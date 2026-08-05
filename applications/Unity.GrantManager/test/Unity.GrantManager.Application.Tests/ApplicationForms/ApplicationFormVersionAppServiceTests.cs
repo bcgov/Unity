@@ -70,6 +70,21 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
     }
 
     [Fact]
+    public void FormMappingPromptData_Should_Include_Accepted_Worksheet_Fields()
+    {
+        var promptData = FormMappingPromptDataBuilder.Build(
+            new ApplicationFormMappingReadModelDto(),
+            ["custom_project_name"]);
+
+        promptData.GetProperty("unityData")
+            .GetProperty("customFields")[0]
+            .GetProperty("Fields")[0]
+            .GetProperty("Name")
+            .GetString()
+            .ShouldBe("custom_project_name");
+    }
+
+    [Fact]
     public async Task GetPendingAiWorksheetAsync_Should_Return_Unpublished_Worksheet_Fields()
     {
         var formVersionId = Guid.NewGuid();
@@ -323,7 +338,8 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
             featureChecker,
             aiGenerationAppService,
             worksheetRepository ?? Substitute.For<IWorksheetRepository>(),
-            customFieldRepository ?? Substitute.For<IRepository<CustomField, Guid>>());
+            customFieldRepository ?? Substitute.For<IRepository<CustomField, Guid>>(),
+            Substitute.For<IFormMappingReviewRepository>());
         return service;
     }
 }

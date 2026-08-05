@@ -40,7 +40,8 @@ namespace Unity.GrantManager.ApplicationForms
         IFeatureChecker featureChecker,
         IAIGenerationAppService aiGenerationAppService,
         IWorksheetRepository worksheetRepository,
-        IRepository<CustomField, Guid> customFieldRepository) :
+        IRepository<CustomField, Guid> customFieldRepository,
+        IFormMappingReviewRepository mappingReviewRepository) :
         CrudAppService<
             ApplicationFormVersion,
             ApplicationFormVersionDto,
@@ -335,6 +336,15 @@ namespace Unity.GrantManager.ApplicationForms
         public virtual async Task<ApplicationFormMappingDto> GenerateMappingAsync(Guid id)
         {
             var applicationFormVersion = await Repository.GetAsync(id);
+            var review = await mappingReviewRepository.FindByFormVersionAsync(id);
+            if (review == null)
+            {
+                review = new FormMappingReview(GuidGenerator.Create(), id);
+                await mappingReviewRepository.InsertAsync(review);
+            }
+
+            review.SetPhase(FormMappingReviewPhase.MappingReview);
+            await mappingReviewRepository.UpdateAsync(review);
             await _aiGenerationAppService.SubmitAsync(
                 AIGenerationOperations.FormMapping,
                 new AIGenerationSubmissionDto
@@ -347,6 +357,79 @@ namespace Unity.GrantManager.ApplicationForms
             {
                 ApplicationFormVersionId = id
             };
+        }
+
+        [HttpGet("api/app/application-form-version/mapping-review")]
+        public virtual async Task<FormMappingReviewDto?> GetMappingReviewAsync(Guid formVersionId)
+        {
+            await CheckPolicyAsync(AIPermissions.Analysis.ViewFormMapping);
+            var review = await mappingReviewRepository.FindByFormVersionAsync(formVersionId);
+            return review == null ? null : MapMappingReview(review);
+        }
+
+        [HttpPost("api/app/application-form-version/accept-mapping-suggestion")]
+        public virtual async Task AcceptMappingSuggestionAsync(Guid formVersionId, Guid suggestionId)
+        {
+            await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormMapping);
+            var review = await mappingReviewRepository.FindByFormVersionAsync(formVersionId)
+                ?? throw new UserFriendlyException("No mapping review is pending.");
+            var suggestions = DeserializeSuggestions(review.PendingMappingSuggestionsJson);
+            var suggestion = suggestions.SingleOrDefault(item => item.Id == suggestionId)
+                ?? throw new UserFriendlyException("The mapping suggestion is no longer available.");
+            var formVersion = await Repository.GetAsync(formVersionId);
+            formVersion.SubmissionHeaderMapping = FormMappingResponseMapper.MergeSubmissionHeaderMapping(
+                formVersion.SubmissionHeaderMapping,
+                [new FormMappingDto
+                {
+                    SourceField = suggestion.SourceField,
+                    TargetField = suggestion.TargetField
+                }]);
+            await Repository.UpdateAsync(formVersion, true);
+            suggestions.Remove(suggestion);
+            review.SetPendingMappingSuggestions(JsonSerializer.Serialize(suggestions));
+            await mappingReviewRepository.UpdateAsync(review, true);
+        }
+
+        [HttpPost("api/app/application-form-version/discard-mapping-suggestions")]
+        public virtual async Task DiscardMappingSuggestionsAsync(Guid formVersionId)
+        {
+            await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormMapping);
+            var review = await mappingReviewRepository.FindByFormVersionAsync(formVersionId);
+            if (review == null)
+            {
+                return;
+            }
+
+            review.SetPendingMappingSuggestions("[]");
+            await mappingReviewRepository.UpdateAsync(review, true);
+        }
+
+        [HttpPost("api/app/application-form-version/mapping-review-phase")]
+        public virtual async Task SetMappingReviewPhaseAsync(Guid formVersionId, FormMappingReviewPhase phase)
+        {
+            await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormMapping);
+            var review = await mappingReviewRepository.FindByFormVersionAsync(formVersionId)
+                ?? throw new UserFriendlyException("No mapping review is pending.");
+            review.SetPhase(phase);
+            await mappingReviewRepository.UpdateAsync(review, true);
+        }
+
+        [HttpPost("api/app/application-form-version/finalize-mapping-review")]
+        public virtual async Task FinalizeMappingReviewAsync(Guid formVersionId)
+        {
+            await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormMapping);
+            var formVersion = await Repository.GetAsync(formVersionId);
+            var review = await mappingReviewRepository.FindByFormVersionAsync(formVersionId)
+                ?? throw new UserFriendlyException("No mapping review is pending.");
+            review.SetPhase(FormMappingReviewPhase.FinalMappingReview);
+            await mappingReviewRepository.UpdateAsync(review, true);
+            await _aiGenerationAppService.SubmitAsync(
+                AIGenerationOperations.FormMapping,
+                new AIGenerationSubmissionDto
+                {
+                    ApplicationId = formVersion.ApplicationFormId,
+                    ApplicationFormVersionId = formVersionId
+                });
         }
 
         [HttpGet("api/app/application-form-version/pending-ai-worksheet")]
@@ -381,6 +464,13 @@ namespace Unity.GrantManager.ApplicationForms
                 throw new UserFriendlyException("Select at least one suggested field.");
             }
 
+            var activeMappingReview = await mappingReviewRepository.FindByFormVersionAsync(formVersionId);
+            activeMappingReview?.SetPhase(FormMappingReviewPhase.WorksheetReview);
+            if (activeMappingReview != null)
+            {
+                await mappingReviewRepository.UpdateAsync(activeMappingReview);
+            }
+
             var fields = worksheet.Sections.SelectMany(section => section.Fields).ToList();
             var unknownFieldIds = selectedFieldIds.Except(fields.Select(field => field.Id)).ToList();
             if (unknownFieldIds.Count > 0)
@@ -389,9 +479,9 @@ namespace Unity.GrantManager.ApplicationForms
             }
 
             var draftName = await GetNextAiWorksheetDraftNameAsync(title);
-            var draft = new Worksheet(Guid.NewGuid(), draftName, title);
+            var draft = new Worksheet(GuidGenerator.Create(), draftName, title);
 
-            var draftSection = new WorksheetSection(Guid.NewGuid(), "Suggested Fields")
+            var draftSection = new WorksheetSection(GuidGenerator.Create(), "Suggested Fields")
             {
                 Worksheet = draft
             }.SetOrder(1);
@@ -404,7 +494,7 @@ namespace Unity.GrantManager.ApplicationForms
                 .Select((field, index) => (field, index)))
             {
                 var draftField = new CustomField(
-                    Guid.NewGuid(),
+                    GuidGenerator.Create(),
                     field.Key,
                     draft.Name,
                     field.Label,
@@ -419,6 +509,18 @@ namespace Unity.GrantManager.ApplicationForms
 
             foreach (var field in fields.Where(field => selectedFieldIds.Contains(field.Id)))
             {
+                var mappingReview = await mappingReviewRepository.FindByFormVersionAsync(formVersionId);
+                if (mappingReview != null)
+                {
+                    var acceptedFields = DeserializeWorksheetFields(mappingReview.AcceptedWorksheetFieldsJson);
+                    if (!acceptedFields.Contains(field.Name, StringComparer.OrdinalIgnoreCase))
+                    {
+                        acceptedFields.Add(field.Name);
+                        mappingReview.SetAcceptedWorksheetFields(JsonSerializer.Serialize(acceptedFields));
+                        await mappingReviewRepository.UpdateAsync(mappingReview);
+                    }
+                }
+
                 field.Section.RemoveField(field);
                 await customFieldRepository.DeleteAsync(field.Id);
             }
@@ -426,6 +528,12 @@ namespace Unity.GrantManager.ApplicationForms
             if (worksheet.Sections.All(section => section.Fields.Count == 0))
             {
                 await worksheetRepository.DeleteAsync(worksheet, true);
+                var completedReview = await mappingReviewRepository.FindByFormVersionAsync(formVersionId);
+                if (completedReview != null)
+                {
+                    completedReview.SetPhase(FormMappingReviewPhase.FinalMappingReview);
+                    await mappingReviewRepository.UpdateAsync(completedReview, true);
+                }
                 return;
             }
 
@@ -441,6 +549,12 @@ namespace Unity.GrantManager.ApplicationForms
             if (worksheet != null)
             {
                 await worksheetRepository.DeleteAsync(worksheet, true);
+                var review = await mappingReviewRepository.FindByFormVersionAsync(formVersionId);
+                if (review != null)
+                {
+                    review.SetPhase(FormMappingReviewPhase.FinalMappingReview);
+                    await mappingReviewRepository.UpdateAsync(review, true);
+                }
             }
         }
 
@@ -474,6 +588,41 @@ namespace Unity.GrantManager.ApplicationForms
                 })
                 .ToList()
         };
+
+        private static FormMappingReviewDto MapMappingReview(FormMappingReview review)
+        {
+            return new FormMappingReviewDto
+            {
+                FormVersionId = review.FormVersionId,
+                Phase = review.Phase,
+                PendingSuggestions = DeserializeSuggestions(review.PendingMappingSuggestionsJson),
+                AcceptedWorksheetFields = DeserializeWorksheetFields(review.AcceptedWorksheetFieldsJson)
+            };
+        }
+
+        private static List<FormMappingSuggestionDto> DeserializeSuggestions(string json)
+        {
+            try
+            {
+                return JsonSerializer.Deserialize<List<FormMappingSuggestionDto>>(json) ?? [];
+            }
+            catch (JsonException)
+            {
+                return [];
+            }
+        }
+
+        private static List<string> DeserializeWorksheetFields(string json)
+        {
+            try
+            {
+                return JsonSerializer.Deserialize<List<string>>(json) ?? [];
+            }
+            catch (JsonException)
+            {
+                return [];
+            }
+        }
 
         private async Task<string> GetNextAiWorksheetDraftNameAsync(string title)
         {

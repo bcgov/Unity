@@ -8,6 +8,11 @@
 - `FormWorksheet` - worksheet generation
 - `FormScoresheet` - scoresheet generation
 
+`FormMapping` and `FormWorksheet` can run as a finite staged flow for form
+configuration: mapping review, optional worksheet review, then final mapping
+review. Review suggestions are persisted until accepted or discarded; existing
+non-empty mappings are never replaced.
+
 ## Versions
 - Built-in prompt rows are defined and seeded by `AIPromptDataSeeder`.
 - Families may have `v0`, `v1`, and `v2` rows; a new operation only needs the versions it supports.

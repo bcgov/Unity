@@ -306,4 +306,16 @@
                 abp-tooltip="Cancel the Edit" button-type="Secondary" />
         </abp-modal-footer>
     </abp-modal>
+    <abp-modal centered="true" scrollable="true" size="Large" id="aiMappingReviewModal">
+        <abp-modal-header title="Review AI mapping suggestions"></abp-modal-header>
+        <abp-modal-body>
+            <div id="aiMappingReviewFields"></div>
+            <div id="aiMappingReviewEmpty" class="text-muted d-none">No mapping suggestions remain.</div>
+        </abp-modal-body>
+        <abp-modal-footer>
+            <button type="button" id="btn-add-ai-mapping" class="btn unt-btn-primary btn-primary">Add to map</button>
+            <button type="button" id="btn-review-later-ai-mapping" class="btn unt-btn-outline-primary btn-outline-primary">Review later</button>
+            <button type="button" id="btn-discard-ai-mapping" class="btn btn-outline-danger">Discard remaining</button>
+        </abp-modal-footer>
+    </abp-modal>
 </div>

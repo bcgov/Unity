@@ -1,10 +1,17 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 
 namespace Unity.GrantManager.ApplicationForms.Mapping;
 
 internal static class FormMappingPromptDataBuilder
 {
-    internal static JsonElement Build(ApplicationFormMappingReadModelDto readModel)
+    internal static JsonElement Build(ApplicationFormMappingReadModelDto readModel) =>
+        Build(readModel, []);
+
+    internal static JsonElement Build(
+        ApplicationFormMappingReadModelDto readModel,
+        IReadOnlyCollection<string> acceptedWorksheetFields)
     {
         var existingMapping = ParseExistingMapping(readModel.ExistingMapping);
         var promptData = new
@@ -21,6 +28,21 @@ internal static class FormMappingPromptDataBuilder
             {
                 coreFields = readModel.UnityCoreFields,
                 customFields = readModel.Worksheets
+                    .Concat(acceptedWorksheetFields.Select(field => new WorksheetMappingFieldsDto
+                    {
+                        WorksheetName = "AI accepted fields",
+                        Fields =
+                        [
+                            new MappingFieldDto
+                            {
+                                Name = field,
+                                Label = field,
+                                Type = "String",
+                                IsCustom = true
+                            }
+                        ]
+                    }))
+                    .ToList()
             },
             existingMapping
         };

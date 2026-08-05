@@ -18,6 +18,7 @@ using Unity.Notifications.EntityFrameworkCore;
 using Unity.Reporting.EntityFrameworkCore;
 using Unity.GrantManager.GlobalTag;
 using Unity.GrantManager.Contacts;
+using Unity.GrantManager.ApplicationForms.Mapping;
 
 namespace Unity.GrantManager.EntityFrameworkCore
 {
@@ -28,6 +29,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
         public DbSet<Intake> Intakes { get; set; }
         public DbSet<ApplicationForm> ApplicationForms { get; set; }
         public DbSet<ApplicationFormVersion> ApplicationFormVersions { get; set; }
+        public DbSet<FormMappingReview> FormMappingReviews { get; set; }
         public DbSet<Applicant> Applicants { get; set; }
         public DbSet<Application> Applications { get; set; }
         public DbSet<ApplicationStatus> ApplicationStatuses { get; set; }
@@ -141,6 +143,17 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.ConfigureByConvention(); //auto configure for the base class props
                 b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
                 b.Property(x => x.FormSchema).HasColumnType("jsonb");
+            });
+
+            modelBuilder.Entity<FormMappingReview>(b =>
+            {
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "FormMappingReviews",
+                    GrantManagerConsts.DbSchema);
+                b.ConfigureByConvention();
+                b.Property(x => x.Phase).HasConversion<string>().IsRequired();
+                b.Property(x => x.PendingMappingSuggestionsJson).HasColumnType("jsonb").IsRequired();
+                b.Property(x => x.AcceptedWorksheetFieldsJson).HasColumnType("jsonb").IsRequired();
+                b.HasIndex(x => x.FormVersionId).IsUnique();
             });
 
             modelBuilder.Entity<ApplicationStatus>(b =>

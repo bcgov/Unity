@@ -61,6 +61,12 @@
         btnGenerateScoresheet: $('#btn-generate-scoresheet'),
         btnReviewWorksheet: $('#btn-review-worksheet'),
         worksheetReviewModal: $('#aiWorksheetReviewModal'),
+        mappingReviewModal: $('#aiMappingReviewModal'),
+        mappingReviewFields: $('#aiMappingReviewFields'),
+        mappingReviewEmpty: $('#aiMappingReviewEmpty'),
+        btnAddMapping: $('#btn-add-ai-mapping'),
+        btnReviewLaterMapping: $('#btn-review-later-ai-mapping'),
+        btnDiscardMapping: $('#btn-discard-ai-mapping'),
         worksheetReviewFields: $('#aiWorksheetReviewFields'),
         worksheetReviewEmpty: $('#aiWorksheetReviewEmpty'),
         worksheetTitle: $('#aiWorksheetTitle'),
@@ -92,6 +98,7 @@
         bindExistingMaps();
         setupTooltips();
         initializeUIConfiguration();
+        loadMappingReview(false);
     }
 
     function setupTooltips() {
@@ -110,6 +117,14 @@
         UIElements.btnGenerateWorksheet.on('click', queueFormWorksheet);
         UIElements.btnGenerateScoresheet.on('click', queueFormScoresheet);
         UIElements.btnReviewWorksheet.on('click', loadAiWorksheetReview);
+        UIElements.btnAddMapping.on('click', addSelectedMappingSuggestion);
+        UIElements.btnReviewLaterMapping.on('click', function () {
+            UIElements.mappingReviewModal.modal('hide');
+        });
+        UIElements.btnDiscardMapping.on('click', discardMappingSuggestions);
+        UIElements.mappingReviewFields.on('click', 'button[data-suggestion-id]', function () {
+            acceptMappingSuggestion($(this).attr('data-suggestion-id'));
+        });
         UIElements.btnCreateWorksheetDraft.on('click', createAiWorksheetDraft);
         UIElements.btnDiscardWorksheet.on('click', discardAiWorksheetSuggestions);
         UIElements.worksheetReviewFields.on('change', 'input[data-field-id]', updateAiWorksheetReview);
@@ -170,6 +185,11 @@
     }
 
     function queueFormMapping(triggerButton = null) {
+        if (UIElements.btnGenerate.attr('data-ai-pending') === 'true') {
+            loadMappingReview(true);
+            return;
+        }
+
         const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
         const applicationId = String(document.getElementById('applicationFormId')?.value ?? '').trim();
         if (!validateGuid(formVersion)) {
@@ -502,6 +522,7 @@
                 if (!worksheet) {
                     UIElements.worksheetReviewModal.modal('hide');
                     setAiWorksheetPending(false);
+                    offerFinalMappingGeneration();
                     return;
                 }
 
@@ -536,6 +557,7 @@
                         setAiWorksheetPending(false);
                         UIElements.worksheetReviewModal.modal('hide');
                         abp.notify.success('', 'Remaining AI worksheet suggestions discarded.');
+                        offerFinalMappingGeneration();
                     })
                     .fail(function () {
                         abp.notify.error('', 'Unable to discard the remaining AI worksheet suggestions.');
@@ -545,6 +567,58 @@
                         updateAiWorksheetDraftButton();
                     });
             });
+    }
+
+    function offerFinalMappingGeneration() {
+        abp.message.confirm('Worksheet review is complete. Proceed to final mapping generation?', 'Continue')
+            .then(function (confirmed) {
+                if (!confirmed) {
+                    return;
+                }
+
+                const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
+                const applicationId = String(document.getElementById('applicationFormId')?.value ?? '').trim();
+                abp.ajax({
+                    url: `/api/app/application-form-version/finalize-mapping-review?formVersionId=${encodeURIComponent(formVersion)}`,
+                    type: 'POST'
+                }).done(function () {
+                    monitorFormMappingGeneration(applicationId, UIElements.btnGenerate, UIElements.btnGenerate.html());
+                }).fail(function () {
+                    abp.notify.error('', 'Unable to start final mapping generation.');
+                });
+            });
+    }
+
+    function checkMappingReviewComplete() {
+        const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
+        abp.ajax({
+            url: `/api/app/application-form-version/mapping-review?formVersionId=${encodeURIComponent(formVersion)}`,
+            type: 'GET'
+        }).done(function (review) {
+            if (review && (!review.pendingSuggestions || review.pendingSuggestions.length === 0)) {
+                UIElements.mappingReviewModal.modal('hide');
+                if (isFinalMappingPhase(review.phase)) {
+                    completeMappingReview();
+                } else {
+                    offerWorksheetGeneration();
+                }
+            }
+        });
+    }
+
+    function completeMappingReview() {
+        const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
+        abp.ajax({
+            url: `/api/app/application-form-version/mapping-review-phase?formVersionId=${encodeURIComponent(formVersion)}&phase=Completed`,
+            type: 'POST'
+        }).done(function () {
+            UIElements.btnGenerate.attr('data-ai-pending', 'false');
+            abp.notify.success('', 'AI mapping review completed.');
+        });
+    }
+
+    function isFinalMappingPhase(phase) {
+        return phase === 'FinalMappingReview' || phase === 2 || phase === '2';
     }
 
     function refreshScoresheetAfterGeneration() {
@@ -574,6 +648,135 @@
         });
     }
 
+    function loadMappingReview(showModal = true) {
+        const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
+        if (!validateGuid(formVersion)) {
+            return;
+        }
+
+        abp.ajax({
+            url: `/api/app/application-form-version/mapping-review?formVersionId=${encodeURIComponent(formVersion)}`,
+            type: 'GET'
+        })
+            .done(function (review) {
+                if (!review || !review.pendingSuggestions || review.pendingSuggestions.length === 0) {
+                    UIElements.btnGenerate
+                        .attr('data-ai-pending', 'false')
+                        .find('span').last().text('Generate Mapping');
+                    return;
+                }
+
+                UIElements.btnGenerate
+                    .attr('data-ai-pending', 'true')
+                    .find('span').last().text('Review Mapping');
+                renderMappingReview(review);
+                if (showModal) {
+                    UIElements.mappingReviewModal.modal('show');
+                }
+            });
+    }
+
+    function renderMappingReview(review) {
+        UIElements.mappingReviewFields.empty();
+        (review.pendingSuggestions || []).forEach(function (suggestion) {
+            const $row = $('<div class="d-flex align-items-center gap-2 mb-2"></div>');
+            $('<input type="checkbox" class="form-check-input" checked>')
+                .attr('data-suggestion-id', suggestion.id)
+                .appendTo($row);
+            $('<span class="flex-grow-1"></span>')
+                .text(`${suggestion.targetField || '—'} → ${suggestion.sourceField || '—'}`)
+                .appendTo($row);
+            $('<button type="button" class="btn btn-sm btn-outline-primary">Add to map</button>')
+                .attr('data-suggestion-id', suggestion.id)
+                .appendTo($row);
+            $row.appendTo(UIElements.mappingReviewFields);
+        });
+        UIElements.mappingReviewEmpty.toggleClass('d-none', (review.pendingSuggestions || []).length > 0);
+        UIElements.mappingReviewFields.attr('data-phase', review.phase || '');
+    }
+
+    function addSelectedMappingSuggestion() {
+        const suggestionId = UIElements.mappingReviewFields
+            .find('input[data-suggestion-id]:checked')
+            .first()
+            .attr('data-suggestion-id');
+        if (suggestionId) {
+            acceptMappingSuggestion(suggestionId);
+        }
+    }
+
+    function acceptMappingSuggestion(suggestionId) {
+        const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
+        abp.ajax({
+            url: `/api/app/application-form-version/accept-mapping-suggestion?formVersionId=${encodeURIComponent(formVersion)}&suggestionId=${encodeURIComponent(suggestionId)}`,
+            type: 'POST'
+        })
+            .done(function () {
+                loadMappingReview(true);
+                refreshMappingTable();
+                checkMappingReviewComplete();
+            })
+            .fail(function () {
+                abp.notify.error('', 'Unable to add the mapping suggestion.');
+            });
+    }
+
+    function discardMappingSuggestions() {
+        const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
+        abp.message.confirm('This will permanently remove the remaining AI mapping suggestions.', 'Discard remaining suggestions?')
+            .then(function (confirmed) {
+                if (!confirmed) {
+                    return;
+                }
+
+                abp.ajax({
+                    url: `/api/app/application-form-version/discard-mapping-suggestions?formVersionId=${encodeURIComponent(formVersion)}`,
+                    type: 'POST'
+                })
+                    .done(function () {
+                        UIElements.mappingReviewModal.modal('hide');
+                        if (isFinalMappingPhase(UIElements.mappingReviewFields.attr('data-phase'))) {
+                            completeMappingReview();
+                        } else {
+                            offerWorksheetGeneration();
+                        }
+                    })
+                    .fail(function () {
+                        abp.notify.error('', 'Unable to discard the mapping suggestions.');
+                    });
+            });
+    }
+
+    function offerWorksheetGeneration() {
+        if (isAiWorksheetPending()) {
+            loadAiWorksheetReview();
+            return;
+        }
+
+        abp.message.confirm('Mapping review is complete. Proceed to worksheet generation?', 'Continue')
+            .then(function (confirmed) {
+                if (!confirmed) {
+                    return;
+                }
+
+                const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
+                abp.ajax({
+                    url: `/api/app/application-form-version/mapping-review-phase?formVersionId=${encodeURIComponent(formVersion)}&phase=WorksheetReview`,
+                    type: 'POST'
+                }).done(function () {
+                    queueFormWorksheet(UIElements.btnGenerateWorksheet.get(0));
+                });
+            });
+    }
+
+    function refreshMappingTable() {
+        if (!dataTable) {
+            return;
+        }
+
+        dataTable.ajax.reload(null, false);
+    }
+
     function refreshMappingAfterGeneration(applicationId, formVersion = null) {
         const resolvedFormVersion = String(formVersion ?? document.getElementById('formVersionId')?.value ?? '').trim();
         if (!validateGuid(resolvedFormVersion)) {
@@ -581,33 +784,8 @@
             return;
         }
 
-        abp.ajax({
-            url: `/api/app/application-form-version/${encodeURIComponent(resolvedFormVersion)}`,
-            type: 'GET'
-        })
-            .done(function (applicationFormVersionDto) {
-                const availableChefsFields = applicationFormVersionDto?.availableChefsFields
-                    ? JSON.parse(applicationFormVersionDto.availableChefsFields)
-                    : [];
-
-                $('#applicationFormVersionDtoString').val(JSON.stringify(applicationFormVersionDto ?? {}));
-                $('#availableChefsFields').val(applicationFormVersionDto?.availableChefsFields ?? '');
-                $('#existingMapping').val(applicationFormVersionDto?.submissionHeaderMapping ?? '');
-
-                existingMappingString = applicationFormVersionDto?.submissionHeaderMapping ?? '';
-                availableChefFieldsString = applicationFormVersionDto?.availableChefsFields ?? '';
-
-                $(intakeMapColumn).empty();
-                $(worksheetMapColumn).empty();
-                dataTable.clear().draw();
-                initializeIntakeMap(availableChefsFields);
-                bindExistingMaps();
-
-                abp.notify.success('', 'Form mapping generated and saved successfully.');
-            })
-            .fail(function () {
-                abp.notify.error('', 'Form mapping generated, but the page could not refresh the saved mapping.');
-            });
+        loadMappingReview(true);
+        abp.notify.success('', 'Form mapping suggestions are ready for review.');
     }
 
     function restoreGenerateMappingButton($button, existingHtml) {
@@ -986,6 +1164,7 @@
 
 
     function handleMappingTabClick() {
+        loadMappingReview(true);
         // Refresh the hidden field with the latest form version ID
         let refreshAvailableWorkSheets = UIElements.refreshAvailableWorksheetsHidden.val();
         if (refreshAvailableWorkSheets && refreshAvailableWorkSheets !== "undefined") {
