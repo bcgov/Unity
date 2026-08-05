@@ -177,7 +177,7 @@ public class AIPromptDataSeeder(
     }
 
     // ═════════════════════════════════════════════════════════════════════════
-    // PROMPT CONTENT — mirrors Runtime/Prompts/Versions/ text files verbatim
+    // PROMPT CONTENT — authoritative built-in database seed definitions
     // ═════════════════════════════════════════════════════════════════════════
 
     // ── v0/analysis.system.txt ───────────────────────────────────────────────

@@ -8,8 +8,7 @@
 - `FormWorksheet` - worksheet generation
 
 ## Versions
-- `v0`, `v1`, `v2` live under `Runtime/Prompts/Versions`
-- The seeder loads built-in prompt rows from those versions
+- Built-in `v0`, `v1`, and `v2` prompt rows are defined and seeded by `AIPromptDataSeeder`
 - Runtime selects the newest active prompt by family.
 
 ## Tenant selection
