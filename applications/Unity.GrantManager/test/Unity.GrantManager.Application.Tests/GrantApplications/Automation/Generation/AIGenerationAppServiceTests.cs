@@ -72,7 +72,8 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
         await queue.Received(1).QueueAsync(
             AIGenerationOperations.AttachmentSummary,
             Arg.Is<AIGenerationSubmissionDto>(request =>
-                request.ApplicationId == applicationId &&
+                request != null
+                && request.ApplicationId == applicationId &&
                 request.AttachmentIds.Count == 0),
             Arg.Any<Guid?>());
     }

@@ -56,7 +56,8 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
         await generationService.Received(1).SubmitAsync(
             AIGenerationOperations.FormMapping,
             Arg.Is<AIGenerationSubmissionDto>(request =>
-                request.ApplicationId == formVersion.ApplicationFormId
+                request != null
+                && request.ApplicationId == formVersion.ApplicationFormId
                 && request.ApplicationFormVersionId == formVersionId));
     }
 

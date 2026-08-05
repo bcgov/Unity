@@ -244,7 +244,8 @@ public class AttachmentSummaryServiceTests
 
         result.ShouldBe("summary text");
         capturedRequest.ShouldNotBeNull();
-        capturedRequest.ExtractedText.ShouldContain(attachmentText);
+        capturedRequest!.ExtractedText.ShouldNotBeNull();
+        capturedRequest.ExtractedText!.ShouldContain(attachmentText);
         await aiService.Received(1).GenerateAttachmentSummaryAsync(Arg.Any<AttachmentSummaryRequest>());
     }
 

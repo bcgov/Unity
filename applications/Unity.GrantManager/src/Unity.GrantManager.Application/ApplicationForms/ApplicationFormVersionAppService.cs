@@ -338,7 +338,7 @@ namespace Unity.GrantManager.ApplicationForms
         /// </summary>
         public virtual async Task<ApplicationFormMappingDto> GenerateMappingAsync(Guid id)
         {
-            var applicationFormVersion = await repository.GetAsync(id);
+            var applicationFormVersion = await Repository.GetAsync(id);
             await _aiGenerationAppService.SubmitAsync(
                 AIGenerationOperations.FormMapping,
                 new AIGenerationSubmissionDto

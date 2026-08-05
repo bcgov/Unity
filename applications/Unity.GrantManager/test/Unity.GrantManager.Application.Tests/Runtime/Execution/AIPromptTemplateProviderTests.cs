@@ -54,8 +54,8 @@ public class AIPromptTemplateProviderTests
         snapshot.PromptVersion.ShouldBe("v1");
         snapshot.SystemPrompt.ShouldBe("SYSTEM");
         snapshot.UserPrompt.ShouldBe("USER");
-        snapshot.MetadataJson.ShouldContain("ApplicationAnalysis");
-        snapshot.MetadataJson.ShouldContain("ApplicationAnalysis");
+        snapshot.MetadataJson.ShouldNotBeNull();
+        snapshot.MetadataJson!.ShouldContain("ApplicationAnalysis");
     }
 
     [Fact]
@@ -80,6 +80,7 @@ public class AIPromptTemplateProviderTests
             .Returns(callInfo =>
             {
                 var predicate = callInfo.Arg<Expression<Func<AIPrompt, bool>>>();
+                ArgumentNullException.ThrowIfNull(predicate);
                 return Task.FromResult(prompt != null && predicate.Compile()(prompt) ? prompt : null);
             });
 

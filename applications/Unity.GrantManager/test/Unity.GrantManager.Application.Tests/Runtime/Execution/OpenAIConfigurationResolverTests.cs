@@ -57,6 +57,7 @@ public class OpenAIConfigurationResolverTests
             .Returns(callInfo =>
             {
                 var predicate = callInfo.Arg<Expression<Func<AIOperation, bool>>>();
+                ArgumentNullException.ThrowIfNull(predicate);
                 return Task.FromResult(new List<AIOperation>
                 {
                     new(Guid.NewGuid(), AIPromptTypes.ApplicationAnalysis, modelId, promptId)
@@ -123,6 +124,7 @@ public class OpenAIConfigurationResolverTests
             .Returns(callInfo =>
             {
                 var predicate = callInfo.Arg<Expression<Func<AIOperation, bool>>>();
+                ArgumentNullException.ThrowIfNull(predicate);
                 return Task.FromResult(new List<AIOperation>
                 {
                     new(Guid.NewGuid(), "Default", modelId, promptId)
@@ -167,6 +169,7 @@ public class OpenAIConfigurationResolverTests
             .Returns(callInfo =>
             {
                 var predicate = callInfo.Arg<Expression<Func<AIModel, bool>>>();
+                ArgumentNullException.ThrowIfNull(predicate);
                 return Task.FromResult(new List<AIModel>
                 {
                     new(Guid.NewGuid(), "Gpt5Mini")
@@ -199,6 +202,7 @@ public class OpenAIConfigurationResolverTests
             .Returns(callInfo =>
             {
                 var predicate = callInfo.Arg<Expression<Func<AIModel, bool>>>();
+                ArgumentNullException.ThrowIfNull(predicate);
                 return Task.FromResult(new List<AIModel>
                 {
                     new(Guid.NewGuid(), "Default")
@@ -250,6 +254,7 @@ public class OpenAIConfigurationResolverTests
             .Returns(callInfo =>
             {
                 var predicate = callInfo.Arg<Expression<Func<AIOperation, bool>>>();
+                ArgumentNullException.ThrowIfNull(predicate);
                 return Task.FromResult(new List<AIOperation>
                 {
                     new(Guid.NewGuid(), AIPromptTypes.ApplicationAnalysis, modelId, promptId)
