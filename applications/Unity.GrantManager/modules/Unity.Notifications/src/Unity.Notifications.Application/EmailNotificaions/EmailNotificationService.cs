@@ -269,7 +269,8 @@ public class EmailNotificationService(
         var renderedTemplate = templateContent
             .Replace("@Model.CurrentUserText", encodedCurrentUserText)
             .Replace("@Html.Raw(Model.CommentBody)", encodedCommentBody)
-            .Replace("@Model.CommentLink", encodedCommentLink);
+            .Replace("@Model.CommentLink", encodedCommentLink)
+            .Replace("@model dynamic", string.Empty);
 
         return renderedTemplate;
     }
