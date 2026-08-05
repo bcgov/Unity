@@ -1,0 +1,24 @@
+.exception-logs-action-bar .exception-logs-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    column-gap: 10px;
+}
+
+.exception-logs-action-bar .exception-logs-filter-field {
+    display: flex;
+    flex-direction: column;
+}
+
+#ExceptionLogsTable td.log-title {
+    max-width: 270px;
+}
+
+#ExceptionLogsTable tbody tr.has-details {
+    cursor: pointer;
+}
+
+#ExceptionLogsTable .exception-log-details pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}

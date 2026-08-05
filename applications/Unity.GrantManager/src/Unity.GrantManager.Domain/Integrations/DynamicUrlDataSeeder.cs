@@ -35,6 +35,8 @@ namespace Unity.GrantManager.Integrations
             public const string MATOMO_DEV_URL = $"{PROTOCOL}//dev-analytics-matomo.apps.silver.devops.gov.bc.ca";
             public const string MATOMO_TEST_URL = $"{PROTOCOL}//test-analytics-matomo.apps.silver.devops.gov.bc.ca";
             public const string MATOMO_PROD_URL = $"{PROTOCOL}//prod-analytics-matomo.apps.silver.devops.gov.bc.ca";
+            public const string GITHUB_REPO = $"{PROTOCOL}//github.com/bcgov/Unity";
+            public const string GITHUB_GRAPHQL = $"{PROTOCOL}//api.github.com/graphql";
         }
 
         private static string GetMatomoUrl()
@@ -67,12 +69,15 @@ namespace Unity.GrantManager.Integrations
                     new() { KeyName = DynamicUrlKeyNames.REPORTING_AI, Url = DynamicUrls.REPORTING_AI, Description = "Reporting AI iFrame Source" },
                     new() { KeyName = DynamicUrlKeyNames.NOTIFICATION_AUTH, Url = DynamicUrls.CHES_PROD_AUTH, Description = "Common Hosted Email Service OAUTH" },
                     new() { KeyName = DynamicUrlKeyNames.ANALYTICS_MATOMO_BASE, Url = GetMatomoUrl(), Description = "Matomo Analytics" },
+                    new() { KeyName = DynamicUrlKeyNames.GITHUB_REPO, Url = DynamicUrls.GITHUB_REPO, Description = "GitHub Repository" },
+                    new() { KeyName = DynamicUrlKeyNames.GITHUB_GRAPHQL, Url = DynamicUrls.GITHUB_GRAPHQL, Description = "GitHub GraphQL Endpoint" },
                     new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
                     new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
                     new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
                     new() { KeyName = $"{DynamicUrlKeyNames.WEBHOOK_KEY_PREFIX}{webhookIndex++}", Url = "", Description = $"Webhook {webhookIndex}" },
                     new() { KeyName = $"{DynamicUrlKeyNames.WEBHOOK_KEY_PREFIX}{webhookIndex++}", Url = "", Description = $"Webhook {webhookIndex}" },
                     new() { KeyName = $"{DynamicUrlKeyNames.WEBHOOK_KEY_PREFIX}{webhookIndex++}", Url = "", Description = $"Webhook {webhookIndex}" },
+                    
                 };
 
                 foreach (var dynamicUrl in dynamicUrls)

@@ -31,6 +31,8 @@ public class AIApplicationModule : AbpModule
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        context.Services.AddMemoryCache();
+
         Configure<AbpMultiTenancyOptions>(options =>
         {
             options.IsEnabled = true;

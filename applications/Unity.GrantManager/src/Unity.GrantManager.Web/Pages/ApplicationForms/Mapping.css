@@ -134,6 +134,16 @@ tr:nth-child(even) {background-color: #f2f2f2;}
     display: block;
 }
 
+.ai-generate-btn:disabled,
+.ai-generate-btn.disabled,
+.ai-generate-btn[data-ai-shared-generating='1'],
+.ai-generate-btn[data-ai-cooldown-active='1'],
+.ai-generate-btn[data-ai-cooldown-checking='1'] {
+    cursor: not-allowed;
+    opacity: 0.55;
+    pointer-events: none;
+}
+
 .buttons-div {
     display: inline-flex;
     padding: 20px;

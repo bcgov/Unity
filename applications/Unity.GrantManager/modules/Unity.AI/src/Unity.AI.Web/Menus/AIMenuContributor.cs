@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Unity.AI.Localization;
 using Unity.AI.Permissions;
+using Unity.Modules.Shared.Navigation;
 using Unity.Modules.Shared.Specializations;
 using Unity.Modules.Shared.Permissions;
 using Volo.Abp.Features;
@@ -27,14 +28,13 @@ public class AIMenuContributor : IMenuContributor
         var specializationChecker = context.ServiceProvider.GetRequiredService<ISpecializationChecker>();
         if (!await specializationChecker.IsEnabledAsync(SpecializationConsts.Onboarding))
         {
-            context.Menu.AddItem(new ApplicationMenuItem(
+            await context.AddItemAsync(new ApplicationMenuItem(
                 name: AIMenus.Prompts,
                 displayName: "AI Prompts",
                 url: "~/Prompts",
                 icon: "fl fl-ai-prompts",
-                order: 900,
-                requiredPermissionName: IdentityConsts.ITOperationsPermissionName
-            ));
+                order: 900
+            ).OnlyWhenInRole(IdentityConsts.ITOperationsRoleName));
         }
 
         if (await featureChecker.IsEnabledAsync("Unity.AIReporting"))
@@ -48,5 +48,6 @@ public class AIMenuContributor : IMenuContributor
                 requiredPermissionName: AIPermissions.Reporting.ReportingDefault
             ));
         }
+
     }
 }

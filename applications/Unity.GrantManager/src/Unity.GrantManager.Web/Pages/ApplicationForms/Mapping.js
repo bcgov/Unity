@@ -8,7 +8,6 @@
     let worksheetMapColumn = document.querySelector('#worksheet-map-available-fields-column');
     let excludedIntakeMappings = new Set(['ConfirmationId', 'SubmissionId', 'SubmissionDate']);
     let dataTable;
-    if (globalThis.toastr) { toastr.options.positionClass = 'toast-top-center'; }
 
     let allowableTypes = new Set(['textarea',
         'orgbook',
@@ -57,6 +56,16 @@
         btnBack: $('#btn-back'),
         btnSave: $('#btn-save'),
         btnEdit: $('#btn-edit'),
+        btnGenerate: $('#btn-generate'),
+        btnGenerateWorksheet: $('#btn-generate-worksheet'),
+        btnGenerateScoresheet: $('#btn-generate-scoresheet'),
+        btnReviewWorksheet: $('#btn-review-worksheet'),
+        worksheetReviewModal: $('#aiWorksheetReviewModal'),
+        worksheetReviewFields: $('#aiWorksheetReviewFields'),
+        worksheetReviewEmpty: $('#aiWorksheetReviewEmpty'),
+        worksheetTitle: $('#aiWorksheetTitle'),
+        btnCreateWorksheetDraft: $('#btn-create-ai-worksheet-draft'),
+        btnDiscardWorksheet: $('#btn-discard-ai-worksheet'),
         btnSync: $('#btn-sync'),
         btnReset: $('#btn-reset'),
         btnClose: $('.btn-close'),
@@ -97,6 +106,15 @@
         UIElements.btnSaveMapping.on('click', handleSaveEditMapping);
         UIElements.btnSync.on('click', handleSync);
         UIElements.btnEdit.on('click', handleEdit);
+        UIElements.btnGenerate.on('click', queueFormMapping);
+        UIElements.btnGenerateWorksheet.on('click', queueFormWorksheet);
+        UIElements.btnGenerateScoresheet.on('click', queueFormScoresheet);
+        UIElements.btnReviewWorksheet.on('click', loadAiWorksheetReview);
+        UIElements.btnCreateWorksheetDraft.on('click', createAiWorksheetDraft);
+        UIElements.btnDiscardWorksheet.on('click', discardAiWorksheetSuggestions);
+        UIElements.worksheetReviewFields.on('change', 'input[data-field-id]', updateAiWorksheetReview);
+        $('#aiWorksheetReviewSelectAll').on('change', toggleAiWorksheetReviewAll);
+        UIElements.worksheetTitle.on('input', updateAiWorksheetDraftButton);
         UIElements.btnReset.on('click', handleReset);
         UIElements.btnCancel.on('click', handleCancelMapping);
         UIElements.btnClose.on('click', handleCancelMapping);
@@ -151,11 +169,482 @@
         UIElements.editMappingModal.addClass('display-modal');
     }
 
+    function queueFormMapping(triggerButton = null) {
+        const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
+        const applicationId = String(document.getElementById('applicationFormId')?.value ?? '').trim();
+        if (!validateGuid(formVersion)) {
+            abp.notify.error('', 'The Form Version ID is not in a GUID format');
+            return;
+        }
+        if (!validateGuid(applicationId)) {
+            abp.notify.error('', 'The Application ID is not in a GUID format');
+            return;
+        }
+
+        const buttonElement = triggerButton?.currentTarget || triggerButton?.target || triggerButton || UIElements.btnGenerate?.get?.(0);
+        const $button = $(buttonElement);
+        const existingHtml = $button.html();
+
+        if ($button.prop('disabled')) {
+            return;
+        }
+
+        globalThis.AIGenerationButtonState?.setGenerating($button);
+
+        abp.ajax({
+            url: `/api/app/ai/generation/form-mapping?applicationId=${encodeURIComponent(applicationId)}&applicationFormVersionId=${encodeURIComponent(formVersion)}`,
+            type: 'POST',
+        })
+            .done(function (generationStatus) {
+                const request = generationStatus?.generationRequest;
+                const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
+
+                if (status === 'Completed') {
+                    globalThis.AIGenerationButtonState?.restoreForCooldownCheck($button, existingHtml);
+                    globalThis.AIGenerationButtonState?.applyStatusState(generationStatus);
+                    refreshMappingAfterGeneration(applicationId, formVersion);
+                    return;
+                }
+
+                monitorFormMappingGeneration(applicationId, $button, existingHtml);
+            })
+            .fail(function (error) {
+                if (globalThis.AIGenerationButtonState?.handleQueueFailure(error)) {
+                    return;
+                }
+
+                abp.message.error('Failed to queue AI mapping generation. Please try again.');
+                restoreGenerateMappingButton($button, existingHtml);
+                globalThis.syncAIRateLimitButtons?.();
+            });
+    }
+
+    function queueFormWorksheet(triggerButton = null) {
+        const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
+        const applicationId = String(document.getElementById('applicationFormId')?.value ?? '').trim();
+        if (!validateGuid(formVersion) || !validateGuid(applicationId)) {
+            abp.notify.error('', 'The Form Version ID or Application ID is not in a GUID format');
+            return;
+        }
+
+        const buttonElement = triggerButton?.currentTarget || triggerButton?.target || triggerButton || UIElements.btnGenerateWorksheet?.get?.(0);
+        const $button = $(buttonElement);
+
+        if (isAiWorksheetPending()) {
+            loadAiWorksheetReview();
+            return;
+        }
+
+        const existingHtml = $button.html();
+
+        if ($button.prop('disabled')) {
+            return;
+        }
+
+        globalThis.AIGenerationButtonState?.setGenerating($button);
+
+        abp.ajax({
+            url: `/api/app/ai/generation/form-worksheet?applicationId=${encodeURIComponent(applicationId)}&applicationFormVersionId=${encodeURIComponent(formVersion)}`,
+            type: 'POST',
+        })
+            .done(function (generationStatus) {
+                const request = generationStatus?.generationRequest;
+                const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
+                if (status === 'Completed') {
+                    globalThis.AIGenerationButtonState?.restoreForCooldownCheck($button, existingHtml);
+                    globalThis.AIGenerationButtonState?.applyStatusState(generationStatus);
+                    refreshWorksheetAfterGeneration();
+                    return;
+                }
+
+                monitorFormWorksheetGeneration(applicationId, $button, existingHtml);
+            })
+            .fail(function (error) {
+                if (globalThis.AIGenerationButtonState?.handleQueueFailure(error)) {
+                    return;
+                }
+
+                abp.message.error('Failed to queue AI worksheet generation. Please try again.');
+                restoreGenerateWorksheetButton($button, existingHtml);
+                globalThis.syncAIRateLimitButtons?.();
+            });
+    }
+
+    function monitorFormWorksheetGeneration(applicationId, $button, existingHtml) {
+        globalThis.AIGenerationButtonState?.monitor({
+            $button,
+            originalHtml: existingHtml,
+            getStatus: () => abp.ajax({
+                url: `/api/app/ai/generation/status?applicationId=${encodeURIComponent(applicationId)}&operationType=form-worksheet`,
+                type: 'GET'
+            }),
+            onComplete: function () {
+                refreshWorksheetAfterGeneration();
+            },
+            onFailed: function (request) {
+                abp.message.error(request?.failureReason || 'AI worksheet generation failed.');
+            },
+            onPollFailed: function () {
+                abp.message.error('Unable to load AI worksheet generation status. Please try again.');
+            }
+        });
+    }
+
+    function queueFormScoresheet(triggerButton = null) {
+        const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
+        const applicationId = String(document.getElementById('applicationFormId')?.value ?? '').trim();
+        if (!validateGuid(formVersion) || !validateGuid(applicationId)) {
+            abp.notify.error('', 'The Form Version ID or Application ID is not in a GUID format');
+            return;
+        }
+
+        const buttonElement = triggerButton?.currentTarget || triggerButton?.target || triggerButton || UIElements.btnGenerateScoresheet?.get?.(0);
+        const $button = $(buttonElement);
+        const existingHtml = $button.html();
+
+        if ($button.prop('disabled')) {
+            return;
+        }
+
+        globalThis.AIGenerationButtonState?.setGenerating($button);
+
+        abp.ajax({
+            url: `/api/app/ai/generation/form-scoresheet?applicationId=${encodeURIComponent(applicationId)}&applicationFormVersionId=${encodeURIComponent(formVersion)}`,
+            type: 'POST',
+        })
+            .done(function (generationStatus) {
+                const request = generationStatus?.generationRequest;
+                const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
+                if (status === 'Completed') {
+                    globalThis.AIGenerationButtonState?.restoreForCooldownCheck($button, existingHtml);
+                    globalThis.AIGenerationButtonState?.applyStatusState(generationStatus);
+                    refreshScoresheetAfterGeneration();
+                    return;
+                }
+
+                monitorFormScoresheetGeneration(applicationId, $button, existingHtml);
+            })
+            .fail(function (error) {
+                if (globalThis.AIGenerationButtonState?.handleQueueFailure(error)) {
+                    return;
+                }
+
+                abp.message.error('Failed to queue AI scoresheet generation. Please try again.');
+                restoreGenerateScoresheetButton($button, existingHtml);
+                globalThis.syncAIRateLimitButtons?.();
+            });
+    }
+
+    function monitorFormScoresheetGeneration(applicationId, $button, existingHtml) {
+        globalThis.AIGenerationButtonState?.monitor({
+            $button,
+            originalHtml: existingHtml,
+            getStatus: () => abp.ajax({
+                url: `/api/app/ai/generation/status?applicationId=${encodeURIComponent(applicationId)}&operationType=form-scoresheet`,
+                type: 'GET'
+            }),
+            onComplete: function () {
+                refreshScoresheetAfterGeneration();
+            },
+            onFailed: function (request) {
+                abp.message.error(request?.failureReason || 'AI scoresheet generation failed.');
+            },
+            onPollFailed: function () {
+                abp.message.error('Unable to load AI scoresheet generation status. Please try again.');
+            }
+        });
+    }
+
+    function refreshWorksheetAfterGeneration() {
+        setAiWorksheetPending(true);
+        abp.notify.success('', 'Worksheet generated. Review the suggested fields and create draft worksheets.');
+        loadAiWorksheetReview();
+    }
+
+    function isAiWorksheetPending() {
+        return UIElements.btnGenerateWorksheet.attr('data-ai-pending') === 'true';
+    }
+
+    function setAiWorksheetPending(isPending) {
+        UIElements.btnGenerateWorksheet
+            .attr('data-ai-pending', isPending ? 'true' : 'false')
+            .toggleClass('d-none', isPending);
+        UIElements.btnReviewWorksheet.toggleClass('d-none', !isPending);
+
+        if (!isPending) {
+            globalThis.syncAIRateLimitButtons?.();
+        }
+    }
+
+    function loadAiWorksheetReview() {
+        const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
+        if (!validateGuid(formVersion)) {
+            abp.notify.error('', 'Unable to review the worksheet because the Form Version ID is invalid.');
+            return;
+        }
+
+        abp.ajax({
+            url: `/api/app/application-form-version/pending-ai-worksheet?formVersionId=${encodeURIComponent(formVersion)}`,
+            type: 'GET'
+        })
+            .done(function (worksheet) {
+                if (!worksheet) {
+                    setAiWorksheetPending(false);
+                    abp.notify.error('', 'The pending AI worksheet is no longer available.');
+                    return;
+                }
+
+                renderAiWorksheetReview(worksheet);
+                UIElements.worksheetReviewModal.modal('show');
+            })
+            .fail(function () {
+                abp.notify.error('', 'Unable to load the pending AI worksheet.');
+            });
+    }
+
+    function renderAiWorksheetReview(worksheet) {
+        UIElements.worksheetReviewFields.empty();
+
+        const fields = worksheet.fields || [];
+        fields.forEach(function (field) {
+            const fieldId = `ai-worksheet-field-${field.id}`;
+            const $row = $('<div class="ai-worksheet-review__field"></div>');
+            $('<span class="ai-worksheet-review__field-name"></span>')
+                .attr('data-field-role', 'Source')
+                .text(field.key || '—')
+                .appendTo($row);
+            $('<i class="fa-solid fa-arrow-right ai-worksheet-review__arrow" aria-hidden="true"></i>').appendTo($row);
+            $('<span class="ai-worksheet-review__field-name"></span>')
+                .attr('data-field-role', 'Worksheet')
+                .text(field.label || field.key || '—')
+                .appendTo($row);
+            const $switch = $('<div class="ai-worksheet-review__switch"></div>');
+            const $switchContainer = $('<div class="form-check unt-form-switch form-switch mb-0"></div>');
+            $('<input class="form-check-input" type="checkbox">')
+                .attr('id', fieldId)
+                .attr('data-field-id', field.id)
+                .attr('aria-label', `Include ${field.label || field.key || 'field'}`)
+                .prop('checked', field.selected !== false)
+                .appendTo($switchContainer);
+            $switchContainer.appendTo($switch);
+            $switch.appendTo($row);
+            $row.appendTo(UIElements.worksheetReviewFields);
+        });
+
+        UIElements.worksheetReviewFields.attr('data-session-id', worksheet.sessionId);
+        UIElements.worksheetReviewEmpty.toggleClass('d-none', fields.length > 0);
+        updateAiWorksheetReview();
+    }
+
+    function updateAiWorksheetReview() {
+        const $fields = UIElements.worksheetReviewFields.find('input[data-field-id]');
+        const selectedCount = $fields.filter(':checked').length;
+        $('#aiWorksheetReviewSelectAll')
+            .prop('checked', $fields.length > 0 && selectedCount === $fields.length)
+            .prop('indeterminate', false);
+        updateAiWorksheetDraftButton();
+    }
+
+    function toggleAiWorksheetReviewAll() {
+        UIElements.worksheetReviewFields.find('input[data-field-id]').prop('checked', $(this).prop('checked'));
+        updateAiWorksheetReview();
+    }
+
+    function updateAiWorksheetDraftButton() {
+        const hasTitle = String(UIElements.worksheetTitle.val() ?? '').trim().length > 0;
+        const hasSelectedFields = UIElements.worksheetReviewFields.find('input[data-field-id]:checked').length > 0;
+        UIElements.btnCreateWorksheetDraft.prop('disabled', !hasTitle || !hasSelectedFields);
+    }
+
+    function createAiWorksheetDraft() {
+        const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
+        const sessionId = UIElements.worksheetReviewFields.attr('data-session-id');
+        const title = String(UIElements.worksheetTitle.val() ?? '').trim();
+        const selectedFieldIds = UIElements.worksheetReviewFields
+            .find('input[data-field-id]:checked')
+            .map(function () { return $(this).attr('data-field-id'); })
+            .get();
+
+        if (!validateGuid(formVersion) || !validateGuid(sessionId) || !title || selectedFieldIds.length === 0) {
+            abp.notify.error('', 'Enter a worksheet title and select at least one suggested field.');
+            return;
+        }
+
+        UIElements.btnCreateWorksheetDraft.prop('disabled', true);
+        UIElements.btnDiscardWorksheet.prop('disabled', true);
+
+        abp.ajax({
+            url: `/api/app/application-form-version/create-ai-worksheet-draft?formVersionId=${encodeURIComponent(formVersion)}`,
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ sessionId, title, selectedFieldIds })
+        })
+            .done(function () {
+                UIElements.worksheetTitle.val('');
+                abp.notify.success('', 'Draft worksheet created.');
+                refreshAiWorksheetReviewAfterDraftCreation(formVersion);
+            })
+            .fail(function () {
+                abp.notify.error('', 'Unable to create the draft worksheet.');
+            })
+            .always(function () {
+                UIElements.btnDiscardWorksheet.prop('disabled', false);
+                updateAiWorksheetDraftButton();
+            });
+    }
+
+    function refreshAiWorksheetReviewAfterDraftCreation(formVersion) {
+        abp.ajax({
+            url: `/api/app/application-form-version/pending-ai-worksheet?formVersionId=${encodeURIComponent(formVersion)}`,
+            type: 'GET'
+        })
+            .done(function (worksheet) {
+                if (!worksheet) {
+                    UIElements.worksheetReviewModal.modal('hide');
+                    setAiWorksheetPending(false);
+                    return;
+                }
+
+                renderAiWorksheetReview(worksheet);
+            })
+            .fail(function () {
+                abp.notify.error('', 'Draft created, but the remaining suggestions could not be loaded.');
+            });
+    }
+
+    function discardAiWorksheetSuggestions() {
+        const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
+        if (!validateGuid(formVersion) || !isAiWorksheetPending()) {
+            return;
+        }
+
+        abp.message.confirm(
+            'This will permanently remove the remaining AI field suggestions.',
+            'Discard remaining suggestions?')
+            .then(function (confirmed) {
+                if (!confirmed) {
+                    return;
+                }
+
+                UIElements.btnCreateWorksheetDraft.prop('disabled', true);
+                UIElements.btnDiscardWorksheet.prop('disabled', true);
+                abp.ajax({
+                    url: `/api/app/application-form-version/discard-ai-worksheet-suggestions?formVersionId=${encodeURIComponent(formVersion)}`,
+                    type: 'POST'
+                })
+                    .done(function () {
+                        setAiWorksheetPending(false);
+                        UIElements.worksheetReviewModal.modal('hide');
+                        abp.notify.success('', 'Remaining AI worksheet suggestions discarded.');
+                    })
+                    .fail(function () {
+                        abp.notify.error('', 'Unable to discard the remaining AI worksheet suggestions.');
+                    })
+                    .always(function () {
+                        UIElements.btnDiscardWorksheet.prop('disabled', false);
+                        updateAiWorksheetDraftButton();
+                    });
+            });
+    }
+
+    function refreshScoresheetAfterGeneration() {
+        abp.notify.success('', 'Scoresheet generated and assigned successfully. Reloading page.');
+        setTimeout(function () {
+            globalThis.location.reload();
+        }, 500);
+    }
+
+    function monitorFormMappingGeneration(applicationId, $button, existingHtml) {
+        globalThis.AIGenerationButtonState?.monitor({
+            $button,
+            originalHtml: existingHtml,
+            getStatus: () => abp.ajax({
+                url: `/api/app/ai/generation/status?applicationId=${encodeURIComponent(applicationId)}&operationType=form-mapping`,
+                type: 'GET'
+            }),
+            onComplete: function () {
+                refreshMappingAfterGeneration(applicationId);
+            },
+            onFailed: function (request) {
+                abp.message.error(request?.failureReason || 'AI mapping generation failed.');
+            },
+            onPollFailed: function () {
+                abp.message.error('Unable to load AI mapping generation status. Please try again.');
+            }
+        });
+    }
+
+    function refreshMappingAfterGeneration(applicationId, formVersion = null) {
+        const resolvedFormVersion = String(formVersion ?? document.getElementById('formVersionId')?.value ?? '').trim();
+        if (!validateGuid(resolvedFormVersion)) {
+            abp.notify.error('', 'Unable to refresh the generated mapping because the Form Version ID is invalid.');
+            return;
+        }
+
+        abp.ajax({
+            url: `/api/app/application-form-version/${encodeURIComponent(resolvedFormVersion)}`,
+            type: 'GET'
+        })
+            .done(function (applicationFormVersionDto) {
+                const availableChefsFields = applicationFormVersionDto?.availableChefsFields
+                    ? JSON.parse(applicationFormVersionDto.availableChefsFields)
+                    : [];
+
+                $('#applicationFormVersionDtoString').val(JSON.stringify(applicationFormVersionDto ?? {}));
+                $('#availableChefsFields').val(applicationFormVersionDto?.availableChefsFields ?? '');
+                $('#existingMapping').val(applicationFormVersionDto?.submissionHeaderMapping ?? '');
+
+                existingMappingString = applicationFormVersionDto?.submissionHeaderMapping ?? '';
+                availableChefFieldsString = applicationFormVersionDto?.availableChefsFields ?? '';
+
+                $(intakeMapColumn).empty();
+                $(worksheetMapColumn).empty();
+                dataTable.clear().draw();
+                initializeIntakeMap(availableChefsFields);
+                bindExistingMaps();
+
+                abp.notify.success('', 'Form mapping generated and saved successfully.');
+            })
+            .fail(function () {
+                abp.notify.error('', 'Form mapping generated, but the page could not refresh the saved mapping.');
+            });
+    }
+
+    function restoreGenerateMappingButton($button, existingHtml) {
+        if (!$button?.length) {
+            return;
+        }
+
+        globalThis.AIGenerationButtonState?.restore($button);
+        $button.html(existingHtml).prop('disabled', false);
+        $button.find('span').last().text('Generate Mapping');
+    }
+
+    function restoreGenerateWorksheetButton($button, existingHtml) {
+        if (!$button?.length) {
+            return;
+        }
+
+        globalThis.AIGenerationButtonState?.restore($button);
+        $button.html(existingHtml).prop('disabled', false);
+        $button.find('span').last().text(isAiWorksheetPending() ? 'Review Worksheet' : 'Generate Worksheet');
+    }
+
+    function restoreGenerateScoresheetButton($button, existingHtml) {
+        if (!$button?.length) {
+            return;
+        }
+
+        globalThis.AIGenerationButtonState?.restore($button);
+        $button.html(existingHtml).prop('disabled', false);
+        $button.find('span').last().text('Generate Scoresheet');
+    }
+
     function handleSaveEditMapping() {
         try {
             let jsonText = $('#jsonText').val();
             $.parseJSON(jsonText);
-            let mappingJsonStr = jsonText.replace(/\s+/g, ' ').replace(/(\r\n|\n|\r)/gm, "");
+            let mappingJsonStr = jsonText.replaceAll(/\s+/g, ' ').replaceAll(/(\r\n|\n|\r)/gm, "");
             UIElements.btnSaveMapping.prop('disabled', true);
             handleSaveMapping($.parseJSON(mappingJsonStr));
             handleCancelMapping();
@@ -355,48 +844,54 @@
     }
 
 
+    function createIntakeFieldCard(intakeField) {
+        let intakeFieldJson = intakeField;
+        let dragableDiv = document.createElement('div');
+        dragableDiv.id = 'unity_' + intakeFieldJson.Name;
+        dragableDiv.className = 'card mapping-field';
+        dragableDiv.setAttribute("draggable", "true");
+
+        // Set icon HTML (internal code, safe)
+        dragableDiv.innerHTML = `${setTypeIndicator(intakeField)}`;
+
+        // Append label as text node to prevent HTML injection
+        dragableDiv.appendChild(document.createTextNode(intakeFieldJson.Label));
+
+        // Append asterisk and route to the appropriate column based on custom status
+        if (intakeFieldJson.IsCustom) {
+            dragableDiv.appendChild(document.createTextNode(" *"));
+            dragableDiv.className += ' custom-field';
+            worksheetMapColumn.appendChild(dragableDiv);
+        } else {
+            intakeMapColumn.appendChild(dragableDiv);
+        }
+    }
+
+    function buildAvailableChefsFieldsRows(availableChefsFields) {
+        let rowsToAdd = [];
+        for (let key of Object.keys(availableChefsFields)) {
+            let jsonObj = JSON.parse(availableChefsFields[key]);
+            if (allowableTypes.has(jsonObj.type.trim())) {
+                rowsToAdd.push([stripHtml(jsonObj.label), key, jsonObj.type, key]);
+            }
+        }
+        return rowsToAdd;
+    }
+
     function initializeIntakeMap(availableChefsFields) {
         try {
 
             let intakeFields = JSON.parse(intakeFieldsString);
 
             for (let intakeField of intakeFields) {
-                let intakeFieldJson = intakeField;
-                if (!excludedIntakeMappings.has(intakeFieldJson.Name)) {
-                    let dragableDiv = document.createElement('div');
-                    dragableDiv.id = 'unity_' + intakeFieldJson.Name;
-                    dragableDiv.className = 'card mapping-field';
-                    dragableDiv.setAttribute("draggable", "true");
-
-                    // Set icon HTML (internal code, safe)
-                    dragableDiv.innerHTML = `${setTypeIndicator(intakeField)}`;
-
-                    // Append label as text node to prevent HTML injection
-                    dragableDiv.appendChild(document.createTextNode(intakeFieldJson.Label));
-
-                    // Append asterisk if custom
-                    if (intakeFieldJson.IsCustom) {
-                        dragableDiv.appendChild(document.createTextNode(" *"));
-                    }
-                    if (intakeFieldJson.IsCustom) {
-                        worksheetMapColumn.appendChild(dragableDiv);
-                        dragableDiv.className += ' custom-field';
-                    } else {
-                        intakeMapColumn.appendChild(dragableDiv);
-                    }
+                if (!excludedIntakeMappings.has(intakeField.Name)) {
+                    createIntakeFieldCard(intakeField);
                 }
             }
 
-            let keys = Object.keys(availableChefsFields);
             dataTable.clear();
 
-            let rowsToAdd = [];
-            for (let key of keys) {
-                let jsonObj = JSON.parse(availableChefsFields[key]);
-                if (allowableTypes.has(jsonObj.type.trim())) {
-                    rowsToAdd.push([stripHtml(jsonObj.label), key, jsonObj.type, key]);
-                }
-            }
+            let rowsToAdd = buildAvailableChefsFieldsRows(availableChefsFields);
 
             if (rowsToAdd.length > 0) {
                 dataTable.rows.add(rowsToAdd);

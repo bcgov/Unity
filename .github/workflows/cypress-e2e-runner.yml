@@ -9,12 +9,24 @@ name: Cypress E2E (runner)
 # Unity.AutoUI Cypress suite from inside the cluster, waits for it to finish,
 # and pulls the logs/screenshots back into this Actions run.
 #
+# This deliberately targets ce395f-tools on the Gold cluster, not d18498-tools
+# on Silver, even though the app environments (dev/test/uat/prod) still run on
+# Silver during the cluster migration — the Job's own baseUrl (via the
+# base_url input, or each cypress-config-*.json's default) is what it tests
+# against, independent of which cluster runs the Job itself. Building the CI
+# plumbing against the migration target now avoids redoing it later.
+#
 # Test credentials are NOT GitHub secrets — the Job pulls them from the
 # unity-cypress-config Secret in ce395f-tools, synced from Vault
 # (GH_UGM_CYPRESS_CONFIG) via External Secrets.
 #
-# OpenShift auth reuses the same oc-login pattern already used by
-# docker-build-dev.yml/docker-build-test.yml/docker-build-main.yml.
+# OpenShift auth reuses the pipeline ServiceAccount (ce395f-tools), which
+# already holds ClusterRole/edit there — covers everything this job needs
+# (templates, processedtemplates, jobs, pods/log, pods/exec), no additional
+# RBAC required. Its token is CYPRESS_OPENSHIFT_TOKEN and its cluster is
+# CYPRESS_OPENSHIFT_CLUSTER — both repo-level (not tied to a GitHub
+# Environment, and deliberately separate from the shared OPENSHIFT_CLUSTER
+# var docker-build-*.yml uses, since that one still points at Silver).
 
 on:
   workflow_call:

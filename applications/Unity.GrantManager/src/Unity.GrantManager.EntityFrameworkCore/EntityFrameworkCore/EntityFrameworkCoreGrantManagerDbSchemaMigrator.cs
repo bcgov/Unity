@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Npgsql;
 using Unity.GrantManager.Data;
 using Volo.Abp.DependencyInjection;
@@ -15,19 +17,34 @@ using Volo.Abp.TenantManagement;
 
 namespace Unity.GrantManager.EntityFrameworkCore;
 
-public class EntityFrameworkCoreGrantManagerDbSchemaMigrator
+public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
+    IServiceProvider serviceProvider,
+    IStringEncryptionService encryptionService,
+    ILogger<EntityFrameworkCoreGrantManagerDbSchemaMigrator> logger)
     : IGrantManagerDbSchemaMigrator, ITransientDependency
 {
-    private readonly IServiceProvider _serviceProvider;
-    private readonly IStringEncryptionService _encryptionService;
+    /* Migration history was squashed to a single "Initial" migration per context
+     * (see Migrations/HostMigrations and Migrations/TenantMigrations). Databases that
+     * were already migrated under the old, now-deleted migration set still carry
+     * __EFMigrationsHistory rows for those old migration ids, which don't match
+     * "Initial" and would make Database.MigrateAsync() below try to re-run Initial's
+     * CreateTable operations against a schema that already has them.
+     *
+     * ReconcileMigrationHistoryAsync resets history to just the Initial row *before*
+     * MigrateAsync() is called, so EF sees it as already applied and skips it. Brand
+     * new databases (including newly provisioned tenants) have an empty or nonexistent
+     * history table at this point, so the reconciliation is a no-op and MigrateAsync()
+     * runs Initial for real to build the schema. Safe to run unconditionally on every
+     * migrator invocation, forever - after the first run per database, history only
+     * ever contains the Initial row so the guard clause never fires again.
+     */
+    private const string HostInitialMigrationId = "20260722193713_Initial";
+    private const string TenantInitialMigrationId = "20260721203242_Initial";
+    private const string EfCoreProductVersion = "10.0.3";
 
-    public EntityFrameworkCoreGrantManagerDbSchemaMigrator(
-        IServiceProvider serviceProvider,
-        IStringEncryptionService encryptionService)
-    {
-        _serviceProvider = serviceProvider;
-        _encryptionService = encryptionService;
-    }
+    private readonly IServiceProvider _serviceProvider = serviceProvider;
+    private readonly IStringEncryptionService _encryptionService = encryptionService;
+    private readonly ILogger<EntityFrameworkCoreGrantManagerDbSchemaMigrator> _logger = logger;
 
     public async Task MigrateAsync(Tenant? tenant)
     {
@@ -68,8 +85,6 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator
                 // Create the PostgreSQL role (idempotent via DO block)
                 await CreateRoleIfNotExistsAsync(adminConnectionString, roleName, rolePassword);
 
-                // Create the database if it does not exist; use the admin connection so
-                // MigrateAsync connects cleanly and avoids logging a ConnectionError.
                 var tenantDb = _serviceProvider
                     .GetRequiredService<GrantTenantDbContext>()
                     .Database;
@@ -89,8 +104,10 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator
                 await tenantDb.ExecuteSqlRawAsync(
                     tenantDb.GetService<IHistoryRepository>().GetCreateIfNotExistsScript());
 
+                await ReconcileMigrationHistoryAsync(tenantDb, TenantInitialMigrationId);
+
                 // Run migrations as admin against the tenant database
-                await tenantDb.MigrateAsync();
+                await MigrateAndLogAsync(tenantDb, $"tenant:{tenant.Name}");
 
                 // Grant table and sequence privileges after migrations have created all objects
                 await GrantTablePrivilegesAsync(adminTenantConnectionString, roleName);
@@ -118,11 +135,106 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator
         }
         else
         {
-            await _serviceProvider
+            var hostDb = _serviceProvider
                 .GetRequiredService<GrantManagerDbContext>()
-                .Database
-                .MigrateAsync();
+                .Database;
+
+            if (!await hostDb.CanConnectAsync())
+            {
+                var configuration = _serviceProvider.GetRequiredService<IConfiguration>();
+                var hostConnectionString = configuration.GetConnectionString(GrantManagerConsts.DefaultConnectionStringName)
+                    ?? throw new InvalidOperationException($"Connection string '{GrantManagerConsts.DefaultConnectionStringName}' is not configured.");
+                var hostCsb = new NpgsqlConnectionStringBuilder(hostConnectionString);
+                var hostDatabaseName = hostCsb.Database
+                    ?? throw new InvalidOperationException("Host connection string is missing the Database value.");
+                EnsureSafeIdentifier(hostDatabaseName, "host database name");
+
+                hostCsb.Database = "postgres";
+                if (!CanCreateDatabaseLocally())
+                {
+                    throw new InvalidOperationException(
+                        $"Host database '{hostDatabaseName}' does not exist and automatic database creation is disabled outside local execution.");
+                }
+
+                await CreateDatabaseIfNotExistsAsync(hostCsb.ToString(), hostDatabaseName);
+            }
+
+            await hostDb.ExecuteSqlRawAsync(
+                hostDb.GetService<IHistoryRepository>().GetCreateIfNotExistsScript());
+
+            await ReconcileMigrationHistoryAsync(hostDb, HostInitialMigrationId);
+
+            await MigrateAndLogAsync(hostDb, "host");
         }
+    }
+
+    private static bool CanCreateDatabaseLocally()
+    {
+        return string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("KUBERNETES_SERVICE_HOST"))
+            && string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("OPENSHIFT_BUILD_NAME"));
+    }
+
+    private async Task MigrateAndLogAsync(DatabaseFacade database, string contextName)
+    {
+        var pendingMigrations = (await database.GetPendingMigrationsAsync()).ToArray();
+        var appliedMigrations = (await database.GetAppliedMigrationsAsync()).ToArray();
+
+        _logger.LogInformation(
+            "Migration plan for {Context}: applied={AppliedMigrations}, pending={PendingMigrations}",
+            contextName,
+            appliedMigrations.Length == 0 ? "none" : string.Join(",", appliedMigrations),
+            pendingMigrations.Length == 0 ? "none" : string.Join(",", pendingMigrations));
+
+        await database.MigrateAsync();
+
+        var finalMigrations = (await database.GetAppliedMigrationsAsync()).ToArray();
+        _logger.LogInformation(
+            "Migration completed for {Context}: result={Result}, final={FinalMigrations}",
+            contextName,
+            pendingMigrations.Length == 0 ? "NoPendingMigrations" : "AppliedMigrations",
+            finalMigrations.Length == 0 ? "none" : string.Join(",", finalMigrations));
+    }
+
+    private static async Task ReconcileMigrationHistoryAsync(DatabaseFacade database, string initialMigrationId)
+    {
+        // initialMigrationId/EfCoreProductVersion are hardcoded constants above, never
+        // external or tenant-controlled input, so interpolating them here is safe.
+#pragma warning disable EF1002
+        await database.ExecuteSqlRawAsync($"""
+            DO $$
+            BEGIN
+                IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '__EFMigrationsHistory') THEN
+                    IF EXISTS (SELECT 1 FROM public."__EFMigrationsHistory" WHERE "MigrationId" <> '{initialMigrationId}') THEN
+                        DELETE FROM public."__EFMigrationsHistory";
+                        INSERT INTO public."__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+                        VALUES ('{initialMigrationId}', '{EfCoreProductVersion}');
+                    END IF;
+                END IF;
+            END $$;
+            """);
+#pragma warning restore EF1002
+    }
+
+    private static async Task CreateDatabaseIfNotExistsAsync(string adminConnectionString, string databaseName)
+    {
+        await using var connection = new NpgsqlConnection(adminConnectionString);
+        await connection.OpenAsync();
+
+        await using (var existsCommand = new NpgsqlCommand(
+            "SELECT 1 FROM pg_database WHERE datname = @databaseName",
+            connection))
+        {
+            existsCommand.Parameters.AddWithValue("databaseName", databaseName);
+
+            if (await existsCommand.ExecuteScalarAsync() != null)
+            {
+                return;
+            }
+        }
+
+        await using var createCommand = connection.CreateCommand();
+        createCommand.CommandText = $"CREATE DATABASE \"{databaseName}\"";
+        await createCommand.ExecuteNonQueryAsync();
     }
 
     // Decrypt the stored value — plain-text rows (pre-encryption) fall back to their original value.

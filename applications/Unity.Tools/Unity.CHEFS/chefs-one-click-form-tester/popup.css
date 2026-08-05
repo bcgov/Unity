@@ -1,0 +1,102 @@
+:root {
+  font-family: Arial, Helvetica, sans-serif;
+  color: #1f2933;
+  background: #f5f7fa;
+}
+body {
+  margin: 0;
+  min-width: 390px;
+}
+main {
+  padding: 16px;
+}
+header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+h1 {
+  margin: 0;
+  color: #003366;
+  font-size: 18px;
+}
+header p {
+  margin: 4px 0 0;
+  color: #5f6b76;
+  font-size: 12px;
+}
+.pill {
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.pill.idle { background: #e5e7eb; color: #374151; }
+.pill.running { background: #dbeafe; color: #1d4ed8; }
+.pill.success { background: #dcfce7; color: #166534; }
+.pill.failure { background: #fee2e2; color: #991b1b; }
+.pill.warning { background: #fef3c7; color: #92400e; }
+.primary-action {
+  margin: 16px 0 12px;
+}
+button {
+  border: 1px solid #9ca3af;
+  border-radius: 5px;
+  background: #fff;
+  color: #1f2933;
+  cursor: pointer;
+  font-size: 14px;
+  min-height: 38px;
+  padding: 8px 12px;
+}
+button:hover:not(:disabled) { filter: brightness(0.97); }
+button:disabled { cursor: not-allowed; opacity: 0.5; }
+button.primary {
+  width: 100%;
+  border-color: #003366;
+  background: #003366;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  min-height: 48px;
+}
+button.danger {
+  width: 100%;
+  border-color: #b91c1c;
+  background: #b91c1c;
+  color: #fff;
+  font-weight: 700;
+}
+.hidden { display: none !important; }
+.status-card {
+  border: 1px solid #d1d5db;
+  border-radius: 7px;
+  background: #fff;
+  padding: 12px;
+}
+dl { margin: 0; }
+dl div {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 8px;
+  padding: 4px 0;
+}
+dt { color: #5f6b76; }
+dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.message {
+  min-height: 18px;
+  margin: 10px 0 0;
+  color: #7c2d12;
+  font-size: 12px;
+}
+.secondary-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+.secondary-actions .full-width {
+  grid-column: 1 / -1;
+}

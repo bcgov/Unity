@@ -3458,11 +3458,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasMaxLength(1024)
                         .HasColumnType("character varying(1024)");
 
-                    b.Property<Guid>("EmailLogId")
+                    b.Property<Guid?>("EmailLogId")
                         .HasColumnType("uuid");
-
-                    b.Property<Guid?>("TemplateId")
-                        .HasColumnType("uuid");                        
 
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
@@ -3483,9 +3480,15 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .HasColumnType("uuid")
                         .HasColumnName("LastModifierId");
 
+                    b.Property<Guid?>("OriginTemplateId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("S3ObjectKey")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<Guid?>("TemplateId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
@@ -3502,6 +3505,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasIndex("EmailLogId");
 
                     b.HasIndex("S3ObjectKey");
+
+                    b.HasIndex("TemplateId");
 
                     b.ToTable("EmailLogAttachments", "Notifications");
                 });
@@ -3568,6 +3573,12 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("Name")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RecipientCategory")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RecipientIdentifier")
                         .HasColumnType("text");
 
                     b.Property<string>("SendFrom")
@@ -5072,8 +5083,12 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasOne("Unity.Notifications.Emails.EmailLog", null)
                         .WithMany()
                         .HasForeignKey("EmailLogId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Unity.Notifications.Templates.EmailTemplate", null)
+                        .WithMany()
+                        .HasForeignKey("TemplateId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("Unity.Notifications.Templates.SubscriptionGroupSubscription", b =>

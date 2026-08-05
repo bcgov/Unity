@@ -5,7 +5,6 @@ using Unity.Identity.Web.Navigation;
 using Unity.Modules.Shared.Navigation;
 using Unity.Modules.Shared.Specializations;
 using Unity.Modules.Shared.Permissions;
-using Unity.TenantManagement;
 using Unity.TenantManagement.Web.Navigation;
 using Volo.Abp.Identity;
 using Volo.Abp.UI.Navigation;
@@ -35,9 +34,9 @@ public class GrantManagerMenuContributor : IMenuContributor
                 l["Menu:Onboarding"],
                 "~/TenantManagement/Onboarding",
                 icon: "fl fl-other-user",
-                order: 1,
-                requiredPermissionName: IdentityConsts.ITOperationsPermissionName
+                order: 1
             ).OnlyWhenSpecializations(SpecializationConsts.Onboarding)
+            .OnlyWhenInRole(IdentityConsts.ITOperationsRoleName)
         );
 
         await context.AddItemAsync(
@@ -117,14 +116,14 @@ public class GrantManagerMenuContributor : IMenuContributor
             ).ExcludeWhenSpecializations(SpecializationConsts.Onboarding)
         );
 
-        // Displayed in the Grant Manager - Used at Tenant Level if the user in the IT Operations role
+        // Displayed in the Grant Manager - Used at Tenant Level for ITAdmin/ITOperations users
         await context.AddItemAsync(
             new ApplicationMenuItem(
                 GrantManagerMenus.EndpointManagement,
                 displayName: "Endpoints",
-                "~/EndpointManagement/Endpoints",
-                requiredPermissionName: IdentityConsts.ITOperationsPermissionName
+                "~/EndpointManagement/Endpoints"
             ).ExcludeWhenSpecializations(SpecializationConsts.Onboarding)
+            .OnlyWhenInRole(IdentityConsts.ITAdminRoleName, IdentityConsts.ITOperationsRoleName)
         );
 
         // ********************
@@ -135,9 +134,9 @@ public class GrantManagerMenuContributor : IMenuContributor
                 l["Menu:TenantManagement"],
                 "~/TenantManagement/Tenants",
                 icon: "fl fl-view-dashboard",
-                order: 8,
-                requiredPermissionName: TenantManagementPermissions.Tenants.Default
+                order: 8
             ).ExcludeWhenSpecializations(SpecializationConsts.Onboarding)
+            .OnlyWhenInRole(IdentityConsts.ITAdminRoleName, IdentityConsts.ITOperationsRoleName)
         );
 
         // Tenants list for ITOperations users on the Onboarding tenant
@@ -147,19 +146,9 @@ public class GrantManagerMenuContributor : IMenuContributor
                 l["Menu:TenantManagement"],
                 "~/TenantManagement/Tenants",
                 icon: "fl fl-view-dashboard",
-                order: 8,
-                requiredPermissionName: IdentityConsts.ITOperationsPermissionName
+                order: 8
             ).OnlyWhenSpecializations(SpecializationConsts.Onboarding)
-        );
-
-        // Displayed on the Tenant Management area if the user has the ITAdministrator Role
-        await context.AddItemAsync(
-            new ApplicationMenuItem(
-                GrantManagerMenus.EndpointManagement,
-                displayName: "Endpoints",
-                "~/EndpointManagement/Endpoints",
-                requiredPermissionName: TenantManagementPermissions.Tenants.Default
-            ).ExcludeWhenSpecializations(SpecializationConsts.Onboarding)
+            .OnlyWhenInRole(IdentityConsts.ITOperationsRoleName)
         );
 
         // End Admin ********************

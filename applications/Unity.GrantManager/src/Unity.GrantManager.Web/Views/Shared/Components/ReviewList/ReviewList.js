@@ -553,13 +553,12 @@ function executeAssessmentAction(assessmentId, triggerAction) {
 }
 
 function createButtonInit(dt, button, config) {
-    let that = this;
     unity.grantManager.assessments.assessment.getCurrentUserAssessmentId(pageApplicationId, {})
-        .done(function (data) {
+        .done((data) => {
             if (data == null) {
-                that.enable();
+                this.enable();
             } else {
-                that.disable();
+                this.disable();
             }
         });
 }

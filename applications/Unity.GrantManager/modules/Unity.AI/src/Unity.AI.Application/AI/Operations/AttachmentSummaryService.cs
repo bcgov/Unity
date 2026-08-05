@@ -22,7 +22,6 @@ public class AttachmentSummaryService(
     ITextExtractionService textExtractionService,
     IAIService aiService,
     IAIGenerationPrerequisiteValidator aiGenerationPrerequisiteValidator,
-    AIExecutionModeResolver executionModeResolver,
     IUnitOfWorkManager unitOfWorkManager,
     ILogger<AttachmentSummaryService> logger,
     IStringLocalizer<AIResource> localizer) : IAttachmentSummaryService, ITransientDependency
@@ -65,124 +64,20 @@ public class AttachmentSummaryService(
             throw new UserFriendlyException(localizer[AILocalizationKeys.SelectAttachmentForSummaries]);
         }
 
-        var mode = executionModeResolver.ResolveMode(AIExecutionModeResolver.AttachmentSummaryOperation);
-        if (mode == AIExecutionMode.Batch)
-        {
-            return await GenerateBatchAsync(ids, promptVersion, cancellationToken);
-        }
-
-        if (mode != AIExecutionMode.Sequential)
-        {
-            logger.LogWarning(
-                "AI attachment summary {ExecutionMode} mode is not supported by the current repository-backed execution path. Falling back to sequential execution.",
-                mode);
-            mode = AIExecutionMode.Sequential;
-        }
-
         return await AIExecutionStrategy.RunAsync(
             ids,
-            mode,
+            AIExecutionMode.Sequential,
             id => GenerateOrFallbackAsync(id, promptVersion, cancellationToken),
-            batch => GenerateSequentiallyAsync(batch, promptVersion, cancellationToken));
-    }
-
-    private async Task<List<string>> GenerateBatchAsync(
-        IReadOnlyCollection<Guid> attachmentIds,
-        string? promptVersion,
-        CancellationToken cancellationToken)
-    {
-        var attachments = new List<(Guid Id, AttachmentSummarySource Source, string ContentType, string ExtractedText)>(attachmentIds.Count);
-        var failures = new Dictionary<Guid, string>();
-
-        foreach (var attachmentId in attachmentIds)
-        {
-            try
+            async batch =>
             {
-                var attachment = await LoadAttachmentAsync(attachmentId);
-                var fileName = string.IsNullOrWhiteSpace(attachment.FileName) ? "unknown" : attachment.FileName;
-                await using var attachmentStream = await OpenAttachmentStreamAsync(attachment, fileName, cancellationToken);
-                var extractedText = await textExtractionService.ExtractTextAsync(fileName, attachmentStream.Content, attachmentStream.ContentType, cancellationToken);
-                if (ShouldStopOnEmptyExtraction(fileName, extractedText))
+                var summaries = new List<string>(batch.Count);
+                foreach (var attachmentId in batch)
                 {
-                    LogEmptyExtraction(attachmentId, fileName, attachmentStream);
-                    failures[attachmentId] = TextExtractionFailedSummary;
-                    continue;
+                    summaries.Add(await GenerateOrFallbackAsync(attachmentId, promptVersion, cancellationToken));
                 }
 
-                attachments.Add((attachmentId, attachment, attachmentStream.ContentType, extractedText));
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error preparing AI summary batch item {AttachmentId}", attachmentId);
-                failures[attachmentId] = SummaryGenerationFailedMessage;
-            }
-        }
-
-        if (attachments.Count == 0)
-        {
-            return attachmentIds.Select(id => failures.TryGetValue(id, out var failure) ? failure : SummaryGenerationFailedMessage).ToList();
-        }
-
-        var batchRequest = new AttachmentSummaryBatchRequest
-        {
-            PromptVersion = promptVersion,
-            Attachments = attachments.Select(item => new AttachmentSummaryBatchItemRequest
-            {
-                AttachmentId = item.Id.ToString(),
-                FileName = string.IsNullOrWhiteSpace(item.Source.FileName) ? "unknown" : item.Source.FileName!,
-                ContentType = item.ContentType,
-                ExtractedText = item.ExtractedText
-            }).ToList()
-        };
-
-        var batchResponse = await aiService.GenerateAttachmentSummaryBatchAsync(batchRequest, cancellationToken);
-        var responseMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var item in batchResponse.Attachments)
-        {
-            if (!string.IsNullOrWhiteSpace(item.AttachmentId))
-            {
-                responseMap[item.AttachmentId] = item.Summary;
-            }
-        }
-
-        var results = new List<string>(attachmentIds.Count);
-        foreach (var attachmentId in attachmentIds)
-        {
-            if (failures.TryGetValue(attachmentId, out var failure))
-            {
-                results.Add(failure);
-                continue;
-            }
-
-            if (responseMap.TryGetValue(attachmentId.ToString(), out var summary))
-            {
-                await SaveSummaryAsync(attachmentId, summary);
-                results.Add(summary);
-                continue;
-            }
-
-            results.Add(SummaryGenerationFailedMessage);
-        }
-
-        return results;
-    }
-
-    private async Task<List<string>> GenerateSequentiallyAsync(
-        IReadOnlyCollection<Guid> attachmentIds,
-        string? promptVersion,
-        CancellationToken cancellationToken)
-    {
-        var summaries = new List<string>(attachmentIds.Count);
-        foreach (var attachmentId in attachmentIds)
-        {
-            summaries.Add(await GenerateOrFallbackAsync(attachmentId, promptVersion, cancellationToken));
-        }
-
-        return summaries;
+                return summaries;
+            });
     }
 
     private async Task<string> GenerateOrFallbackAsync(

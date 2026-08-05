@@ -100,8 +100,8 @@ $(function () {
         let itemId = $(this).data('id');
         let ownerId = $(this).data('ownerid');
         let commentType = $(this).data('type');
-        
-        pinComment(itemId, ownerId, commentType);
+
+        pinComment(itemId, ownerId, commentType, mentionDataList);
     });
 
     $('body').on('click', '.unpin-button', function (e) {
@@ -109,8 +109,8 @@ $(function () {
         let itemId = $(this).data('id');
         let ownerId = $(this).data('ownerid');
         let commentType = $(this).data('type');
-        
-        unpinComment(itemId, ownerId, commentType);
+
+        unpinComment(itemId, ownerId, commentType, mentionDataList);
     });
 });
 
@@ -239,7 +239,7 @@ function deleteComment(commentId, ownerId, commentType) {
     );
 }
 
-function pinComment(commentId, ownerId, commentType) {
+function pinComment(commentId, ownerId, commentType, mentionList) {
     abp.message.confirm(
         'Are you sure you want to pin this comment?',
         'Pin Comment',
@@ -250,8 +250,11 @@ function pinComment(commentId, ownerId, commentType) {
                     commentType: commentType
                 }).then(function () {
                     abp.notify.success('Comment pinned successfully');
-                    
+
                     PubSub.publish(commentType + '_refresh');
+                    setTimeout(() => {
+                        initTribute(mentionList);
+                    }, 500);
                 }).catch(function (error) {
                     abp.notify.error('Failed to pin comment');
                     console.error(error);
@@ -261,7 +264,7 @@ function pinComment(commentId, ownerId, commentType) {
     );
 }
 
-function unpinComment(commentId, ownerId, commentType) {
+function unpinComment(commentId, ownerId, commentType, mentionList) {
     unity.grantManager.comments.comment.unpin(commentId, {
         ownerId: ownerId,
         commentType: commentType
@@ -269,6 +272,9 @@ function unpinComment(commentId, ownerId, commentType) {
         abp.notify.success('Comment unpinned successfully');
 
         PubSub.publish(commentType + '_refresh');
+        setTimeout(() => {
+            initTribute(mentionList);
+        }, 500);
     }).catch(function (error) {
         abp.notify.error('Failed to unpin comment');
         console.error(error);

@@ -95,7 +95,6 @@ const emailGroupsManager = {
 
         // Setup user search dropdown functionality
         setupUserSearchDropdown: function(searchInputId, dropdownId, addButtonId, onUserSelected) {
-            const self = this;
             let searchTimeout;
             let allUsers = [];
             let selectedUser = null;
@@ -118,8 +117,8 @@ const emailGroupsManager = {
 
                 searchTimeout = setTimeout(() => {
                     if (searchTerm.length > 0) {
-                        const filteredUsers = self.filterUsersBySearchTerm(allUsers, searchTerm);
-                        self.displayFilteredUsers(dropdownId, filteredUsers);
+                        const filteredUsers = emailGroupsManager.utils.filterUsersBySearchTerm(allUsers, searchTerm);
+                        emailGroupsManager.utils.displayFilteredUsers(dropdownId, filteredUsers);
                     } else {
                         $(`#${dropdownId}`).html('<li class="px-3 py-2 text-muted">Start typing to search users...</li>');
                     }
@@ -217,8 +216,6 @@ const emailGroupsManager = {
     },
 
     initializeDataTable: function () {
-        const self = this;
-
         emailGroupsTable = $('#EmailGroupsTable').DataTable(abp.libs.datatables.normalizeConfiguration({
             processing: true,
             serverSide: false,
@@ -228,16 +225,16 @@ const emailGroupsManager = {
             scrollX: true,
             ordering: true,
             ajax: function (requestData, callback, settings) {
-                self.loadGroupsForDataTable(callback);
+                emailGroupsManager.loadGroupsForDataTable(callback);
             },
-            columnDefs: self.defineColumnDefs()
+            columnDefs: emailGroupsManager.defineColumnDefs()
         }));
 
         // Bind events to the DataTable
         emailGroupsTable.on('click', 'td button.manage-users-btn', function (event) {
             event.stopPropagation();
             const rowData = emailGroupsTable.row(event.target.closest('tr')).data();
-            self.showManageUsersModal(rowData);
+            emailGroupsManager.showManageUsersModal(rowData);
         });
 
         emailGroupsTable.on('click', 'td button.delete-group-btn', function (event) {
@@ -246,7 +243,7 @@ const emailGroupsManager = {
             // Check for both lowercase and uppercase
             const isDynamic = rowData.type === 'dynamic' || rowData.type === 'Dynamic';
             if (isDynamic) {
-                self.deleteGroup(rowData.id);
+                emailGroupsManager.deleteGroup(rowData.id);
             }
         });
     },
@@ -315,13 +312,11 @@ const emailGroupsManager = {
     },
 
     bindEvents: function () {
-        const self = this;
-
         // Remove any existing handlers first
         $('#CreateNewEmailGroup').off('click');
 
         $('#CreateNewEmailGroup').on('click', function () {
-            self.showCreateGroupModal();
+            emailGroupsManager.showCreateGroupModal();
         });
     },
 
@@ -344,7 +339,6 @@ const emailGroupsManager = {
 
 
     showCreateGroupModal: function () {
-        const self = this;
         const selectedUsers = []; // Cache for selected users
 
         const modalHtml = `
@@ -422,7 +416,7 @@ const emailGroupsManager = {
         // Wait for modal to be fully shown before initializing DataTable
         $('#createGroupModal').on('shown.bs.modal', function () {
             createGroupUsersTable = $('#createGroupUsersTable').DataTable(abp.libs.datatables.normalizeConfiguration(
-                self.utils.getStandardDataTableConfig([])
+                emailGroupsManager.utils.getStandardDataTableConfig([])
             ));
 
             // Force columns to adjust
@@ -432,7 +426,7 @@ const emailGroupsManager = {
         modal.show();
 
         // Initialize user search with shared utility
-        self.utils.setupUserSearchDropdown(
+        emailGroupsManager.utils.setupUserSearchDropdown(
             'createGroupUserSearch',
             'createGroupUserDropdown',
             'createAddUserBtn',
@@ -458,8 +452,8 @@ const emailGroupsManager = {
         );
 
         // Override the default displayFilteredUsers for create modal to exclude selected users
-        const originalDisplayFilteredUsers = self.utils.displayFilteredUsers.bind(self.utils);
-        self.utils.displayFilteredUsers = function(dropdownId, filteredUsers, excludeUserIds = []) {
+        const originalDisplayFilteredUsers = emailGroupsManager.utils.displayFilteredUsers.bind(emailGroupsManager.utils);
+        emailGroupsManager.utils.displayFilteredUsers = function(dropdownId, filteredUsers, excludeUserIds = []) {
             if (dropdownId === 'createGroupUserDropdown') {
                 const selectedUserIds = selectedUsers.map(u => u.userId);
                 excludeUserIds = [...excludeUserIds, ...selectedUserIds];
@@ -525,7 +519,7 @@ const emailGroupsManager = {
 
         $('#createGroupModal').on('hidden.bs.modal', function () {
             // Restore original displayFilteredUsers function
-            self.utils.displayFilteredUsers = originalDisplayFilteredUsers;
+            emailGroupsManager.utils.displayFilteredUsers = originalDisplayFilteredUsers;
             
             // Clean up DataTable
             if (createGroupUsersTable) {
@@ -559,7 +553,6 @@ const emailGroupsManager = {
     },
 
     showManageUsersModal: function (group) {
-        const self = this;
         const isDynamic = group.type === 'dynamic' || group.type === 'Dynamic';
 
         // Track changes locally
@@ -688,13 +681,13 @@ const emailGroupsManager = {
 
         $('#manageUsersModal').one('shown.bs.modal', () => {
             groupUsersTable = $('#groupUsersTable').DataTable(
-                abp.libs.datatables.normalizeConfiguration(self.utils.getStandardDataTableConfig([]))
+                abp.libs.datatables.normalizeConfiguration(emailGroupsManager.utils.getStandardDataTableConfig([]))
             );
-            self.loadGroupUsersForTable(group.id, groupUsersTable);
+            emailGroupsManager.loadGroupUsersForTable(group.id, groupUsersTable);
         });
 
         // Initialize user search with shared utility and custom filtering for existing group users
-        self.utils.setupUserSearchDropdown(
+        emailGroupsManager.utils.setupUserSearchDropdown(
             'userSearchInput',
             'userDropdownMenu',
             'manageAddUserBtn',
@@ -704,8 +697,8 @@ const emailGroupsManager = {
         );
 
         // Override the default displayFilteredUsers for manage modal to exclude current group users
-        const originalDisplayFilteredUsers = self.utils.displayFilteredUsers.bind(self.utils);
-        self.utils.displayFilteredUsers = function(dropdownId, filteredUsers, excludeUserIds = []) {
+        const originalDisplayFilteredUsers = emailGroupsManager.utils.displayFilteredUsers.bind(emailGroupsManager.utils);
+        emailGroupsManager.utils.displayFilteredUsers = function(dropdownId, filteredUsers, excludeUserIds = []) {
             if (dropdownId === 'userDropdownMenu') {
                 // Get current group users from DataTable and exclude them
                 const currentUsers = groupUsersTable ? groupUsersTable.rows().data().toArray() : [];
@@ -827,7 +820,7 @@ const emailGroupsManager = {
         $('#manageUsersModal').on('hidden.bs.modal', function () {
 
             // Restore original displayFilteredUsers function
-            self.utils.displayFilteredUsers = originalDisplayFilteredUsers;
+            emailGroupsManager.utils.displayFilteredUsers = originalDisplayFilteredUsers;
 
             if (groupUsersTable) {
                 groupUsersTable.destroy();

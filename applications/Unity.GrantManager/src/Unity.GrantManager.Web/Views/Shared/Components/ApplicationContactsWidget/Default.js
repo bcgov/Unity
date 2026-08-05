@@ -50,8 +50,6 @@
             },
 
             setupEventHandlers: function() {
-                const self = this;
-
                 // Unsubscribe from previous subscription if it exists
                 // This prevents duplicate event handlers after widget refresh
                 if (applicantContactsWidgetToken) {
@@ -62,7 +60,7 @@
                 applicantContactsWidgetToken = PubSub.subscribe(
                     'refresh_application_contacts',
                     () => {
-                        self.refresh();
+                        this.refresh();
                     }
                 );
 
@@ -72,10 +70,10 @@
                 $wrapper.off('click.ApplicationContactsWidget', '.contact-edit-btn');
 
                 // Handle Add Contact button click
-                $wrapper.on('click.ApplicationContactsWidget', '#CreateContactButton', function (e) {
+                $wrapper.on('click.ApplicationContactsWidget', '#CreateContactButton', (e) => {
                     e.preventDefault();
                     _createContactModal.open({
-                        applicationId: self.applicationId || $wrapper.find('#ApplicationContactsWidget_ApplicationId').val()
+                        applicationId: this.applicationId || $wrapper.find('#ApplicationContactsWidget_ApplicationId').val()
                     });
                 });
 

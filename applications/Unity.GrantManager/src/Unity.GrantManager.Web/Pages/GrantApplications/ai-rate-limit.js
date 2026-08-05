@@ -46,7 +46,7 @@
         btn.setAttribute(ATTR_COOLDOWN, '1');
         btn.setAttribute('disabled', 'disabled');
         btn.classList.add('disabled');
-        setLabel(btn, `Wait ${seconds}s`);
+        setLabel(btn, `Waiting... ${seconds}s`);
     }
 
     function restore(btn) {
@@ -75,6 +75,7 @@
             return;
         }
 
+        rememberLabel(btn);
         btn.setAttribute(ATTR_CHECKING, '1');
         if (!btn.disabled || btn.getAttribute(ATTR_OWNED_DISABLED) === '1') {
             btn.setAttribute(ATTR_OWNED_DISABLED, '1');
@@ -246,13 +247,16 @@
         applyCooldown(Number(data?.retryAfterSeconds) || 0);
     }
 
-    globalThis.syncAIRateLimitButtons = () => {
-        renderState();
+    globalThis.syncAICooldownButtons = () => {
+        disableUntilChecked();
         fetchState(true);
     };
+    globalThis.syncAIRateLimitButtons = globalThis.syncAICooldownButtons;
     globalThis.setAIGenerationButtonsGenerating = applyGenerating;
+    globalThis.setAIGenerationButtonsCooldown = applyCooldown;
     globalThis.applyAIRateLimitState = applyRateLimitState;
-    globalThis.refreshAIRateLimitState = globalThis.syncAIRateLimitButtons;
+    globalThis.refreshAICooldownState = globalThis.syncAICooldownButtons;
+    globalThis.refreshAIRateLimitState = globalThis.syncAICooldownButtons;
 
     document.addEventListener('click', (e) => {
         const btn = e.target.closest(BUTTON_SELECTOR);

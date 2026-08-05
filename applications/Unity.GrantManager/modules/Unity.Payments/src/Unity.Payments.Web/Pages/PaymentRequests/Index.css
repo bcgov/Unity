@@ -1,4 +1,45 @@
-﻿#PaymentRequestListTable_filter label {
+﻿.date-input-filter-div {
+    display: inline-block;
+    padding: 10px;
+    padding-top: 0px;
+    margin-top: -10px;
+    margin-bottom: -10px;
+    padding-bottom: 0px !important;
+}
+
+.date-input-filter-div label.form-label {
+    font-size: 13.6px;
+    margin-bottom: 0.3rem;
+}
+
+.custom-date-range-container-div {
+    display: inline-block;
+    padding: 0px;
+    margin: 0px;
+}
+
+.quick-date-input {
+    font-size: var(--bc-font-size);
+    color: var(--bc-colors-grey-text-500);
+    border-radius: var(--bc-layout-margin-small) !important;
+    border: 2px solid var(--bc-colors-blue-primary);
+    text-overflow: ellipsis;
+}
+
+.action-bar-date-controls .search-action-bar {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+.action-bar-date-controls .date-input-filter-div {
+    margin-top: 10px;
+}
+
+.action-bar-date-controls #dynamicButtonContainerId {
+    margin-top: 0;
+}
+
+#PaymentRequestListTable_filter label {
     font-size: var(--bc-font-size-sm);
     color: var(--bc-colors-grey-text-300);
     white-space: nowrap;

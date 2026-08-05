@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CHEFS One-Click Form Tester</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>CHEFS One-Click Form Tester</h1>
+        <p id="versionText">v0.4.0 build 2026.07.23.14</p>
+      </div>
+      <span id="statusPill" class="pill idle">Ready</span>
+    </header>
+
+    <section class="primary-action">
+      <button id="startButton" class="primary">Fill and Submit</button>
+      <button id="stopButton" class="danger hidden">Stop Run</button>
+    </section>
+
+    <section class="status-card">
+      <dl>
+        <div><dt>Run</dt><dd id="runId">None</dd></div>
+        <div><dt>Pass</dt><dd id="passCount">0</dd></div>
+        <div><dt>Filled</dt><dd id="filledCount">0</dd></div>
+        <div><dt>Remaining</dt><dd id="remainingCount">0</dd></div>
+        <div><dt>Current action</dt><dd id="currentAction">Idle</dd></div>
+        <div><dt>Confirmation</dt><dd id="confirmationId">-</dd></div>
+        <div><dt>Batch active</dt><dd id="batchActive">No</dd></div>
+        <div><dt>Batch queued</dt><dd id="batchQueued">0</dd></div>
+        <div><dt>Batch completed</dt><dd id="batchCompleted">0</dd></div>
+      </dl>
+      <p id="message" class="message"></p>
+    </section>
+
+    <section class="secondary-actions">
+      <button id="exportButton" disabled>Export Last Run</button>
+      <button id="copyButton" disabled>Copy Summary</button>
+      <button id="dashboardButton" class="full-width">Results Dashboard</button>
+      <button id="settingsButton" class="full-width">Settings</button>
+      <button id="stopBatchButton" class="danger full-width hidden">Stop Batch</button>
+    </section>
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>

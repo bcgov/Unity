@@ -224,7 +224,6 @@
         defaultValues.emailFrom = UIElements.inputOriginalEmailFrom.val();
         defaultValues.emailCC = UIElements.inputOriginalEmailCC.val() || '';
         defaultValues.emailBCC = UIElements.inputOriginalEmailBCC.val() || '';
-        if (globalThis.toastr) { toastr.options.positionClass = 'toast-top-center'; }
         preloadTemplates(); // Pre-fetch templates on page load
         initTemplateDetails();
         $('#templateTextContainer').hide();
@@ -302,6 +301,43 @@
         }
     }
 
+    function navigateCalendarMonth(direction) {
+        scheduleState.currentMonth += direction;
+        if (scheduleState.currentMonth < 0) {
+            scheduleState.currentMonth = 11;
+            scheduleState.currentYear--;
+        } else if (scheduleState.currentMonth > 11) {
+            scheduleState.currentMonth = 0;
+            scheduleState.currentYear++;
+        }
+        renderCalendarGrid(scheduleState);
+    }
+
+    function formatScheduleDateInput(rawValue) {
+        let val = rawValue.replaceAll(/\D/, '');
+        if (val.length > 8) val = val.substring(0, 8);
+        if (val.length >= 2) {
+            val = val.substring(0, 2) + '/' + val.substring(2);
+        }
+        if (val.length >= 5) {
+            val = val.substring(0, 5) + '/' + val.substring(5);
+        }
+        return val;
+    }
+
+    function handleScheduleDateInputChange() {
+        const val = formatScheduleDateInput(UIElements.scheduleDateInput.val());
+        UIElements.scheduleDateInput.val(val);
+
+        // Validate immediately when a complete date is entered (MM/DD/YYYY = 10 chars)
+        if (val.length === 10) {
+            validateScheduleDate();
+        } else if (val.length < 10 && val.length > 0) {
+            // Clear validation messages while user is still typing an incomplete date
+            UIElements.scheduleDateValidation.hide();
+        }
+    }
+
     function bindDelayModeEvents() {
         // Use global scheduleState
         scheduleState.currentMonth = new Date().getMonth();
@@ -330,42 +366,16 @@
 
         // Calendar navigation
         UIElements.btnCalendarPrev.on('click', function () {
-            scheduleState.currentMonth--;
-            if (scheduleState.currentMonth < 0) {
-                scheduleState.currentMonth = 11;
-                scheduleState.currentYear--;
-            }
-            renderCalendarGrid(scheduleState);
+            navigateCalendarMonth(-1);
         });
 
         UIElements.btnCalendarNext.on('click', function () {
-            scheduleState.currentMonth++;
-            if (scheduleState.currentMonth > 11) {
-                scheduleState.currentMonth = 0;
-                scheduleState.currentYear++;
-            }
-            renderCalendarGrid(scheduleState);
+            navigateCalendarMonth(1);
         });
 
         // Date input two-way binding with input masking for MM/DD/YYYY
         UIElements.scheduleDateInput.on('input', function () {
-            let val = UIElements.scheduleDateInput.val().replaceAll(/\D/, '');
-            if (val.length > 8) val = val.substring(0, 8);
-            if (val.length >= 2) {
-                val = val.substring(0, 2) + '/' + val.substring(2);
-            }
-            if (val.length >= 5) {
-                val = val.substring(0, 5) + '/' + val.substring(5);
-            }
-            UIElements.scheduleDateInput.val(val);
-
-            // Validate immediately when a complete date is entered (MM/DD/YYYY = 10 chars)
-            if (val.length === 10) {
-                validateScheduleDate();
-            } else if (val.length < 10 && val.length > 0) {
-                // Clear validation messages while user is still typing an incomplete date
-                UIElements.scheduleDateValidation.hide();
-            }
+            handleScheduleDateInputChange();
         });
 
         UIElements.scheduleDateInput.on('blur', function () {
@@ -653,11 +663,6 @@
         validator?.resetForm();
 
 
-        // Clear toastr notifications
-        if (globalThis.toastr) {
-            toastr.clear();
-        }
-
         $('#modal-content, #modal-background').removeClass('active');
         UIElements.emailForm.removeClass('active');
         $('#EmailTemplateName').val('');
@@ -738,9 +743,7 @@
                     // Reset BCC visibility
                     toggleBCCVisibility();
                     // Show success toast
-                    if (globalThis.toastr) {
-                        toastr.success('Changes discarded', 'Email Reset');
-                    }
+                    abp.notify.success('Changes discarded', 'Email Reset');
                 })
                 .fail(e => {
                     console.warn('Failed to delete draft on discard:', e);
@@ -831,9 +834,7 @@
             resetValidationErrors();
 
             // Show success toast
-            if (globalThis.toastr) {
-                toastr.success('Changes discarded', 'Email Reset');
-            }
+            abp.notify.success('Changes discarded', 'Email Reset');
 
             // Disable save and discard buttons since no changes are present
             handleDraftChange();
@@ -1338,9 +1339,10 @@
         // Then initialize TinyMCE
         tinymce.init({
             license_key: 'gpl',
-            selector: '#EmailBody',
+            selector: '#EmailBody',            
             plugins: getPlugins(),
             menubar: 'file edit view insert format tools',
+            toolbar: getToolbarOptions(),
             resize: true,
             statusbar: true,
             elementpath: false,
@@ -2106,6 +2108,7 @@
             selector: '#EmailBody',
             plugins: getPlugins(),
             menubar: 'file edit view insert format tools',
+            toolbar: getToolbarOptions(),
             resize: true,
             statusbar: true,
             elementpath: false,
@@ -2368,7 +2371,17 @@
         const input = document.getElementById(inputId);
         if (!input?.files?.length) return;
 
-        const disallowedTypes = JSON.parse(decodeURIComponent($('#Extensions').val()));
+        let allowedTypes;
+        try {
+            allowedTypes = JSON.parse(decodeURIComponent($('#AllowedFileTypes').val()));
+            if (!Array.isArray(allowedTypes)) {
+                throw new TypeError('AllowedFileTypes did not parse to an array');
+            }
+        } catch (e) {
+            console.warn('Unable to parse allowed file types configuration:', e);
+            abp.notify.error('Unable to determine allowed file types. Please contact support.');
+            return;
+        }
         const maxFileSize = decodeURIComponent($('#EmailAttachmentMaxFileSize').val());
 
         let isAllowedTypeError = false;
@@ -2377,7 +2390,7 @@
 
         for (let file of input.files) {
             const ext = file.name.slice(file.name.lastIndexOf('.') + 1).toLowerCase();
-            if (disallowedTypes.includes(ext)) {
+            if (!allowedTypes.includes(ext)) {
                 isAllowedTypeError = true;
             }
             if (file.size * 0.000001 > maxFileSize) {
@@ -2566,7 +2579,7 @@ function sanitizeTinyMceHtml(html) {
 
 
 /**
- * Displays validation error toast using abp.notify or toastr
+ * Displays validation error toast using abp.notify
  * @param {string[]} errors - Array of error messages to display
  */
 function showValidationErrorToast(errors) {
@@ -2577,22 +2590,8 @@ function showValidationErrorToast(errors) {
 
     console.log('Showing validation errors:', errors);
 
-    // Use abp.notify if available, fallback to toastr if available
-    if (globalThis.abp?.notify) {
-        const errorTitle = 'Validation Error' + (errors.length > 1 ? 's' : '');
-        abp.notify.error(errorMessage, errorTitle);
-    } else if (globalThis.toastr) {
-        toastr.error(errorMessage, 'Validation Error' + (errors.length > 1 ? 's' : ''), {
-            timeOut: 0,
-            extendedTimeOut: 0,
-            closeButton: true,
-            escapeHtml: false
-        });
-    } else {
-        // Final fallback: alert
-        console.error('Validation Errors:', errors.join('\n'));
-        alert('Validation Error:\n\n' + errors.join('\n'));
-    }
+    const errorTitle = 'Validation Error' + (errors.length > 1 ? 's' : '');
+    abp.notify.error(errorMessage, errorTitle);
 }
 
 /**
@@ -2786,7 +2785,7 @@ function isValidDate(month, day, year) {
  * @returns {string} Title-cased string
  */
 function toTitleCase(str) {
-    return str.toLowerCase().replace(/\b\w/g, function (char) {
+    return str.toLowerCase().replaceAll(/\b\w/g, function (char) {
         return char.toUpperCase();
     });
 }

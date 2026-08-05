@@ -2,8 +2,8 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
+using Unity.AI.Cooldown;
 using Unity.AI.Operations;
-using Unity.AI.RateLimit;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
@@ -16,10 +16,9 @@ namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 public class GenerateAttachmentSummaryJob(
     IAttachmentSummaryService attachmentSummaryService,
     IRepository<AIGenerationRequest, Guid> generationRequestRepository,
-    IRepository<AIOperation, Guid> operationRepository,
     ICurrentTenant currentTenant,
     IUnitOfWorkManager unitOfWorkManager,
-    IAIRateLimiter aiRateLimiter,
+    IAICooldownService aiCooldownService,
     ILogger<GenerateAttachmentSummaryJob> logger) : AsyncBackgroundJob<GenerateAttachmentSummaryBackgroundJobArgs>, ITransientDependency
 {
     public override async Task ExecuteAsync(GenerateAttachmentSummaryBackgroundJobArgs args)
@@ -37,32 +36,33 @@ public class GenerateAttachmentSummaryJob(
             await AIGenerationRequestJobHelper.MarkRunningInNewUowAsync(
                 unitOfWorkManager,
                 generationRequestRepository,
-                operationRepository,
                 args.TenantId,
                 args.ApplicationId,
-                AIGenerationRequestKeyHelper.AttachmentSummaryOperationType);
+                args.OperationId);
             try
             {
-                await attachmentSummaryService.GenerateForApplicationAsync(args.ApplicationId, args.PromptVersion, args.AttachmentIds);
+                await attachmentSummaryService.GenerateForApplicationAsync(
+                    args.ApplicationId,
+                    args.PromptVersion,
+                    args.AttachmentIds,
+                    default);
 
-                await AIGenerationRequestJobHelper.StampRateLimitBestEffortAsync(aiRateLimiter, logger, args.RequestedByUserId, args.ApplicationId, AIGenerationRequestKeyHelper.AttachmentSummaryOperationType);
+                await AIGenerationRequestJobHelper.StampCooldownBestEffortAsync(aiCooldownService, logger, args.RequestedByUserId, args.ApplicationId, AIGenerationRequestKeyHelper.AttachmentSummaryOperationType);
                 await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(
                     unitOfWorkManager,
                     generationRequestRepository,
-                    operationRepository,
                     args.TenantId,
                     args.ApplicationId,
-                    AIGenerationRequestKeyHelper.AttachmentSummaryOperationType);
+                    args.OperationId);
             }
             catch (Exception ex)
             {
                 await AIGenerationRequestJobHelper.MarkFailedInNewUowAsync(
                     unitOfWorkManager,
                     generationRequestRepository,
-                    operationRepository,
                     args.TenantId,
                     args.ApplicationId,
-                    AIGenerationRequestKeyHelper.AttachmentSummaryOperationType,
+                    args.OperationId,
                     ex.Message);
                 throw;
             }

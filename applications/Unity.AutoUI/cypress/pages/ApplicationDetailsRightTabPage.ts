@@ -193,7 +193,7 @@ export class ApplicationDetailsRightTabPage extends BasePage {
     return cy
       .get(this.countBadges.emails, { timeout: this.STANDARD_TIMEOUT })
       .invoke("text")
-      .then((text) => parseInt(text, 10) || 0);
+      .then((text) => Number.parseInt(text, 10) || 0);
   }
 
   /**
@@ -203,7 +203,7 @@ export class ApplicationDetailsRightTabPage extends BasePage {
     return cy
       .get(this.countBadges.comments, { timeout: this.STANDARD_TIMEOUT })
       .invoke("text")
-      .then((text) => parseInt(text, 10) || 0);
+      .then((text) => Number.parseInt(text, 10) || 0);
   }
 
   /**
@@ -213,7 +213,7 @@ export class ApplicationDetailsRightTabPage extends BasePage {
     return cy
       .get(this.countBadges.attachments, { timeout: this.STANDARD_TIMEOUT })
       .invoke("text")
-      .then((text) => parseInt(text, 10) || 0);
+      .then((text) => Number.parseInt(text, 10) || 0);
   }
 
   /**
@@ -223,7 +223,7 @@ export class ApplicationDetailsRightTabPage extends BasePage {
     return cy
       .get(this.countBadges.links, { timeout: this.STANDARD_TIMEOUT })
       .invoke("text")
-      .then((text) => parseInt(text, 10) || 0);
+      .then((text) => Number.parseInt(text, 10) || 0);
   }
 
   // ============ Details Tab Methods ============

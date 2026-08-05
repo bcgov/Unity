@@ -411,14 +411,13 @@ class UnityZoneForm extends UnityChangeTrackingForm {
 
     reportZones(viewExpanded = false) {
         let tableData = [];
-        const self = this; // Store reference to the class instance
 
-        this.form.find('fieldset').each(function () {
-            const fieldName = $(this).attr('name');
+        this.form.find('fieldset').each((_, fieldset) => {
+            const fieldName = $(fieldset).attr('name');
 
-            $(this).find(':input').each(function () {
-                const $el = $(this);
-                const name = this.name || '(no name)';
+            $(fieldset).find(':input').each((_, input) => {
+                const $el = $(input);
+                const name = input.name || '(no name)';
 
                 // Get current value based on input type
                 let currentValue;
@@ -435,21 +434,21 @@ class UnityZoneForm extends UnityChangeTrackingForm {
                 }
 
                 // Get original value if it exists
-                const originalValue = name !== '(no name)' && self.originalValues.hasOwnProperty(name) ?
-                    self.originalValues[name] : '(not tracked)';
+                const originalValue = name !== '(no name)' && this.originalValues.hasOwnProperty(name) ?
+                    this.originalValues[name] : '(not tracked)';
 
-                const isModified = self.modifiedFields.has(name);
+                const isModified = this.modifiedFields.has(name);
 
                 let tableOutput = {
-                    'fieldsetName': self.#extractZoneSuffix(fieldName),
-                    'id': this.id
+                    'fieldsetName': this.#extractZoneSuffix(fieldName),
+                    'id': input.id
                 }
                 
                 if (viewExpanded) {
                     let expandedProperties = {
                         'name': name,
-                        'tag': this.tagName.toLowerCase(),
-                        'type': this.type
+                        'tag': input.tagName.toLowerCase(),
+                        'type': input.type
                     };
 
                     tableOutput = { ...tableOutput, ...expandedProperties };

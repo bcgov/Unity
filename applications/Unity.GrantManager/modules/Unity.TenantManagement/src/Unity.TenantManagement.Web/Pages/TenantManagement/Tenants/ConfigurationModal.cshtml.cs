@@ -57,7 +57,7 @@ public class ConfigurationModalModel(
             .AuthorizeAsync(User, TenantManagementPermissions.Tenants.ManageConnectionStrings)).Succeeded;
 
         CanManageFeatures = (await AuthorizationService
-            .AuthorizeAsync(User, IdentityConsts.ITOperationsPolicyName)).Succeeded;
+            .AuthorizeAsync(User, IdentityConsts.ITAdminOrITOperationsPolicyName)).Succeeded;
 
         CanManageManagers = CanManageFeatures;
 
@@ -91,7 +91,7 @@ public class ConfigurationModalModel(
         }
 
         if (!string.IsNullOrEmpty(FeaturesJson) &&
-            (await AuthorizationService.AuthorizeAsync(User, IdentityConsts.ITOperationsPolicyName)).Succeeded)
+            (await AuthorizationService.AuthorizeAsync(User, IdentityConsts.ITAdminOrITOperationsPolicyName)).Succeeded)
         {
             var featureUpdates = new List<UpdateFeatureDto>();
             foreach (var feature in JsonDocument.Parse(FeaturesJson).RootElement.EnumerateArray())

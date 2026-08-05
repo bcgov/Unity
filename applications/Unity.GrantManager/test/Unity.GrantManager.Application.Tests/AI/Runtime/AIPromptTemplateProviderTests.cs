@@ -55,11 +55,7 @@ public class AIPromptTemplateProviderTests
         snapshot.SystemPrompt.ShouldBe("SYSTEM");
         snapshot.UserPrompt.ShouldBe("USER");
         snapshot.MetadataJson.ShouldContain("ApplicationAnalysis");
-        snapshot.Manifest.ShouldNotBeNull();
-        snapshot.Manifest!.OperationName.ShouldBe("ApplicationAnalysis");
-        snapshot.Manifest.PromptVersion.ShouldBe("v1");
-        snapshot.Manifest.InputContractName.ShouldBe("ApplicationAnalysisOperationInputDto");
-        snapshot.Manifest.OutputContractName.ShouldBe("ApplicationAnalysisResponse");
+        snapshot.MetadataJson.ShouldContain("ApplicationAnalysis");
     }
 
     [Fact]

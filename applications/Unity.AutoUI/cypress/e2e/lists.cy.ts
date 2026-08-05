@@ -92,7 +92,7 @@ describe('Grant Manager Login and List Navigation', () => {
         cy.get('#applicationStatusChart text', { timeout: 30000 })
             .first()
             .should(($el) => {
-                expect(parseInt($el.text(), 10)).to.be.gt(0)
+                expect(Number.parseInt($el.text(), 10)).to.be.gt(0)
             })
 
         cy.visit(Cypress.env('webapp.url'))

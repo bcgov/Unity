@@ -7,11 +7,11 @@
 
 function approvedAmountUpdated(event) {
     const input = event.target;
-    const value = parseFloat(input.value.replace(/,/g, ''));
+    const value = Number.parseFloat(input.value.replaceAll(',', ''));
 
     setNote(event.target, '_APPROVED_AMOUNT_DEFAULTED', false);
 
-    if (isNaN(value) || value <= 0) {
+    if (Number.isNaN(value) || value <= 0) {
         setNote(event.target, '_INVALID_APPROVED_AMOUNT', true);
     } else {
         setNote(event.target, '_INVALID_APPROVED_AMOUNT', false);
@@ -45,11 +45,11 @@ function runValidations() {
     $('#bulkApprovalForm input[name="BulkApplicationApprovals.Index"]').each(function () {
         itemCount++;
         let index = $(this).val();
-        let approvedAmount = parseFloat($('#bulkApprovalForm input[name="BulkApplicationApprovals[' + index + '].ApprovedAmount"]').val().replace(/,/g, ''));
+        let approvedAmount = Number.parseFloat($('#bulkApprovalForm input[name="BulkApplicationApprovals[' + index + '].ApprovedAmount"]').val().replaceAll(',', ''));
         let decisionDate = new Date($('#bulkApprovalForm input[name="BulkApplicationApprovals[' + index + '].DecisionDate"]').val());
         let isValidField = $('#bulkApprovalForm input[name="BulkApplicationApprovals[' + index + '].IsValid"]').val();
 
-        if (isValidField.toLowerCase() !== 'true' || isNaN(approvedAmount) || approvedAmount <= 0 || isNaN(decisionDate.getTime()) || decisionDate > new Date()) {
+        if (isValidField.toLowerCase() !== 'true' || Number.isNaN(approvedAmount) || approvedAmount <= 0 || Number.isNaN(decisionDate.getTime()) || decisionDate > new Date()) {
             isValid = false;
         }
     });

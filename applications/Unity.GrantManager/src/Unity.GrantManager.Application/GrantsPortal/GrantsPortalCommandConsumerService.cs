@@ -23,7 +23,7 @@ namespace Unity.GrantManager.GrantsPortal;
 /// </summary>
 public class GrantsPortalCommandConsumerService(
     IServiceProvider serviceProvider,
-    IAsyncConnectionFactory connectionFactory,
+    IConnectionFactory connectionFactory,
     IOptions<GrantsPortalRabbitMqOptions> options,
     ILogger<GrantsPortalCommandConsumerService> logger) : BackgroundService
 {
@@ -38,7 +38,7 @@ public class GrantsPortalCommandConsumerService(
     private readonly SemaphoreSlim _reconnectLock = new(1, 1);
 
     private IConnection? _connection;
-    private IModel? _channel;
+    private IChannel? _channel;
 
     private const int MaxRetries = 5;
     private static readonly TimeSpan InitialRetryDelay = TimeSpan.FromSeconds(5);
@@ -71,13 +71,13 @@ public class GrantsPortalCommandConsumerService(
             {
                 logger.LogInformation("Connecting to RabbitMQ for Grants Portal consumer (attempt {Attempt}/{MaxRetries})", attempt, MaxRetries);
 
-                _connection = connectionFactory.CreateConnection();
-                _connection.ConnectionShutdown += OnConnectionShutdown;
-                _channel = _connection.CreateModel();
-                _channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
+                _connection = await connectionFactory.CreateConnectionAsync(cancellationToken);
+                _connection.ConnectionShutdownAsync += OnConnectionShutdownAsync;
+                _channel = await _connection.CreateChannelAsync(cancellationToken: cancellationToken);
+                await _channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 1, global: false, cancellationToken: cancellationToken);
 
-                DeclareTopology();
-                StartConsuming();
+                await DeclareTopologyAsync(cancellationToken);
+                await StartConsumingAsync(cancellationToken);
 
                 logger.LogInformation("Grants Portal command consumer started. Listening on queue {Queue}", _options.InboundQueue);
                 return;
@@ -111,15 +111,15 @@ public class GrantsPortalCommandConsumerService(
             try
             {
                 logger.LogInformation("Slow reconnect: attempting to connect to RabbitMQ...");
-                CleanupConnection();
+                await CleanupConnectionAsync();
 
-                _connection = connectionFactory.CreateConnection();
-                _connection.ConnectionShutdown += OnConnectionShutdown;
-                _channel = _connection.CreateModel();
-                _channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
+                _connection = await connectionFactory.CreateConnectionAsync(cancellationToken);
+                _connection.ConnectionShutdownAsync += OnConnectionShutdownAsync;
+                _channel = await _connection.CreateChannelAsync(cancellationToken: cancellationToken);
+                await _channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 1, global: false, cancellationToken: cancellationToken);
 
-                DeclareTopology();
-                StartConsuming();
+                await DeclareTopologyAsync(cancellationToken);
+                await StartConsumingAsync(cancellationToken);
 
                 logger.LogInformation("Slow reconnect: successfully reconnected. Listening on queue {Queue}", _options.InboundQueue);
                 return;
@@ -135,9 +135,9 @@ public class GrantsPortalCommandConsumerService(
         }
     }
 
-    private void OnConnectionShutdown(object? sender, ShutdownEventArgs e)
+    private Task OnConnectionShutdownAsync(object sender, ShutdownEventArgs e)
     {
-        if (_stoppingToken.IsCancellationRequested) return;
+        if (_stoppingToken.IsCancellationRequested) return Task.CompletedTask;
 
         logger.LogWarning("RabbitMQ connection lost: {Reason}. Attempting to reconnect...", e.ReplyText);
 
@@ -152,7 +152,7 @@ public class GrantsPortalCommandConsumerService(
             try
             {
                 await Task.Delay(InitialRetryDelay, _stoppingToken);
-                CleanupConnection();
+                await CleanupConnectionAsync();
                 await ConnectAndConsumeAsync(_stoppingToken);
             }
             catch (OperationCanceledException) when (_stoppingToken.IsCancellationRequested)
@@ -168,34 +168,41 @@ public class GrantsPortalCommandConsumerService(
                 _reconnectLock.Release();
             }
         }, _stoppingToken);
+
+        return Task.CompletedTask;
     }
 
-    private void DeclareTopology()
+    private async Task DeclareTopologyAsync(CancellationToken cancellationToken)
     {
         if (_channel == null) return;
 
-        _channel.ExchangeDeclare(
+        await _channel.ExchangeDeclareAsync(
             exchange: _options.Exchange,
             type: _options.ExchangeType,
             durable: true,
-            autoDelete: false);
+            autoDelete: false,
+            arguments: null,
+            cancellationToken: cancellationToken);
 
-        _channel.QueueDeclare(
+        await _channel.QueueDeclareAsync(
             queue: _options.InboundQueue,
             durable: true,
             exclusive: false,
             autoDelete: false,
-            arguments: new System.Collections.Generic.Dictionary<string, object>
+            arguments: new System.Collections.Generic.Dictionary<string, object?>
             {
                 { "x-queue-type", "quorum" }
-            });
+            },
+            cancellationToken: cancellationToken);
 
         foreach (var routingKey in _options.InboundRoutingKeys)
         {
-            _channel.QueueBind(
+            await _channel.QueueBindAsync(
                 queue: _options.InboundQueue,
                 exchange: _options.Exchange,
-                routingKey: routingKey);
+                routingKey: routingKey,
+                arguments: null,
+                cancellationToken: cancellationToken);
         }
 
         logger.LogInformation(
@@ -203,17 +210,22 @@ public class GrantsPortalCommandConsumerService(
             _options.Exchange, _options.InboundQueue, string.Join(", ", _options.InboundRoutingKeys));
     }
 
-    private void StartConsuming()
+    private async Task StartConsumingAsync(CancellationToken cancellationToken)
     {
         if (_channel == null) return;
 
         var consumer = new AsyncEventingBasicConsumer(_channel);
-        consumer.Received += OnMessageReceivedAsync;
+        consumer.ReceivedAsync += OnMessageReceivedAsync;
 
-        _channel.BasicConsume(
+        await _channel.BasicConsumeAsync(
             queue: _options.InboundQueue,
             autoAck: false,
-            consumer: consumer);
+            consumerTag: string.Empty,
+            noLocal: false,
+            exclusive: false,
+            arguments: null,
+            consumer: consumer,
+            cancellationToken: cancellationToken);
     }
 
     /// <summary>
@@ -225,7 +237,7 @@ public class GrantsPortalCommandConsumerService(
         var messageId = ea.BasicProperties?.MessageId ?? string.Empty;
         var messageType = ea.BasicProperties?.Type ?? string.Empty;
         var correlationId = ea.BasicProperties?.CorrelationId ?? string.Empty;
-        var consumingChannel = ((AsyncEventingBasicConsumer)sender).Model;
+        var consumingChannel = ((AsyncEventingBasicConsumer)sender).Channel;
 
         logger.LogInformation("Received message {MessageId} type={MessageType}", messageId, messageType);
 
@@ -233,7 +245,7 @@ public class GrantsPortalCommandConsumerService(
         if (string.Equals(messageType, "MessageAcknowledgment", StringComparison.OrdinalIgnoreCase))
         {
             logger.LogDebug("Discarding acknowledgment message {MessageId} to prevent loop", messageId);
-            consumingChannel.BasicAck(ea.DeliveryTag, multiple: false);
+            await consumingChannel.BasicAckAsync(ea.DeliveryTag, multiple: false);
             return;
         }
 
@@ -245,7 +257,7 @@ public class GrantsPortalCommandConsumerService(
             if (envelope == null)
             {
                 logger.LogError("Failed to deserialize message {MessageId}. Discarding.", messageId);
-                consumingChannel.BasicAck(ea.DeliveryTag, multiple: false);
+                await consumingChannel.BasicAckAsync(ea.DeliveryTag, multiple: false);
                 return;
             }
 
@@ -257,7 +269,7 @@ public class GrantsPortalCommandConsumerService(
             if (string.IsNullOrWhiteSpace(messageId))
             {
                 logger.LogError("Received message with missing/blank MessageId. Discarding. CorrelationId={CorrelationId}", correlationId);
-                consumingChannel.BasicAck(ea.DeliveryTag, multiple: false);
+                await consumingChannel.BasicAckAsync(ea.DeliveryTag, multiple: false);
                 return;
             }
 
@@ -277,7 +289,7 @@ public class GrantsPortalCommandConsumerService(
             if (existing != null)
             {
                 logger.LogInformation("Message {MessageId} already in inbox (status={Status}). Skipping.", messageId, existing.Status);
-                consumingChannel.BasicAck(ea.DeliveryTag, multiple: false);
+                await consumingChannel.BasicAckAsync(ea.DeliveryTag, multiple: false);
                 return;
             }
 
@@ -307,12 +319,12 @@ public class GrantsPortalCommandConsumerService(
         catch (Exception ex)
         {
             logger.LogError(ex, "Error saving message {MessageId} to inbox. Message will be requeued.", messageId);
-            consumingChannel.BasicReject(ea.DeliveryTag, requeue: true);
+            await consumingChannel.BasicRejectAsync(ea.DeliveryTag, requeue: true);
             return;
         }
 
         // ACK only after successful save to inbox
-        consumingChannel.BasicAck(ea.DeliveryTag, multiple: false);
+        await consumingChannel.BasicAckAsync(ea.DeliveryTag, multiple: false);
     }
 
     private static Guid? ResolveTenantId(string? provider)
@@ -326,15 +338,13 @@ public class GrantsPortalCommandConsumerService(
         return null;
     }
 
-    private void CleanupConnection()
+    private async Task CleanupConnectionAsync()
     {
         try
         {
-            if (_connection != null) _connection.ConnectionShutdown -= OnConnectionShutdown;
-            _channel?.Close();
-            _channel?.Dispose();
-            _connection?.Close();
-            _connection?.Dispose();
+            _connection?.ConnectionShutdownAsync -= OnConnectionShutdownAsync;
+            if (_channel != null) await _channel.DisposeAsync();
+            if (_connection != null) await _connection.DisposeAsync();
         }
         catch (Exception ex)
         {
@@ -369,7 +379,19 @@ public class GrantsPortalCommandConsumerService(
 
     public override void Dispose()
     {
-        CleanupConnection();
+        try
+        {
+            _connection?.ConnectionShutdownAsync -= OnConnectionShutdownAsync;
+            _channel?.Dispose();
+            _connection?.Dispose();
+        }
+        catch (Exception ex)
+        {
+            logger.LogDebug(ex, "Error during connection cleanup on dispose");
+        }
+
+        _channel = null;
+        _connection = null;
         _reconnectLock.Dispose();
         base.Dispose();
         GC.SuppressFinalize(this);

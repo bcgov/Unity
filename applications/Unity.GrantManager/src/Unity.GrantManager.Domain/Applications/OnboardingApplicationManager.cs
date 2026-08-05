@@ -1,4 +1,4 @@
-using Stateless;
+﻿using Stateless;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,7 +40,7 @@ public class OnboardingApplicationManager(
             ConfigureWorkflow);
 
         var allActions = workflow.GetAllActions().Distinct().ToList();
-        var permittedActions = workflow.GetPermittedActions().ToList();
+        var permittedActions = (await workflow.GetPermittedActionsAsync()).ToList();
 
         return allActions
             .Select(trigger => new ApplicationActionResultItem
@@ -53,7 +53,7 @@ public class OnboardingApplicationManager(
             .ToList();
     }
 
-    public bool IsActionAllowed(Application application, GrantApplicationAction triggerAction)
+    public static async Task<bool> IsActionAllowed(Application application, GrantApplicationAction triggerAction)
     {
         var statusCode = application.ApplicationStatus.StatusCode;
         var workflow = new UnityWorkflow<GrantApplicationState, GrantApplicationAction>(
@@ -61,7 +61,7 @@ public class OnboardingApplicationManager(
             s => statusCode = s,
             ConfigureWorkflow);
 
-        return workflow.GetPermittedActions().Contains(triggerAction);
+        return (await workflow.GetPermittedActionsAsync()).Contains(triggerAction);
     }
 
     public async Task<Application> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction)

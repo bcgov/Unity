@@ -1,0 +1,26 @@
+FORM MAPPING CONTEXT:
+{{DATA}}
+
+OUTPUT
+{
+  "<unity field name>": "<chefs source field name>",
+  "<unity field name>": "<chefs source field name>"
+}
+
+Rules:
+- Return one flat JSON object only.
+- The context is grouped as `chefsData` and `unityData`.
+- `chefsData.fields` contains the CHEFS source fields.
+- `unityData.coreFields` contains Unity target fields.
+- `unityData.customFields` contains worksheet-derived Unity target fields.
+- Each property name must be a Unity core or worksheet-derived target field name from the provided context.
+- Each property value must be the CHEFS source field name that best matches that Unity target field.
+- Only include mappings that are clearly semantically equivalent or strongly related by label, name, type, and purpose.
+- Do not force one-to-one coverage. Omit Unity fields when no CHEFS field is a sensible match.
+- Omit CHEFS fields that do not clearly map to a Unity target field.
+- Do not map platform/system identifiers such as SubmissionId, SubmissionDate, or ConfirmationId; they are managed by Unity and should be omitted if present.
+- If no fields clearly match, return `{}`.
+- The mapping is dynamic; do not hardcode or assume a fixed list of fields.
+- Prefer existing Unity core intake fields when they already fit the source field.
+- Only use worksheet custom field targets when the form genuinely needs them.
+- Return valid plain JSON only.
