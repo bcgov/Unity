@@ -6,12 +6,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
 using Unity.Modules.Shared.Permissions;
-using Volo.Abp.Data;
+using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
-using Volo.Abp;
 
 namespace Unity.AI.Prompts;
 
@@ -132,9 +132,7 @@ public class AIPromptAppService :
         }
     }
 
-    // Not used by any client; keep the entity soft-managed via IsActive rather than exposing hard delete.
     [RemoteService(false)]
-    [HttpDelete("{id}")]
     public override async Task DeleteAsync(Guid id)
     {
         using (_multiTenantDataFilter.Disable())

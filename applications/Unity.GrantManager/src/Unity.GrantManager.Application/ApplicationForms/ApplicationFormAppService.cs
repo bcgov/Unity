@@ -52,10 +52,9 @@ public class ApplicationFormAppService
         _applicationService = applicationService;
         _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
         _formsApiService = formsApiService;
-        GetListPolicyName = GrantManagerPermissions.ApplicationForms.Default;
+        DeletePolicyName = GrantManagerPermissions.ApplicationForms.Default;
     }
 
-    // No caller uses this endpoint; disable it to reduce surface area.
     [RemoteService(false)]
     public override Task DeleteAsync(Guid id) => base.DeleteAsync(id);
 
@@ -225,7 +224,7 @@ public class ApplicationFormAppService
                     throw new BusinessException(GrantManagerDomainErrorCodes.ChildFormCannotReferenceSelf);
                 }
 
-                var parentForm = await Repository.FindAsync(dto.ParentFormId.Value) ?? throw new BusinessException(GrantManagerDomainErrorCodes.ChildFormRequiresParentForm);
+                _ = await Repository.FindAsync(dto.ParentFormId.Value) ?? throw new BusinessException(GrantManagerDomainErrorCodes.ChildFormRequiresParentForm);
             }
         }
 
