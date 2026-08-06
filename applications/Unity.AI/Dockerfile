@@ -54,7 +54,7 @@ COPY entrypoint.sh /entrypoint.sh
 
 # Install Python dependencies, set up entrypoint, and fix ownership
 WORKDIR /app/backend
-RUN pip install --no-cache-dir -r requirements.txt gunicorn && \
+RUN pip install --no-cache-dir -r requirements.txt && \
     sed -i 's/\r$//' /entrypoint.sh && \
     chmod 777 /entrypoint.sh && \
     chown appuser:appuser /entrypoint.sh && \
