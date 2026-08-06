@@ -5,6 +5,7 @@ Handles initialization and command-line interface.
 import sys
 import logging
 import os
+import threading
 from typing import Optional
 from config import config
 from database import db_manager, cache_repository
@@ -145,15 +146,16 @@ Commands:
         run_server()
 
 
-# Initialize database when module is loaded (for gunicorn with --preload)
-# Use environment variable to ensure this only runs ONCE in parent process
+# Initialize database when module is loaded (once per gunicorn worker
+# process, or once for `flask run`). Use an environment variable to guard
+# against Werkzeug's debug-reloader re-running this in its watcher process.
 _initialized = os.environ.get('_APP_INITIALIZED')
 
 # True when launched as `python app.py <cli-command>` rather than as the server.
-# Under gunicorn sys.argv[1] is `--preload`, so this stays False — the server
-# still runs its startup seed-embed. CLI commands (the OpenShift re-embed
-# CronJob included) run their own embed in main(), so the import-time embed
-# is skipped to avoid double work.
+# Under gunicorn sys.argv[1] is a gunicorn flag, so this stays False — the
+# server still runs its startup seed-embed. CLI commands (the OpenShift
+# re-embed CronJob included) run their own embed in main(), so the
+# import-time embed is skipped to avoid double work.
 _is_cli_command = (
     len(sys.argv) > 1
     and sys.argv[1] in {"embed", "g", "embed-all", "help"}
@@ -173,14 +175,30 @@ if not _initialized and os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
 
     # Startup seed-embed for the server only — first-deploy safety net before
     # the nightly CronJob's first run. CLI commands embed in main() themselves.
+    #
+    # Runs in a background thread instead of blocking here: this executes
+    # before gunicorn workers start accepting connections, so blocking here
+    # keeps /health and /ready from responding until the embed finishes —
+    # and duration scales with the number of tenant databases. With more
+    # than one tenant configured, that pushed startup past OpenShift's
+    # liveness-probe grace period and put the pod in a permanent
+    # CrashLoopBackOff. Backgrounding it lets the worker start serving
+    # immediately; embed_schemas' per-db advisory lock already makes
+    # concurrent embed attempts across the 2 worker processes safe (one
+    # wins, the other skips).
     if not _is_cli_command:
-        try:
-            logger.info("Embedding database schemas for all tenants...")
-            embed_all_tenants()
-            logger.info("Schema embedding completed successfully for all tenants")
-        except Exception as e:
-            logger.warning(f"Schema embedding failed: {e}", exc_info=True)
-            # Don't exit - app can still run without embeddings
+        def _run_startup_seed_embed():
+            try:
+                logger.info("Embedding database schemas for all tenants...")
+                embed_all_tenants()
+                logger.info("Schema embedding completed successfully for all tenants")
+            except Exception as e:
+                logger.warning(f"Schema embedding failed: {e}", exc_info=True)
+                # Don't exit - app can still run without embeddings
+
+        threading.Thread(
+            target=_run_startup_seed_embed, daemon=True, name="startup-seed-embed"
+        ).start()
 
 
 if __name__ == "__main__":

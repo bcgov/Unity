@@ -178,6 +178,30 @@ class DatabaseManager:
             logger.exception(f"Error purging embeddings: {e}")
             raise
 
+    def has_embeddings(self, db_id: int,
+                       collection_name: str = "embedded_schema") -> bool:
+        """Check whether any embeddings exist yet for a given (db_id, collection_name).
+
+        Used by the /ready endpoint to distinguish "vector store already has
+        a usable set for this db" (safe to serve traffic — embed_schemas'
+        add-then-delete swap means a refresh in progress never empties it)
+        from "brand-new tenant, first-ever seed-embed hasn't finished yet"
+        (not safe to serve — there's nothing to answer schema queries with).
+        """
+        with self.get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT EXISTS (
+                        SELECT 1 FROM langchain_pg_embedding
+                        WHERE collection_id IN (
+                            SELECT uuid FROM langchain_pg_collection
+                            WHERE name = %s
+                        )
+                        AND cmetadata->>'db_id' = %s
+                    )
+                """, (collection_name, str(db_id)))
+                return bool(cur.fetchone()[0])
+
     def get_embedding_ids(self, db_id: int,
                           collection_name: str = "embedded_schema") -> List[str]:
         """Return the ids of all embeddings for a given (db_id, collection_name).
@@ -247,9 +271,21 @@ class DatabaseManager:
             try:
                 yield True
             finally:
-                with conn.cursor() as cur:
-                    cur.execute("SELECT pg_advisory_unlock(%s, %s)", (key1, key2))
-                conn.commit()
+                try:
+                    with conn.cursor() as cur:
+                        cur.execute("SELECT pg_advisory_unlock(%s, %s)", (key1, key2))
+                    conn.commit()
+                except psycopg.OperationalError:
+                    # Connection died while the caller's work was in flight (e.g.
+                    # an idle-reaping network hop between the app and an external
+                    # Postgres). Postgres releases session-level advisory locks
+                    # automatically when the session ends, so the lock is already
+                    # gone server-side — just log instead of failing the embed run.
+                    logger.warning(
+                        f"Could not release advisory lock ({key1}, {key2}); "
+                        f"connection was already dropped, lock is released with it",
+                        exc_info=True
+                    )
         finally:
             conn.close()
 
