@@ -88,6 +88,7 @@ $(function () {
                 if (templatesDataTable) {
                     setTimeout(() => {
                         templatesDataTable.columns.adjust().draw();
+                        resizeTemplatesScrollBody();
                     }, 0);
                 }
             });
@@ -103,6 +104,21 @@ $(function () {
                     tab.show();
                 }
             }, 100);
+        }
+    }
+
+    function resizeTemplatesScrollBody() {
+        if (!templatesDataTable) return;
+        const scrollResize = templatesDataTable.settings?.()[0]?._scrollResize;
+        if (scrollResize && typeof scrollResize._size === 'function') {
+            scrollResize._size();
+            return;
+        }
+
+        try {
+            templatesDataTable.columns.adjust();
+        } catch (e) {
+            console.debug('Templates table column adjust failed:', e.message);
         }
     }
 
