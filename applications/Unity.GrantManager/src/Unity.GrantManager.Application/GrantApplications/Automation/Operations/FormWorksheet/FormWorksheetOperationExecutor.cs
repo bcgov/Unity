@@ -20,6 +20,7 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
+using Volo.Abp.Guids;
 
 using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 
@@ -31,6 +32,8 @@ public sealed class FormWorksheetOperationExecutor(
     IWorksheetRepository worksheetRepository,
     IApplicationFormVersionMappingReadService mappingReadService,
     IFormWorksheetService aiService,
+    IGenerationReviewRepository generationReviewRepository,
+    IGuidGenerator guidGenerator,
     ILogger<FormWorksheetOperationExecutor> logger) : AIGenerationOperationExecutor, ITransientDependency
 {
     private static readonly JsonSerializerOptions CaseInsensitiveJsonOptions = new()
@@ -46,8 +49,22 @@ public sealed class FormWorksheetOperationExecutor(
             ?? throw new InvalidOperationException("Form worksheet generation requires an application form version.");
         var formVersion = await applicationFormVersionRepository.GetAsync(applicationFormVersionId);
         var applicationForm = await applicationFormRepository.GetAsync(formVersion.ApplicationFormId);
-        var worksheetName = AiWorksheetSuggestionName.Build(applicationForm.Id, formVersion.Id);
+        var baseWorksheetName = AiWorksheetSuggestionName.Build(applicationForm.Id, formVersion.Id);
+        var review = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(
+            AIGenerationOperations.FormWorksheet,
+            applicationFormVersionId);
+        var worksheetName = baseWorksheetName;
         var existingWorksheet = await worksheetRepository.GetByNameAsync(worksheetName, true);
+        if (existingWorksheet?.Published == true && review?.Status != GenerationReviewStatus.Active)
+        {
+            var suffix = review?.Sequence + 1 ?? 2;
+            do
+            {
+                worksheetName = $"{baseWorksheetName}-{suffix++}";
+                existingWorksheet = await worksheetRepository.GetByNameAsync(worksheetName, true);
+            }
+            while (existingWorksheet != null);
+        }
         if (existingWorksheet != null)
         {
             if (existingWorksheet.Published)
@@ -100,6 +117,18 @@ public sealed class FormWorksheetOperationExecutor(
             await worksheetRepository.InsertAsync(worksheet);
 
         }
+
+        if (review == null || review.Status != GenerationReviewStatus.Active)
+        {
+            review = new GenerationReview(
+                guidGenerator.Create(),
+                AIGenerationOperations.FormWorksheet,
+                applicationFormVersionId,
+                review?.Sequence + 1 ?? 1);
+            await generationReviewRepository.InsertAsync(review);
+        }
+
+        await generationReviewRepository.UpdateAsync(review, true);
 
         return existingWorksheet == null;
     }

@@ -57,9 +57,15 @@
         btnSave: $('#btn-save'),
         btnEdit: $('#btn-edit'),
         btnGenerate: $('#btn-generate'),
+        btnReviewMapping: $('#btn-review-mapping'),
         btnGenerateWorksheet: $('#btn-generate-worksheet'),
         btnGenerateScoresheet: $('#btn-generate-scoresheet'),
         btnReviewWorksheet: $('#btn-review-worksheet'),
+        btnPublishAssignWorksheets: $('#btn-publish-assign-worksheets'),
+        btnGenerateFinalMapping: $('#btn-generate-final-mapping'),
+        btnReviewFinalMapping: $('#btn-review-final-mapping'),
+        btnGenerateNextMapping: $('#btn-generate-next-mapping'),
+        btnGenerateNextWorksheets: $('#btn-generate-next-worksheets'),
         worksheetReviewModal: $('#aiWorksheetReviewModal'),
         mappingReviewModal: $('#aiMappingReviewModal'),
         mappingReviewFields: $('#aiMappingReviewFields'),
@@ -107,7 +113,8 @@
             url: `/api/app/application-form-version/mapping-review?formVersionId=${encodeURIComponent(formVersion)}`,
             type: 'GET'
         }).done(function (review) {
-            if (review?.phase === 'PublishAndAssignWorksheets' || review?.canGenerateFinalMapping) {
+            const action = getWorkflowAction(review);
+            if (action === 'GenerateFinalMapping') {
                 finalizeMappingReview();
                 return;
             }
@@ -139,7 +146,16 @@
         UIElements.btnSync.on('click', handleSync);
         UIElements.btnEdit.on('click', handleEdit);
         UIElements.btnGenerate.on('click', handleMappingAction);
+        UIElements.btnReviewMapping.on('click', function () {
+            loadMappingReview(true);
+        });
+        UIElements.btnReviewFinalMapping.on('click', function () {
+            loadMappingReview(true);
+        });
         UIElements.btnGenerateWorksheet.on('click', queueFormWorksheet);
+        UIElements.btnGenerateFinalMapping.on('click', finalizeMappingReview);
+        UIElements.btnGenerateNextMapping.on('click', queueFormMapping);
+        UIElements.btnGenerateNextWorksheets.on('click', queueFormWorksheet);
         UIElements.btnGenerateScoresheet.on('click', queueFormScoresheet);
         UIElements.btnReviewWorksheet.on('click', loadAiWorksheetReview);
         UIElements.btnAddMapping.on('click', addSelectedMappingSuggestion);
@@ -288,7 +304,8 @@
     function queueFormWorksheetCore(triggerButton = null) {
         const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
         const applicationId = String(document.getElementById('applicationFormId')?.value ?? '').trim();
-
+        const buttonElement = triggerButton?.currentTarget || triggerButton?.target || triggerButton || UIElements.btnGenerateWorksheet?.get?.(0);
+        const $button = $(buttonElement);
         const existingHtml = $button.html();
 
         if ($button.prop('disabled')) {
@@ -695,23 +712,12 @@
             .done(function (review) {
                 updateWorkflowActions(review);
                 if (!review || !review.pendingSuggestions || review.pendingSuggestions.length === 0) {
-                    UIElements.btnGenerate
-                        .attr('data-ai-pending', 'false')
-                        .find('span').last().text('Generate Mapping');
-                    UIElements.btnGenerateWorksheet.removeClass('d-none');
-                    UIElements.btnReviewWorksheet.toggleClass('d-none', !isAiWorksheetPending());
                     if (review?.phase === 'PublishAndAssignWorksheets') {
-                        UIElements.btnGenerate
-                            .find('span').last()
-                            .text(review.canGenerateFinalMapping ? 'Generate Mapping' : 'Publish & Assign Worksheets');
                         UIElements.btnGenerate.prop('disabled', !review.canGenerateFinalMapping);
                     }
                     return;
                 }
 
-                UIElements.btnGenerate
-                    .attr('data-ai-pending', 'true')
-                    .find('span').last().text('Review Mapping');
                 renderMappingReview(review);
                 if (showModal) {
                     UIElements.mappingReviewModal.modal('show');
@@ -720,22 +726,107 @@
     }
 
     function updateWorkflowActions(review) {
-        const phase = review?.phase;
-        const hasReview = !!review;
-        const mappingReview = phase === 'MappingReview' || phase === 0 || phase === '0';
-        const worksheetReview = phase === 'WorksheetReview' || phase === 1 || phase === '1';
-        const publishAssign = phase === 'PublishAndAssignWorksheets' || phase === 2 || phase === '2';
-        const idle = !hasReview || phase === 'Completed' || phase === 4 || phase === '4';
+        const action = getWorkflowAction(review);
+        const state = getWorkflowState(review);
+        const actions = (review?.availableActions || []).map(getActionName);
+        const isActionAvailable = name => actions.includes(name);
+        const isInitial = action === 'GenerateInitialMapping';
+        const isInitialReview = action === 'ReviewInitialMapping';
+        const isGenerateWorksheets = action === 'GenerateWorksheets';
+        const isReviewWorksheets = action === 'ReviewWorksheets';
+        const isPublishAssign = action === 'PublishAndAssignWorksheets';
+        const isFinalMapping = action === 'GenerateFinalMapping';
+        const isFinalReview = action === 'ReviewFinalMapping';
+        const isCompleted = state === 'Completed';
 
-        UIElements.btnGenerate.toggleClass('d-none', worksheetReview);
-        UIElements.btnGenerateWorksheet.toggleClass('d-none', !idle && !worksheetReview);
-        UIElements.btnReviewWorksheet.toggleClass('d-none', !worksheetReview || !isAiWorksheetPending());
-        UIElements.btnGenerate.prop('disabled', publishAssign && !review.canGenerateFinalMapping);
+        UIElements.btnGenerate.toggleClass('d-none', !isInitial);
+        UIElements.btnReviewMapping.toggleClass('d-none', !isInitialReview);
+        UIElements.btnGenerateWorksheet.toggleClass('d-none', !isGenerateWorksheets);
+        UIElements.btnReviewWorksheet.toggleClass('d-none', !isReviewWorksheets);
+        UIElements.btnPublishAssignWorksheets.toggleClass('d-none', !isPublishAssign);
+        UIElements.btnGenerateFinalMapping.toggleClass('d-none', !isFinalMapping);
+        UIElements.btnReviewFinalMapping.toggleClass('d-none', !isFinalReview);
+        UIElements.btnGenerateNextMapping.toggleClass('d-none', !isCompleted || !isActionAvailable('GenerateMapping'));
+        UIElements.btnGenerateNextWorksheets.toggleClass('d-none', !isCompleted || !isActionAvailable('GenerateWorksheetsNextCycle'));
+        UIElements.btnGenerate.prop('disabled', !review?.actionEnabled && isInitial);
+        UIElements.btnGenerateFinalMapping.prop('disabled', !review?.actionEnabled);
 
-        if (mappingReview) {
-            UIElements.btnGenerate.removeClass('d-none');
-            UIElements.btnGenerateWorksheet.addClass('d-none');
+        const aiButtons = [
+            UIElements.btnGenerate,
+            UIElements.btnReviewMapping,
+            UIElements.btnGenerateWorksheet,
+            UIElements.btnReviewWorksheet,
+            UIElements.btnPublishAssignWorksheets,
+            UIElements.btnGenerateFinalMapping,
+            UIElements.btnReviewFinalMapping,
+            UIElements.btnGenerateNextMapping,
+            UIElements.btnGenerateNextWorksheets
+        ];
+        aiButtons.forEach($button => $button.removeClass('btn-primary').addClass('btn-outline-primary'));
+        const $currentButton = {
+            GenerateInitialMapping: UIElements.btnGenerate,
+            ReviewInitialMapping: UIElements.btnReviewMapping,
+            GenerateWorksheets: UIElements.btnGenerateWorksheet,
+            ReviewWorksheets: UIElements.btnReviewWorksheet,
+            PublishAndAssignWorksheets: UIElements.btnPublishAssignWorksheets,
+            GenerateFinalMapping: UIElements.btnGenerateFinalMapping,
+            ReviewFinalMapping: UIElements.btnReviewFinalMapping
+        }[action];
+        $currentButton?.removeClass('btn-outline-primary').addClass('btn-primary');
+    }
+
+    function getWorkflowState(review) {
+        if (review?.state) {
+            return review.state;
         }
+        return getEnumName(review?.workflowState, {
+            10: 'GenerateInitialMapping',
+            20: 'ReviewInitialMapping',
+            30: 'GenerateWorksheets',
+            40: 'ReviewWorksheets',
+            50: 'PublishAndAssignWorksheets',
+            60: 'GenerateFinalMapping',
+            70: 'ReviewFinalMapping',
+            80: 'Completed'
+        });
+    }
+
+    function getWorkflowAction(review) {
+        if (review?.action) {
+            return review.action;
+        }
+        return getEnumName(review?.workflowAction, {
+            10: 'GenerateInitialMapping',
+            20: 'ReviewInitialMapping',
+            30: 'GenerateWorksheets',
+            40: 'ReviewWorksheets',
+            50: 'PublishAndAssignWorksheets',
+            60: 'GenerateFinalMapping',
+            70: 'ReviewFinalMapping',
+            80: 'GenerateMapping',
+            90: 'GenerateWorksheetsNextCycle'
+        });
+    }
+
+    function getActionName(action) {
+        return getEnumName(action, {
+            10: 'GenerateInitialMapping',
+            20: 'ReviewInitialMapping',
+            30: 'GenerateWorksheets',
+            40: 'ReviewWorksheets',
+            50: 'PublishAndAssignWorksheets',
+            60: 'GenerateFinalMapping',
+            70: 'ReviewFinalMapping',
+            80: 'GenerateMapping',
+            90: 'GenerateWorksheetsNextCycle'
+        });
+    }
+
+    function getEnumName(value, numericNames) {
+        if (typeof value === 'string') {
+            return value;
+        }
+        return numericNames[String(value)] || '';
     }
 
     function renderMappingReview(review) {
@@ -867,7 +958,6 @@
 
         globalThis.AIGenerationButtonState?.restore($button);
         $button.html(existingHtml).prop('disabled', false);
-        $button.find('span').last().text(isAiWorksheetPending() ? 'Review Worksheet' : 'Generate Worksheet');
     }
 
     function restoreGenerateScoresheetButton($button, existingHtml) {

@@ -118,7 +118,14 @@
                                 title="Generate the mapping for the current form version">
                             <span class="ai-button-content">
                                 <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
-                                <span>Generate Mapping</span>
+                                <span>Generate Initial Mapping</span>
+                            </span>
+                        </button>
+                        <button type="button" id="btn-review-mapping" class="btn ai-generate-btn unt-btn-outline-primary btn-outline-primary d-none"
+                                title="Review pending mapping suggestions">
+                            <span class="ai-button-content">
+                                <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
+                                <span>Review Initial Mapping</span>
                             </span>
                         </button>
                     }
@@ -129,14 +136,58 @@
                                 title="Generate worksheet suggestions for the current form version">
                             <span class="ai-button-content">
                                 <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
-                                <span>Generate Worksheet</span>
+                                <span>Generate Worksheets</span>
                             </span>
                         </button>
                         <button type="button" id="btn-review-worksheet" class="btn unt-btn-outline-primary btn-outline-primary d-none"
                                 title="Review pending worksheet suggestions">
                             <span class="ai-button-content">
                                 <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
-                                <span>Review Worksheet</span>
+                                <span>Review Worksheets</span>
+                            </span>
+                        </button>
+                    }
+                    @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormWorksheet.Generate))
+                    {
+                        <button type="button" id="btn-publish-assign-worksheets" class="btn ai-generate-btn unt-btn-outline-primary btn-outline-primary" disabled
+                                title="Publish and assign worksheet drafts before generating the final mapping">
+                            <span class="ai-button-content">
+                                <i class="unt-icon-sm fa-solid fa-link"></i>
+                                <span>Publish &amp; Assign Worksheets</span>
+                            </span>
+                        </button>
+                    }
+                    @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormMapping.Generate))
+                    {
+                        <button type="button" id="btn-generate-final-mapping" class="btn ai-generate-btn unt-btn-outline-primary btn-outline-primary d-none"
+                                title="Generate the final mapping for the current form version">
+                            <span class="ai-button-content">
+                                <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
+                                <span>Generate Final Mapping</span>
+                            </span>
+                        </button>
+                        <button type="button" id="btn-review-final-mapping" class="btn ai-generate-btn unt-btn-outline-primary btn-outline-primary d-none"
+                                title="Review final mapping suggestions">
+                            <span class="ai-button-content">
+                                <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
+                                <span>Review Final Mapping</span>
+                            </span>
+                        </button>
+                        <button type="button" id="btn-generate-next-mapping" class="btn ai-generate-btn unt-btn-outline-primary btn-outline-primary d-none"
+                                title="Start the next mapping review cycle">
+                            <span class="ai-button-content">
+                                <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
+                                <span>Generate Mapping</span>
+                            </span>
+                        </button>
+                    }
+                    @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormWorksheet.Generate))
+                    {
+                        <button type="button" id="btn-generate-next-worksheets" class="btn ai-generate-btn unt-btn-outline-primary btn-outline-primary d-none"
+                                title="Start the next worksheet review cycle">
+                            <span class="ai-button-content">
+                                <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
+                                <span>Generate Worksheets</span>
                             </span>
                         </button>
                     }

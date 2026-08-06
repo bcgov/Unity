@@ -11,6 +11,8 @@ public sealed class AIGenerationBackgroundJobArgs
 
     public Guid OperationId { get; set; }
 
+    public Guid? GenerationRequestId { get; set; }
+
     public Guid? TenantId { get; set; }
 
     public Guid? RequestedByUserId { get; set; }

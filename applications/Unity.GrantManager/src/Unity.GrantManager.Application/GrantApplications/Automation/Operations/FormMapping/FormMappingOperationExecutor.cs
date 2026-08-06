@@ -25,7 +25,7 @@ namespace Unity.GrantManager.GrantApplications.Automation.Operations.FormMapping
 public sealed class FormMappingOperationExecutor(
     IApplicationFormVersionMappingReadService mappingReadService,
     IFormMappingService aiService,
-    IFormMappingReviewRepository mappingReviewRepository,
+    IGenerationReviewRepository generationReviewRepository,
     IGuidGenerator guidGenerator) : AIGenerationOperationExecutor, ITransientDependency
 {
     public override string OperationType => AIGenerationOperations.FormMapping;
@@ -35,17 +35,29 @@ public sealed class FormMappingOperationExecutor(
         var applicationFormVersionId = args.ApplicationFormVersionId
             ?? throw new InvalidOperationException("Form mapping generation requires an application form version.");
         var readModel = await mappingReadService.GetAsync(applicationFormVersionId);
-        var review = await mappingReviewRepository.FindByFormVersionAsync(applicationFormVersionId);
+        var review = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(
+            AIGenerationOperations.FormMapping,
+            applicationFormVersionId);
+        IReadOnlyCollection<string> acceptedWorksheetFields = review == null
+            ? []
+            : JsonSerializer.Deserialize<FormMappingReviewPayload>(review.ReviewData)
+                ?.AcceptedWorksheetFields
+                ?? [];
         var response = await aiService.GenerateFormMappingAsync(new FormMappingRequest
         {
-            Data = FormMappingPromptDataBuilder.Build(readModel),
+            Data = FormMappingPromptDataBuilder.Build(readModel, acceptedWorksheetFields),
             PromptVersion = args.PromptVersion
         });
 
-        if (review == null)
+        if (review == null || review.Status != GenerationReviewStatus.Active)
         {
-            review = new FormMappingReview(guidGenerator.Create(), applicationFormVersionId);
-            await mappingReviewRepository.InsertAsync(review);
+            var sequence = review?.Sequence + 1 ?? 1;
+            review = new GenerationReview(
+                guidGenerator.Create(),
+                AIGenerationOperations.FormMapping,
+                applicationFormVersionId,
+                sequence);
+            await generationReviewRepository.InsertAsync(review);
         }
 
         var suggestions = FormMappingResponseMapper.ParseSuggestions(response.Mapping)
@@ -58,13 +70,12 @@ public sealed class FormMappingOperationExecutor(
                 Confidence = suggestion.Confidence
             })
             .ToList();
-        review.SetPendingMappingSuggestions(JsonSerializer.Serialize(suggestions));
-        if (review.Phase == FormMappingReviewPhase.Completed)
-        {
-            review.SetPhase(FormMappingReviewPhase.FinalMappingReview);
-        }
-
-        await mappingReviewRepository.UpdateAsync(review, true);
+        var payload = JsonSerializer.Deserialize<FormMappingReviewPayload>(review.ReviewData)
+            ?? new FormMappingReviewPayload();
+        payload.PendingSuggestions = suggestions;
+        review.SetReviewData(JsonSerializer.Serialize(payload));
+        review.SetStatus(GenerationReviewStatus.Active);
+        await generationReviewRepository.UpdateAsync(review, true);
 
         return true;
     }

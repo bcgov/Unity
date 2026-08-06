@@ -339,7 +339,7 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
             aiGenerationAppService,
             worksheetRepository ?? Substitute.For<IWorksheetRepository>(),
             customFieldRepository ?? Substitute.For<IRepository<CustomField, Guid>>(),
-            Substitute.For<IFormMappingReviewRepository>(),
+            Substitute.For<IGenerationReviewRepository>(),
             Substitute.For<Unity.Flex.Domain.WorksheetLinks.IWorksheetLinkRepository>());
         return service;
     }

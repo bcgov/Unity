@@ -8,3 +8,28 @@ public enum FormMappingReviewPhase
     FinalMappingReview = 3,
     Completed = 4
 }
+
+public enum FormGenerationWorkflowState
+{
+    GenerateInitialMapping = 10,
+    ReviewInitialMapping = 20,
+    GenerateWorksheets = 30,
+    ReviewWorksheets = 40,
+    PublishAndAssignWorksheets = 50,
+    GenerateFinalMapping = 60,
+    ReviewFinalMapping = 70,
+    Completed = 80
+}
+
+public enum FormGenerationWorkflowAction
+{
+    GenerateInitialMapping = 10,
+    ReviewInitialMapping = 20,
+    GenerateWorksheets = 30,
+    ReviewWorksheets = 40,
+    PublishAndAssignWorksheets = 50,
+    GenerateFinalMapping = 60,
+    ReviewFinalMapping = 70,
+    GenerateMapping = 80,
+    GenerateWorksheetsNextCycle = 90
+}
