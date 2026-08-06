@@ -2,7 +2,7 @@
 
 namespace Unity.Flex.Web.Views.Shared.Components.QuestionSelectListWidget
 {
-    public class QuestionSelectListViewModel
+    public class QuestionSelectListViewModel : RequiredFieldViewModel
     {
         public Guid QuestionId { get; set; }
         public bool IsDisabled { get; set; }

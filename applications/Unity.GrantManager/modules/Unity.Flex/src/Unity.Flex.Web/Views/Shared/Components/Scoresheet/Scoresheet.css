@@ -22,6 +22,30 @@
     color: #ffffff;
 }
 
+#previewScoresheetActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    position: sticky;
+    top: 0;
+    padding-right: 24px;
+    z-index: 999;
+}
+
+#previewScoresheetActions .floating-save-btn {
+    position: static;
+}
+
+#preview .accordion-button.section-unsaved,
+#scoresheet-preview .accordion-button.section-unsaved {
+    color: #FF0909;
+}
+
+#preview .preview-btn.section-unsaved:not(.collapsed),
+#scoresheet-preview .preview-btn.section-unsaved:not(.collapsed) {
+    color: #FFADAD;
+}
+
 #preview .preview-btn.collapsed::after {
     -webkit-filter: grayscale(1) invert(0); 
     filter: grayscale(1) invert(0); 

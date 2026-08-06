@@ -54,6 +54,28 @@ input {
     margin-top: 0;
 }
 
+#assessmentScoresWidgetArea .save-button-container {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    position: sticky;
+    top: 0;
+    padding-right: 24px;
+    z-index: 999;
+}
+
+#assessmentScoresWidgetArea .save-button-container .floating-save-btn {
+    position: static;
+}
+
+#assessment-scoresheet .accordion-button.section-unsaved {
+    color: #FF0909;
+}
+
+#assessment-scoresheet .preview-btn.section-unsaved:not(.collapsed) {
+    color: #FFADAD;
+}
+
 /* AI-generated answer styling (blue text) */
 .ai-generated-answer {
     color: #0066cc !important;
