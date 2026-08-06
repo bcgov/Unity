@@ -178,29 +178,31 @@ class DatabaseManager:
             logger.exception(f"Error purging embeddings: {e}")
             raise
 
-    def has_embeddings(self, db_id: int,
-                       collection_name: str = "embedded_schema") -> bool:
-        """Check whether any embeddings exist yet for a given (db_id, collection_name).
+    def has_embeddings_for_db_ids(self, db_ids, collection_name: str = "embedded_schema"):
+        """Return the subset of db_ids that already have at least one embedding.
 
         Used by the /ready endpoint to distinguish "vector store already has
         a usable set for this db" (safe to serve traffic — embed_schemas'
         add-then-delete swap means a refresh in progress never empties it)
         from "brand-new tenant, first-ever seed-embed hasn't finished yet"
         (not safe to serve — there's nothing to answer schema queries with).
+
+        Single query over all db_ids rather than one round-trip per db_id,
+        since /ready is polled repeatedly by the readiness probe.
         """
+        if not db_ids:
+            return set()
         with self.get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("""
-                    SELECT EXISTS (
-                        SELECT 1 FROM langchain_pg_embedding
-                        WHERE collection_id IN (
-                            SELECT uuid FROM langchain_pg_collection
-                            WHERE name = %s
-                        )
-                        AND cmetadata->>'db_id' = %s
+                    SELECT DISTINCT cmetadata->>'db_id' FROM langchain_pg_embedding
+                    WHERE collection_id IN (
+                        SELECT uuid FROM langchain_pg_collection
+                        WHERE name = %s
                     )
-                """, (collection_name, str(db_id)))
-                return bool(cur.fetchone()[0])
+                    AND cmetadata->>'db_id' = ANY(%s)
+                """, (collection_name, [str(db_id) for db_id in db_ids]))
+                return {int(row[0]) for row in cur.fetchall()}
 
     def get_embedding_ids(self, db_id: int,
                           collection_name: str = "embedded_schema") -> List[str]:

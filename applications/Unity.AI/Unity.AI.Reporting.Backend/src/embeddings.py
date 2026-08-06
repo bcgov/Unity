@@ -523,18 +523,16 @@ class EmbeddingManager:
 
         collection_name = config.app.collection_name
 
-        # --- Phase 1: cheap fingerprint check ---
-        if self._schema_unchanged(db_id, schema_types, collection_name,
-                                  tenant_id=tenant_id):
-            return
-
-        # --- Phase 2: full extract → add-then-delete swap ---
-        logger.info(f"Embedding schemas for db_id: {db_id}, types: {schema_types}")
-
-        # Serialize the swap per (db_id, collection). The capture-then-delete
-        # below is not safe under concurrent runs (overlapping CronJob + manual
-        # embed, etc.): each would capture the same old_ids and leave the
-        # other's fresh rows behind as duplicates. Skip if another run owns it.
+        # Serialize the whole operation (cheap check included) per (db_id,
+        # collection). Without --preload, each gunicorn worker independently
+        # runs the startup seed-embed, so this now routinely has concurrent
+        # callers; without the lock covering the cheap check too, every
+        # worker would redundantly hit Metabase for the same read-only check
+        # even when nothing downstream needs to write. The capture-then-delete
+        # swap in Phase 2 also isn't safe under concurrent runs (overlapping
+        # CronJob + manual embed, etc.): each would capture the same old_ids
+        # and leave the other's fresh rows behind as duplicates. Skip
+        # entirely if another run already owns it.
         with db_manager.embed_lock(db_id, collection_name) as acquired:
             if not acquired:
                 logger.info(
@@ -542,6 +540,14 @@ class EmbeddingManager:
                     f"skipping this concurrent run"
                 )
                 return
+
+            # --- Phase 1: cheap fingerprint check ---
+            if self._schema_unchanged(db_id, schema_types, collection_name,
+                                      tenant_id=tenant_id):
+                return
+
+            # --- Phase 2: full extract → add-then-delete swap ---
+            logger.info(f"Embedding schemas for db_id: {db_id}, types: {schema_types}")
 
             # Capture the existing row set BEFORE adding fresh embeddings so we
             # can delete them after the new rows are committed (atomic-ish swap).

@@ -285,14 +285,15 @@ def ready():
         embeddings_status = "healthy"
         try:
             db_ids = {cfg["db_id"] for cfg in config.tenant_mappings.values()}
-            pending = [
-                db_id for db_id in db_ids
-                if not db_manager.has_embeddings(db_id, config.app.collection_name)
-            ]
+            db_ids_with_embeddings = db_manager.has_embeddings_for_db_ids(
+                db_ids, config.app.collection_name
+            )
+            pending = sorted(db_ids - db_ids_with_embeddings)
             if pending:
-                embeddings_status = f"unhealthy: no embeddings yet for db_id(s) {sorted(pending)}"
-        except Exception:
-            embeddings_status = "unhealthy"
+                embeddings_status = f"unhealthy: no embeddings yet for db_id(s) {pending}"
+        except Exception as e:
+            logger.exception(f"Error checking embedding readiness: {e}")
+            embeddings_status = "unhealthy: error checking embeddings"
 
         # Determine overall readiness
         all_healthy = all(

@@ -183,15 +183,32 @@ if not _initialized and os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
     # than one tenant configured, that pushed startup past OpenShift's
     # liveness-probe grace period and put the pod in a permanent
     # CrashLoopBackOff. Backgrounding it lets the worker start serving
-    # immediately; embed_schemas' per-db advisory lock already makes
-    # concurrent embed attempts across the 2 worker processes safe (one
-    # wins, the other skips).
+    # immediately.
     if not _is_cli_command:
         def _run_startup_seed_embed():
             try:
-                logger.info("Embedding database schemas for all tenants...")
-                embed_all_tenants()
-                logger.info("Schema embedding completed successfully for all tenants")
+                # Only one worker should run the startup pass — each of
+                # gunicorn's workers independently reaches this code (no
+                # --preload, see entrypoint.sh), so without coordination all
+                # of them race through embed_all_tenants() together. The
+                # per-db_id lock inside embed_schemas only stops two workers
+                # touching the *same* db_id at the *same* instant; it can't
+                # stop a slower worker from redoing a db a faster worker
+                # already finished and released the lock for. A single
+                # pod-startup-scoped lock (reusing embed_lock's generic
+                # advisory-lock mechanism with a sentinel key unrelated to
+                # any real db_id/collection) makes exactly one worker the
+                # leader for this pass; the rest skip it entirely.
+                with db_manager.embed_lock(0, "__startup_seed_embed_leader__") as is_leader:
+                    if not is_leader:
+                        logger.info(
+                            "Another worker is already running the startup "
+                            "seed-embed; skipping"
+                        )
+                        return
+                    logger.info("Embedding database schemas for all tenants...")
+                    embed_all_tenants()
+                    logger.info("Schema embedding completed successfully for all tenants")
             except Exception as e:
                 logger.warning(f"Schema embedding failed: {e}", exc_info=True)
                 # Don't exit - app can still run without embeddings
