@@ -447,12 +447,12 @@ public class ApplicationLinksAppService(IRepository<ApplicationLink, Guid> repos
     }
 
     /// <summary>
-    /// Updates the intake with the specified <paramref name="id"/> using the provided <paramref name="input"/>.
+    /// Updates an application link with the specified <paramref name="id"/> using the provided <paramref name="input"/>.
     /// </summary>
-    /// <remarks>Use <see cref="UpdateLinkTypeAsync"/> to update the link type instead of deleting.</remarks>
-    /// <param name="id"></param>
-    /// <param name="input"></param>
-    /// <returns></returns>
+    /// <remarks>Remote updates are disabled; use <see cref="UpdateLinkTypeAsync"/> to change the link type.</remarks>
+     /// <param name="id">The unique identifier of the application link to update.</param>
+     /// <param name="input">The updated application link data.</param>
+     /// <returns>The updated application link.</returns>
     [RemoteService(false)]
     public override Task<ApplicationLinksDto> UpdateAsync(Guid id, ApplicationLinksDto input) => base.UpdateAsync(id, input);
 
