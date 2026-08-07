@@ -111,7 +111,9 @@ BEGIN
                                     CASE 
                                         WHEN um.type_path LIKE '%checkboxgroup%' THEN
                                             -- For checkbox group, parse the JSON array and extract the specific checkbox value
-                                            format('(CASE WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) IS NULL THEN NULL ELSE (SELECT (checkbox_elem->>''value'')::BOOLEAN FROM jsonb_array_elements(((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L))::jsonb) AS checkbox_elem WHERE checkbox_elem->>''key'' = %L) END) AS %I',
+                                            -- Guard against a stored value that is null/empty/not a JSON array (e.g. '') before attempting the ::jsonb cast
+                                            format('(CASE WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) IS NULL THEN NULL WHEN btrim((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) ~ ''^\[.*\]$'' THEN (SELECT (checkbox_elem->>''value'')::BOOLEAN FROM jsonb_array_elements(((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L))::jsonb) AS checkbox_elem WHERE checkbox_elem->>''key'' = %L) ELSE NULL END) AS %I',
+                                                split_part(um.clean_data_path, '->', 1), -- Field10 equivalent in datagrid
                                                 split_part(um.clean_data_path, '->', 1), -- Field10 equivalent in datagrid
                                                 split_part(um.clean_data_path, '->', 1), -- Field10 equivalent in datagrid
                                                 split_part(um.clean_data_path, '->', 2), -- check1/check2/etc
@@ -203,9 +205,11 @@ BEGIN
                                     CASE 
                                         WHEN um.type_path LIKE '%checkboxgroup%' THEN
                                             -- For checkbox group, parse the JSON array and extract the specific checkbox value
-                                            format('(CASE WHEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) IS NULL THEN NULL ELSE (SELECT (checkbox_elem->>''value'')::BOOLEAN FROM jsonb_array_elements(((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L))::jsonb) AS checkbox_elem WHERE checkbox_elem->>''key'' = %L) END) AS %I',
+                                            -- Guard against a stored value that is null/empty/not a JSON array (e.g. '') before attempting the ::jsonb cast
+                                            format('(CASE WHEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) IS NULL THEN NULL WHEN btrim((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) ~ ''^\[.*\]$'' THEN (SELECT (checkbox_elem->>''value'')::BOOLEAN FROM jsonb_array_elements(((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L))::jsonb) AS checkbox_elem WHERE checkbox_elem->>''key'' = %L) ELSE NULL END) AS %I',
                                                 split_part(COALESCE(um.clean_data_path, um.property_name), '->', 1), -- Field10
-                                                split_part(COALESCE(um.clean_data_path, um.property_name), '->', 1), -- Field10  
+                                                split_part(COALESCE(um.clean_data_path, um.property_name), '->', 1), -- Field10
+                                                split_part(COALESCE(um.clean_data_path, um.property_name), '->', 1), -- Field10
                                                 split_part(COALESCE(um.clean_data_path, um.property_name), '->', 2), -- check1/check2/etc
                                                 um.column_name)
                                         ELSE
