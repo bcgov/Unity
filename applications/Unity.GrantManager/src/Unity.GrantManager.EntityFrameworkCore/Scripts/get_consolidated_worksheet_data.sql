@@ -124,9 +124,9 @@ BEGIN
                                 WHEN 'checkbox' THEN
                                     CASE
                                         WHEN um.type_path LIKE '%checkboxgroup%' THEN
-                                            -- Guard against a stored value that is null/empty/not a JSON array (e.g. '') before attempting the ::jsonb cast
-                                            format('(CASE WHEN ((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) IS NULL THEN NULL WHEN btrim((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L)) ~ ''^\[.*\]$'' THEN (SELECT (checkbox_elem->>''value'')::BOOLEAN FROM jsonb_array_elements(((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L))::jsonb) AS checkbox_elem WHERE checkbox_elem->>''key'' = %L) ELSE NULL END) AS %I',
-                                                split_part(um.clean_data_path, '->', 1),
+                                            -- Validate via safe_to_jsonb + jsonb_typeof = 'array' rather than a bracket-shape regex, so a
+                                            -- null/empty/malformed stored value (e.g. '' or '[invalid]') never reaches the ::jsonb cast
+                                            format('(CASE WHEN jsonb_typeof("Reporting".safe_to_jsonb((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L))) = ''array'' THEN (SELECT (checkbox_elem->>''value'')::BOOLEAN FROM jsonb_array_elements("Reporting".safe_to_jsonb((SELECT cell_elem->>''value'' FROM jsonb_array_elements(dg_tbl.dg_data->''cells'') AS cell_elem WHERE cell_elem->>''key'' = %L))) AS checkbox_elem WHERE checkbox_elem->>''key'' = %L) ELSE NULL END) AS %I',
                                                 split_part(um.clean_data_path, '->', 1),
                                                 split_part(um.clean_data_path, '->', 1),
                                                 split_part(um.clean_data_path, '->', 2),
@@ -220,9 +220,9 @@ BEGIN
                                 WHEN 'checkbox' THEN
                                     CASE
                                         WHEN um.type_path LIKE '%checkboxgroup%' THEN
-                                            -- Guard against a stored value that is null/empty/not a JSON array (e.g. '') before attempting the ::jsonb cast
-                                            format('(CASE WHEN ((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) IS NULL THEN NULL WHEN btrim((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L)) ~ ''^\[.*\]$'' THEN (SELECT (checkbox_elem->>''value'')::BOOLEAN FROM jsonb_array_elements(((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L))::jsonb) AS checkbox_elem WHERE checkbox_elem->>''key'' = %L) ELSE NULL END) AS %I',
-                                                split_part(COALESCE(um.clean_data_path, um.property_name), '->', 1),
+                                            -- Validate via safe_to_jsonb + jsonb_typeof = 'array' rather than a bracket-shape regex, so a
+                                            -- null/empty/malformed stored value (e.g. '' or '[invalid]') never reaches the ::jsonb cast
+                                            format('(CASE WHEN jsonb_typeof("Reporting".safe_to_jsonb((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L))) = ''array'' THEN (SELECT (checkbox_elem->>''value'')::BOOLEAN FROM jsonb_array_elements("Reporting".safe_to_jsonb((SELECT v_elem->>''value'' FROM jsonb_array_elements(wi."CurrentValue"->''values'') AS v_elem WHERE v_elem->>''key'' = %L))) AS checkbox_elem WHERE checkbox_elem->>''key'' = %L) ELSE NULL END) AS %I',
                                                 split_part(COALESCE(um.clean_data_path, um.property_name), '->', 1),
                                                 split_part(COALESCE(um.clean_data_path, um.property_name), '->', 1),
                                                 split_part(COALESCE(um.clean_data_path, um.property_name), '->', 2),

@@ -44,7 +44,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                             CASE
                                 WHEN elem->>'key' IN (SELECT field_key FROM checkboxgroup_fields)
                                      AND elem->>'value' IS NOT NULL
-                                     AND btrim(elem->>'value') !~ '^\[.*\]$'
+                                     AND jsonb_typeof(""Reporting"".safe_to_jsonb(elem->>'value')) IS DISTINCT FROM 'array'
                                 THEN jsonb_set(elem, '{value}', 'null'::jsonb)
                                 ELSE elem
                             END
@@ -57,7 +57,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     FROM jsonb_array_elements(wi.""CurrentValue""->'values') AS elem
                     WHERE elem->>'key' IN (SELECT field_key FROM checkboxgroup_fields)
                       AND elem->>'value' IS NOT NULL
-                      AND btrim(elem->>'value') !~ '^\[.*\]$'
+                      AND jsonb_typeof(""Reporting"".safe_to_jsonb(elem->>'value')) IS DISTINCT FROM 'array'
                 );");
         }
 
