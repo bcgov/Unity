@@ -67,15 +67,15 @@
                     <abp-card-body class="pb-0 mb-0">
                         <abp-row class="m-0 p-1">
                             <abp-column size="_4" >
-                                <label for="@Model.BatchNumberDisplay" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:BatchNumberName"]</label>
-                                <input type="text" class="form-control" value="@Model.BatchNumberDisplay" disabled />
+                                <label for="BatchNumberDisplay" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:BatchNumberName"]</label>
+                                <input type="text" id="BatchNumberDisplay" class="form-control" value="@Model.BatchNumberDisplay" disabled />
                             </abp-column>
                             <abp-column size="_4">
-                                <label for="@Model.ApplicationPaymentRequestForm?.Count" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:NumberPayment"]</label>
+                                <label for="ApplicationCount" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:NumberPayment"]</label>
                                 <input type="text" class="form-control" id="ApplicationCount" value="@Model.ApplicationPaymentRequestForm?.Count" disabled />
                             </abp-column>
                             <abp-column size="_4">
-                                <label for="@Model.TotalAmount" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:TotalAmount"]</label>
+                                <label for="TotalAmount" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:TotalAmount"]</label>
                                 <input type="text" class="form-control unity-currency-input" id="TotalAmount" value="@Model.TotalAmount" disabled />
                             </abp-column>
                         </abp-row>
