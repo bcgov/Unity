@@ -1,16 +1,16 @@
-using Microsoft.Extensions.Localization;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.Flex.Domain.Scoresheets;
+using Microsoft.Extensions.Localization;
 using Unity.AI.Localization;
+using Unity.AI.Operations;
+using Unity.Flex.Domain.Scoresheets;
 using Unity.GrantManager.Applications;
-using Unity.Modules.Shared.Correlation;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Linq;
 
-namespace Unity.AI.Operations;
+namespace Unity.GrantManager.GrantApplications.Automation;
 
 public class AIGenerationPrerequisiteValidator(
     IApplicationRepository applicationRepository,
