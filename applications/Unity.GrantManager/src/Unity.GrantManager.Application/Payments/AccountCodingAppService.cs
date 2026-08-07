@@ -28,18 +28,6 @@ public class AccountCodingAppService :
     /// <summary>
     /// Deletes the account coding with the specified <paramref name="id"/>.
     /// </summary>
-    /// <remarks>
-    /// <list type="number">
-    ///     <item>
-    ///         <term>API Restriction</term>
-    ///         <description>Has been removed from API registration</description>
-    ///     </item>
-    ///     <item>
-    ///         <term>Permission Policy</term>
-    ///         <description>Requires <see cref="UnitySettingManagementPermissions.ConfigurePayments" /></description>
-    ///     </item>
-    /// </list>
-    /// </remarks>
     /// <param name="id">The unique identifier of the account coding to delete.</param>
     /// <returns>A task that represents the asynchronous delete operation.</returns>
     [RemoteService(false)]
