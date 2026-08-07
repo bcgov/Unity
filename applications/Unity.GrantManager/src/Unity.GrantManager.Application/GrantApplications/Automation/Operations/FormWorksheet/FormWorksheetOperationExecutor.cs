@@ -55,30 +55,12 @@ public sealed class FormWorksheetOperationExecutor(
             applicationFormVersionId);
         var worksheetName = baseWorksheetName;
         var existingWorksheet = await worksheetRepository.GetByNameAsync(worksheetName, true);
-        if (existingWorksheet?.Published == true && review?.Status != GenerationReviewStatus.Active)
-        {
-            var suffix = review?.Sequence + 1 ?? 2;
-            do
-            {
-                worksheetName = $"{baseWorksheetName}-{suffix++}";
-                existingWorksheet = await worksheetRepository.GetByNameAsync(worksheetName, true);
-            }
-            while (existingWorksheet != null);
-        }
+        EnsureCanonicalSuggestionWorksheetState(existingWorksheet);
         if (existingWorksheet != null)
         {
-            if (existingWorksheet.Published)
-            {
-                logger.LogWarning(
-                    "A published worksheet already uses AI suggestion name {WorksheetName}; leaving it unchanged.",
-                    worksheetName);
-            }
-            else
-            {
-                logger.LogInformation(
-                    "An AI suggestion worksheet is pending review for form version {FormVersionId}; leaving it unchanged.",
-                    formVersion.Id);
-            }
+            logger.LogInformation(
+                "An AI suggestion worksheet is pending review for form version {FormVersionId}; leaving it unchanged.",
+                formVersion.Id);
         }
         else
         {
@@ -131,6 +113,15 @@ public sealed class FormWorksheetOperationExecutor(
         await generationReviewRepository.UpdateAsync(review, true);
 
         return existingWorksheet == null;
+    }
+
+    internal static void EnsureCanonicalSuggestionWorksheetState(Worksheet? worksheet)
+    {
+        if (worksheet?.Published == true)
+        {
+            throw new InvalidOperationException(
+                "The canonical AI suggestion worksheet is published and cannot be regenerated.");
+        }
     }
 
     internal static List<AiWorksheetFieldSuggestion> ParseWorksheetDefinition(string json)

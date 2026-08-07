@@ -28,9 +28,10 @@ namespace Unity.GrantManager.ApplicationForms
         Task CreateAiWorksheetDraftAsync(Guid formVersionId, CreateAiWorksheetDraftDto input);
         Task DiscardAiWorksheetSuggestionsAsync(Guid formVersionId);
         Task<FormMappingReviewDto> GetMappingReviewAsync(Guid formVersionId);
-        Task AcceptMappingSuggestionAsync(Guid formVersionId, Guid suggestionId);
+        Task<AcceptMappingSuggestionsResultDto> AcceptMappingSuggestionsAsync(Guid formVersionId, AcceptMappingSuggestionsDto input);
         Task DiscardMappingSuggestionsAsync(Guid formVersionId);
         Task SetMappingReviewPhaseAsync(Guid formVersionId, FormMappingReviewPhase phase);
         Task FinalizeMappingReviewAsync(Guid formVersionId);
+        Task ResetAiFlowAsync(Guid formVersionId);
     }
 }

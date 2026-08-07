@@ -3,7 +3,7 @@
  * across every .ai-generate-btn so all AI surfaces behave consistently.
  */
 (function () {
-    const BUTTON_SELECTOR = '.ai-generate-btn';
+    const BUTTON_SELECTOR = '.ai-generate-btn:not([data-ai-review-action="true"])';
     const ATTR_LABEL = 'data-original-label';
     const ATTR_COOLDOWN = 'data-ai-cooldown-active';
     const ATTR_CHECKING = 'data-ai-cooldown-checking';

@@ -70,11 +70,28 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
     }
 
     [Fact]
-    public void FormMappingPromptData_Should_Include_Accepted_Worksheet_Fields()
+    public void FormMappingPromptData_Should_Include_Linked_Worksheet_Fields()
     {
-        var promptData = FormMappingPromptDataBuilder.Build(
-            new ApplicationFormMappingReadModelDto(),
-            ["custom_project_name"]);
+        var promptData = FormMappingPromptDataBuilder.Build(new ApplicationFormMappingReadModelDto
+        {
+            Worksheets =
+            [
+                new WorksheetMappingFieldsDto
+                {
+                    WorksheetName = "Project details",
+                    Fields =
+                    [
+                        new MappingFieldDto
+                        {
+                            Name = "custom_project_name",
+                            Label = "Project name",
+                            Type = "String",
+                            IsCustom = true
+                        }
+                    ]
+                }
+            ]
+        });
 
         promptData.GetProperty("unityData")
             .GetProperty("customFields")[0]

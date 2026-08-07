@@ -1,0 +1,39 @@
+@using Unity.GrantManager.Web.Pages.ApplicationForms
+@model AiSuggestionReviewModalModel
+
+<div class="modal fade" id="@Model.ModalId" tabindex="-1" aria-labelledby="@Model.ModalLabelId" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content ai-suggestion-review">
+            <div class="ai-suggestion-review__panel">
+                <div class="modal-header ai-suggestion-review__header">
+                    <h5 class="modal-title" id="@Model.ModalLabelId">@Model.Title</h5>
+                </div>
+                <div class="modal-body ai-suggestion-review__body">
+                    @if (!string.IsNullOrWhiteSpace(Model.TitleInputId))
+                    {
+                        <div class="ai-suggestion-review__title-group">
+                            <label for="@Model.TitleInputId" class="form-label">@Model.TitleInputLabel</label>
+                            <input id="@Model.TitleInputId" class="form-control" type="text" required maxlength="256"
+                                   placeholder="@Model.TitleInputPlaceholder" autocomplete="off" />
+                        </div>
+                    }
+                    <div class="ai-suggestion-review__list">
+                        <div class="ai-suggestion-review__table-header">
+                            <span>@Model.SourceColumnTitle</span><span aria-hidden="true"></span><span>@Model.TargetColumnTitle</span>
+                            <div class="form-check unt-form-switch form-switch mb-0 ai-suggestion-review__select-all">
+                                <input id="@Model.SelectAllId" class="form-check-input" type="checkbox" aria-label="Include all suggestions" />
+                            </div>
+                        </div>
+                        <div id="@Model.FieldsId"></div>
+                        <div id="@Model.EmptyId" class="ai-suggestion-review__empty d-none">@Model.EmptyText</div>
+                    </div>
+                </div>
+                <div class="modal-footer ai-suggestion-review__footer">
+                    <button type="button" id="@Model.PrimaryActionId" class="btn unt-btn-primary btn-primary" disabled="@Model.PrimaryActionDisabled">@Model.PrimaryActionText</button>
+                    <button type="button" id="@Model.ReviewLaterActionId" class="btn unt-btn-outline-primary btn-outline-primary" data-bs-dismiss="modal">Review later</button>
+                    <button type="button" id="@Model.DiscardActionId" class="btn btn-outline-danger ai-suggestion-review__discard">Discard remaining</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

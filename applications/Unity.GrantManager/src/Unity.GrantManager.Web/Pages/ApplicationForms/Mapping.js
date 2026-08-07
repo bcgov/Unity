@@ -66,10 +66,12 @@
         btnReviewFinalMapping: $('#btn-review-final-mapping'),
         btnGenerateNextMapping: $('#btn-generate-next-mapping'),
         btnGenerateNextWorksheets: $('#btn-generate-next-worksheets'),
+        btnRestartAiFlow: $('#btn-restart-ai-flow'),
         worksheetReviewModal: $('#aiWorksheetReviewModal'),
         mappingReviewModal: $('#aiMappingReviewModal'),
         mappingReviewFields: $('#aiMappingReviewFields'),
         mappingReviewEmpty: $('#aiMappingReviewEmpty'),
+        mappingReviewSelectAll: $('#aiMappingReviewSelectAll'),
         btnAddMapping: $('#btn-add-ai-mapping'),
         btnReviewLaterMapping: $('#btn-review-later-ai-mapping'),
         btnDiscardMapping: $('#btn-discard-ai-mapping'),
@@ -107,22 +109,6 @@
         loadMappingReview(false);
     }
 
-    function handleMappingAction(event) {
-        const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
-        abp.ajax({
-            url: `/api/app/application-form-version/mapping-review?formVersionId=${encodeURIComponent(formVersion)}`,
-            type: 'GET'
-        }).done(function (review) {
-            const action = getWorkflowAction(review);
-            if (action === 'GenerateFinalMapping') {
-                finalizeMappingReview();
-                return;
-            }
-
-            queueFormMapping(event);
-        });
-    }
-
     function setupTooltips() {
         $('[data-toggle="tooltip"]').tooltip({
             placement: 'top'
@@ -131,7 +117,7 @@
 
     function startWorksheetPhase(callback) {
         const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
-        abp.ajax({
+        return abp.ajax({
             url: `/api/app/application-form-version/mapping-review-phase?formVersionId=${encodeURIComponent(formVersion)}&phase=WorksheetReview`,
             type: 'POST'
         }).done(callback).fail(function () {
@@ -145,7 +131,7 @@
         UIElements.btnSaveMapping.on('click', handleSaveEditMapping);
         UIElements.btnSync.on('click', handleSync);
         UIElements.btnEdit.on('click', handleEdit);
-        UIElements.btnGenerate.on('click', handleMappingAction);
+        UIElements.btnGenerate.on('click', queueFormMapping);
         UIElements.btnReviewMapping.on('click', function () {
             loadMappingReview(true);
         });
@@ -156,6 +142,7 @@
         UIElements.btnGenerateFinalMapping.on('click', finalizeMappingReview);
         UIElements.btnGenerateNextMapping.on('click', queueFormMapping);
         UIElements.btnGenerateNextWorksheets.on('click', queueFormWorksheet);
+        UIElements.btnRestartAiFlow.on('click', restartAiFlow);
         UIElements.btnGenerateScoresheet.on('click', queueFormScoresheet);
         UIElements.btnReviewWorksheet.on('click', loadAiWorksheetReview);
         UIElements.btnAddMapping.on('click', addSelectedMappingSuggestion);
@@ -163,9 +150,8 @@
             UIElements.mappingReviewModal.modal('hide');
         });
         UIElements.btnDiscardMapping.on('click', discardMappingSuggestions);
-        UIElements.mappingReviewFields.on('click', 'button[data-suggestion-id]', function () {
-            acceptMappingSuggestion($(this).attr('data-suggestion-id'));
-        });
+        UIElements.mappingReviewFields.on('change', 'input[data-suggestion-id]', updateMappingReviewSelection);
+        UIElements.mappingReviewSelectAll.on('change', toggleMappingReviewAll);
         UIElements.btnCreateWorksheetDraft.on('click', createAiWorksheetDraft);
         UIElements.btnDiscardWorksheet.on('click', discardAiWorksheetSuggestions);
         UIElements.worksheetReviewFields.on('change', 'input[data-field-id]', updateAiWorksheetReview);
@@ -465,6 +451,7 @@
                     return;
                 }
 
+                setAiWorksheetPending(true);
                 renderAiWorksheetReview(worksheet);
                 UIElements.worksheetReviewModal.modal('show');
             })
@@ -479,17 +466,17 @@
         const fields = worksheet.fields || [];
         fields.forEach(function (field) {
             const fieldId = `ai-worksheet-field-${field.id}`;
-            const $row = $('<div class="ai-worksheet-review__field"></div>');
-            $('<span class="ai-worksheet-review__field-name"></span>')
+            const $row = $('<div class="ai-suggestion-review__field"></div>');
+            $('<span class="ai-suggestion-review__field-name"></span>')
                 .attr('data-field-role', 'Source')
                 .text(field.key || '—')
                 .appendTo($row);
-            $('<i class="fa-solid fa-arrow-right ai-worksheet-review__arrow" aria-hidden="true"></i>').appendTo($row);
-            $('<span class="ai-worksheet-review__field-name"></span>')
+            $('<i class="fa-solid fa-arrow-right ai-suggestion-review__arrow" aria-hidden="true"></i>').appendTo($row);
+            $('<span class="ai-suggestion-review__field-name"></span>')
                 .attr('data-field-role', 'Worksheet')
                 .text(field.label || field.key || '—')
                 .appendTo($row);
-            const $switch = $('<div class="ai-worksheet-review__switch"></div>');
+            const $switch = $('<div class="ai-suggestion-review__switch"></div>');
             const $switchContainer = $('<div class="form-check unt-form-switch form-switch mb-0"></div>');
             $('<input class="form-check-input" type="checkbox">')
                 .attr('id', fieldId)
@@ -705,7 +692,7 @@
             return;
         }
 
-        abp.ajax({
+        return abp.ajax({
             url: `/api/app/application-form-version/mapping-review?formVersionId=${encodeURIComponent(formVersion)}`,
             type: 'GET'
         })
@@ -751,28 +738,6 @@
         UIElements.btnGenerate.prop('disabled', !review?.actionEnabled && isInitial);
         UIElements.btnGenerateFinalMapping.prop('disabled', !review?.actionEnabled);
 
-        const aiButtons = [
-            UIElements.btnGenerate,
-            UIElements.btnReviewMapping,
-            UIElements.btnGenerateWorksheet,
-            UIElements.btnReviewWorksheet,
-            UIElements.btnPublishAssignWorksheets,
-            UIElements.btnGenerateFinalMapping,
-            UIElements.btnReviewFinalMapping,
-            UIElements.btnGenerateNextMapping,
-            UIElements.btnGenerateNextWorksheets
-        ];
-        aiButtons.forEach($button => $button.removeClass('btn-primary').addClass('btn-outline-primary'));
-        const $currentButton = {
-            GenerateInitialMapping: UIElements.btnGenerate,
-            ReviewInitialMapping: UIElements.btnReviewMapping,
-            GenerateWorksheets: UIElements.btnGenerateWorksheet,
-            ReviewWorksheets: UIElements.btnReviewWorksheet,
-            PublishAndAssignWorksheets: UIElements.btnPublishAssignWorksheets,
-            GenerateFinalMapping: UIElements.btnGenerateFinalMapping,
-            ReviewFinalMapping: UIElements.btnReviewFinalMapping
-        }[action];
-        $currentButton?.removeClass('btn-outline-primary').addClass('btn-primary');
     }
 
     function getWorkflowState(review) {
@@ -832,46 +797,90 @@
     function renderMappingReview(review) {
         UIElements.mappingReviewFields.empty();
         (review.pendingSuggestions || []).forEach(function (suggestion) {
-            const $row = $('<div class="d-flex align-items-center gap-2 mb-2"></div>');
-            $('<input type="checkbox" class="form-check-input" checked>')
+            const fieldId = `ai-mapping-field-${suggestion.id}`;
+            const $row = $('<div class="ai-suggestion-review__field"></div>');
+            $('<span class="ai-suggestion-review__field-name"></span>')
+                .attr('data-field-role', 'CHEFS field')
+                .text(suggestion.sourceField || '—')
+                .appendTo($row);
+            $('<i class="fa-solid fa-arrow-right ai-suggestion-review__arrow" aria-hidden="true"></i>').appendTo($row);
+            $('<span class="ai-suggestion-review__field-name"></span>')
+                .attr('data-field-role', 'Unity core field')
+                .text(suggestion.targetField || '—')
+                .appendTo($row);
+            const $switch = $('<div class="ai-suggestion-review__switch"></div>');
+            const $switchContainer = $('<div class="form-check unt-form-switch form-switch mb-0"></div>');
+            $('<input class="form-check-input" type="checkbox">')
+                .attr('id', fieldId)
                 .attr('data-suggestion-id', suggestion.id)
-                .appendTo($row);
-            $('<span class="flex-grow-1"></span>')
-                .text(`${suggestion.targetField || '—'} → ${suggestion.sourceField || '—'}`)
-                .appendTo($row);
-            $('<button type="button" class="btn btn-sm btn-outline-primary">Add to map</button>')
-                .attr('data-suggestion-id', suggestion.id)
-                .appendTo($row);
+                .attr('aria-label', `Include ${suggestion.sourceField || 'CHEFS field'} mapping suggestion`)
+                .prop('checked', false)
+                .appendTo($switchContainer);
+            $switchContainer.appendTo($switch);
+            $switch.appendTo($row);
             $row.appendTo(UIElements.mappingReviewFields);
         });
         UIElements.mappingReviewEmpty.toggleClass('d-none', (review.pendingSuggestions || []).length > 0);
         UIElements.mappingReviewFields.attr('data-phase', review.phase || '');
+        updateMappingReviewSelection();
     }
 
-    function addSelectedMappingSuggestion() {
-        const suggestionId = UIElements.mappingReviewFields
-            .find('input[data-suggestion-id]:checked')
-            .first()
-            .attr('data-suggestion-id');
-        if (suggestionId) {
-            acceptMappingSuggestion(suggestionId);
-        }
+    function updateMappingReviewSelection() {
+        const $suggestions = UIElements.mappingReviewFields.find('input[data-suggestion-id]');
+        const selectedCount = $suggestions.filter(':checked').length;
+        UIElements.mappingReviewSelectAll
+            .prop('checked', $suggestions.length > 0 && selectedCount === $suggestions.length)
+            .prop('indeterminate', false);
+        UIElements.btnAddMapping.prop('disabled', selectedCount === 0);
     }
 
-    function acceptMappingSuggestion(suggestionId) {
+    function toggleMappingReviewAll() {
+        UIElements.mappingReviewFields
+            .find('input[data-suggestion-id]')
+            .prop('checked', UIElements.mappingReviewSelectAll.prop('checked'));
+        updateMappingReviewSelection();
+    }
+
+    async function addSelectedMappingSuggestion() {
         const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
-        abp.ajax({
-            url: `/api/app/application-form-version/accept-mapping-suggestion?formVersionId=${encodeURIComponent(formVersion)}&suggestionId=${encodeURIComponent(suggestionId)}`,
-            type: 'POST'
-        })
-            .done(function () {
-                loadMappingReview(true);
-                refreshMappingTable();
-                checkMappingReviewComplete();
-            })
-            .fail(function () {
-                abp.notify.error('', 'Unable to add the mapping suggestion.');
+        const suggestionIds = UIElements.mappingReviewFields
+            .find('input[data-suggestion-id]:checked')
+            .map(function () { return $(this).attr('data-suggestion-id'); })
+            .get();
+
+        if (!validateGuid(formVersion) || suggestionIds.length === 0) {
+            return;
+        }
+
+        UIElements.btnAddMapping.prop('disabled', true);
+        let result;
+        try {
+            result = await abp.ajax({
+                url: `/api/app/application-form-version/accept-mapping-suggestions?formVersionId=${encodeURIComponent(formVersion)}`,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ suggestionIds })
             });
+        } catch (error) {
+            abp.notify.error(
+                '',
+                error?.responseJSON?.error?.message || 'Unable to add the selected mapping suggestions.');
+            updateMappingReviewSelection();
+            return;
+        }
+
+        existingMappingString = result.submissionHeaderMapping;
+        $('#existingMapping').val(existingMappingString);
+        handleReset();
+
+        try {
+            await loadMappingReview(true);
+            checkMappingReviewComplete();
+        } catch (error) {
+            console.error('Unable to refresh mapping suggestions after they were added.', error);
+        } finally {
+            updateMappingReviewSelection();
+        }
     }
 
     function discardMappingSuggestions() {
@@ -882,7 +891,7 @@
                     return;
                 }
 
-                abp.ajax({
+                return abp.ajax({
                     url: `/api/app/application-form-version/discard-mapping-suggestions?formVersionId=${encodeURIComponent(formVersion)}`,
                     type: 'POST'
                 })
@@ -900,34 +909,48 @@
             });
     }
 
-    function offerWorksheetGeneration() {
-        if (isAiWorksheetPending()) {
-            loadAiWorksheetReview();
+    function restartAiFlow() {
+        const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
+        if (!validateGuid(formVersion)) {
             return;
         }
 
-        abp.message.confirm('Mapping review is complete. Proceed to worksheet generation?', 'Continue')
+        abp.message.confirm(
+            'This permanently deletes AI workflow progress, AI-created worksheets and assignments, and all saved mappings for this form version.',
+            'Restart AI Flow?')
             .then(function (confirmed) {
                 if (!confirmed) {
                     return;
                 }
 
-                const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
-                abp.ajax({
-                    url: `/api/app/application-form-version/mapping-review-phase?formVersionId=${encodeURIComponent(formVersion)}&phase=WorksheetReview`,
+                UIElements.btnRestartAiFlow.prop('disabled', true);
+                return abp.ajax({
+                    url: `/api/app/application-form-version/reset-ai-flow?formVersionId=${encodeURIComponent(formVersion)}`,
                     type: 'POST'
                 }).done(function () {
-                    queueFormWorksheet(UIElements.btnGenerateWorksheet.get(0));
+                    globalThis.location.reload();
+                }).fail(function (error) {
+                    abp.notify.error('', error?.responseJSON?.error?.message || 'Unable to restart the AI flow.');
+                }).always(function () {
+                    UIElements.btnRestartAiFlow.prop('disabled', false);
                 });
             });
     }
 
-    function refreshMappingTable() {
-        if (!dataTable) {
+    function offerWorksheetGeneration() {
+        const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
+        if (!validateGuid(formVersion)) {
             return;
         }
 
-        dataTable.ajax.reload(null, false);
+        return abp.ajax({
+            url: `/api/app/application-form-version/mapping-review-phase?formVersionId=${encodeURIComponent(formVersion)}&phase=WorksheetReview`,
+            type: 'POST'
+        }).done(function () {
+            loadMappingReview(false);
+        }).fail(function (error) {
+            abp.notify.error('', error?.responseJSON?.error?.message || 'Unable to continue to worksheet generation.');
+        });
     }
 
     function refreshMappingAfterGeneration(applicationId, formVersion = null) {
@@ -1025,7 +1048,7 @@
             // If this really is a GUID, validate it defensively
             if (!/^[0-9a-fA-F-]{36}$/.test(chefsFormVersionGuid)) {
                 abp.notify.error("The CHEFS Form Version ID is not in a GUID format");
-                return; // or handle error                
+                return; // or handle error
             }
 
             url.searchParams.set("ChefsFormVersionGuid", chefsFormVersionGuid);
@@ -1316,7 +1339,7 @@
 
 
     function handleMappingTabClick() {
-        loadMappingReview(true);
+        loadMappingReview(false);
         // Refresh the hidden field with the latest form version ID
         let refreshAvailableWorkSheets = UIElements.refreshAvailableWorksheetsHidden.val();
         if (refreshAvailableWorkSheets && refreshAvailableWorkSheets !== "undefined") {
@@ -1330,6 +1353,8 @@
             UIElements.refreshAvailableWorksheetsHidden.val(data.chefsFormVersionId);
         }
     );
+
+
 });
 
 

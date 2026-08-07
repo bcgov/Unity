@@ -38,14 +38,9 @@ public sealed class FormMappingOperationExecutor(
         var review = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(
             AIGenerationOperations.FormMapping,
             applicationFormVersionId);
-        IReadOnlyCollection<string> acceptedWorksheetFields = review == null
-            ? []
-            : JsonSerializer.Deserialize<FormMappingReviewPayload>(review.ReviewData)
-                ?.AcceptedWorksheetFields
-                ?? [];
         var response = await aiService.GenerateFormMappingAsync(new FormMappingRequest
         {
-            Data = FormMappingPromptDataBuilder.Build(readModel, acceptedWorksheetFields),
+            Data = FormMappingPromptDataBuilder.Build(readModel),
             PromptVersion = args.PromptVersion
         });
 

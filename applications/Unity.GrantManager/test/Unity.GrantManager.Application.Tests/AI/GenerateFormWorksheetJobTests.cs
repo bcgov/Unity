@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Shouldly;
 using Unity.Flex.Worksheets;
+using Unity.Flex.Domain.Worksheets;
 using Unity.GrantManager.GrantApplications.Automation.Operations.FormWorksheet;
 using Xunit;
 
@@ -65,5 +66,17 @@ public class FormWorksheetOperationExecutorTests
         var field = worksheet.Sections.Single().Fields.Single();
         field.Order.ShouldBe(1u);
         field.Definition.ShouldContain("maxLength");
+    }
+
+    [Fact]
+    public void EnsureCanonicalSuggestionWorksheetState_Should_Reject_Published_Worksheet()
+    {
+        var worksheet = new Worksheet(Guid.NewGuid(), "ai-form-worksheet", "AI Worksheet");
+        worksheet.SetPublished(true);
+
+        var exception = Should.Throw<InvalidOperationException>(() =>
+            FormWorksheetOperationExecutor.EnsureCanonicalSuggestionWorksheetState(worksheet));
+
+        exception.Message.ShouldContain("canonical AI suggestion worksheet is published");
     }
 }

@@ -31,6 +31,17 @@
     margin-bottom: 0.5rem;
 }
 
+.ai-button-content {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.ai-generate-btn {
+    height: 2.25rem;
+}
+
     .configuration-action-bar h5 {
         font-weight: 700;
     }
@@ -56,7 +67,7 @@
         float: left;
         width: 40%;
     }
-  
+
   /* Clear floats after the columns */
   .row:after {
     content: "";
@@ -178,7 +189,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
     color: var(--bc-colors-blue-background, #38598A);
 }
 
-.toast-top-center { 
+.toast-top-center {
     top: 220px;
     margin: 0 auto;
     left: 50%;
@@ -320,7 +331,7 @@ textarea {
 .input-button-wrapper {
     display: flex;
     flex-direction: row;
-    flex-wrap: nowrap;    
+    flex-wrap: nowrap;
     justify-content: flex-start;
     align-items: center;
     gap: 5px;
@@ -370,11 +381,11 @@ textarea {
     background: #fff;
 }
 
-.application-forms-table-content .table.dataTable { 
+.application-forms-table-content .table.dataTable {
     margin-top:0px !important;
 }
 .note{
-     font-size: 0.75rem; 
+     font-size: 0.75rem;
 }
 .direct-approval {
     font-size: 0.9rem;
