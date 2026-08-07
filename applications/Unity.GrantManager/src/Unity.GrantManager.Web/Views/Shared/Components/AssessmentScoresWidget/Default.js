@@ -634,6 +634,31 @@ function validateRequiredSelectField(selectField, errorMessage) {
     return true;
 }
 
+// questionType -> how to look up and validate that question's answer field.
+// Number (1) is always validated (range checks apply even when not
+// required); the other types are only validated when marked required.
+const QUESTION_TYPE_FIELD_CONFIG = {
+    1: { idPrefix: 'answer-number-', validate: validateNumericField, requiredOnly: false },
+    2: { idPrefix: 'answer-text-', validate: validateTextField, requiredOnly: true },
+    14: { idPrefix: 'answer-textarea-', validate: validateTextField, requiredOnly: true },
+    6: { idPrefix: 'answer-yesno-', validate: validateRequiredSelectField, requiredOnly: true },
+    12: { idPrefix: 'answer-selectlist-', validate: validateRequiredSelectField, requiredOnly: true },
+};
+
+function validateAnswerField(answer, errorMessage) {
+    const config = QUESTION_TYPE_FIELD_CONFIG[answer.questionType];
+    if (!config) {
+        return undefined;
+    }
+
+    const field = document.getElementById(config.idPrefix + answer.questionId);
+    if (config.requiredOnly && !field.required) {
+        return undefined;
+    }
+
+    return config.validate(field, errorMessage);
+}
+
 function handleInputChange(questionId, inputFieldPrefix) {
     const sectionFormId = $(`#${inputFieldPrefix + questionId}`)
         .closest('form')
@@ -663,69 +688,21 @@ function handleInputChange(questionId, inputFieldPrefix) {
 
     //Handle values and objects comparison
     for (let x = 0; x < assessmentAnswersArr.length; x++) {
-        const qId = assessmentAnswersArr[x].questionId;
+        const answer = assessmentAnswersArr[x];
         const errorMessage = document.getElementById(
-            'error-message-' + qId
+            'error-message-' + answer.questionId
         );
 
-        if (assessmentAnswersArr[x].questionType === 1) {
-            let inputNumberField = document.getElementById(
-                'answer-number-' + qId
-            );
-            assessmentAnswersArr[x].isValid = validateNumericField(
-                inputNumberField,
-                errorMessage
-            );
-        } else if (assessmentAnswersArr[x].questionType === 2) {
-            let inputTextField = document.getElementById(
-                'answer-text-' + qId
-            );
-
-            if (inputTextField.required) {
-                assessmentAnswersArr[x].isValid = validateTextField(
-                    inputTextField,
-                    errorMessage
-                );
-            }
-        } else if (assessmentAnswersArr[x].questionType === 14) {
-            let inputTextAreaField = document.getElementById(
-                'answer-textarea-' + qId
-            );
-
-            if (inputTextAreaField.required) {
-                assessmentAnswersArr[x].isValid = validateTextField(
-                    inputTextAreaField,
-                    errorMessage
-                );
-            }
-        } else if (assessmentAnswersArr[x].questionType === 6) {
-            let inputYesNoField = document.getElementById(
-                'answer-yesno-' + qId
-            );
-
-            if (inputYesNoField.required) {
-                assessmentAnswersArr[x].isValid = validateRequiredSelectField(
-                    inputYesNoField,
-                    errorMessage
-                );
-            }
-        } else if (assessmentAnswersArr[x].questionType === 12) {
-            let inputSelectListField = document.getElementById(
-                'answer-selectlist-' + qId
-            );
-
-            if (inputSelectListField.required) {
-                assessmentAnswersArr[x].isValid = validateRequiredSelectField(
-                    inputSelectListField,
-                    errorMessage
-                );
-            }
+        // buildFormData() defaults isValid to true for both the current and
+        // original answer objects; only overwrite it when validation actually
+        // ran, so a skipped (optional, unvalidated) field keeps that shared
+        // default instead of comparing true against undefined below.
+        const isValid = validateAnswerField(answer, errorMessage);
+        if (typeof isValid === 'boolean') {
+            answer.isValid = isValid;
         }
-        assessmentAnswersArr[x].isSame = compareObj(
-            assessmentAnswersArr[x],
-            origAnswersArr[x]
-        );
-        updateQuestionHeaderStyle(qId, !assessmentAnswersArr[x].isSame);
+        answer.isSame = compareObj(answer, origAnswersArr[x]);
+        updateQuestionHeaderStyle(answer.questionId, !answer.isSame);
     }
 
     //Handle section dirty/valid state
