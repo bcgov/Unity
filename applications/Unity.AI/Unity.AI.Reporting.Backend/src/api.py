@@ -273,13 +273,34 @@ def ready():
             config.app.debug  # This will fail if config is broken
         except Exception:
             config_status = "unhealthy"
-            
+
+        # Check that every configured tenant db has at least some embeddings.
+        # The startup seed-embed runs in the background (see app.py) so the
+        # process itself comes up immediately — but a brand-new tenant with
+        # no embeddings yet genuinely can't answer schema queries until its
+        # first embed finishes. Existing tenants stay "healthy" throughout a
+        # refresh: embed_schemas adds new embeddings before deleting the old
+        # ones, so there's always a usable set to serve from except on a
+        # tenant's very first-ever embed.
+        embeddings_status = "healthy"
+        try:
+            db_ids = {cfg["db_id"] for cfg in config.tenant_mappings.values()}
+            db_ids_with_embeddings = db_manager.has_embeddings_for_db_ids(
+                db_ids, config.app.collection_name
+            )
+            pending = sorted(db_ids - db_ids_with_embeddings)
+            if pending:
+                embeddings_status = f"unhealthy: no embeddings yet for db_id(s) {pending}"
+        except Exception as e:
+            logger.exception(f"Error checking embedding readiness: {e}")
+            embeddings_status = "unhealthy: error checking embeddings"
+
         # Determine overall readiness
         all_healthy = all(
-            status == "healthy" 
-            for status in [db_status, jwt_status, config_status]
+            status == "healthy"
+            for status in [db_status, jwt_status, config_status, embeddings_status]
         )
-        
+
         response_data = {
             "status": "ready" if all_healthy else "not ready",
             "service": "unity-ai-backend",
@@ -287,10 +308,11 @@ def ready():
             "checks": {
                 "database": db_status,
                 "jwt_auth": jwt_status,
-                "configuration": config_status
+                "configuration": config_status,
+                "embeddings": embeddings_status
             }
         }
-        
+
         return jsonify(response_data), 200 if all_healthy else 503
         
     except Exception:
@@ -769,7 +791,7 @@ async def _async_ask(data, user_data):
     logger.info(f"Creating Metabase card with SQL length: {len(sql)}")
 
     card_id, card_data = metabase_client.create_card(
-        sql, db_id, collection_id, metadata['title'],
+        sql, db_id, collection_id, metadata.get('title', 'Untitled'),
         tenant_id=tenant_id,
         visualization_settings=_build_viz_settings(metadata.get("visualization_options", [])),
     )
