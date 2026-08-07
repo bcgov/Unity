@@ -26,7 +26,7 @@ RETURNS TRIGGER AS $$
 DECLARE
     month_num integer;
 BEGIN
-    month_num := CASE NEW.""FiscalMonth""
+    month_num := CASE LEFT(NEW."FiscalMonth", 3)
         WHEN 'Jan' THEN 1 WHEN 'Feb' THEN 2 WHEN 'Mar' THEN 3
         WHEN 'Apr' THEN 4 WHEN 'May' THEN 5 WHEN 'Jun' THEN 6
         WHEN 'Jul' THEN 7 WHEN 'Aug' THEN 8 WHEN 'Sep' THEN 9
