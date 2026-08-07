@@ -324,6 +324,7 @@
             populateRegisteredFields('', '', '', '', '');
         });
     }
+
     function calculateApplicantFiscalYearEnd($container) {
         const monthVal = $container.find('#ApplicantOrganizationInfo_FiscalMonth').val();
         const dayVal = $container.find('#ApplicantOrganizationInfo_FiscalDay').val();
