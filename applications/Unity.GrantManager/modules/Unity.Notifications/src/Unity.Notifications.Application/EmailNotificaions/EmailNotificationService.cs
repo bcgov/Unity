@@ -4,12 +4,13 @@ using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Unity.AspNetCore.Mvc.UI.Theme.UX2.Renderers;
 using Unity.GrantManager.Notifications;
 using Unity.Notifications.Emails;
 using Unity.Notifications.Permissions;
@@ -32,7 +33,8 @@ public class EmailNotificationService(
         ISettingManager settingManager,
         IFeatureChecker featureChecker,
         IConfiguration configuration,
-        IWebHostEnvironment webHostEnvironment) : ApplicationService, IEmailNotificationService
+        IWebHostEnvironment webHostEnvironment,
+        IMarkdownRenderer markdownRenderer) : ApplicationService, IEmailNotificationService
 {
 
     public async Task<Guid> InitializeDraftAsync(Guid applicationId)
@@ -251,7 +253,7 @@ public class EmailNotificationService(
     /// Renders the comment notification email template with the provided parameters.
     /// </summary>
     /// <param name="currentUserText">Display name of the user who mentioned</param>
-    /// <param name="commentBody">The comment body text (may contain HTML)</param>
+    /// <param name="commentBody">The comment body text</param>
     /// <param name="commentLink">The URL link to view the comment</param>
     /// <returns>Rendered HTML email body</returns>
     private async Task<string> RenderCommentNotificationTemplateAsync(string currentUserText, string commentBody, string commentLink)
@@ -259,11 +261,16 @@ public class EmailNotificationService(
         // Load template from embedded resources or file system
         string templateContent = await LoadEmailTemplateAsync("CommentNotification");
 
+        var encodedCurrentUserText = WebUtility.HtmlEncode(currentUserText);
+        var encodedCommentBody = markdownRenderer.Render(commentBody);
+        var encodedCommentLink = WebUtility.HtmlEncode(commentLink);
+
         // Replace placeholders with actual values
         var renderedTemplate = templateContent
-            .Replace("@Model.CurrentUserText", currentUserText)
-            .Replace("@Html.Raw(Model.CommentBody)", commentBody)
-            .Replace("@Model.CommentLink", commentLink);
+            .Replace("@Model.CurrentUserText", encodedCurrentUserText)
+            .Replace("@Html.Raw(Model.CommentBody)", encodedCommentBody)
+            .Replace("@Model.CommentLink", encodedCommentLink)
+            .Replace("@model dynamic", string.Empty);
 
         return renderedTemplate;
     }

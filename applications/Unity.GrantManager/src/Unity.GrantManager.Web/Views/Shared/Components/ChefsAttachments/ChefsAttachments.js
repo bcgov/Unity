@@ -306,7 +306,7 @@ $(function () {
         return (
             '<div class="ai-summary-row">' +
             '<div class="ai-summary-content">' +
-            '<strong><i class="unt-icon-sm fa-solid fa-wand-sparkles"></i> Summary:</strong> ' +
+            '<strong><i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i> Summary:</strong> ' +
             '<p class="mt-2">' +
             safeSummary +
             '</p>' +
@@ -462,7 +462,7 @@ function getChefsFileDownloadColumn() {
                 ' chefs-file-name="' + escapeHtmlAttribute(fileName) + '"' +
                 ' chefs-display-name="' + escapeHtmlAttribute(displayName) + '"' +
                 ' onclick="previewChefsFile(event)">' +
-                '<i class="fa fa-eye p-0"></i><span>Preview Attachment</span>' +
+                '<i class="fa-regular fa-eye p-0"></i><span>Preview Attachment</span>' +
                 '</button>' +
                 '<button class="btn fullWidth" style="margin:10px" type="button"' +
                 ' chefs-submission-id="' + escapeHtmlAttribute(submissionId) + '"' +

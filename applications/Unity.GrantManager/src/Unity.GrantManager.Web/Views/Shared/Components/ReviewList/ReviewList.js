@@ -450,11 +450,11 @@ function unityWorkflowButtonText(dt, button, config) {
 }
 
 function cloneButtonText(dt, button, config) {
-    return '<span class="ai-button-content"><i class="unt-icon-sm fa-solid fa-wand-sparkles"></i><span>' + actionButtonLabelMap.Clone + '</span></span>';
+    return '<span class="ai-button-content"><i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i><span>' + actionButtonLabelMap.Clone + '</span></span>';
 }
 
 function generateAiButtonText(dt, button, config) {
-    return '<span class="ai-button-content"><i class="unt-icon-sm fa-solid fa-wand-sparkles"></i><span>Generate</span></span>';
+    return '<span class="ai-button-content"><i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i><span>Generate</span></span>';
 }
 
 function unityWorkflowButtonAction(e, dt, button, config) {

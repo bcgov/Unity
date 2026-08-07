@@ -1,9 +1,9 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Caching.Distributed;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -198,5 +198,9 @@ namespace Unity.GrantManager.Integrations.Endpoints
             // Clear the key set itself
             await _cache.RemoveAsync(keySetKey);
         }
+
+        [RemoteService(false)]
+        public override Task DeleteAsync(Guid id)
+            => base.DeleteAsync(id);
     }
 }
