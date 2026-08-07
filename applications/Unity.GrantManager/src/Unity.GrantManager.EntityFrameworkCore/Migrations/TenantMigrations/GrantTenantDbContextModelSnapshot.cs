@@ -845,9 +845,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("FiscalMonth")
                         .HasColumnType("text");
 
-                    b.Property<DateOnly?>("FiscalYearEnd")
-                        .HasColumnType("date");
-
                     b.Property<string>("FundingHistoryComments")
                         .HasColumnType("text");
 
