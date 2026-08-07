@@ -96,6 +96,9 @@ namespace Unity.GrantManager.EntityFrameworkCore
                     .WithOne(s => s.Applicant)
                     .HasForeignKey(x => x.ApplicantId)
                     .OnDelete(DeleteBehavior.NoAction);
+
+                b.Property(x => x.FiscalYearEnd)
+                    .HasColumnType("date");
             });
 
             modelBuilder.Entity<Intake>(b =>
