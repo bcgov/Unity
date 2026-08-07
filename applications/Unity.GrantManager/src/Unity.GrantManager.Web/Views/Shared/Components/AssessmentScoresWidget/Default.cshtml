@@ -21,8 +21,8 @@
     <input type="hidden" id="AssessmentScoresheetSchemaJson" value='@JsonSerializer.Serialize(Model.Scoresheet)' />
     <div class="container-fluid px-3" id="assessment-scoresheet">
         <div class="save-button-container">
-            <button type="button" class="btn unt-btn-link btn-link floating-save-btn" id="scoresheetDiscardAllBtn" disabled>Discard Changes</button>
-            <button type="button" class="btn unt-btn-primary btn-primary floating-save-btn" id="scoresheetSaveAllBtn" disabled>Save Changes</button>
+            <button type="button" class="btn unt-btn-link btn-link floating-save-btn" id="scoresheetDiscardAllBtn" disabled><i class="fl fl-undo"></i> Discard Changes</button>
+            <button type="button" class="btn unt-btn-primary btn-primary floating-save-btn" id="scoresheetSaveAllBtn" disabled><i class="fl fl-save"></i> Save Changes</button>
         </div>
         @if (Model.Scoresheet.Sections.Any())
         {
@@ -80,7 +80,7 @@
 
                                                         <div class="accordion-item">
                                                             <h2 class="accordion-header" id="question-heading-@question.Id">
-                                                                <button class="accordion-button collapsed unt-accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#question-collapse-@question.Id" aria-expanded="true" aria-controls="question-collapse-@question.Id">
+                                                                <button class="accordion-button collapsed unt-accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#question-collapse-@question.Id" aria-expanded="true" aria-controls="question-collapse-@question.Id" data-question-id="@question.Id">
                                                                     @sectionNumber.@questionNumber @Html.SanitizeRaw(question.Label)
                                                                     @if (question.Definition?.ConvertDefinition(question.Type)?.GetIsRequired() == true)
                                                                     {

@@ -217,7 +217,7 @@ $(function () {
                 accordionHTML += `
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="nested-panel${hashCode(item.innerText)}">
-                            <button class="accordion-button question-btn collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#nested-collapse${hashCode(item.innerText)}" aria-expanded="true" aria-controls="nested-collapse${hashCode(item.innerText)}">
+                            <button class="accordion-button question-btn collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#nested-collapse${hashCode(item.innerText)}" aria-expanded="true" aria-controls="nested-collapse${hashCode(item.innerText)}" data-question-id="${item.dataset.id}">
                                 ${sectionNumber}.${questionNumber}  ${sanitizeHtml(item.dataset.questionlabel)} ${item.dataset.required == 'True' ? '*' : ''}
                             </button>
                         </h2>
@@ -240,8 +240,8 @@ $(function () {
 
         previewDiv.innerHTML = `
             <div class="save-button-container" id="previewScoresheetActions">
-                <button type="button" class="btn unt-btn-link btn-link floating-save-btn" id="previewDiscardAllBtn" disabled onclick="discardAllPreviewSections()">Discard Changes</button>
-                <button type="button" class="btn unt-btn-primary btn-primary floating-save-btn" id="previewSaveAllBtn" disabled onclick="savePreviewAllSections()">Save Changes</button>
+                <button type="button" class="btn unt-btn-link btn-link floating-save-btn" id="previewDiscardAllBtn" disabled onclick="discardAllPreviewSections()"><i class="fl fl-undo"></i> Discard Changes</button>
+                <button type="button" class="btn unt-btn-primary btn-primary floating-save-btn" id="previewSaveAllBtn" disabled onclick="savePreviewAllSections()"><i class="fl fl-save"></i> Save Changes</button>
             </div>
             <div class="accordion unt-accordion" id="accordion-preview">
                 <div class="d-flex justify-content-end m-3">
@@ -563,6 +563,8 @@ function savePreviewAllSections() {
             if (el) {
                 el.dataset.originalValue = el.value;
             }
+            const questionId = fieldId.split('-').slice(2).join('-');
+            updateQuestionHeaderStyle(questionId, false);
         });
 
         previewSectionState[sectionId] = { isDirty: false, isValid: true };
@@ -599,6 +601,8 @@ function discardAllPreviewSections() {
             if (errorMessage) {
                 errorMessage.textContent = '';
             }
+
+            updateQuestionHeaderStyle(questionId, false);
         });
 
         previewSectionState[sectionId] = { isDirty: false, isValid: true };

@@ -137,6 +137,19 @@ function updateSectionHeaderStyle(sectionId, isDirty) {
     }
 }
 
+// Selector is data-question-id based (rather than a #question-heading-{id}
+// id lookup) so this same function works unmodified on the Scoresheet
+// configuration preview too, which uses a different DOM id scheme for its
+// question headers but stamps the same data-question-id attribute.
+function updateQuestionHeaderStyle(questionId, isDirty) {
+    const headerButton = document.querySelector(
+        '.accordion-button[data-question-id="' + questionId + '"]'
+    );
+    if (headerButton) {
+        headerButton.classList.toggle('question-unsaved', isDirty);
+    }
+}
+
 function refreshBulkScoresheetActionButtons() {
     const states = Object.values(scoresheetSectionState);
     const anyDirty = states.some((s) => s.isDirty);
@@ -221,6 +234,8 @@ function saveAllScoresheetSections() {
                         el.dataset.originalIsHumanConfirmed =
                             el.dataset.isHumanConfirmed;
                     }
+                    const questionId = fieldId.split('-').slice(2).join('-');
+                    updateQuestionHeaderStyle(questionId, false);
                 });
 
                 dirtySectionIds.forEach((sectionId) => {
@@ -454,6 +469,8 @@ function discardAllScoresheetSections() {
                 ) {
                     restoreAiIndicators(el);
                 }
+
+                updateQuestionHeaderStyle(questionId, false);
             });
 
             scoresheetSectionState[sectionId] = {
@@ -708,6 +725,7 @@ function handleInputChange(questionId, inputFieldPrefix) {
             assessmentAnswersArr[x],
             origAnswersArr[x]
         );
+        updateQuestionHeaderStyle(qId, !assessmentAnswersArr[x].isSame);
     }
 
     //Handle section dirty/valid state
