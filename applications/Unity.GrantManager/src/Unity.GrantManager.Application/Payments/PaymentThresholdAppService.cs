@@ -24,7 +24,6 @@ public class PaymentThresholdAppService :
         : base(repository)
     {
         CreatePolicyName = UnitySettingManagementPermissions.ConfigurePayments;
-        UpdatePolicyName = UnitySettingManagementPermissions.ConfigurePayments;
         DeletePolicyName = UnitySettingManagementPermissions.ConfigurePayments;
     }
 
