@@ -54,7 +54,8 @@
 
 #preview .preview-btn.section-unsaved:not(.collapsed),
 #scoresheet-preview .preview-btn.section-unsaved:not(.collapsed) {
-    color: #FFADAD;
+    color: #FF0909;
+    background-color: #FEEAEA;
 }
 
 #preview .accordion-button.question-unsaved,
@@ -64,7 +65,8 @@
 
 #preview .accordion-button.question-unsaved:not(.collapsed),
 #scoresheet-preview .accordion-button.question-unsaved:not(.collapsed) {
-    color: #FFADAD;
+    color: #FF0909;
+    background-color: #FEEAEA;
 }
 
 #preview .preview-btn.collapsed::after {

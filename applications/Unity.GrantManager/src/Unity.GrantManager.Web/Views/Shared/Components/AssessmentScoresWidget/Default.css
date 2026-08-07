@@ -84,7 +84,8 @@ input {
 }
 
 #assessment-scoresheet .preview-btn.section-unsaved:not(.collapsed) {
-    color: #FFADAD;
+    color: #FF0909;
+    background-color: #FEEAEA;
 }
 
 #assessment-scoresheet .accordion-button.question-unsaved {
@@ -92,7 +93,8 @@ input {
 }
 
 #assessment-scoresheet .accordion-button.question-unsaved:not(.collapsed) {
-    color: #FFADAD;
+    color: #FF0909;
+    background-color: #FEEAEA;
 }
 
 /* AI-generated answer styling (blue text) */
