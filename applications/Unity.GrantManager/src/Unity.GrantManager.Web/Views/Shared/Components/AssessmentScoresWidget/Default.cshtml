@@ -20,6 +20,10 @@
     <abp-input type="hidden" id="AssessmentId" asp-for="@Model.AssessmentId" />
     <input type="hidden" id="AssessmentScoresheetSchemaJson" value='@JsonSerializer.Serialize(Model.Scoresheet)' />
     <div class="container-fluid px-3" id="assessment-scoresheet">
+        <div class="save-button-container">
+            <button type="button" class="btn unt-btn-link btn-link floating-save-btn" id="scoresheetDiscardAllBtn" disabled><i class="fl fl-undo"></i> Discard Changes</button>
+            <button type="button" class="btn unt-btn-primary btn-primary floating-save-btn" id="scoresheetSaveAllBtn" disabled><i class="fl fl-save"></i> Save Changes</button>
+        </div>
         @if (Model.Scoresheet.Sections.Any())
         {
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 pt-4 pb-2">
@@ -29,7 +33,7 @@
                     {
                         <button type="button" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn" id="regenerateAiScoresheetBtn" onclick="queueApplicationScoring()" data-ai-cooldown-checking="1" data-ai-rate-limit-disabled="1" disabled>
                             <span class="ai-button-content">
-                                <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
+                                <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
                                 <span>Generate</span>
                             </span>
                         </button>
@@ -76,7 +80,7 @@
 
                                                         <div class="accordion-item">
                                                             <h2 class="accordion-header" id="question-heading-@question.Id">
-                                                                <button class="accordion-button collapsed unt-accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#question-collapse-@question.Id" aria-expanded="true" aria-controls="question-collapse-@question.Id">
+                                                                <button class="accordion-button collapsed unt-accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#question-collapse-@question.Id" aria-expanded="true" aria-controls="question-collapse-@question.Id" data-question-id="@question.Id">
                                                                     @sectionNumber.@questionNumber @Html.SanitizeRaw(question.Label)
                                                                     @if (question.Definition?.ConvertDefinition(question.Type)?.GetIsRequired() == true)
                                                                     {
@@ -85,7 +89,7 @@
                                                                     @if (question.AIConfidence.HasValue && question.AIConfidence.Value < 85)
                                                                     {
                                                                         <span class="low-confidence-badge ms-2" title="AI confidence is @question.AIConfidence.Value.ToString("F0")%.">
-                                                                           <i class="fa-solid fa-wand-sparkles"></i> <i class="fas fa-exclamation-triangle"></i> @question.AIConfidence.Value.ToString("F0")%
+                                                                           <i class="fa-solid fa-wand-magic-sparkles"></i> <i class="fa-solid fa-triangle-exclamation"></i> @question.AIConfidence.Value.ToString("F0")%
                                                                         </span>
                                                                     }
                                                                 </button>
@@ -189,10 +193,6 @@
                                                     <p>No questions available.</p>
                                                 }
                                             </div>
-                                        </div>
-                                        <div class="btn-group mx-3 py-2">
-                                            <button type="button" class="btn unt-btn-primary btn-primary mx-1 mb-2" disabled form="section-form-@sec.Id" id="scoresheet-section-save-@sec.Id" data-section-id="@sec.Id" data-form-id="section-form-@sec.Id">Save Changes</button>
-                                            <button type="button" class="btn unt-btn-link btn-link mx-2 mb-2" disabled form="section-form-@sec.Id" id="scoresheet-section-discard-@sec.Id" data-section-id="@sec.Id" data-form-id="section-form-@sec.Id">Discard Changes</button>
                                         </div>
                                     </div>
                                 </form>

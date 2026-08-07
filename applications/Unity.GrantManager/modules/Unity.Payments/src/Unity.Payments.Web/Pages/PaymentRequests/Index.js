@@ -753,7 +753,7 @@ $(function () {
             index: columnIndex,
             render: function (data, _, row) {
                 if (row.errorSummary != null && row.errorSummary !== '') {
-                    return `${data} <i class="fa fa-flag error-icon" data-toggle="tooltip" title="${row.errorSummary}"></i>`;
+                    return `${data} <i class="fa-solid fa-flag error-icon" data-toggle="tooltip" title="${row.errorSummary}"></i>`;
                 } else {
                     return data;
                 }
