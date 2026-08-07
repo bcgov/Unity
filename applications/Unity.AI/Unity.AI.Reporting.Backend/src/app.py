@@ -146,11 +146,6 @@ Commands:
         run_server()
 
 
-# Initialize database when module is loaded (once per gunicorn worker
-# process, or once for `flask run`). Use an environment variable to guard
-# against Werkzeug's debug-reloader re-running this in its watcher process.
-_initialized = os.environ.get('_APP_INITIALIZED')
-
 # True when launched as `python app.py <cli-command>` rather than as the server.
 # Under gunicorn sys.argv[1] is a gunicorn flag, so this stays False — the
 # server still runs its startup seed-embed. CLI commands (the OpenShift
@@ -161,10 +156,27 @@ _is_cli_command = (
     and sys.argv[1] in {"embed", "g", "embed-all", "help"}
 )
 
-if not _initialized and os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
-    # Mark as initialized before doing anything to prevent race conditions
-    os.environ['_APP_INITIALIZED'] = '1'
+# True only for Werkzeug's reloader *watcher* process: `python app.py` with
+# no args, debug/reload enabled, about to spawn the child that actually
+# serves. Werkzeug sets WERKZEUG_RUN_MAIN=true in that child's environment —
+# the watcher itself never has it set, and neither does a gunicorn worker
+# (gunicorn imports this module directly as `app:app`, so __name__ is never
+# "__main__" and no reloader is ever involved) or a plain `flask run`
+# without reload. WERKZEUG_RUN_MAIN being unset can't by itself distinguish
+# "gunicorn / no reload" from "the watcher" — both look identical — so this
+# also requires __name__ == "__main__" and debug=True, which only the
+# watcher path hits. The watcher must skip entirely: it never serves any
+# requests, and because the child inherits the watcher's os.environ, having
+# the watcher run this previously left the child (the one actually serving)
+# thinking initialization was already done and skipping it.
+_is_reloader_watcher = (
+    not _is_cli_command
+    and __name__ == "__main__"
+    and config.app.debug
+    and os.environ.get('WERKZEUG_RUN_MAIN') != 'true'
+)
 
+if not _is_reloader_watcher:
     try:
         logger.info("Initializing database schema...")
         db_manager.init_tables()

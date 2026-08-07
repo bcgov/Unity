@@ -277,12 +277,16 @@ class DatabaseManager:
                     with conn.cursor() as cur:
                         cur.execute("SELECT pg_advisory_unlock(%s, %s)", (key1, key2))
                     conn.commit()
-                except psycopg.OperationalError:
+                except (psycopg.OperationalError, psycopg.InterfaceError):
                     # Connection died while the caller's work was in flight (e.g.
                     # an idle-reaping network hop between the app and an external
                     # Postgres). Postgres releases session-level advisory locks
                     # automatically when the session ends, so the lock is already
                     # gone server-side — just log instead of failing the embed run.
+                    # psycopg raises OperationalError when the connection is
+                    # outright closed/dead, or InterfaceError for other non-usable
+                    # connection states (e.g. mid-COPY) — both mean "can't send
+                    # the unlock", so both are handled the same way here.
                     logger.warning(
                         f"Could not release advisory lock ({key1}, {key2}); "
                         f"connection was already dropped, lock is released with it",
