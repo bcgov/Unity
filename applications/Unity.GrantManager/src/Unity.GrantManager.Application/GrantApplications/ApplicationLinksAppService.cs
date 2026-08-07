@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
+using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
@@ -444,6 +445,16 @@ public class ApplicationLinksAppService(IRepository<ApplicationLink, Guid> repos
             };
         }
     }
+
+    /// <summary>
+    /// Updates an application link with the specified <paramref name="id"/> using the provided <paramref name="input"/>.
+    /// </summary>
+    /// <remarks>Remote updates are disabled; use <see cref="UpdateLinkTypeAsync"/> to change the link type.</remarks>
+     /// <param name="id">The unique identifier of the application link to update.</param>
+     /// <param name="input">The updated application link data.</param>
+     /// <returns>The updated application link.</returns>
+    [RemoteService(false)]
+    public override Task<ApplicationLinksDto> UpdateAsync(Guid id, ApplicationLinksDto input) => base.UpdateAsync(id, input);
 
     public async Task UpdateLinkTypeAsync(Guid applicationLinkId, ApplicationLinkType newLinkType)
     {
