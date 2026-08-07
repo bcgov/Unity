@@ -60,7 +60,7 @@ public class GrantManagerEntityFrameworkCoreModule : AbpModule
             options.Configure(dbContextConfiguration =>
             {
                 dbContextConfiguration.UseNpgsql();
-                dbContextConfiguration.DbContextOptions.LogTo(Console.WriteLine, LogLevel.Information);
+                dbContextConfiguration.DbContextOptions.LogTo(Console.WriteLine, LogLevel.Error);
             });
         });
     }
