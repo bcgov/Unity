@@ -54,6 +54,49 @@ input {
     margin-top: 0;
 }
 
+#assessmentScoresWidgetArea .save-button-container {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    position: sticky;
+    top: 0;
+    padding: 8px 24px 8px 0;
+    z-index: 999;
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+#assessmentScoresWidgetArea .save-button-container .floating-save-btn {
+    position: static;
+}
+
+#scoresheetSaveAllBtn:disabled {
+    --bs-btn-disabled-bg: #255A90;
+    --bs-btn-disabled-color: #ffffff;
+}
+
+#scoresheetDiscardAllBtn:disabled {
+    --bs-btn-disabled-color: #6c757d;
+}
+
+#assessment-scoresheet .accordion-button.section-unsaved {
+    color: #FF0909;
+}
+
+#assessment-scoresheet .preview-btn.section-unsaved:not(.collapsed) {
+    color: #FF0909;
+    background-color: #FEEAEA;
+}
+
+#assessment-scoresheet .accordion-button.question-unsaved {
+    color: #FF0909;
+}
+
+#assessment-scoresheet .accordion-button.question-unsaved:not(.collapsed) {
+    color: #FF0909;
+    background-color: #FEEAEA;
+}
+
 /* AI-generated answer styling (blue text) */
 .ai-generated-answer {
     color: #0066cc !important;
