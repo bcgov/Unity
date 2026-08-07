@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using Unity.AI.Operations;
 using Unity.AI.Domain;
-using Unity.AI.Prompts;
+using Unity.AI.Runtime.Prompts;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;

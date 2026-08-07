@@ -42,18 +42,20 @@ public class AIRateLimiter(
         }
     }
 
-    public virtual async Task EnsureAsync()
+    public virtual Task EnsureAsync() => EnsureAsync(currentUser.Id);
+
+    public virtual async Task EnsureAsync(Guid? userId)
     {
-        if (currentUser.Id is not Guid userId)
+        if (userId is not Guid resolvedUserId)
         {
             // No user (background/system flow). User-level rate limit does not apply.
             return;
         }
 
-        var userLock = distributedLockProvider.CreateLock(CooldownLockPrefix + userId);
+        var userLock = distributedLockProvider.CreateLock(CooldownLockPrefix + resolvedUserId);
         using (await userLock.AcquireAsync())
         {
-            var remaining = await GetRemainingSecondsAsync(userId);
+            var remaining = await GetRemainingSecondsAsync(resolvedUserId);
             if (remaining > 0)
             {
                 throw new UserFriendlyException(
