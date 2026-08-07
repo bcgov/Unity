@@ -35,11 +35,15 @@ BEGIN
     END;
 
     IF month_num IS NOT NULL AND NEW.""FiscalDay"" IS NOT NULL THEN
-        NEW.""FiscalYearEnd"" := MAKE_DATE(
-            EXTRACT(YEAR FROM CURRENT_DATE)::int,
-            month_num,
-            NEW.""FiscalDay""
-        );
+        BEGIN
+            NEW.""FiscalYearEnd"" := MAKE_DATE(
+                EXTRACT(YEAR FROM CURRENT_DATE)::int,
+                month_num,
+                NEW.""FiscalDay""
+            );
+        EXCEPTION WHEN others THEN
+            NEW.""FiscalYearEnd"" := NULL;
+        END;
     ELSE
         NEW.""FiscalYearEnd"" := NULL;
     END IF;
@@ -52,6 +56,13 @@ CREATE TRIGGER trg_applicants_fiscal_year_end
 BEFORE INSERT OR UPDATE OF ""FiscalMonth"", ""FiscalDay""
 ON ""Applicants""
 FOR EACH ROW EXECUTE FUNCTION compute_applicants_fiscal_year_end();
+");
+
+            // Backfill existing rows by touching FiscalDay, which fires the trigger above.
+            migrationBuilder.Sql(@"
+UPDATE ""Applicants""
+SET ""FiscalDay"" = ""FiscalDay""
+WHERE ""FiscalMonth"" IS NOT NULL AND ""FiscalDay"" IS NOT NULL;
 ");
         }
 
