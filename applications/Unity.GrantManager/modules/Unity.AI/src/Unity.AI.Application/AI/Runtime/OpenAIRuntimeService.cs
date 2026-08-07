@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
@@ -15,8 +16,8 @@ using Volo.Abp.DependencyInjection;
 
 namespace Unity.AI.Runtime
 {
-    [ExposeServices(typeof(IAIService), typeof(IFormMappingService), typeof(IFormWorksheetService), typeof(IFormScoresheetService))]
-    public class OpenAIRuntimeService : IAIService, IFormMappingService, IFormWorksheetService, IFormScoresheetService, ITransientDependency
+    [ExposeServices(typeof(IAIService), typeof(IFormMappingService), typeof(IFormWorksheetService), typeof(IFormScoresheetService), typeof(IAttachmentSummaryEvaluationService))]
+    public class OpenAIRuntimeService : IAIService, IFormMappingService, IFormWorksheetService, IFormScoresheetService, IAttachmentSummaryEvaluationService, ITransientDependency
     {
         private readonly ILogger<OpenAIRuntimeService> _logger;
         private readonly OpenAITransportService _openAITransportService;
@@ -82,7 +83,7 @@ namespace Unity.AI.Runtime
                     promptTemplate.MetadataJson);
 
                 await _promptFileLogger.LogPromptInputAsync(ApplicationAnalysisPromptType, promptVersion, systemPrompt, applicationAnalysisContent, cancellationToken);
-                var result = await GenerateWithRetryAsync(
+                var (result, _) = await GenerateWithRetryAsync(
                     () => _openAITransportService.GenerateSummaryAsync(
                         applicationAnalysisContent,
                         systemPrompt,
@@ -135,60 +136,11 @@ namespace Unity.AI.Runtime
         {
             ArgumentNullException.ThrowIfNull(request);
             var fileName = request.FileName ?? string.Empty;
-            var contentType = request.ContentType ?? "application/octet-stream";
 
             try
             {
-                var settings = await _openAIConfigurationResolver.ResolveOperationSettingsAsync(AttachmentSummaryPromptType, cancellationToken);
-                var promptTemplate = await _promptTemplateProvider.GetRequiredPromptAsync(
-                    AttachmentSummaryPromptType,
-                    request.PromptVersion ?? settings.PromptVersion,
-                    cancellationToken);
-                var promptVersion = promptTemplate.PromptVersion;
-                var extractedText = request.ExtractedText;
-                var prompt = promptTemplate.SystemPrompt;
-
-                var attachmentText = string.IsNullOrWhiteSpace(extractedText) ? null : extractedText;
-                var attachmentPayload = new[]
-                {
-                    new
-                    {
-                        name = fileName,
-                        contentType,
-                        text = attachmentText
-                    }
-                };
-                var attachments = JsonSerializer.Serialize(attachmentPayload, AIJsonDefaults.Indented);
-                var contentToAnalyze = AIPromptTemplateRenderer.BuildAttachmentSummaryUserPrompt(
-                    promptTemplate.UserPrompt,
-                    attachments,
-                    promptTemplate.MetadataJson);
-
-                await _promptFileLogger.LogPromptInputAsync(AttachmentSummaryPromptType, promptVersion, prompt, contentToAnalyze, cancellationToken);
-                var result = await GenerateWithRetryAsync(
-                    () => _openAITransportService.GenerateSummaryAsync(
-                        contentToAnalyze,
-                        prompt,
-                        settings,
-                        settings.CompletionTokens,
-                        cancellationToken: cancellationToken),
-                    AIProviderPayloadValidator.ValidateAttachmentSummaryText,
-                    "attachment summary",
-                    cancellationToken);
-                await _promptFileLogger.LogPromptOutputAsync(AttachmentSummaryPromptType, promptVersion, result.CaptureOutput, cancellationToken);
-
-                if (result.Outcome != AIOperationOutcome.Success)
-                {
-                    return new AttachmentSummaryResponse
-                    {
-                        Summary = $"AI analysis not available for this attachment ({fileName})."
-                    };
-                }
-
-                return new AttachmentSummaryResponse
-                {
-                    Summary = ExtractSummaryFromJson(result.Content)
-                };
+                var diagnostic = await RunAttachmentSummaryCoreAsync(request, cancellationToken);
+                return new AttachmentSummaryResponse { Summary = diagnostic.Summary };
             }
             catch (OperationCanceledException)
             {
@@ -202,6 +154,79 @@ namespace Unity.AI.Runtime
                     Summary = $"AI analysis not available for this attachment ({fileName})."
                 };
             }
+        }
+
+        // IAttachmentSummaryEvaluationService — surfaces the full diagnostic. Never call from production paths.
+        public Task<AttachmentSummaryDiagnosticResult> RunAsync(AttachmentSummaryRequest request, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            return RunAttachmentSummaryCoreAsync(request, cancellationToken);
+        }
+
+        private async Task<AttachmentSummaryDiagnosticResult> RunAttachmentSummaryCoreAsync(AttachmentSummaryRequest request, CancellationToken cancellationToken)
+        {
+            var fileName = request.FileName ?? string.Empty;
+            var contentType = request.ContentType ?? "application/octet-stream";
+
+            var settings = await _openAIConfigurationResolver.ResolveOperationSettingsAsync(AttachmentSummaryPromptType, cancellationToken);
+            var promptTemplate = await _promptTemplateProvider.GetRequiredPromptAsync(
+                AttachmentSummaryPromptType,
+                request.PromptVersion ?? settings.PromptVersion,
+                cancellationToken);
+            var promptVersion = promptTemplate.PromptVersion;
+            var extractedText = request.ExtractedText;
+            var prompt = promptTemplate.SystemPrompt;
+
+            var attachmentText = string.IsNullOrWhiteSpace(extractedText) ? null : extractedText;
+            var attachmentPayload = new[]
+            {
+                new
+                {
+                    name = fileName,
+                    contentType,
+                    text = attachmentText
+                }
+            };
+            var attachments = JsonSerializer.Serialize(attachmentPayload, AIJsonDefaults.Indented);
+            var contentToAnalyze = AIPromptTemplateRenderer.BuildAttachmentSummaryUserPrompt(
+                promptTemplate.UserPrompt,
+                attachments,
+                promptTemplate.MetadataJson);
+
+            await _promptFileLogger.LogPromptInputAsync(AttachmentSummaryPromptType, promptVersion, prompt, contentToAnalyze, cancellationToken);
+            var (result, metrics) = await GenerateWithRetryAsync(
+                () => _openAITransportService.GenerateSummaryAsync(
+                    contentToAnalyze,
+                    prompt,
+                    settings,
+                    settings.CompletionTokens,
+                    cancellationToken: cancellationToken),
+                AIProviderPayloadValidator.ValidateAttachmentSummaryText,
+                "attachment summary",
+                cancellationToken);
+            await _promptFileLogger.LogPromptOutputAsync(AttachmentSummaryPromptType, promptVersion, result.CaptureOutput, cancellationToken);
+
+            var summary = result.Outcome == AIOperationOutcome.Success
+                ? ExtractSummaryFromJson(result.Content)
+                : $"AI analysis not available for this attachment ({fileName}).";
+
+            return new AttachmentSummaryDiagnosticResult(
+                Summary: summary,
+                ModelOutput: result.Content ?? string.Empty,
+                Outcome: result.Outcome,
+                FailureCategory: result.FailureCategory,
+                EffectivePromptVersion: promptVersion,
+                ProviderName: settings.ProviderName,
+                ProfileName: settings.ProfileName,
+                Model: result.Response.Model,
+                HttpStatusCode: result.Response.HttpStatusCode,
+                FinishReason: result.Response.FinishReason,
+                AttemptCount: metrics.AttemptCount,
+                DurationMs: metrics.DurationMs,
+                PromptTokensTotal: metrics.PromptTokensTotal,
+                CompletionTokensTotal: metrics.CompletionTokensTotal,
+                TotalTokensTotal: metrics.TotalTokensTotal,
+                ReasoningTokensTotal: metrics.ReasoningTokensTotal);
         }
 
         public async Task<ApplicationScoringResponse> GenerateApplicationScoringAsync(ApplicationScoringRequest request, CancellationToken cancellationToken = default)
@@ -245,7 +270,7 @@ namespace Unity.AI.Runtime
                 var systemPrompt = promptTemplate.SystemPrompt;
 
                 await _promptFileLogger.LogPromptInputAsync(ApplicationScoringPromptType, promptVersion, systemPrompt, applicationScoringContent, cancellationToken);
-                var result = await GenerateWithRetryAsync(
+                var (result, _) = await GenerateWithRetryAsync(
                     () => _openAITransportService.GenerateSummaryAsync(
                         applicationScoringContent,
                         systemPrompt,
@@ -294,7 +319,7 @@ namespace Unity.AI.Runtime
                     promptTemplate.MetadataJson);
 
                 await _promptFileLogger.LogPromptInputAsync(FormWorksheetPromptType, promptVersion, systemPrompt, content, cancellationToken);
-                var result = await GenerateWithRetryAsync(
+                var (result, _) = await GenerateWithRetryAsync(
                     () => _openAITransportService.GenerateSummaryAsync(
                         content,
                         systemPrompt,
@@ -343,7 +368,7 @@ namespace Unity.AI.Runtime
                     promptTemplate.MetadataJson);
 
                 await _promptFileLogger.LogPromptInputAsync(FormScoresheetPromptType, promptVersion, systemPrompt, content, cancellationToken);
-                var result = await GenerateWithRetryAsync(
+                var (result, _) = await GenerateWithRetryAsync(
                     () => _openAITransportService.GenerateSummaryAsync(
                         content,
                         systemPrompt,
@@ -392,7 +417,7 @@ namespace Unity.AI.Runtime
                     promptTemplate.MetadataJson);
 
                 await _promptFileLogger.LogPromptInputAsync(promptType, promptVersion, systemPrompt, content, cancellationToken);
-                var result = await GenerateWithRetryAsync(
+                var (result, _) = await GenerateWithRetryAsync(
                     () => _openAITransportService.GenerateSummaryAsync(
                         content,
                         systemPrompt,
@@ -428,25 +453,37 @@ namespace Unity.AI.Runtime
         public Task<FormMappingResponse> GenerateFormMappingAsync(FormMappingRequest request, CancellationToken cancellationToken = default) =>
             GenerateFormMappingCoreAsync(request, FormMappingPromptType, cancellationToken);
 
-        private async Task<AIOperationResult> GenerateWithRetryAsync(
+        private async Task<(AIOperationResult Result, AIRetryMetrics Metrics)> GenerateWithRetryAsync(
             Func<Task<AIOperationResult>> operation,
             Func<string, AIResponseValidationResult> validator,
             string operationName,
             CancellationToken cancellationToken = default)
         {
             var lastResult = AIOperationResult.InvalidOutput();
+            var stopwatch = Stopwatch.StartNew();
+            var attemptsUsed = 0;
+            var promptSum = 0;
+            var completionSum = 0;
+            var totalSum = 0;
+            var reasoningSum = 0;
 
             for (var attempt = 1; attempt <= MaxAiAttempts; attempt++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 lastResult = await operation();
+                attemptsUsed = attempt;
+                promptSum += lastResult.Response.PromptTokens ?? 0;
+                completionSum += lastResult.Response.CompletionTokens ?? 0;
+                totalSum += lastResult.Response.TotalTokens ?? 0;
+                reasoningSum += lastResult.Response.ReasoningTokens ?? 0;
 
                 if (lastResult.Outcome == AIOperationOutcome.Success)
                 {
                     var validationResult = validator(lastResult.Content);
                     if (validationResult.IsValid)
                     {
-                        return lastResult;
+                        stopwatch.Stop();
+                        return (lastResult, new AIRetryMetrics(attemptsUsed, stopwatch.ElapsedMilliseconds, promptSum, completionSum, totalSum, reasoningSum));
                     }
 
                     lastResult = lastResult.WithOutcome(AIOperationOutcome.InvalidOutput, validationResult.FailureCategory);
@@ -462,7 +499,8 @@ namespace Unity.AI.Runtime
 
                 if (lastResult.Outcome == AIOperationOutcome.PermanentFailure)
                 {
-                    return lastResult;
+                    stopwatch.Stop();
+                    return (lastResult, new AIRetryMetrics(attemptsUsed, stopwatch.ElapsedMilliseconds, promptSum, completionSum, totalSum, reasoningSum));
                 }
 
                 if (attempt < MaxAiAttempts)
@@ -488,6 +526,7 @@ namespace Unity.AI.Runtime
                 }
             }
 
+            stopwatch.Stop();
             _logger.LogWarning(
                 "AI {OperationName} exhausted retries with outcome {Outcome} and failure category {FailureCategory}; HTTP status {HttpStatusCode}; model {Model}; returning last result",
                 operationName,
@@ -495,7 +534,7 @@ namespace Unity.AI.Runtime
                 lastResult.FailureCategory,
                 lastResult.Response.HttpStatusCode,
                 lastResult.Response.Model);
-            return lastResult;
+            return (lastResult, new AIRetryMetrics(attemptsUsed, stopwatch.ElapsedMilliseconds, promptSum, completionSum, totalSum, reasoningSum));
         }
 
         private async Task<bool> IsAvailableCoreAsync()

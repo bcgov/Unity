@@ -16,3 +16,5 @@ Generate summaries for selected application attachments.
 
 ## Notes
 - Each attachment is processed as part of the generation request.
+- Supported Office/PDF files with no extractable text use the fixed extraction-failure summary and do not invoke the model.
+- The offline and protected live evaluation workflow is documented in [`../../evals/README.md`](../../evals/README.md).

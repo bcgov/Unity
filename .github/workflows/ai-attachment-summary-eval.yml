@@ -1,0 +1,143 @@
+name: AI Attachment Summary Eval (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      runLive:
+        description: "Run the protected candidate + judge suite with private attachments"
+        required: false
+        default: false
+        type: boolean
+      emitBaselineCandidate:
+        description: "Emit baseline.candidate.json during the live run"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: applications/Unity.GrantManager
+
+jobs:
+  offline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore modules/Unity.AI/evals/test/Unity.AI.Evaluation.Tests/Unity.AI.Evaluation.Tests.csproj
+
+      - name: Build
+        run: dotnet build modules/Unity.AI/evals/test/Unity.AI.Evaluation.Tests/Unity.AI.Evaluation.Tests.csproj --no-restore -c Release
+
+      - name: Validate committed dataset
+        run: >
+          dotnet test modules/Unity.AI/evals/test/Unity.AI.Evaluation.Tests/Unity.AI.Evaluation.Tests.csproj
+          --no-build -c Release
+          --filter "Category=AIEvalOffline"
+          --logger "trx;LogFileName=offline.trx"
+          --results-directory TestResults
+
+      - name: Upload offline test results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: ai-eval-offline-results
+          path: applications/Unity.GrantManager/TestResults/
+          retention-days: 30
+          if-no-files-found: warn
+
+  live:
+    if: inputs.runLive
+    needs: offline
+    runs-on: ubuntu-latest
+    environment: ai-evaluation
+    env:
+      Azure__Operations__Defaults__Provider: ${{ secrets.AZURE_OPERATIONS_PROVIDER }}
+      Azure__OpenAI__Endpoint: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+      Azure__OpenAI__ApiKey: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      Azure__OpenAI__Profiles__Gpt5Mini__DeploymentName: ${{ secrets.AZURE_OPENAI_GPT5MINI_DEPLOYMENT }}
+      EVAL_JUDGE_ENDPOINT: ${{ secrets.EVAL_JUDGE_ENDPOINT }}
+      EVAL_JUDGE_KEY: ${{ secrets.EVAL_JUDGE_KEY }}
+      EVAL_JUDGE_DEPLOYMENT: ${{ secrets.EVAL_JUDGE_DEPLOYMENT }}
+      EVAL_JUDGE_API_VERSION: ${{ secrets.EVAL_JUDGE_API_VERSION }}
+      EVAL_ATTACHMENTS_ARCHIVE_URL: ${{ secrets.EVAL_ATTACHMENTS_ARCHIVE_URL }}
+      EVAL_RUN_LIVE: "1"
+      EVAL_EMIT_BASELINE: ${{ inputs.emitBaselineCandidate && '1' || '0' }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Provision private attachment dataset
+        shell: bash
+        run: |
+          if [[ -z "$EVAL_ATTACHMENTS_ARCHIVE_URL" ]]; then
+            echo "::error::EVAL_ATTACHMENTS_ARCHIVE_URL is required for a live attachment eval."
+            exit 1
+          fi
+          archive="$RUNNER_TEMP/ai-eval-attachments.zip"
+          attachment_dir="$RUNNER_TEMP/ai-eval-attachments"
+          curl --fail --silent --show-error --location "$EVAL_ATTACHMENTS_ARCHIVE_URL" --output "$archive"
+          mkdir -p "$attachment_dir"
+          unzip -q "$archive" -d "$attachment_dir"
+          echo "EVAL_ATTACHMENTS_DIR=$attachment_dir" >> "$GITHUB_ENV"
+
+      - name: Restore
+        run: dotnet restore modules/Unity.AI/evals/test/Unity.AI.Evaluation.Tests/Unity.AI.Evaluation.Tests.csproj
+
+      - name: Build
+        run: dotnet build modules/Unity.AI/evals/test/Unity.AI.Evaluation.Tests/Unity.AI.Evaluation.Tests.csproj --no-restore -c Release
+
+      - name: Validate private binaries and extraction
+        run: >
+          dotnet test modules/Unity.AI/evals/test/Unity.AI.Evaluation.Tests/Unity.AI.Evaluation.Tests.csproj
+          --no-build -c Release
+          --filter "Category=AIEvalOffline"
+          --logger "trx;LogFileName=extraction.trx"
+          --results-directory TestResults
+
+      - name: Run candidate and judge
+        run: >
+          dotnet test modules/Unity.AI/evals/test/Unity.AI.Evaluation.Tests/Unity.AI.Evaluation.Tests.csproj
+          --no-build -c Release
+          --filter "Category=AIEvalLive"
+          --logger "trx;LogFileName=live.trx"
+          --results-directory TestResults
+
+      - name: Upload eval reports
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: ai-eval-reports
+          path: applications/Unity.GrantManager/modules/Unity.AI/evals/test/Unity.AI.Evaluation.Tests/reports/**
+          retention-days: 30
+          if-no-files-found: warn
+
+      - name: Upload baseline candidate
+        if: always() && inputs.emitBaselineCandidate
+        uses: actions/upload-artifact@v5
+        with:
+          name: baseline-candidate
+          path: applications/Unity.GrantManager/modules/Unity.AI/evals/test/Unity.AI.Evaluation.Tests/datasets/attachment-summary/baseline.candidate.json
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload live test results
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: ai-eval-live-results
+          path: applications/Unity.GrantManager/TestResults/
+          retention-days: 30
+          if-no-files-found: warn

@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\..\..\..\common.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Unity.AI.Evaluation</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <BuildInParallel>true</BuildInParallel>
+    <UseSharedCompilation>true</UseSharedCompilation>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\..\test\Unity.GrantManager.Application.Tests\Unity.GrantManager.Application.Tests.csproj" />
+    <ProjectReference Include="..\..\..\src\Unity.AI.Application\Unity.AI.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="datasets\**\*.*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <!-- ponytail: link the tenant-facing eval CSV into datasets/ so it flips the
+         dataset hash and is co-located with cases.jsonl at runtime. Real
+         attachments stay outside git (downloaded via evals/scripts/Get-EvalAttachments.ps1). -->
+    <None Include="..\..\data\attachment-summary-eval.csv"
+          Link="datasets\attachment-summary\data\attachment-summary-eval.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

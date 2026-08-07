@@ -27,27 +27,25 @@ public class AttachmentSummaryService(
     IStringLocalizer<AIResource> localizer) : IAttachmentSummaryService, ITransientDependency
 {
     private const string SummaryGenerationFailedMessage = "AI summary generation failed.";
-    private const string TextExtractionFailedSummary = "Attachment text could not be extracted for AI summary generation.";
-
     public async Task<string> GenerateAndSaveAsync(Guid attachmentId, string? promptVersion = null, CancellationToken cancellationToken = default)
     {
         var attachment = await LoadAttachmentAsync(attachmentId);
         var fileName = string.IsNullOrWhiteSpace(attachment.FileName) ? "unknown" : attachment.FileName;
 
         await using var attachmentStream = await OpenAttachmentStreamAsync(attachment, fileName, cancellationToken);
-        var extractedText = await textExtractionService.ExtractTextAsync(fileName, attachmentStream.Content, attachmentStream.ContentType, cancellationToken);
-        if (ShouldStopOnEmptyExtraction(fileName, extractedText))
+        var extraction = await AttachmentSummaryExtractor.ExtractAsync(fileName, attachmentStream.Content, attachmentStream.ContentType, textExtractionService, cancellationToken);
+        if (extraction.StoppedOnEmpty)
         {
             LogEmptyExtraction(attachmentId, fileName, attachmentStream);
-            await SaveSummaryAsync(attachmentId, TextExtractionFailedSummary);
-            return TextExtractionFailedSummary;
+            await SaveSummaryAsync(attachmentId, AttachmentSummaryExtractor.TextExtractionFailedSummary);
+            return AttachmentSummaryExtractor.TextExtractionFailedSummary;
         }
 
         var summaryResponse = await aiService.GenerateAttachmentSummaryAsync(new AttachmentSummaryRequest
         {
             FileName = fileName,
             ContentType = attachmentStream.ContentType,
-            ExtractedText = extractedText,
+            ExtractedText = extraction.ExtractedText,
             PromptVersion = promptVersion,
         }, cancellationToken);
 
@@ -181,17 +179,6 @@ public class AttachmentSummaryService(
                 attachment.Id);
             return ChefsFileAttachmentStream.Empty;
         }
-    }
-
-    private static bool ShouldStopOnEmptyExtraction(string fileName, string extractedText)
-    {
-        return string.IsNullOrWhiteSpace(extractedText) && IsSupportedOfficeOrPdf(fileName);
-    }
-
-    private static bool IsSupportedOfficeOrPdf(string fileName)
-    {
-        var extension = Path.GetExtension(fileName)?.ToLowerInvariant();
-        return extension is ".pdf" or ".docx" or ".xlsx" or ".xls" or ".pptx";
     }
 
     private void LogEmptyExtraction(

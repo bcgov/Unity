@@ -1,0 +1,20 @@
+Project Budget Breakdown (Synthetic Sample)
+
+Total requested amount: $75,000
+Project duration: 12 months
+
+Category                          Amount     Share
+--------------------------------  ---------  -------
+Personnel (project lead, coord)   $42,000    56.0%
+Materials and supplies            $14,000    18.7%
+Travel (site visits, workshops)   $8,000     10.7%
+Consulting (evaluation)           $6,000     8.0%
+Administration                    $3,500     4.7%
+Contingency                       $1,500     2.0%
+--------------------------------  ---------  -------
+TOTAL                             $75,000    100.0%
+
+Notes
+Personnel is the largest category by design; this is a delivery-heavy program.
+Travel is scoped to the four project regions only.
+No indirect / overhead recovery is requested.
