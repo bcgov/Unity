@@ -16,9 +16,9 @@ namespace Unity.Flex.Web.Views.Shared.Components.QuestionSelectListWidget
         AutoInitialize = true)]
     public class QuestionSelectListWidget : AbpViewComponent
     {
-        public async Task<IViewComponentResult> InvokeAsync(Guid questionId, bool isDisabled, string? answer, string definition, bool isHumanConfirmed = true, string? aiCitation = null, int? aiConfidence = null)
+        public async Task<IViewComponentResult> InvokeAsync(Guid questionId, bool isDisabled, string? answer, string definition, bool required = false, bool isHumanConfirmed = true, string? aiCitation = null, int? aiConfidence = null)
         {
-            return View(await Task.FromResult(new QuestionSelectListViewModel() { QuestionId = questionId, IsDisabled = isDisabled, Answer = answer ?? string.Empty, Definition = definition, IsHumanConfirmed = isHumanConfirmed, AICitation = aiCitation, AIConfidence = aiConfidence }));
+            return View(await Task.FromResult(new QuestionSelectListViewModel() { QuestionId = questionId, IsDisabled = isDisabled, Answer = answer ?? string.Empty, Definition = definition, Required = required, IsHumanConfirmed = isHumanConfirmed, AICitation = aiCitation, AIConfidence = aiConfidence }));
         }
 
         public class QuestionSelectListWidgetStyleBundleContributor : BundleContributor

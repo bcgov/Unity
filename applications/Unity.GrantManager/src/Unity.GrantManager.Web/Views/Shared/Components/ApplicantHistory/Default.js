@@ -83,7 +83,7 @@ $(function () {
                         .addClass('btn btn-link p-0 funding-delete-btn')
                         .attr({ 'type': 'button', 'title': 'Delete Funding History', 'data-id': row.id })
                         .css({ 'color': '#0066cc', 'text-decoration': 'none' })
-                        .append($('<i>').addClass('fa fa-times'));
+                        .append($('<i>').addClass('fa-solid fa-xmark'));
 
                     $wrapper.append($editBtn).append($deleteBtn);
                     return $wrapper.prop('outerHTML');
@@ -117,7 +117,7 @@ $(function () {
                         .addClass('btn btn-link p-0 issue-delete-btn')
                         .attr({ 'type': 'button', 'title': 'Delete Issue Tracking', 'data-id': row.id })
                         .css({ 'color': '#0066cc', 'text-decoration': 'none' })
-                        .append($('<i>').addClass('fa fa-times'));
+                        .append($('<i>').addClass('fa-solid fa-xmark'));
 
                     $wrapper.append($editBtn).append($deleteBtn);
                     return $wrapper.prop('outerHTML');
@@ -163,7 +163,7 @@ $(function () {
                         .addClass('btn btn-link p-0 audit-delete-btn')
                         .attr({ 'type': 'button', 'title': 'Delete Audit History', 'data-id': row.id })
                         .css({ 'color': '#0066cc', 'text-decoration': 'none' })
-                        .append($('<i>').addClass('fa fa-times'));
+                        .append($('<i>').addClass('fa-solid fa-xmark'));
 
                     $wrapper.append($editBtn).append($deleteBtn);
                     return $wrapper.prop('outerHTML');
@@ -208,7 +208,7 @@ $(function () {
                         .addClass('btn btn-link p-0 reports-delete-btn')
                         .attr({ 'type': 'button', 'title': 'Delete Reports History', 'data-id': row.id })
                         .css({ 'color': '#0066cc', 'text-decoration': 'none' })
-                        .append($('<i>').addClass('fa fa-times'));
+                        .append($('<i>').addClass('fa-solid fa-xmark'));
 
                     $wrapper.append($editBtn).append($deleteBtn);
                     return $wrapper.prop('outerHTML');

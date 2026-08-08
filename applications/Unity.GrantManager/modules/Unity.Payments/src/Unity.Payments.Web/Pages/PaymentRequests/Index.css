@@ -75,22 +75,22 @@
 }
 
 .payment-status-transition-ban {
-    color: #FF0909;
+    color: #C80000;
     font-size: 1rem;
     cursor: pointer;
 }
 
 #PaymentRequestListTable .error-icon {
-    color: #FF0909;
+    color: #C80000;
 }
 
 #PaymentRequestListTable .error-icon-selected {
-    color: #FF0909;
+    color: #C80000;
 }
 
 #PaymentRequestListTable .error-row td {
     background-color: #FEEAEA;
-    color: #FF0909 !important;
+    color: #C80000 !important;
 }
 
 /* DataTables stateRestore - Save View */
