@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Caching.Memory;
 using NSubstitute;
 using Shouldly;
 using System;
@@ -60,7 +61,7 @@ public class OpenAIConfigurationResolverTests
                 ArgumentNullException.ThrowIfNull(predicate);
                 return Task.FromResult(new List<AIOperation>
                 {
-                    new(Guid.NewGuid(), AIPromptTypes.ApplicationAnalysis, modelId, promptId)
+                new(Guid.NewGuid(), AIPromptTypes.ApplicationAnalysis, modelId)
                     {
                         ExecutionMode = AIExecutionMode.Sequential,
                         CompletionTokens = 2222,
@@ -137,7 +138,7 @@ public class OpenAIConfigurationResolverTests
                 ArgumentNullException.ThrowIfNull(predicate);
                 return Task.FromResult(new List<AIOperation>
                 {
-                    new(Guid.NewGuid(), "Default", modelId, promptId)
+                new(Guid.NewGuid(), "Default", modelId)
                     {
                         ExecutionMode = AIExecutionMode.Sequential,
                         CompletionTokens = 2000,
@@ -277,7 +278,7 @@ public class OpenAIConfigurationResolverTests
                 ArgumentNullException.ThrowIfNull(predicate);
                 return Task.FromResult(new List<AIOperation>
                 {
-                    new(Guid.NewGuid(), AIPromptTypes.ApplicationAnalysis, modelId, promptId)
+                new(Guid.NewGuid(), AIPromptTypes.ApplicationAnalysis, modelId)
                     {
                         IsActive = true,
                         CompletionTokens = 2000
@@ -323,7 +324,9 @@ public class OpenAIConfigurationResolverTests
     public async Task Should_Select_Newest_Tenant_Prompt_And_Isolate_It_From_Global_Cache()
     {
         var tenantId = Guid.NewGuid();
+        var tenantWithoutOverrideId = Guid.NewGuid();
         var modelId = Guid.NewGuid();
+        using var cache = new MemoryCache(new MemoryCacheOptions());
         var operationRepository = Substitute.For<IRepository<AIOperation, Guid>>();
         operationRepository.GetListAsync(Arg.Any<Expression<Func<AIOperation, bool>>>())
             .Returns(Task.FromResult(new List<AIOperation>
@@ -359,15 +362,31 @@ public class OpenAIConfigurationResolverTests
                 }
             }));
 
-        var resolver = CreateResolver(
+        var hostResolver = CreateResolver(
             modelRepository: modelRepository,
             operationRepository: operationRepository,
             promptRepository: promptRepository,
+            memoryCache: cache);
+        var tenantResolver = CreateResolver(
+            modelRepository: modelRepository,
+            operationRepository: operationRepository,
+            promptRepository: promptRepository,
+            memoryCache: cache,
             tenantId: tenantId);
+        var tenantWithoutOverrideResolver = CreateResolver(
+            modelRepository: modelRepository,
+            operationRepository: operationRepository,
+            promptRepository: promptRepository,
+            memoryCache: cache,
+            tenantId: tenantWithoutOverrideId);
 
-        var settings = await resolver.ResolveOperationSettingsAsync(AIPromptTypes.ApplicationAnalysis);
+        var hostSettings = await hostResolver.ResolveOperationSettingsAsync(AIPromptTypes.ApplicationAnalysis);
+        var tenantSettings = await tenantResolver.ResolveOperationSettingsAsync(AIPromptTypes.ApplicationAnalysis);
+        var tenantWithoutOverrideSettings = await tenantWithoutOverrideResolver.ResolveOperationSettingsAsync(AIPromptTypes.ApplicationAnalysis);
 
-        settings.PromptVersion.ShouldBe("v2");
+        hostSettings.PromptVersion.ShouldBe("v1");
+        tenantSettings.PromptVersion.ShouldBe("v2");
+        tenantWithoutOverrideSettings.PromptVersion.ShouldBe("v1");
     }
 
     private static OpenAIConfigurationResolver CreateResolver(
@@ -376,6 +395,7 @@ public class OpenAIConfigurationResolverTests
         IRepository<AIOperation, Guid>? operationRepository = null,
         IRepository<AIPrompt, Guid>? promptRepository = null,
         IDataFilter<IMultiTenant>? multiTenantDataFilter = null,
+        IMemoryCache? memoryCache = null,
         Guid? tenantId = null)
     {
         var configurationValues = new Dictionary<string, string?>
@@ -408,7 +428,7 @@ public class OpenAIConfigurationResolverTests
             modelRepository ?? CreateEmptyModelRepository(),
             operationRepository ?? CreateEmptyOperationRepository(),
             promptRepository ?? CreateEmptyPromptRepository(),
-            Substitute.For<Microsoft.Extensions.Caching.Memory.IMemoryCache>(),
+            memoryCache ?? Substitute.For<IMemoryCache>(),
             configuration,
             filter,
             currentTenant);

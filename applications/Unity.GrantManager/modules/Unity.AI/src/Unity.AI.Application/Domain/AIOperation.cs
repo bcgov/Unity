@@ -29,8 +29,4 @@ public class AIOperation : AuditedAggregateRoot<Guid>
         AIModelId = aiModelId;
     }
 
-    public AIOperation(Guid id, string name, Guid aiModelId, Guid unusedPromptId)
-        : this(id, name, aiModelId)
-    {
-    }
 }

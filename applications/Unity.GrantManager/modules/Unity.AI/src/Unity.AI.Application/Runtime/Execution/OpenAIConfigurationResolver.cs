@@ -317,13 +317,10 @@ public class OpenAIConfigurationResolver(
             return null;
         }
 
-        var prompt = await ResolvePromptAsync(operation.Name, cancellationToken);
         var snapshot = new ResolvedOperationSnapshot(
             operation.Id,
             operation.Name,
             operation.AIModelId,
-            prompt.Id,
-            prompt.VersionNumber,
             operation.CompletionTokens,
             operation.IsActive);
 
@@ -365,8 +362,6 @@ public class OpenAIConfigurationResolver(
         Guid Id,
         string Name,
         Guid AIModelId,
-        Guid PromptId,
-        int PromptVersion,
         int CompletionTokens,
         bool IsActive);
 }

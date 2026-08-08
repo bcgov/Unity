@@ -32,29 +32,8 @@ namespace Unity.GrantManager.Migrations.HostMigrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<Guid>(
-                name: "AIPromptId",
-                schema: "AI",
-                table: "AIOperations",
-                type: "uuid",
-                nullable: false,
-                defaultValue: new Guid("00000000-0000-0000-0000-000000000000"));
-
-            migrationBuilder.CreateIndex(
-                name: "IX_AIOperations_AIPromptId",
-                schema: "AI",
-                table: "AIOperations",
-                column: "AIPromptId");
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_AIOperations_AIPrompts_AIPromptId",
-                schema: "AI",
-                table: "AIOperations",
-                column: "AIPromptId",
-                principalSchema: "AI",
-                principalTable: "AIPrompts",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Restrict);
+            throw new NotSupportedException(
+                "RemoveOperationPromptForeignKey cannot be rolled back because prompt selection is now resolved by tenant/global prompt family.");
         }
     }
 }

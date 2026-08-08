@@ -167,10 +167,10 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
     {
         var operations = new List<AIOperation>
         {
-            new(Guid.NewGuid(), "AttachmentSummary", Guid.NewGuid(), Guid.NewGuid()) { IsActive = true },
-            new(ApplicationAnalysisOperationId, "ApplicationAnalysis", Guid.NewGuid(), Guid.NewGuid()) { IsActive = true },
-            new(Guid.NewGuid(), "ApplicationScoring", Guid.NewGuid(), Guid.NewGuid()) { IsActive = true },
-            new(Guid.NewGuid(), "FormMapping", Guid.NewGuid(), Guid.NewGuid()) { IsActive = true }
+            new(Guid.NewGuid(), "AttachmentSummary", Guid.NewGuid()) { IsActive = true },
+            new(ApplicationAnalysisOperationId, "ApplicationAnalysis", Guid.NewGuid()) { IsActive = true },
+            new(Guid.NewGuid(), "ApplicationScoring", Guid.NewGuid()) { IsActive = true },
+            new(Guid.NewGuid(), "FormMapping", Guid.NewGuid()) { IsActive = true }
         };
 
         var repository = Substitute.For<IRepository<AIOperation, Guid>>();

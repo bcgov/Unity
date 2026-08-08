@@ -51,6 +51,7 @@ public class AIPromptAppService :
         using (_multiTenantDataFilter.Disable())
         {
             var selected = await Repository.GetAsync(promptId);
+            EnsureReadAccess(selected);
             var items = await Repository.GetListAsync(v => v.TenantId == selected.TenantId && v.Name == selected.Name);
             var sorted = items.OrderBy(v => v.VersionNumber).ToList();
             return new ListResultDto<AIPromptDto>(
@@ -63,7 +64,9 @@ public class AIPromptAppService :
     {
         using (_multiTenantDataFilter.Disable())
         {
-            return await base.GetAsync(id);
+            var prompt = await Repository.GetAsync(id);
+            EnsureReadAccess(prompt);
+            return ObjectMapper.Map<AIPrompt, AIPromptDto>(prompt);
         }
     }
 
@@ -72,7 +75,22 @@ public class AIPromptAppService :
     {
         using (_multiTenantDataFilter.Disable())
         {
-            return await base.GetListAsync(input);
+            var prompts = await Repository.GetListAsync();
+            var accessiblePrompts = _currentTenant.Id is Guid tenantId
+                ? prompts.Where(prompt => prompt.TenantId == null || prompt.TenantId == tenantId)
+                : prompts;
+            var sortedPrompts = accessiblePrompts
+                .OrderBy(prompt => prompt.Name)
+                .ThenByDescending(prompt => prompt.VersionNumber)
+                .ToList();
+            var items = sortedPrompts
+                .Skip(input.SkipCount)
+                .Take(input.MaxResultCount)
+                .ToList();
+
+            return new PagedResultDto<AIPromptDto>(
+                sortedPrompts.Count,
+                ObjectMapper.Map<List<AIPrompt>, List<AIPromptDto>>(items));
         }
     }
 
@@ -82,7 +100,7 @@ public class AIPromptAppService :
         using (_multiTenantDataFilter.Disable())
         {
             var prompt = await Repository.GetAsync(input.PromptId);
-            EnsureTenantAccess(prompt);
+            EnsureReadAccess(prompt);
             var targetTenantId = _currentTenant.Id ?? prompt.TenantId;
             var existingVersion = await Repository.FirstOrDefaultAsync(p =>
                 p.TenantId == targetTenantId &&
@@ -117,7 +135,7 @@ public class AIPromptAppService :
         using (_multiTenantDataFilter.Disable())
         {
             var entity = await Repository.GetAsync(id);
-            EnsureTenantAccess(entity);
+            EnsureMutationAccess(entity);
             var conflictingVersion = await Repository.FirstOrDefaultAsync(p =>
                 p.Id != id &&
                 p.TenantId == entity.TenantId &&
@@ -139,11 +157,19 @@ public class AIPromptAppService :
         }
     }
 
-    private void EnsureTenantAccess(AIPrompt prompt)
+    private void EnsureReadAccess(AIPrompt prompt)
     {
         if (_currentTenant.Id is Guid tenantId && prompt.TenantId is not null && prompt.TenantId != tenantId)
         {
             throw new AbpAuthorizationException("The selected AI prompt belongs to another tenant.");
+        }
+    }
+
+    private void EnsureMutationAccess(AIPrompt prompt)
+    {
+        if (_currentTenant.Id is Guid tenantId && prompt.TenantId != tenantId)
+        {
+            throw new AbpAuthorizationException("The selected AI prompt cannot be modified from this tenant.");
         }
     }
 
@@ -154,7 +180,7 @@ public class AIPromptAppService :
         using (_multiTenantDataFilter.Disable())
         {
             var entity = await Repository.GetAsync(id);
-            EnsureTenantAccess(entity);
+            EnsureMutationAccess(entity);
             await base.DeleteAsync(id);
         }
     }

@@ -273,7 +273,7 @@ public class AttachmentSummaryServiceTests
             .Returns(callInfo =>
             {
                 var filter = callInfo.ArgAt<System.Linq.Expressions.Expression<Func<AIOperation, bool>>>(0).Compile();
-                var operation = new AIOperation(Guid.NewGuid(), AIPromptTypes.AttachmentSummary, Guid.NewGuid(), Guid.NewGuid())
+                var operation = new AIOperation(Guid.NewGuid(), AIPromptTypes.AttachmentSummary, Guid.NewGuid())
                 {
                     ExecutionMode = AIExecutionMode.Sequential,
                     IsActive = true
