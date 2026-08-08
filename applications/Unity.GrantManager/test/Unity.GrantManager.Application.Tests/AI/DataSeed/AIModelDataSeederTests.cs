@@ -21,8 +21,10 @@ public class AIModelDataSeederTests
         var modelRepository = Substitute.For<IRepository<AIModel, Guid>>();
         var insertedModels = new List<AIModel>();
         modelRepository
-            .FirstOrDefaultAsync(Arg.Any<System.Linq.Expressions.Expression<Func<AIModel, bool>>>())
-            .Returns((AIModel?)null);
+            .GetListAsync(
+                Arg.Any<System.Linq.Expressions.Expression<Func<AIModel, bool>>>(),
+                cancellationToken: Arg.Any<System.Threading.CancellationToken>())
+            .Returns(Task.FromResult(new List<AIModel>()));
         modelRepository
             .InsertAsync(Arg.Any<AIModel>(), Arg.Any<bool>(), Arg.Any<System.Threading.CancellationToken>())
             .Returns(callInfo =>
@@ -51,6 +53,41 @@ public class AIModelDataSeederTests
         DeserializeSettings(gpt5Mini.SettingsJson).Temperature.ShouldBeNull();
         DeserializeSettings(gpt5Nano.SettingsJson).MaxOutputTokenCountSupported.ShouldBeFalse();
         DeserializeSettings(gpt5Nano.SettingsJson).Temperature.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task Should_Update_Existing_Model_When_Provider_Is_Stale()
+    {
+        var modelRepository = Substitute.For<IRepository<AIModel, Guid>>();
+        var existingModel = new AIModel(Guid.NewGuid(), "gpt-5-mini", "LegacyProvider")
+        {
+            IsActive = false,
+            SettingsJson = "{}"
+        };
+        modelRepository
+            .GetListAsync(
+                Arg.Any<System.Linq.Expressions.Expression<Func<AIModel, bool>>>(),
+                cancellationToken: Arg.Any<System.Threading.CancellationToken>())
+            .Returns(callInfo =>
+            {
+                var predicate = callInfo
+                    .Arg<System.Linq.Expressions.Expression<Func<AIModel, bool>>>()
+                    .Compile();
+                return Task.FromResult(new[] { existingModel }.Where(predicate).ToList());
+            });
+
+        var seeder = new AIModelDataSeeder(modelRepository);
+
+        await seeder.SeedAsync(new DataSeedContext());
+
+        existingModel.Provider.ShouldBe("OpenAI");
+        existingModel.IsActive.ShouldBeTrue();
+        DeserializeSettings(existingModel.SettingsJson).MaxOutputTokenCountSupported.ShouldBeFalse();
+        await modelRepository.Received(1).UpdateAsync(existingModel, autoSave: true);
+        await modelRepository.DidNotReceive().InsertAsync(
+            Arg.Is<AIModel>(model => model.Name == existingModel.Name),
+            Arg.Any<bool>(),
+            Arg.Any<System.Threading.CancellationToken>());
     }
 
     private static AIModelSettings DeserializeSettings(string settingsJson)

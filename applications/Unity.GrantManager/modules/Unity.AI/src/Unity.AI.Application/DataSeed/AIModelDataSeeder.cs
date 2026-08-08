@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
@@ -40,8 +41,8 @@ public class AIModelDataSeeder(
             Temperature = definition.Temperature
         };
 
-        var existing = await modelRepository.FirstOrDefaultAsync(model =>
-            model.Name == definition.Name && model.Provider == definition.Provider);
+        var existing = (await modelRepository.GetListAsync(model =>
+            model.Name == definition.Name)).SingleOrDefault();
         if (existing != null)
         {
             existing.Provider = definition.Provider;
