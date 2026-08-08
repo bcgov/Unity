@@ -1,4 +1,3 @@
-﻿using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -9,21 +8,13 @@ using Unity.GrantManager.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.HostMigrations;
 
 [DbContext(typeof(GrantManagerDbContext))]
-[Migration("20260805185000_RebuildAIModelsAndRemovePromptLink")]
-public partial class RebuildAIModelsAndRemovePromptLink : Migration
+[Migration("20260805185000_RebuildAIModels")]
+public partial class RebuildAIModels : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
     {
         migrationBuilder.Sql(
             """
-            ALTER TABLE "AI"."AIOperations"
-                DROP CONSTRAINT IF EXISTS "FK_AIOperations_AIPrompts_AIPromptId";
-
-            DROP INDEX IF EXISTS "AI"."IX_AIOperations_AIPromptId";
-
-            ALTER TABLE "AI"."AIOperations"
-                DROP COLUMN IF EXISTS "AIPromptId";
-
             ALTER TABLE "AI"."AIOperations"
                 DROP CONSTRAINT IF EXISTS "FK_AIOperations_AIModels_AIModelId";
 
@@ -177,29 +168,5 @@ public partial class RebuildAIModelsAndRemovePromptLink : Migration
                 REFERENCES "AI"."AIModels" ("Id")
                 ON DELETE RESTRICT;
             """);
-
-        migrationBuilder.AddColumn<Guid>(
-            name: "AIPromptId",
-            schema: "AI",
-            table: "AIOperations",
-            type: "uuid",
-            nullable: false,
-            defaultValue: Guid.Empty);
-
-        migrationBuilder.CreateIndex(
-            name: "IX_AIOperations_AIPromptId",
-            schema: "AI",
-            table: "AIOperations",
-            column: "AIPromptId");
-
-        migrationBuilder.AddForeignKey(
-            name: "FK_AIOperations_AIPrompts_AIPromptId",
-            schema: "AI",
-            table: "AIOperations",
-            column: "AIPromptId",
-            principalSchema: "AI",
-            principalTable: "AIPrompts",
-            principalColumn: "Id",
-            onDelete: ReferentialAction.Restrict);
     }
 }
