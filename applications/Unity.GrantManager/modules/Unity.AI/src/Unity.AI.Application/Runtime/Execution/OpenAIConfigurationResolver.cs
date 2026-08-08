@@ -20,7 +20,8 @@ public class OpenAIConfigurationResolver(
     IRepository<AIPrompt, Guid> promptRepository,
     IMemoryCache memoryCache,
     IConfiguration configuration,
-    IDataFilter<IMultiTenant> multiTenantDataFilter) : ITransientDependency
+    IDataFilter<IMultiTenant> multiTenantDataFilter,
+    ICurrentTenant currentTenant) : ITransientDependency
 {
     private static readonly TimeSpan SettingsCacheDuration = TimeSpan.FromMinutes(5);
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -34,6 +35,7 @@ public class OpenAIConfigurationResolver(
     private readonly IMemoryCache _memoryCache = memoryCache;
     private readonly IConfiguration _configuration = configuration;
     private readonly IDataFilter<IMultiTenant> _multiTenantDataFilter = multiTenantDataFilter;
+    private readonly ICurrentTenant _currentTenant = currentTenant;
 
     public string ResolveProviderName() => Required("Azure:Operations:Defaults:Provider");
 
@@ -72,7 +74,7 @@ public class OpenAIConfigurationResolver(
         {
             throw new InvalidOperationException($"Azure:{providerName}:Endpoint must be a valid absolute URI.");
         }
-        var prompt = await LoadPromptAsync(operation.AIPromptId, cancellationToken);
+        var prompt = await ResolvePromptAsync(operation.Name, cancellationToken);
         if (!prompt.IsActive)
         {
             throw new InvalidOperationException($"AI prompt '{prompt.Name}' v{prompt.VersionNumber} is not active.");
@@ -273,7 +275,7 @@ public class OpenAIConfigurationResolver(
             throw new InvalidOperationException($"AI operation '{operationName}' is not configured.");
         }
 
-        var prompt = await LoadPromptAsync(operation.AIPromptId, cancellationToken);
+        var prompt = await ResolvePromptAsync(operation.Name, cancellationToken);
         if (!prompt.IsActive)
         {
             throw new InvalidOperationException($"AI prompt '{prompt.Name}' v{prompt.VersionNumber} is not active.");
@@ -282,9 +284,9 @@ public class OpenAIConfigurationResolver(
         return $"v{prompt.VersionNumber}";
     }
 
-    private static string BuildOperationSettingsCacheKey(string operationName)
+    private string BuildOperationSettingsCacheKey(string operationName)
     {
-        return $"ai:operation-settings:{operationName.Trim().ToLowerInvariant()}";
+        return $"ai:operation-settings:{_currentTenant.Id?.ToString() ?? "host"}:{operationName.Trim().ToLowerInvariant()}";
     }
 
     private async Task<AIPrompt> LoadPromptAsync(Guid promptId, CancellationToken cancellationToken)
@@ -319,7 +321,6 @@ public class OpenAIConfigurationResolver(
             operation.Id,
             operation.Name,
             operation.AIModelId,
-            operation.AIPromptId,
             operation.CompletionTokens,
             operation.IsActive);
 
@@ -327,16 +328,40 @@ public class OpenAIConfigurationResolver(
         return snapshot;
     }
 
-    private static string BuildOperationSnapshotCacheKey(string operationName)
+    private string BuildOperationSnapshotCacheKey(string operationName)
     {
-        return $"ai:operation-snapshot:{operationName.Trim().ToLowerInvariant()}";
+        return $"ai:operation-snapshot:{_currentTenant.Id?.ToString() ?? "host"}:{operationName.Trim().ToLowerInvariant()}";
+    }
+
+    private async Task<AIPrompt> ResolvePromptAsync(string promptFamily, CancellationToken cancellationToken)
+    {
+        using (_multiTenantDataFilter.Disable())
+        {
+            var prompts = await _promptRepository.GetListAsync(
+                prompt => prompt.Name == promptFamily && prompt.IsActive,
+                cancellationToken: cancellationToken);
+            prompts ??= [];
+
+            var selected = _currentTenant.Id is Guid tenantId
+                ? prompts.Where(prompt => prompt.TenantId == tenantId)
+                    .OrderByDescending(prompt => prompt.VersionNumber)
+                    .FirstOrDefault()
+                : null;
+
+            selected ??= prompts.Where(prompt => prompt.TenantId == null)
+                .OrderByDescending(prompt => prompt.VersionNumber)
+                .FirstOrDefault();
+
+            return selected
+                ?? throw new InvalidOperationException(
+                    $"AI prompt family '{promptFamily}' has no active prompt for the current tenant.");
+        }
     }
 
     private sealed record ResolvedOperationSnapshot(
         Guid Id,
         string Name,
         Guid AIModelId,
-        Guid AIPromptId,
         int CompletionTokens,
         bool IsActive);
 }

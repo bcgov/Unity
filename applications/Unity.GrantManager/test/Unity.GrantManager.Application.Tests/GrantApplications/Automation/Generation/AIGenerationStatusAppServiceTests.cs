@@ -26,7 +26,7 @@ public class AIGenerationStatusAppServiceTests(ITestOutputHelper outputHelper) :
 
         var operations = new[]
         {
-            new AIOperation(operationId, "ApplicationAnalysis", Guid.NewGuid(), Guid.NewGuid())
+            new AIOperation(operationId, "ApplicationAnalysis", Guid.NewGuid())
             {
                 IsActive = true
             }
@@ -64,7 +64,7 @@ public class AIGenerationStatusAppServiceTests(ITestOutputHelper outputHelper) :
 
         var operations = new[]
         {
-            new AIOperation(operationId, "ApplicationAnalysis", Guid.NewGuid(), Guid.NewGuid())
+            new AIOperation(operationId, "ApplicationAnalysis", Guid.NewGuid())
             {
                 IsActive = false
             }
@@ -102,7 +102,7 @@ public class AIGenerationStatusAppServiceTests(ITestOutputHelper outputHelper) :
 
         var operations = new[]
         {
-            new AIOperation(operationId, "ApplicationAnalysis", Guid.NewGuid(), Guid.NewGuid())
+            new AIOperation(operationId, "ApplicationAnalysis", Guid.NewGuid())
         };
 
         var requests = new[]
