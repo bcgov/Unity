@@ -578,6 +578,8 @@ $(function () {
             getAssigneesColumn(columnIndex++),
             getStatusColumn(columnIndex++),
             getExternalStatusVisibilityColumn(columnIndex++),
+            getExternalStatusColumn(columnIndex++),
+            getPublishedStatusColumn(columnIndex++),
             getRequestedAmountColumn(columnIndex++),
             getApprovedAmountColumn(columnIndex++),
             getEconomicRegionColumn(columnIndex++),
@@ -807,6 +809,26 @@ $(function () {
             render: function (data) {
                 return data ? 'Published' : 'Unpublished';
             },
+            index: columnIndex
+        }
+    }
+
+    function getExternalStatusColumn(columnIndex) {
+        return {
+            title: l('ExternalStatus'),
+            data: 'externalStatus',
+            name: 'externalStatus',
+            className: 'data-table-header',
+            index: columnIndex
+        }
+    }
+
+    function getPublishedStatusColumn(columnIndex) {
+        return {
+            title: l('PublishedStatus'),
+            data: 'publishedStatus',
+            name: 'publishedStatus',
+            className: 'data-table-header',
             index: columnIndex
         }
     }

@@ -61,6 +61,8 @@ public class ApplicationListRecord
 
     // ApplicationStatus (always joined)
     public string Status { get; init; } = string.Empty;
+    public string ExternalStatus { get; set; } = string.Empty;
+    public string? PublishedStatus { get; set; }
 
     // ApplicationForm (always joined)
     public string Category { get; init; } = string.Empty;
