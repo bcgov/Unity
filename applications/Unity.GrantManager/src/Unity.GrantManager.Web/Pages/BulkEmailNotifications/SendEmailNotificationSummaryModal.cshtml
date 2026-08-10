@@ -1,0 +1,50 @@
+@page
+@model Unity.GrantManager.Web.Pages.BulkEmailNotifications.SendEmailNotificationSummaryModalModel
+@using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@inject IStringLocalizer<GrantManagerResource> L
+
+@{
+    Layout = null;
+}
+
+<abp-modal id="sendEmailNotificationSummaryModal" size="ExtraLarge">
+    <abp-modal-header>
+        Send Email Summary
+    </abp-modal-header>
+    <abp-modal-body>
+        <div class="table-container">
+            <table class="custom-table" aria-describedby="Send Email Summary">
+                <thead>
+                    <th class="col-5"></th>
+                    <th class="col-20">Reference No:</th>
+                    <th class="col-75">Status:</th>
+                </thead>
+                <tbody class="batch-approval-summary-tbody">
+                    @for (var i = 0; i < Model.BulkEmailNotificationResults?.Count; i++)
+                    {
+                        <tr>
+                            <td class="col-5 centered-icon">
+                                @if (Model.BulkEmailNotificationResults[i].IsSuccess)
+                                {
+                                    <i class="fa-solid fa-check text-success"></i>
+                                }
+                                else
+                                {
+                                    <i class="fa-solid fa-xmark text-danger"></i>
+                                }
+                            </td>
+                            <td class="col-20">
+                                <abp-input asp-for="@Model.BulkEmailNotificationResults[i].ReferenceNo" suppress-label disabled=true />
+                            </td>
+                            <td class="col-75">
+                                <abp-input asp-for="@Model.BulkEmailNotificationResults[i].Message" suppress-label disabled=true />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </abp-modal-body>
+</abp-modal>

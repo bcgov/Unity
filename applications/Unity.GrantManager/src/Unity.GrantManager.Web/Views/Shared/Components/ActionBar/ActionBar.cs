@@ -28,6 +28,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ActionBar
               .AddIfNotContains("/Pages/BulkApprovals/ApproveApplicationsModal.css");
             context.Files
               .AddIfNotContains("/Pages/BulkActions/BulkPublishApplications.css");
+            context.Files
+              .AddIfNotContains("/Pages/BulkEmailNotifications/SendEmailNotificationModal.css");
         }
     }
 
@@ -52,6 +54,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ActionBar
               .AddIfNotContains("/Pages/BulkApprovals/ApproveApplicationsModal.js");
             context.Files
               .AddIfNotContains("/Pages/BulkActions/BulkPublishApplications.js");
+            context.Files
+              .AddIfNotContains("/Pages/BulkEmailNotifications/SendEmailNotificationModal.js");
         }
     }
 }

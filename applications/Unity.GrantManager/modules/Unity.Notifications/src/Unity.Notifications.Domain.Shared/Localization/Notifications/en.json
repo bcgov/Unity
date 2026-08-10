@@ -10,6 +10,7 @@
     "Permission:Notifications": "Notifications",
     "Permission:Notifications.Email": "Email",
     "Permission:Notifications.Email.Send": "Send Email for Individual Application",
+    "Permission:Notifications.Email.SendBulk": "Send Bulk Email Notification",
     "Permission:Notifications.Email.DeleteDraft": "Delete Draft Email for Individual Application",
     "Permission:Notifications.Email.CancelScheduled": "Cancel Scheduled Email for Individual Application",
     "Permission:Notifications.Email.Schedule": "Schedule Email for Individual Application",

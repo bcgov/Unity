@@ -91,6 +91,7 @@
     "ApplicationList:StartAssessmentButton": "Start Assessment",
     "ApplicationList:CompleteAssessmentButton": "Complete Assessment",
     "ApplicationList:TagButton": "Tags",
+    "ApplicationList:SendEmailButton": "Send Email",
     "ApplicationList:ResyncSubmissionAttachmentsButton": "Resync",
     "ApplicationList:ManageTagButton": "Manage Tags",
 
@@ -534,6 +535,17 @@
     "ApplicationBatchApprovalRequest:InvalidPermissions": "Invalid permissions",
     "ApplicationBatchApprovalRequest:InvalidApprovedAmount": "Invalid Approved Amount, it must be greater than 0.00",
     "ApplicationBatchApprovalRequest:InvalidRecommendedAmount": "Invalid Recommended Amount, it must be greater than 0.00",
+
+    "SendEmailNotificationRequest:Title": "Send Email Notification",
+    "SendEmailNotificationRequest:SubmitButtonText": "Send",
+    "SendEmailNotificationRequest:CancelButtonText": "Cancel",
+    "SendEmailNotificationRequest:MaxCountExceeded": "You have exceeded the maximum number of items for bulk email. Please reduce the number to {0} or fewer",
+    "SendEmailNotificationRequest:NoDraftFound": "No draft email found for this application. Please create a draft email before proceeding.",
+    "SendEmailNotificationRequest:MultipleDraftsFound": "Multiple draft emails found for this application. Please retain only one draft before proceeding.",
+    "SendEmailNotificationRequest:MissingSubject": "Draft email is missing a Subject. Please update the draft before proceeding.",
+    "SendEmailNotificationRequest:MissingToAddress": "Draft email is missing a To address. Please update the draft before proceeding.",
+    "SendEmailNotificationRequest:MissingFromAddress": "Draft email is missing a From address. Please update the draft before proceeding.",
+    "SendEmailNotificationRequest:MissingBody": "Draft email is missing a Body. Please update the draft before proceeding.",
 
     "ApplicationBatchPublishRequest:MaxCountExceeded": "You have exceeded the maximum number of items for bulk status publishing. Please reduce the number to {0} or fewer",
     "ApplicationBatchPublishRequest:MinCountExceeded": "You have no items selected for bulk status publishing. Please close this prompt to continue",
