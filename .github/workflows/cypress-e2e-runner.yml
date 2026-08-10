@@ -2,31 +2,20 @@ name: Cypress E2E (runner)
 
 # Shared job called by cypress-dev/test/uat/prod.yml.
 #
-# Unlike Grants, this doesn't run Cypress on the GitHub-hosted runner directly —
-# the Unity Grant Manager Route is IP-allowlisted to the BC Gov network, which
-# GitHub-hosted runners can't reach. Instead this job launches an OpenShift Job
+# Unity Grant Manager Route is IP-allowlisted to the BC Gov network, which
+# GitHub-hosted runners can't reach. This GitHub job launches an OpenShift Job
 # (from the unity-cypress-job Template in ce395f-tools) that runs the existing
 # Unity.AutoUI Cypress suite from inside the cluster, waits for it to finish,
 # and pulls the logs/screenshots back into this Actions run.
 #
-# This deliberately targets ce395f-tools on the Gold cluster, not d18498-tools
-# on Silver, even though the app environments (dev/test/uat/prod) still run on
-# Silver during the cluster migration — the Job's own baseUrl (via the
-# base_url input, or each cypress-config-*.json's default) is what it tests
-# against, independent of which cluster runs the Job itself. Building the CI
-# plumbing against the migration target now avoids redoing it later.
+# The Job pulls credentials from the unity-cypress-config Secret in ce395f-tools, 
+# synced from Vault (GH_UGM_CYPRESS_CONFIG) via External Secrets.
 #
-# Test credentials are NOT GitHub secrets — the Job pulls them from the
-# unity-cypress-config Secret in ce395f-tools, synced from Vault
-# (GH_UGM_CYPRESS_CONFIG) via External Secrets.
-#
-# OpenShift auth reuses the pipeline ServiceAccount (ce395f-tools), which
-# already holds ClusterRole/edit there — covers everything this job needs
-# (templates, processedtemplates, jobs, pods/log, pods/exec), no additional
-# RBAC required. Its token is CYPRESS_OPENSHIFT_TOKEN and its cluster is
-# CYPRESS_OPENSHIFT_CLUSTER — both repo-level (not tied to a GitHub
-# Environment, and deliberately separate from the shared OPENSHIFT_CLUSTER
-# var docker-build-*.yml uses, since that one still points at Silver).
+# OpenShift auth reuses the pipeline ServiceAccount (ce395f-tools), which already 
+# holds ClusterRole/edit this covers everything the job needs (templates, 
+# processedtemplates, jobs, pods/log, pods/exec), no additional RBAC required. 
+# 
+# Token is CYPRESS_OPENSHIFT_TOKEN and its cluster is CYPRESS_OPENSHIFT_CLUSTER.
 
 on:
   workflow_call:
@@ -91,22 +80,24 @@ jobs:
       - name: Wait for Cypress Job to finish
         id: wait
         run: |
-          # Don't use `oc wait --for=condition=complete/failed` here: a freshly
-          # created Job has no .status.conditions entries yet, and
-          # --for=condition=X (without an explicit =true) is satisfied the
-          # instant the condition is merely absent rather than false — so it
-          # can report "condition met" seconds after creation, long before the
-          # Job has actually run. Poll the numeric succeeded/failed fields
-          # instead, which are only set once a pod genuinely finishes.
+          # Wait for the Job to finish by polling the logs for a sentinel line
+          # the cypress container (see cypress-job-template.yaml in
+          # tenant-gitops-ce395f) prints a "CYPRESS_DONE exit_code=N"
+          # sentinel line when the test run finishes and, on failure,
+          # sleeps for 600s before actually exiting.
           JOB_REF="${{ steps.launch.outputs.job_ref }}"
+          JOB_NAME="${JOB_REF#job.batch/}"
           DEADLINE=$(( $(date +%s) + JOB_TIMEOUT_SECONDS ))
-          SUCCEEDED=0
-          FAILED=0
+          POD=""
+          EXIT_CODE=""
+
           while true; do
-            SUCCEEDED=$(oc get "$JOB_REF" -n $TOOLS_NAMESPACE -o jsonpath='{.status.succeeded}')
-            FAILED=$(oc get "$JOB_REF" -n $TOOLS_NAMESPACE -o jsonpath='{.status.failed}')
-            if [ "${SUCCEEDED:-0}" -ge 1 ] 2>/dev/null || [ "${FAILED:-0}" -ge 1 ] 2>/dev/null; then
-              break
+            POD=$(oc get pods -n $TOOLS_NAMESPACE -l job-name="$JOB_NAME" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)
+            if [ -n "$POD" ]; then
+              EXIT_CODE=$(oc logs "$POD" -n $TOOLS_NAMESPACE -c cypress 2>/dev/null | grep -o 'CYPRESS_DONE exit_code=[0-9]*' | tail -1 | cut -d= -f2 || true)
+              if [ -n "$EXIT_CODE" ]; then
+                break
+              fi
             fi
             if [ "$(date +%s)" -ge "$DEADLINE" ]; then
               echo "Timed out after ${JOB_TIMEOUT_SECONDS}s waiting for $JOB_REF"
@@ -115,7 +106,12 @@ jobs:
             sleep 10
           done
 
-          echo "succeeded=${SUCCEEDED:-0}" >> "$GITHUB_OUTPUT"
+          echo "pod=${POD:-}" >> "$GITHUB_OUTPUT"
+          if [ "${EXIT_CODE:-1}" = "0" ]; then
+            echo "succeeded=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "succeeded=0" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Show Cypress logs
         if: always()
@@ -126,15 +122,13 @@ jobs:
       - name: Collect screenshots on failure
         if: steps.wait.outputs.succeeded != '1'
         run: |
-          JOB_NAME="${{ steps.launch.outputs.job_ref }}"
-          JOB_NAME="${JOB_NAME#job.batch/}"
-          POD=$(oc get pods -n $TOOLS_NAMESPACE -l job-name="$JOB_NAME" -o jsonpath='{.items[0].metadata.name}')
+          POD="${{ steps.wait.outputs.pod }}"
           mkdir -p cypress-screenshots
           oc cp "$TOOLS_NAMESPACE/$POD:/workspace/applications/Unity.AutoUI/cypress/screenshots" ./cypress-screenshots -c cypress || true
 
       - name: Upload screenshots on failure
         if: steps.wait.outputs.succeeded != '1'
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: cypress-screenshots-${{ inputs.env_name }}-${{ github.run_number }}
           path: cypress-screenshots
