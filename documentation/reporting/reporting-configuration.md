@@ -194,7 +194,7 @@ The name of the source `Worksheet` this field came from, including its version s
 
 ### Source Order
 
-A numeric column, hidden by default, giving each field's 1-based position in the provider's calculated overall field order. Present for every provider. Not user-editable — it is recalculated by the provider on every load and is not affected by saved Report Column values. Users can reveal it via the column picker to inspect the underlying order, or to manually re-sort back to it after sorting by another column.
+A numeric column, hidden by default, giving each field's 1-based position in the provider's calculated overall field order. Present for every provider. Not user-editable — for saved configurations it reflects the value stored in the mapping (older mappings are backfilled from live provider metadata) and is not affected by saved Report Column values. Users can reveal it via the column picker to inspect the underlying order, or to manually re-sort back to it after sorting by another column.
 
 ### Default Sort Order
 
