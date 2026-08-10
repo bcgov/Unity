@@ -1,5 +1,5 @@
 {
-    "webapp.url": "https://uat-unity.apps.silver.devops.gov.bc.ca/",
+    "webapp.url": "https://uat-unity.apps.gold.devops.gov.bc.ca/",
     "environment": "UAT",
     "test1username": "",
     "test1password": "",
