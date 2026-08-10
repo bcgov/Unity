@@ -119,15 +119,19 @@ This ensures established mappings are preserved and only genuinely new fields re
 
 ## Field Column Definitions
 
-The configuration table displays one row per mappable field from the source. The first three column headers change depending on the active provider tab; the remaining three are constant across all providers.
+The configuration table displays one row per mappable field from the source. For the `worksheet` / `worksheet_consolidated` providers, **Worksheet Name** is the leftmost column. After that, the next three column headers change depending on the active provider tab; the remaining three are constant across all providers.
 
-**Provider-specific headers (columns 1–3):**
+**Worksheet-only header (leftmost column):** **Worksheet Name** — shown only for the `worksheet` / `worksheet_consolidated` providers; absent (and every other column shifts one position left) for `formversion` / `formversion_consolidated` / `scoresheet`.
+
+**Provider-specific headers (next three columns):**
 
 - `formversion` / `formversion_consolidated` — **CHEFS Label**, **CHEFS Property Name**, **CHEFS Type**
 - `worksheet` / `worksheet_consolidated` — **Worksheet Label**, **Worksheet Property Name**, **Worksheet Type**
 - `scoresheet` — **Scoresheet Label**, **Scoresheet Property Name**, **Scoresheet Type**
 
-**Constant headers (columns 4–6):** **Path**, **Report Column**, **Type Path**
+**Constant headers (following three columns):** **Path**, **Report Column**, **Type Path**
+
+**Source Order** — present for every provider as a trailing column, hidden by default (see below).
 
 ### Label *(CHEFS Label / Worksheet Label / Scoresheet Label)*
 
@@ -183,6 +187,26 @@ Indicates which form versions contain this field. Only present when using `formv
 - Blank — field is present in all versions with the same type; merged into a single column
 - `v1` — field exists only in version 1
 - `v1, v3` — field exists in versions 1 and 3 but not in all versions
+
+### Worksheet Name *(worksheet providers only)*
+
+The name of the source `Worksheet` this field came from, including its version suffix (e.g., `grant_application-v2`). Only present for the `worksheet` and `worksheet_consolidated` providers; blank for `formversion` and `scoresheet`.
+
+### Source Order
+
+A numeric column, hidden by default, giving each field's 1-based position in the provider's calculated overall field order. Present for every provider. Not user-editable — it is recalculated by the provider on every load and is not affected by saved Report Column values. Users can reveal it via the column picker to inspect the underlying order, or to manually re-sort back to it after sorting by another column.
+
+### Default Sort Order
+
+For the `worksheet` and `worksheet_consolidated` providers, rows are returned pre-sorted (and numbered via **Source Order**) by:
+
+1. **Worksheet Name**, A–Z (the version suffix means later versions naturally sort after earlier ones)
+2. **Section order** within each worksheet
+3. **Field layout order** within each section (top to bottom, left to right)
+4. **Checkbox group option order** — when a single Checkbox Group field expands into one row per option, the rows follow the order the options are defined on the field (not alphabetical)
+5. **Data grid column order** — when a single Data Grid field expands into one row per column, the rows follow the order the columns are defined on the grid. For a mixed dynamic/static grid, CHEFS-extracted dynamic columns are emitted first (in CHEFS's own order), followed by any additional statically-defined columns not already covered
+
+For the `worksheet` and `worksheet_consolidated` providers, the table's default sort is by **Source Order**, ascending, until the user explicitly sorts by another column, at which point the existing sort/column-visibility persistence takes over. Other providers (`formversion`, `formversion_consolidated`, `scoresheet`) continue to default-sort by Label, unchanged — their **Source Order** column is still populated (reflecting each provider's natural field order) and available via the column picker, but is not the default sort key.
 
 ---
 

@@ -54,6 +54,11 @@ namespace Unity.Reporting.Configuration.FieldsProviders
             }
 
             var mergedFields = MergeFields(versionsWithFields);
+
+            // Stamp each field with its 1-based position in the merged order as SourceOrder, which drives
+            // the report-config-table's default sort.
+            FieldOrderingUtils.AssignSourceOrder(mergedFields);
+
             var mapMetadata = new MapMetadataDto { Info = metadataInfo };
 
             return new FieldPathMetaMapDto { Fields = [.. mergedFields], Metadata = mapMetadata };
