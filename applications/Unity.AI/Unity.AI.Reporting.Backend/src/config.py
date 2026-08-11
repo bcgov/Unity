@@ -74,7 +74,11 @@ class AppConfig:
     fuzzy_match_threshold: float = 92.0
     fuzzy_match_limit: int = 200
     semantic_cache_borderline_low: float = 0.85
-    semantic_cache_top_k: int = 5
+    # Top-K is deliberately generous: the discriminator guard filters candidates
+    # *after* the LIMIT, and year-variants of a question cluster tightly in
+    # embedding space, so a genuine match can sit behind a dozen near-duplicates.
+    semantic_cache_top_k: int = 20
+    cache_discriminator_guard_enabled: bool = True
     llm_judge_enabled: bool = False
     llm_judge_score_threshold: float = 8.0
     preview_row_limit: int = 1000
@@ -122,7 +126,9 @@ class Config:
             fuzzy_match_threshold=float(os.getenv("FUZZY_MATCH_THRESHOLD", "92")),
             fuzzy_match_limit=int(os.getenv("FUZZY_MATCH_LIMIT", "200")),
             semantic_cache_borderline_low=float(os.getenv("SEMANTIC_CACHE_BORDERLINE_LOW", "0.85")),
-            semantic_cache_top_k=int(os.getenv("SEMANTIC_CACHE_TOP_K", "5")),
+            semantic_cache_top_k=int(os.getenv("SEMANTIC_CACHE_TOP_K", "20")),
+            cache_discriminator_guard_enabled=os.getenv(
+                "CACHE_DISCRIMINATOR_GUARD_ENABLED", "true").lower() == "true",
             llm_judge_enabled=os.getenv("LLM_JUDGE_ENABLED", "false").lower() == "true",
             llm_judge_score_threshold=float(os.getenv("LLM_JUDGE_SCORE_THRESHOLD", "8.0")),
             preview_row_limit=int(os.getenv("PREVIEW_ROW_LIMIT", "1000")),

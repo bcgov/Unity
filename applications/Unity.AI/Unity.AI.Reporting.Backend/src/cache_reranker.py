@@ -3,9 +3,12 @@ cache_reranker.py — Multi-layer cache reranking.
 Phase 1: FuzzyMatcher — rapidfuzz layer 1.5 between exact and embedding search.
 Phase 2: normalize_query — whitespace, punctuation, domain abbreviation expansion.
 Phase 3: LLMJudge — binary equivalence judge for borderline cosine zone.
+Phase 4: discriminator guard + temporal validity — deterministic rejection of
+         cache candidates whose salient literals or time period differ (AB#33664).
 """
 import logging
 import re
+from datetime import datetime
 from typing import Optional, List, Dict
 
 from rapidfuzz import fuzz, process
@@ -42,6 +45,151 @@ def normalize_query(text: str) -> str:
     for pattern, replacement in _ABBREVIATIONS:
         text = pattern.sub(replacement, text)
     return text
+
+
+# ── Phase 4a: discriminator guard ─────────────────────────────────────────────
+# Text similarity is the wrong signal for filter literals: "…in 2024" vs "…in 2026"
+# scores 97.7 on rapidfuzz and ~0.98 on cosine, yet needs completely different SQL.
+# Worse, the score *rises* with question length, so no threshold fixes the class.
+# Extract the literals that force different SQL and require them to match exactly.
+
+_MONTHS = (
+    "january", "february", "march", "april", "may", "june",
+    "july", "august", "september", "october", "november", "december",
+)
+
+_YEAR_RE = re.compile(r'\b(?:19|20)\d{2}\b')
+# normalize_query has already expanded "Q3" -> "quarter 3" by the time we run.
+_QUARTER_RE = re.compile(r'\bquarter\s*([1-4])\b')
+_MONTH_RE = re.compile(r'\b(' + '|'.join(_MONTHS) + r')\b')
+_NUMBER_RE = re.compile(r'\b\d+(?:\.\d+)?\b')
+
+
+def extract_discriminators(text: str) -> frozenset:
+    """Return the kind-tagged salient literals in a question.
+
+    Kind tags keep a year from colliding with a count, so "top 2024" and
+    "in 2024" are not treated as the same constraint:
+        "applications in 2024"        -> {"year:2024"}
+        "top 5 regions in Q3 2024"    -> {"num:5", "quarter:3", "year:2024"}
+        "how many applications"       -> frozenset()
+
+    Normalisation is applied internally, so callers may pass either a raw
+    query_text or an already-normalised query — normalize_query is idempotent.
+    """
+    remaining = normalize_query(text)
+    found = set()
+
+    # Years first, then strip them so they are not re-counted as bare numbers.
+    found.update(f"year:{m.group(0)}" for m in _YEAR_RE.finditer(remaining))
+    remaining = _YEAR_RE.sub(' ', remaining)
+
+    # "quarter 3" is consumed whole, so the 3 does not resurface as num:3.
+    found.update(f"quarter:{m.group(1)}" for m in _QUARTER_RE.finditer(remaining))
+    remaining = _QUARTER_RE.sub(' ', remaining)
+
+    found.update(f"month:{m.group(1)}" for m in _MONTH_RE.finditer(remaining))
+    found.update(f"num:{m.group(0)}" for m in _NUMBER_RE.finditer(remaining))
+
+    return frozenset(found)
+
+
+def discriminators_conflict(q1: str, q2: str) -> bool:
+    """True when two questions carry different salient literals.
+
+    Set equality, not subset: any difference means different SQL. Two questions
+    with no literals at all compare equal and are left to the similarity layers.
+
+    This is a conflict detector, not an equivalence prover — it cannot see
+    word-level differences ("approved" vs "pending" both yield {"year:2024"}).
+    Those remain the job of the LLM judge and the user-facing cache badge.
+    """
+    return extract_discriminators(q1) != extract_discriminators(q2)
+
+
+# ── Phase 4b: temporal validity ───────────────────────────────────────────────
+# sql_generator injects "The current date is <today>" into the prompt, so the
+# model may freeze a relative period as a literal. "…submitted this year" cached
+# in 2025 pins 2025, and re-asking the identical words in 2026 is an *exact*
+# match — no similarity score involved, so no reranker can catch it.
+
+_GRANULARITY_ORDER = ("day", "week", "month", "quarter", "year")
+
+_RELATIVE_PERIOD_RE = re.compile(
+    r'\b(?:this|last|next|past|previous|current|recent)\s+'
+    r'(?:fiscal\s+)?(year|quarter|month|week|day)s?\b'
+)
+# normalize_query expands ytd/mtd/qtd into these long forms.
+_TO_DATE_RE = re.compile(r'\b(year|quarter|month|week) to date\b')
+_DAY_WORD_RE = re.compile(r'\b(?:today|yesterday|tomorrow)\b')
+
+# Any 4-digit year literal means the SQL pins a date instead of deriving it.
+_SQL_HARDCODED_DATE_RE = re.compile(r'\b(?:19|20)\d{2}\b')
+
+
+def relative_time_granularity(text: str) -> Optional[str]:
+    """Return the finest relative-time granularity in a question, or None.
+
+    Finest wins because it is the most restrictive: a question mentioning both
+    "this month" and "last year" must be re-checked monthly, not yearly.
+    """
+    normalized = normalize_query(text)
+    found = [m.group(1) for m in _RELATIVE_PERIOD_RE.finditer(normalized)]
+    found += [m.group(1) for m in _TO_DATE_RE.finditer(normalized)]
+    if _DAY_WORD_RE.search(normalized):
+        found.append("day")
+    if not found:
+        return None
+    return min(found, key=_GRANULARITY_ORDER.index)
+
+
+def sql_has_hardcoded_date(sql: str) -> bool:
+    """True when the SQL pins a literal year rather than deriving it from CURRENT_DATE.
+
+    SQL built from CURRENT_DATE / DATE_TRUNC / INTERVAL recomputes its own window
+    on every run and stays correct indefinitely, so it never goes stale.
+    """
+    return bool(_SQL_HARDCODED_DATE_RE.search(sql or ""))
+
+
+def same_period(created_at: datetime, granularity: str,
+                now: Optional[datetime] = None) -> bool:
+    """True when created_at falls in the same calendar period as now."""
+    now = now or datetime.now()
+    if granularity == "year":
+        return created_at.year == now.year
+    if granularity == "quarter":
+        return (created_at.year, (created_at.month - 1) // 3) == \
+               (now.year, (now.month - 1) // 3)
+    if granularity == "month":
+        return (created_at.year, created_at.month) == (now.year, now.month)
+    if granularity == "week":
+        return created_at.isocalendar()[:2] == now.isocalendar()[:2]
+    if granularity == "day":
+        return created_at.date() == now.date()
+    return True
+
+
+def cached_entry_is_temporally_valid(
+    normalized_query: str,
+    cached_sql: str,
+    created_at: Optional[datetime],
+    now: Optional[datetime] = None,
+) -> bool:
+    """False when a relative-time question's cached SQL pins a now-expired period.
+
+    `now` is injectable so the year-boundary case is testable without waiting
+    for one.
+    """
+    granularity = relative_time_granularity(normalized_query)
+    if granularity is None:
+        return True
+    if not sql_has_hardcoded_date(cached_sql):
+        return True
+    if created_at is None:
+        # Relative question + pinned date + unknown age — not worth the risk.
+        return False
+    return same_period(created_at, granularity, now)
 
 
 class FuzzyMatcher:

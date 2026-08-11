@@ -522,10 +522,40 @@ def _attach_preview_to_proposal(proposal, db_id, tenant_id):
     return proposal
 
 
+def _drop_conflicting_candidates(tenant_id, db_id, normalized_query, candidates, text_key):
+    """Remove candidates whose salient literals differ from the incoming question.
+
+    Runs *before* ranking, so a slightly lower-scoring candidate with matching
+    literals can still win instead of being shadowed by a closer-looking one
+    that asks about a different year (AB#33664).
+    """
+    if not config.app.cache_discriminator_guard_enabled:
+        return candidates
+
+    kept, rejected = [], []
+    for candidate in candidates:
+        if cache_reranker.discriminators_conflict(normalized_query, candidate[text_key]):
+            rejected.append(candidate)
+        else:
+            kept.append(candidate)
+
+    if rejected:
+        logger.info(
+            f"[cache:discriminator_reject] tenant={tenant_id} db={db_id} "
+            f"rejected={len(rejected)} kept={len(kept)} "
+            f"query_literals={sorted(cache_reranker.extract_discriminators(normalized_query))} "
+            f"sample_rejected={sorted(cache_reranker.extract_discriminators(rejected[0][text_key]))}"
+        )
+    return kept
+
+
 def _fuzzy_cache_lookup(tenant_id, db_id, schema_types, collection_name, normalized_query):
     """Layer 1.5: rapidfuzz match against recent normalized queries."""
     recent = cache_repository.get_recent_normalized_queries(
         tenant_id, db_id, schema_types, collection_name, config.app.fuzzy_match_limit
+    )
+    recent = _drop_conflicting_candidates(
+        tenant_id, db_id, normalized_query, recent, "normalized_query"
     )
     fuzzy_match = cache_reranker.fuzzy_matcher.find_best(
         normalized_query, recent, config.app.fuzzy_match_threshold
@@ -601,6 +631,10 @@ async def _embedding_cache_lookup(tenant_id, db_id, schema_types, collection_nam
         threshold=config.app.semantic_cache_borderline_low,
         k=config.app.semantic_cache_top_k,
     )
+    # Filter ahead of both the auto-accept short-circuit and the borderline slice.
+    candidates = _drop_conflicting_candidates(
+        tenant_id, db_id, normalized_query, candidates, "query_text"
+    )
     if candidates:
         candidate_sims = ', '.join(f"{c['similarity']:.4f}" for c in candidates)
         logger.info(
@@ -636,9 +670,25 @@ async def _semantic_cache_lookup(tenant_id, db_id, schema_types, collection_name
     return await _embedding_cache_lookup(tenant_id, db_id, schema_types, collection_name, normalized_query)
 
 
-async def _serve_cache_hit(cache_hit, db_id, collection_id, tenant_id):
+async def _serve_cache_hit(cache_hit, db_id, collection_id, tenant_id, normalized_query):
     """Validate cached SQL and build the cache-hit response. Returns None if SQL is no longer valid."""
     cached = cache_hit["response_payload"]
+
+    # Relative-time questions ("this year", "last quarter") may have had their
+    # period frozen as a literal at generation time. Checked here so it covers
+    # every layer including exact match — where the two questions are the same
+    # string, so no reranker can ever see the difference. Ahead of validate_sql
+    # to avoid a wasted Metabase round-trip.
+    if not cache_reranker.cached_entry_is_temporally_valid(
+        normalized_query, cached.get("sql", ""), cache_hit.get("created_at")
+    ):
+        logger.info(
+            f"[cache:stale_relative_date] tenant={tenant_id} db={db_id} "
+            f"granularity={cache_reranker.relative_time_granularity(normalized_query)} "
+            f"created_at={cache_hit.get('created_at')}"
+        )
+        return None
+
     try:
         loop = asyncio.get_event_loop()
         is_valid, _ = await loop.run_in_executor(
@@ -689,7 +739,11 @@ async def _serve_cache_hit(cache_hit, db_id, collection_id, tenant_id):
         "from_cache": True,
         "cache_similarity": round(cache_hit["similarity"], 4),
         "cache_hit_type": hit_type,
-        "cache_original_query": cache_hit.get("query_text", "") if hit_type == "llm_judge_hit" else None,
+        # Populated for every non-exact hit so the UI can show what was reused
+        # and offer "Get fresh answer". Exact hits need no such prompt.
+        "cache_original_query": (
+            cache_hit.get("query_text", "") if hit_type != "exact_hit" else None
+        ),
     }), 200
 
 
@@ -728,7 +782,10 @@ async def _try_serve_from_cache(tenant_id, db_id, schema_types, collection_name,
     )
     if not cache_hit:
         return None, query_embedding
-    return await _serve_cache_hit(cache_hit, db_id, collection_id, tenant_id), query_embedding
+    served = await _serve_cache_hit(
+        cache_hit, db_id, collection_id, tenant_id, normalized_query
+    )
+    return served, query_embedding
 
 
 async def _async_ask(data, user_data):
