@@ -54,8 +54,4 @@ globs: "**/*.js"
 - Run `abp install-libs` to copy resources
 - Add to bundle contributor in `Unity.Theme.UX2` module
 
-## WaterMark
-- Whenever we edit a .js file, we should add a watermark to the top of the file with the following format:
-```javascript
-// <FileName> - <DateTime> - <Author>
 
