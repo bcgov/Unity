@@ -819,7 +819,11 @@ $(function () {
             data: 'externalStatus',
             name: 'externalStatus',
             className: 'data-table-header',
-            index: columnIndex
+            index: columnIndex,
+            render: function (data, type) {
+                const value = data ?? '';
+                return type === 'display' ? dtTextRenderer.display(value) : value;
+            }
         }
     }
 
@@ -829,7 +833,11 @@ $(function () {
             data: 'publishedStatus',
             name: 'publishedStatus',
             className: 'data-table-header',
-            index: columnIndex
+            index: columnIndex,
+            render: function (data, type) {
+                const value = data ?? '';
+                return type === 'display' ? dtTextRenderer.display(value) : value;
+            }
         }
     }
 
