@@ -33,13 +33,13 @@ class SQLGenerator:
         # Backtrack-free: body is any run of non-backtick chars, or 1-2 backticks
         # not followed by a third (the closing fence). Possessive quantifiers (3.11+).
         self.sql_pattern = re.compile(r"```sql\s*+((?:[^`]++|`(?!``))*+)```", re.I)
-        self.metadata_pattern = re.compile(
-            r"""(?:\#\#\#\s*)?Metadata:\s*
-                (?:```json\s*)?
-                (\{[^}]*})
-                (?:\s*```)?
-            """,
-            re.IGNORECASE | re.DOTALL | re.VERBOSE
+        # Only locates where the metadata JSON starts; extract_metadata uses
+        # json.JSONDecoder().raw_decode from here so nested objects/arrays in
+        # the metadata (e.g. "columns": [{...}]) are parsed correctly instead
+        # of truncating at the first inner '}'.
+        self.metadata_header_pattern = re.compile(
+            r"(?:\#\#\#\s*)?Metadata:\s*(?:```json\s*)?",
+            re.IGNORECASE
         )
     
     def extract_sql(self, text: str) -> Optional[str]:
@@ -59,15 +59,20 @@ class SQLGenerator:
     
     def extract_metadata(self, text: str) -> Optional[Dict[str, Any]]:
         """Extract metadata from LLM response"""
-        match = self.metadata_pattern.search(text)
-        if not match:
+        header_match = self.metadata_header_pattern.search(text)
+        if not header_match:
             return None
-        
-        raw = match.group(1).strip()
+
+        start = text.find('{', header_match.end())
+        if start == -1:
+            return None
+
         try:
-            return json.loads(raw)
+            metadata, _ = json.JSONDecoder().raw_decode(text, start)
         except json.JSONDecodeError:
             return None
+
+        return metadata
     
     def fingerprint_results(self, sql: str, db_id: int, tenant_id: Optional[str] = None) -> Tuple[str, Tuple[str, ...], str]:
         """
