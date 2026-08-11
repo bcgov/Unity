@@ -22,7 +22,9 @@ $(function () {
     function bindUIEvents() {
         UIElements.btnSave.on('click', handleSave);
         UIElements.btnCancel.on('click', handleCancel);
-        UIElements.btnBack.on('click', handleBack);
+        UIElements.btnBack.on('click', function () {
+            location.href = '/ApplicationForms';
+        });
     }
 
     function handleSave() {
@@ -57,7 +59,3 @@ $(function () {
         UIElements.manualCheckbox.prop('checked', lastSavedAIValues.manuallyInitiateAIAnalysis);
     }
 });
-
-function handleBack() {
-    location.href = '/ApplicationForms';
-}
