@@ -19,6 +19,11 @@ public class ExceptionCounterMiddleware(
     ExceptionNotificationThrottle throttle,
     ILogger<ExceptionCounterMiddleware> logger)
 {
+    private static readonly TimeSpan PersistenceBackoff = TimeSpan.FromSeconds(30);
+    private readonly object _persistenceGate = new();
+    private bool _persistenceInFlight;
+    private DateTimeOffset _persistenceDisabledUntil;
+
     // Notify only in these environments; add "Staging" if desired
     private static readonly HashSet<string> NotifyEnvironments =
         new(StringComparer.OrdinalIgnoreCase)
@@ -122,6 +127,19 @@ public class ExceptionCounterMiddleware(
         // we can safely use it after the request scope has ended
         var scopeFactory = context.RequestServices.GetRequiredService<IServiceScopeFactory>();
 
+        // Acquire the single-flight gate only once the synchronous, potentially-throwing prep
+        // above has succeeded — otherwise an exception here would leave persistenceInFlight
+        // stuck "true" forever, since the Task.Run below (whose finally resets it) never starts.
+        lock (_persistenceGate)
+        {
+            if (_persistenceInFlight || DateTimeOffset.UtcNow < _persistenceDisabledUntil)
+            {
+                return;
+            }
+
+            _persistenceInFlight = true;
+        }
+
         _ = Task.Run(async () =>
         {
             try
@@ -131,6 +149,11 @@ public class ExceptionCounterMiddleware(
                 var uowManager = scope.ServiceProvider.GetRequiredService<IUnitOfWorkManager>();
                 var notifications = scope.ServiceProvider.GetRequiredService<INotificationsAppService>();
                 var exceptionLogs = scope.ServiceProvider.GetService<IExceptionLogAppService>();
+
+                if (exceptionLogs == null)
+                {
+                    OpenPersistenceBackoff();
+                }
 
                 // Get current user and tenant name
                 var userId = AbpUserTenantAccessor.GetCurrentUserId(scope.ServiceProvider);
@@ -262,6 +285,7 @@ public class ExceptionCounterMiddleware(
                         }
                         catch (Exception logEx)
                         {
+                            OpenPersistenceBackoff();
                             logger.LogWarning(logEx, "Failed to create exception log within UnitOfWork");
                         }
                     }
@@ -270,6 +294,7 @@ public class ExceptionCounterMiddleware(
                 }
                 catch (Exception uowEx)
                 {
+                    OpenPersistenceBackoff();
                     logger.LogWarning(uowEx, "Failed to complete UnitOfWork for exception handling");
                 }
             }
@@ -279,7 +304,22 @@ public class ExceptionCounterMiddleware(
                     notifyEx,
                     "Failed to send Teams exception notification");
             }
+            finally
+            {
+                lock (_persistenceGate)
+                {
+                    _persistenceInFlight = false;
+                }
+            }
         });
+    }
+
+    private void OpenPersistenceBackoff()
+    {
+        lock (_persistenceGate)
+        {
+            _persistenceDisabledUntil = DateTimeOffset.UtcNow.Add(PersistenceBackoff);
+        }
     }
 
     private static string BuildApplicationStackExcerpt(Exception ex)

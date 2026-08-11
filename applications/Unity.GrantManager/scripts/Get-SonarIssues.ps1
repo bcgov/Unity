@@ -3,12 +3,16 @@
     Pulls open SonarCloud issues for a branch via the public API and writes them to a Markdown report.
 
 .DESCRIPTION
-    Calls the SonarCloud /api/issues/search endpoint (paginating past its 500-per-page limit),
+    Calls the SonarQube /api/issues/search endpoint (paginating past its 500-per-page limit),
     then groups the results by severity into a Markdown file - handy for pasting into Copilot/Claude
-    or attaching to a PR instead of screen-scraping the SonarCloud UI.
+    or attaching to a PR instead of screen-scraping the SonarQube UI.
+
+.PARAMETER ServerUrl
+    SonarQube server URL. Default: https://sonarqube.econ.gov.bc.ca/sonar. Set this to
+    https://sonarcloud.io when querying SonarCloud.
 
 .PARAMETER ProjectKey
-    SonarCloud project (component) key. Default: bcgov_Unity.
+    SonarQube project (component) key. Default: UnityScanKey.
 
 .PARAMETER Branch
     Branch name to query. If omitted, you'll be prompted to pick the current git branch, one of
@@ -28,6 +32,10 @@
 .PARAMETER Types
     Optional filter, e.g. -Types BUG,VULNERABILITY. Valid values: BUG, VULNERABILITY, CODE_SMELL.
 
+.PARAMETER FileType
+    Source file type to include. Valid values: js, css, cshtml, cs, all. If omitted, you'll be
+    prompted to choose one.
+
 .PARAMETER IncludeResolved
     Include resolved/closed issues too. By default only unresolved (open) issues are fetched.
 
@@ -41,7 +49,10 @@
     this for unattended/CI runs where nothing should launch afterwards.
 
 .EXAMPLE
-    .\Get-SonarIssues.ps1 -Branch main -Token $env:SONAR_TOKEN
+    .\Get-SonarIssues.ps1 -Branch dev -Token $env:SONAR_TOKEN
+
+.EXAMPLE
+    .\Get-SonarIssues.ps1 -ServerUrl https://sonarcloud.io -ProjectKey bcgov_Unity -Branch main -Token $env:SONAR_TOKEN
 
 .EXAMPLE
     .\Get-SonarIssues.ps1 -ProjectKey bcgov_Unity -Branch feature/AB-12345 -Severities BLOCKER,CRITICAL -OutputPath .\sonar-report.md
@@ -59,7 +70,9 @@
     .\Get-SonarIssues.ps1 -Branch main -FixLevel Quick
 #>
 param(
-    [string]$ProjectKey = "bcgov_Unity",
+    [string]$ServerUrl = "https://sonarqube.econ.gov.bc.ca/sonar",
+
+    [string]$ProjectKey = "UnityScanKey",
 
     [string]$Branch = "",
 
@@ -73,6 +86,9 @@ param(
     [ValidateSet("BUG", "VULNERABILITY", "CODE_SMELL")]
     [string[]]$Types = @(),
 
+    [ValidateSet("js", "css", "cshtml", "cs", "all")]
+    [string]$FileType = "",
+
     [switch]$IncludeResolved,
 
     [ValidateSet("None", "Quick", "QuickModerate", "All")]
@@ -83,7 +99,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$ApiBase = "https://sonarcloud.io/api/issues/search"
+$ApiBase = "$($ServerUrl.TrimEnd('/'))/api/issues/search"
 $PageSize = 500
 $SeverityOrder = @("BLOCKER", "CRITICAL", "MAJOR", "MINOR", "INFO")
 $WellKnownBranches = @("dev", "test", "main")
@@ -151,6 +167,32 @@ function Read-BranchSelection {
     }
 }
 
+function Read-FileTypeSelection {
+    $menu = [ordered]@{
+        "1" = @{ Label = "JavaScript (.js)"; Extension = "js" }
+        "2" = @{ Label = "Stylesheet (.css)"; Extension = "css" }
+        "3" = @{ Label = "Razor (.cshtml)"; Extension = "cshtml" }
+        "4" = @{ Label = "C# (.cs)"; Extension = "cs" }
+        "5" = @{ Label = "All source file types"; Extension = "all" }
+    }
+
+    Write-Host ""
+    Write-Host "Which source file type should be included?" -ForegroundColor Cyan
+    foreach ($key in $menu.Keys) {
+        Write-Host "  [$key] $($menu[$key].Label)"
+    }
+
+    while ($true) {
+        $choice = Read-Host "Enter choice (default: 5 - All source file types)"
+        if ([string]::IsNullOrWhiteSpace($choice)) { $choice = "5" }
+
+        if ($menu.Contains($choice)) {
+            return $menu[$choice].Extension
+        }
+        Write-Host "Invalid choice '$choice' - try again." -ForegroundColor Yellow
+    }
+}
+
 # Maps a -FixLevel value (or the equivalent interactive menu choice) to the FixComplexity tiers
 # it covers. "None" intentionally maps to an empty array - nothing gets fixed.
 $FixLevelTierMap = [ordered]@{
@@ -188,6 +230,10 @@ function Read-FixLevelSelection {
 
 if (-not $Branch) {
     $Branch = Read-BranchSelection -CurrentBranch (Get-CurrentGitBranch)
+}
+
+if (-not $FileType) {
+    $FileType = Read-FileTypeSelection
 }
 
 if (-not $OutputPath) {
@@ -287,6 +333,14 @@ function Get-IssueFilePath {
     return ($Issue.component -replace "^$([regex]::Escape($ProjectKey)):", "")
 }
 
+if ($FileType -ne "all") {
+    $extension = ".$FileType"
+    $allIssues = [System.Collections.Generic.List[object]]@(
+        $allIssues | Where-Object { (Get-IssueFilePath $_).EndsWith($extension, [System.StringComparison]::OrdinalIgnoreCase) }
+    )
+    Write-Host "Issues after file type filter '$FileType': $($allIssues.Count)"
+}
+
 # --- Fix-complexity classification ---
 # Goal: separate mechanical, low-risk fixes (rename, swap one API for another, drop an unused var)
 # from ones that ripple across every call site or need an actual design change, so the report can
@@ -366,6 +420,7 @@ $md = New-Object System.Text.StringBuilder
 [void]$md.AppendLine("")
 [void]$md.AppendLine("- **Project:** $ProjectKey")
 [void]$md.AppendLine("- **Branch:** $(if ($Branch) { $Branch } else { '(default)' })")
+[void]$md.AppendLine("- **Source file type:** $FileType")
 [void]$md.AppendLine("- **Generated:** $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')")
 [void]$md.AppendLine("- **Total open issues:** $($allIssues.Count)")
 [void]$md.AppendLine("")
@@ -404,7 +459,7 @@ if ($quickWins.Count -gt 0) {
         $file = Get-IssueFilePath $issue
         $line = if ($issue.textRange -and $issue.textRange.startLine) { $issue.textRange.startLine } else { "-" }
         $message = ($issue.message -replace '\|', '\|')
-        $link = "https://sonarcloud.io/project/issues?id=$ProjectKey&issues=$($issue.key)&open=$($issue.key)$(if ($Branch) { "&branch=$Branch" })"
+        $link = "$($ServerUrl.TrimEnd('/'))/project/issues?id=$ProjectKey&issues=$($issue.key)&open=$($issue.key)$(if ($Branch) { "&branch=$Branch" })"
         [void]$md.AppendLine("| $($issue.severity) | ``$file`` | $line | [$($issue.rule)]($link) | $message |")
     }
     [void]$md.AppendLine("")
@@ -425,7 +480,7 @@ foreach ($sev in $SeverityOrder) {
         $line = if ($issue.textRange -and $issue.textRange.startLine) { $issue.textRange.startLine } else { "-" }
         $message = ($issue.message -replace '\|', '\|')
         $effort = if ($issue.effort) { $issue.effort } else { "-" }
-        $link = "https://sonarcloud.io/project/issues?id=$ProjectKey&issues=$($issue.key)&open=$($issue.key)$(if ($Branch) { "&branch=$Branch" })"
+        $link = "$($ServerUrl.TrimEnd('/'))/project/issues?id=$ProjectKey&issues=$($issue.key)&open=$($issue.key)$(if ($Branch) { "&branch=$Branch" })"
         [void]$md.AppendLine("| ``$file`` | $line | $($issue.type) | $($issue.FixComplexity.Badge) | $effort | [$($issue.rule)]($link) | $message |")
     }
     [void]$md.AppendLine("")
