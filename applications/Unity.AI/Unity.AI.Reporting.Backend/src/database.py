@@ -133,7 +133,10 @@ class DatabaseManager:
                 # One-time migration: query_embedding was originally `vector(3072)`, but
                 # pgvector's hnsw/ivfflat indexes cap at 2000 dimensions for that type, so
                 # ensure_hnsw_index() could never actually build one. halfvec(3072) supports
-                # hnsw up to 4000-d. Safe to re-run (no-op) on a column already halfvec.
+                # hnsw up to 4000-d. The sentinel row guards against repeating this check on
+                # every startup, but ALTER COLUMN TYPE always takes an ACCESS EXCLUSIVE lock
+                # and rewrites the table even when the target type already matches — so the
+                # ALTER itself is skipped whenever the column is already halfvec(3072).
                 cur.execute("""
                     INSERT INTO schema_versions (db_id, collection_name, fingerprint)
                     VALUES (0, '__migration_v2_halfvec__', 'done')
@@ -142,11 +145,20 @@ class DatabaseManager:
                 """)
                 if cur.fetchone():
                     cur.execute("""
-                        ALTER TABLE query_cache
-                            ALTER COLUMN query_embedding TYPE halfvec(3072)
-                            USING query_embedding::halfvec
+                        SELECT format_type(atttypid, atttypmod)
+                        FROM pg_attribute
+                        WHERE attrelid = 'query_cache'::regclass
+                          AND attname = 'query_embedding'
+                          AND NOT attisdropped
                     """)
-                    logger.info("One-time cache migration: query_embedding converted to halfvec(3072)")
+                    current_type = cur.fetchone()[0]
+                    if current_type != "halfvec(3072)":
+                        cur.execute("""
+                            ALTER TABLE query_cache
+                                ALTER COLUMN query_embedding TYPE halfvec(3072)
+                                USING query_embedding::halfvec
+                        """)
+                        logger.info("One-time cache migration: query_embedding converted to halfvec(3072)")
 
                 # ivfflat index requires rows to exist first — created separately via evict_old
                 # or on first similarity search. Skip here to avoid error on empty table.
