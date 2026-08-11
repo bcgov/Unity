@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace Unity.GrantManager.Web.Pages.BulkEmailNotifications.ViewModels
 {
@@ -16,6 +17,19 @@ namespace Unity.GrantManager.Web.Pages.BulkEmailNotifications.ViewModels
         public string? ApplicantName { get; set; } = string.Empty;
         public string FormName { get; set; } = string.Empty;
         public string ApplicationStatus { get; set; } = string.Empty;
+
+        [DisplayName("Requested Amount")]
+        public decimal RequestedAmount { get; set; }
+
+        [DisplayName("Recommended Amount")]
+        public decimal RecommendedAmount { get; set; }
+
+        [DisplayName("Approved Amount")]
+        public decimal ApprovedAmount { get; set; }
+
+        [DisplayName("Decision Date")]
+        public DateTime? DecisionDate { get; set; }
+
         public string? EmailSubject { get; set; }
         public bool IsValid { get; set; }
         public List<EmailNotificationNoteViewModel> Notes { get; set; }

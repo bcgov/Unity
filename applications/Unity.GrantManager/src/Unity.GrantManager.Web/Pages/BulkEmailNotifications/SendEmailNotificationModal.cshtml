@@ -55,6 +55,18 @@
                                 <abp-input type="hidden" asp-for="@Model.BulkEmailNotifications[i].ReferenceNo" />
 
                                 <abp-row class="m-0 p-3">
+                                    <abp-column size="_3" class="px-3">
+                                        <abp-input asp-for="@Model.BulkEmailNotifications[i].RequestedAmount" class="unity-currency-input" disabled=true />
+                                    </abp-column>
+                                    <abp-column size="_3" class="px-3">
+                                        <abp-input asp-for="@Model.BulkEmailNotifications[i].RecommendedAmount" class="unity-currency-input" disabled=true />
+                                    </abp-column>
+                                    <abp-column size="_3" class="px-3">
+                                        <abp-input asp-for="@Model.BulkEmailNotifications[i].ApprovedAmount" class="unity-currency-input" disabled=true />
+                                    </abp-column>
+                                    <abp-column size="_3">
+                                        <abp-input asp-for="@Model.BulkEmailNotifications[i].DecisionDate" type="date" disabled=true />
+                                    </abp-column>
                                     <abp-column size="_12" class="px-3">
                                         <abp-input asp-for="@Model.BulkEmailNotifications[i].EmailSubject" disabled="true" />
                                     </abp-column>
@@ -103,3 +115,14 @@
 
     </abp-modal>
 </form>
+
+<script defer>
+    (function () {
+        if (window.jQuery) {
+             $('#bulkEmailNotificationForm .unity-currency-input').maskMoney({
+                thousands: ',',
+                decimal: '.'
+        }).maskMoney('mask');
+        }
+    })();
+</script>

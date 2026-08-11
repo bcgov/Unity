@@ -23,7 +23,7 @@ namespace Unity.GrantManager.Web.Pages.BulkEmailNotifications
                 items.Add(new BulkEmailNotificationItemResult
                 {
                     ReferenceNo = item,
-                    Message = "Success",
+                    Message = "Queued for delivery",
                     IsSuccess = true
                 });
             }

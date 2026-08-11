@@ -9,7 +9,7 @@
     Layout = null;
 }
 
-<abp-modal id="sendEmailNotificationSummaryModal" size="ExtraLarge">
+<abp-modal id="sendEmailNotificationSummaryModal">
     <abp-modal-header>
         Send Email Summary
     </abp-modal-header>
@@ -18,8 +18,8 @@
             <table class="custom-table" aria-describedby="Send Email Summary">
                 <thead>
                     <th class="col-5"></th>
-                    <th class="col-20">Reference No:</th>
-                    <th class="col-75">Status:</th>
+                    <th class="col-35">Submission #:</th>
+                    <th class="col-60">Status:</th>
                 </thead>
                 <tbody class="batch-approval-summary-tbody">
                     @for (var i = 0; i < Model.BulkEmailNotificationResults?.Count; i++)
@@ -35,10 +35,10 @@
                                     <i class="fa-solid fa-xmark text-danger"></i>
                                 }
                             </td>
-                            <td class="col-20">
+                            <td class="col-35">
                                 <abp-input asp-for="@Model.BulkEmailNotificationResults[i].ReferenceNo" suppress-label disabled=true />
                             </td>
-                            <td class="col-75">
+                            <td class="col-60">
                                 <abp-input asp-for="@Model.BulkEmailNotificationResults[i].Message" suppress-label disabled=true />
                             </td>
                         </tr>

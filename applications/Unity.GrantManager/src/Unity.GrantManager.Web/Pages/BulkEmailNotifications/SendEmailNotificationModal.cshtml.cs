@@ -79,6 +79,10 @@ public class SendEmailNotificationModalModel(IBulkEmailNotificationAppService bu
                     EmailSubject = application.EmailSubject,
                     ApplicationStatus = application.ApplicationStatus,
                     FormName = application.FormName,
+                    RequestedAmount = application.RequestedAmount,
+                    RecommendedAmount = application.RecommendedAmount,
+                    ApprovedAmount = application.ApprovedAmount,
+                    DecisionDate = application.DecisionDate,
                     IsValid = application.IsValid
                 };
 

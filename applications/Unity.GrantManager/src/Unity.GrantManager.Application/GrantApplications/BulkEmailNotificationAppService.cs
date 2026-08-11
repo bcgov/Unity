@@ -184,6 +184,10 @@ namespace Unity.GrantManager.GrantApplications
                 ApplicantName = application.Applicant?.ApplicantName ?? string.Empty,
                 ApplicationStatus = application.ApplicationStatus.InternalStatus,
                 FormName = application.ApplicationForm?.ApplicationFormName ?? string.Empty,
+                RequestedAmount = application.RequestedAmount,
+                RecommendedAmount = application.RecommendedAmount,
+                ApprovedAmount = application.ApprovedAmount,
+                DecisionDate = application.FinalDecisionDate,
                 ValidationMessages = validationMessages,
                 IsValid = validationMessages.Count == 0
             };
