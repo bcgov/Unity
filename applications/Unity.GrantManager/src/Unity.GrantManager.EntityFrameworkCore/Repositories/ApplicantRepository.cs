@@ -1,9 +1,9 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.EntityFrameworkCore;
 using Unity.Payments.Domain.Suppliers;
@@ -165,7 +165,8 @@ namespace Unity.GrantManager.Repositories
                     StartedOperatingDate = a.StartedOperatingDate,
                     IsDuplicated = a.IsDuplicated,
                     CreationTime = a.CreationTime,
-                    LastModificationTime = a.LastModificationTime
+                    LastModificationTime = a.LastModificationTime,
+                    FiscalYearEnd = a.FiscalYearEnd
                 })
                 .ToListAsync();
         }

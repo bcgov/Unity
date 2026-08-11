@@ -64,6 +64,7 @@ $(function () {
             getFiscalMonthColumn(columnIndex++),
             getBusinessNumberColumn(columnIndex++),
             getFiscalDayColumn(columnIndex++),
+            getFiscalYearEndColumn(columnIndex),
             getStartedOperatingDateColumn(columnIndex++),
             getIsDuplicatedColumn(columnIndex++),            
             getCreationTimeColumn(columnIndex++),
@@ -342,6 +343,18 @@ $(function () {
             render: function (data) {
                 return data ?? '';
             },
+            index: columnIndex
+        }
+    }
+
+    function getFiscalYearEndColumn(columnIndex) {
+        return {
+            title: 'Fiscal Year End',
+            data: 'fiscalYearEnd',
+            name: 'fiscalYearEnd',
+            className: 'data-table-header text-nowrap',
+            visible: false,
+            render: DataTable.render.date('YYYY-MM-DD', currentCultureName),
             index: columnIndex
         }
     }
