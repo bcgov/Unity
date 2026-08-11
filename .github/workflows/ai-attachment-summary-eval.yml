@@ -70,6 +70,7 @@ jobs:
       EVAL_JUDGE_API_VERSION: ${{ secrets.EVAL_JUDGE_API_VERSION }}
       EVAL_ATTACHMENTS_ARCHIVE_URL: ${{ secrets.EVAL_ATTACHMENTS_ARCHIVE_URL }}
       EVAL_RUN_LIVE: "1"
+      EVAL_CASE_SOURCE: "csv"
       EVAL_EMIT_BASELINE: ${{ inputs.emitBaselineCandidate && '1' || '0' }}
 
     steps:
@@ -87,10 +88,22 @@ jobs:
             exit 1
           fi
           archive="$RUNNER_TEMP/ai-eval-attachments.zip"
+          package_dir="$RUNNER_TEMP/ai-eval-package"
           attachment_dir="$RUNNER_TEMP/ai-eval-attachments"
           curl --fail --silent --show-error --location "$EVAL_ATTACHMENTS_ARCHIVE_URL" --output "$archive"
+          mkdir -p "$package_dir"
           mkdir -p "$attachment_dir"
-          unzip -q "$archive" -d "$attachment_dir"
+          unzip -q "$archive" -d "$package_dir"
+
+          metadata_file="$(find "$package_dir" -type f -name 'attachment-summary-eval.csv' -print -quit)"
+          if [[ -z "$metadata_file" ]]; then
+            echo "::error::Private eval archive must contain attachment-summary-eval.csv."
+            exit 1
+          fi
+          mkdir -p modules/Unity.AI/evals/data
+          cp "$metadata_file" modules/Unity.AI/evals/data/attachment-summary-eval.csv
+
+          find "$package_dir" -type f ! -name 'attachment-summary-eval.csv' -exec cp {} "$attachment_dir" \;
           echo "EVAL_ATTACHMENTS_DIR=$attachment_dir" >> "$GITHUB_ENV"
 
       - name: Restore

@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Collections.Generic;
 
 namespace Unity.AI.Evaluation;
 
@@ -52,5 +53,16 @@ internal static class DatasetHasher
 
         var final = sha.ComputeHash(Encoding.UTF8.GetBytes(buf.ToString()));
         return "sha256:" + Convert.ToHexString(final).ToLowerInvariant();
+    }
+
+    public static string ComputeCaseSet(IEnumerable<EvalCase> cases)
+    {
+        var canonical = string.Join(
+            "\n",
+            cases
+                .Select(evalCase => $"{evalCase.Source}:{evalCase.Id}")
+                .OrderBy(value => value, StringComparer.Ordinal));
+        return "sha256:" + Convert.ToHexString(
+            SHA256.HashData(Encoding.UTF8.GetBytes(canonical))).ToLowerInvariant();
     }
 }

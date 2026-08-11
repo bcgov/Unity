@@ -5,7 +5,7 @@ using Unity.AI.Extraction;
 
 namespace Unity.AI.Operations;
 
-// ponytail: shared between production AttachmentSummaryService and evaluation harness.
+// Note: shared between production AttachmentSummaryService and evaluation harness.
 // If a third caller shows up with a different empty-extraction policy, split the policy from the extract call.
 public static class AttachmentSummaryExtractor
 {

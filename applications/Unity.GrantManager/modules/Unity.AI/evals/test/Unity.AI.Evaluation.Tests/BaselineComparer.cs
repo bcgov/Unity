@@ -15,11 +15,17 @@ internal static class BaselineComparer
     //  - dataset hash mismatch => hard fail
     //  - pass-rate drop > 3pp => fail
     //  - normalized mean rubric drop > 3pp (of 5.0) => fail
-    //  - any previously-safe case now hallucinating or hitting a forbidden claim => fail
+    //  - any previously-safe case now has a blocking unsupported or forbidden claim => fail
     //  - retry-once + reproduce is handled by the caller (this is a pure compare)
     public static BaselineComparison Compare(Baseline baseline, EvalRun run)
     {
         var reasons = new List<string>();
+
+        if (baseline.BaselineVersion != 2)
+        {
+            reasons.Add($"baseline_version_mismatch:baseline={baseline.BaselineVersion};required=2");
+            return new BaselineComparison(true, reasons);
+        }
 
         if (!string.Equals(baseline.DatasetHash, run.DatasetHash, System.StringComparison.Ordinal))
         {
@@ -31,6 +37,15 @@ internal static class BaselineComparer
         {
             reasons.Add(
                 $"harness_version_mismatch:baseline={baseline.HarnessVersion};run={run.HarnessVersion}");
+            return new BaselineComparison(true, reasons);
+        }
+
+        if (!string.Equals(baseline.CaseSetHash, run.CaseSetHash, System.StringComparison.Ordinal)
+            || !baseline.Cases.Keys.OrderBy(id => id, System.StringComparer.Ordinal)
+                .SequenceEqual(run.Cases.Select(result => result.CaseId)
+                    .OrderBy(id => id, System.StringComparer.Ordinal)))
+        {
+            reasons.Add($"case_set_mismatch:baseline={baseline.CaseSetHash};run={run.CaseSetHash}");
             return new BaselineComparison(true, reasons);
         }
 
@@ -46,6 +61,24 @@ internal static class BaselineComparer
             reasons.Add(
                 $"candidate_mismatch:baseline={baseline.Candidate.Provider}/{baseline.Candidate.Profile};" +
                 $"run={run.CandidateProvider}/{run.CandidateProfile}");
+            return new BaselineComparison(true, reasons);
+        }
+
+        if (!baseline.Candidate.Models.OrderBy(value => value, System.StringComparer.Ordinal)
+                .SequenceEqual(run.CandidateModels.OrderBy(value => value, System.StringComparer.Ordinal))
+            || !baseline.Candidate.PromptTemplateHashes.OrderBy(value => value, System.StringComparer.Ordinal)
+                .SequenceEqual(run.PromptTemplateHashes.OrderBy(value => value, System.StringComparer.Ordinal)))
+        {
+            reasons.Add("candidate_snapshot_mismatch");
+            return new BaselineComparison(true, reasons);
+        }
+
+        if (!string.Equals(baseline.Judge.Deployment, run.JudgeDeployment, System.StringComparison.Ordinal)
+            || !string.Equals(baseline.Judge.ApiVersion, run.JudgeApiVersion, System.StringComparison.Ordinal)
+            || !baseline.Judge.Models.OrderBy(value => value, System.StringComparer.Ordinal)
+                .SequenceEqual(run.JudgeModels.OrderBy(value => value, System.StringComparer.Ordinal)))
+        {
+            reasons.Add("judge_snapshot_mismatch");
             return new BaselineComparison(true, reasons);
         }
 
@@ -81,6 +114,12 @@ internal static class BaselineComparer
             reasons.Add($"mean_rubric_drop_normalized={rubricDropNormalized:F3}");
         }
 
+        var factCoverageDrop = baseline.Aggregate.FactCoverageRate - run.FactCoverageRate;
+        if (factCoverageDrop > DropThreshold)
+        {
+            reasons.Add($"fact_coverage_drop={factCoverageDrop:F3}");
+        }
+
         foreach (var caseResult in run.Cases)
         {
             if (!baseline.Cases.TryGetValue(caseResult.CaseId, out var prior))
@@ -88,9 +127,9 @@ internal static class BaselineComparer
                 continue; // new case; not a regression
             }
 
-            if (!prior.Hallucination && caseResult.Judge.Hallucination)
+            if (prior.Pass && caseResult.Judge.HasBlockingUnsupportedClaim)
             {
-                reasons.Add($"new_hallucination:{caseResult.CaseId}");
+                reasons.Add($"new_blocking_unsupported_claim:{caseResult.CaseId}");
             }
             if (!prior.ForbiddenClaim && caseResult.Judge.ForbiddenClaim)
             {

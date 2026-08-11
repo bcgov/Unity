@@ -1,0 +1,21 @@
+# Local, gitignored candidate + judge credentials for the live attachment-summary
+# eval. Copy this file to live-eval.local.ps1 (same folder) and fill in the
+# blanks. Invoke-LiveEval.ps1 dot-sources live-eval.local.ps1 automatically.
+#
+# Never commit live-eval.local.ps1 — it is listed in evals/.gitignore.
+
+# Candidate provider (read via ABP IConfiguration by OpenAIConfigurationResolver).
+# The AttachmentSummary operation is seeded to the "Gpt5Mini" model, so the
+# Profiles:Gpt5Mini:DeploymentName key below must resolve to a real deployment.
+$env:Azure__Operations__Defaults__Provider = "OpenAI"
+$env:Azure__OpenAI__Endpoint = ""
+$env:Azure__OpenAI__ApiKey = ""
+$env:Azure__OpenAI__Profiles__Gpt5Mini__DeploymentName = "gpt-5-mini"
+
+# Judge (env-only by design — see AzureOpenAIJudgeClient.cs). Reusing the same
+# endpoint/key as the candidate is fine; the judge deployment/api-version are
+# independent values.
+$env:EVAL_JUDGE_ENDPOINT = $env:Azure__OpenAI__Endpoint
+$env:EVAL_JUDGE_KEY = $env:Azure__OpenAI__ApiKey
+$env:EVAL_JUDGE_DEPLOYMENT = "gpt-5"
+$env:EVAL_JUDGE_API_VERSION = "2024-10-21"

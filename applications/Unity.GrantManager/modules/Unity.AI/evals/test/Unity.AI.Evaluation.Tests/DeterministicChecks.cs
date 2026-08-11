@@ -49,12 +49,19 @@ internal static class DeterministicChecks
             failures.Add($"sentence_count={sentences}");
         }
 
-        foreach (var forbidden in evalCase.ForbiddenClaims)
+        // JSONL fixtures define literal forbidden phrases. CSV cases define
+        // semantic instructions (for example, "Do not claim...") that cannot
+        // be meaningfully checked with substring matching and are evaluated by
+        // the structured judge trap assessments instead.
+        if (string.Equals(evalCase.Source, "jsonl", StringComparison.OrdinalIgnoreCase))
         {
-            if (!string.IsNullOrWhiteSpace(forbidden) &&
-                summary.Contains(forbidden, StringComparison.OrdinalIgnoreCase))
+            foreach (var forbidden in evalCase.ForbiddenClaims)
             {
-                failures.Add($"forbidden_claim:{forbidden}");
+                if (!string.IsNullOrWhiteSpace(forbidden) &&
+                    summary.Contains(forbidden, StringComparison.OrdinalIgnoreCase))
+                {
+                    failures.Add($"forbidden_claim:{forbidden}");
+                }
             }
         }
 

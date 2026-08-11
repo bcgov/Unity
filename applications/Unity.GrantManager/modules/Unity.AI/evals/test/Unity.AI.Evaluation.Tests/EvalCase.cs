@@ -20,7 +20,7 @@ public sealed class EvalCase
     [JsonPropertyName("fixturePath")]
     public string? FixturePath { get; set; }
 
-    // ponytail: pre-extracted text on disk; bypasses TextExtractionService entirely
+    // Note: pre-extracted text on disk; bypasses TextExtractionService entirely
     [JsonPropertyName("extractedTextPath")]
     public string? ExtractedTextPath { get; set; }
 
@@ -69,7 +69,7 @@ public sealed class EvalCase
     [JsonPropertyName("hallucinationTraps")]
     public List<EvalHallucinationTrap> HallucinationTraps { get; set; } = new();
 
-    // ponytail: CSV-loaded cases point at real downloaded attachments outside the
+    // Note: CSV-loaded cases point at real downloaded attachments outside the
     // datasets/ tree. Not serialized; DatasetLoader sets it after resolving the file.
     [JsonIgnore]
     public string? AttachmentAbsolutePath { get; set; }

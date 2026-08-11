@@ -24,10 +24,11 @@
     <None Update="datasets\**\*.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <!-- ponytail: link the tenant-facing eval CSV into datasets/ so it flips the
+    <!-- Note: link the tenant-facing eval CSV into datasets/ so it flips the
          dataset hash and is co-located with cases.jsonl at runtime. Real
          attachments stay outside git (downloaded via evals/scripts/Get-EvalAttachments.ps1). -->
     <None Include="..\..\data\attachment-summary-eval.csv"
+          Condition="Exists('..\..\data\attachment-summary-eval.csv')"
           Link="datasets\attachment-summary\data\attachment-summary-eval.csv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

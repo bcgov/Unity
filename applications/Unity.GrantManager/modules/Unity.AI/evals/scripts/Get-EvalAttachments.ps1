@@ -4,7 +4,7 @@
 # so no auth token is needed once the port-forward is up.
 #
 # Prereq: `oc login` already done (e.g. via ocUnityDbConnect.ps1).
-# ponytail: reuses the anonymous chefs download route rather than hitting CHEFS
+# Note: reuses the anonymous chefs download route rather than hitting CHEFS
 # directly, so tenant-scoped CHEFS creds live in the pod, not on your laptop.
 
 param(

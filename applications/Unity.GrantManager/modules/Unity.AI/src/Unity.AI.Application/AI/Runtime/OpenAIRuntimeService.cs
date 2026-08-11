@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -226,7 +228,27 @@ namespace Unity.AI.Runtime
                 PromptTokensTotal: metrics.PromptTokensTotal,
                 CompletionTokensTotal: metrics.CompletionTokensTotal,
                 TotalTokensTotal: metrics.TotalTokensTotal,
-                ReasoningTokensTotal: metrics.ReasoningTokensTotal);
+                ReasoningTokensTotal: metrics.ReasoningTokensTotal)
+            {
+                PromptTemplateSha256 = ComputePromptTemplateSha256(
+                    promptTemplate.SystemPrompt,
+                    promptTemplate.UserPrompt,
+                    promptTemplate.MetadataJson),
+            };
+        }
+
+        private static string ComputePromptTemplateSha256(
+            string? systemPrompt,
+            string? userPrompt,
+            string? metadataJson)
+        {
+            var canonical = string.Join(
+                "\n---\n",
+                systemPrompt ?? string.Empty,
+                userPrompt ?? string.Empty,
+                metadataJson ?? string.Empty);
+            return "sha256:" + Convert.ToHexString(
+                SHA256.HashData(Encoding.UTF8.GetBytes(canonical))).ToLowerInvariant();
         }
 
         public async Task<ApplicationScoringResponse> GenerateApplicationScoringAsync(ApplicationScoringRequest request, CancellationToken cancellationToken = default)

@@ -16,4 +16,11 @@ public sealed record AttachmentSummaryDiagnosticResult(
     int PromptTokensTotal,
     int CompletionTokensTotal,
     int TotalTokensTotal,
-    int ReasoningTokensTotal);
+    int ReasoningTokensTotal)
+{
+    /// <summary>
+    /// SHA-256 of the unrendered system prompt, user template, and prompt metadata.
+    /// This deliberately excludes attachment text and other request data.
+    /// </summary>
+    public string PromptTemplateSha256 { get; init; } = "";
+}

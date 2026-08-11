@@ -28,7 +28,7 @@ namespace Unity.AI.Evaluation;
 [Collection("AIEvalLive")]
 public class LiveSuiteTests : GrantManagerApplicationTestBase
 {
-    private const string HarnessVersion = "0.2.0";
+    private const string HarnessVersion = "0.4.0";
     private readonly ITestOutputHelper _out;
 
     public LiveSuiteTests(ITestOutputHelper output) : base(output)
@@ -49,39 +49,11 @@ public class LiveSuiteTests : GrantManagerApplicationTestBase
         var run = await ExecuteSuiteAsync(CancellationToken.None);
         var outDir = ReportWriter.Write(run, DatasetLoader.ReportsRoot);
         _out.WriteLine($"report: {outDir}");
-
-        var baselinePath = Path.Combine(DatasetLoader.DatasetRoot, "baseline.json");
-        if (!File.Exists(baselinePath))
+        var privateAuditPath = PrivateAuditWriter.WriteIfEnabled(run);
+        if (privateAuditPath != null)
         {
-            _out.WriteLine("no baseline.json committed — regression check skipped (report-only mode).");
-            return;
+            _out.WriteLine($"private audit: {privateAuditPath}");
         }
-
-        var baseline = JsonSerializer.Deserialize<Baseline>(File.ReadAllText(baselinePath))
-            ?? throw new InvalidOperationException("baseline.json unreadable");
-
-        var comparison = BaselineComparer.Compare(baseline, run);
-        if (!comparison.Regressed)
-        {
-            return;
-        }
-
-        if (comparison.Reasons.Any(reason =>
-                reason.StartsWith("dataset_hash_mismatch:", StringComparison.Ordinal)))
-        {
-            comparison.Regressed.ShouldBeFalse(
-                $"regression: {string.Join("; ", comparison.Reasons)}");
-        }
-
-        _out.WriteLine(
-            $"potential regression; running confirmation: {string.Join("; ", comparison.Reasons)}");
-        var confirmation = await ExecuteSuiteAsync(CancellationToken.None);
-        var confirmationDir = ReportWriter.Write(confirmation, DatasetLoader.ReportsRoot);
-        _out.WriteLine($"confirmation report: {confirmationDir}");
-
-        var confirmedComparison = BaselineComparer.Compare(baseline, confirmation);
-        confirmedComparison.Regressed.ShouldBeFalse(
-            $"confirmed regression: {string.Join("; ", confirmedComparison.Reasons)}");
     }
 
     [Fact]
@@ -128,6 +100,26 @@ public class LiveSuiteTests : GrantManagerApplicationTestBase
                 .ToList();
             cases.ShouldNotBeEmpty();
             _out.WriteLine($"EVAL_CASE_SOURCE={sourceFilter}: restricted to {cases.Count} case(s).");
+        }
+
+        var availableCases = cases.ToList();
+        var availableCaseCount = availableCases.Count;
+
+        var explicitCaseIdsRaw = Environment.GetEnvironmentVariable("EVAL_CASE_IDS");
+        if (!string.IsNullOrWhiteSpace(explicitCaseIdsRaw))
+        {
+            var requestedIds = explicitCaseIdsRaw
+                .Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            var availableIds = cases.Select(c => c.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var missingIds = requestedIds.Where(id => !availableIds.Contains(id)).ToList();
+            missingIds.ShouldBeEmpty(
+                $"EVAL_CASE_IDS contains unknown case(s): {string.Join(", ", missingIds)}");
+            var requestedSet = requestedIds.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            cases = cases.Where(c => requestedSet.Contains(c.Id)).ToList();
+            cases.ShouldNotBeEmpty();
+            _out.WriteLine($"EVAL_CASE_IDS: selected {cases.Count} explicit case(s).");
         }
 
         // EVAL_CASE_OFFSET skips the first N cases (after source filtering) so
@@ -184,18 +176,18 @@ public class LiveSuiteTests : GrantManagerApplicationTestBase
             }
 
             var det = DeterministicChecks.Run(c, diag.Summary, diag.ModelOutput, diag.Outcome);
-            var verdict = await judge.JudgeAsync(
-                c,
-                extracted,
-                diag.Summary,
-                extraction.StoppedOnEmpty,
-                ct);
-            var casePassed = det.Passed
-                             && !verdict.Failed
-                             && !verdict.Hallucination
-                             && !verdict.ForbiddenClaim
-                             && verdict.AllDimsAtLeast3
-                             && verdict.MeanRubric >= 3.25;
+            var verdict = extraction.StoppedOnEmpty
+                ? JudgeVerdict.Skip("no extractable text")
+                : await judge.JudgeAsync(
+                    c,
+                    extracted,
+                    diag.Summary,
+                    extraction.StoppedOnEmpty,
+                    ct);
+            var casePassed = EvalCasePassPolicy.Passes(
+                det,
+                verdict,
+                extraction.StoppedOnEmpty);
 
             results.Add(new CaseResult(
                 CaseId: c.Id,
@@ -222,9 +214,15 @@ public class LiveSuiteTests : GrantManagerApplicationTestBase
                 ReasoningTokensTotal: diag.ReasoningTokensTotal,
                 ExtractionStoppedOnEmpty: extraction.StoppedOnEmpty,
                 ExtractedTextLength: extracted?.Length ?? 0,
-                ExtractedTextSha256: Sha256Hex(extracted ?? "")));
+                ExtractedTextSha256: Sha256Hex(extracted ?? ""))
+            {
+                CandidateSummary = diag.Summary,
+                PromptTemplateSha256 = diag.PromptTemplateSha256,
+            });
         }
 
+        var selectedCaseSetHash = DatasetHasher.ComputeCaseSet(cases);
+        var availableCaseSetHash = DatasetHasher.ComputeCaseSet(availableCases);
         return new EvalRun(
             HarnessVersion: HarnessVersion,
             CommitSha: Environment.GetEnvironmentVariable("GITHUB_SHA") ?? "local",
@@ -233,7 +231,36 @@ public class LiveSuiteTests : GrantManagerApplicationTestBase
             JudgeDeployment: judge.DeploymentName,
             CandidateProvider: candidateProvider,
             CandidateProfile: candidateProfile,
-            Cases: results);
+            Cases: results)
+        {
+            CaseSetHash = selectedCaseSetHash,
+            JudgeApiVersion = judge.ApiVersion,
+            SourceFilter = sourceFilter ?? "",
+            AvailableCaseCount = availableCaseCount,
+            FullCaseSet = string.Equals(
+                selectedCaseSetHash,
+                availableCaseSetHash,
+                StringComparison.Ordinal),
+            CandidateModels = results
+                .Select(result => result.Model)
+                .Where(model => !string.IsNullOrWhiteSpace(model))
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(model => model, StringComparer.Ordinal)
+                .ToList(),
+            JudgeModels = results
+                .Select(result => result.Judge.JudgeModel)
+                .Where(model => !string.IsNullOrWhiteSpace(model))
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(model => model, StringComparer.Ordinal)
+                .ToList(),
+            PromptTemplateHashes = results
+                .Select(result => result.PromptTemplateSha256)
+                .Where(hash => !string.IsNullOrWhiteSpace(hash)
+                    && !string.Equals(hash, "not-invoked", StringComparison.Ordinal))
+                .Distinct(StringComparer.Ordinal)
+                .OrderBy(hash => hash, StringComparer.Ordinal)
+                .ToList(),
+        };
     }
 
     private static AttachmentSummaryDiagnosticResult EmptyExtractionDiagnostic()
@@ -254,7 +281,10 @@ public class LiveSuiteTests : GrantManagerApplicationTestBase
             PromptTokensTotal: 0,
             CompletionTokensTotal: 0,
             TotalTokensTotal: 0,
-            ReasoningTokensTotal: 0);
+            ReasoningTokensTotal: 0)
+        {
+            PromptTemplateSha256 = "not-invoked",
+        };
     }
 
     private static Baseline BuildBaseline(EvalRun run)
@@ -274,6 +304,7 @@ public class LiveSuiteTests : GrantManagerApplicationTestBase
                 Pass = c.CasePassed,
                 Hallucination = c.Judge.Hallucination,
                 ForbiddenClaim = c.Judge.ForbiddenClaim,
+                FactCoverageRate = c.Judge.FactCoverageRate,
                 Rubric = new BaselineRubric
                 {
                     Groundedness = c.Judge.Groundedness,
@@ -285,19 +316,29 @@ public class LiveSuiteTests : GrantManagerApplicationTestBase
         }
         return new Baseline
         {
-            BaselineVersion = 1,
+            BaselineVersion = 2,
             DatasetHash = run.DatasetHash,
             HarnessVersion = run.HarnessVersion,
+            CaseSetHash = run.CaseSetHash,
             Candidate = new BaselineCandidate
             {
                 Provider = run.CandidateProvider,
                 Profile = run.CandidateProfile,
                 PromptVersion = firstPromptVersion,
+                Models = run.CandidateModels.ToList(),
+                PromptTemplateHashes = run.PromptTemplateHashes.ToList(),
+            },
+            Judge = new BaselineJudge
+            {
+                Deployment = run.JudgeDeployment,
+                ApiVersion = run.JudgeApiVersion,
+                Models = run.JudgeModels.ToList(),
             },
             Aggregate = new BaselineAggregate
             {
                 PassRate = run.PassRate,
                 MeanRubric = run.MeanRubric,
+                FactCoverageRate = run.FactCoverageRate,
             },
             Cases = cases,
         };
