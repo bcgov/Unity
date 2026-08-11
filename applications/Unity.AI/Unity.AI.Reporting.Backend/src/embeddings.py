@@ -7,6 +7,7 @@ import json
 import logging
 import time
 from typing import List, Optional, Tuple
+import sqlalchemy.exc
 from langchain_core.documents import Document
 from langchain_openai import AzureOpenAIEmbeddings
 from pydantic import SecretStr
@@ -145,10 +146,14 @@ class SchemaExtractor:
         try:
             result = self.metabase.execute_sql(sql, db_id, tenant_id=tenant_id)
             return bool(result["rows"])
-        except Exception:
+        except Exception as e:
             # A real "no rows" returns [] above; reaching here means the query
             # itself failed — mark so the schema fingerprint isn't advanced
             # based on a transiently dropped table.
+            logger.warning(
+                f"_has_data check failed for \"{schema_name}\".\"{table_name}\" "
+                f"(db_id={db_id}): {e}"
+            )
             self._extraction_had_error = True
             return False
 
@@ -460,11 +465,20 @@ class EmbeddingManager:
             api_version=config.ai.azure_api_version
         )
 
+        # pool_pre_ping: verify a pooled connection is still alive (cheap
+        # SELECT 1) before handing it to a query, transparently discarding
+        # and replacing it if not. vector_store is built once at process
+        # startup and can then sit unused for long stretches between
+        # requests (a quiet tenant, a quiet night) — without pre_ping, the
+        # first query after such a gap can hit a connection that's already
+        # gone stale (idle timeout, network blip, DB restart) and fail
+        # outright instead of transparently reconnecting.
         self.vector_store = PGVector(
             embeddings=self.embedding_model,
             collection_name=config.app.collection_name,
             connection=config.database.url,
-            use_jsonb=True
+            use_jsonb=True,
+            engine_args={"pool_pre_ping": True}
         )
         self.schema_extractor = SchemaExtractor(metabase_client)
 
@@ -475,7 +489,8 @@ class EmbeddingManager:
             embeddings=self.embedding_model,
             collection_name=config.app.collection_name,
             connection=config.database.url,
-            use_jsonb=True
+            use_jsonb=True,
+            engine_args={"pool_pre_ping": True}
         )
 
     def _retry_on_connection_error(self, func, *args, **kwargs):
@@ -484,15 +499,19 @@ class EmbeddingManager:
         for attempt in range(max_retries):
             try:
                 return func(*args, **kwargs)
-            except Exception as e:
-                error_msg = str(e).lower()
-                # Check if it's a connection error
-                if any(keyword in error_msg for keyword in ['connection', 'terminating', 'closed']):
-                    logger.warning(f"Connection error on attempt {attempt + 1}/{max_retries}: {e}")
-                    if attempt < max_retries - 1:
-                        self._reconnect_vector_store()
-                        time.sleep(0.5 * (attempt + 1))  # Exponential backoff
-                        continue
+            except sqlalchemy.exc.DBAPIError as e:
+                # DBAPIError covers driver-level connection failures (dropped
+                # connections, SSL EOF, etc.) regardless of the exact message
+                # text. Matching on message substrings like "connection" or
+                # "closed" missed real-world phrasings such as "SSL error:
+                # unexpected eof while reading", letting a stale pooled
+                # connection surface as a request failure instead of being
+                # retried.
+                logger.warning(f"Connection error on attempt {attempt + 1}/{max_retries}: {e}")
+                if attempt < max_retries - 1:
+                    self._reconnect_vector_store()
+                    time.sleep(0.5 * (attempt + 1))  # Exponential backoff
+                    continue
                 raise
         return None
 
