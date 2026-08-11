@@ -15,7 +15,7 @@
 
 <div class="action-bar p-2 search-action-bar">
     <div class="search-action-bar_search-wrapper">
-        <input type="search" id="search" placeholder="Search" class="tbl-search">
+        <input type="search" id="search" placeholder="Search" aria-label="Search" class="tbl-search">
         <div class="mb-3 date-input-filter-div">
             <label class="form-label" for="quickDateRange">Quick Date Range</label>
             <select id="quickDateRange" class="form-control quick-date-input">
@@ -30,7 +30,7 @@
         </div>
         <div class="mb-3 custom-date-range-container-div" id="customDateInputs" style="display: none;">
             <div class="mb-3 date-input-filter-div">
-                <label class="form-label" for="SubmittedFromDate">Submission Date From</label>
+                <label class="form-label" for="submittedFromDate">Submission Date From</label>
                 <input   
                     abp-data-datepicker="false"              
                     type="date"
@@ -42,7 +42,7 @@
                     max="2100-01-01">
             </div>
             <div class="mb-3 date-input-filter-div">
-                <label class="form-label" for="SubmittedToDate">Submission Date To</label>
+                <label class="form-label" for="submittedToDate">Submission Date To</label>
                 <input
                     abp-data-datepicker="false" 
                     type="date"
@@ -134,7 +134,7 @@
         <abp-row>
             <abp-column class="spinner-loader">
                 <div class="spinner-grow" role="status">
-                    <span class="sr-only">Loading...</span>
+                    <span class="visually-hidden">Loading...</span>
                 </div>
             </abp-column>
         </abp-row>

@@ -2,12 +2,12 @@ using System;
 using System.Linq;
 using Shouldly;
 using Unity.Flex.Worksheets;
-using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
+using Unity.GrantManager.GrantApplications.Automation.Operations.FormWorksheet;
 using Xunit;
 
 namespace Unity.GrantManager.AI;
 
-public class GenerateFormWorksheetJobTests
+public class FormWorksheetOperationExecutorTests
 {
     [Theory]
     [InlineData("{}")]
@@ -16,11 +16,14 @@ public class GenerateFormWorksheetJobTests
     [InlineData("""{"fields":[{"key":"project","label":"Project","type":"Radio"}]}""")]
     [InlineData("""{"fields":[{"key":"project","label":"Project","type":2}]}""")]
     [InlineData("""{"fields":[{"key":"project","label":"Project","type":" "}]}""")]
+    [InlineData("""{"fields":[{"key":null,"label":"Project","type":"Text"}]}""")]
+    [InlineData("""{"fields":[{"key":"project","label":null,"type":"Text"}]}""")]
+    [InlineData("""{"fields":[{"key":"project","label":"Project","type":null}]}""")]
     [InlineData("""{"fields":[{"key":"project","label":"Project","type":"Text"},{"key":"PROJECT","label":"Other","type":"Text"}]}""")]
     public void ParseWorksheetDefinition_Should_Reject_Incomplete_Ai_Response(string worksheetJson)
     {
         var exception = Should.Throw<InvalidOperationException>(() =>
-            GenerateFormWorksheetJob.ParseWorksheetDefinition(worksheetJson));
+            FormWorksheetOperationExecutor.ParseWorksheetDefinition(worksheetJson));
 
         exception.Message.ShouldContain("unusable worksheet definition");
     }
@@ -28,7 +31,7 @@ public class GenerateFormWorksheetJobTests
     [Fact]
     public void ParseWorksheetDefinition_Should_Accept_Flat_Safe_Field_Suggestions()
     {
-        var fields = GenerateFormWorksheetJob.ParseWorksheetDefinition("""
+        var fields = FormWorksheetOperationExecutor.ParseWorksheetDefinition("""
             {"fields":[{"key":"projectName","label":"Project Name","type":"Text"},{"key":"requestedAmount","label":"Requested Amount","type":"Currency"}]}
             """);
 
@@ -41,7 +44,7 @@ public class GenerateFormWorksheetJobTests
     [Fact]
     public void ParseWorksheetDefinition_Should_Trim_And_Ignore_Case_For_Safe_Field_Types()
     {
-        var fields = GenerateFormWorksheetJob.ParseWorksheetDefinition("""
+        var fields = FormWorksheetOperationExecutor.ParseWorksheetDefinition("""
             {"fields":[{"key":"projectName","label":"Project Name","type":"  teXT  "}]}
             """);
 
@@ -51,11 +54,11 @@ public class GenerateFormWorksheetJobTests
     [Fact]
     public void BuildWorksheet_Should_Create_One_SuggestedFields_Section_With_Default_Definitions()
     {
-        var suggestions = GenerateFormWorksheetJob.ParseWorksheetDefinition("""
+        var suggestions = FormWorksheetOperationExecutor.ParseWorksheetDefinition("""
             {"fields":[{"key":"projectName","label":"Project Name","type":"Text"}]}
             """);
 
-        var worksheet = GenerateFormWorksheetJob.BuildWorksheet(suggestions, "ai-form-worksheet");
+        var worksheet = FormWorksheetOperationExecutor.BuildWorksheet(suggestions, "ai-form-worksheet");
 
         worksheet.Sections.Count.ShouldBe(1);
         worksheet.Sections.Single().Name.ShouldBe("Suggested Fields");

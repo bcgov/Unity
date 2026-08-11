@@ -105,7 +105,7 @@
     </div>
     <div class="m-4 d-flex justify-content-center">
         <div class="spinner-border">
-            <span class="sr-only">Loading...</span>
+            <span class="visually-hidden">Loading...</span>
         </div>
     </div>
 </div>
@@ -129,7 +129,7 @@
                     <abp-row>
                         <abp-column size="_12" class="spinner-loader">
                             <div class="spinner-grow">
-                                <span class="sr-only">Loading...</span>
+                                <span class="visually-hidden">Loading...</span>
                             </div>
                         </abp-column>
                     </abp-row>
@@ -173,7 +173,7 @@
                             <abp-column size="_12">
                                 <abp-row>
                                     <abp-column size="_12" class="back-button-container">
-                                        <abp-button id="backBtn" class="btn-sm back-btn" icon="angle-left" text="Back to Review List" />
+                                        <abp-button id="backBtn" class="btn-sm back-btn" icon-type="Other" icon="fa-solid fa-angle-left" text="Back to Review List" />
                                     </abp-column>
                                     <abp-column size="_8">
                                         <h4 class="review-heading">Assessment Result Attachments</h4>
@@ -283,7 +283,7 @@
             @if (aiApplicationAnalysisEnabled)
             {
                 <li class="nav-item">
-                    <button class="nav-link" id="ai-analysis-tab" data-bs-toggle="tab" data-bs-target="#ai-analysis" type="button" role="tab" aria-controls="ai-analysis" aria-selected="false" title="Application Analysis"><i class="fa fa-wand-sparkles" aria-hidden="true"></i></button>
+                    <button class="nav-link" id="ai-analysis-tab" data-bs-toggle="tab" data-bs-target="#ai-analysis" type="button" role="tab" aria-controls="ai-analysis" aria-selected="false" title="Application Analysis"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i></button>
                 </li>
             }
             </ul>
@@ -329,7 +329,7 @@
 
                         <div class="d-flex justify-content-end m-3">
                             <form id="form" name="form" action="/uploader" enctype="multipart/form-data" method="post">
-                                <input id="assessment_upload" name="assessment_upload" type="file" size="1" multiple onchange="uploadAssessmentFiles('assessment_upload');" style="display: none" />
+                                <input id="assessment_upload" name="assessment_upload" type="file" size="1" multiple onchange="uploadAssessmentFiles('assessment_upload');" aria-label="Add Attachments" style="display: none" />
                                 <abp-button text="Add Attachments"
                                             id="assessment_upload_btn"
                                             class="assessment-upload-btn"
@@ -424,7 +424,7 @@
                         {
                             <button type="button" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn" id="regenerateApplicationAnalysis" data-ai-cooldown-checking="1" data-ai-rate-limit-disabled="1" disabled>
                                 <span class="ai-button-content">
-                                    <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
+                                    <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
                                     <span>Generate</span>
                                 </span>
                             </button>
@@ -473,7 +473,7 @@
                                 <div class="ai-analysis-section-actions">
                                     <button type="button" class="ai-analysis-section-toggle" data-element="hidden-toggle" style="display:none;"></button>
                                     <button type="button" class="ai-analysis-collapse-toggle" data-element="collapse-toggle" aria-expanded="true">
-                                        <i class="fa fa-chevron-down" aria-hidden="true"></i>
+                                        <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
                                     </button>
                                 </div>
                             </div>

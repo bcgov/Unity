@@ -12,10 +12,6 @@ public class AIOperation : AuditedAggregateRoot<Guid>
 
     public AIModel AIModel { get; set; } = default!;
 
-    public Guid AIPromptId { get; set; }
-
-    public AIPrompt? AIPrompt { get; set; }
-
     public AIExecutionMode ExecutionMode { get; set; } = AIExecutionMode.Sequential;
 
     public int CompletionTokens { get; set; }
@@ -26,11 +22,11 @@ public class AIOperation : AuditedAggregateRoot<Guid>
     {
     }
 
-    public AIOperation(Guid id, string name, Guid aiModelId, Guid aiPromptId)
+    public AIOperation(Guid id, string name, Guid aiModelId)
     {
         Id = id;
         Name = name;
         AIModelId = aiModelId;
-        AIPromptId = aiPromptId;
     }
+
 }

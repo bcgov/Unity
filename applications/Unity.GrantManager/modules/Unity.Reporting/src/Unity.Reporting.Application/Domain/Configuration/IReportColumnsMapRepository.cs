@@ -45,7 +45,7 @@ namespace Unity.Reporting.Domain.Configuration
         Task GenerateViewAsync(Guid correlationId, string correlationProvider);
 
         /// <summary>
-        /// Retrieves data from a generated view with pagination and filtering.
+        /// Retrieves data from a generated view with pagination.
         /// </summary>
         /// <param name="viewName">The name of the view to query.</param>
         /// <param name="request">The request parameters for data retrieval.</param>

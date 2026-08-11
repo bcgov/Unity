@@ -47,9 +47,21 @@ $(function () {
         });
     });
 
+    // Detail content is read-only; prevent its clicks from reaching the row toggle.
+    exceptionLogsTable.on('click', 'td.exception-log-details-row, td.exception-log-details-row *', function (e) {
+        e.stopImmediatePropagation();
+    });
+
     // Row click toggles the exception details child row (instead of a <details> element).
-    exceptionLogsTable.on('click', 'tbody tr', function (e) {
+    exceptionLogsTable.on('click', 'tbody > tr', function (e) {
         if ($(e.target).closest('a').length) {
+            return;
+        }
+
+        // DataTables applies the child-row class to the detail cell, so clicks
+        // inside expanded details must never toggle the parent data row.
+        if ($(e.target).closest('.exception-log-details-row').length ||
+            $(this).find('.exception-log-details-row').length) {
             return;
         }
 

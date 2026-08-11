@@ -123,7 +123,7 @@ $(function () {
                           data-bs-toggle="tooltip"
                           data-bs-placement="left"
                           title="${escaped}">
-                        <i class="fa fa-info-circle text-muted" aria-hidden="true"></i>
+                        <i class="fa-solid fa-circle-info text-muted" aria-hidden="true"></i>
                         <span class="visually-hidden">${escaped}</span>
                     </span>`;
         }
@@ -138,7 +138,7 @@ $(function () {
                             data-bs-strategy="fixed"
                             aria-expanded="false"
                             data-contact-id="${row.contactId}">
-                        <i class="fa fa-ellipsis-v" aria-hidden="true"></i>
+                        <i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li>

@@ -47,8 +47,8 @@
                         <div class="edit_row_field unity-input-group">
                             @if (!isEditable)
                             {
-                                <label class="form-label">@df.Name</label>
-                                <input type="text" class="form-control" value="@df.Value" disabled />
+                                <label class="form-label" for="@df.Key">@df.Name</label>
+                                <input type="text" id="@df.Key" class="form-control" value="@df.Value" aria-label="@df.Name" disabled />
                             }
                             else if (fieldType == CustomFieldType.Checkbox)
                             {

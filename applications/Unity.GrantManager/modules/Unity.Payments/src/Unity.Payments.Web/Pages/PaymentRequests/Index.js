@@ -529,7 +529,8 @@ $(function () {
             }
         },
         onStateLoaded: function (dtApi, data) {
-            if (!initialLoad) {
+            if (!initialLoad && data) {
+                // A saved state was restored
                 isRestoringState = false;
                 dtApi.ajax.reload(null, false);
             }
@@ -539,8 +540,16 @@ $(function () {
         contextMenuActionsSelector: '[data-selector="batch-payment-table-actions"]'
     });
 
-    $('.grp-savedStates').text('Save View');
+    // Initialize savedStates button styling
     $('.grp-savedStates').closest('.btn-group').addClass('cstm-save-view');
+
+    // Update button text to Save View
+    function updateSavedStatesButtonText() {
+        $('.grp-savedStates').text('Save View');
+    }
+
+    dataTable.on('stateRestore-change', updateSavedStatesButtonText);
+    updateSavedStatesButtonText();
 
     dataTable.on('column-visibility.dt', function (e, settings, columnIdx) {
         try {
@@ -744,7 +753,7 @@ $(function () {
             index: columnIndex,
             render: function (data, _, row) {
                 if (row.errorSummary != null && row.errorSummary !== '') {
-                    return `${data} <i class="fa fa-flag error-icon" data-toggle="tooltip" title="${row.errorSummary}"></i>`;
+                    return `${data} <i class="fa-solid fa-flag error-icon" data-toggle="tooltip" title="${row.errorSummary}"></i>`;
                 } else {
                     return data;
                 }

@@ -650,8 +650,16 @@ $(function () {
     });
 
     // For savedStates
-    $('.grp-savedStates').text('Save View');
+    // Initialize button styling
     $('.grp-savedStates').closest('.btn-group').addClass('cstm-save-view');
+
+    // Update button text based
+    function updateSavedStatesButtonText() {
+        $('.grp-savedStates').text('Save View');
+    }
+
+    dataTable.on('stateRestore-change', updateSavedStatesButtonText);
+    updateSavedStatesButtonText();
 
     // Subscribe to refresh events
     PubSub.subscribe('refresh_applicant_list', (msg, data) => {

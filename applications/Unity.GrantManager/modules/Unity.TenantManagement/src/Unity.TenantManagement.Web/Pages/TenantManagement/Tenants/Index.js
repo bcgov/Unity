@@ -32,7 +32,7 @@
         if (!items.length) return '';
         return '<div class="text-center"><div class="dropdown d-inline-block">' +
             '<a href="javascript:;" class="btn btn-primary btn-sm dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">' +
-            '<i class="fa fa-cog"></i> ' + lGm('TenantList:ActionsButton') + '</a>' +
+            '<i class="fa-solid fa-gear"></i> ' + lGm('TenantList:ActionsButton') + '</a>' +
             '<div class="dropdown-menu">' + items.join('') + '</div>' +
             '</div></div>';
     }
@@ -191,7 +191,7 @@
 
     function _renderFeatureItem(feature) {
         let id = 'ft-' + feature.name.replaceAll('.', '-');
-        let checked = feature.value === 'true' ? ' checked' : '';
+        let checked = (feature.value || '').toLowerCase() === 'true' ? ' checked' : '';
         return '<div class="form-check form-switch mb-2">' +
             '<input class="form-check-input" type="checkbox" id="' + id + '"' +
             ' data-feature-name="' + feature.name + '"' + checked + '>' +
@@ -270,7 +270,7 @@
         if (!_featuresLoaded) return;
         let features = [];
         $('#config-features-content input[type="checkbox"]').each(function () {
-            features.push({ name: $(this).data('feature-name'), value: $(this).prop('checked').toString() });
+            features.push({ name: $(this).data('feature-name'), value: $(this).prop('checked') ? 'True' : 'False' });
         });
         $('#config-features-json').val(JSON.stringify(features));
     }

@@ -80,9 +80,9 @@
                                             title="Remove registered organisation"
                                             style="margin: -3px; margin-left: -5px;"
                                             type="button"
-                                            icon="xmark"
+                                            icon-type="Other"
+                                            icon="fa-solid fa-xmark"
                                             class="p-0">
-                                    <i class="fa fa-xmark"></i>
                                 </abp-button>
                             </abp-column>
                         </abp-row>
@@ -349,7 +349,7 @@
                         </abp-column>
                         <abp-column size="_2" class="px-1 aligned-select-btn">
                             <button class="btn unt-btn-outline-primary btn-outline-primary" id="btn-refresh-electoral" type="button" onclick="refreshApplicantElectoralDistrict()">
-                                <i class="unt-icon-sm fa-solid fa-refresh"></i>
+                                <i class="unt-icon-sm fa-solid fa-arrows-rotate"></i>
                             </button>
                         </abp-column>
                     </abp-row>
@@ -429,13 +429,13 @@
                                 <td>@L["ApplicantInfoView:ApplicantInfo.UnityApplicant"].Value</td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_UnityApplicantId" value="existing" class="me-2" />
+                                        <input type="radio" name="merge_UnityApplicantId" value="existing" class="me-2" aria-label="Select existing value for @L["ApplicantInfoView:ApplicantInfo.UnityApplicant"].Value" />
                                         <span id="existing_UnityApplicantId"></span>
                                     </label>
                                 </td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0" for="merge_UnityApplicantId_new">
-                                        <input type="radio" id="merge_UnityApplicantId_new" name="merge_UnityApplicantId" value="new" class="me-2" aria-labelledby="merge_UnityApplicantId_new" />
+                                        <input type="radio" id="merge_UnityApplicantId_new" name="merge_UnityApplicantId" value="new" class="me-2" aria-label="Select new value for @L["ApplicantInfoView:ApplicantInfo.UnityApplicant"].Value" />
                                         <span id="new_UnityApplicantId"></span>
                                     </label>
                                 </td>
@@ -444,13 +444,13 @@
                                 <td>@L["ApplicantInfoView:ApplicantInfo.ApplicantName"].Value</td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_ApplicantName" value="existing" class="me-2" />
+                                        <input type="radio" name="merge_ApplicantName" value="existing" class="me-2" aria-label="Select existing value for @L["ApplicantInfoView:ApplicantInfo.ApplicantName"].Value" />
                                         <span id="existing_ApplicantName"></span>
                                     </label>
                                 </td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_ApplicantName" value="new" class="me-2" />
+                                        <input type="radio" name="merge_ApplicantName" value="new" class="me-2" aria-label="Select new value for @L["ApplicantInfoView:ApplicantInfo.ApplicantName"].Value" />
                                         <span id="new_ApplicantName"></span>
                                     </label>
                                 </td>
@@ -459,13 +459,13 @@
                                 <td>@L["ApplicantInfoView:ApplicantInfo.OrgName"].Value</td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_OrgName" value="existing" class="me-2" />
+                                        <input type="radio" name="merge_OrgName" value="existing" class="me-2" aria-label="Select existing value for @L["ApplicantInfoView:ApplicantInfo.OrgName"].Value" />
                                         <span id="existing_OrgName"></span>
                                     </label>
                                 </td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_OrgName" value="new" class="me-2" />
+                                        <input type="radio" name="merge_OrgName" value="new" class="me-2" aria-label="Select new value for @L["ApplicantInfoView:ApplicantInfo.OrgName"].Value" />
                                         <span id="new_OrgName"></span>
                                     </label>
                                 </td>
@@ -474,13 +474,13 @@
                                 <td>@L["ApplicantInfoView:ApplicantInfo.OrgNumber"].Value</td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_OrgNumber" value="existing" class="me-2" />
+                                        <input type="radio" name="merge_OrgNumber" value="existing" class="me-2" aria-label="Select existing value for @L["ApplicantInfoView:ApplicantInfo.OrgNumber"].Value" />
                                         <span id="existing_OrgNumber"></span>
                                     </label>
                                 </td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_OrgNumber" value="new" class="me-2" />
+                                        <input type="radio" name="merge_OrgNumber" value="new" class="me-2" aria-label="Select new value for @L["ApplicantInfoView:ApplicantInfo.OrgNumber"].Value" />
                                         <span id="new_OrgNumber"></span>
                                     </label>
                                 </td>
@@ -489,13 +489,13 @@
                                 <td>@L["ApplicantInfoView:ApplicantInfo.NonRegOrgName"].Value</td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_NonRegOrgName" value="existing" class="me-2" />
+                                        <input type="radio" name="merge_NonRegOrgName" value="existing" class="me-2" aria-label="Select existing value for @L["ApplicantInfoView:ApplicantInfo.NonRegOrgName"].Value" />
                                         <span id="existing_NonRegOrgName"></span>
                                     </label>
                                 </td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_NonRegOrgName" value="new" class="me-2" />
+                                        <input type="radio" name="merge_NonRegOrgName" value="new" class="me-2" aria-label="Select new value for @L["ApplicantInfoView:ApplicantInfo.NonRegOrgName"].Value" />
                                         <span id="new_NonRegOrgName"></span>
                                     </label>
                                 </td>
@@ -504,13 +504,13 @@
                                 <td>@L["ApplicantInfoView:ApplicantInfo.OrganizationType"].Value</td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_OrganizationType" value="existing" class="me-2" />
+                                        <input type="radio" name="merge_OrganizationType" value="existing" class="me-2" aria-label="Select existing value for @L["ApplicantInfoView:ApplicantInfo.OrganizationType"].Value" />
                                         <span id="existing_OrganizationType"></span>
                                     </label>
                                 </td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_OrganizationType" value="new" class="me-2" />
+                                        <input type="radio" name="merge_OrganizationType" value="new" class="me-2" aria-label="Select new value for @L["ApplicantInfoView:ApplicantInfo.OrganizationType"].Value" />
                                         <span id="new_OrganizationType"></span>
                                     </label>
                                 </td>
@@ -519,13 +519,13 @@
                                 <td>@L["ApplicantInfoView:ApplicantInfo.ApproxNumberOfEmployees"].Value</td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_ApproxNumberOfEmployees" value="existing" class="me-2" />
+                                        <input type="radio" name="merge_ApproxNumberOfEmployees" value="existing" class="me-2" aria-label="Select existing value for @L["ApplicantInfoView:ApplicantInfo.ApproxNumberOfEmployees"].Value" />
                                         <span id="existing_ApproxNumberOfEmployees"></span>
                                     </label>
                                 </td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_ApproxNumberOfEmployees" value="new" class="me-2" />
+                                        <input type="radio" name="merge_ApproxNumberOfEmployees" value="new" class="me-2" aria-label="Select new value for @L["ApplicantInfoView:ApplicantInfo.ApproxNumberOfEmployees"].Value" />
                                         <span id="new_ApproxNumberOfEmployees"></span>
                                     </label>
                                 </td>
@@ -534,13 +534,13 @@
                                 <td>@L["ApplicantInfoView:ApplicantInfo.OrgBookStatus"].Value</td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_OrgStatus" value="existing" class="me-2" />
+                                        <input type="radio" name="merge_OrgStatus" value="existing" class="me-2" aria-label="Select existing value for @L["ApplicantInfoView:ApplicantInfo.OrgBookStatus"].Value" />
                                         <span id="existing_OrgStatus"></span>
                                     </label>
                                 </td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_OrgStatus" value="new" class="me-2" />
+                                        <input type="radio" name="merge_OrgStatus" value="new" class="me-2" aria-label="Select new value for @L["ApplicantInfoView:ApplicantInfo.OrgBookStatus"].Value" />
                                         <span id="new_OrgStatus"></span>
                                     </label>
                                 </td>
@@ -549,13 +549,13 @@
                                 <td>@L["ApplicantInfoView:ApplicantInfo.IndigenousOrgInd"].Value</td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_IndigenousOrgInd" value="existing" class="me-2" />
+                                        <input type="radio" name="merge_IndigenousOrgInd" value="existing" class="me-2" aria-label="Select existing value for @L["ApplicantInfoView:ApplicantInfo.IndigenousOrgInd"].Value" />
                                         <span id="existing_IndigenousOrgInd"></span>
                                     </label>
                                 </td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_IndigenousOrgInd" value="new" class="me-2" />
+                                        <input type="radio" name="merge_IndigenousOrgInd" value="new" class="me-2" aria-label="Select new value for @L["ApplicantInfoView:ApplicantInfo.IndigenousOrgInd"].Value" />
                                         <span id="new_IndigenousOrgInd"></span>
                                     </label>
                                 </td>
@@ -564,13 +564,13 @@
                                 <td>@L["ApplicantInfoView:ApplicantInfo.Sector"].Value</td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_Sector" value="existing" class="me-2" />
+                                        <input type="radio" name="merge_Sector" value="existing" class="me-2" aria-label="Select existing value for @L["ApplicantInfoView:ApplicantInfo.Sector"].Value" />
                                         <span id="existing_Sector"></span>
                                     </label>
                                 </td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_Sector" value="new" class="me-2" />
+                                        <input type="radio" name="merge_Sector" value="new" class="me-2" aria-label="Select new value for @L["ApplicantInfoView:ApplicantInfo.Sector"].Value" />
                                         <span id="new_Sector"></span>
                                     </label>
                                 </td>
@@ -579,13 +579,13 @@
                                 <td>@L["ApplicantInfoView:ApplicantInfo.SubSector"].Value</td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_SubSector" value="existing" class="me-2" />
+                                        <input type="radio" name="merge_SubSector" value="existing" class="me-2" aria-label="Select existing value for @L["ApplicantInfoView:ApplicantInfo.SubSector"].Value" />
                                         <span id="existing_SubSector"></span>
                                     </label>
                                 </td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_SubSector" value="new" class="me-2" />
+                                        <input type="radio" name="merge_SubSector" value="new" class="me-2" aria-label="Select new value for @L["ApplicantInfoView:ApplicantInfo.SubSector"].Value" />
                                         <span id="new_SubSector"></span>
                                     </label>
                                 </td>
@@ -594,13 +594,13 @@
                                 <td>@L["ApplicantInfoView:ApplicantInfo.SectorSubSectorIndustryDesc"].Value</td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_SectorSubSectorIndustryDesc" value="existing" class="me-2" />
+                                        <input type="radio" name="merge_SectorSubSectorIndustryDesc" value="existing" class="me-2" aria-label="Select existing value for @L["ApplicantInfoView:ApplicantInfo.SectorSubSectorIndustryDesc"].Value" />
                                         <span id="existing_SectorSubSectorIndustryDesc"></span>
                                     </label>
                                 </td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_SectorSubSectorIndustryDesc" value="new" class="me-2" />
+                                        <input type="radio" name="merge_SectorSubSectorIndustryDesc" value="new" class="me-2" aria-label="Select new value for @L["ApplicantInfoView:ApplicantInfo.SectorSubSectorIndustryDesc"].Value" />
                                         <span id="new_SectorSubSectorIndustryDesc"></span>
                                     </label>
                                 </td>
@@ -609,13 +609,13 @@
                                 <td>@L["ApplicantInfoView:ApplicantInfo.FiscalDay"].Value</td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_FiscalDay" value="existing" class="me-2" />
+                                        <input type="radio" name="merge_FiscalDay" value="existing" class="me-2" aria-label="Select existing value for @L["ApplicantInfoView:ApplicantInfo.FiscalDay"].Value" />
                                         <span id="existing_FiscalDay"></span>
                                     </label>
                                 </td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_FiscalDay" value="new" class="me-2" />
+                                        <input type="radio" name="merge_FiscalDay" value="new" class="me-2" aria-label="Select new value for @L["ApplicantInfoView:ApplicantInfo.FiscalDay"].Value" />
                                         <span id="new_FiscalDay"></span>
                                     </label>
                                 </td>
@@ -624,13 +624,13 @@
                                 <td>@L["ApplicantInfoView:ApplicantInfo.FiscalMonth"].Value</td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_FiscalMonth" value="existing" class="me-2" />
+                                        <input type="radio" name="merge_FiscalMonth" value="existing" class="me-2" aria-label="Select existing value for @L["ApplicantInfoView:ApplicantInfo.FiscalMonth"].Value" />
                                         <span id="existing_FiscalMonth"></span>
                                     </label>
                                 </td>
                                 <td>
                                     <label class="d-flex align-items-center w-100 mb-0">
-                                        <input type="radio" name="merge_FiscalMonth" value="new" class="me-2" />
+                                        <input type="radio" name="merge_FiscalMonth" value="new" class="me-2" aria-label="Select new value for @L["ApplicantInfoView:ApplicantInfo.FiscalMonth"].Value" />
                                         <span id="new_FiscalMonth"></span>
                                     </label>
                                 </td>

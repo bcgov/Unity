@@ -8,6 +8,8 @@ public interface IAIGenerationAppService : IApplicationService
 {
     Task GenerateApplicationAttachmentSummariesAsync(AttachmentSummaryGenerationRequestDto request);
 
+    Task SubmitAsync(string operationType, AIGenerationSubmissionDto request);
+
     Task GenerateApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null);
 
     Task GenerateApplicationScoringAsync(Guid applicationId, string? promptVersion = null);

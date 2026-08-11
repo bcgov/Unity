@@ -152,7 +152,7 @@ namespace Unity.Payments.Domain.Services
             if (includeTags)
             {
                 paymentsQueryable = paymentsQueryable
-                    .Include(pr => pr.PaymentTags)
+                    .Include(pr => pr.PaymentTags!)
                     .ThenInclude(pt => pt.Tag);
             }
 
@@ -161,9 +161,7 @@ namespace Unity.Payments.Domain.Services
                 paymentsQueryable = paymentsQueryable.Include(pr => pr.ExpenseApprovals);
             }
 
-#pragma warning disable CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
             var paymentWithIncludes = await paymentsQueryable.ToListAsync();
-#pragma warning restore CS8620 // Argument cannot be used for parameter due to differences in the nullability of reference types.
 
             return paymentWithIncludes;
         }

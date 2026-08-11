@@ -520,8 +520,16 @@ $(function () {
     });
 
     //For savedStates
-    $('.grp-savedStates').text('Save View');
+    // Initialize button styling
     $('.grp-savedStates').closest('.btn-group').addClass('cstm-save-view');
+
+    // Update button text based to Save Views
+    function updateSavedStatesButtonText() {
+        $('.grp-savedStates').text('Save View');
+    }
+
+    dataTable.on('stateRestore-change', updateSavedStatesButtonText);
+    updateSavedStatesButtonText();
 
     // Helper function to restore custom filters when loading table views.
     function restoreCustomFilters(filters) {

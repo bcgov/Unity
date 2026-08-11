@@ -57,7 +57,6 @@ public class GrantApplicationAppService(
     IApplicantAddressRepository applicantAddressRepository,
     IApplicantSupplierAppService applicantSupplierService,
     IPaymentRequestAppService paymentRequestService,
-    IAIGenerationStatusAppService aiGenerationStatusAppService,
     IFeatureChecker featureChecker)
     : GrantManagerAppService, IGrantApplicationAppService
 #pragma warning restore S107 // Methods should not have too many parameters
@@ -257,7 +256,7 @@ public class GrantApplicationAppService(
         //Code is temporarily commented out as this will be the way to get the accurate count
         //once the core GrantApplications data table is moved server side from client side.
         //Until then, since it is client side and always requests all records at once to be
-        //loaded, an extra round-trip to the database for a query is unnecessary. 
+        //loaded, an extra round-trip to the database for a query is unnecessary.
 
         //var totalCount = await applicationRepository.GetCountAsync(input.SubmittedFromDate,input.SubmittedToDate);
 #pragma warning restore S125
@@ -1201,29 +1200,6 @@ public class GrantApplicationAppService(
         return applicationManager.GetWorkflowDiagram(isDirectApproval);
     }
 
-    private async Task EnsureAIGenerationStatusAccessAsync(string operationType)
-    {
-        switch (operationType)
-        {
-            case AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType:
-                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewApplicationAnalysis);
-                return;
-            case AIGenerationRequestKeyHelper.AttachmentSummaryOperationType:
-                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewAttachmentSummary);
-                return;
-            case AIGenerationRequestKeyHelper.ApplicationScoringOperationType:
-                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewScoringResult);
-                return;
-            case AIGenerationRequestKeyHelper.PipelineOperationType:
-                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewApplicationAnalysis);
-                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewAttachmentSummary);
-                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewScoringResult);
-                return;
-            default:
-                throw new UserFriendlyException("Unknown AI generation operation type.");
-        }
-    }
-
     private async Task EnsureAttachmentSummariesEnabledAsync()
     {
         if (!await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries"))
@@ -1359,19 +1335,6 @@ public class GrantApplicationAppService(
     public async Task<string> RestoreAIAnalysisItemAsync(Guid applicationId, string itemId)
     {
         return await UpdateAIAnalysisItemDismissedStateAsync(applicationId, itemId, isDismissed: false);
-    }
-
-    public async Task<AIGenerationStatusDto> GetAIGenerationStatusAsync(Guid applicationId, string operationType)
-    {
-        await EnsureAIGenerationStatusAccessAsync(operationType);
-
-        var request = await aiGenerationStatusAppService.GetLatestAsync(applicationId, operationType, CurrentTenant.Id);
-
-        return new AIGenerationStatusDto
-        {
-            GenerationRequest = request,
-            FailureReason = request?.FailureReason
-        };
     }
 
     private async Task<string> UpdateAIAnalysisItemDismissedStateAsync(Guid applicationId, string itemId, bool isDismissed)

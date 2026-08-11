@@ -3,11 +3,28 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Unity.GrantManager.Notifications.Logs;
+using Volo.Abp;
+using Volo.Abp.Authorization;
 
 namespace Unity.GrantManager.Web.Middleware
 {
     internal static partial class ExceptionNotificationHelpers
     {
+        public static bool IsExpected(Exception exception)
+        {
+            for (Exception? current = exception; current is not null; current = current.InnerException)
+            {
+                if (current is OperationCanceledException ||
+                    current is AbpAuthorizationException ||
+                    current is IUserFriendlyException)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         // Matches Azure Boards work item references used in this repo's branch/PR naming, e.g. "AB#33086".
         [GeneratedRegex(@"AB#\d+", RegexOptions.IgnoreCase)]
         private static partial Regex TicketReferencePattern();

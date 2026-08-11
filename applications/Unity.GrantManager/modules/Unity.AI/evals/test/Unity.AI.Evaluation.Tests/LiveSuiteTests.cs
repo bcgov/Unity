@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 using Unity.AI.Extraction;
 using Unity.AI.Operations;
 using Unity.AI.Requests;
-using Unity.AI.Runtime;
+using Unity.AI.Runtime.Execution;
 using Unity.GrantManager;
 using Xunit;
 using Xunit.Abstractions;

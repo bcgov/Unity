@@ -13,11 +13,14 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Unity.GrantManager.Applications;
+using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Models;
 using Unity.Notifications.Emails;
 using Volo.Abp.AspNetCore.Mvc;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Validation;
 
@@ -64,6 +67,9 @@ namespace Unity.GrantManager.Controllers
         private readonly ICurrentTenant _currentTenant;
         private readonly ILibreOfficeConversionService _libreOfficeConversionService;
         private readonly IAttachmentPreviewAppService _attachmentPreviewAppService;
+        private readonly IApplicantRepository _applicantRepository;
+        private readonly IApplicationRepository _applicationRepository;
+        private readonly IAssessmentRepository _assessmentRepository;
         // LazyServiceProvider is populated via property injection when ASP.NET Core activates this
         // controller through DI/routing. Unit tests that construct AttachmentController directly
         // (new AttachmentController(...)) bypass that activation, leaving it null - guard against
@@ -87,7 +93,10 @@ namespace Unity.GrantManager.Controllers
             IEmailLogAttachmentUploadService emailLogAttachmentUploadService,
             ICurrentTenant currentTenant,
             ILibreOfficeConversionService libreOfficeConversionService,
-            IAttachmentPreviewAppService attachmentPreviewAppService)
+            IAttachmentPreviewAppService attachmentPreviewAppService,
+            IApplicantRepository applicantRepository,
+            IApplicationRepository applicationRepository,
+            IAssessmentRepository assessmentRepository)
         {
             _fileAppService = fileAppService;
             _configuration = configuration;
@@ -96,6 +105,9 @@ namespace Unity.GrantManager.Controllers
             _currentTenant = currentTenant;
             _libreOfficeConversionService = libreOfficeConversionService;
             _attachmentPreviewAppService = attachmentPreviewAppService;
+            _applicantRepository = applicantRepository;
+            _applicationRepository = applicationRepository;
+            _assessmentRepository = assessmentRepository;
         }
 
         [HttpGet("applicant/{applicantId}/download/{fileName}")]
@@ -114,6 +126,11 @@ namespace Unity.GrantManager.Controllers
             if (string.IsNullOrWhiteSpace(fileName))
             {
                 return BadRequest(badRequestFileMsg);
+            }
+
+            if (!Guid.TryParse(applicantId, out var parsedApplicantId) || await _applicantRepository.FindAsync(parsedApplicantId) == null)
+            {
+                return NotFound(NotFoundFileMsg);
             }
 
             var folder = _configuration["S3:ApplicantS3Folder"] ?? throw new AbpValidationException("Missing server configuration: S3:ApplicantS3Folder");
@@ -163,6 +180,11 @@ namespace Unity.GrantManager.Controllers
                 return BadRequest(badRequestFileMsg);
             }
 
+            if (!Guid.TryParse(applicationId, out var parsedApplicationId) || await _applicationRepository.FindAsync(parsedApplicationId) == null)
+            {
+                return NotFound(NotFoundFileMsg);
+            }
+
             var folder = _configuration["S3:ApplicationS3Folder"] ?? throw new AbpValidationException("Missing server configuration: S3:ApplicationS3Folder");
 
             if (!folder.EndsWith('/'))
@@ -208,6 +230,11 @@ namespace Unity.GrantManager.Controllers
             if (string.IsNullOrWhiteSpace(fileName))
             {
                 return BadRequest(badRequestFileMsg);
+            }
+
+            if (!Guid.TryParse(assessmentId, out var parsedAssessmentId) || await _assessmentRepository.FindAsync(parsedAssessmentId) == null)
+            {
+                return NotFound(NotFoundFileMsg);
             }
 
             var folder = _configuration["S3:AssessmentS3Folder"] ?? throw new AbpValidationException("Missing server configuration: S3:AssessmentS3Folder");
@@ -336,6 +363,7 @@ namespace Unity.GrantManager.Controllers
             if (string.IsNullOrWhiteSpace(applicationId)) return BadRequest("Application ID must be provided.");
             if (!Guid.TryParse(applicationId, out var parsedApplicationId)) return BadRequest("Application ID must be a valid GUID.");
             if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(badRequestFileMsg);
+            if (await _applicationRepository.FindAsync(parsedApplicationId) == null) return NotFound(NotFoundFileMsg);
             if (!LibreOfficeInstallationCache.IsInstalled(() => _libreOfficeConversionService.IsInstalled())) return StatusCode(503, new { error = libreOfficeNotInstalledMsg });
             try
             {
@@ -357,6 +385,7 @@ namespace Unity.GrantManager.Controllers
             if (string.IsNullOrWhiteSpace(assessmentId)) return BadRequest("Assessment ID must be provided.");
             if (!Guid.TryParse(assessmentId, out var parsedAssessmentId)) return BadRequest("Assessment ID must be a valid GUID.");
             if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(badRequestFileMsg);
+            if (await _assessmentRepository.FindAsync(parsedAssessmentId) == null) return NotFound(NotFoundFileMsg);
             if (!LibreOfficeInstallationCache.IsInstalled(() => _libreOfficeConversionService.IsInstalled())) return StatusCode(503, new { error = libreOfficeNotInstalledMsg });
             try
             {
@@ -376,11 +405,13 @@ namespace Unity.GrantManager.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             if (string.IsNullOrWhiteSpace(applicantId)) return BadRequest("Applicant ID must be provided.");
+            if (!Guid.TryParse(applicantId, out var parsedApplicantId)) return BadRequest("Applicant ID must be a valid GUID.");
             if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(badRequestFileMsg);
+            if (await _applicantRepository.FindAsync(parsedApplicantId) == null) return NotFound(NotFoundFileMsg);
             if (!_libreOfficeConversionService.IsInstalled()) return StatusCode(503, new { error = libreOfficeNotInstalledMsg });
             try
             {
-                var blob = await _attachmentPreviewAppService.GetOrCreatePreviewPdfAsync(AttachmentType.APPLICANT, Guid.Parse(applicantId), fileName);
+                var blob = await _attachmentPreviewAppService.GetOrCreatePreviewPdfAsync(AttachmentType.APPLICANT, parsedApplicantId, fileName);
                 if (blob?.Content == null) return NotFound(NotFoundFileMsg);
                 return File(blob.Content, PdfContentType);
             }

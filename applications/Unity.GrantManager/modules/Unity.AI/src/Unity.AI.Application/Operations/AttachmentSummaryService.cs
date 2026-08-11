@@ -1,0 +1,213 @@
+using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Unity.AI.Extraction;
+using Unity.AI.Attachments;
+using Unity.AI.Localization;
+using Unity.AI.Requests;
+using Volo.Abp;
+using Volo.Abp.DependencyInjection;
+using Volo.Abp.Uow;
+
+namespace Unity.AI.Operations;
+
+public class AttachmentSummaryService(
+    IAttachmentSummaryDataProvider attachmentSummaryDataProvider,
+    IAttachmentContentProvider attachmentContentProvider,
+    ITextExtractionService textExtractionService,
+    IAIService aiService,
+    IAIGenerationPrerequisiteValidator aiGenerationPrerequisiteValidator,
+    IUnitOfWorkManager unitOfWorkManager,
+    ILogger<AttachmentSummaryService> logger,
+    IStringLocalizer<AIResource> localizer) : IAttachmentSummaryService, ITransientDependency
+{
+    private const string SummaryGenerationFailedMessage = "AI summary generation failed.";
+    public async Task<string> GenerateAndSaveAsync(Guid attachmentId, string? promptVersion = null, CancellationToken cancellationToken = default)
+    {
+        var attachment = await LoadAttachmentAsync(attachmentId);
+        var fileName = string.IsNullOrWhiteSpace(attachment.FileName) ? "unknown" : attachment.FileName;
+
+        await using var attachmentStream = await OpenAttachmentStreamAsync(attachment, fileName, cancellationToken);
+        var extraction = await AttachmentSummaryExtractor.ExtractAsync(fileName, attachmentStream.Content, attachmentStream.ContentType, textExtractionService, cancellationToken);
+        if (extraction.StoppedOnEmpty)
+        {
+            LogEmptyExtraction(attachmentId, fileName, attachmentStream);
+            await SaveSummaryAsync(attachmentId, AttachmentSummaryExtractor.TextExtractionFailedSummary);
+            return AttachmentSummaryExtractor.TextExtractionFailedSummary;
+        }
+
+        var summaryResponse = await aiService.GenerateAttachmentSummaryAsync(new AttachmentSummaryRequest
+        {
+            FileName = fileName,
+            ContentType = attachmentStream.ContentType,
+            ExtractedText = extraction.ExtractedText,
+            PromptVersion = promptVersion,
+        }, cancellationToken);
+
+        await SaveSummaryAsync(attachmentId, summaryResponse.Summary);
+
+        return summaryResponse.Summary;
+    }
+
+    public async Task<List<string>> GenerateAndSaveAsync(IEnumerable<Guid> attachmentIds, string? promptVersion = null, CancellationToken cancellationToken = default)
+    {
+        var ids = attachmentIds as IReadOnlyCollection<Guid> ?? attachmentIds.ToList();
+        if (ids.Count == 0)
+        {
+            throw new UserFriendlyException(localizer[AILocalizationKeys.SelectAttachmentForSummaries]);
+        }
+
+        return await AIExecutionStrategy.RunAsync(
+            ids,
+            AIExecutionMode.Sequential,
+            id => GenerateOrFallbackAsync(id, promptVersion, cancellationToken),
+            async batch =>
+            {
+                var summaries = new List<string>(batch.Count);
+                foreach (var attachmentId in batch)
+                {
+                    summaries.Add(await GenerateOrFallbackAsync(attachmentId, promptVersion, cancellationToken));
+                }
+
+                return summaries;
+            });
+    }
+
+    private async Task<string> GenerateOrFallbackAsync(
+        Guid attachmentId,
+        string? promptVersion,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await GenerateAndSaveAsync(attachmentId, promptVersion, cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error generating AI summary for attachment {AttachmentId}", attachmentId);
+            return SummaryGenerationFailedMessage;
+        }
+    }
+
+    public async Task<List<string>> GenerateForApplicationAsync(
+        Guid applicationId,
+        string? promptVersion = null,
+        IReadOnlyCollection<Guid>? attachmentIds = null,
+        CancellationToken cancellationToken = default)
+    {
+        await WithUnitOfWorkAsync(() => aiGenerationPrerequisiteValidator.EnsureAttachmentSummaryAvailableAsync(applicationId));
+
+        var applicationAttachmentIds = await LoadApplicationAttachmentIdsAsync(applicationId);
+
+        if (attachmentIds is not { Count: > 0 })
+        {
+            return await GenerateAndSaveAsync(applicationAttachmentIds, promptVersion, cancellationToken);
+        }
+
+        var applicationAttachmentIdSet = applicationAttachmentIds.ToHashSet();
+        var selectedIds = attachmentIds.Distinct().ToList();
+
+        if (selectedIds.Any(id => !applicationAttachmentIdSet.Contains(id)))
+        {
+            throw new InvalidOperationException("One or more selected attachments do not belong to the application.");
+        }
+
+        return await GenerateAndSaveAsync(selectedIds, promptVersion, cancellationToken);
+    }
+
+    private async Task<AttachmentSummarySource> LoadAttachmentAsync(Guid attachmentId)
+    {
+        var attachment = await attachmentSummaryDataProvider.GetAttachmentAsync(attachmentId);
+        return attachment ?? throw new UserFriendlyException(localizer[AILocalizationKeys.AttachmentNotFound]);
+    }
+
+    private async Task SaveSummaryAsync(Guid attachmentId, string summary)
+    {
+        await attachmentSummaryDataProvider.UpdateAttachmentSummaryAsync(attachmentId, summary);
+    }
+
+    private async Task<List<Guid>> LoadApplicationAttachmentIdsAsync(Guid applicationId)
+    {
+        return await attachmentSummaryDataProvider.GetApplicationAttachmentIdsAsync(applicationId);
+    }
+
+    private async Task WithUnitOfWorkAsync(Func<Task> operation)
+    {
+        using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
+        await operation();
+        await uow.CompleteAsync();
+    }
+
+    private async Task<AttachmentContentStream> OpenAttachmentStreamAsync(
+        AttachmentSummarySource attachment,
+        string fileName,
+        CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(attachment.ChefsSubmissionId, out var submissionId) ||
+            !Guid.TryParse(attachment.ChefsFileId, out var fileId))
+        {
+            logger.LogWarning(
+                "Attachment {AttachmentId} has invalid CHEFS IDs. Falling back to metadata-only summary generation.",
+                attachment.Id);
+            return AttachmentContentStream.Empty;
+        }
+
+        try
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return await attachmentContentProvider.OpenAttachmentAsync(submissionId, fileId, fileName);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(
+                ex,
+                "Failed retrieving CHEFS content for attachment {AttachmentId}. Falling back to metadata-only summary generation.",
+                attachment.Id);
+            return AttachmentContentStream.Empty;
+        }
+    }
+
+    private void LogEmptyExtraction(
+        Guid attachmentId,
+        string fileName,
+        AttachmentContentStream attachmentStream)
+    {
+        logger.LogWarning(
+            "No text extracted for supported attachment {AttachmentId} ({FileName}). Skipping AI summary generation. ContentType: {ContentType}; StreamCanSeek: {StreamCanSeek}; StreamLength: {StreamLength}.",
+            attachmentId,
+            fileName,
+            attachmentStream.ContentType,
+            attachmentStream.Content.CanSeek,
+            TryGetStreamLength(attachmentStream.Content));
+    }
+
+    private static long? TryGetStreamLength(Stream stream)
+    {
+        if (!stream.CanSeek)
+        {
+            return null;
+        }
+
+        try
+        {
+            return stream.Length;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+}

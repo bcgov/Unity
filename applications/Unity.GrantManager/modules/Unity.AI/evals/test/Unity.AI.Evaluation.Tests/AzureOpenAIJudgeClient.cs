@@ -780,5 +780,6 @@ internal static class JudgePrompts
           "trapAssessments": [
             { "trapId": "exact hallucinationTraps id", "triggered": true|false, "rationale": "why" }
           ]
-        
+        }
+        """;
 }

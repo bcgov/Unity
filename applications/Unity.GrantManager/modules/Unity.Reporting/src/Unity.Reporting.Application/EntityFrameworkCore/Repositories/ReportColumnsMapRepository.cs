@@ -108,6 +108,15 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
             // Normalize view name to lowercase for consistency
             var normalizedViewName = viewName.Trim().ToLowerInvariant();
 
+            // SECURITY: Validate the identifier before it is interpolated into SQL below.
+            // ViewExistsAsync alone is not sufficient - it only proves a matching row exists in
+            // pg_views, not that the name is free of characters that would break out of the
+            // quoted identifier it gets embedded in.
+            if (!IsValidPostgreSqlIdentifier(normalizedViewName))
+            {
+                throw new ArgumentException($"Invalid view name format: {viewName}", nameof(viewName));
+            }
+
             var dbContext = await GetDbContextAsync();
             var connection = dbContext.Database.GetDbConnection();
             await dbContext.Database.OpenConnectionAsync();
@@ -131,18 +140,6 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
                         ORDER BY a.""CreationTime"" DESC
                         LIMIT 1
                     )";
-
-                // Add filtering if provided
-                if (!string.IsNullOrWhiteSpace(request.Filter))
-                {
-                    previewQuery += $" AND ({request.Filter})";
-                }
-
-                // Add ordering if provided
-                if (!string.IsNullOrWhiteSpace(request.OrderBy))
-                {
-                    previewQuery += $" ORDER BY {request.OrderBy}";
-                }
 
                 // Execute the preview query
                 using var dataCommand = connection.CreateCommand();
@@ -180,6 +177,15 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
             // Normalize view name to lowercase for consistency
             var normalizedViewName = viewName.Trim().ToLowerInvariant();
 
+            // SECURITY: Validate the identifier before it is interpolated into SQL below.
+            // ViewExistsAsync alone is not sufficient - it only proves a matching row exists in
+            // pg_views, not that the name is free of characters that would break out of the
+            // quoted identifier it gets embedded in.
+            if (!IsValidPostgreSqlIdentifier(normalizedViewName))
+            {
+                throw new ArgumentException($"Invalid view name format: {viewName}", nameof(viewName));
+            }
+
             var dbContext = await GetDbContextAsync();
             var connection = dbContext.Database.GetDbConnection();
             await dbContext.Database.OpenConnectionAsync();
@@ -196,26 +202,12 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
                 var baseQuery = $@"SELECT * FROM ""Reporting"".""{normalizedViewName}""";
                 var countQuery = $@"SELECT COUNT(*) FROM ""Reporting"".""{normalizedViewName}""";
 
-                // Add filtering if provided
-                if (!string.IsNullOrWhiteSpace(request.Filter))
-                {
-                    var whereClause = $" WHERE {request.Filter}";
-                    baseQuery += whereClause;
-                    countQuery += whereClause;
-                }
-
                 // Get total count
                 using (var countCommand = connection.CreateCommand())
                 {
                     countCommand.CommandText = countQuery;
                     var countResult = await countCommand.ExecuteScalarAsync();
                     result.TotalCount = Convert.ToInt32(countResult);
-                }
-
-                // Add ordering if provided
-                if (!string.IsNullOrWhiteSpace(request.OrderBy))
-                {
-                    baseQuery += $" ORDER BY {request.OrderBy}";
                 }
 
                 // Add pagination
@@ -399,6 +391,14 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
                 // Grant SELECT permission on each view to the role
                 foreach (var viewName in viewNames)
                 {
+                    // SECURITY: Validate each identifier read back from pg_views before it is
+                    // interpolated into SQL - quoted PostgreSQL identifiers can contain characters
+                    // (embedded quotes, semicolons) that would otherwise break out of the quotes below.
+                    if (!IsValidPostgreSqlIdentifier(viewName))
+                    {
+                        throw new ArgumentException($"Invalid view name format: {viewName}", nameof(viewName));
+                    }
+
                     var sql = $"GRANT SELECT ON \"Reporting\".\"{viewName}\" TO \"{role}\"";
                     await dbContext.Database.ExecuteSqlRawAsync(sql);
                 }
@@ -551,7 +551,7 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
         /// </summary>
         /// <param name="identifier">The identifier to validate</param>
         /// <returns>True if the identifier is valid, false otherwise</returns>
-        private static bool IsValidPostgreSqlIdentifier(string identifier)
+        internal static bool IsValidPostgreSqlIdentifier(string identifier)
         {
             if (string.IsNullOrWhiteSpace(identifier))
                 return false;

@@ -2,7 +2,7 @@
 
 namespace Unity.Flex.Web.Views.Shared.Components.QuestionYesNoWidget
 {
-    public class QuestionYesNoViewModel 
+    public class QuestionYesNoViewModel : RequiredFieldViewModel
     {
         public Guid QuestionId { get; set; }
         public bool IsDisabled { get; set; }

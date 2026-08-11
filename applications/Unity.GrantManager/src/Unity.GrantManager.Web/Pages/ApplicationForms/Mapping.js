@@ -8,7 +8,6 @@
     let worksheetMapColumn = document.querySelector('#worksheet-map-available-fields-column');
     let excludedIntakeMappings = new Set(['ConfirmationId', 'SubmissionId', 'SubmissionDate']);
     let dataTable;
-    if (globalThis.toastr) { toastr.options.positionClass = 'toast-top-center'; }
 
     let allowableTypes = new Set(['textarea',
         'orgbook',
@@ -645,7 +644,7 @@
         try {
             let jsonText = $('#jsonText').val();
             $.parseJSON(jsonText);
-            let mappingJsonStr = jsonText.replace(/\s+/g, ' ').replace(/(\r\n|\n|\r)/gm, "");
+            let mappingJsonStr = jsonText.replaceAll(/\s+/g, ' ').replaceAll(/(\r\n|\n|\r)/gm, "");
             UIElements.btnSaveMapping.prop('disabled', true);
             handleSaveMapping($.parseJSON(mappingJsonStr));
             handleCancelMapping();

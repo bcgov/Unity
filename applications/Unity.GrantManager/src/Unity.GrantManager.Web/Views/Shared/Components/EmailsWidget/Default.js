@@ -224,7 +224,6 @@
         defaultValues.emailFrom = UIElements.inputOriginalEmailFrom.val();
         defaultValues.emailCC = UIElements.inputOriginalEmailCC.val() || '';
         defaultValues.emailBCC = UIElements.inputOriginalEmailBCC.val() || '';
-        if (globalThis.toastr) { toastr.options.positionClass = 'toast-top-center'; }
         preloadTemplates(); // Pre-fetch templates on page load
         initTemplateDetails();
         $('#templateTextContainer').hide();
@@ -664,11 +663,6 @@
         validator?.resetForm();
 
 
-        // Clear toastr notifications
-        if (globalThis.toastr) {
-            toastr.clear();
-        }
-
         $('#modal-content, #modal-background').removeClass('active');
         UIElements.emailForm.removeClass('active');
         $('#EmailTemplateName').val('');
@@ -749,9 +743,7 @@
                     // Reset BCC visibility
                     toggleBCCVisibility();
                     // Show success toast
-                    if (globalThis.toastr) {
-                        toastr.success('Changes discarded', 'Email Reset');
-                    }
+                    abp.notify.success('Changes discarded', 'Email Reset');
                 })
                 .fail(e => {
                     console.warn('Failed to delete draft on discard:', e);
@@ -842,9 +834,7 @@
             resetValidationErrors();
 
             // Show success toast
-            if (globalThis.toastr) {
-                toastr.success('Changes discarded', 'Email Reset');
-            }
+            abp.notify.success('Changes discarded', 'Email Reset');
 
             // Disable save and discard buttons since no changes are present
             handleDraftChange();
@@ -1349,9 +1339,10 @@
         // Then initialize TinyMCE
         tinymce.init({
             license_key: 'gpl',
-            selector: '#EmailBody',
+            selector: '#EmailBody',            
             plugins: getPlugins(),
             menubar: 'file edit view insert format tools',
+            toolbar: getToolbarOptions(),
             resize: true,
             statusbar: true,
             elementpath: false,
@@ -2117,6 +2108,7 @@
             selector: '#EmailBody',
             plugins: getPlugins(),
             menubar: 'file edit view insert format tools',
+            toolbar: getToolbarOptions(),
             resize: true,
             statusbar: true,
             elementpath: false,
@@ -2587,7 +2579,7 @@ function sanitizeTinyMceHtml(html) {
 
 
 /**
- * Displays validation error toast using abp.notify or toastr
+ * Displays validation error toast using abp.notify
  * @param {string[]} errors - Array of error messages to display
  */
 function showValidationErrorToast(errors) {
@@ -2598,22 +2590,8 @@ function showValidationErrorToast(errors) {
 
     console.log('Showing validation errors:', errors);
 
-    // Use abp.notify if available, fallback to toastr if available
-    if (globalThis.abp?.notify) {
-        const errorTitle = 'Validation Error' + (errors.length > 1 ? 's' : '');
-        abp.notify.error(errorMessage, errorTitle);
-    } else if (globalThis.toastr) {
-        toastr.error(errorMessage, 'Validation Error' + (errors.length > 1 ? 's' : ''), {
-            timeOut: 0,
-            extendedTimeOut: 0,
-            closeButton: true,
-            escapeHtml: false
-        });
-    } else {
-        // Final fallback: alert
-        console.error('Validation Errors:', errors.join('\n'));
-        alert('Validation Error:\n\n' + errors.join('\n'));
-    }
+    const errorTitle = 'Validation Error' + (errors.length > 1 ? 's' : '');
+    abp.notify.error(errorMessage, errorTitle);
 }
 
 /**
@@ -2807,7 +2785,7 @@ function isValidDate(month, day, year) {
  * @returns {string} Title-cased string
  */
 function toTitleCase(str) {
-    return str.toLowerCase().replace(/\b\w/g, function (char) {
+    return str.toLowerCase().replaceAll(/\b\w/g, function (char) {
         return char.toUpperCase();
     });
 }

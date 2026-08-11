@@ -73,7 +73,7 @@
 
 /* Table header styling - match the user config pattern */
 #TenantViewRoleTable thead th {
-    background-color: #859ab9 !important;
+    background-color: #55698A !important;
     color: white !important;
     font-weight: 500 !important;
     font-size: 18px !important;
@@ -82,7 +82,7 @@
 }
 
 #TenantViewRoleTable thead th:hover {
-    background-color: #6c7b95 !important;
+    background-color: #3E4C63 !important;
     color: white !important;
 }
 
