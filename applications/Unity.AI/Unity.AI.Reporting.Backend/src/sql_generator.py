@@ -38,8 +38,8 @@ class SQLGenerator:
         # the metadata (e.g. "columns": [{...}]) are parsed correctly instead
         # of truncating at the first inner '}'.
         self.metadata_header_pattern = re.compile(
-            r"(?:\#\#\#\s*)?Metadata:\s*(?:```json\s*)?",
-            re.IGNORECASE
+            r"^(?:\#\#\#\s*)?Metadata:\s*(?:```json\s*)?",
+            re.IGNORECASE | re.MULTILINE
         )
     
     def extract_sql(self, text: str) -> Optional[str]:
@@ -63,9 +63,15 @@ class SQLGenerator:
         if not header_match:
             return None
 
-        start = text.find('{', header_match.end())
-        if start == -1:
+        # Require the next non-whitespace character to be '{' rather than
+        # searching forward for one — otherwise a top-level array (or any
+        # stray '{' before the real object) gets silently mis-parsed as an
+        # unrelated/partial dict instead of being rejected as invalid.
+        rest = text[header_match.end():]
+        stripped = rest.lstrip()
+        if not stripped.startswith('{'):
             return None
+        start = header_match.end() + (len(rest) - len(stripped))
 
         try:
             metadata, _ = json.JSONDecoder().raw_decode(text, start)
