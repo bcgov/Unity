@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.History;
@@ -26,14 +27,21 @@ public class HistoryWidgetViewComponent(
         string? entityId = applicationId.ToString();
         Dictionary<string, string> applicationStatusDict = await GetApplicationStatusDict();
 
-        HistoryWidgetViewModel model = new()
-        {
-            ApplicationStatusHistoryList = await historyAppService.GetEntityPropertyChangesAsync(
+        var historyList = await historyAppService.GetEntityPropertyChangesAsync(
             new GetEntityPropertyChangesInput
             {
                 EntityId = entityId,
                 PropertyNames = [Property_ApplicationStatusId, Property_ExternalStatusVisibility],
-            }, applicationStatusDict),
+            }, applicationStatusDict);
+
+        // Suppress the automatic initial Unpublished entry created on new entities (no prior value)
+        historyList = historyList
+            .Where(h => !(h.PropertyName == Property_ExternalStatusVisibility && string.IsNullOrEmpty(h.OriginalValue)))
+            .ToList();
+
+        HistoryWidgetViewModel model = new()
+        {
+            ApplicationStatusHistoryList = historyList,
         };
 
         return View(model);

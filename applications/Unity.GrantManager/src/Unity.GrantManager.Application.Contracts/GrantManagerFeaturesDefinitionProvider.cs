@@ -13,7 +13,7 @@ namespace Unity.GrantManager
     {
         public override void Define(IFeatureDefinitionContext context)
         {
-            var myGroup = context.AddGroup("GrantManager");
+            var myGroup = context.AddGroup("GrantManager", displayName: LocalizableString.Create<GrantManagerResource>("Grant Manager"));
             var defaultValue = "false";
 
             myGroup.AddFeature("Unity.Payments",
