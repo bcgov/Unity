@@ -13,7 +13,6 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.AI.Models;
-using Unity.AI.Permissions;
 using Unity.AI.Responses;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets;
@@ -25,7 +24,6 @@ using Unity.GrantManager.Flex;
 using Unity.GrantManager.GlobalTag;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Payments;
-using Unity.GrantManager.GrantApplications.Automation;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
 using Unity.Modules.Shared.Specializations;
@@ -159,9 +157,11 @@ public class GrantApplicationAppService(
                 RiskRanking = rec.RiskRanking,
                 UnityApplicationId = rec.UnityApplicationId,
                 ExternalStatusVisibility = rec.ExternalStatusVisibility,
-
+                
                 // From ApplicationStatus
                 Status = rec.Status,
+                ExternalStatus = rec.ExternalStatus,
+                PublishedStatus = rec.PublishedStatus,
 
                 // From ApplicationForm
                 Category = rec.Category,
