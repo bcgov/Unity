@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
@@ -17,7 +18,6 @@ using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.MultiTenancy;
 using Volo.Abp.Security.Encryption;
 using Volo.Abp.TenantManagement;
 using Unity.GrantManager.Notifications;
@@ -43,6 +43,10 @@ namespace Unity.GrantManager.ApplicationForms
             ReadCommentHandling = JsonCommentHandling.Skip,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
+
+        // Pace requests to CHEFS across forms so a large form count doesn't burn through
+        // ResilientHttpRequest's per-call retry budget and trip its rate limiting.
+        private static readonly TimeSpan ChefsRequestPacingDelay = TimeSpan.FromMilliseconds(500);
 
         // Collaborators are resolved lazily via ABP's LazyServiceProvider to keep the
         // constructor within SonarQube's 7-parameter limit (S107). CurrentTenant, Logger,
@@ -209,6 +213,7 @@ namespace Unity.GrantManager.ApplicationForms
                         Logger.LogError(ex, "Exception: {Exception}", ex);
                     }
 
+                    await Task.Delay(ChefsRequestPacingDelay);
                 }
 
                 AddFact("------------------------------------", "----------------------------------------");
@@ -303,6 +308,20 @@ namespace Unity.GrantManager.ApplicationForms
             if (!response.IsSuccessStatusCode)
             {
                 string errorMessage = "Error calling ListFormSubmissions: " + content;
+
+                if (response.StatusCode == HttpStatusCode.TooManyRequests)
+                {
+                    // Transient/expected: CHEFS rate limiting. Skip quietly and let the next
+                    // scheduled sync pass retry, rather than paging anyone.
+                    Logger.LogWarning(
+                        "CHEFS rate limit reached while calling ListFormSubmissions for form {FormId}. Skipping this synchronization pass.",
+                        applicationForm.ChefsApplicationFormGuid);
+                    return null;
+                }
+
+                // Unauthorized/Forbidden usually mean a misconfigured or revoked API key for this
+                // form, not a transient condition - let this throw through the normal exception/
+                // notification pipeline so it actually gets noticed and fixed.
                 throw new ApiException((int)response.StatusCode, errorMessage, response.ReasonPhrase ?? $"{response.StatusCode}");
             }
 

@@ -72,6 +72,11 @@ public class ExceptionCounterMiddleware(
         }
         catch (Exception ex)
         {
+            if (ExceptionNotificationHelpers.IsExpected(ex))
+            {
+                throw;
+            }
+
             ExceptionCounter.WithLabels(ex.GetType().Name).Inc();
 
             ErrorCountingLoggerSink.ErrorCounter

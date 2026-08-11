@@ -1,80 +1,18 @@
-using Microsoft.Extensions.Logging;
-using System;
-using System.Threading.Tasks;
-using Unity.AI.Domain;
-using Unity.AI.Cooldown;
-using Unity.AI.Operations;
-using Unity.GrantManager.Applications;
-using Unity.GrantManager.GrantApplications;
-using Volo.Abp.ObjectMapping;
-using Volo.Abp.BackgroundJobs;
-using Volo.Abp.DependencyInjection;
-using Volo.Abp.Domain.Repositories;
-using Volo.Abp.MultiTenancy;
-using Volo.Abp.Uow;
+using Unity.AI.Generation;
 
 namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 
-public class GenerateApplicationAnalysisJob(
-    ApplicationAnalysisService applicationAnalysisService,
-    IAIApplicationInputBuilder aiApplicationInputBuilder,
-    IApplicationRepository applicationRepository,
-    IRepository<AIGenerationRequest, Guid> generationRequestRepository,
-    ICurrentTenant currentTenant,
-    IUnitOfWorkManager unitOfWorkManager,
-    IAICooldownService aiCooldownService,
-    IObjectMapper objectMapper,
-    ILogger<GenerateApplicationAnalysisJob> logger) : AsyncBackgroundJob<GenerateApplicationAnalysisBackgroundJobArgs>, ITransientDependency
+public sealed class GenerateApplicationAnalysisJob(
+    AIGenerationBackgroundJob genericJob)
+    : LegacyAIGenerationBackgroundJob<GenerateApplicationAnalysisBackgroundJobArgs>(genericJob)
 {
-    public override async Task ExecuteAsync(GenerateApplicationAnalysisBackgroundJobArgs args)
+    protected override AIGenerationBackgroundJobArgs Convert(GenerateApplicationAnalysisBackgroundJobArgs args) => new()
     {
-        using var logScope = AIGenerationLogScope.Begin(
-            logger,
-            AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType,
-            args.ApplicationId,
-            args.TenantId,
-            args.PromptVersion,
-            args.RequestedByUserId);
-
-        using (currentTenant.Change(args.TenantId))
-        {
-            await AIGenerationRequestJobHelper.MarkRunningInNewUowAsync(
-                unitOfWorkManager,
-                generationRequestRepository,
-                args.TenantId,
-                args.ApplicationId,
-                args.OperationId);
-            try
-            {
-                var application = await applicationRepository.GetAsync(args.ApplicationId);
-                var promptData = objectMapper.Map<Application, AIApplicationPromptDataDto>(application);
-                var analysisInput = await aiApplicationInputBuilder.BuildApplicationAnalysisInputAsync(promptData, args.PromptVersion);
-                var analysisJson = await applicationAnalysisService.RegenerateAsync(analysisInput);
-
-                await AIGenerationRequestJobHelper.SaveApplicationResultInNewUowAsync(
-                    unitOfWorkManager,
-                    applicationRepository,
-                    args.ApplicationId,
-                    app => app.AIAnalysis = analysisJson);
-                await AIGenerationRequestJobHelper.StampCooldownBestEffortAsync(aiCooldownService, logger, args.RequestedByUserId, args.ApplicationId, AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType);
-                await AIGenerationRequestJobHelper.MarkCompletedInNewUowAsync(
-                    unitOfWorkManager,
-                    generationRequestRepository,
-                    args.TenantId,
-                    args.ApplicationId,
-                    args.OperationId);
-            }
-            catch (Exception ex)
-            {
-                await AIGenerationRequestJobHelper.MarkFailedInNewUowAsync(
-                    unitOfWorkManager,
-                    generationRequestRepository,
-                    args.TenantId,
-                    args.ApplicationId,
-                    args.OperationId,
-                    ex.Message);
-                throw;
-            }
-        }
-    }
+        OperationType = AIGenerationOperations.ApplicationAnalysis,
+        ApplicationId = args.ApplicationId,
+        OperationId = args.OperationId,
+        TenantId = args.TenantId,
+        RequestedByUserId = args.RequestedByUserId,
+        PromptVersion = args.PromptVersion
+    };
 }

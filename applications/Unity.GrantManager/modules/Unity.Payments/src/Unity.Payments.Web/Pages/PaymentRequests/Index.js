@@ -543,14 +543,9 @@ $(function () {
     // Initialize savedStates button styling
     $('.grp-savedStates').closest('.btn-group').addClass('cstm-save-view');
 
-    // Update button text based on whether any named saved views exist.
-    // Driven by the StateRestore extension's own 'stateRestore-change' event (the same
-    // event it uses internally to update its default label) rather than a localStorage
-    // key guess or a one-shot draw handler - those raced against the extension's own
-    // loading of previously-saved states from storage on page refresh.
+    // Update button text to Save View
     function updateSavedStatesButtonText() {
-        const savedStatesExist = dataTable.stateRestore.states().length > 0;
-        $('.grp-savedStates').text(savedStatesExist ? 'Saved States' : 'Save View');
+        $('.grp-savedStates').text('Save View');
     }
 
     dataTable.on('stateRestore-change', updateSavedStatesButtonText);
@@ -758,7 +753,7 @@ $(function () {
             index: columnIndex,
             render: function (data, _, row) {
                 if (row.errorSummary != null && row.errorSummary !== '') {
-                    return `${data} <i class="fa fa-flag error-icon" data-toggle="tooltip" title="${row.errorSummary}"></i>`;
+                    return `${data} <i class="fa-solid fa-flag error-icon" data-toggle="tooltip" title="${row.errorSummary}"></i>`;
                 } else {
                     return data;
                 }

@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
+using Unity.AI.Generation;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
@@ -19,14 +20,12 @@ public class AIGenerationStatusAppService(
 {
     public virtual async Task<AIGenerationRequestDto?> GetLatestAsync(Guid applicationId, string operationType, Guid? tenantId = null)
     {
-        var operationName = AIGenerationRequestKeyHelper.ResolveOperationName(operationType);
-
-        if (operationName == null)
+        if (!AIGenerationOperations.TryGet(operationType, out var operationDefinition))
         {
             return null;
         }
 
-        var operation = await ResolveOperationAsync(operationName);
+        var operation = await ResolveOperationAsync(operationDefinition!.OperationName);
         if (operation == null)
         {
             return null;

@@ -30,17 +30,17 @@ UI-facing AI bits:
 
 ## Files
 ### Application
-- `AI/Operations` - validators and helpers
-- `AI/Runtime` - rendering, parsing, logging, provider calls
-- `AI/Prompts` - prompt types and template plumbing
+- `Operations` - validators and helpers
+- `Runtime/Execution` - rendering, parsing, logging, provider calls
+- `Runtime/Prompts` - prompt types and template plumbing
 - `DataSeed` - seeded prompt and operation data
 - `Generation/AIGenerationAppService.cs` - generation API
 
 ### Application.Contracts
-- `AI/IAIService.cs` - runtime contract
+- `IAIService.cs` - runtime contract
 - `Generation/IAIGenerationAppService.cs` - generation app service contract
 - `Generation/*ResultDto.cs` - queued result DTOs
-- `AI/Operations/IAIGenerationPrerequisiteValidator.cs` - queue prerequisites
+- `Operations/IAIGenerationPrerequisiteValidator.cs` - queue prerequisites
 - `Automation/IApplicationAIGenerationQueue.cs` - queue contract
 - `Permissions/*` - permissions
 

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
-using Unity.AI.Prompts;
+using Unity.AI.Runtime.Prompts;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
@@ -177,7 +177,7 @@ public class AIPromptDataSeeder(
     }
 
     // ═════════════════════════════════════════════════════════════════════════
-    // PROMPT CONTENT — mirrors AI/Prompts/Versions/ text files verbatim
+    // PROMPT CONTENT — mirrors Runtime/Prompts/Versions/ text files verbatim
     // ═════════════════════════════════════════════════════════════════════════
 
     // ── v0/analysis.system.txt ───────────────────────────────────────────────

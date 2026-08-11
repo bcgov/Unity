@@ -22,8 +22,6 @@
     <!-- Explicit reference to fix vulnerable transitive dependency -->
     <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.10" />
     <ProjectReference Include="..\..\..\..\modules\Unity.Flex\src\Unity.Flex.Application\Unity.Flex.Application.csproj" />
-    <ProjectReference Include="..\..\..\..\src\Unity.GrantManager.Application.Contracts\Unity.GrantManager.Application.Contracts.csproj" />
-    <ProjectReference Include="..\..\..\..\src\Unity.GrantManager.Domain\Unity.GrantManager.Domain.csproj" />
     <ProjectReference Include="..\..\..\Unity.SharedKernel\Unity.SharedKernel.csproj" />
     <ProjectReference Include="..\Unity.AI.Application.Contracts\Unity.AI.Application.Contracts.csproj" />
   </ItemGroup>
@@ -35,7 +33,7 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Prompts\Versions\**\*.txt">
+    <Content Include="Runtime\Prompts\Versions\**\*.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>

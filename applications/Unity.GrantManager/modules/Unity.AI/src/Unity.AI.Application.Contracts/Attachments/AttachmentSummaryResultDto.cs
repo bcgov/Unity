@@ -1,4 +1,4 @@
-namespace Unity.GrantManager.Attachments;
+namespace Unity.AI.Attachments;
 
 public class AttachmentSummaryResultDto
 {

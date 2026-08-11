@@ -1,9 +1,10 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Caching.Distributed;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.EntityFrameworkCore;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -123,20 +124,18 @@ namespace Unity.GrantManager.Integrations.Endpoints
             if (!string.IsNullOrEmpty(cached))
                 return cached;
 
-            DynamicUrl? dynamicUrl;
+            string? url;
             if (tenantSpecific)
             {
-                dynamicUrl = await Repository.FirstOrDefaultAsync(x => x.KeyName == keyName && x.TenantId == tenantId);
+                url = await GetUrlValueAsync(keyName, tenantId);
             }
             else
             {
                 using (CurrentTenant.Change(null))
                 {
-                    dynamicUrl = await Repository.FirstOrDefaultAsync(x => x.KeyName == keyName && x.TenantId == null);
+                    url = await GetUrlValueAsync(keyName, tenantId: null);
                 }
             }
-
-            var url = dynamicUrl?.Url;
 
             if (!string.IsNullOrWhiteSpace(url))
             {
@@ -153,6 +152,17 @@ namespace Unity.GrantManager.Integrations.Endpoints
             }
 
             return url;
+        }
+
+        private async Task<string?> GetUrlValueAsync(string keyName, Guid? tenantId)
+        {
+            var queryable = await Repository.GetQueryableAsync();
+
+            return await AsyncExecuter.FirstOrDefaultAsync(
+                queryable
+                    .AsNoTracking()
+                    .Where(x => x.KeyName == keyName && x.TenantId == tenantId)
+                    .Select(x => x.Url));
         }
 
         // ------------------------------
@@ -188,5 +198,9 @@ namespace Unity.GrantManager.Integrations.Endpoints
             // Clear the key set itself
             await _cache.RemoveAsync(keySetKey);
         }
+
+        [RemoteService(false)]
+        public override Task DeleteAsync(Guid id)
+            => base.DeleteAsync(id);
     }
 }
