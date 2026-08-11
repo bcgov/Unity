@@ -21,13 +21,26 @@ public partial class RebuildAIModels : Migration
             DROP INDEX IF EXISTS "AI"."IX_AIOperations_AIModelId";
             DROP INDEX IF EXISTS "AI"."IX_AIModels_Name";
 
-            ALTER TABLE "AI"."AIModels"
+            ALTER TABLE IF EXISTS "AI"."AIModels"
                 RENAME TO "AIModels_Legacy";
 
-            ALTER TABLE "AI"."AIModels_Legacy"
-                RENAME CONSTRAINT "PK_AIModels" TO "PK_AIModels_Legacy";
+            DO $$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1
+                    FROM pg_constraint c
+                    JOIN pg_class t ON t.oid = c.conrelid
+                    JOIN pg_namespace n ON n.oid = t.relnamespace
+                    WHERE n.nspname = 'AI'
+                      AND t.relname = 'AIModels_Legacy'
+                      AND c.conname = 'PK_AIModels'
+                ) THEN
+                    ALTER TABLE "AI"."AIModels_Legacy"
+                        RENAME CONSTRAINT "PK_AIModels" TO "PK_AIModels_Legacy";
+                END IF;
+            END $$;
 
-            CREATE TABLE "AI"."AIModels"
+            CREATE TABLE IF NOT EXISTS "AI"."AIModels"
             (
                 "Id" uuid NOT NULL,
                 "Name" character varying(200) NOT NULL,
@@ -43,40 +56,31 @@ public partial class RebuildAIModels : Migration
                 CONSTRAINT "PK_AIModels" PRIMARY KEY ("Id")
             );
 
-            INSERT INTO "AI"."AIModels"
-            (
-                "Id",
-                "Name",
-                "Provider",
-                "IsActive",
-                "SettingsJson",
-                "ExtraProperties",
-                "ConcurrencyStamp",
-                "CreationTime",
-                "CreatorId",
-                "LastModificationTime",
-                "LastModifierId"
-            )
-            SELECT
-                "Id",
-                CASE "Name"
-                    WHEN 'Gpt4oMini' THEN 'gpt-4o-mini'
-                    WHEN 'Gpt5Mini' THEN 'gpt-5-mini'
-                    WHEN 'Gpt5Nano' THEN 'gpt-5-nano'
-                    ELSE "Name"
-                END,
-                'OpenAI',
-                "IsActive",
-                "SettingsJson",
-                "ExtraProperties",
-                "ConcurrencyStamp",
-                "CreationTime",
-                "CreatorId",
-                "LastModificationTime",
-                "LastModifierId"
-            FROM "AI"."AIModels_Legacy";
+            DO $$
+            BEGIN
+                IF to_regclass('"AI"."AIModels_Legacy"') IS NOT NULL THEN
+                    INSERT INTO "AI"."AIModels"
+                    (
+                        "Id", "Name", "Provider", "IsActive", "SettingsJson",
+                        "ExtraProperties", "ConcurrencyStamp", "CreationTime", "CreatorId",
+                        "LastModificationTime", "LastModifierId"
+                    )
+                    SELECT
+                        "Id",
+                        CASE "Name"
+                            WHEN 'Gpt4oMini' THEN 'gpt-4o-mini'
+                            WHEN 'Gpt5Mini' THEN 'gpt-5-mini'
+                            WHEN 'Gpt5Nano' THEN 'gpt-5-nano'
+                            ELSE "Name"
+                        END,
+                        'OpenAI', "IsActive", "SettingsJson", "ExtraProperties",
+                        "ConcurrencyStamp", "CreationTime", "CreatorId",
+                        "LastModificationTime", "LastModifierId"
+                    FROM "AI"."AIModels_Legacy";
+                END IF;
+            END $$;
 
-            DROP TABLE "AI"."AIModels_Legacy";
+            DROP TABLE IF EXISTS "AI"."AIModels_Legacy";
 
             CREATE UNIQUE INDEX "IX_AIModels_Name"
                 ON "AI"."AIModels" ("Name");
@@ -102,13 +106,26 @@ public partial class RebuildAIModels : Migration
             DROP INDEX IF EXISTS "AI"."IX_AIOperations_AIModelId";
             DROP INDEX IF EXISTS "AI"."IX_AIModels_Name";
 
-            ALTER TABLE "AI"."AIModels"
+            ALTER TABLE IF EXISTS "AI"."AIModels"
                 RENAME TO "AIModels_Current";
 
-            ALTER TABLE "AI"."AIModels_Current"
-                RENAME CONSTRAINT "PK_AIModels" TO "PK_AIModels_Current";
+            DO $$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1
+                    FROM pg_constraint c
+                    JOIN pg_class t ON t.oid = c.conrelid
+                    JOIN pg_namespace n ON n.oid = t.relnamespace
+                    WHERE n.nspname = 'AI'
+                      AND t.relname = 'AIModels_Current'
+                      AND c.conname = 'PK_AIModels'
+                ) THEN
+                    ALTER TABLE "AI"."AIModels_Current"
+                        RENAME CONSTRAINT "PK_AIModels" TO "PK_AIModels_Current";
+                END IF;
+            END $$;
 
-            CREATE TABLE "AI"."AIModels"
+            CREATE TABLE IF NOT EXISTS "AI"."AIModels"
             (
                 "Id" uuid NOT NULL,
                 "Name" character varying(200) NOT NULL,
@@ -123,38 +140,30 @@ public partial class RebuildAIModels : Migration
                 CONSTRAINT "PK_AIModels" PRIMARY KEY ("Id")
             );
 
-            INSERT INTO "AI"."AIModels"
-            (
-                "Id",
-                "Name",
-                "IsActive",
-                "SettingsJson",
-                "ExtraProperties",
-                "ConcurrencyStamp",
-                "CreationTime",
-                "CreatorId",
-                "LastModificationTime",
-                "LastModifierId"
-            )
-            SELECT
-                "Id",
-                CASE "Name"
-                    WHEN 'gpt-4o-mini' THEN 'Gpt4oMini'
-                    WHEN 'gpt-5-mini' THEN 'Gpt5Mini'
-                    WHEN 'gpt-5-nano' THEN 'Gpt5Nano'
-                    ELSE "Name"
-                END,
-                "IsActive",
-                "SettingsJson",
-                "ExtraProperties",
-                "ConcurrencyStamp",
-                "CreationTime",
-                "CreatorId",
-                "LastModificationTime",
-                "LastModifierId"
-            FROM "AI"."AIModels_Current";
+            DO $$
+            BEGIN
+                IF to_regclass('"AI"."AIModels_Current"') IS NOT NULL THEN
+                    INSERT INTO "AI"."AIModels"
+                    (
+                        "Id", "Name", "IsActive", "SettingsJson", "ExtraProperties",
+                        "ConcurrencyStamp", "CreationTime", "CreatorId", "LastModificationTime",
+                        "LastModifierId"
+                    )
+                    SELECT
+                        "Id",
+                        CASE "Name"
+                            WHEN 'gpt-4o-mini' THEN 'Gpt4oMini'
+                            WHEN 'gpt-5-mini' THEN 'Gpt5Mini'
+                            WHEN 'gpt-5-nano' THEN 'Gpt5Nano'
+                            ELSE "Name"
+                        END,
+                        "IsActive", "SettingsJson", "ExtraProperties", "ConcurrencyStamp",
+                        "CreationTime", "CreatorId", "LastModificationTime", "LastModifierId"
+                    FROM "AI"."AIModels_Current";
+                END IF;
+            END $$;
 
-            DROP TABLE "AI"."AIModels_Current";
+            DROP TABLE IF EXISTS "AI"."AIModels_Current";
 
             CREATE UNIQUE INDEX "IX_AIModels_Name"
                 ON "AI"."AIModels" ("Name");
