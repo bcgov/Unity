@@ -42,11 +42,17 @@ public sealed record CaseResult(
     public string CandidateSummary { get; init; } = "";
     public string PromptTemplateSha256 { get; init; } = "";
 
-    public string EvaluationOutcome => HasEvaluationError
-        ? "EvaluationError"
-        : CasePassed
-            ? "QualityPass"
-            : "QualityFail";
+    public string EvaluationOutcome
+    {
+        get
+        {
+            if (HasEvaluationError)
+            {
+                return "EvaluationError";
+            }
+            return CasePassed ? "QualityPass" : "QualityFail";
+        }
+    }
 
     public bool HasEvaluationError =>
         Judge.Failed
