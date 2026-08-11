@@ -20,9 +20,9 @@ public class ExceptionCounterMiddleware(
     ILogger<ExceptionCounterMiddleware> logger)
 {
     private static readonly TimeSpan PersistenceBackoff = TimeSpan.FromSeconds(30);
-    private readonly object persistenceGate = new();
-    private bool persistenceInFlight;
-    private DateTimeOffset persistenceDisabledUntil;
+    private readonly object _persistenceGate = new();
+    private bool _persistenceInFlight;
+    private DateTimeOffset _persistenceDisabledUntil;
 
     // Notify only in these environments; add "Staging" if desired
     private static readonly HashSet<string> NotifyEnvironments =
@@ -130,14 +130,14 @@ public class ExceptionCounterMiddleware(
         // Acquire the single-flight gate only once the synchronous, potentially-throwing prep
         // above has succeeded — otherwise an exception here would leave persistenceInFlight
         // stuck "true" forever, since the Task.Run below (whose finally resets it) never starts.
-        lock (persistenceGate)
+        lock (_persistenceGate)
         {
-            if (persistenceInFlight || DateTimeOffset.UtcNow < persistenceDisabledUntil)
+            if (_persistenceInFlight || DateTimeOffset.UtcNow < _persistenceDisabledUntil)
             {
                 return;
             }
 
-            persistenceInFlight = true;
+            _persistenceInFlight = true;
         }
 
         _ = Task.Run(async () =>
@@ -306,9 +306,9 @@ public class ExceptionCounterMiddleware(
             }
             finally
             {
-                lock (persistenceGate)
+                lock (_persistenceGate)
                 {
-                    persistenceInFlight = false;
+                    _persistenceInFlight = false;
                 }
             }
         });
@@ -316,9 +316,9 @@ public class ExceptionCounterMiddleware(
 
     private void OpenPersistenceBackoff()
     {
-        lock (persistenceGate)
+        lock (_persistenceGate)
         {
-            persistenceDisabledUntil = DateTimeOffset.UtcNow.Add(PersistenceBackoff);
+            _persistenceDisabledUntil = DateTimeOffset.UtcNow.Add(PersistenceBackoff);
         }
     }
 
