@@ -500,13 +500,23 @@ class EmbeddingManager:
             try:
                 return func(*args, **kwargs)
             except sqlalchemy.exc.DBAPIError as e:
-                # DBAPIError covers driver-level connection failures (dropped
-                # connections, SSL EOF, etc.) regardless of the exact message
-                # text. Matching on message substrings like "connection" or
-                # "closed" missed real-world phrasings such as "SSL error:
-                # unexpected eof while reading", letting a stale pooled
-                # connection surface as a request failure instead of being
-                # retried.
+                if not e.connection_invalidated:
+                    # DBAPIError also covers non-disconnect failures (bad
+                    # SQL, permissions, constraint violations, etc.) —
+                    # reconnecting the vector store wouldn't fix any of
+                    # those, so retrying would just add delay before the
+                    # same failure resurfaces. connection_invalidated is set
+                    # by SQLAlchemy's dialect based on the actual connection
+                    # object's state (closed/broken), not by guessing from
+                    # the message text, so it reliably tells disconnects
+                    # (worth retrying) apart from everything else (not).
+                    raise
+                # A real disconnect — e.g. a stale pooled connection whose
+                # underlying socket died while idle. Matching on message
+                # substrings like "connection" or "closed" used to miss
+                # real-world phrasings such as "SSL error: unexpected eof
+                # while reading", letting this surface as a request failure
+                # instead of being retried.
                 logger.warning(f"Connection error on attempt {attempt + 1}/{max_retries}: {e}")
                 if attempt < max_retries - 1:
                     self._reconnect_vector_store()
