@@ -33,7 +33,7 @@ globs: "**/*.cs, **/*.cshtml, **/*.js"
 - Never commit secrets, connection strings, or API keys to source code
 - Use environment variables or secure configuration providers
 - Reference `.env.example` for required environment variables
-- Sensitive configuration is stored in OpenShift secrects and Hashicorp Vault when deployed
+- Sensitive configuration is stored in OpenShift secrets and HashiCorp Vault when deployed
 
 ## Authentication
 

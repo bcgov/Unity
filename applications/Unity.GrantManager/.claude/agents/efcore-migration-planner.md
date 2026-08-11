@@ -41,6 +41,6 @@ Plan schema changes, mapping updates, and migration execution for the correct da
 - Apply the `unity-ef-core` skill's patterns.
 - Follow `applications/Unity.GrantManager/.github/instructions/efcore.instructions.md`.
 - Always call `ConfigureByConvention()` for mapped entities.
-- Do not use `includeAllEntities: true` with default repositories.
+- Default repositories are currently registered with `includeAllEntities: true`; remove it only when you intentionally want aggregate-roots-only repositories and have verified no callers rely on entity repositories.
 - Always specify context (`GrantManagerDbContext` or `GrantTenantDbContext`) for migration commands.
 - This agent plans only — it does not run `dotnet ef migrations add` or edit files itself.

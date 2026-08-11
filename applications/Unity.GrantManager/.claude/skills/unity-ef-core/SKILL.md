@@ -30,8 +30,7 @@ dotnet ef migrations add <Name> --context GrantTenantDbContext --output-dir Migr
 
 ## Entity Configuration
 
-Entity mapping is done via extension methods on `ModelBuilder`, NOT inline in `OnModelCreating`.
-
+Entity mapping is primarily configured inline in `OnModelCreating` in `GrantManagerDbContext` / `GrantTenantDbContext`. Extension methods on `ModelBuilder` are also used for shared/module-specific configuration (e.g., `modelBuilder.ConfigureAI()`).
 ```csharp
 public static class GrantManagerDbContextModelCreatingExtensions
 {

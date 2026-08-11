@@ -1,6 +1,6 @@
 ---
 name: unity-application-layer
-description: ABP Application Services, DTOs, AutoMapper profiles, validation, and error handling for Unity. Use when creating or modifying app services, DTOs, or mapping profiles in Application or Application.Contracts projects.
+description: ABP Application Services, DTOs, Mapperly mapping, validation, and error handling for Unity. Use when creating or modifying app services, DTOs, or mapping profiles in Application or Application.Contracts projects.
 ---
 
 # Unity Application Layer Patterns

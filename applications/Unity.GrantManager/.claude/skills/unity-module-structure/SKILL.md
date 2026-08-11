@@ -75,7 +75,7 @@ public class GrantManagerEntityFrameworkCoreModule : AbpModule
     {
         context.Services.AddAbpDbContext<GrantManagerDbContext>(options =>
         {
-            options.AddDefaultRepositories();
+            options.AddDefaultRepositories(includeAllEntities: true);
         });
     }
 }
