@@ -54,6 +54,10 @@ public static class AIDbContextModelCreatingExtensions
                 .IsRequired()
                 .HasMaxLength(200);
 
+            b.Property(x => x.Provider)
+                .IsRequired()
+                .HasMaxLength(100);
+
             b.Property(x => x.IsActive)
                 .IsRequired();
 
