@@ -208,7 +208,10 @@
             responseCallback,
             actionButtons: [],
             pagingEnabled: true,
+            scrollY: 'calc(100vh - 280px)',
+            scrollCollapse: true,
             reorderEnabled: false,
+            fixedHeaders: true,
             languageSetValues: {},
             dynamicButtonContainerId: null,
             useNullPlaceholder: false,
@@ -230,6 +233,51 @@
         if (notificationsTable) {
             notificationsTable.ajax.reload();
         }
+    }
+
+    // ScrollResize skips sizing while the table is hidden (e.g. an inactive Bootstrap
+    // tab pane), so nothing pins the pagination bar to the bottom until we recalculate
+    // it ourselves once the tab holding this widget becomes visible.
+    function resizeNotificationsScrollBody() {
+        if (!notificationsTable) return;
+        const scrollResize = notificationsTable.settings?.()[0]?._scrollResize;
+        if (scrollResize && typeof scrollResize._size === 'function') {
+            scrollResize._size();
+            return;
+        }
+        try {
+            notificationsTable.columns.adjust();
+        } catch (e) {
+            console.debug('Notifications table column adjust failed:', e.message);
+        }
+    }
+
+    function bindTabVisibilityResize() {
+        document.addEventListener('shown.bs.tab', function (e) {
+            const target = e.target;
+            if (!target) return;
+            const isNotificationsTab =
+                target.id === 'nav-notifications-tab' ||
+                target.getAttribute?.('data-bs-target') === '#nav-notifications';
+            if (isNotificationsTab) {
+                resizeNotificationsScrollBody();
+            }
+        });
+
+        const notificationsSection = document.getElementById('notifications-div');
+        const notificationsMenuItem = document.getElementById('notifications-menu-item');
+        const resizeWhenVisible = () => {
+            if (!notificationsSection?.offsetParent) return;
+            setTimeout(resizeNotificationsScrollBody, 0);
+        };
+
+        notificationsMenuItem?.addEventListener('click', resizeWhenVisible);
+        if (notificationsSection && typeof MutationObserver !== 'undefined') {
+            const observer = new MutationObserver(resizeWhenVisible);
+            observer.observe(notificationsSection, { attributes: true, attributeFilter: ['class', 'style'] });
+        }
+
+        window.addEventListener('resize', resizeWhenVisible);
     }
 
     function onCancelNotification(id) {
@@ -610,6 +658,9 @@
 
         fetchTemplates().then(populateTemplates);
         initNotificationsTable();
+        bindTabVisibilityResize();
+        // In case the widget is already visible on load (not inside a hidden tab pane)
+        resizeNotificationsScrollBody();
 
         // Attach save button listener (remove old one first to prevent duplicates)
         const saveBtn = document.getElementById('btn-save-notification');
