@@ -71,12 +71,25 @@ class AppConfig:
     semantic_cache_enabled: bool = True
     semantic_cache_threshold: float = 0.95
     fuzzy_match_enabled: bool = True
-    fuzzy_match_threshold: float = 92.0
+    # token_sort_ratio measures character overlap, not meaning, so this layer
+    # needs a high bar: "north region" vs "south region" scores 93.9. The two
+    # things fuzzy uniquely catches — typos (97.7) and word order (100) — clear
+    # 96 comfortably, and anything rejected here still falls through to the
+    # embedding layer, which is an actual semantic signal.
+    fuzzy_match_threshold: float = 96.0
     fuzzy_match_limit: int = 200
     semantic_cache_borderline_low: float = 0.85
-    semantic_cache_top_k: int = 5
-    llm_judge_enabled: bool = False
+    # Top-K is deliberately generous: the discriminator guard filters candidates
+    # *after* the LIMIT, and year-variants of a question cluster tightly in
+    # embedding space, so a genuine match can sit behind a dozen near-duplicates.
+    semantic_cache_top_k: int = 20
+    cache_discriminator_guard_enabled: bool = True
+    llm_judge_enabled: bool = True
     llm_judge_score_threshold: float = 8.0
+    # Retrieval stays wide (semantic_cache_top_k) so the discriminator guard has
+    # material to work with, but only the closest few survivors are judged —
+    # otherwise one lookup would fan out to 20 concurrent Azure calls.
+    llm_judge_max_candidates: int = 3
     preview_row_limit: int = 1000
     data_model_preview_row_limit: int = 1
     cors_allowed_origins: list[str] = field(default_factory=list)
@@ -119,12 +132,19 @@ class Config:
             semantic_cache_enabled=os.getenv("SEMANTIC_CACHE_ENABLED", "true").lower() == "true",
             semantic_cache_threshold=float(os.getenv("SEMANTIC_CACHE_THRESHOLD", "0.95")),
             fuzzy_match_enabled=os.getenv("FUZZY_MATCH_ENABLED", "true").lower() == "true",
-            fuzzy_match_threshold=float(os.getenv("FUZZY_MATCH_THRESHOLD", "92")),
+            fuzzy_match_threshold=float(os.getenv("FUZZY_MATCH_THRESHOLD", "96")),
             fuzzy_match_limit=int(os.getenv("FUZZY_MATCH_LIMIT", "200")),
             semantic_cache_borderline_low=float(os.getenv("SEMANTIC_CACHE_BORDERLINE_LOW", "0.85")),
-            semantic_cache_top_k=int(os.getenv("SEMANTIC_CACHE_TOP_K", "5")),
-            llm_judge_enabled=os.getenv("LLM_JUDGE_ENABLED", "false").lower() == "true",
+            semantic_cache_top_k=int(os.getenv("SEMANTIC_CACHE_TOP_K", "20")),
+            cache_discriminator_guard_enabled=os.getenv(
+                "CACHE_DISCRIMINATOR_GUARD_ENABLED", "true").lower() == "true",
+            llm_judge_enabled=os.getenv("LLM_JUDGE_ENABLED", "true").lower() == "true",
             llm_judge_score_threshold=float(os.getenv("LLM_JUDGE_SCORE_THRESHOLD", "8.0")),
+            # Clamped: the value is used as a list slice, so 0 would judge
+            # nothing (every lookup a guaranteed miss) and a negative value
+            # would silently drop the *last* candidate instead. Use
+            # LLM_JUDGE_ENABLED to turn the judge off.
+            llm_judge_max_candidates=max(1, int(os.getenv("LLM_JUDGE_MAX_CANDIDATES", "3"))),
             preview_row_limit=int(os.getenv("PREVIEW_ROW_LIMIT", "1000")),
             data_model_preview_row_limit=int(os.getenv("DATA_MODEL_PREVIEW_ROW_LIMIT", "1")),
             cors_allowed_origins=[

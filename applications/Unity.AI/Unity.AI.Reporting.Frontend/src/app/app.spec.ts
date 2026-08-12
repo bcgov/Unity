@@ -32,6 +32,28 @@ function makeTurn(sql: string = 'SELECT 1'): Turn {
   };
 }
 
+/** Renders a single cached turn and returns the root element for querying. */
+function renderCacheTurn(
+  cacheHitType?: Turn['embed']['cache_hit_type'],
+  fromCache = true,
+): HTMLElement {
+  const fixture = TestBed.createComponent(App);
+
+  const turn = makeTurn();
+  turn.embed.from_cache = fromCache;
+  turn.embed.cache_hit_type = cacheHitType;
+  turn.embed.cache_original_query = 'How many applications were submitted in 2024?';
+  // Seed before the first change-detection pass: the sidebar binds
+  // [conversation], so mutating it afterwards trips NG0100 under zoneless CD.
+  (fixture.componentInstance as any).conversation = [turn];
+
+  fixture.detectChanges();
+  TestBed.inject(HttpTestingController).match('/api/chats').forEach(req => req.flush([]));
+  fixture.detectChanges();
+
+  return fixture.nativeElement as HTMLElement;
+}
+
 describe('App', () => {
   let httpTesting: HttpTestingController;
 
@@ -198,6 +220,42 @@ describe('App', () => {
       await fixture.whenStable();
       expect(turn.embed.sql_explanation).toBe('recovered on retry');
       expect(turn.embed.sql_explanation_error).toBe(false);
+    });
+  });
+
+  describe('cache badge (AB#33664)', () => {
+    // The badge carries the "Get fresh answer" escape hatch. Before the fix it
+    // only rendered for llm_judge_hit — a hit type that never occurs — so a
+    // wrong fuzzy/semantic hit reached the user with no way to override it.
+
+    it('should show the badge and fresh-answer button for a semantic hit', () => {
+      const el = renderCacheTurn('semantic_hit');
+      expect(el.querySelector('.cache-badge')).toBeTruthy();
+      expect(el.querySelector('.cache-fresh-btn')).toBeTruthy();
+    });
+
+    it('should show the badge for a fuzzy hit — the hit type AB#33664 produces', () => {
+      const el = renderCacheTurn('fuzzy_hit');
+      expect(el.querySelector('.cache-badge')).toBeTruthy();
+      expect(el.querySelector('.cache-fresh-btn')).toBeTruthy();
+    });
+
+    it('should surface the reused question', () => {
+      const el = renderCacheTurn('fuzzy_hit');
+      expect(el.querySelector('.cache-badge-hint')?.textContent)
+        .toContain('How many applications were submitted in 2024?');
+    });
+
+    it('should stay silent on an exact hit', () => {
+      // Same question, and only the SQL is cached (it is re-run every time),
+      // so there is nothing for the user to second-guess.
+      const el = renderCacheTurn('exact_hit');
+      expect(el.querySelector('.cache-badge')).toBeNull();
+    });
+
+    it('should stay silent when the answer was not cached', () => {
+      const el = renderCacheTurn(undefined, false);
+      expect(el.querySelector('.cache-badge')).toBeNull();
     });
   });
 });

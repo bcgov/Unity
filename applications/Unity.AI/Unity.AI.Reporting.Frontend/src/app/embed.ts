@@ -16,7 +16,7 @@ export interface Embed {
     from_cache?: boolean;           // True when response was served from semantic cache
     cache_similarity?: number;      // Cosine similarity score (0–1) of the cache hit
     cache_hit_type?: 'exact_hit' | 'semantic_hit' | 'fuzzy_hit' | 'llm_judge_hit';
-    cache_original_query?: string;  // The original cached query (set for llm_judge_hit only)
+    cache_original_query?: string;  // The reused question (set for every non-exact hit)
     card_data?: CardData | null;    // Inline preview rows from Metabase (null when fetch failed)
 }
 

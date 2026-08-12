@@ -522,10 +522,40 @@ def _attach_preview_to_proposal(proposal, db_id, tenant_id):
     return proposal
 
 
-def _fuzzy_cache_lookup(tenant_id, db_id, schema_types, collection_name, normalized_query):
+def _drop_conflicting_candidates(tenant_id, db_id, normalized_query, candidates, text_key):
+    """Remove candidates whose salient literals differ from the incoming question.
+
+    Runs *before* ranking, so a slightly lower-scoring candidate with matching
+    literals can still win instead of being shadowed by a closer-looking one
+    that asks about a different year (AB#33664).
+    """
+    if not config.app.cache_discriminator_guard_enabled:
+        return candidates
+
+    kept, rejected = [], []
+    for candidate in candidates:
+        if cache_reranker.discriminators_conflict(normalized_query, candidate[text_key]):
+            rejected.append(candidate)
+        else:
+            kept.append(candidate)
+
+    if rejected:
+        logger.info(
+            f"[cache:discriminator_reject] tenant={tenant_id} db={db_id} "
+            f"rejected={len(rejected)} kept={len(kept)} "
+            f"query_literals={sorted(cache_reranker.extract_discriminators(normalized_query))} "
+            f"sample_rejected={sorted(cache_reranker.extract_discriminators(rejected[0][text_key]))}"
+        )
+    return kept
+
+
+async def _fuzzy_cache_lookup(tenant_id, db_id, schema_types, collection_name, normalized_query):
     """Layer 1.5: rapidfuzz match against recent normalized queries."""
     recent = cache_repository.get_recent_normalized_queries(
         tenant_id, db_id, schema_types, collection_name, config.app.fuzzy_match_limit
+    )
+    recent = _drop_conflicting_candidates(
+        tenant_id, db_id, normalized_query, recent, "normalized_query"
     )
     fuzzy_match = cache_reranker.fuzzy_matcher.find_best(
         normalized_query, recent, config.app.fuzzy_match_threshold
@@ -535,31 +565,53 @@ def _fuzzy_cache_lookup(tenant_id, db_id, schema_types, collection_name, normali
     cache_hit = cache_repository.find_exact(
         tenant_id, db_id, schema_types, collection_name, fuzzy_match["normalized_query"]
     )
-    if cache_hit:
-        cache_hit["hit_type_override"] = "fuzzy_hit"
-        logger.info(
-            f"[cache:fuzzy_hit] tenant={tenant_id} db={db_id} score={fuzzy_match['score']:.1f}"
+    if not cache_hit:
+        return None
+
+    # A high rapidfuzz score only means the characters line up. In a long
+    # question a single swapped filter word still clears the threshold, so the
+    # judge gets the final say here too.
+    if config.app.llm_judge_enabled:
+        judged = await _llm_judge_lookup(
+            tenant_id, db_id, normalized_query, [{**cache_hit, "similarity": 1.0}]
         )
+        if not judged:
+            logger.info(
+                f"[cache:fuzzy_rejected] tenant={tenant_id} db={db_id} "
+                f"score={fuzzy_match['score']:.1f} reason=judge"
+            )
+            return None
+
+    cache_hit["hit_type_override"] = "fuzzy_hit"
+    logger.info(
+        f"[cache:fuzzy_hit] tenant={tenant_id} db={db_id} score={fuzzy_match['score']:.1f}"
+    )
     return cache_hit
 
 
-async def _llm_judge_lookup(tenant_id, db_id, normalized_query, borderline):
-    """Run LLM judge over borderline candidates in parallel; return the best hit or None."""
-    borderline_sims = ', '.join(f"{c['similarity']:.4f}" for c in borderline)
+async def _llm_judge_lookup(tenant_id, db_id, normalized_query, candidates):
+    """Score candidates in parallel and return the best acceptable one, or None.
+
+    Candidates are already ordered by similarity, so the cap keeps the closest
+    few. Best-of-K matters: the highest-similarity candidate can be a one-word
+    filter swap while the genuine paraphrase sits just below it.
+    """
+    candidates = candidates[:config.app.llm_judge_max_candidates]
+    candidate_sims = ', '.join(f"{c['similarity']:.4f}" for c in candidates)
     logger.info(
-        f"[cache:borderline] tenant={tenant_id} db={db_id} "
-        f"count={len(borderline)} similarities=[{borderline_sims}]"
+        f"[cache:judging] tenant={tenant_id} db={db_id} "
+        f"count={len(candidates)} similarities=[{candidate_sims}]"
     )
     async with build_async_client() as judge_client:
         results = await asyncio.gather(*[
             cache_reranker.llm_judge.score_candidate(
                 normalized_query, candidate["query_text"], judge_client
             )
-            for candidate in borderline
+            for candidate in candidates
         ])
 
     best_candidate, best_score = None, -1  # sentinel; valid scores are 0..10
-    for candidate, (score, judge_tokens) in zip(borderline, results):
+    for candidate, (score, judge_tokens) in zip(candidates, results):
         logger.info(
             f"[cache:llm_judge] tenant={tenant_id} db={db_id} "
             f"similarity={candidate['similarity']:.4f} score={score} tokens={judge_tokens}"
@@ -587,7 +639,7 @@ async def _llm_judge_lookup(tenant_id, db_id, normalized_query, borderline):
 
 
 async def _embedding_cache_lookup(tenant_id, db_id, schema_types, collection_name, normalized_query):
-    """Layer 2: dense embedding top-K search with optional LLM judge for borderline zone.
+    """Layer 2: dense embedding top-K search, then the LLM judge.
 
     Returns (cache_hit_or_None, query_embedding).
     """
@@ -601,22 +653,30 @@ async def _embedding_cache_lookup(tenant_id, db_id, schema_types, collection_nam
         threshold=config.app.semantic_cache_borderline_low,
         k=config.app.semantic_cache_top_k,
     )
-    if candidates:
-        candidate_sims = ', '.join(f"{c['similarity']:.4f}" for c in candidates)
-        logger.info(
-            f"[cache:candidates] tenant={tenant_id} db={db_id} "
-            f"count={len(candidates)} similarities=[{candidate_sims}]"
-        )
+    candidates = _drop_conflicting_candidates(
+        tenant_id, db_id, normalized_query, candidates, "query_text"
+    )
+    if not candidates:
+        return None, query_embedding
 
-    if candidates and candidates[0]["similarity"] >= config.app.semantic_cache_threshold:
+    candidate_sims = ', '.join(f"{c['similarity']:.4f}" for c in candidates)
+    logger.info(
+        f"[cache:candidates] tenant={tenant_id} db={db_id} "
+        f"count={len(candidates)} similarities=[{candidate_sims}]"
+    )
+
+    # Every candidate is judged, including very close ones. There is no safe
+    # auto-accept band: a one-word filter swap ("approved" -> "pending") leaves
+    # most of the sentence intact and so scores *above* a genuine paraphrase,
+    # and the gap widens as questions get longer. Similarity cannot separate
+    # them; only reading the two questions can.
+    if config.app.llm_judge_enabled:
+        cache_hit = await _llm_judge_lookup(tenant_id, db_id, normalized_query, candidates)
+        return cache_hit, query_embedding
+
+    # Judge disabled — fall back to the plain similarity cut-off.
+    if candidates[0]["similarity"] >= config.app.semantic_cache_threshold:
         return candidates[0], query_embedding
-
-    if candidates and config.app.llm_judge_enabled:
-        borderline = [c for c in candidates if c["similarity"] < config.app.semantic_cache_threshold]
-        if borderline:
-            cache_hit = await _llm_judge_lookup(tenant_id, db_id, normalized_query, borderline)
-            return cache_hit, query_embedding
-
     return None, query_embedding
 
 
@@ -629,16 +689,34 @@ async def _semantic_cache_lookup(tenant_id, db_id, schema_types, collection_name
         return cache_hit, None
 
     if config.app.fuzzy_match_enabled:
-        cache_hit = _fuzzy_cache_lookup(tenant_id, db_id, schema_types, collection_name, normalized_query)
+        cache_hit = await _fuzzy_cache_lookup(
+            tenant_id, db_id, schema_types, collection_name, normalized_query
+        )
         if cache_hit:
             return cache_hit, None
 
     return await _embedding_cache_lookup(tenant_id, db_id, schema_types, collection_name, normalized_query)
 
 
-async def _serve_cache_hit(cache_hit, db_id, collection_id, tenant_id):
+async def _serve_cache_hit(cache_hit, db_id, collection_id, tenant_id, normalized_query):
     """Validate cached SQL and build the cache-hit response. Returns None if SQL is no longer valid."""
     cached = cache_hit["response_payload"]
+
+    # Relative-time questions ("this year", "last quarter") may have had their
+    # period frozen as a literal at generation time. Checked here so it covers
+    # every layer including exact match — where the two questions are the same
+    # string, so no reranker can ever see the difference. Ahead of validate_sql
+    # to avoid a wasted Metabase round-trip.
+    if not cache_reranker.cached_entry_is_temporally_valid(
+        normalized_query, cached.get("sql", ""), cache_hit.get("created_at")
+    ):
+        logger.info(
+            f"[cache:stale_relative_date] tenant={tenant_id} db={db_id} "
+            f"granularity={cache_reranker.relative_time_granularity(normalized_query)} "
+            f"created_at={cache_hit.get('created_at')}"
+        )
+        return None
+
     try:
         loop = asyncio.get_event_loop()
         is_valid, _ = await loop.run_in_executor(
@@ -689,7 +767,11 @@ async def _serve_cache_hit(cache_hit, db_id, collection_id, tenant_id):
         "from_cache": True,
         "cache_similarity": round(cache_hit["similarity"], 4),
         "cache_hit_type": hit_type,
-        "cache_original_query": cache_hit.get("query_text", "") if hit_type == "llm_judge_hit" else None,
+        # Populated for every non-exact hit so the UI can show what was reused
+        # and offer "Get fresh answer". Exact hits need no such prompt.
+        "cache_original_query": (
+            cache_hit.get("query_text", "") if hit_type != "exact_hit" else None
+        ),
     }), 200
 
 
@@ -728,7 +810,10 @@ async def _try_serve_from_cache(tenant_id, db_id, schema_types, collection_name,
     )
     if not cache_hit:
         return None, query_embedding
-    return await _serve_cache_hit(cache_hit, db_id, collection_id, tenant_id), query_embedding
+    served = await _serve_cache_hit(
+        cache_hit, db_id, collection_id, tenant_id, normalized_query
+    )
+    return served, query_embedding
 
 
 async def _async_ask(data, user_data):

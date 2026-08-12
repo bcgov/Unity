@@ -611,7 +611,7 @@ class CacheRepository:
         with self.db.get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("""
-                    SELECT cache_id, response_payload
+                    SELECT cache_id, response_payload, query_text, created_at
                     FROM query_cache
                     WHERE tenant_id = %s
                       AND db_id = %s
@@ -624,6 +624,8 @@ class CacheRepository:
                     return {
                         "cache_id": str(row[0]),
                         "response_payload": row[1],
+                        "query_text": row[2],
+                        "created_at": row[3],
                         "similarity": 1.0
                     }
         return None
@@ -665,14 +667,14 @@ class CacheRepository:
     ) -> list:
         """Top-K cosine similarity search with floor = threshold.
         Returns list sorted by similarity DESC (closest first).
-        Each dict: cache_id, response_payload, query_text, similarity."""
+        Each dict: cache_id, response_payload, query_text, created_at, similarity."""
         fp = self.build_fingerprint(db_id, schema_types, collection_name)
         embedding_str = "[" + ",".join(str(v) for v in embedding) + "]"
         with self.db.get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("SET hnsw.ef_search = 64")
                 cur.execute("""
-                    SELECT cache_id, response_payload, query_text,
+                    SELECT cache_id, response_payload, query_text, created_at,
                            1 - (query_embedding <=> %s::halfvec) AS similarity
                     FROM query_cache
                     WHERE tenant_id = %s
@@ -688,7 +690,8 @@ class CacheRepository:
                         "cache_id": str(row[0]),
                         "response_payload": row[1],
                         "query_text": row[2],
-                        "similarity": float(row[3]),
+                        "created_at": row[3],
+                        "similarity": float(row[4]),
                     }
                     for row in cur.fetchall()
                 ]
@@ -734,6 +737,12 @@ class CacheRepository:
                         response_payload = EXCLUDED.response_payload,
                         query_embedding  = EXCLUDED.query_embedding,
                         accessed_at      = NOW(),
+                        -- created_at tracks when *this SQL* was generated, which is
+                        -- what the relative-date freshness check reads. Without this
+                        -- an entry that expires at a period boundary stays expired
+                        -- forever: it is regenerated on every request, the new SQL
+                        -- is stored, but the stale timestamp keeps rejecting it.
+                        created_at       = NOW(),
                         access_count     = query_cache.access_count + 1
                 """, (tenant_id, db_id, fp, query_text, normalized_query,
                       embedding_str, json.dumps(response_payload)))
