@@ -88,7 +88,7 @@ class DatabaseManager:
                         schema_fingerprint TEXT NOT NULL,
                         query_text TEXT NOT NULL,
                         normalized_query TEXT NOT NULL,
-                        query_embedding vector(3072) NOT NULL,
+                        query_embedding halfvec(3072) NOT NULL,
                         response_payload JSONB NOT NULL,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         accessed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -129,6 +129,36 @@ class DatabaseManager:
                     logger.info(
                         f"One-time cache migration: purged {cur.rowcount} pre-fix query_cache entries"
                     )
+
+                # One-time migration: query_embedding was originally `vector(3072)`, but
+                # pgvector's hnsw/ivfflat indexes cap at 2000 dimensions for that type, so
+                # ensure_hnsw_index() could never actually build one. halfvec(3072) supports
+                # hnsw up to 4000-d. The sentinel row guards against repeating this check on
+                # every startup, but ALTER COLUMN TYPE always takes an ACCESS EXCLUSIVE lock
+                # and rewrites the table even when the target type already matches — so the
+                # ALTER itself is skipped whenever the column is already halfvec(3072).
+                cur.execute("""
+                    INSERT INTO schema_versions (db_id, collection_name, fingerprint)
+                    VALUES (0, '__migration_v2_halfvec__', 'done')
+                    ON CONFLICT (db_id, collection_name) DO NOTHING
+                    RETURNING db_id
+                """)
+                if cur.fetchone():
+                    cur.execute("""
+                        SELECT format_type(atttypid, atttypmod)
+                        FROM pg_attribute
+                        WHERE attrelid = 'query_cache'::regclass
+                          AND attname = 'query_embedding'
+                          AND NOT attisdropped
+                    """)
+                    current_type = cur.fetchone()[0]
+                    if current_type != "halfvec(3072)":
+                        cur.execute("""
+                            ALTER TABLE query_cache
+                                ALTER COLUMN query_embedding TYPE halfvec(3072)
+                                USING query_embedding::halfvec
+                        """)
+                        logger.info("One-time cache migration: query_embedding converted to halfvec(3072)")
 
                 # ivfflat index requires rows to exist first — created separately via evict_old
                 # or on first similarity search. Skip here to avoid error on empty table.
@@ -609,13 +639,13 @@ class CacheRepository:
                 cur.execute("SET hnsw.ef_search = 64")
                 cur.execute("""
                     SELECT cache_id, response_payload,
-                           1 - (query_embedding <=> %s::vector) AS similarity
+                           1 - (query_embedding <=> %s::halfvec) AS similarity
                     FROM query_cache
                     WHERE tenant_id = %s
                       AND db_id = %s
                       AND schema_fingerprint = %s
-                      AND 1 - (query_embedding <=> %s::vector) >= %s
-                    ORDER BY query_embedding <=> %s::vector
+                      AND 1 - (query_embedding <=> %s::halfvec) >= %s
+                    ORDER BY query_embedding <=> %s::halfvec
                     LIMIT 1
                 """, (embedding_str, tenant_id, db_id, fp,
                       embedding_str, threshold, embedding_str))
@@ -643,13 +673,13 @@ class CacheRepository:
                 cur.execute("SET hnsw.ef_search = 64")
                 cur.execute("""
                     SELECT cache_id, response_payload, query_text,
-                           1 - (query_embedding <=> %s::vector) AS similarity
+                           1 - (query_embedding <=> %s::halfvec) AS similarity
                     FROM query_cache
                     WHERE tenant_id = %s
                       AND db_id = %s
                       AND schema_fingerprint = %s
-                      AND 1 - (query_embedding <=> %s::vector) >= %s
-                    ORDER BY query_embedding <=> %s::vector
+                      AND 1 - (query_embedding <=> %s::halfvec) >= %s
+                    ORDER BY query_embedding <=> %s::halfvec
                     LIMIT %s
                 """, (embedding_str, tenant_id, db_id, fp,
                       embedding_str, threshold, embedding_str, k))
@@ -698,7 +728,7 @@ class CacheRepository:
                     INSERT INTO query_cache
                         (tenant_id, db_id, schema_fingerprint, query_text, normalized_query,
                          query_embedding, response_payload)
-                    VALUES (%s, %s, %s, %s, %s, %s::vector, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s::halfvec, %s)
                     ON CONFLICT (tenant_id, db_id, schema_fingerprint, normalized_query)
                     DO UPDATE SET
                         response_payload = EXCLUDED.response_payload,
@@ -803,8 +833,10 @@ class CacheRepository:
                 return purged
 
     def ensure_hnsw_index(self):
-        """Create the hnsw index once the table has rows. hnsw supports up to 16000 dimensions,
-        unlike ivfflat which caps at 2000 — required for text-embedding-3-large (3072-d)."""
+        """Create the hnsw index once the table has rows. pgvector's hnsw/ivfflat indexes
+        both cap at 2000 dimensions for the plain `vector` type, but text-embedding-3-large
+        is 3072-d — hence query_embedding is `halfvec(3072)`, where hnsw supports up to
+        4000 dimensions."""
         with self.db.get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("SELECT COUNT(*) FROM query_cache")
@@ -813,7 +845,7 @@ class CacheRepository:
                     cur.execute("""
                         CREATE INDEX IF NOT EXISTS idx_query_cache_embedding
                             ON query_cache
-                            USING hnsw (query_embedding vector_cosine_ops)
+                            USING hnsw (query_embedding halfvec_cosine_ops)
                             WITH (m = 16, ef_construction = 64)
                     """)
                     conn.commit()
