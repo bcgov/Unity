@@ -64,6 +64,28 @@ _QUARTER_RE = re.compile(r'\bquarter\s*([1-4])\b')
 _MONTH_RE = re.compile(r'\b(' + '|'.join(_MONTHS) + r')\b')
 _NUMBER_RE = re.compile(r'\b\d+(?:\.\d+)?\b')
 
+# Relative windows carry direction, quantity, unit and fiscal status. All four
+# change the SQL, so all four belong in the discriminator set: "this year" and
+# "last year" contain no literals at all, yet need entirely different SQL.
+_RELATIVE_PERIOD_RE = re.compile(
+    r'\b(?P<direction>this|last|next|past|previous|current|recent|rolling|trailing)\s+'
+    r'(?:(?P<count>\d+)\s+)?'
+    r'(?P<fiscal>fiscal\s+)?'
+    r'(?P<unit>year|quarter|month|week|day)s?\b'
+)
+# normalize_query expands ytd/mtd/qtd into these long forms.
+_TO_DATE_RE = re.compile(r'\b(year|quarter|month|week) to date\b')
+_DAY_WORD_RE = re.compile(r'\b(today|yesterday|tomorrow)\b')
+
+
+def _relative_tag(match) -> str:
+    """Stable tag for one relative window, e.g. 'rel:last:30:day'."""
+    unit = match.group("unit")
+    if match.group("fiscal"):
+        unit = f"fiscal-{unit}"
+    # Absent count means one period ("last year" == "last 1 year").
+    return f"rel:{match.group('direction')}:{match.group('count') or '1'}:{unit}"
+
 
 def extract_discriminators(text: str) -> frozenset:
     """Return the kind-tagged salient literals in a question.
@@ -72,6 +94,8 @@ def extract_discriminators(text: str) -> frozenset:
     "in 2024" are not treated as the same constraint:
         "applications in 2024"        -> {"year:2024"}
         "top 5 regions in Q3 2024"    -> {"num:5", "quarter:3", "year:2024"}
+        "applications last 30 days"   -> {"rel:last:30:day"}
+        "applications this year"      -> {"rel:this:1:year"}
         "how many applications"       -> frozenset()
 
     Normalisation is applied internally, so callers may pass either a raw
@@ -80,7 +104,18 @@ def extract_discriminators(text: str) -> frozenset:
     remaining = normalize_query(text)
     found = set()
 
-    # Years first, then strip them so they are not re-counted as bare numbers.
+    # Relative windows first: they own their own digits ("last 30 days"), which
+    # must not resurface as a bare num:30.
+    found.update(_relative_tag(m) for m in _RELATIVE_PERIOD_RE.finditer(remaining))
+    remaining = _RELATIVE_PERIOD_RE.sub(' ', remaining)
+
+    found.update(f"todate:{m.group(1)}" for m in _TO_DATE_RE.finditer(remaining))
+    remaining = _TO_DATE_RE.sub(' ', remaining)
+
+    found.update(f"day:{m.group(1)}" for m in _DAY_WORD_RE.finditer(remaining))
+    remaining = _DAY_WORD_RE.sub(' ', remaining)
+
+    # Years next, then strip them so they are not re-counted as bare numbers.
     found.update(f"year:{m.group(0)}" for m in _YEAR_RE.finditer(remaining))
     remaining = _YEAR_RE.sub(' ', remaining)
 
@@ -115,32 +150,52 @@ def discriminators_conflict(q1: str, q2: str) -> bool:
 
 _GRANULARITY_ORDER = ("day", "week", "month", "quarter", "year")
 
-_RELATIVE_PERIOD_RE = re.compile(
-    r'\b(?:this|last|next|past|previous|current|recent)\s+'
-    r'(?:fiscal\s+)?(year|quarter|month|week|day)s?\b'
-)
-# normalize_query expands ytd/mtd/qtd into these long forms.
-_TO_DATE_RE = re.compile(r'\b(year|quarter|month|week) to date\b')
-_DAY_WORD_RE = re.compile(r'\b(?:today|yesterday|tomorrow)\b')
-
 # Any 4-digit year literal means the SQL pins a date instead of deriving it.
 _SQL_HARDCODED_DATE_RE = re.compile(r'\b(?:19|20)\d{2}\b')
 
+# The BC government fiscal year runs April 1 - March 31. A cache entry written
+# on March 31 is in a different fiscal year from one read on April 1, even
+# though both fall in the same calendar year.
+FISCAL_START_MONTH = 4
 
-def relative_time_granularity(text: str) -> Optional[str]:
-    """Return the finest relative-time granularity in a question, or None.
 
-    Finest wins because it is the most restrictive: a question mentioning both
-    "this month" and "last year" must be re-checked monthly, not yearly.
+def fiscal_year_id(value: datetime, start_month: int = FISCAL_START_MONTH) -> int:
+    """Fiscal year a date belongs to, labelled by its starting calendar year."""
+    return value.year if value.month >= start_month else value.year - 1
+
+
+def relative_time_spec(text: str) -> Optional[tuple]:
+    """Return (granularity, is_fiscal) for a relative-time question, else None.
+
+    Granularity is the finest window mentioned, because that is the most
+    restrictive: a question naming both "this month" and "last year" must be
+    re-checked monthly, not yearly.
+
+    A quantified window ("last 30 days", "rolling 12 months") is pinned to
+    "day": its boundaries move every day, so anything cached yesterday is
+    already answering a different range.
     """
     normalized = normalize_query(text)
-    found = [m.group(1) for m in _RELATIVE_PERIOD_RE.finditer(normalized)]
+    found, fiscal = [], False
+
+    for m in _RELATIVE_PERIOD_RE.finditer(normalized):
+        if m.group("fiscal"):
+            fiscal = True
+        found.append("day" if m.group("count") else m.group("unit"))
+
     found += [m.group(1) for m in _TO_DATE_RE.finditer(normalized)]
     if _DAY_WORD_RE.search(normalized):
         found.append("day")
+
     if not found:
         return None
-    return min(found, key=_GRANULARITY_ORDER.index)
+    return min(found, key=_GRANULARITY_ORDER.index), fiscal
+
+
+def relative_time_granularity(text: str) -> Optional[str]:
+    """Granularity alone, for logging and callers that do not care about fiscal."""
+    spec = relative_time_spec(text)
+    return spec[0] if spec else None
 
 
 def sql_has_hardcoded_date(sql: str) -> bool:
@@ -153,12 +208,24 @@ def sql_has_hardcoded_date(sql: str) -> bool:
 
 
 def same_period(created_at: datetime, granularity: str,
-                now: Optional[datetime] = None) -> bool:
-    """True when created_at falls in the same calendar period as now."""
+                now: Optional[datetime] = None, fiscal: bool = False) -> bool:
+    """True when created_at falls in the same period as now.
+
+    `fiscal` shifts year and quarter boundaries to the fiscal calendar; month,
+    week and day are unaffected by where the year starts.
+    """
     now = now or datetime.now()
     if granularity == "year":
+        if fiscal:
+            return fiscal_year_id(created_at) == fiscal_year_id(now)
         return created_at.year == now.year
     if granularity == "quarter":
+        if fiscal:
+            # Quarter index counted from the fiscal start month.
+            return (fiscal_year_id(created_at),
+                    (created_at.month - FISCAL_START_MONTH) % 12 // 3) == \
+                   (fiscal_year_id(now),
+                    (now.month - FISCAL_START_MONTH) % 12 // 3)
         return (created_at.year, (created_at.month - 1) // 3) == \
                (now.year, (now.month - 1) // 3)
     if granularity == "month":
@@ -181,15 +248,16 @@ def cached_entry_is_temporally_valid(
     `now` is injectable so the year-boundary case is testable without waiting
     for one.
     """
-    granularity = relative_time_granularity(normalized_query)
-    if granularity is None:
+    spec = relative_time_spec(normalized_query)
+    if spec is None:
         return True
+    granularity, fiscal = spec
     if not sql_has_hardcoded_date(cached_sql):
         return True
     if created_at is None:
         # Relative question + pinned date + unknown age — not worth the risk.
         return False
-    return same_period(created_at, granularity, now)
+    return same_period(created_at, granularity, now, fiscal=fiscal)
 
 
 class FuzzyMatcher:

@@ -707,6 +707,12 @@ class CacheRepository:
                         response_payload = EXCLUDED.response_payload,
                         query_embedding  = EXCLUDED.query_embedding,
                         accessed_at      = NOW(),
+                        -- created_at tracks when *this SQL* was generated, which is
+                        -- what the relative-date freshness check reads. Without this
+                        -- an entry that expires at a period boundary stays expired
+                        -- forever: it is regenerated on every request, the new SQL
+                        -- is stored, but the stale timestamp keeps rejecting it.
+                        created_at       = NOW(),
                         access_count     = query_cache.access_count + 1
                 """, (tenant_id, db_id, fp, query_text, normalized_query,
                       embedding_str, json.dumps(response_payload)))
