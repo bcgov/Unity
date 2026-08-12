@@ -51,4 +51,10 @@ Once you've configured your connection strings via `appsettings.secrets.json` (o
 dotnet run
 ```
 
+Migration history flattening is disabled by default. To reconcile databases that still
+contain migration ids from the removed migration set, run the migrator once with
+`Database__FlattenMigrations=true` (or set `Database:FlattenMigrations` to `true` in
+`appsettings.secrets.json`). Do not leave this enabled for normal migration runs: it
+deletes migration history rows that were added after the flattened `Initial` migration.
+
 Or run it from Visual Studio by setting `Unity.GrantManager.DbMigrator` as the startup project.
