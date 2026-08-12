@@ -586,14 +586,14 @@ class EmbeddingManager:
                 db_id, schema_types, tenant_id=tenant_id
             )
 
-            # Bail out without touching the DB on partial extraction or no docs —
-            # leaves the existing embeddings + cache intact for the next run.
             if not all_extractions_ok:
                 logger.warning(
-                    f"Skipping embed for db_id={db_id} due to silent extraction "
-                    f"error(s); existing embeddings + cache retained, will retry next run"
+                    f"Extraction error(s) for db_id={db_id}; saving whatever "
+                    f"extracted successfully but not advancing the schema "
+                    f"fingerprint, so this run's failed table(s)/view(s) are "
+                    f"retried next time instead of freezing every other update "
+                    f"to this database in the meantime"
                 )
-                return
             if not all_documents:
                 logger.warning(
                     f"No documents extracted for db_id={db_id}; "
@@ -610,11 +610,16 @@ class EmbeddingManager:
             if old_ids:
                 db_manager.purge_embeddings_by_ids(old_ids, collection_name)
 
-            # Conditional cache invalidation — purges query_cache only on real change.
-            fingerprint = hashlib.sha256(
-                "\n".join(sorted(all_sig_parts)).encode("utf-8")
-            ).hexdigest()[:16]
-            cache_repository.update_schema_fingerprint(db_id, collection_name, fingerprint)
+            # Only advance the fingerprint (and thus allow cache invalidation and
+            # the cheap "schema unchanged" fast-path) when this run's signature is
+            # actually complete. Advancing it on a partial extraction could let a
+            # later, fully-successful run with the same incomplete-looking hash
+            # be wrongly treated as "unchanged" and skipped.
+            if all_extractions_ok:
+                fingerprint = hashlib.sha256(
+                    "\n".join(sorted(all_sig_parts)).encode("utf-8")
+                ).hexdigest()[:16]
+                cache_repository.update_schema_fingerprint(db_id, collection_name, fingerprint)
 
     def _schema_unchanged(self, db_id: int, schema_types: List[str],
                           collection_name: str,
