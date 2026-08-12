@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using Unity.GrantManager.ApplicantProfile;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Domain.Entities.Auditing;
@@ -32,6 +33,10 @@ public class ApplicationForm : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public FormHierarchyType? FormHierarchy { get; set; }
     public Guid? ParentFormId { get; set; }
     public bool IsDirectApproval { get; set; } = false;
+    
+    public bool PublishRenewalLink { get; set; }
+    public ExternalLink? RenewalLink { get; set; }
+
     public bool AutomaticallyGenerateAIAnalysis { get; set; } = false;
     public bool ManuallyInitiateAIAnalysis { get; set; } = false;
     [MaxLength(100)]
