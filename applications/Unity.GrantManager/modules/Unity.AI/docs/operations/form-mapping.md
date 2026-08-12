@@ -18,7 +18,7 @@ Generate recommended CHEFS-to-Unity field mapping for a form version.
 - `GET /api/app/application-form-version/{id}`
 
 ## Contract
-- Structured mapping recommendation JSON output. Returns an immediate queued result via API app service, queue, background job, and AI runtime.
+- Structured mapping recommendation JSON output. The POST request enqueues generation and returns without the generated payload; clients use the shared status endpoint while the background executor persists the result.
 
 ## Output Shape
 - Core field matches.

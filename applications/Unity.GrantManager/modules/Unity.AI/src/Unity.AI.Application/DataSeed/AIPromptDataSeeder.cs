@@ -12,8 +12,7 @@ using Volo.Abp.MultiTenancy;
 namespace Unity.AI.DataSeed;
 
 /// <summary>
-/// Seeds the built-in AI prompts (application analysis, attachment summary, application scoring) into the host database.
-/// Each prompt family is represented as versioned rows in AIPrompts.
+/// Seeds host-owned, versioned built-in AI prompts.
 /// </summary>
 public class AIPromptDataSeeder(
     IRepository<AIPrompt, Guid> promptRepository,
@@ -21,7 +20,10 @@ public class AIPromptDataSeeder(
 {
     public async Task SeedAsync(DataSeedContext context)
     {
-        if (context.TenantId != null) return; // host database only
+        if (context.TenantId != null)
+        {
+            return;
+        }
 
         using (currentTenant.Change(null))
         {
