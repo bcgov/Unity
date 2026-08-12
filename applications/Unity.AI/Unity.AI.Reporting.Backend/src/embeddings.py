@@ -6,6 +6,7 @@ import hashlib
 import json
 import logging
 import time
+import uuid
 from typing import List, Optional, Tuple
 import sqlalchemy.exc
 from langchain_core.documents import Document
@@ -18,6 +19,13 @@ from metabase import metabase_client
 
 # Configure logging
 logger = logging.getLogger(__name__)
+
+# Fixed namespace for deriving deterministic embedding-row ids from
+# (db_id, schema-qualified table/view name). Letting add_documents upsert by
+# id — instead of blind-inserting a fresh random id every run — means a
+# table/view that succeeds on a run where some other table/view failed
+# updates its own row in place rather than creating a duplicate.
+_EMBEDDING_ID_NAMESPACE = uuid.uuid5(uuid.NAMESPACE_URL, "unity-ai-reporting/schema-embeddings")
 
 
 class SchemaExtractor:
@@ -260,6 +268,11 @@ class SchemaExtractor:
                     "page_content": page,
                     "correlation_type": "public",
                     "signature": self._signature_line("public", table["name"], columns),
+                    # Stable identity for the embedding row — deliberately excludes
+                    # columns/content so the same table always maps to the same id
+                    # even as its columns change, enabling upsert instead of
+                    # add-then-delete (see EmbeddingManager._extract_documents).
+                    "name": f"public.{table['name']}",
                 })
                 logger.debug(f"Extracted schema for {table['name']}")
             except Exception as e:
@@ -342,6 +355,8 @@ class SchemaExtractor:
                 "signature": self._signature_line(
                     "Reporting", view_name, columns, view_metadata
                 ),
+                # See extract_schemas' "name" field — same purpose.
+                "name": f"Reporting.{view_name}",
             }
         except Exception as e:
             logger.exception(f"Error processing view {view_name}: {e}")
@@ -534,13 +549,19 @@ class EmbeddingManager:
           1. Cheap signature pass — compute the structural fingerprint without
              per-column sample queries or Azure embedding calls. If it matches
              the stored fingerprint, return early (no DB writes, no API spend).
-          2. Otherwise, full extract → add new embeddings → delete the old ones
-             captured up-front. This add-then-delete swap means a live query
-             during the refresh always sees a complete embedding set (worst
-             case: old + new superset), never the empty window the old
-             delete-then-add path created.
-          3. Update the schema fingerprint, which conditionally invalidates the
-             semantic query_cache when the structural fingerprint changed.
+          2. Otherwise, full extract → upsert each successfully-extracted
+             table/view by a deterministic id (db_id + name), so a table/view
+             that succeeds always overwrites its own prior row in place —
+             whether this run is fully successful or partial — instead of
+             ever creating a duplicate or requiring a delete+recreate. A live
+             query during the refresh always sees a complete embedding set.
+          3. Only on a *fully* successful extraction: purge rows that exist in
+             the vector store but weren't reproduced this run (genuinely
+             removed tables/views), and advance the schema fingerprint, which
+             conditionally invalidates the semantic query_cache. A partial
+             extraction leaves the failed table's/view's last-known-good row
+             untouched and the fingerprint unmoved, so it's retried next run
+             instead of being deleted or silently skipped forever.
 
         Args:
             db_id: Database ID to embed schemas for
@@ -557,11 +578,12 @@ class EmbeddingManager:
         # runs the startup seed-embed, so this now routinely has concurrent
         # callers; without the lock covering the cheap check too, every
         # worker would redundantly hit Metabase for the same read-only check
-        # even when nothing downstream needs to write. The capture-then-delete
-        # swap in Phase 2 also isn't safe under concurrent runs (overlapping
-        # CronJob + manual embed, etc.): each would capture the same old_ids
-        # and leave the other's fresh rows behind as duplicates. Skip
-        # entirely if another run already owns it.
+        # even when nothing downstream needs to write. Deterministic ids make
+        # the upsert itself concurrency-safe (no duplicate-row risk), but two
+        # overlapping full-success runs (overlapping CronJob + manual embed,
+        # etc.) could still race on the stale-id purge and each redundantly
+        # redo the whole extract + Azure-embedding workload. Skip entirely if
+        # another run already owns it.
         with db_manager.embed_lock(db_id, collection_name) as acquired:
             if not acquired:
                 logger.info(
@@ -575,25 +597,17 @@ class EmbeddingManager:
                                       tenant_id=tenant_id):
                 return
 
-            # --- Phase 2: full extract → add-then-delete swap ---
+            # --- Phase 2: full extract → upsert by deterministic id ---
             logger.info(f"Embedding schemas for db_id: {db_id}, types: {schema_types}")
 
-            # Capture the existing row set BEFORE adding fresh embeddings so we
-            # can delete them after the new rows are committed (atomic-ish swap).
+            # Capture the existing row set up front — used below to find rows
+            # that no longer correspond to any table/view this run produced.
             old_ids = db_manager.get_embedding_ids(db_id, collection_name)
 
-            all_documents, all_sig_parts, all_extractions_ok = self._extract_documents(
+            all_documents, all_ids, all_sig_parts, all_extractions_ok = self._extract_documents(
                 db_id, schema_types, tenant_id=tenant_id
             )
 
-            # Bail out without touching the DB on partial extraction or no docs —
-            # leaves the existing embeddings + cache intact for the next run.
-            if not all_extractions_ok:
-                logger.warning(
-                    f"Skipping embed for db_id={db_id} due to silent extraction "
-                    f"error(s); existing embeddings + cache retained, will retry next run"
-                )
-                return
             if not all_documents:
                 logger.warning(
                     f"No documents extracted for db_id={db_id}; "
@@ -601,20 +615,42 @@ class EmbeddingManager:
                 )
                 return
 
-            # Add new first, then delete old. Between these the running app sees a
-            # superset (old + new) — safe. If add_documents fails, old rows remain
-            # and the next run retries (no destructive failure mode).
-            self.vector_store.add_documents(all_documents)
-            logger.info(f"Added {len(all_documents)} embeddings for db_id={db_id}")
+            # Upsert by deterministic id (db_id + table/view name) instead of
+            # blind-inserting a fresh random id every run: a table/view that
+            # succeeds this run overwrites its own prior row in place, whether
+            # or not some other table/view in the same run failed. Nothing is
+            # written — good or bad — for whatever failed extraction, so its
+            # last-known-good row (if any) is simply left alone.
+            self.vector_store.add_documents(all_documents, ids=all_ids)
+            logger.info(f"Upserted {len(all_documents)} embeddings for db_id={db_id}")
 
-            if old_ids:
-                db_manager.purge_embeddings_by_ids(old_ids, collection_name)
+            if all_extractions_ok:
+                # Only trust this run's id set as the complete truth — and thus
+                # only purge rows it didn't reproduce — when nothing failed.
+                # Purging on a partial run risks deleting the last-known-good
+                # row for a table/view that merely failed to extract *this*
+                # run, with no fresh row to replace it.
+                stale_ids = set(old_ids) - set(all_ids)
+                if stale_ids:
+                    db_manager.purge_embeddings_by_ids(list(stale_ids), collection_name)
 
-            # Conditional cache invalidation — purges query_cache only on real change.
-            fingerprint = hashlib.sha256(
-                "\n".join(sorted(all_sig_parts)).encode("utf-8")
-            ).hexdigest()[:16]
-            cache_repository.update_schema_fingerprint(db_id, collection_name, fingerprint)
+                # Only advance the fingerprint (and thus allow cache invalidation
+                # and the cheap "schema unchanged" fast-path) when this run's
+                # signature is actually complete. Advancing it on a partial
+                # extraction could let a later, fully-successful run compute a
+                # matching hash and be wrongly treated as "unchanged" — leaving
+                # whatever this run failed to write permanently missing.
+                fingerprint = hashlib.sha256(
+                    "\n".join(sorted(all_sig_parts)).encode("utf-8")
+                ).hexdigest()[:16]
+                cache_repository.update_schema_fingerprint(db_id, collection_name, fingerprint)
+            else:
+                logger.warning(
+                    f"Extraction error(s) for db_id={db_id}; upserted whatever "
+                    f"succeeded but left old rows for the failed table(s)/view(s) "
+                    f"in place and did not advance the schema fingerprint, so "
+                    f"they're retried next run instead of being lost or frozen"
+                )
 
     def _schema_unchanged(self, db_id: int, schema_types: List[str],
                           collection_name: str,
@@ -656,16 +692,30 @@ class EmbeddingManager:
             return True
         return False
 
+    def _document_id(self, db_id: int, name: str) -> str:
+        """Deterministic embedding-row id for (db_id, schema-qualified name).
+
+        Stable across runs regardless of column/content changes, so
+        add_documents(..., ids=...) upserts the same row in place instead of
+        creating a new one — see _EMBEDDING_ID_NAMESPACE.
+        """
+        return str(uuid.uuid5(_EMBEDDING_ID_NAMESPACE, f"{db_id}:{name}"))
+
     def _extract_documents(self, db_id: int, schema_types: List[str],
                            tenant_id: Optional[str] = None
-                           ) -> Tuple[List[Document], List[str], bool]:
+                           ) -> Tuple[List[Document], List[str], List[str], bool]:
         """Full schema extract → embedding Documents + signature parts.
 
-        Returns (documents, signature_parts, all_extractions_ok). A False
-        all_extractions_ok flags a silently-swallowed extraction error so the
-        caller can skip the destructive swap and retry on the next run.
+        Returns (documents, ids, signature_parts, all_extractions_ok). `ids`
+        are deterministic per (db_id, table/view name) — same length/order as
+        `documents` — so callers can upsert instead of add-then-delete. A
+        False all_extractions_ok flags a silently-swallowed extraction error;
+        callers must not treat this run's document set as the complete truth
+        (e.g. must not purge old rows absent from it, must not advance the
+        schema fingerprint).
         """
         all_documents: List[Document] = []
+        all_ids: List[str] = []
         all_sig_parts: List[str] = []
         all_extractions_ok = True
 
@@ -687,8 +737,9 @@ class EmbeddingManager:
                         }
                     )
                 )
+                all_ids.append(self._document_id(db_id, schema["name"]))
 
-        return all_documents, all_sig_parts, all_extractions_ok
+        return all_documents, all_ids, all_sig_parts, all_extractions_ok
     
     def _get_all_custom_schemas(self, query: str, db_id: int) -> List[Document]:
         """Retrieve ALL embedded custom/worksheet schemas for a db_id.
