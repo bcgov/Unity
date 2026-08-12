@@ -619,6 +619,11 @@
             console.warn('init() called again but already initialized, returning early');
             return;
         }
+
+        const modalEl = document.getElementById('notificationModal');
+        if (modalEl && modalEl.parentElement !== document.body) {
+            document.body.appendChild(modalEl);
+        }
         
         console.debug('init() starting');
         
@@ -633,7 +638,6 @@
 
         configureSubmitOnlyValidation();
 
-        const modalEl = document.getElementById('notificationModal');
         if (modalEl) {
             // Always reset validation when modal is fully closed
             modalEl.addEventListener('hidden.bs.modal', () => resetValidationState());
