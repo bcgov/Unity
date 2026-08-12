@@ -29,8 +29,9 @@ feature, permissions, and form-version requirement.
 | Form Worksheet | `form-worksheet` | Yes |
 | Form Scoresheet | `form-scoresheet` | Yes |
 
-Generation requires both the catalogued feature and generate permission. Status reads
-require the corresponding view permission.
+User-triggered generation requires both the catalogued feature and generate permission.
+Automatic intake enforces its tenant, form, feature, and generation prerequisites without
+user permission authorization. Status reads require the corresponding view permission.
 
 See [configuration](./configuration.md), [pipeline](./operation-pipeline.md), and the
 [implementation playbook](./implementation-playbook.md).

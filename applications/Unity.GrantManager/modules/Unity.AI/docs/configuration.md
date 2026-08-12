@@ -1,6 +1,6 @@
 # Runtime Configuration
 
-AI behavior is split between host-owned database configuration and deployment
+AI behavior is split between database-owned configuration and deployment
 configuration. The database is the source of truth for which model, operation, and
 prompt are used; appsettings holds deployment connectivity and operational settings.
 
