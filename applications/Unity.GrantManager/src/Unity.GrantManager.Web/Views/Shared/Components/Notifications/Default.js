@@ -137,6 +137,9 @@
     function fetchStatuses() {
         return fetch('/api/form-notifications/statuses').then(r => r.json());
     }
+    function fetchPaymentStatuses() {
+        return fetch('/api/form-notifications/payment-statuses').then(r => r.json());
+    }
 
     function fetchRecipients(category) {
         return fetch('/api/form-notifications/recipients?category=' + encodeURIComponent(category)).then(r => r.json());
@@ -158,11 +161,19 @@
         return detail;
     }
 
+    function renderTriggerType(data, type, row) {
+        if (row.triggerType === 'Event' && row.module) {
+            return 'Event - ' + row.module;
+        }
+
+        return row.triggerType || '';
+    }
+
     function getNotificationColumns() {
         let index = 0;
         return [
             { title: 'Template',      name: 'templateName', data: 'templateName', visible: true, index: index++ },
-            { title: 'Trigger Type',  name: 'triggerType',  data: 'triggerType',  visible: true, index: index++ },
+            { title: 'Trigger Type',  name: 'triggerType',  data: 'triggerType',  visible: true, index: index++, render: renderTriggerType },
             { title: 'Trigger Detail',name: 'triggerDetail',data: null, visible: true, orderable: true, defaultContent: '', index: index++,
               render: renderTriggerDetail },
             { title: 'Status', name: 'status', data: 'isActive', visible: true, orderable: true, index: index++,
@@ -343,7 +354,7 @@
         if (modalEl) {
             modalEl.dataset.editId = row.id;
         }
-        document.getElementById('notificationModal')?.addEventListener('shown.bs.modal', function () {
+        document.getElementById('notificationModal')?.addEventListener('shown.bs.modal', async function () {
             const setVal = (id, val) => {
                 document.getElementById(id).value = val ?? '';
             };
@@ -374,7 +385,9 @@
                 const values = row.recipientIdentifier ? row.recipientIdentifier.split(',').map(v => v.trim()) : [];
                 setSelectedRecipients(values);
             } else if (row.triggerType === 'Event') {
-                setVal('statusSelect', row.applicationStatusId);
+                setVal('moduleSelect', row.module);
+                await loadStatusesForModule(row.module);
+                setVal('statusSelect', row.applicationStatusId || row.eventStatus);
                 setVal('recipientCategory', row.recipientCategory);
                 // Set multiple values for recipient select
                 const values = row.recipientIdentifier ? row.recipientIdentifier.split(',').map(v => v.trim()) : [];
@@ -418,6 +431,25 @@
             opt.text = s.internalStatus;
             sel.appendChild(opt);
         });
+    }
+    async function loadStatusesForModule(module) {
+        const statusSelect = document.getElementById('statusSelect');
+        if (!statusSelect) return;
+
+        statusSelect.innerHTML = '';
+        const blank = document.createElement('option');
+        blank.value = '';
+        blank.text = '';
+        statusSelect.appendChild(blank);
+        statusSelect.disabled = !module;
+
+        if (!module) return;
+
+        const statuses = module === 'Payment'
+            ? await fetchPaymentStatuses()
+            : await fetchStatuses();
+        populateStatuses(statuses);
+        statusSelect.disabled = false;
     }
 
     function populateRecipients(list) {
@@ -530,9 +562,10 @@
     function showModal() {
         resetValidationState();
 
-        ['templateSelect', 'triggerType', 'dateType', 'statusSelect', 'recipientCategory'].forEach(id => {
+        ['templateSelect', 'triggerType', 'dateType', 'moduleSelect', 'statusSelect', 'recipientCategory'].forEach(id => {
             document.getElementById(id).value = '';
         });
+        document.getElementById('statusSelect').disabled = true;
 
         // Clear the recipient select
         clearSelectedRecipients();
@@ -556,7 +589,7 @@
 
         const requiredAlways = ['templateSelect', 'triggerType'];
         const requiredForDate = ['dateType', 'recipientCategory', 'recipientSelect'];
-        const requiredForEvent = ['statusSelect', 'recipientCategory', 'recipientSelect'];
+        const requiredForEvent = ['moduleSelect', 'statusSelect', 'recipientCategory', 'recipientSelect'];
 
         const fieldsToValidate = [
             ...requiredAlways,
@@ -685,7 +718,7 @@
             e.target.classList.remove('is-invalid');
             updatePreview();
         });
-        ['dateType', 'statusSelect'].forEach(id => {
+        ['dateType', 'moduleSelect', 'statusSelect'].forEach(id => {
             document.getElementById(id)?.addEventListener('change', (e) => {
                 e.target.classList.remove('is-invalid');
             });
@@ -708,6 +741,13 @@
                 dateOptionsEl?.classList.add('hidden-section');
                 eventOptionsEl?.classList.remove('hidden-section');
                 recipientOptionsEl?.classList.remove('hidden-section');
+                const moduleSelect = document.getElementById('moduleSelect');
+                const statusSelect = document.getElementById('statusSelect');
+                if (moduleSelect?.value) {
+                    loadStatusesForModule(moduleSelect.value);
+                } else if (statusSelect) {
+                    statusSelect.disabled = true;
+                }
             } else {
                 dateOptionsEl?.classList.add('hidden-section');
                 eventOptionsEl?.classList.add('hidden-section');
@@ -715,6 +755,14 @@
             }
             
             e.target.classList.remove('is-invalid');
+        });
+
+        document.getElementById('moduleSelect')?.addEventListener('change', (e) => {
+            e.target.classList.remove('is-invalid');
+            loadStatusesForModule(e.target.value).catch(err => {
+                console.error('Failed to load module statuses', err);
+                abp.notify.error('Failed to load status triggers');
+            });
         });
 
         document.getElementById('recipientCategory')?.addEventListener('change', (e) => {
@@ -750,19 +798,22 @@
 
         const templateId = (document.getElementById('templateSelect').value || '').trim();
         const dateType = document.getElementById('dateType').value;
-        const applicationStatusId = document.getElementById('statusSelect')?.value;
+        const module = document.getElementById('moduleSelect')?.value;
+        const statusValue = document.getElementById('statusSelect')?.value;
         const recipientCategory = document.getElementById('recipientCategory')?.value;
         
         // Collect multiple selected recipients as comma-separated string
         const recipientIdentifier = getSelectedRecipients().join(',');
 
-        const resolvedStatusId = triggerType === 'Event' ? (applicationStatusId || null) : null;
+        const resolvedStatusId = triggerType === 'Event' && module === 'Application' ? (statusValue || null) : null;
 
         const bodyObj = {
             templateId: templateId,
             triggerType: triggerType,
+            module: triggerType === 'Event' ? module : null,
             dateType: triggerType === 'Date' ? dateType : null,
             applicationStatusId: resolvedStatusId,
+            eventStatus: triggerType === 'Event' && module === 'Payment' ? (statusValue || null) : null,
             recipientCategory: recipientCategory,
             recipientIdentifier: recipientIdentifier
         };
