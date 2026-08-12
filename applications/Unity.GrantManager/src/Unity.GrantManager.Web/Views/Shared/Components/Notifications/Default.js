@@ -392,13 +392,15 @@
         blank.value = '';
         blank.text = '';
         sel.appendChild(blank);
-        templates.forEach(t => {
-            const opt = document.createElement('option');
-            // Use template id as the option value so we can reference templates reliably
-            opt.value = t.id;
-            opt.text = t.name + ' — ' + t.subject;
-            sel.appendChild(opt);
-        });
+        [...templates]
+            .sort((left, right) => left.name.localeCompare(right.name, undefined, { sensitivity: 'base' }))
+            .forEach(t => {
+                const opt = document.createElement('option');
+                // Use template id as the option value so we can reference templates reliably
+                opt.value = t.id;
+                opt.text = t.name + ' — ' + t.subject;
+                sel.appendChild(opt);
+            });
         updatePreview();
     }
 
