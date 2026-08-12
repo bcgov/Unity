@@ -59,6 +59,10 @@ _MONTHS = (
 )
 
 _YEAR_RE = re.compile(r'\b(?:19|20)\d{2}\b')
+# normalize_query has already expanded "FY2024" -> "fiscal year 2024" by the time
+# we run. BC's fiscal year runs April 1 - March 31, so it covers a different
+# window from calendar 2024 and must not collapse onto the same year: tag.
+_FISCAL_YEAR_RE = re.compile(r'\bfiscal\s+year\s*((?:19|20)\d{2})\b')
 # normalize_query has already expanded "Q3" -> "quarter 3" by the time we run.
 _QUARTER_RE = re.compile(r'\bquarter\s*([1-4])\b')
 _MONTH_RE = re.compile(r'\b(' + '|'.join(_MONTHS) + r')\b')
@@ -94,6 +98,7 @@ def extract_discriminators(text: str) -> frozenset:
     "in 2024" are not treated as the same constraint:
         "applications in 2024"        -> {"year:2024"}
         "top 5 regions in Q3 2024"    -> {"num:5", "quarter:3", "year:2024"}
+        "applications in FY2024"      -> {"fiscal_year:2024"}
         "applications last 30 days"   -> {"rel:last:30:day"}
         "applications this year"      -> {"rel:this:1:year"}
         "how many applications"       -> frozenset()
@@ -115,7 +120,12 @@ def extract_discriminators(text: str) -> frozenset:
     found.update(f"day:{m.group(1)}" for m in _DAY_WORD_RE.finditer(remaining))
     remaining = _DAY_WORD_RE.sub(' ', remaining)
 
-    # Years next, then strip them so they are not re-counted as bare numbers.
+    # Fiscal years before calendar years: "fiscal year 2024" is consumed whole so
+    # its 2024 does not also surface as a calendar year:2024.
+    found.update(f"fiscal_year:{m.group(1)}" for m in _FISCAL_YEAR_RE.finditer(remaining))
+    remaining = _FISCAL_YEAR_RE.sub(' ', remaining)
+
+    # Calendar years next, then strip them so they are not re-counted as bare numbers.
     found.update(f"year:{m.group(0)}" for m in _YEAR_RE.finditer(remaining))
     remaining = _YEAR_RE.sub(' ', remaining)
 

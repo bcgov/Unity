@@ -73,6 +73,14 @@ class TestExtractDiscriminators(unittest.TestCase):
             frozenset({"month:january", "year:2024"}),
         )
 
+    def test_fiscal_year_abbreviation_is_tagged_separately(self):
+        # normalize_query turns "FY2024" into "fiscal year 2024"; the phrase is
+        # consumed whole so the 2024 must not resurface as a calendar year:2024.
+        self.assertEqual(
+            cache_reranker.extract_discriminators("Applications in FY2024"),
+            frozenset({"fiscal_year:2024"}),
+        )
+
     def test_accepts_raw_or_normalised_input(self):
         raw = "  How Many Applications In 2024??  "
         normalised = cache_reranker.normalize_query(raw)
@@ -138,9 +146,21 @@ class TestDiscriminatorsConflict(unittest.TestCase):
         ))
 
     def test_fiscal_and_calendar_year_conflict(self):
-        """"this year" and "this fiscal year" are different windows in BC."""
+        """Relative "this year" and "this fiscal year" are different windows in BC."""
         self.assertTrue(cache_reranker.discriminators_conflict(
             "Applications this year", "Applications this fiscal year",
+        ))
+
+    def test_absolute_fiscal_and_calendar_year_conflict(self):
+        """BC fiscal 2024 is Apr 2024 - Mar 2025, so it is not calendar 2024."""
+        self.assertTrue(cache_reranker.discriminators_conflict(
+            "Applications in FY2024", "Applications in 2024",
+        ))
+
+    def test_same_fiscal_year_does_not_conflict(self):
+        """Non-regression: FY2024 and its expanded long form are the same window."""
+        self.assertFalse(cache_reranker.discriminators_conflict(
+            "Applications in FY2024", "Applications in fiscal year 2024",
         ))
 
     def test_relative_and_absolute_period_conflict(self):
