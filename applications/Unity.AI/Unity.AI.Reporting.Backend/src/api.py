@@ -549,7 +549,7 @@ def _drop_conflicting_candidates(tenant_id, db_id, normalized_query, candidates,
     return kept
 
 
-def _fuzzy_cache_lookup(tenant_id, db_id, schema_types, collection_name, normalized_query):
+async def _fuzzy_cache_lookup(tenant_id, db_id, schema_types, collection_name, normalized_query):
     """Layer 1.5: rapidfuzz match against recent normalized queries."""
     recent = cache_repository.get_recent_normalized_queries(
         tenant_id, db_id, schema_types, collection_name, config.app.fuzzy_match_limit
@@ -565,31 +565,53 @@ def _fuzzy_cache_lookup(tenant_id, db_id, schema_types, collection_name, normali
     cache_hit = cache_repository.find_exact(
         tenant_id, db_id, schema_types, collection_name, fuzzy_match["normalized_query"]
     )
-    if cache_hit:
-        cache_hit["hit_type_override"] = "fuzzy_hit"
-        logger.info(
-            f"[cache:fuzzy_hit] tenant={tenant_id} db={db_id} score={fuzzy_match['score']:.1f}"
+    if not cache_hit:
+        return None
+
+    # A high rapidfuzz score only means the characters line up. In a long
+    # question a single swapped filter word still clears the threshold, so the
+    # judge gets the final say here too.
+    if config.app.llm_judge_enabled:
+        judged = await _llm_judge_lookup(
+            tenant_id, db_id, normalized_query, [{**cache_hit, "similarity": 1.0}]
         )
+        if not judged:
+            logger.info(
+                f"[cache:fuzzy_rejected] tenant={tenant_id} db={db_id} "
+                f"score={fuzzy_match['score']:.1f} reason=judge"
+            )
+            return None
+
+    cache_hit["hit_type_override"] = "fuzzy_hit"
+    logger.info(
+        f"[cache:fuzzy_hit] tenant={tenant_id} db={db_id} score={fuzzy_match['score']:.1f}"
+    )
     return cache_hit
 
 
-async def _llm_judge_lookup(tenant_id, db_id, normalized_query, borderline):
-    """Run LLM judge over borderline candidates in parallel; return the best hit or None."""
-    borderline_sims = ', '.join(f"{c['similarity']:.4f}" for c in borderline)
+async def _llm_judge_lookup(tenant_id, db_id, normalized_query, candidates):
+    """Score candidates in parallel and return the best acceptable one, or None.
+
+    Candidates are already ordered by similarity, so the cap keeps the closest
+    few. Best-of-K matters: the highest-similarity candidate can be a one-word
+    filter swap while the genuine paraphrase sits just below it.
+    """
+    candidates = candidates[:config.app.llm_judge_max_candidates]
+    candidate_sims = ', '.join(f"{c['similarity']:.4f}" for c in candidates)
     logger.info(
-        f"[cache:borderline] tenant={tenant_id} db={db_id} "
-        f"count={len(borderline)} similarities=[{borderline_sims}]"
+        f"[cache:judging] tenant={tenant_id} db={db_id} "
+        f"count={len(candidates)} similarities=[{candidate_sims}]"
     )
     async with build_async_client() as judge_client:
         results = await asyncio.gather(*[
             cache_reranker.llm_judge.score_candidate(
                 normalized_query, candidate["query_text"], judge_client
             )
-            for candidate in borderline
+            for candidate in candidates
         ])
 
     best_candidate, best_score = None, -1  # sentinel; valid scores are 0..10
-    for candidate, (score, judge_tokens) in zip(borderline, results):
+    for candidate, (score, judge_tokens) in zip(candidates, results):
         logger.info(
             f"[cache:llm_judge] tenant={tenant_id} db={db_id} "
             f"similarity={candidate['similarity']:.4f} score={score} tokens={judge_tokens}"
@@ -617,7 +639,7 @@ async def _llm_judge_lookup(tenant_id, db_id, normalized_query, borderline):
 
 
 async def _embedding_cache_lookup(tenant_id, db_id, schema_types, collection_name, normalized_query):
-    """Layer 2: dense embedding top-K search with optional LLM judge for borderline zone.
+    """Layer 2: dense embedding top-K search, then the LLM judge.
 
     Returns (cache_hit_or_None, query_embedding).
     """
@@ -631,26 +653,30 @@ async def _embedding_cache_lookup(tenant_id, db_id, schema_types, collection_nam
         threshold=config.app.semantic_cache_borderline_low,
         k=config.app.semantic_cache_top_k,
     )
-    # Filter ahead of both the auto-accept short-circuit and the borderline slice.
     candidates = _drop_conflicting_candidates(
         tenant_id, db_id, normalized_query, candidates, "query_text"
     )
-    if candidates:
-        candidate_sims = ', '.join(f"{c['similarity']:.4f}" for c in candidates)
-        logger.info(
-            f"[cache:candidates] tenant={tenant_id} db={db_id} "
-            f"count={len(candidates)} similarities=[{candidate_sims}]"
-        )
+    if not candidates:
+        return None, query_embedding
 
-    if candidates and candidates[0]["similarity"] >= config.app.semantic_cache_threshold:
+    candidate_sims = ', '.join(f"{c['similarity']:.4f}" for c in candidates)
+    logger.info(
+        f"[cache:candidates] tenant={tenant_id} db={db_id} "
+        f"count={len(candidates)} similarities=[{candidate_sims}]"
+    )
+
+    # Every candidate is judged, including very close ones. There is no safe
+    # auto-accept band: a one-word filter swap ("approved" -> "pending") leaves
+    # most of the sentence intact and so scores *above* a genuine paraphrase,
+    # and the gap widens as questions get longer. Similarity cannot separate
+    # them; only reading the two questions can.
+    if config.app.llm_judge_enabled:
+        cache_hit = await _llm_judge_lookup(tenant_id, db_id, normalized_query, candidates)
+        return cache_hit, query_embedding
+
+    # Judge disabled — fall back to the plain similarity cut-off.
+    if candidates[0]["similarity"] >= config.app.semantic_cache_threshold:
         return candidates[0], query_embedding
-
-    if candidates and config.app.llm_judge_enabled:
-        borderline = [c for c in candidates if c["similarity"] < config.app.semantic_cache_threshold]
-        if borderline:
-            cache_hit = await _llm_judge_lookup(tenant_id, db_id, normalized_query, borderline)
-            return cache_hit, query_embedding
-
     return None, query_embedding
 
 
@@ -663,7 +689,9 @@ async def _semantic_cache_lookup(tenant_id, db_id, schema_types, collection_name
         return cache_hit, None
 
     if config.app.fuzzy_match_enabled:
-        cache_hit = _fuzzy_cache_lookup(tenant_id, db_id, schema_types, collection_name, normalized_query)
+        cache_hit = await _fuzzy_cache_lookup(
+            tenant_id, db_id, schema_types, collection_name, normalized_query
+        )
         if cache_hit:
             return cache_hit, None
 
