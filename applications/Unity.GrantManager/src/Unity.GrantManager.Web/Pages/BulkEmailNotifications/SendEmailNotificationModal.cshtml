@@ -39,6 +39,7 @@
                                     </abp-column>
                                     <abp-column size="_3" class="bulk-approval-remove-row d-flex justify-content-end col-3 gap-1 align-items-center">
                                         <abp-button onclick='removeApplicationEmail("@Model.BulkEmailNotifications[i].ApplicationId" + "_container")'
+                                                    onkeydown='if(event.key === "Enter" || event.key === " ") { removeApplicationEmail("@Model.BulkEmailNotifications[i].ApplicationId" + "_container"); event.preventDefault(); }'
                                                     size="Small"
                                                     icon-type="Other"
                                                     icon="fa-solid fa-xmark"
@@ -109,7 +110,8 @@
                         data-bs-dismiss="modal"
                         text="@L["SendEmailNotificationRequest:CancelButtonText"].Value"
                         data-dismiss="modal"
-                        onclick="closeEmailNotifications()">
+                        onclick="closeEmailNotifications()"
+                        onkeydown='if(event.key === "Enter" || event.key === " ") { closeEmailNotifications(); event.preventDefault(); }'>
             </abp-button>
         </abp-modal-footer>
 
