@@ -12,7 +12,7 @@ Generate summaries for selected application attachments.
 - `GET /api/app/ai/generation/status`
 
 ## Contract
-- Structured attachment summary output. Returns an immediate queued result via API app service, queue, background job, and AI runtime.
+- Structured attachment summary output. The POST request enqueues generation and returns without the generated payload; clients use the shared status endpoint while the background executor persists the result.
 
 ## Notes
 - Each attachment is processed as part of the generation request.

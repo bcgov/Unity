@@ -138,6 +138,7 @@ public class ApplicationGenerationQueue(
         var persistedOperation = await ResolveOperationAsync(operation);
         var requestLock = distributedLockProvider.CreateLock($"ai-generation:{tenantId}:{request.ApplicationId}:{persistedOperation.Id}");
 
+        // The lock must cover the active-request check so each tenant/application/operation queues only once.
         using (await requestLock.AcquireAsync())
         {
             var query = await generationRequestRepository.GetQueryableAsync();
@@ -159,8 +160,7 @@ public class ApplicationGenerationQueue(
 
             await validateInput();
 
-            // Single chokepoint for all AI generate flows (manual + auto).
-            // The limiter is a no-op for system/background callers without an authenticated user.
+            // Manual and automatic flows share this user-scoped limiter; system callers bypass it.
             await aiRateLimiter.EnsureAsync(currentUser.Id);
 
             var generationRequest = new AIGenerationRequest(

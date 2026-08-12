@@ -9,6 +9,7 @@ namespace Unity.GrantManager.Notifications
         public Guid EmailTemplateId { get; set; }
         public string? TemplateName { get; set; }
         public string TriggerType { get; set; } = string.Empty;
+        public string? Module { get; set; }
         public string? TriggerDetail { get; set; }
         public bool IsActive { get; set; }
         public string? EventType { get; set; }

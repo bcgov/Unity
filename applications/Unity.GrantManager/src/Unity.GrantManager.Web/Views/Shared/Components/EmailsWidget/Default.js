@@ -912,25 +912,31 @@
         $select.find('option').not($placeholder).remove();
 
         const seenTemplateIds = new Set();
-        templates.forEach((template) => {
-            const templateName = template.name || template.Name || 'Unnamed Template';
-            const templateId = (template.id || template.Id || '').toString();
-            if (!templateId || seenTemplateIds.has(templateId)) {
-                return;
-            }
+        [...templates]
+            .sort((left, right) => {
+                const leftName = (left.name || left.Name || 'Unnamed Template').trim();
+                const rightName = (right.name || right.Name || 'Unnamed Template').trim();
+                return leftName.localeCompare(rightName, undefined, { sensitivity: 'base' });
+            })
+            .forEach((template) => {
+                const templateName = template.name || template.Name || 'Unnamed Template';
+                const templateId = (template.id || template.Id || '').toString();
+                if (!templateId || seenTemplateIds.has(templateId)) {
+                    return;
+                }
 
-            seenTemplateIds.add(templateId);
+                seenTemplateIds.add(templateId);
 
-            const $option = $('<option>')
-                .val(templateId)
-                .text(templateName);
+                const $option = $('<option>')
+                    .val(templateId)
+                    .text(templateName);
 
-            if (activeTemplateId && templateId === activeTemplateId.toString()) {
-                $option.prop('selected', true);
-            }
+                if (activeTemplateId && templateId === activeTemplateId.toString()) {
+                    $option.prop('selected', true);
+                }
 
-            $option.appendTo($select);
-        });
+                $option.appendTo($select);
+            });
     }
 
     function hasLoadedTemplateOptions($select) {
