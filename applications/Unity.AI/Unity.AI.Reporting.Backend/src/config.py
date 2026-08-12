@@ -140,7 +140,11 @@ class Config:
                 "CACHE_DISCRIMINATOR_GUARD_ENABLED", "true").lower() == "true",
             llm_judge_enabled=os.getenv("LLM_JUDGE_ENABLED", "true").lower() == "true",
             llm_judge_score_threshold=float(os.getenv("LLM_JUDGE_SCORE_THRESHOLD", "8.0")),
-            llm_judge_max_candidates=int(os.getenv("LLM_JUDGE_MAX_CANDIDATES", "3")),
+            # Clamped: the value is used as a list slice, so 0 would judge
+            # nothing (every lookup a guaranteed miss) and a negative value
+            # would silently drop the *last* candidate instead. Use
+            # LLM_JUDGE_ENABLED to turn the judge off.
+            llm_judge_max_candidates=max(1, int(os.getenv("LLM_JUDGE_MAX_CANDIDATES", "3"))),
             preview_row_limit=int(os.getenv("PREVIEW_ROW_LIMIT", "1000")),
             data_model_preview_row_limit=int(os.getenv("DATA_MODEL_PREVIEW_ROW_LIMIT", "1")),
             cors_allowed_origins=[

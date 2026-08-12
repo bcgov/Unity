@@ -34,7 +34,7 @@ if SRC not in sys.path:
 try:
     import cache_reranker
     _OK = True
-except Exception:  # pragma: no cover - e.g. rapidfuzz or the openai SDK missing
+except ImportError:  # pragma: no cover - e.g. rapidfuzz or the openai SDK missing
     _OK = False
 
 
