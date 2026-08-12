@@ -10,6 +10,20 @@
     width: auto;
 }
 
+#nav-tabContent.unt-tab-content {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 230px);
+    min-height: 0;
+}
+
+#nav-tabContent.unt-tab-content > .tab-pane.show.active {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+}
+
 .configuration-action-bar {
     align-items: center;
     border-bottom: 1px solid #dee2e6;
