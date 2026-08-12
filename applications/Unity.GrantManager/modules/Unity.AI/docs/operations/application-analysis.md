@@ -13,7 +13,7 @@ Generate an AI analysis of an application submission.
 - `GET /api/app/ai/generation/status`
 
 ## Contract
-- Structured analysis output. Returns an immediate queued result via API app service, queue, background job, and AI runtime.
+- Structured analysis output. The POST request enqueues generation and returns without the generated payload; clients use the shared status endpoint while the background executor persists the result.
 
 ## Notes
 - This is a reviewer-oriented summary and recommendation flow.

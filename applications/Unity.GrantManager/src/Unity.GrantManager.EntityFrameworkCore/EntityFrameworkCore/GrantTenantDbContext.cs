@@ -433,6 +433,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.Property(x => x.FormId).IsRequired();
                 b.Property(x => x.EmailTemplateId).IsRequired();
                 b.Property(x => x.TriggerType).IsRequired().HasMaxLength(64);
+                b.Property(x => x.Module).HasMaxLength(64);
                 b.Property(x => x.TriggerDetail).HasMaxLength(1000);
                 b.Property(x => x.EventType).HasMaxLength(128);
                 b.Property(x => x.ApplicationStatus).HasMaxLength(128);

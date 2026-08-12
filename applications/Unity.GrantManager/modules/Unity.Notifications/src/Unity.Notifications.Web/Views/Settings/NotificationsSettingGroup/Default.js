@@ -1,4 +1,13 @@
-﻿
+function initializeTooltips() {
+    if (typeof bootstrap === 'undefined') return;
+
+    document.querySelectorAll('#nav-template [data-bs-toggle="tooltip"]').forEach((tooltipElement) => {
+        bootstrap.Tooltip.getOrCreateInstance(tooltipElement, {
+            customClass: 'notification-tooltip-popover'
+        });
+    });
+}
+
 $(function () {
     const UiElements = {
         saveButton: $("#saveTemplateBtn"),
@@ -23,6 +32,7 @@ $(function () {
 
     function init() {
         $('#email-attachments-section').hide();
+        initializeTooltips();
         initializeTemplateDataTables();
         initializeDivider();
         initializeTabPersistence();

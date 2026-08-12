@@ -20,6 +20,7 @@ public sealed class AIGenerationBackgroundJob(
 {
     public override async Task ExecuteAsync(AIGenerationBackgroundJobArgs args)
     {
+        // The job owns tenant scope and request lifecycle; executors own AI input and result persistence.
         using var logScope = AIGenerationLogScope.Begin(
             logger,
             args.OperationType,
