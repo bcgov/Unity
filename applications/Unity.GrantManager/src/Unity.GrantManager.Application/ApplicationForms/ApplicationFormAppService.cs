@@ -9,8 +9,8 @@ using Unity.GrantManager.Forms;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Integrations.Chefs;
 using Unity.GrantManager.Permissions;
-using Unity.Payments.Permissions;
 using Unity.Payments.Enums;
+using Unity.Payments.Permissions;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -52,6 +52,8 @@ public class ApplicationFormAppService
         _applicationService = applicationService;
         _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
         _formsApiService = formsApiService;
+
+        DeletePolicyName = GrantManagerPermissions.ApplicationForms.Default;
     }
 
     [Authorize(GrantManagerPermissions.ApplicationForms.Default)]
@@ -220,7 +222,7 @@ public class ApplicationFormAppService
                     throw new BusinessException(GrantManagerDomainErrorCodes.ChildFormCannotReferenceSelf);
                 }
 
-                var parentForm = await Repository.FindAsync(dto.ParentFormId.Value) ?? throw new BusinessException(GrantManagerDomainErrorCodes.ChildFormRequiresParentForm);
+                _ = await Repository.FindAsync(dto.ParentFormId.Value) ?? throw new BusinessException(GrantManagerDomainErrorCodes.ChildFormRequiresParentForm);
             }
         }
 
@@ -307,4 +309,8 @@ public class ApplicationFormAppService
             ApplicationFormVersion = formDetails.ApplicationFormVersion
         };
     }
+
+    [RemoteService(false)]
+    public override Task DeleteAsync(Guid id)
+        => base.DeleteAsync(id);
 }

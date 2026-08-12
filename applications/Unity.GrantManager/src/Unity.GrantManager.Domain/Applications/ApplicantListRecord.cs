@@ -27,4 +27,5 @@ public class ApplicantListRecord
     public bool IsDuplicated { get; set; }
     public DateTime CreationTime { get; set; }
     public DateTime? LastModificationTime { get; set; }
+    public DateOnly? FiscalYearEnd { get; set; }
 }

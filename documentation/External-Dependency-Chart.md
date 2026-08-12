@@ -63,8 +63,8 @@ graph TD
 | 10 | **OrgBook** | Business Registry Lookup | `ORGBOOK_API_BASE` | `https://orgbook.gov.bc.ca/api` | REST | GET search/autocomplete, GET topic/credential details | Application / OrgBookService |
 | 11 | **CHEFS / Intake** | Form Submissions (CHEFS) | `INTAKE_API_BASE` | `https://submit.digital.gov.bc.ca/app/api/v1` | REST | GET forms, GET versions, GET submissions | Application / FormsApiService, SubmissionAppService |
 | 12 | **Azure OpenAI** | AI Analysis & Scoring | `OpenAI:Endpoint` + `OpenAI:ApiKey` (Vault) | Azure-hosted endpoint (configured per env) | HTTPS / Azure SDK | Chat completions for AttachmentSummary, ApplicationAnalysis, ApplicationScoring | Unity.AI / OpenAITransportService |
-| 13 | **Reporting AI Dashboard** | AI Reporting (Metabase-based) | `REPORTING_AI` | `https://prod-unity-ai-reporting-d18498-prod.apps.silver.devops.gov.bc.ca` | iFrame embed only (no backend HTTP call) | Embedded analytics dashboard | Unity.AI / AIReporting page |
-| 14 | **Matomo Analytics** | Web Analytics | `ANALYTICS_MATOMO_BASE` | `https://prod-analytics-matomo.apps.silver.devops.gov.bc.ca` | Browser JS tag | Page views, user events | Web (frontend JS) |
+| 13 | **Reporting AI Dashboard** | AI Reporting (Metabase-based) | `REPORTING_AI` | `https://prod-unity-ai-reporting-d18498-prod.apps.gold.devops.gov.bc.ca` | iFrame embed only (no backend HTTP call) | Embedded analytics dashboard | Unity.AI / AIReporting page |
+| 14 | **Matomo Analytics** | Web Analytics | `ANALYTICS_MATOMO_BASE` | `https://prod-analytics-matomo.apps.gold.devops.gov.bc.ca` | Browser JS tag | Page views, user events | Web (frontend JS) |
 | 15 | **HashiCorp Vault** | Secrets Management | (platform) | `https://vault.developer.gov.bc.ca` | Vault API / ExternalSecrets operator | API keys, DB credentials, OAuth secrets | Platform |
 
 ---
@@ -75,7 +75,7 @@ graph TD
 |---|---------|---------------|------------|----------------|----------|------------|-------|
 | 1 | **Keycloak / LoginProxy** | Authentication (SSO) | `KEYCLOAK__AUTHSERVERURL` / `KEYCLOAK__REALM` | `https://loginproxy.gov.bc.ca/auth` | OIDC | POST token exchange (code → token), GET /userinfo | Backend / AuthCallback |
 | 2 | **OrgBook** | Business Registry Lookup | `orgbookApiUrl` | `https://orgbook.gov.bc.ca/api` | REST | GET /v3/search/autocomplete, GET /v4/search/topic | Frontend / organization.component.ts |
-| 3 | **Matomo Analytics** | Web Analytics | `MATOMO__URL` / `MATOMO__SITEID` | `https://prod-analytics-matomo.apps.silver.devops.gov.bc.ca/` | Browser JS tag | Page views, user events | Frontend |
+| 3 | **Matomo Analytics** | Web Analytics | `MATOMO__URL` / `MATOMO__SITEID` | `https://prod-analytics-matomo.apps.gold.devops.gov.bc.ca/` | Browser JS tag | Page views, user events | Frontend |
 | 4 | **Unity Grant Manager API** | Internal Portal→UGM calls | `Plugins:UNITY:Configuration:BaseUrl` | `http://{env}-unity-grantmanager-web` (in-cluster) | REST (HTTP, in-cluster) | GET /api/app/applicant-profiles/tenants, GET /api/app/applicant-profiles/profile | Backend / UnityPlugin, Unity.Profile |
 
 ---
@@ -140,9 +140,9 @@ Unity Applicant Portal (UAP)
 | Service | Dev | Test/UAT | Production |
 |---------|-----|----------|------------|
 | Keycloak | `dev.loginproxy.gov.bc.ca/auth` | `test.loginproxy.gov.bc.ca/auth` | `loginproxy.gov.bc.ca/auth` |
-| Matomo | `dev-analytics-matomo.apps.silver.devops.gov.bc.ca` | `test-analytics-matomo.apps.silver.devops.gov.bc.ca` | `prod-analytics-matomo.apps.silver.devops.gov.bc.ca` |
-| UGM ingress | `dev-unity.apps.silver.devops.gov.bc.ca` | `test-unity.apps.silver.devops.gov.bc.ca` | `prod-unity.apps.silver.devops.gov.bc.ca` |
-| CHEFS (dev) | `chefs-test.apps.silver.devops.gov.bc.ca/app/api/v1` | — | `submit.digital.gov.bc.ca/app/api/v1` |
+| Matomo | `dev-analytics-matomo.apps.gold.devops.gov.bc.ca` | `test-analytics-matomo.apps.gold.devops.gov.bc.ca` | `prod-analytics-matomo.apps.gold.devops.gov.bc.ca` |
+| UGM ingress | `dev-unity.apps.gold.devops.gov.bc.ca` | `test-unity.apps.gold.devops.gov.bc.ca` | `prod-unity.apps.silver.devops.gov.bc.ca` |
+| CHEFS (dev) | `chefs-test.apps.gold.devops.gov.bc.ca/app/api/v1` | — | `submit.digital.gov.bc.ca/app/api/v1` |
 | CSS Env | `dev` | — | `prod` |
 | Azure OpenAI | Per-env endpoint (Vault) | Per-env endpoint (Vault) | Per-env endpoint (Vault) |
 
@@ -161,12 +161,12 @@ Unity Applicant Portal (UAP)
 | `GEOCODER_LOCATION_API_BASE` | `https://geocoder.api.gov.bc.ca` | UGM |
 | `GEOCODER_API_BASE` | `https://openmaps.gov.bc.ca/geo/pub/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=` | UGM |
 | `ORGBOOK_API_BASE` | `https://orgbook.gov.bc.ca/api` | UGM + UAP frontend |
-| `ANALYTICS_MATOMO_BASE` | `https://prod-analytics-matomo.apps.silver.devops.gov.bc.ca` | UGM + UAP |
-| `REPORTING_AI` | `https://prod-unity-ai-reporting-d18498-prod.apps.silver.devops.gov.bc.ca` | UGM (iFrame only) |
+| `ANALYTICS_MATOMO_BASE` | `https://prod-analytics-matomo.apps.gold.devops.gov.bc.ca` | UGM + UAP |
+| `REPORTING_AI` | `https://prod-unity-ai-reporting-d18498-prod.apps.gold.devops.gov.bc.ca` | UGM (iFrame only) |
 | `INTAKE_API_BASE` | `https://submit.digital.gov.bc.ca/app/api/v1` | UGM |
 | `OpenAI:Endpoint` + `OpenAI:ApiKey` | Azure OpenAI (per env, from Vault) | UGM |
 | `KEYCLOAK__AUTHSERVERURL` | `https://loginproxy.gov.bc.ca/auth` | UAP |
-| `MATOMO__URL` | `https://prod-analytics-matomo.apps.silver.devops.gov.bc.ca/` | UAP |
+| `MATOMO__URL` | `https://prod-analytics-matomo.apps.gold.devops.gov.bc.ca/` | UAP |
 | `Plugins:UNITY:Configuration:BaseUrl` | `http://{env}-unity-grantmanager-web` (in-cluster) | UAP |
 
 ---

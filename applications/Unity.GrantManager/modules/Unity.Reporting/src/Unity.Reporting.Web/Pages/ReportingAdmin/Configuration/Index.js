@@ -63,7 +63,7 @@ $(function () {
             return;
         }
 
-        button.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Saving...');
+        button.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Saving...');
 
         _tenantViewRoleAppService.update(tenantId, { viewRole: viewRole })
             .done(function (_) {
@@ -83,7 +83,7 @@ $(function () {
                 abp.notify.error('Failed to save view role.');
             })
             .always(function () {
-                button.prop('disabled', false).html('<i class="fa fa-save"></i> Save');
+                button.prop('disabled', false).html('<i class="fa-regular fa-floppy-disk"></i> Save');
             });
     });
 
@@ -134,7 +134,7 @@ $(function () {
 
     // Function to save role and then assign to views
     function saveAndAssignRole(tenantId, tenantName, viewRole, button, row) {
-        button.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Saving & Assigning...');
+        button.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Saving & Assigning...');
 
         _tenantViewRoleAppService.update(tenantId, { viewRole: viewRole })
             .done(function (result) {
@@ -153,13 +153,13 @@ $(function () {
             })
             .fail(function () {
                 abp.notify.error('Failed to save view role.');
-                button.prop('disabled', false).html('<i class="fa fa-cogs"></i> Assign to Views');
+                button.prop('disabled', false).html('<i class="fa-solid fa-gears"></i> Assign to Views');
             });
     }
 
     // Function to assign role to views
     function assignRoleToViews(tenantId, tenantName, viewRole, button) {
-        button.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Assigning...');
+        button.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Assigning...');
 
         _tenantViewRoleAppService.assignRoleToViews(tenantId)
             .done(function () {
@@ -169,7 +169,7 @@ $(function () {
                 abp.notify.error('Failed to queue role assignment jobs.');
             })
             .always(function () {
-                button.prop('disabled', false).html('<i class="fa fa-cogs"></i> Assign to Views');
+                button.prop('disabled', false).html('<i class="fa-solid fa-gears"></i> Assign to Views');
             });
     }
 

@@ -4809,7 +4809,7 @@
                 "id": "eaf9cpv",
                 "key": "partner1Location",
                 "data": {
-                  "url": "https://unity-chefs-data.apps.silver.devops.gov.bc.ca/reference/common/locations-simple.json",
+                  "url": "https://unity-chefs-data.apps.gold.devops.gov.bc.ca/reference/common/locations-simple.json",
                   "json": "",
                   "custom": "",
                   "values": [
@@ -5787,7 +5787,7 @@
                 "id": "eywec1p",
                 "key": "partner2Location",
                 "data": {
-                  "url": "https://unity-chefs-data.apps.silver.devops.gov.bc.ca/reference/common/locations-simple.json",
+                  "url": "https://unity-chefs-data.apps.gold.devops.gov.bc.ca/reference/common/locations-simple.json",
                   "json": "",
                   "custom": "",
                   "values": [
@@ -7495,7 +7495,7 @@
                 "id": "eo06q6",
                 "key": "projectLocationDetailed",
                 "data": {
-                  "url": "https://unity-chefs-data.apps.silver.devops.gov.bc.ca/reference/common/locations-detailed.json",
+                  "url": "https://unity-chefs-data.apps.gold.devops.gov.bc.ca/reference/common/locations-detailed.json",
                   "json": "",
                   "custom": "",
                   "values": [
@@ -7981,7 +7981,7 @@
                 "id": "e11zgn",
                 "key": "_Community1Location",
                 "data": {
-                  "url": "https://unity-chefs-data.apps.silver.devops.gov.bc.ca/reference/common/locations-simple.json",
+                  "url": "https://unity-chefs-data.apps.gold.devops.gov.bc.ca/reference/common/locations-simple.json",
                   "json": "",
                   "custom": "",
                   "values": [
@@ -8107,7 +8107,7 @@
                 "id": "ecup9jp",
                 "key": "_Community2Location",
                 "data": {
-                  "url": "https://unity-chefs-data.apps.silver.devops.gov.bc.ca/reference/common/locations-simple.json",
+                  "url": "https://unity-chefs-data.apps.gold.devops.gov.bc.ca/reference/common/locations-simple.json",
                   "json": "",
                   "custom": "",
                   "values": [
@@ -8233,7 +8233,7 @@
                 "id": "ewc98lg",
                 "key": "_Community3Location",
                 "data": {
-                  "url": "https://unity-chefs-data.apps.silver.devops.gov.bc.ca/reference/common/locations-simple.json",
+                  "url": "https://unity-chefs-data.apps.gold.devops.gov.bc.ca/reference/common/locations-simple.json",
                   "json": "",
                   "custom": "",
                   "values": [

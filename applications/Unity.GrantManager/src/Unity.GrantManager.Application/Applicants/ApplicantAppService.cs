@@ -5,23 +5,23 @@ using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Text.Json;
+using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Intakes.Mapping;
-using Unity.Payments.Events;
-using Volo.Abp;
 using Unity.GrantManager.Integrations.Orgbook;
+using Unity.GrantManager.Permissions;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Utils;
 using Unity.Payments.Domain.Suppliers;
-using Unity.GrantManager.Permissions;
+using Unity.Payments.Events;
 using Unity.Payments.Integrations.Cas;
 using Unity.Payments.Suppliers;
-using Volo.Abp.DependencyInjection;
+using Volo.Abp;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 
 namespace Unity.GrantManager.Applicants;
@@ -798,8 +798,9 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                     : null,
                 IsDuplicated = applicant.IsDuplicated,
                 CreationTime = applicant.CreationTime,
-                LastModificationTime = applicant.LastModificationTime
-            }).ToList();
+                LastModificationTime = applicant.LastModificationTime,
+                FiscalYearEnd = applicant.FiscalYearEnd,
+        }).ToList();
         // Use items.Count while client side datatables are used. When going to server
         // side actually query the correct amount with paging enabled.
         return new PagedResultDto<ApplicantListDto>(items.Count, items);

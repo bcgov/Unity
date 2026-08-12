@@ -7,16 +7,19 @@
     <select id="answer-yesno-@Model.QuestionId"
             class="form-select form-control answer-yesno-input @(!Model.IsHumanConfirmed ? "ai-generated-answer" : "human-confirmed-answer")"
             name="Answer-YesNo-@Model.QuestionId"
+            required="@Model.Required"
             data-original-value="@Model.Answer"
             data-yes-numeric-value="@Model.YesValue"
             data-no-numeric-value="@Model.NoValue"
             data-is-human-confirmed="@Model.IsHumanConfirmed.ToString().ToLower()"
+            data-original-is-human-confirmed="@Model.IsHumanConfirmed.ToString().ToLower()"
             disabled="@Model.IsDisabled"
             onchange="handleInputChange('@Model.QuestionId','answer-yesno-'); markAsHumanConfirmed(this)">
         <option value="">Please choose...</option>
         <!option value="Yes" @(Model.Answer == "Yes" ? "selected" : "")>Yes</!option>
         <!option value="No" @(Model.Answer == "No" ? "selected" : "")>No</!option>
     </select>
+    <span id="error-message-@Model.QuestionId" class="text-danger field-validation-error"></span>
     @if (!Model.IsHumanConfirmed && !string.IsNullOrEmpty(Model.Answer))
     {
         <div class="ai-answer-indicator">

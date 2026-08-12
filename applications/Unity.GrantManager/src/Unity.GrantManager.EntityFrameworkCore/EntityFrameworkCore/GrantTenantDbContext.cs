@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using System.Linq;
 using Unity.GrantManager.Applications;
@@ -96,6 +97,12 @@ namespace Unity.GrantManager.EntityFrameworkCore
                     .WithOne(s => s.Applicant)
                     .HasForeignKey(x => x.ApplicantId)
                     .OnDelete(DeleteBehavior.NoAction);
+
+                // FYE is updated through the compute_applicants_fiscal_year_end() trigger
+                var fyeProp = b.Property(x => x.FiscalYearEnd)
+                    .HasColumnType("date")
+                    .ValueGeneratedOnAddOrUpdate();
+                fyeProp.Metadata.SetBeforeSaveBehavior(PropertySaveBehavior.Ignore);
             });
 
             modelBuilder.Entity<Intake>(b =>

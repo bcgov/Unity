@@ -1,6 +1,8 @@
 using System;
+
 namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
-public class GenerateApplicationScoringBackgroundJobArgs
+
+public sealed class GenerateApplicationScoringBackgroundJobArgs
 {
     public Guid ApplicationId { get; set; }
     public Guid OperationId { get; set; }

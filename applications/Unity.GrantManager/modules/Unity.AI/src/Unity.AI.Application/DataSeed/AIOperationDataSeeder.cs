@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
 using Unity.AI.Operations;
 using Unity.AI.Domain;
-using Unity.AI.Prompts;
+using Unity.AI.Runtime.Prompts;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
@@ -16,20 +16,19 @@ namespace Unity.AI.DataSeed;
 public class AIOperationDataSeeder(
     IRepository<AIOperation, Guid> operationRepository,
     IRepository<AIModel, Guid> modelRepository,
-    IRepository<AIPrompt, Guid> promptRepository,
     ICurrentTenant currentTenant,
     ILogger<AIOperationDataSeeder> logger) : ITransientDependency
 {
-    private const string DefaultModelName = "Gpt5Mini";
+    private const string DefaultModelName = "gpt-5-mini";
 
     private static readonly BuiltInOperationDefinition[] BuiltInOperations =
     [
-        new(AIPromptTypes.ApplicationAnalysis, AIPromptTypes.ApplicationAnalysis, 1, 4000),
-        new(AIPromptTypes.AttachmentSummary, AIPromptTypes.AttachmentSummary, 1, 2000),
-        new(AIPromptTypes.ApplicationScoring, AIPromptTypes.ApplicationScoring, 1, 8000),
-        new(AIPromptTypes.FormMapping, AIPromptTypes.FormMapping, 2, 2000),
-        new(AIPromptTypes.FormWorksheet, AIPromptTypes.FormWorksheet, 2, 4000),
-        new(AIPromptTypes.FormScoresheet, AIPromptTypes.FormScoresheet, 2, 4000)
+        new(AIPromptTypes.ApplicationAnalysis, 4000),
+        new(AIPromptTypes.AttachmentSummary, 2000),
+        new(AIPromptTypes.ApplicationScoring, 8000),
+        new(AIPromptTypes.FormMapping, 2000),
+        new(AIPromptTypes.FormWorksheet, 4000),
+        new(AIPromptTypes.FormScoresheet, 4000)
     ];
 
     public async Task SeedAsync(DataSeedContext context)
@@ -57,22 +56,10 @@ public class AIOperationDataSeeder(
 
     private async Task EnsureOperationAsync(BuiltInOperationDefinition definition, AIModel model)
     {
-        var prompt = await ResolvePromptAsync(definition.PromptName, definition.PromptVersionNumber);
-        if (prompt == null)
-        {
-            logger.LogWarning(
-                "AI operation seeding skipped: no active prompt found for operation '{OperationName}' and prompt '{PromptName}' version '{PromptVersionNumber}'.",
-                definition.OperationName,
-                definition.PromptName,
-                definition.PromptVersionNumber);
-            return;
-        }
-
         var existing = await operationRepository.FirstOrDefaultAsync(op => op.Name == definition.OperationName);
         if (existing != null)
         {
             existing.AIModelId = model.Id;
-            existing.AIPromptId = prompt.Id;
             existing.ExecutionMode = definition.ExecutionMode;
             existing.CompletionTokens = definition.CompletionTokens;
             existing.IsActive = true;
@@ -81,7 +68,7 @@ public class AIOperationDataSeeder(
         }
 
         await operationRepository.InsertAsync(
-            new AIOperation(Guid.CreateVersion7(), definition.OperationName, model.Id, prompt.Id)
+            new AIOperation(Guid.CreateVersion7(), definition.OperationName, model.Id)
             {
                 ExecutionMode = definition.ExecutionMode,
                 CompletionTokens = definition.CompletionTokens,
@@ -96,18 +83,8 @@ public class AIOperationDataSeeder(
         return models.FirstOrDefault();
     }
 
-    private async Task<AIPrompt?> ResolvePromptAsync(string promptName, int promptVersionNumber)
-    {
-        return await promptRepository.FirstOrDefaultAsync(item =>
-            item.Name == promptName &&
-            item.VersionNumber == promptVersionNumber &&
-            item.IsActive);
-    }
-
     private sealed record BuiltInOperationDefinition(
         string OperationName,
-        string PromptName,
-        int PromptVersionNumber,
         int CompletionTokens,
         AIExecutionMode ExecutionMode = AIExecutionMode.Sequential);
 }

@@ -674,7 +674,8 @@ public class GrantManagerWebModule : AbpModule
 
         app.UseCorrelationId();
         app.UseStaticFiles();
-        app.UseMiddleware<Unity.GrantManager.Web.Middleware.ExceptionCounterMiddleware>();
+        app.UseMiddleware<RequestCancellationMiddleware>();
+        app.UseMiddleware<ExceptionCounterMiddleware>();
         app.UseMiddleware<TimezoneMiddleware>();
         app.UseRouting();
         app.UseHttpMetrics();

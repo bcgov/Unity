@@ -2,9 +2,11 @@ using Prometheus;
 using Serilog.Core;
 using Serilog.Events;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Unity.GrantManager.Logs;
+using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Web.Middleware;
 
@@ -16,7 +18,12 @@ namespace Unity.GrantManager.Web.Middleware;
 /// </summary>
 public sealed class ErrorCountingLoggerSink : ILogEventSink
 {
+    private static readonly TimeSpan PersistenceBackoff = TimeSpan.FromSeconds(30);
     private static IServiceScopeFactory? _scopeFactory;
+    private static readonly AsyncLocal<bool> IsPersistingExceptionLog = new();
+    private readonly object _persistenceGate = new();
+    private bool _persistenceInFlight;
+    private DateTimeOffset _persistenceDisabledUntil;
 
     internal static readonly Counter ErrorCounter =
         Metrics.CreateCounter(
@@ -34,7 +41,16 @@ public sealed class ErrorCountingLoggerSink : ILogEventSink
 
     public void Emit(LogEvent logEvent)
     {
-        if (logEvent.Level < LogEventLevel.Error) return;
+        if (logEvent.Level < LogEventLevel.Error || IsPersistingExceptionLog.Value)
+        {
+            return;
+        }
+
+        if (logEvent.Exception is not null &&
+            ExceptionNotificationHelpers.IsExpected(logEvent.Exception))
+        {
+            return;
+        }
 
         string level = logEvent.Level.ToString().ToLowerInvariant();
         string exceptionType = logEvent.Exception?.GetType().Name ?? string.Empty;
@@ -47,8 +63,20 @@ public sealed class ErrorCountingLoggerSink : ILogEventSink
             return;
         }
 
+        lock (_persistenceGate)
+        {
+            if (_persistenceInFlight || DateTimeOffset.UtcNow < _persistenceDisabledUntil)
+            {
+                return;
+            }
+
+            _persistenceInFlight = true;
+        }
+
         _ = Task.Run(async () =>
         {
+            IsPersistingExceptionLog.Value = true;
+
             try
             {
                 await using var scope = scopeFactory.CreateAsyncScope();
@@ -65,6 +93,14 @@ public sealed class ErrorCountingLoggerSink : ILogEventSink
                 string? sourceFile = frame?.File == null
                     ? null
                     : ExceptionNotificationHelpers.NormalizeRepoPath(frame.Value.File);
+
+                // Isolate this from whatever ambient unit of work/DbContext happens to be flowing
+                // through the captured ExecutionContext (e.g. the request that triggered this log
+                // event may still be mid-operation on its own DbContext) - without requiresNew,
+                // ABP's implicit [UnitOfWork] on CreateAsync would join that ambient one instead of
+                // getting its own, causing "a second operation was started on this context instance".
+                using var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWorkManager>()
+                    .Begin(requiresNew: true, isTransactional: false);
 
                 await exceptionLogs.CreateAsync(new CreateExceptionLogDto
                 {
@@ -89,10 +125,24 @@ public sealed class ErrorCountingLoggerSink : ILogEventSink
                     SourceLine = frame?.Line,
                     Environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
                 });
+
+                await uow.CompleteAsync();
             }
             catch
             {
-                // Swallow to avoid recursive logging from logger sink failures.
+                lock (_persistenceGate)
+                {
+                    _persistenceDisabledUntil = DateTimeOffset.UtcNow.Add(PersistenceBackoff);
+                }
+            }
+            finally
+            {
+                IsPersistingExceptionLog.Value = false;
+
+                lock (_persistenceGate)
+                {
+                    _persistenceInFlight = false;
+                }
             }
         });
     }
