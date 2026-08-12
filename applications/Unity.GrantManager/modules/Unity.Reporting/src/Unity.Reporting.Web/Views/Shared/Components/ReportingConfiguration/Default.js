@@ -559,7 +559,9 @@ $(function () {
             dataPath: row.dataPath,
             columnName: row.columnName || '',
             typePath: row.typePath,
-            versionLabel: row.versionLabel || null
+            versionLabel: row.versionLabel || null,
+            worksheetName: row.worksheetName || null,
+            sourceOrder: row.sourceOrder || 0
         }));
 
         return {
@@ -593,7 +595,9 @@ $(function () {
             dataPath: field.dataPath,
             columnName: getDefaultColumnNameSource(field),
             typePath: field.typePath,
-            versionLabel: field.versionLabel || null
+            versionLabel: field.versionLabel || null,
+            worksheetName: field.worksheetName || null,
+            sourceOrder: field.sourceOrder || 0
         }));
 
         return {
@@ -657,11 +661,27 @@ $(function () {
 
         const listColumns = [
             {
+                title: 'Worksheet Name',
+                data: 'worksheetName',
+                name: 'worksheetName',
+                className: 'data-table-header',
+                width: '220px',
+                index: 0,
+                orderable: true,
+                visible: currentProvider === 'worksheet' || currentProvider === 'worksheet_consolidated',
+                render: function (data, type, _) {
+                    if (type === 'display') {
+                        return data || '';
+                    }
+                    return data || '';
+                }
+            },
+            {
                 title: providerConfig.columns.label,
                 data: 'label',
                 name: 'label',
                 className: 'data-table-header',
-                index: 0,
+                index: 1,
                 orderable: true
             },
             {
@@ -669,7 +689,7 @@ $(function () {
                 data: 'key',
                 name: 'key',
                 className: 'data-table-header',
-                index: 1,
+                index: 2,
                 orderable: true
             },
             {
@@ -677,7 +697,7 @@ $(function () {
                 data: 'type',
                 name: 'type',
                 className: 'data-table-header',
-                index: 2,
+                index: 3,
                 orderable: true
             },
             {
@@ -685,7 +705,7 @@ $(function () {
                 data: 'dataPath', // We use the dataPath explicitly here
                 name: 'path',
                 className: 'data-table-header',
-                index: 3,
+                index: 4,
                 orderable: true,
                 render: function (data, type, row) {
                     if (type === 'display') {
@@ -699,7 +719,7 @@ $(function () {
                 data: 'columnName',
                 name: 'columnName',
                 className: 'data-table-header',
-                index: 4,
+                index: 5,
                 orderable: false,
                 render: function (data, type, row) {
                     if (type === 'display') {
@@ -714,7 +734,7 @@ $(function () {
                 data: 'typePath',
                 name: 'typePath',
                 className: 'data-table-header',
-                index: 5,
+                index: 6,
                 orderable: false,
                 render: function (data, type, _) {
                     if (type === 'display') {
@@ -729,7 +749,7 @@ $(function () {
                 name: 'versionLabel',
                 className: 'data-table-header',
                 width: '90px',
-                index: 6,
+                index: 7,
                 orderable: true,
                 visible: currentProvider === 'worksheet_consolidated' || currentProvider === 'formversion_consolidated',
                 render: function (data, type, _) {
@@ -737,6 +757,24 @@ $(function () {
                         return data || 'All';
                     }
                     return data || '';
+                }
+            },
+            {
+                title: 'Source Order',
+                data: 'sourceOrder',
+                name: 'sourceOrder',
+                className: 'data-table-header',
+                width: '90px',
+                index: 8,
+                orderable: true,
+                // Hidden by default (not part of defaultVisibleColumns below) — it exists so users can
+                // opt in via the column picker and re-sort back to the calculated natural order after
+                // sorting by another column.
+                render: function (data, type, _) {
+                    if (type === 'display') {
+                        return data || '';
+                    }
+                    return data;
                 }
             }
         ];
@@ -790,12 +828,26 @@ $(function () {
         if (currentProvider === 'worksheet_consolidated' || currentProvider === 'formversion_consolidated') {
             defaultVisibleColumns.push('versionLabel');
         }
+        if (currentProvider === 'worksheet' || currentProvider === 'worksheet_consolidated') {
+            defaultVisibleColumns.push('worksheetName');
+        }
+
+        // Default sort: for worksheet-based providers, sort by the hidden Source Order column (1 -> n),
+        // the server's calculated overall field order (Worksheet Name A-Z, then section order, then field
+        // layout order, then checkbox group option / data grid column order). Other providers default-sort
+        // by Label, unchanged. Resolved here to the column's actual numeric index — DataTables' initial
+        // `order` option only accepts column indices, not names, so passing a name straight through would
+        // silently fail to apply any sort.
+        const defaultSortColumnName = (currentProvider === 'worksheet' || currentProvider === 'worksheet_consolidated')
+            ? 'sourceOrder'
+            : 'label';
+        const defaultSortColumn = listColumns.find(c => c.name === defaultSortColumnName)?.index ?? 1;
 
         dataTable = initializeDataTable({
             dt,
             defaultVisibleColumns,
             listColumns,
-            defaultSortColumn: 0,
+            defaultSortColumn,
             dataEndpoint: dataEndpoint,
             data: {},
             responseCallback: responseCallback,
@@ -810,6 +862,16 @@ $(function () {
             externalSearchId: 'search-report-config',
             fixedHeaders: true
         });
+
+        // table-utils' getVisibleColumnIndexes() always forces the column at position 0 to be
+        // visible (so the table never renders with an empty leftmost column), regardless of
+        // defaultVisibleColumns. Worksheet Name now occupies position 0 so it can be the leftmost
+        // column, which means that force-visible rule would otherwise show it even for providers
+        // where it should stay hidden. Re-apply the correct provider-based visibility here so it's
+        // not stuck "on" before any saved preference (below) has a chance to override it.
+        _suppressColvisSave = true;
+        dataTable.column('worksheetName:name').visible(currentProvider === 'worksheet' || currentProvider === 'worksheet_consolidated');
+        _suppressColvisSave = false;
 
         // Persist column visibility per provider
         dataTable.on('column-visibility.dt', function () {

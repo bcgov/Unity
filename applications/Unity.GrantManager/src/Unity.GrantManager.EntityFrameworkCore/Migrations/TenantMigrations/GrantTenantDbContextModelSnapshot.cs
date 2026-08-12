@@ -19,7 +19,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("_Abp_DatabaseProvider", EfCoreDatabaseProvider.PostgreSql)
-                .HasAnnotation("ProductVersion", "10.0.3")
+                .HasAnnotation("ProductVersion", "10.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -844,6 +844,10 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("FiscalMonth")
                         .HasColumnType("text");
+
+                    b.Property<DateOnly?>("FiscalYearEnd")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("date");
 
                     b.Property<string>("FundingHistoryComments")
                         .HasColumnType("text");

@@ -1,5 +1,5 @@
 {
-    "webapp.url": "https://prod-unity.apps.silver.devops.gov.bc.ca/",
+    "webapp.url": "https://prod-unity.apps.gold.devops.gov.bc.ca/",
     "environment": "PROD",
     "test1username": "",
     "test1password": "",

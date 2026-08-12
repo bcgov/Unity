@@ -344,7 +344,9 @@ namespace Unity.Reporting.Configuration
                     DataPath = field.DataPath,
                     TypePath = field.TypePath,
                     Id = field.Id,
-                    VersionLabel = field.VersionLabel
+                    VersionLabel = field.VersionLabel,
+                    WorksheetName = field.WorksheetName,
+                    SourceOrder = field.SourceOrder
                 };
             }).ToList();
 
@@ -453,7 +455,9 @@ namespace Unity.Reporting.Configuration
                     DataPath = field.DataPath,
                     TypePath = field.TypePath,
                     Id = field.Id,
-                    VersionLabel = field.VersionLabel
+                    VersionLabel = field.VersionLabel,
+                    WorksheetName = field.WorksheetName,
+                    SourceOrder = field.SourceOrder
                 };
             }).ToList();
 

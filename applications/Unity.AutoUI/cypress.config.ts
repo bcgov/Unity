@@ -65,7 +65,7 @@ export default defineConfig({
       "cypress/scripts/**/*.cy.{js,jsx,ts,tsx}",
       "cypress/regression/**/*.cy.{js,jsx,ts,tsx}",
     ],
-    baseUrl: "https://dev-unity.apps.silver.devops.gov.bc.ca/",
+    baseUrl: "https://dev-unity.apps.gold.devops.gov.bc.ca/",
     defaultCommandTimeout: 20000, // Time, in milliseconds, to wait until most DOM based commands are considered timed out.
     viewportWidth: 1440, // Default width in pixels.
     viewportHeight: 900, // Default height in pixels.

@@ -915,3 +915,10 @@ div.dt-container div.dt-search {
 .filter-search-action-bar_search-wrapper {
     flex: 1;
 }
+
+table.dataTable th.dt-type-numeric div.dt-column-header, 
+table.dataTable th.dt-type-date div.dt-column-header, 
+table.dataTable td.dt-type-numeric div.dt-column-header, 
+table.dataTable td.dt-type-date div.dt-column-header {
+    flex-direction: row !important;
+}

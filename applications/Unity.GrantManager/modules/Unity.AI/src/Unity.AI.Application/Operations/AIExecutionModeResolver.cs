@@ -1,17 +1,19 @@
-using Microsoft.Extensions.Configuration;
 using System;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Unity.AI.Domain;
 using Unity.AI.Runtime.Prompts;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Repositories;
 
 namespace Unity.AI.Operations;
 
 /// <summary>
-/// Resolves the configured <see cref="AIExecutionMode"/> for an AI operation.
-/// Configuration keys:
-///   Azure:Operations:{operationName}:ExecutionMode - "Sequential" | "Parallel" | "Batch" (case-insensitive)
-///   Azure:Operations:Defaults:ExecutionMode        - required default when operation override is absent
+/// Resolves the persisted <see cref="AIExecutionMode"/> for an active AI operation.
 /// </summary>
-public class AIExecutionModeResolver(IConfiguration configuration) : ITransientDependency
+public class AIExecutionModeResolver(
+    IRepository<AIOperation, Guid> operationRepository) : ITransientDependency
 {
     public const string AttachmentSummaryOperation = AIPromptTypes.AttachmentSummary;
     public const string ApplicationScoringOperation = AIPromptTypes.ApplicationScoring;
@@ -19,20 +21,20 @@ public class AIExecutionModeResolver(IConfiguration configuration) : ITransientD
     public const string FormWorksheetOperation = AIPromptTypes.FormWorksheet;
     public const string FormScoresheetOperation = AIPromptTypes.FormScoresheet;
 
-    public AIExecutionMode ResolveMode(string operationName)
+    public async Task<AIExecutionMode> ResolveModeAsync(
+        string operationName,
+        CancellationToken cancellationToken = default)
     {
-        var configured = configuration[$"Azure:Operations:{operationName}:ExecutionMode"];
-        if (string.IsNullOrWhiteSpace(configured))
+        var operations = await operationRepository.GetListAsync(
+            candidate => candidate.IsActive,
+            cancellationToken: cancellationToken);
+        var operation = operations.FirstOrDefault(candidate =>
+            string.Equals(candidate.Name, operationName, StringComparison.OrdinalIgnoreCase));
+        if (operation == null)
         {
-            configured = configuration["Azure:Operations:Defaults:ExecutionMode"];
+            throw new InvalidOperationException($"AI operation '{operationName}' is not configured.");
         }
 
-        return configured?.Trim().ToLowerInvariant() switch
-        {
-            "sequential" => AIExecutionMode.Sequential,
-            "parallel" => AIExecutionMode.Parallel,
-            "batch" => AIExecutionMode.Batch,
-            _ => throw new InvalidOperationException($"AI execution mode is not configured or is invalid for operation '{operationName}'.")
-        };
+        return operation.ExecutionMode;
     }
 }
