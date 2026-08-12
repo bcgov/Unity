@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Web.Pages.BulkEmailNotifications.ViewModels;
+using Unity.Modules.Shared.Utils;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 
 namespace Unity.GrantManager.Web.Pages.BulkEmailNotifications;
@@ -45,7 +46,7 @@ public class SendEmailNotificationModalModel(IBulkEmailNotificationAppService bu
 
             if (selectedApplicationIds == null || selectedApplicationIds.Count == 0)
             {
-                Logger.LogWarning("Cache key expired or invalid: {CacheKey}", cacheKey);
+                Logger.LogWarning("Cache key expired or invalid: {CacheKey}", cacheKey.SanitizeField());
                 ViewData["Error"] = "The session has expired. Please try selecting applications again.";
                 Invalid = true;
                 return;
