@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using Unity.GrantManager.ApplicantProfile;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.GrantApplications;
+using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 
@@ -81,5 +82,54 @@ public class ApplicationForm : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public static AddressType GetDefaultElectoralDistrictAddressType()
     {
         return AddressType.PhysicalAddress;
+    }
+
+    public const int MaxRelatedExternalLinks = 8;
+
+    /// <summary>
+    /// Replaces the Renewal and Related external links as a set, enforcing that a link
+    /// cannot be marked visible in the Applicant Portal without a valid URI.
+    /// </summary>
+    public ApplicationForm SetExternalLinks(ExternalLink? renewalLink, List<ExternalLink> relatedLinks)
+    {
+        ArgumentNullException.ThrowIfNull(relatedLinks);
+
+        // Cap the number of related links to the maximum allowed
+        if (relatedLinks.Count > MaxRelatedExternalLinks)
+        {
+            throw new BusinessException(GrantManagerDomainErrorCodes.TooManyRelatedLinks);
+        }
+
+        // Validate that if a renewal link is published, it must have a valid URI
+        if (renewalLink is { Published: true } && string.IsNullOrWhiteSpace(renewalLink.Uri))
+        {
+            throw new BusinessException(GrantManagerDomainErrorCodes.RenewalLinkRequiredForVisibility);
+        }
+
+        // Validate that if any related link is published, it must have a valid URI
+        if (relatedLinks.Exists(l => l.Published && string.IsNullOrWhiteSpace(l.Uri)))
+        {
+            throw new BusinessException(GrantManagerDomainErrorCodes.RelatedLinkInvalidUri);
+        }
+
+        var links = new List<ExternalLink>();
+
+        if (renewalLink is not null)
+        {
+            renewalLink.ExternalLinkType = ExternalLinkType.Renewal;
+            renewalLink.Order = 0;
+            links.Add(renewalLink);
+        }
+
+        for (var i = 0; i < relatedLinks.Count; i++)
+        {
+            relatedLinks[i].ExternalLinkType = ExternalLinkType.Related;
+            relatedLinks[i].Order = i;
+            links.Add(relatedLinks[i]);
+        }
+
+        ExternalLinks = links;
+
+        return this;
     }
 }

@@ -366,6 +366,7 @@ public partial class ApplicationFormDtoToEntityMapper : MapperBase<ApplicationFo
     [MapperIgnoreTarget(nameof(ApplicationForm.ParentFormId))]
     [MapperIgnoreTarget(nameof(ApplicationForm.IsDeleted))]
     [MapperIgnoreTarget(nameof(ApplicationForm.PaymentApprovalThreshold))]
+    [MapperIgnoreTarget(nameof(ApplicationForm.ExternalLinks))]
     public override partial ApplicationForm Map(ApplicationFormDto source);
 
     [MapperIgnoreTarget(nameof(ApplicationForm.DeleterId))]
@@ -379,6 +380,7 @@ public partial class ApplicationFormDtoToEntityMapper : MapperBase<ApplicationFo
     [MapperIgnoreTarget(nameof(ApplicationForm.ParentFormId))]
     [MapperIgnoreTarget(nameof(ApplicationForm.IsDeleted))]
     [MapperIgnoreTarget(nameof(ApplicationForm.PaymentApprovalThreshold))]
+    [MapperIgnoreTarget(nameof(ApplicationForm.ExternalLinks))]
     public override partial void Map(ApplicationFormDto source, ApplicationForm destination);
 }
 [Mapper] public partial class ApplicationFormVersionToDtoMapper : MapperBase<ApplicationFormVersion, ApplicationFormVersionDto> { public override partial ApplicationFormVersionDto Map(ApplicationFormVersion source); public override partial void Map(ApplicationFormVersion source, ApplicationFormVersionDto destination); }

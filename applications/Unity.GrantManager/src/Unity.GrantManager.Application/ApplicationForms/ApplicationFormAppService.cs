@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.GrantManager.ApplicantProfile;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.GrantApplications;
@@ -186,6 +187,31 @@ public class ApplicationFormAppService
         form.ManuallyInitiateAIAnalysis = config.ManuallyInitiateAIAnalysis;
         await Repository.UpdateAsync(form);
     }
+
+    [Authorize(GrantManagerPermissions.ApplicationForms.Default)]
+    public async Task PatchExternalLinksConfigAsync(Guid id, ExternalLinksConfigDto config)
+    {
+        ArgumentNullException.ThrowIfNull(config);
+
+        var form = await Repository.GetAsync(id);
+
+        var renewalLink = config.RenewalLink is null ? null : MapToExternalLink(config.RenewalLink);
+        var relatedLinks = (config.RelatedLinks ?? []).Select(MapToExternalLink).ToList();
+
+        form.SetExternalLinks(renewalLink, relatedLinks);
+
+        await Repository.UpdateAsync(form);
+    }
+
+    private static ExternalLink MapToExternalLink(ExternalLinkConfigDto dto) => new()
+    {
+        Uri = dto.Uri,
+        Title = dto.Title,
+        Description = dto.Description,
+        Published = dto.Published,
+        ExternalLinkType = dto.ExternalLinkType,
+        Order = dto.Order
+    };
 
     [Authorize(PaymentsPermissions.Payments.EditFormPaymentConfiguration)]
     public async Task<bool> GetFormPreventPaymentStatusByApplicationId(Guid applicationId)

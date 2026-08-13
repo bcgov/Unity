@@ -26,4 +26,10 @@ public static class GrantManagerDomainErrorCodes
     public const string PayableFormRequiresHierarchy = "GrantManager:PayableFormRequiresHierarchy";
     public const string ChildFormRequiresParentForm = "GrantManager:ChildFormRequiresParentForm";
     public const string ChildFormCannotReferenceSelf = "GrantManager:ChildFormCannotReferenceSelf";
+
+    /* APPLICANT PORTAL EXTERNAL LINKS */
+    public const string RenewalLinkRequiredForVisibility = "GrantManager:RenewalLinkRequiredForVisibility";
+    public const string RenewalLinkInvalidUri = "GrantManager:RenewalLinkInvalidUri";
+    public const string RelatedLinkInvalidUri = "GrantManager:RelatedLinkInvalidUri";
+    public const string TooManyRelatedLinks = "GrantManager:TooManyRelatedLinks";
 }
