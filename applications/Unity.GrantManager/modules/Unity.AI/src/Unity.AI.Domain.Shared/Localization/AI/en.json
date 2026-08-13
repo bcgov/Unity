@@ -23,9 +23,16 @@
     "Permission:AI.Prompts.Delete": "Delete Prompts",
     "Menu:AIReporting": "AI Reporting",
 
+    "AISettingGroup:Title": "AI Configuration",
+    "AISettingGroup:SaveChanges": "Save Changes",
+    "AISettingGroup:DiscardChanges": "Discard Changes",
+
     "Setting:AI.AutomaticGenerationEnabled": "Automatically Generate AI Analysis",
+    "Setting:AI.AutomaticGenerationEnabled:Description": "When enabled, AI analysis runs automatically on new application intake (subject to form-level AI configuration).",
     "Setting:AI.ManualGenerationEnabled": "Manually Initiate AI Analysis",
+    "Setting:AI.ManualGenerationEnabled:Description": "When enabled, users with appropriate permissions can manually generate or regenerate AI analysis.",
     "Setting:AI.ReportingEnabled": "AI Reporting",
+    "Setting:AI.ReportingEnabled:Description": "When enabled, users with the AI Reporting permission can access the AI Reporting dashboard.",
 
     "LegalDisclaimer:Title": "Legal Disclaimer",
     "LegalDisclaimer:Body": "The Platform does not provide legal, financial, or policy advice, and may not be relied on to determine program eligibility or make final decisions in place of the user, who will be solely responsible for the use of the Platform, including the review and validation of Unity AI outputs before use.",
