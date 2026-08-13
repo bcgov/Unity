@@ -18,6 +18,9 @@ public class FormMappingReviewDto
     public string StateLabel { get; set; } = string.Empty;
     public string ActionLabel { get; set; } = string.Empty;
     public List<FormMappingSuggestionDto> PendingSuggestions { get; set; } = [];
+    public int UnchangedSuggestionCount { get; set; }
+    public bool NoSuggestionsGenerated { get; set; }
+    public bool NoWorksheetSuggestionsGenerated { get; set; }
     public List<Guid> DraftWorksheetIds { get; set; } = [];
     public bool CanGenerateFinalMapping { get; set; }
 }

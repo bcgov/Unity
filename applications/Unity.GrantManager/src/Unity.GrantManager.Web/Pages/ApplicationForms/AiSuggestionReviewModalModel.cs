@@ -7,9 +7,12 @@ public sealed class AiSuggestionReviewModalModel
     public string Title { get; init; } = string.Empty;
     public string SourceColumnTitle { get; init; } = string.Empty;
     public string TargetColumnTitle { get; init; } = string.Empty;
+    public bool HideTargetColumn { get; init; }
     public string FieldsId { get; init; } = string.Empty;
     public string EmptyId { get; init; } = string.Empty;
     public string EmptyText { get; init; } = string.Empty;
+    public string EmptyTitle { get; init; } = string.Empty;
+    public string EmptyIconClass { get; init; } = "fa-wand-magic-sparkles";
     public string SelectAllId { get; init; } = string.Empty;
     public string? TitleInputId { get; init; }
     public string? TitleInputLabel { get; init; }

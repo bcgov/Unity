@@ -31,6 +31,10 @@
     margin-bottom: 0.5rem;
 }
 
+.configuration-action-bar[data-ai-workflow-loading="true"] .ai-workflow-action {
+    visibility: hidden;
+}
+
     .configuration-action-bar h5 {
         font-weight: 700;
     }

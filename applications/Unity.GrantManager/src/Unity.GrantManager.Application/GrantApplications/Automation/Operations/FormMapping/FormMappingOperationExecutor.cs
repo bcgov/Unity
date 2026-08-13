@@ -55,7 +55,7 @@ public sealed class FormMappingOperationExecutor(
             await generationReviewRepository.InsertAsync(review);
         }
 
-        var suggestions = FormMappingResponseMapper.ParseSuggestions(response.Mapping)
+        var rawSuggestions = FormMappingResponseMapper.ParseSuggestions(response.Mapping)
             .Select(suggestion => new FormMappingSuggestionDto
             {
                 Id = guidGenerator.Create(),
@@ -65,13 +65,78 @@ public sealed class FormMappingOperationExecutor(
                 Confidence = suggestion.Confidence
             })
             .ToList();
+        var isFinalMapping = review.Sequence > 1 && review.Sequence % 2 == 0;
+        var unchangedCount = 0;
+        var suggestions = isFinalMapping
+            ? ClassifyFinalSuggestions(readModel.ExistingMapping, rawSuggestions, out unchangedCount)
+            : rawSuggestions;
         var payload = JsonSerializer.Deserialize<FormMappingReviewPayload>(review.ReviewData)
             ?? new FormMappingReviewPayload();
         payload.PendingSuggestions = suggestions;
+        payload.UnchangedSuggestionCount = isFinalMapping ? unchangedCount : 0;
+        payload.NoSuggestionsGenerated = suggestions.Count == 0;
+        if (suggestions.Count == 0)
+        {
+            review.Complete();
+        }
         review.SetReviewData(JsonSerializer.Serialize(payload));
-        review.SetStatus(GenerationReviewStatus.Active);
+        if (suggestions.Count > 0)
+        {
+            review.SetStatus(GenerationReviewStatus.Active);
+        }
         await generationReviewRepository.UpdateAsync(review, true);
 
         return true;
+    }
+
+    internal static List<FormMappingSuggestionDto> ClassifyFinalSuggestions(
+        string? existingMapping,
+        List<FormMappingSuggestionDto> suggestions,
+        out int unchangedCount)
+    {
+        var existing = ParseMapping(existingMapping);
+        var bySource = existing.GroupBy(pair => pair.Value, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.First().Key, StringComparer.OrdinalIgnoreCase);
+        var byTarget = existing.ToDictionary(pair => pair.Key, pair => pair.Value, StringComparer.OrdinalIgnoreCase);
+        unchangedCount = 0;
+        var actionable = new List<FormMappingSuggestionDto>();
+
+        foreach (var suggestion in suggestions)
+        {
+            if (bySource.TryGetValue(suggestion.SourceField, out var previousTarget) &&
+                previousTarget.Equals(suggestion.TargetField, StringComparison.OrdinalIgnoreCase))
+            {
+                unchangedCount++;
+                continue;
+            }
+
+            suggestion.ChangeType = bySource.ContainsKey(suggestion.SourceField) ? "Changed" : "New";
+            suggestion.PreviousTargetField = bySource.GetValueOrDefault(suggestion.SourceField);
+            suggestion.ConflictSourceField = byTarget.TryGetValue(suggestion.TargetField, out var conflictSource) &&
+                !conflictSource.Equals(suggestion.SourceField, StringComparison.OrdinalIgnoreCase)
+                ? conflictSource
+                : null;
+            actionable.Add(suggestion);
+        }
+
+        return actionable;
+    }
+
+    private static Dictionary<string, string> ParseMapping(string? mapping)
+    {
+        if (string.IsNullOrWhiteSpace(mapping))
+        {
+            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<Dictionary<string, string>>(mapping)
+                ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        }
+        catch (JsonException)
+        {
+            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        }
     }
 }

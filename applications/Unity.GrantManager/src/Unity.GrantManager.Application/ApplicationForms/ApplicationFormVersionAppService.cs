@@ -420,7 +420,8 @@ namespace Unity.GrantManager.ApplicationForms
                 {
                     SourceField = suggestion.SourceField,
                     TargetField = suggestion.TargetField
-                }));
+                }),
+                replaceExisting: review.Sequence > 1 && review.Sequence % 2 == 0);
             await Repository.UpdateAsync(formVersion, true);
             payload.PendingSuggestions.RemoveAll(suggestion => suggestionIds.Contains(suggestion.Id));
             SetMappingReviewPayload(review, payload);
@@ -562,6 +563,7 @@ namespace Unity.GrantManager.ApplicationForms
                 review.Status == GenerationReviewStatus.Active ||
                 worksheetReview == null ||
                 worksheetReview.Status == GenerationReviewStatus.Active ||
+                GetWorksheetReviewPayload(worksheetReview).NoSuggestionsGenerated ||
                 !await HasNoRemainingDraftsOrAssignedDraftAsync(worksheetReview))
             {
                 throw new UserFriendlyException("Publish and assign the AI worksheet drafts before generating mapping.");
@@ -744,7 +746,8 @@ namespace Unity.GrantManager.ApplicationForms
                 throw new UserFriendlyException("The AI scoresheet selection is invalid.");
             }
 
-            var draft = new Scoresheet(GuidGenerator.Create(), title, $"ai-scoresheet-draft-{GuidGenerator.Create():N}");
+            var draftName = await GetNextAiScoresheetDraftNameAsync(title);
+            var draft = new Scoresheet(GuidGenerator.Create(), title, draftName);
             foreach (var sourceSection in suggestion.Sections.OrderBy(section => section.Order))
             {
                 var selectedQuestions = sourceSection.Fields
@@ -935,6 +938,9 @@ namespace Unity.GrantManager.ApplicationForms
                 StateLabel = GetWorkflowLabel(workflow.State),
                 ActionLabel = GetWorkflowLabel(workflow.Action),
                 PendingSuggestions = mappingPayload.PendingSuggestions,
+                UnchangedSuggestionCount = mappingPayload.UnchangedSuggestionCount,
+                NoSuggestionsGenerated = mappingPayload.NoSuggestionsGenerated,
+                NoWorksheetSuggestionsGenerated = worksheetPayload.NoSuggestionsGenerated,
                 DraftWorksheetIds = worksheetPayload.DraftWorksheetIds,
                 CanGenerateFinalMapping = workflow.State == FormGenerationWorkflowState.GenerateFinalMapping
             };
@@ -999,6 +1005,22 @@ namespace Unity.GrantManager.ApplicationForms
                 return FormWorkflowResult.Single(
                     FormGenerationWorkflowState.ReviewWorksheets,
                     FormGenerationWorkflowAction.ReviewWorksheets,
+                    true);
+            }
+
+            if (GetWorksheetReviewPayload(worksheetReview).NoSuggestionsGenerated)
+            {
+                return FormWorkflowResult.Single(
+                    FormGenerationWorkflowState.Completed,
+                    FormGenerationWorkflowAction.GenerateMapping,
+                    true);
+            }
+
+            if (worksheetReview.Status == GenerationReviewStatus.Discarded)
+            {
+                return FormWorkflowResult.Single(
+                    FormGenerationWorkflowState.Completed,
+                    FormGenerationWorkflowAction.GenerateMapping,
                     true);
             }
 
@@ -1130,6 +1152,21 @@ namespace Unity.GrantManager.ApplicationForms
             var suffix = 2;
 
             while (await worksheetRepository.GetByNameAsync(candidate, false) != null)
+            {
+                candidate = $"{baseName}-{suffix++}";
+            }
+
+            return candidate;
+        }
+
+        private async Task<string> GetNextAiScoresheetDraftNameAsync(string title)
+        {
+            var titlePart = Regex.Replace(title.Trim().ToLowerInvariant(), "[^a-z0-9]+", "-").Trim('-');
+            var baseName = $"ai-{(string.IsNullOrEmpty(titlePart) ? "scoresheet" : titlePart)}";
+            var candidate = baseName;
+            var suffix = 2;
+
+            while (await scoresheetRepository.GetByNameAsync(candidate, false) != null)
             {
                 candidate = $"{baseName}-{suffix++}";
             }

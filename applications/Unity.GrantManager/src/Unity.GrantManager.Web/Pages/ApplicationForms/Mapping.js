@@ -100,6 +100,65 @@
         refreshAvailableWorksheetsHidden: $('#refresh_available_worksheets')
     };
 
+    const reviewConfigs = {
+        mapping: {
+            modal: UIElements.mappingReviewModal,
+            fields: UIElements.mappingReviewFields,
+            empty: UIElements.mappingReviewEmpty,
+            primary: UIElements.btnAddMapping,
+            later: UIElements.btnReviewLaterMapping,
+            discard: UIElements.btnDiscardMapping,
+            emptyMessage: 'No new mappings were suggested.',
+            emptyPrimaryText: 'Continue to Worksheets',
+            primaryText: 'Add selected to map',
+            continueReview: function () {
+                UIElements.mappingReviewModal.modal('hide');
+                loadMappingReview(false);
+            }
+        },
+        worksheet: {
+            modal: UIElements.worksheetReviewModal,
+            fields: UIElements.worksheetReviewFields,
+            empty: UIElements.worksheetReviewEmpty,
+            primary: UIElements.btnCreateWorksheetDraft,
+            later: $('#btn-review-later-ai-worksheet'),
+            discard: UIElements.btnDiscardWorksheet,
+            emptyMessage: 'No additional worksheet fields were suggested.',
+            emptyPrimaryText: 'Finish',
+            primaryText: 'Create Draft',
+            continueReview: function () {
+                setAiWorksheetPending(false);
+                UIElements.worksheetReviewModal.modal('hide');
+                loadMappingReview(false);
+            }
+        },
+        scoresheet: {
+            modal: UIElements.scoresheetReviewModal,
+            fields: UIElements.scoresheetReviewFields,
+            empty: UIElements.scoresheetReviewEmpty,
+            primary: UIElements.btnCreateScoresheetDraft,
+            later: $('#btn-review-later-ai-scoresheet'),
+            discard: UIElements.btnDiscardScoresheet,
+            emptyMessage: 'No additional scoresheet questions were suggested.',
+            emptyPrimaryText: 'Finish',
+            primaryText: 'Add to Scoresheet',
+            continueReview: function () {
+                const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
+                abp.ajax({
+                    url: `/api/app/application-form-version/discard-ai-scoresheet-suggestions?formVersionId=${encodeURIComponent(formVersion)}`,
+                    type: 'POST'
+                }).done(function () {
+                    setAiScoresheetPending(false);
+                    UIElements.scoresheetReviewModal.modal('hide');
+                    loadMappingReview(false);
+                }).fail(function () {
+                    reviewConfigs.scoresheet.primary.prop('disabled', false);
+                    abp.notify.error('', 'Unable to finish the scoresheet review.');
+                });
+            }
+        }
+    };
+
     init();
 
     function init() {
@@ -147,22 +206,47 @@
         UIElements.btnGenerateWorksheet.on('click', queueFormWorksheet);
         UIElements.btnGenerateFinalMapping.on('click', finalizeMappingReview);
         UIElements.btnRestartAiFlow.on('click', restartAiFlow);
-        UIElements.btnGenerateScoresheet.on('click', queueFormScoresheet);
-        UIElements.btnCreateScoresheetDraft.on('click', createAiScoresheetDraft);
+        UIElements.btnGenerateScoresheet.on('click', function () {
+            if (UIElements.btnGenerateScoresheet.attr('data-ai-pending') === 'true') {
+                loadAiScoresheetReview(true);
+                return;
+            }
+
+            queueFormScoresheet(this);
+        });
+        UIElements.btnCreateScoresheetDraft.on('click', function () {
+            if (UIElements.btnCreateScoresheetDraft.attr('data-empty-confirmation') === 'true') {
+                continueEmptyReview(reviewConfigs.scoresheet);
+                return;
+            }
+            createAiScoresheetDraft();
+        });
         UIElements.btnDiscardScoresheet.on('click', discardAiScoresheetSuggestions);
         UIElements.scoresheetReviewFields.on('change', 'input[data-question-id]', updateAiScoresheetReview);
         UIElements.scoresheetReviewFields.on('change', 'input[data-section-id]', toggleAiScoresheetSection);
         UIElements.scoresheetReviewSelectAll.on('change', toggleAiScoresheetReviewAll);
         UIElements.scoresheetTitle.on('input', updateAiScoresheetDraftButton);
         UIElements.btnReviewWorksheet.on('click', loadAiWorksheetReview);
-        UIElements.btnAddMapping.on('click', addSelectedMappingSuggestion);
+        UIElements.btnAddMapping.on('click', function () {
+            if (UIElements.btnAddMapping.attr('data-empty-confirmation') === 'true') {
+                continueEmptyReview(reviewConfigs.mapping);
+                return;
+            }
+            addSelectedMappingSuggestion();
+        });
         UIElements.btnReviewLaterMapping.on('click', function () {
             UIElements.mappingReviewModal.modal('hide');
         });
         UIElements.btnDiscardMapping.on('click', discardMappingSuggestions);
         UIElements.mappingReviewFields.on('change', 'input[data-suggestion-id]', updateMappingReviewSelection);
         UIElements.mappingReviewSelectAll.on('change', toggleMappingReviewAll);
-        UIElements.btnCreateWorksheetDraft.on('click', createAiWorksheetDraft);
+        UIElements.btnCreateWorksheetDraft.on('click', function () {
+            if (UIElements.btnCreateWorksheetDraft.attr('data-empty-confirmation') === 'true') {
+                continueEmptyReview(reviewConfigs.worksheet);
+                return;
+            }
+            createAiWorksheetDraft();
+        });
         UIElements.btnDiscardWorksheet.on('click', discardAiWorksheetSuggestions);
         UIElements.worksheetReviewFields.on('change', 'input[data-field-id]', updateAiWorksheetReview);
         $('#aiWorksheetReviewSelectAll').on('change', toggleAiWorksheetReviewAll);
@@ -424,7 +508,6 @@
 
     function refreshWorksheetAfterGeneration() {
         setAiWorksheetPending(true);
-        abp.notify.success('', 'Worksheet generated. Review the suggested fields and create draft worksheets.');
         loadAiWorksheetReview();
     }
 
@@ -457,7 +540,13 @@
             .done(function (worksheet) {
                 if (!worksheet) {
                     setAiWorksheetPending(false);
-                    abp.notify.error('', 'The pending AI worksheet is no longer available.');
+                    loadMappingReview(false).done(function (review) {
+                        if (review?.noWorksheetSuggestionsGenerated) {
+                            showEmptyReviewConfirmation(reviewConfigs.worksheet);
+                        } else {
+                            abp.notify.error('', 'The pending AI worksheet is no longer available.');
+                        }
+                    });
                     return;
                 }
 
@@ -471,6 +560,7 @@
     }
 
     function renderAiWorksheetReview(worksheet) {
+        resetEmptyReviewModal(reviewConfigs.worksheet);
         UIElements.worksheetReviewFields.empty();
 
         const fields = worksheet.fields || [];
@@ -604,8 +694,8 @@
                     .done(function () {
                         setAiWorksheetPending(false);
                         UIElements.worksheetReviewModal.modal('hide');
-                        abp.notify.success('', 'Remaining AI worksheet suggestions discarded.');
-                        offerFinalMappingGeneration();
+                        loadMappingReview(false);
+                        loadAiScoresheetReview(false);
                     })
                     .fail(function () {
                         abp.notify.error('', 'Unable to discard the remaining AI worksheet suggestions.');
@@ -672,17 +762,23 @@
 
     function refreshScoresheetAfterGeneration() {
         setAiScoresheetPending(true);
-        abp.notify.success('', 'Scoresheet suggestions are ready for review.');
         loadAiScoresheetReview(true);
     }
 
     function setAiScoresheetPending(isPending) {
-        UIElements.btnGenerateScoresheet.attr('data-ai-pending', isPending ? 'true' : 'false');
+        UIElements.btnGenerateScoresheet
+            .attr('data-ai-pending', isPending ? 'true' : 'false');
         UIElements.btnGenerateScoresheet.find('.ai-button-content span:last-child').text(
             isPending ? 'Review Scoresheet' : 'Generate Scoresheet');
+
+        if (isPending) {
+            UIElements.btnGenerateScoresheet
+                .removeAttr('data-ai-cooldown-checking data-ai-rate-limit-disabled')
+                .prop('disabled', false);
+        }
     }
 
-    function loadAiScoresheetReview(showModal = true) {
+    function loadAiScoresheetReview(showModal = true, showEmpty = true) {
         const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
         if (!validateGuid(formVersion)) {
             return;
@@ -694,14 +790,25 @@
         }).done(function (review) {
             if (!review) {
                 setAiScoresheetPending(false);
-                UIElements.scoresheetReviewModal.modal('hide');
+                if (showModal && showEmpty) {
+                    showEmptyReviewConfirmation(reviewConfigs.scoresheet);
+                } else {
+                    UIElements.scoresheetReviewModal.modal('hide');
+                }
                 return;
             }
 
             setAiScoresheetPending(true);
             renderAiScoresheetReview(review);
             if (showModal) {
-                UIElements.scoresheetReviewModal.modal('show');
+                const hasQuestions = (review.sections || []).some(section => (section.questions || []).length > 0);
+                if (hasQuestions) {
+                    UIElements.scoresheetReviewModal.modal('show');
+                } else if (showEmpty) {
+                    showEmptyReviewConfirmation(reviewConfigs.scoresheet);
+                } else {
+                    UIElements.scoresheetReviewModal.modal('hide');
+                }
             }
         }).fail(function () {
             if (showModal) {
@@ -711,6 +818,7 @@
     }
 
     function renderAiScoresheetReview(review) {
+        resetEmptyReviewModal(reviewConfigs.scoresheet);
         UIElements.scoresheetReviewFields.empty();
         UIElements.scoresheetReviewSelectAll.prop('checked', false);
         UIElements.scoresheetTitle.val(review.title || '');
@@ -722,10 +830,14 @@
             const $section = $('<div/>', { class: 'ai-suggestion-review__section' });
             const $header = $('<div/>', { class: 'ai-suggestion-review__section-header' });
             $('<span/>', { text: section.name || 'Section' }).appendTo($header);
-            $('<label/>', { class: 'form-check-label' })
-                .append($('<input/>', { type: 'checkbox', class: 'form-check-input', 'data-section-id': section.id }))
-                .append(' Select all')
-                .appendTo($header);
+            const $sectionToggle = $('<div/>', { class: 'form-check unt-form-switch form-switch mb-0', title: 'Include all questions in this section' });
+            $('<input/>', {
+                type: 'checkbox',
+                class: 'form-check-input',
+                'data-section-id': section.id,
+                'aria-label': `Include all questions in ${section.name || 'section'}`
+            }).appendTo($sectionToggle);
+            $sectionToggle.appendTo($header);
             $section.append($header);
 
             (section.questions || []).forEach(function (question) {
@@ -737,9 +849,18 @@
                     'data-question-section-id': section.id,
                     checked: question.selected !== false
                 });
-                $('<div/>', { class: 'ai-suggestion-review__source', text: question.label || question.name || '' }).prepend($checkbox).appendTo($row);
-                $('<div/>', { class: 'ai-suggestion-review__arrow', text: '→' }).appendTo($row);
-                $('<div/>', { class: 'ai-suggestion-review__target', text: section.name || '' }).appendTo($row);
+                $('<div/>', { class: 'ai-suggestion-review__source', text: question.label || question.name || '' }).appendTo($row);
+                if (!UIElements.scoresheetReviewModal.find('.ai-suggestion-review__panel').attr('data-hide-target-column')) {
+                    $('<div/>', { class: 'ai-suggestion-review__arrow', text: '→' }).appendTo($row);
+                }
+                if (!UIElements.scoresheetReviewModal.find('.ai-suggestion-review__panel').attr('data-hide-target-column')) {
+                    $('<div/>', { class: 'ai-suggestion-review__target', text: section.name || '' }).appendTo($row);
+                }
+                const $questionToggle = $('<div/>', { class: 'ai-suggestion-review__switch' });
+                const $questionSwitch = $('<div/>', { class: 'form-check unt-form-switch form-switch mb-0' });
+                $checkbox.appendTo($questionSwitch);
+                $questionSwitch.appendTo($questionToggle);
+                $questionToggle.appendTo($row);
                 $section.append($row);
             });
             UIElements.scoresheetReviewFields.append($section);
@@ -801,7 +922,7 @@
             data: JSON.stringify({ sessionId: sessionId, title: title, selectedQuestionIds: selectedQuestionIds })
         }).done(function () {
             abp.notify.success('', 'Scoresheet draft created.');
-            loadAiScoresheetReview(true);
+            loadAiScoresheetReview(true, false);
         }).fail(function (error) {
             abp.notify.error('', error?.responseJSON?.error?.message || 'Unable to create the scoresheet draft.');
             updateAiScoresheetDraftButton();
@@ -863,8 +984,14 @@
             type: 'GET'
         })
             .done(function (review) {
+                setAiWorkflowReady();
                 updateWorkflowActions(review);
                 if (!review || !review.pendingSuggestions || review.pendingSuggestions.length === 0) {
+                    if (showModal && (review?.noSuggestionsGenerated ||
+                        (review?.unchangedSuggestionCount > 0 && review?.state === 'Completed'))) {
+                        showEmptyReviewConfirmation(reviewConfigs.mapping);
+                        return;
+                    }
                     if (review?.phase === 'PublishAndAssignWorksheets') {
                         UIElements.btnGenerate.prop('disabled', !review.canGenerateFinalMapping);
                     }
@@ -875,7 +1002,14 @@
                 if (showModal) {
                     UIElements.mappingReviewModal.modal('show');
                 }
+            }).fail(function () {
+                setAiWorkflowReady();
             });
+    }
+
+    function setAiWorkflowReady() {
+        $('.configuration-action-bar[data-ai-workflow-loading="true"]')
+            .attr('data-ai-workflow-loading', 'false');
     }
 
     function updateWorkflowActions(review) {
@@ -944,6 +1078,7 @@
     }
 
     function renderMappingReview(review) {
+        resetEmptyReviewModal(reviewConfigs.mapping);
         UIElements.mappingReviewFields.empty();
         (review.pendingSuggestions || []).forEach(function (suggestion) {
             const fieldId = `ai-mapping-field-${suggestion.id}`;
@@ -953,10 +1088,17 @@
                 .text(suggestion.sourceField || '—')
                 .appendTo($row);
             $('<i class="fa-solid fa-arrow-right ai-suggestion-review__arrow" aria-hidden="true"></i>').appendTo($row);
-            $('<span class="ai-suggestion-review__field-name"></span>')
+            const $target = $('<span class="ai-suggestion-review__field-name"></span>')
                 .attr('data-field-role', 'Unity core field')
-                .text(suggestion.targetField || '—')
+                .text(suggestion.changeType === 'Changed'
+                    ? `${suggestion.previousTargetField || 'Unmapped'} → ${suggestion.targetField || '—'}`
+                    : suggestion.targetField || '—')
                 .appendTo($row);
+            if (suggestion.conflictSourceField) {
+                $('<small class="text-warning ai-suggestion-review__conflict d-block"></small>')
+                    .text(` Replaces mapping from ${suggestion.conflictSourceField}`)
+                    .appendTo($target);
+            }
             const $switch = $('<div class="ai-suggestion-review__switch"></div>');
             const $switchContainer = $('<div class="form-check unt-form-switch form-switch mb-0"></div>');
             $('<input class="form-check-input" type="checkbox">')
@@ -972,6 +1114,40 @@
         UIElements.mappingReviewEmpty.toggleClass('d-none', (review.pendingSuggestions || []).length > 0);
         UIElements.mappingReviewFields.attr('data-phase', review.phase || '');
         updateMappingReviewSelection();
+    }
+
+    function showEmptyReviewConfirmation(config) {
+        config.fields.empty().attr('data-empty-confirmation', 'true');
+        config.modal.attr('data-empty-confirmation', 'true');
+        config.modal.find('.ai-suggestion-review').attr('data-empty-confirmation', 'true');
+        config.empty.find('.ai-suggestion-review__empty-text').text(config.emptyMessage).removeClass('d-none');
+        config.empty.removeClass('d-none');
+        config.modal.find('.ai-suggestion-review__table-header').addClass('d-none');
+        config.modal.find('.ai-suggestion-review__title-group').addClass('d-none');
+        config.primary.attr('data-empty-confirmation', 'true')
+            .text(config.emptyPrimaryText)
+            .prop('disabled', false);
+        config.later.add(config.discard).addClass('d-none');
+        config.modal.modal('show');
+    }
+
+    function resetEmptyReviewModal(config) {
+        config.fields.removeAttr('data-empty-confirmation');
+        config.modal.removeAttr('data-empty-confirmation');
+        config.modal.find('.ai-suggestion-review').removeAttr('data-empty-confirmation');
+        config.empty.find('.ai-suggestion-review__empty-text').text('');
+        config.empty.addClass('d-none');
+        config.modal.find('.ai-suggestion-review__table-header').removeClass('d-none');
+        config.modal.find('.ai-suggestion-review__title-group').removeClass('d-none');
+        config.primary.removeAttr('data-empty-confirmation')
+            .text(config.primaryText)
+            .prop('disabled', true);
+        config.later.add(config.discard).removeClass('d-none');
+    }
+
+    function continueEmptyReview(config) {
+        config.primary.prop('disabled', true);
+        config.continueReview();
     }
 
     function updateMappingReviewSelection() {
@@ -1110,7 +1286,6 @@
         }
 
         loadMappingReview(true);
-        abp.notify.success('', 'Form mapping suggestions are ready for review.');
     }
 
     function restoreGenerateMappingButton($button, existingHtml) {

@@ -203,6 +203,29 @@
     padding-inline: 0.75rem;
 }
 
+.ai-suggestion-review__panel[data-hide-target-column="true"] .ai-suggestion-review__table-header,
+.ai-suggestion-review__panel[data-hide-target-column="true"] .ai-suggestion-review__field {
+    grid-template-columns: minmax(0, 1fr) 2rem auto;
+}
+
+.ai-suggestion-review__panel[data-hide-target-column="true"] .ai-suggestion-review__switch,
+.ai-suggestion-review__panel[data-hide-target-column="true"] .ai-suggestion-review__section-header .form-switch {
+    align-items: center;
+    display: flex;
+    justify-content: flex-end;
+    min-height: 2rem;
+    min-width: 2.5rem;
+}
+
+.ai-suggestion-review__panel[data-hide-target-column="true"] .ai-suggestion-review__switch .form-check-input,
+.ai-suggestion-review__panel[data-hide-target-column="true"] .ai-suggestion-review__section-header .form-check-input {
+    transform: scale(0.9);
+}
+
+.ai-suggestion-review__panel[data-hide-target-column="true"] .ai-suggestion-review__select-all .form-check-input {
+    transform: scale(0.9);
+}
+
 .ai-suggestion-review__section-header {
     align-items: center;
     background: #eef3f7;
@@ -255,6 +278,90 @@
 .ai-suggestion-review__empty {
     color: #486581;
     text-align: center;
+}
+
+.ai-suggestion-review[data-empty-confirmation] .ai-suggestion-review__header {
+    justify-content: center;
+    padding-top: 0.5rem;
+    text-align: center;
+}
+
+.ai-suggestion-review[data-empty-confirmation] .ai-suggestion-review__body {
+    min-height: 12rem;
+}
+
+.ai-suggestion-review[data-empty-confirmation] .ai-suggestion-review__list {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    min-height: 10rem;
+}
+
+.ai-suggestion-review[data-empty-confirmation] .ai-suggestion-review__empty {
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.5;
+    max-width: 28rem;
+    padding: 1.5rem 1rem;
+    text-align: center;
+}
+
+.ai-suggestion-review__empty-icon {
+    align-items: center;
+    background: #e8f1f8;
+    border-radius: 50%;
+    color: #255a90;
+    display: inline-flex;
+    font-size: 1.35rem;
+    height: 3.5rem;
+    justify-content: center;
+    margin-bottom: 0.9rem;
+    position: relative;
+    width: 3.5rem;
+}
+
+.ai-suggestion-review__empty-check {
+    align-items: center;
+    background: #2f855a;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    bottom: -0.15rem;
+    color: #fff;
+    display: inline-flex;
+    font-size: 0.55rem;
+    height: 1.25rem;
+    justify-content: center;
+    position: absolute;
+    right: -0.15rem;
+    width: 1.25rem;
+}
+
+.ai-suggestion-review__empty-title {
+    color: #1f2933;
+    font-size: 1.08rem;
+    font-weight: 600;
+    line-height: 1.35;
+    margin-bottom: 0.4rem;
+}
+
+.ai-suggestion-review__empty-text {
+    color: #627d98;
+    font-size: 0.92rem;
+    font-weight: 400;
+    line-height: 1.55;
+}
+
+.ai-suggestion-review[data-empty-confirmation] .ai-suggestion-review__footer {
+    justify-content: center;
+}
+
+.ai-suggestion-review[data-empty-confirmation] .ai-suggestion-review__footer .btn-primary {
+    font-size: 0.9rem;
+    min-width: 0;
+    padding: 0.5rem 1.25rem;
 }
 
 .ai-suggestion-review__footer {

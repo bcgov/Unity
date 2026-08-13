@@ -223,6 +223,29 @@ public class PromptResponseValidatorTests
         result.IsValid.ShouldBeTrue();
     }
 
+    [Fact]
+    public void ValidateFormScoresheetJson_Should_Allow_Mixed_Property_Casing()
+    {
+        var response = ValidFormScoresheetJson
+            .Replace("\"Title\"", "\"title\"", StringComparison.Ordinal)
+            .Replace("\"Name\"", "\"name\"", StringComparison.Ordinal)
+            .Replace("\"Version\"", "\"version\"", StringComparison.Ordinal)
+            .Replace("\"Order\"", "\"order\"", StringComparison.Ordinal)
+            .Replace("\"Published\"", "\"published\"", StringComparison.Ordinal)
+            .Replace("\"Sections\"", "\"sections\"", StringComparison.Ordinal)
+            .Replace("\"Fields\"", "\"fields\"", StringComparison.Ordinal)
+            .Replace("\"ReportColumns\"", "\"reportColumns\"", StringComparison.Ordinal)
+            .Replace("\"ReportKeys\"", "\"reportKeys\"", StringComparison.Ordinal)
+            .Replace("\"ReportViewName\"", "\"reportViewName\"", StringComparison.Ordinal)
+            .Replace("\"Description\"", "\"description\"", StringComparison.Ordinal)
+            .Replace("\"Type\"", "\"type\"", StringComparison.Ordinal)
+            .Replace("\"Definition\"", "\"definition\"", StringComparison.Ordinal);
+
+        var result = AIProviderPayloadValidator.ValidateFormScoresheetJson(response);
+
+        result.IsValid.ShouldBeTrue();
+    }
+
     [Theory]
     [InlineData("\"Title\": \"Generated scoresheet\"", "\"Title\": \"\"")]
     [InlineData("\"Version\": 1", "\"Version\": \"1\"")]

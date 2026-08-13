@@ -20,7 +20,8 @@ namespace Unity.AI.Runtime.Execution
     public sealed record AIOperationResult(
         AIOperationOutcome Outcome,
         AIProviderResult Response,
-        AIFailureCategory FailureCategory = AIFailureCategory.None)
+        AIFailureCategory FailureCategory = AIFailureCategory.None,
+        string? FailureReason = null)
     {
         public string Content => Response.Content;
 
@@ -41,8 +42,8 @@ namespace Unity.AI.Runtime.Execution
         public static AIOperationResult InvalidOutput(AIProviderResult? response = null) =>
             new(AIOperationOutcome.InvalidOutput, response ?? AIProviderResult.Empty, AIFailureCategory.InvalidOutput);
 
-        public AIOperationResult WithOutcome(AIOperationOutcome outcome, AIFailureCategory? failureCategory = null) =>
-            new(outcome, Response, failureCategory ?? ResolveFailureCategory(outcome));
+        public AIOperationResult WithOutcome(AIOperationOutcome outcome, AIFailureCategory? failureCategory = null, string? failureReason = null) =>
+            new(outcome, Response, failureCategory ?? ResolveFailureCategory(outcome), failureReason ?? FailureReason);
 
         private static AIFailureCategory ResolveFailureCategory(AIOperationOutcome outcome)
         {

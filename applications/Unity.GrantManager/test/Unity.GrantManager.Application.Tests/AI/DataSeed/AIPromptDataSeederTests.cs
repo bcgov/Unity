@@ -53,6 +53,49 @@ public class AIPromptDataSeederTests
             prompt.IsActive &&
             !string.IsNullOrWhiteSpace(prompt.SystemPrompt) &&
             !string.IsNullOrWhiteSpace(prompt.UserPrompt)).ShouldBeTrue();
+
+        var worksheetPrompt = insertedPrompts.Single(prompt => prompt.Name == AIPromptTypes.FormWorksheet);
+        worksheetPrompt.UserPrompt.ShouldContain("all applicable field suggestions");
+        worksheetPrompt.UserPrompt.ShouldContain("empty fields array");
+    }
+
+    [Fact]
+    public async Task Should_Update_Existing_Prompt_To_Current_Definition()
+    {
+        var existingPrompt = new AIPrompt(
+            Guid.NewGuid(),
+            AIPromptTypes.FormWorksheet,
+            2,
+            "old system prompt",
+            "old user prompt")
+        {
+            MetadataJson = "old metadata",
+            IsActive = false
+        };
+        var promptRepository = Substitute.For<IRepository<AIPrompt, Guid>>();
+        promptRepository
+            .FirstOrDefaultAsync(Arg.Any<Expression<Func<AIPrompt, bool>>>())
+            .Returns(callInfo =>
+            {
+                var predicate = callInfo.Arg<Expression<Func<AIPrompt, bool>>>().Compile();
+                return Task.FromResult<AIPrompt?>(predicate(existingPrompt) ? existingPrompt : null);
+            });
+        promptRepository
+            .UpdateAsync(Arg.Any<AIPrompt>(), true, Arg.Any<System.Threading.CancellationToken>())
+            .Returns(callInfo => Task.FromResult(callInfo.Arg<AIPrompt>()));
+
+        var currentTenant = Substitute.For<ICurrentTenant>();
+        currentTenant.Change(null).Returns(Substitute.For<IDisposable>());
+        var seeder = new AIPromptDataSeeder(promptRepository, currentTenant);
+
+        await seeder.SeedAsync(new DataSeedContext());
+
+        existingPrompt.SystemPrompt.ShouldNotBe("old system prompt");
+        existingPrompt.UserPrompt.ShouldContain("all applicable field suggestions");
+        existingPrompt.UserPrompt.ShouldContain("empty fields array");
+        existingPrompt.MetadataJson.ShouldBe("{}");
+        existingPrompt.IsActive.ShouldBeTrue();
+        await promptRepository.Received(1).UpdateAsync(existingPrompt, true, Arg.Any<System.Threading.CancellationToken>());
     }
 
     private static void AssertVersions(

@@ -4,7 +4,7 @@
 <div class="modal fade" id="@Model.ModalId" tabindex="-1" aria-labelledby="@Model.ModalLabelId" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content ai-suggestion-review">
-            <div class="ai-suggestion-review__panel">
+        <div class="ai-suggestion-review__panel" data-hide-target-column="@Model.HideTargetColumn.ToString().ToLowerInvariant()">
                 <div class="modal-header ai-suggestion-review__header">
                     <h5 class="modal-title" id="@Model.ModalLabelId">@Model.Title</h5>
                 </div>
@@ -19,13 +19,18 @@
                     }
                     <div class="ai-suggestion-review__list">
                         <div class="ai-suggestion-review__table-header">
-                            <span>@Model.SourceColumnTitle</span><span aria-hidden="true"></span><span>@Model.TargetColumnTitle</span>
+                            <span>@Model.SourceColumnTitle</span><span aria-hidden="true"></span>@if (!Model.HideTargetColumn)
+                            {
+                                <span>@Model.TargetColumnTitle</span>
+                            }
                             <div class="form-check unt-form-switch form-switch mb-0 ai-suggestion-review__select-all">
                                 <input id="@Model.SelectAllId" class="form-check-input" type="checkbox" aria-label="Include all suggestions" />
                             </div>
                         </div>
                         <div id="@Model.FieldsId" data-section-data-attribute="@Model.SectionDataAttribute"></div>
-                        <div id="@Model.EmptyId" class="ai-suggestion-review__empty d-none">@Model.EmptyText</div>
+                        <div id="@Model.EmptyId" class="ai-suggestion-review__empty d-none">
+                            <span class="ai-suggestion-review__empty-text">@Model.EmptyText</span>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer ai-suggestion-review__footer">

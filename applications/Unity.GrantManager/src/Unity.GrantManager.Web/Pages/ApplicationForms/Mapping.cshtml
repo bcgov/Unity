@@ -30,7 +30,8 @@
         TargetColumnTitle = "Unity Core Field",
         FieldsId = "aiMappingReviewFields",
         EmptyId = "aiMappingReviewEmpty",
-        EmptyText = "No mapping suggestions remain.",
+        EmptyTitle = "No mapping changes found",
+        EmptyText = "AI completed its review but did not find any new mappings that need attention. Existing mappings were left unchanged.",
         SelectAllId = "aiMappingReviewSelectAll",
         PrimaryActionId = "btn-add-ai-mapping",
         PrimaryActionText = "Add selected to map",
@@ -46,7 +47,8 @@
         TargetColumnTitle = "Worksheet Field",
         FieldsId = "aiWorksheetReviewFields",
         EmptyId = "aiWorksheetReviewEmpty",
-        EmptyText = "No custom fields were suggested.",
+        EmptyTitle = "No worksheet fields found",
+        EmptyText = "AI completed its review but did not find any additional worksheet fields that need to be created.",
         SelectAllId = "aiWorksheetReviewSelectAll",
         TitleInputId = "aiWorksheetTitle",
         TitleInputLabel = "Worksheet Title",
@@ -66,7 +68,8 @@
         TargetColumnTitle = "Section",
         FieldsId = "aiScoresheetReviewFields",
         EmptyId = "aiScoresheetReviewEmpty",
-        EmptyText = "No scoresheet questions remain.",
+        EmptyTitle = "No scoresheet questions found",
+        EmptyText = "AI completed its review but did not find any additional scoresheet questions that need to be added.",
         SelectAllId = "aiScoresheetReviewSelectAll",
         TitleInputId = "aiScoresheetTitle",
         TitleInputLabel = "Scoresheet Title",
@@ -76,6 +79,7 @@
         PrimaryActionDisabled = true,
         ReviewLaterActionId = "btn-review-later-ai-scoresheet",
         DiscardActionId = "btn-discard-ai-scoresheet",
+        HideTargetColumn = true,
         SectionDataAttribute = "section-id"
     };
 }
@@ -159,10 +163,10 @@
                 <div class="col-12 col-md-8">
                     <h5>Mapping Configuration</h5>
                 </div>
-                <div class="col-12 col-md-4 btn-wrapper">
+                <div class="col-12 col-md-4 btn-wrapper" data-ai-workflow-loading="true">
                     @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormMapping.Generate))
                     {
-                        <button type="button" id="btn-generate" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn"
+                        <button type="button" id="btn-generate" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none"
                                 data-ai-cooldown-checking="1" data-ai-rate-limit-disabled="1" disabled
                                 title="Generate the mapping for the current form version">
                             <span class="ai-button-content">
@@ -170,7 +174,7 @@
                                 <span>Generate Initial Mapping</span>
                             </span>
                         </button>
-                        <button type="button" id="btn-review-mapping" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn d-none"
+                        <button type="button" id="btn-review-mapping" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none"
                                 data-ai-review-action="true"
                                 title="Review pending mapping suggestions">
                             <span class="ai-button-content">
@@ -181,7 +185,7 @@
                     }
                     @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormWorksheet.Generate))
                     {
-                        <button type="button" id="btn-generate-worksheet" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn"
+                        <button type="button" id="btn-generate-worksheet" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none"
                                 data-ai-cooldown-checking="1" data-ai-rate-limit-disabled="1" data-ai-pending="false" disabled
                                 title="Generate worksheet suggestions for the current form version">
                             <span class="ai-button-content">
@@ -189,7 +193,7 @@
                                 <span>Generate Worksheets</span>
                             </span>
                         </button>
-                        <button type="button" id="btn-review-worksheet" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn d-none"
+                        <button type="button" id="btn-review-worksheet" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none"
                                 data-ai-review-action="true"
                                 title="Review pending worksheet suggestions">
                             <span class="ai-button-content">
@@ -200,7 +204,7 @@
                     }
                     @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormWorksheet.Generate))
                     {
-                        <button type="button" id="btn-publish-assign-worksheets" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn" disabled
+                        <button type="button" id="btn-publish-assign-worksheets" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none" disabled
                                 title="Publish and assign worksheet drafts before generating the final mapping">
                             <span class="ai-button-content">
                                 <i class="unt-icon-sm fa-solid fa-link"></i>
@@ -210,14 +214,14 @@
                     }
                     @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormMapping.Generate))
                     {
-                        <button type="button" id="btn-generate-final-mapping" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn d-none"
+                        <button type="button" id="btn-generate-final-mapping" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none"
                                 title="Generate the final mapping for the current form version">
                             <span class="ai-button-content">
                                 <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
                                 <span>Generate Final Mapping</span>
                             </span>
                         </button>
-                        <button type="button" id="btn-review-final-mapping" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn d-none"
+                        <button type="button" id="btn-review-final-mapping" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none"
                                 data-ai-review-action="true"
                                 title="Review final mapping suggestions">
                             <span class="ai-button-content">
@@ -229,7 +233,7 @@
                     @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormMapping.Generate)
                         && await PermissionChecker.IsGrantedAsync(AIPermissions.FormWorksheet.Generate))
                     {
-                        <button type="button" id="btn-restart-ai-flow" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn d-none"
+                        <button type="button" id="btn-restart-ai-flow" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none"
                                 data-ai-review-action="true"
                                 title="Delete AI workflow progress, AI worksheets, and saved mappings for this form version">
                             <span class="ai-button-content">

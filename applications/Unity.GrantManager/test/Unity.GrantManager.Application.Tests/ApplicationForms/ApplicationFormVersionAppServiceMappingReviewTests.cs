@@ -16,6 +16,7 @@ using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Integrations.Chefs;
 using Unity.GrantManager.Reporting.FieldGenerators;
+using Unity.GrantManager.GrantApplications.Automation.Operations.FormMapping;
 using Unity.Modules.Shared.Correlation;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
@@ -98,6 +99,63 @@ public class ApplicationFormVersionAppServiceMappingReviewTests(ITestOutputHelpe
     }
 
     [Fact]
+    public async Task AcceptMappingSuggestionsAsync_Should_Replace_Source_And_Move_Conflicting_Target_In_Final_Review()
+    {
+        var formVersionId = Guid.NewGuid();
+        var suggestionId = Guid.NewGuid();
+        var formVersion = new ApplicationFormVersion
+        {
+            SubmissionHeaderMapping = "{\"TargetA\":\"SourceA\",\"TargetB\":\"SourceB\"}"
+        };
+        var repository = Substitute.For<IRepository<ApplicationFormVersion, Guid>>();
+        repository.GetAsync(formVersionId).Returns(formVersion);
+        var review = new GenerationReview(Guid.NewGuid(), AIGenerationOperations.FormMapping, formVersionId, sequence: 2);
+        review.SetReviewData(JsonSerializer.Serialize(new FormMappingReviewPayload
+        {
+            PendingSuggestions =
+            [
+                new FormMappingSuggestionDto
+                {
+                    Id = suggestionId,
+                    SourceField = "SourceA",
+                    TargetField = "TargetB"
+                }
+            ]
+        }));
+        var reviewRepository = Substitute.For<IGenerationReviewRepository>();
+        reviewRepository.FindLatestByOperationAndFormVersionAsync(AIGenerationOperations.FormMapping, formVersionId)
+            .Returns(review);
+        var service = CreateService(repository, reviewRepository);
+
+        var result = await service.AcceptMappingSuggestionsAsync(formVersionId, new AcceptMappingSuggestionsDto
+        {
+            SuggestionIds = [suggestionId]
+        });
+
+        result.SubmissionHeaderMapping.ShouldBe("{\"TargetB\":\"SourceA\"}");
+    }
+
+    [Fact]
+    public void ClassifyFinalSuggestions_Should_Remove_Unchanged_And_Describe_Changes()
+    {
+        var suggestions = FormMappingOperationExecutor.ClassifyFinalSuggestions(
+            "{\"TargetA\":\"SourceA\",\"TargetB\":\"SourceB\"}",
+            [
+                new FormMappingSuggestionDto { SourceField = "SourceA", TargetField = "TargetA" },
+                new FormMappingSuggestionDto { SourceField = "SourceA", TargetField = "TargetB" },
+                new FormMappingSuggestionDto { SourceField = "SourceC", TargetField = "TargetC" }
+            ],
+            out var unchangedCount);
+
+        unchangedCount.ShouldBe(1);
+        suggestions.Count.ShouldBe(2);
+        suggestions[0].ChangeType.ShouldBe("Changed");
+        suggestions[0].PreviousTargetField.ShouldBe("TargetA");
+        suggestions[0].ConflictSourceField.ShouldBe("SourceB");
+        suggestions[1].ChangeType.ShouldBe("New");
+    }
+
+    [Fact]
     public async Task FinalizeMappingReviewAsync_Should_Allow_Final_Mapping_When_One_Of_Multiple_Drafts_Is_Published_And_Assigned()
     {
         var formVersionId = Guid.NewGuid();
@@ -141,6 +199,64 @@ public class ApplicationFormVersionAppServiceMappingReviewTests(ITestOutputHelpe
                 submission != null &&
                 submission.ApplicationFormVersionId == formVersionId &&
                 submission.ApplicationId == formVersion.ApplicationFormId));
+    }
+
+    [Fact]
+    public async Task GetMappingReviewAsync_Should_Complete_When_No_Worksheet_Suggestions_Were_Generated()
+    {
+        var formVersionId = Guid.NewGuid();
+        var mappingReview = new GenerationReview(Guid.NewGuid(), AIGenerationOperations.FormMapping, formVersionId);
+        mappingReview.Complete();
+        var worksheetReview = new GenerationReview(Guid.NewGuid(), AIGenerationOperations.FormWorksheet, formVersionId);
+        worksheetReview.SetReviewData(JsonSerializer.Serialize(new FormWorksheetReviewPayload
+        {
+            NoSuggestionsGenerated = true
+        }));
+        worksheetReview.Complete();
+
+        var repository = Substitute.For<IRepository<ApplicationFormVersion, Guid>>();
+        var reviewRepository = Substitute.For<IGenerationReviewRepository>();
+        reviewRepository.FindLatestByOperationAndFormVersionAsync(AIGenerationOperations.FormMapping, formVersionId)
+            .Returns(mappingReview);
+        reviewRepository.FindLatestByOperationAndFormVersionAsync(AIGenerationOperations.FormWorksheet, formVersionId)
+            .Returns(worksheetReview);
+        var service = CreateService(repository, reviewRepository);
+
+        var result = await service.GetMappingReviewAsync(formVersionId);
+
+        result.State.ShouldBe(FormGenerationWorkflowState.Completed.ToString());
+        result.Action.ShouldBe(FormGenerationWorkflowAction.GenerateMapping.ToString());
+        result.CanGenerateFinalMapping.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task FinalizeMappingReviewAsync_Should_Reject_When_No_Worksheet_Suggestions_Were_Generated()
+    {
+        var formVersionId = Guid.NewGuid();
+        var formVersion = new ApplicationFormVersion { ApplicationFormId = Guid.NewGuid() };
+        var mappingReview = new GenerationReview(Guid.NewGuid(), AIGenerationOperations.FormMapping, formVersionId);
+        mappingReview.Complete();
+        var worksheetReview = new GenerationReview(Guid.NewGuid(), AIGenerationOperations.FormWorksheet, formVersionId);
+        worksheetReview.SetReviewData(JsonSerializer.Serialize(new FormWorksheetReviewPayload
+        {
+            NoSuggestionsGenerated = true
+        }));
+        worksheetReview.Complete();
+
+        var repository = Substitute.For<IRepository<ApplicationFormVersion, Guid>>();
+        repository.GetAsync(formVersionId).Returns(formVersion);
+        var generationService = Substitute.For<IAIGenerationAppService>();
+        var reviewRepository = Substitute.For<IGenerationReviewRepository>();
+        reviewRepository.FindLatestByOperationAndFormVersionAsync(AIGenerationOperations.FormMapping, formVersionId)
+            .Returns(mappingReview);
+        reviewRepository.FindLatestByOperationAndFormVersionAsync(AIGenerationOperations.FormWorksheet, formVersionId)
+            .Returns(worksheetReview);
+        var service = CreateService(repository, reviewRepository, generationService);
+
+        await Should.ThrowAsync<UserFriendlyException>(() => service.FinalizeMappingReviewAsync(formVersionId));
+
+        await generationService.DidNotReceive().SubmitAsync(
+            Arg.Any<string>(), Arg.Any<AIGenerationSubmissionDto>());
     }
 
     private static GenerationReview CreateReview(

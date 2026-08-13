@@ -56,6 +56,8 @@ public sealed class FormWorksheetOperationExecutor(
         var worksheetName = baseWorksheetName;
         var existingWorksheet = await worksheetRepository.GetByNameAsync(worksheetName, true);
         EnsureCanonicalSuggestionWorksheetState(existingWorksheet);
+        var noSuggestionsGenerated = existingWorksheet != null &&
+            existingWorksheet.Sections.SelectMany(section => section.Fields).Any() == false;
         if (existingWorksheet != null)
         {
             logger.LogInformation(
@@ -94,9 +96,13 @@ public sealed class FormWorksheetOperationExecutor(
             });
 
             var suggestions = ParseWorksheetDefinition(worksheetResponse.Worksheet);
-            var worksheet = BuildWorksheet(suggestions, worksheetName);
-            worksheet.SetPublished(false);
-            await worksheetRepository.InsertAsync(worksheet);
+            noSuggestionsGenerated = suggestions.Count == 0;
+            if (!noSuggestionsGenerated)
+            {
+                var worksheet = BuildWorksheet(suggestions, worksheetName);
+                worksheet.SetPublished(false);
+                await worksheetRepository.InsertAsync(worksheet);
+            }
 
         }
 
@@ -108,6 +114,15 @@ public sealed class FormWorksheetOperationExecutor(
                 applicationFormVersionId,
                 review?.Sequence + 1 ?? 1);
             await generationReviewRepository.InsertAsync(review);
+        }
+
+        if (noSuggestionsGenerated)
+        {
+            review.SetReviewData(JsonSerializer.Serialize(new FormWorksheetReviewPayload
+            {
+                NoSuggestionsGenerated = true
+            }));
+            review.Complete();
         }
 
         await generationReviewRepository.UpdateAsync(review, true);

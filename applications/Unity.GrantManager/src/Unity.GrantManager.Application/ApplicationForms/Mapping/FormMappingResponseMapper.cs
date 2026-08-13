@@ -75,7 +75,8 @@ internal static class FormMappingResponseMapper
 
     internal static string MergeSubmissionHeaderMapping(
         string? existingMapping,
-        IEnumerable<FormMappingDto> suggestions)
+        IEnumerable<FormMappingDto> suggestions,
+        bool replaceExisting = false)
     {
         var mapping = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         if (!string.IsNullOrWhiteSpace(existingMapping))
@@ -100,10 +101,25 @@ internal static class FormMappingResponseMapper
         foreach (var suggestion in suggestions)
         {
             if (!string.IsNullOrWhiteSpace(suggestion.TargetField)
-                && !string.IsNullOrWhiteSpace(suggestion.SourceField)
-                && !mapping.ContainsKey(suggestion.TargetField))
+                && !string.IsNullOrWhiteSpace(suggestion.SourceField))
             {
-                mapping[suggestion.TargetField] = suggestion.SourceField;
+                if (replaceExisting)
+                {
+                    foreach (var existing in mapping
+                        .Where(pair => pair.Key.Equals(suggestion.TargetField, StringComparison.OrdinalIgnoreCase)
+                            || pair.Value.Equals(suggestion.SourceField, StringComparison.OrdinalIgnoreCase))
+                        .Select(pair => pair.Key)
+                        .ToList())
+                    {
+                        mapping.Remove(existing);
+                    }
+
+                    mapping[suggestion.TargetField] = suggestion.SourceField;
+                }
+                else if (!mapping.ContainsKey(suggestion.TargetField))
+                {
+                    mapping[suggestion.TargetField] = suggestion.SourceField;
+                }
             }
         }
 
