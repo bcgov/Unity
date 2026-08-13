@@ -70,8 +70,8 @@ namespace Unity.GrantManager.ApplicantProfile
                         Status = application.ExternalStatusVisibility
                             ? status.NotifiedStatus ?? status.ExternalStatus
                             : status.ExternalStatus,
-                        RenewalLink = form.ExternalLinks
-                            .FirstOrDefault(x => x.Published && x.ExternalLinkType == ExternalLinkType.Renewal),
+                        RenewalLink = application.EligibleForRenewal ? form.ExternalLinks
+                            .FirstOrDefault(x => x.Published && x.ExternalLinkType == ExternalLinkType.Renewal) : null,
                         RelatedLinks = form.ExternalLinks
                             .Where(x => x.Published && x.ExternalLinkType == ExternalLinkType.Related)
                             .OrderBy(x => x.Order)
