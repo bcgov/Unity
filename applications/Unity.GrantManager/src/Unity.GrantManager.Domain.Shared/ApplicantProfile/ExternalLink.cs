@@ -16,6 +16,13 @@ public class ExternalLink
     public required string Uri { get; set; }
 
     /// <summary>
+    /// Gets or sets the type of the external link.
+    /// </summary>
+    public ExternalLinkType ExternalLinkType { get; set; } = ExternalLinkType.Other;
+    public bool Publish { get; set; } = false;
+    public int Order { get; set; } = -1;
+
+    /// <summary>
     /// Gets or sets the title of the external link.
     /// </summary>
     [MaxLength(255)]

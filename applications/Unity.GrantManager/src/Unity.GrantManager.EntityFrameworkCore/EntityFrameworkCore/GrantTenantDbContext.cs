@@ -2,22 +2,22 @@
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using System.Linq;
+using Unity.Flex.EntityFrameworkCore;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Comments;
+using Unity.GrantManager.Contacts;
+using Unity.GrantManager.GlobalTag;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Identity;
+using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Notifications;
+using Unity.Notifications.EntityFrameworkCore;
+using Unity.Payments.EntityFrameworkCore;
+using Unity.Reporting.EntityFrameworkCore;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore.Modeling;
-using Unity.GrantManager.Identity;
-using Unity.Payments.EntityFrameworkCore;
-using Unity.Flex.EntityFrameworkCore;
-using Unity.Notifications.EntityFrameworkCore;
-using Unity.Reporting.EntityFrameworkCore;
-using Unity.GrantManager.GlobalTag;
-using Unity.GrantManager.Contacts;
 
 namespace Unity.GrantManager.EntityFrameworkCore
 {
@@ -121,6 +121,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
                 b.ConfigureByConvention(); //auto configure for the base class props
                 b.Property(x => x.ApplicationFormName).IsRequired().HasMaxLength(255);
+                b.ComplexCollection(x => x.ExternalLinks, e => e.ToJson());
 
                 b.HasOne<Intake>().WithMany().HasForeignKey(x => x.IntakeId).IsRequired();
 

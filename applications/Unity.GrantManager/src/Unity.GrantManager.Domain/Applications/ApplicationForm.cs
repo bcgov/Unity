@@ -33,9 +33,7 @@ public class ApplicationForm : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public FormHierarchyType? FormHierarchy { get; set; }
     public Guid? ParentFormId { get; set; }
     public bool IsDirectApproval { get; set; } = false;
-    
-    public bool PublishRenewalLink { get; set; }
-    public ExternalLink? RenewalLink { get; set; }
+    public List<ExternalLink> ExternalLinks { get; set; } = [];
 
     public bool AutomaticallyGenerateAIAnalysis { get; set; } = false;
     public bool ManuallyInitiateAIAnalysis { get; set; } = false;
