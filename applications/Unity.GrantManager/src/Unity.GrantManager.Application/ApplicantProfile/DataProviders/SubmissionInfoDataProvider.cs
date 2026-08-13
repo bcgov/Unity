@@ -71,11 +71,28 @@ namespace Unity.GrantManager.ApplicantProfile
                             ? status.NotifiedStatus ?? status.ExternalStatus
                             : status.ExternalStatus,
                         RenewalLink = application.EligibleForRenewal ? form.ExternalLinks
-                            .FirstOrDefault(x => x.Published && x.ExternalLinkType == ExternalLinkType.Renewal) : null,
+                            .Where(x => x.Published && x.ExternalLinkType == ExternalLinkType.Renewal)
+                            .Select(x => new ExternalLinkDto
+                            {
+                                Uri = x.Uri,
+                                ExternalLinkType = x.ExternalLinkType,
+                                Order = x.Order,
+                                Title = x.Title,
+                                Description = x.Description
+                            })
+                            .FirstOrDefault() : null,
                         RelatedLinks = form.ExternalLinks
                             .Where(x => x.Published && x.ExternalLinkType == ExternalLinkType.Related)
                             .OrderBy(x => x.Order)
                             .ThenBy(x => x.Title)
+                            .Select(x => new ExternalLinkDto
+                            {
+                                Uri = x.Uri,
+                                ExternalLinkType = x.ExternalLinkType,
+                                Order = x.Order,
+                                Title = x.Title,
+                                Description = x.Description
+                            })
                     }).ToListAsync();
 
                 dto.Submissions.AddRange(results.Select(s => new SubmissionInfoItemDto
@@ -87,24 +104,12 @@ namespace Unity.GrantManager.ApplicantProfile
                     ReferenceNo = s.ReferenceNo,
                     Type = s.FormName,
                     Status = s.Status,
-                    RenewalLink = s.RenewalLink is null ? null : MapExternalLink(s.RenewalLink),
-                    RelatedLinks = [.. s.RelatedLinks.Select(MapExternalLink)]
+                    RenewalLink = s.RenewalLink,
+                    RelatedLinks = [.. s.RelatedLinks]
                 }));
             }
 
             return dto;
-        }
-
-        private static ExternalLinkDto MapExternalLink(ExternalLink link)
-        {
-            return new ExternalLinkDto
-            {
-                Uri = link.Uri,
-                ExternalLinkType = link.ExternalLinkType,
-                Order = link.Order,
-                Title = link.Title,
-                Description = link.Description
-            };
         }
 
         /// <summary>
