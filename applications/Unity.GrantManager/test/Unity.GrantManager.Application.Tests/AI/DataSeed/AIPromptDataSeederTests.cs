@@ -98,7 +98,7 @@ public class AIPromptDataSeederTests
 
         existingPrompt.SystemPrompt.ShouldNotBe("old system prompt");
         existingPrompt.UserPrompt.ShouldContain("SCORESHEET CONTEXT");
-        existingPrompt.UserPrompt.ShouldContain("all applicable questions");
+        existingPrompt.UserPrompt.ShouldContain("one scoresheet definition JSON object only");
         existingPrompt.MetadataJson.ShouldContain("DATA");
         existingPrompt.IsActive.ShouldBeTrue();
         await promptRepository.Received().UpdateAsync(existingPrompt, true, Arg.Any<System.Threading.CancellationToken>());
