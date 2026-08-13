@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using System;
@@ -7,12 +8,8 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Unity.AI.Features;
 using Unity.AI.Generation;
-using Unity.AI.Operations;
 using Unity.AI.Permissions;
-using Unity.AI.Requests;
-using Unity.AI.Runtime.Execution;
 using Unity.Flex.Domain.Worksheets;
 using Unity.GrantManager.ApplicationForms.Mapping;
 using Unity.GrantManager.Applications;
@@ -57,7 +54,7 @@ namespace Unity.GrantManager.ApplicationForms
         public override async Task<ApplicationFormVersionDto> CreateAsync(CreateUpdateApplicationFormVersionDto input) =>
             await base.CreateAsync(input);
 
-        [RemoteService(false)]
+        [Authorize]
         public override async Task<ApplicationFormVersionDto> UpdateAsync(Guid id, CreateUpdateApplicationFormVersionDto input) =>
             await base.UpdateAsync(id, input);
 
