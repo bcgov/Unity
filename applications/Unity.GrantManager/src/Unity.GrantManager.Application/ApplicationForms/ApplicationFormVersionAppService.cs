@@ -513,11 +513,16 @@ namespace Unity.GrantManager.ApplicationForms
             var formVersion = await Repository.GetAsync(formVersionId);
             var mappingReviews = await generationReviewRepository.GetListByOperationAndFormVersionAsync(AIGenerationOperations.FormMapping, formVersionId);
             var worksheetReviews = await generationReviewRepository.GetListByOperationAndFormVersionAsync(AIGenerationOperations.FormWorksheet, formVersionId);
-            var scoresheetReviews = await generationReviewRepository.GetListByOperationAndFormVersionAsync(AIGenerationOperations.FormScoresheet, formVersionId);
             var worksheetIds = worksheetReviews
                 .SelectMany(review => GetWorksheetReviewPayload(review).DraftWorksheetIds)
                 .Distinct()
                 .ToList();
+            var suggestionWorksheet = await worksheetRepository.GetByNameAsync(
+                AiWorksheetSuggestionName.Build(formVersion.ApplicationFormId, formVersion.Id), true);
+            if (suggestionWorksheet != null && !worksheetIds.Contains(suggestionWorksheet.Id))
+            {
+                worksheetIds.Add(suggestionWorksheet.Id);
+            }
 
             foreach (var worksheetId in worksheetIds)
             {
@@ -534,15 +539,7 @@ namespace Unity.GrantManager.ApplicationForms
                 }
             }
 
-            var resetFormVersion = await formVersionRepository.GetAsync(formVersionId);
-            var suggestionScoresheet = await scoresheetRepository.GetByNameAsync(
-                BuildAiScoresheetSuggestionName(resetFormVersion.ApplicationFormId, resetFormVersion.Id), true);
-            if (suggestionScoresheet != null)
-            {
-                await scoresheetRepository.DeleteAsync(suggestionScoresheet, true);
-            }
-
-            await generationReviewRepository.DeleteManyAsync(mappingReviews.Concat(worksheetReviews).Concat(scoresheetReviews), true);
+            await generationReviewRepository.DeleteManyAsync(mappingReviews.Concat(worksheetReviews), true);
             formVersion.SubmissionHeaderMapping = "{}";
             await Repository.UpdateAsync(formVersion, true);
         }
