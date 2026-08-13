@@ -83,7 +83,7 @@ namespace Unity.GrantManager.ApplicantProfile
                             .FirstOrDefault() : null,
                         RelatedLinks = form.ExternalLinks
                             .Where(x => x.Published && x.ExternalLinkType == ExternalLinkType.Related)
-                            .OrderBy(x => x.Order)
+                            .OrderBy(x => x.Order == -1 ? int.MaxValue : x.Order) // Links without an order default to -1
                             .ThenBy(x => x.Title)
                             .Select(x => new ExternalLinkDto
                             {
