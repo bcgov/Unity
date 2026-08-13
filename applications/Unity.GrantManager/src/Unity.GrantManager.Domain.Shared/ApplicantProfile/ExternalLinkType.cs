@@ -2,6 +2,6 @@
 
 public enum ExternalLinkType
 {
-    Other = 1,
+    Related = 1,
     Renewal = 2
 }

@@ -69,7 +69,13 @@ namespace Unity.GrantManager.ApplicantProfile
                         FormName = form.ApplicationFormName ?? string.Empty,
                         Status = application.ExternalStatusVisibility
                             ? status.NotifiedStatus ?? status.ExternalStatus
-                            : status.ExternalStatus
+                            : status.ExternalStatus,
+                        RenewalLink = form.ExternalLinks
+                            .FirstOrDefault(x => x.Publish && x.ExternalLinkType == ExternalLinkType.Renewal),
+                        RelatedLinks = form.ExternalLinks
+                            .Where(x => x.Publish && x.ExternalLinkType == ExternalLinkType.Related)
+                            .OrderBy(x => x.Order)
+                            .ThenBy(x => x.Title)
                     }).ToListAsync();
 
                 dto.Submissions.AddRange(results.Select(s => new SubmissionInfoItemDto
@@ -80,11 +86,25 @@ namespace Unity.GrantManager.ApplicantProfile
                     SubmissionTime = ResolveSubmissionTime(s.Submission, s.CreationTime),
                     ReferenceNo = s.ReferenceNo,
                     Type = s.FormName,
-                    Status = s.Status
+                    Status = s.Status,
+                    RenewalLink = s.RenewalLink is null ? null : MapExternalLink(s.RenewalLink),
+                    RelatedLinks = [.. s.RelatedLinks.Select(MapExternalLink)]
                 }));
             }
 
             return dto;
+        }
+
+        private static ExternalLinkDto MapExternalLink(ExternalLink link)
+        {
+            return new ExternalLinkDto
+            {
+                Uri = link.Uri,
+                ExternalLinkType = link.ExternalLinkType,
+                Order = link.Order,
+                Title = link.Title,
+                Description = link.Description
+            };
         }
 
         /// <summary>

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Unity.GrantManager.ApplicantProfile.ProfileData;
 
@@ -12,4 +13,5 @@ public class SubmissionInfoItemDto
     public string Type { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public ExternalLinkDto? RenewalLink { get; set; }
+    public List<ExternalLinkDto> RelatedLinks { get; set; } = [];
 }

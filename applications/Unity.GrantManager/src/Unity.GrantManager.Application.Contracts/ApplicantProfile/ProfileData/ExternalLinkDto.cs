@@ -5,18 +5,10 @@
 /// </summary>
 public class ExternalLinkDto
 {
-    /// <summary>
-    /// Gets or sets the URL of the external link.
-    /// </summary>
-    public string Uri { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the title of the external link.
-    /// </summary>
+    public required string Uri { get; set; }
+    public ExternalLinkType ExternalLinkType { get; set; }
+    public bool Publish { get; set; } = false;
+    public int Order { get; set; } = -1;
     public string Title { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the description of the external link.
-    /// </summary>
     public string Description { get; set; } = string.Empty;
 }
