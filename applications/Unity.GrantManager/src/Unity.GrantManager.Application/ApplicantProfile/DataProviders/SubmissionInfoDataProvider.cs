@@ -71,9 +71,9 @@ namespace Unity.GrantManager.ApplicantProfile
                             ? status.NotifiedStatus ?? status.ExternalStatus
                             : status.ExternalStatus,
                         RenewalLink = form.ExternalLinks
-                            .FirstOrDefault(x => x.Publish && x.ExternalLinkType == ExternalLinkType.Renewal),
+                            .FirstOrDefault(x => x.Published && x.ExternalLinkType == ExternalLinkType.Renewal),
                         RelatedLinks = form.ExternalLinks
-                            .Where(x => x.Publish && x.ExternalLinkType == ExternalLinkType.Related)
+                            .Where(x => x.Published && x.ExternalLinkType == ExternalLinkType.Related)
                             .OrderBy(x => x.Order)
                             .ThenBy(x => x.Title)
                     }).ToListAsync();
