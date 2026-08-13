@@ -110,9 +110,17 @@ public class EmailNotificationService(
                 string commentLink = input.CommentType switch
                 {
                     Comments.CommentType.ApplicationComment or Comments.CommentType.AssessmentComment =>
-                        QueryHelpers.AddQueryString($"{baseUrl}/GrantApplications/Details", "ApplicationId", input.OwnerId),
+                        QueryHelpers.AddQueryString($"{baseUrl}/GrantApplications/Details", new Dictionary<string, string?>
+                        {
+                            ["ApplicationId"] = input.OwnerId,
+                            ["TenantId"] = CurrentTenant.Id?.ToString()
+                        }),
                     Comments.CommentType.ApplicantComment =>
-                        QueryHelpers.AddQueryString($"{baseUrl}/GrantApplicants/Details", "ApplicantId", input.OwnerId),
+                        QueryHelpers.AddQueryString($"{baseUrl}/GrantApplicants/Details", new Dictionary<string, string?>
+                        {
+                            ["ApplicantId"] = input.OwnerId,
+                            ["TenantId"] = CurrentTenant.Id?.ToString()
+                        }),
                     _ => throw new InvalidOperationException("Invalid comment type.")
                 };
 
