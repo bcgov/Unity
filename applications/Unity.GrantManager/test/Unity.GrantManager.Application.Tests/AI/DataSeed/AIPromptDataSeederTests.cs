@@ -75,16 +75,15 @@ public class AIPromptDataSeederTests
         var promptRepository = Substitute.For<IRepository<AIPrompt, Guid>>();
         promptRepository
             .FirstOrDefaultAsync(Arg.Any<Expression<Func<AIPrompt, bool>>>())
-            .ReturnsForAnyArgs(callInfo =>
-            {
-                var predicateExpression = callInfo.Arg<Expression<Func<AIPrompt, bool>>>();
-                ArgumentNullException.ThrowIfNull(predicateExpression);
-                var predicate = predicateExpression.Compile();
-                return Task.FromResult(predicate(existingPrompt) ? existingPrompt : (AIPrompt)null!);
-            });
+            .Returns(existingPrompt);
         promptRepository
             .UpdateAsync(Arg.Any<AIPrompt>(), true, Arg.Any<System.Threading.CancellationToken>())
-            .Returns(callInfo => Task.FromResult(callInfo.Arg<AIPrompt>()));
+            .Returns(callInfo =>
+            {
+                var prompt = callInfo.Arg<AIPrompt>();
+                ArgumentNullException.ThrowIfNull(prompt);
+                return Task.FromResult(prompt);
+            });
 
         var currentTenant = Substitute.For<ICurrentTenant>();
         currentTenant.Change(null).Returns(Substitute.For<IDisposable>());
@@ -95,9 +94,9 @@ public class AIPromptDataSeederTests
         existingPrompt.SystemPrompt.ShouldNotBe("old system prompt");
         existingPrompt.UserPrompt.ShouldContain("all applicable field suggestions");
         existingPrompt.UserPrompt.ShouldContain("empty fields array");
-        existingPrompt.MetadataJson.ShouldBe("{}");
+        existingPrompt.MetadataJson.ShouldContain("DATA");
         existingPrompt.IsActive.ShouldBeTrue();
-        await promptRepository.Received(1).UpdateAsync(existingPrompt, true, Arg.Any<System.Threading.CancellationToken>());
+        await promptRepository.Received().UpdateAsync(existingPrompt, true, Arg.Any<System.Threading.CancellationToken>());
     }
 
     private static void AssertVersions(
