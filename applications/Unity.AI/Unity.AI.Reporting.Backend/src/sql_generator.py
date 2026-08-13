@@ -12,6 +12,7 @@ import logging
 from typing import Dict, Any, List, Optional, Tuple
 from collections import Counter
 from config import config
+from conversation import previous_turn
 from embeddings import embedding_manager
 from llm_client import build_async_client, chat_completion, usage_to_dict
 from metabase import metabase_client
@@ -171,10 +172,13 @@ class SQLGenerator:
         examples = self.load_examples()
         newline = '\n'
 
-        # Add past question context if available
+        # Add past question context if available. previous_turn() is shared with
+        # cache_reranker.build_context_key so the cache identity always covers
+        # exactly the context this prompt was built from (AB#34050) — any change
+        # to what conditions the prompt belongs in that helper, not here.
         past_context = ""
-        if past_questions and len(past_questions) > 1:
-            last_q = past_questions[-2]
+        last_q = previous_turn(past_questions)
+        if last_q:
             past_context = (
                 f'Note that the previous question in this conversation was: '
                 f'"{last_q["question"]}" and the generated SQL was: "{last_q["SQL"]}". '

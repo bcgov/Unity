@@ -12,6 +12,11 @@ from config import config
 # Configure logging
 logger = logging.getLogger(__name__)
 
+# Advisory-lock key serialising init_tables across concurrent starters. Same
+# int4 convention as embed_lock: crc32 is unsigned, shift into Postgres's signed
+# int4 range.
+_INIT_TABLES_LOCK_KEY = zlib.crc32(b"init_tables") - 2**31
+
 
 class DatabaseManager:
     """Manages database connections and operations"""
@@ -33,6 +38,17 @@ class DatabaseManager:
         """Initialize all required database tables"""
         with self.get_connection() as conn:
             with conn.cursor() as cur:
+                # gunicorn runs without --preload (see entrypoint.sh), so every
+                # worker reaches this independently on each pod start and they
+                # race each other through the DDL below. IF NOT EXISTS and the
+                # migration sentinels keep that idempotent, but concurrent
+                # ALTER/CREATE INDEX/DROP INDEX on one table can still fail with
+                # "tuple concurrently updated". Serialise instead: the second
+                # worker waits here, then finds every sentinel already present
+                # and falls through. Transaction-scoped, so it releases with the
+                # single commit at the end of this method — no unlock needed.
+                cur.execute("SELECT pg_advisory_xact_lock(%s)", (_INIT_TABLES_LOCK_KEY,))
+
                 # Chat table for conversation history
                 cur.execute("""
                     CREATE TABLE IF NOT EXISTS chats (
@@ -79,13 +95,17 @@ class DatabaseManager:
                     CREATE INDEX IF NOT EXISTS idx_feedback_status ON feedback(status);
                 """)
                 
-                # Semantic query cache table
+                # Semantic query cache table.
+                # context_key scopes an entry to the conversation context it was
+                # generated under — see cache_reranker.build_context_key. '' is
+                # the standalone case (first question of a chat).
                 cur.execute("""
                     CREATE TABLE IF NOT EXISTS query_cache (
                         cache_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
                         tenant_id TEXT NOT NULL,
                         db_id INTEGER NOT NULL,
                         schema_fingerprint TEXT NOT NULL,
+                        context_key TEXT NOT NULL DEFAULT '',
                         query_text TEXT NOT NULL,
                         normalized_query TEXT NOT NULL,
                         query_embedding halfvec(3072) NOT NULL,
@@ -95,8 +115,11 @@ class DatabaseManager:
                         access_count INTEGER DEFAULT 1
                     );
 
-                    CREATE UNIQUE INDEX IF NOT EXISTS idx_query_cache_exact
-                        ON query_cache(tenant_id, db_id, schema_fingerprint, normalized_query);
+                    -- Pre-existing tables predate context_key. Metadata-only on
+                    -- PG 11+, so no rewrite. Must run before the index below.
+                    ALTER TABLE query_cache
+                        ADD COLUMN IF NOT EXISTS context_key TEXT NOT NULL DEFAULT '';
+
                     CREATE INDEX IF NOT EXISTS idx_query_cache_tenant_db
                         ON query_cache(tenant_id, db_id, schema_fingerprint);
                 """)
@@ -159,6 +182,44 @@ class DatabaseManager:
                                 USING query_embedding::halfvec
                         """)
                         logger.info("One-time cache migration: query_embedding converted to halfvec(3072)")
+
+                # One-time migration (AB#34050): the cache identity gained context_key,
+                # so a follow-up answered against a previous turn can no longer be served
+                # to a fresh chat that just happens to use the same words. Rows written
+                # before this carry no context marker at all, so a poisoned follow-up
+                # entry is indistinguishable from a good standalone one — purge once.
+                cur.execute("""
+                    INSERT INTO schema_versions (db_id, collection_name, fingerprint)
+                    VALUES (0, '__migration_v3_context_key__', 'done')
+                    ON CONFLICT (db_id, collection_name) DO NOTHING
+                    RETURNING db_id
+                """)
+                if cur.fetchone():
+                    cur.execute("DELETE FROM query_cache")
+                    logger.info(
+                        f"One-time cache migration: purged {cur.rowcount} pre-context_key "
+                        f"query_cache entries"
+                    )
+
+                # Deliberately after the purge: building the unique index first would
+                # index every legacy row and then immediately delete them all.
+                #
+                # A new index *name* is required. CREATE UNIQUE INDEX IF NOT EXISTS on
+                # the old name would find it present and silently keep the old 4-column
+                # definition, leaving context_key out of the uniqueness constraint.
+                # context_key sits ahead of normalized_query so that
+                # get_recent_normalized_queries, which filters on context but not on the
+                # query text, still has a usable index prefix; the exact lookup uses all
+                # five columns with equality either way.
+                #
+                # Both statements are unconditional (not gated on the sentinel) so a
+                # manually-dropped index heals on the next start.
+                cur.execute("""
+                    CREATE UNIQUE INDEX IF NOT EXISTS idx_query_cache_exact_ctx
+                        ON query_cache(tenant_id, db_id, schema_fingerprint,
+                                       context_key, normalized_query);
+                    DROP INDEX IF EXISTS idx_query_cache_exact;
+                """)
 
                 # ivfflat index requires rows to exist first — created separately via evict_old
                 # or on first similarity search. Skip here to avoid error on empty table.
@@ -599,13 +660,20 @@ class CacheRepository:
     def __init__(self, db_manager: DatabaseManager):
         self.db = db_manager
 
+    # Every lookup below filters on context_key, and it is a *required* argument
+    # throughout: an entry generated against a previous conversation turn must
+    # never be served to a request that does not carry that same turn (AB#34050).
+    # No default value — a defaulted "" would let a forgotten call site silently
+    # widen the scope back to the buggy behaviour instead of failing loudly.
+
     @staticmethod
     def build_fingerprint(db_id: int, schema_types: list, collection_name: str) -> str:
         """Build a schema fingerprint string for cache scoping."""
         return f"{db_id}:{':'.join(sorted(schema_types))}:{collection_name}"
 
     def find_exact(self, tenant_id: str, db_id: int, schema_types: list,
-                   collection_name: str, normalized_query: str) -> Optional[Dict[str, Any]]:
+                   collection_name: str, normalized_query: str,
+                   context_key: str) -> Optional[Dict[str, Any]]:
         """Layer 1: exact normalized-query match — no embedding cost."""
         fp = self.build_fingerprint(db_id, schema_types, collection_name)
         with self.db.get_connection() as conn:
@@ -616,9 +684,10 @@ class CacheRepository:
                     WHERE tenant_id = %s
                       AND db_id = %s
                       AND schema_fingerprint = %s
+                      AND context_key = %s
                       AND normalized_query = %s
                     LIMIT 1
-                """, (tenant_id, db_id, fp, normalized_query))
+                """, (tenant_id, db_id, fp, context_key, normalized_query))
                 row = cur.fetchone()
                 if row:
                     return {
@@ -632,7 +701,7 @@ class CacheRepository:
 
     def find_similar(self, tenant_id: str, db_id: int, schema_types: list,
                      collection_name: str, embedding: list,
-                     threshold: float) -> Optional[Dict[str, Any]]:
+                     threshold: float, context_key: str) -> Optional[Dict[str, Any]]:
         """Layer 2: cosine similarity search via pgvector."""
         fp = self.build_fingerprint(db_id, schema_types, collection_name)
         embedding_str = "[" + ",".join(str(v) for v in embedding) + "]"
@@ -646,10 +715,11 @@ class CacheRepository:
                     WHERE tenant_id = %s
                       AND db_id = %s
                       AND schema_fingerprint = %s
+                      AND context_key = %s
                       AND 1 - (query_embedding <=> %s::halfvec) >= %s
                     ORDER BY query_embedding <=> %s::halfvec
                     LIMIT 1
-                """, (embedding_str, tenant_id, db_id, fp,
+                """, (embedding_str, tenant_id, db_id, fp, context_key,
                       embedding_str, threshold, embedding_str))
                 row = cur.fetchone()
                 if row:
@@ -663,11 +733,15 @@ class CacheRepository:
     def find_similar_topk(
         self, tenant_id: str, db_id: int, schema_types: list,
         collection_name: str, embedding: list,
-        threshold: float, k: int = 5
+        threshold: float, context_key: str, k: int = 5
     ) -> list:
         """Top-K cosine similarity search with floor = threshold.
         Returns list sorted by similarity DESC (closest first).
-        Each dict: cache_id, response_payload, query_text, created_at, similarity."""
+        Each dict: cache_id, response_payload, query_text, created_at, similarity.
+
+        The context_key filter matters most here: a follow-up's own cached row is
+        a ~1.0 cosine neighbour of the same words asked standalone, so similarity
+        alone can never separate them."""
         fp = self.build_fingerprint(db_id, schema_types, collection_name)
         embedding_str = "[" + ",".join(str(v) for v in embedding) + "]"
         with self.db.get_connection() as conn:
@@ -680,10 +754,11 @@ class CacheRepository:
                     WHERE tenant_id = %s
                       AND db_id = %s
                       AND schema_fingerprint = %s
+                      AND context_key = %s
                       AND 1 - (query_embedding <=> %s::halfvec) >= %s
                     ORDER BY query_embedding <=> %s::halfvec
                     LIMIT %s
-                """, (embedding_str, tenant_id, db_id, fp,
+                """, (embedding_str, tenant_id, db_id, fp, context_key,
                       embedding_str, threshold, embedding_str, k))
                 return [
                     {
@@ -698,7 +773,7 @@ class CacheRepository:
 
     def get_recent_normalized_queries(
         self, tenant_id: str, db_id: int, schema_types: list,
-        collection_name: str, limit: int = 200
+        collection_name: str, context_key: str, limit: int = 200
     ) -> list:
         """Fetch recent normalized queries for fuzzy matching.
         Returns list of {"normalized_query": str, "cache_id": str} ordered by accessed_at DESC."""
@@ -711,9 +786,10 @@ class CacheRepository:
                     WHERE tenant_id = %s
                       AND db_id = %s
                       AND schema_fingerprint = %s
+                      AND context_key = %s
                     ORDER BY accessed_at DESC
                     LIMIT %s
-                """, (tenant_id, db_id, fp, limit))
+                """, (tenant_id, db_id, fp, context_key, limit))
                 return [
                     {"normalized_query": row[0], "cache_id": str(row[1])}
                     for row in cur.fetchall()
@@ -721,18 +797,24 @@ class CacheRepository:
 
     def save(self, tenant_id: str, db_id: int, schema_types: list, collection_name: str,
              query_text: str, normalized_query: str, embedding: list,
-             response_payload: Dict[str, Any]):
-        """Store a new cache entry, updating if the normalized query already exists."""
+             response_payload: Dict[str, Any], context_key: str):
+        """Store a new cache entry, updating if the same query+context already exists.
+
+        The conflict target must list the same five columns as
+        idx_query_cache_exact_ctx — the same question asked with and without a
+        previous turn is two entries, not one overwriting the other."""
         fp = self.build_fingerprint(db_id, schema_types, collection_name)
         embedding_str = "[" + ",".join(str(v) for v in embedding) + "]"
         with self.db.get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute("""
                     INSERT INTO query_cache
-                        (tenant_id, db_id, schema_fingerprint, query_text, normalized_query,
+                        (tenant_id, db_id, schema_fingerprint, context_key,
+                         query_text, normalized_query,
                          query_embedding, response_payload)
-                    VALUES (%s, %s, %s, %s, %s, %s::halfvec, %s)
-                    ON CONFLICT (tenant_id, db_id, schema_fingerprint, normalized_query)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s::halfvec, %s)
+                    ON CONFLICT (tenant_id, db_id, schema_fingerprint,
+                                 context_key, normalized_query)
                     DO UPDATE SET
                         response_payload = EXCLUDED.response_payload,
                         query_embedding  = EXCLUDED.query_embedding,
@@ -744,7 +826,7 @@ class CacheRepository:
                         -- is stored, but the stale timestamp keeps rejecting it.
                         created_at       = NOW(),
                         access_count     = query_cache.access_count + 1
-                """, (tenant_id, db_id, fp, query_text, normalized_query,
+                """, (tenant_id, db_id, fp, context_key, query_text, normalized_query,
                       embedding_str, json.dumps(response_payload)))
                 conn.commit()
 
