@@ -734,7 +734,7 @@
             url: `/api/app/application-form-version/mapping-review?formVersionId=${encodeURIComponent(formVersion)}`,
             type: 'GET'
         }).done(function (review) {
-            if (review && (!review.pendingSuggestions || review.pendingSuggestions.length === 0)) {
+            if (!review?.pendingSuggestions?.length) {
                 UIElements.mappingReviewModal.modal('hide');
                 if (isFinalMappingPhase(review.phase)) {
                     completeMappingReview();

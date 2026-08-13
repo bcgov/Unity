@@ -78,7 +78,7 @@ public class AIPromptDataSeederTests
             .Returns(callInfo =>
             {
                 var predicate = callInfo.Arg<Expression<Func<AIPrompt, bool>>>().Compile();
-                return Task.FromResult<AIPrompt?>(predicate(existingPrompt) ? existingPrompt : null);
+                return Task.FromResult(predicate(existingPrompt) ? existingPrompt : null!);
             });
         promptRepository
             .UpdateAsync(Arg.Any<AIPrompt>(), true, Arg.Any<System.Threading.CancellationToken>())
