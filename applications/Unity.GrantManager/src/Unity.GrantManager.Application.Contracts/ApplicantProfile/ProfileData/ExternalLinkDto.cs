@@ -8,7 +8,5 @@ public class ExternalLinkDto
     public required string Uri { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
-    public ExternalLinkType ExternalLinkType { get; set; }
-    public bool Published { get; set; } = false;
     public int Order { get; set; } = -1;
 }

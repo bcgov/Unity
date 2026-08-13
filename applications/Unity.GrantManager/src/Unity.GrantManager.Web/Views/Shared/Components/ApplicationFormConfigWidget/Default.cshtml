@@ -127,5 +127,131 @@
             </span>
         </div>
     </div>
+    <hr />
+    <div class="row">
+        <div class="col-12 p-3">
+            <h6 class="mb-3"><b>@L["ApplicationForms.Configuration:ApplicantPortalLinks"].Value</b></h6>
+            <div class="row">
+                <div class="col-12 col-md-5">
+                    <label class="form-label" for="renewalLinkUri">@L["ApplicationForms.Configuration:RenewalLink"].Value</label>
+                    <input type="url"
+                           class="form-control"
+                           id="renewalLinkUri"
+                           name="renewalLinkUri"
+                           value="@Model?.RenewalLinkUri"
+                           maxlength="2048"
+                           placeholder="https://..." />
+                    <span class="field-error text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label" for="renewalLinkTitle">@L["ApplicationForms.Configuration:RenewalLinkDisplayName"].Value</label>
+                    <input type="text"
+                           class="form-control"
+                           id="renewalLinkTitle"
+                           name="renewalLinkTitle"
+                           value="@Model?.RenewalLinkTitle"
+                           maxlength="255" />
+                    <span class="field-error text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-3 d-flex align-items-end">
+                    <div class="switch-container">
+                        <div class="form-check unt-form-switch form-switch">
+                            <input class="form-check-input"
+                                   checked="@Model?.RenewalLinkPublished"
+                                   type="checkbox"
+                                   id="renewalLinkPublished"
+                                   name="renewalLinkPublished"
+                                   style="cursor:pointer">
+                            <label class="form-check-label" for="renewalLinkPublished">@L["ApplicationForms.Configuration:ShowRenewalLinksInPortal"].Value</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-12">
+                    <label class="form-label" for="applicantMessage">@L["ApplicationForms.Configuration:ApplicantMessage"].Value</label>
+                    <textarea class="form-control"
+                              id="applicantMessage"
+                              name="applicantMessage"
+                              maxlength="512"
+                              rows="2">@Model?.ApplicantMessage</textarea>
+                    <span class="field-error text-danger small"></span>
+                </div>
+            </div>
+
+            <hr class="my-3" />
+
+            <fieldset>
+                <legend class="visually-hidden">@L["ApplicationForms.Configuration:OtherLinks"].Value</legend>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="form-label mb-0" aria-hidden="true">@L["ApplicationForms.Configuration:OtherLinks"].Value</span>
+                    <button type="button"
+                            id="btn-add-related-link"
+                            class="btn btn-sm unt-btn-outline-primary btn-outline-primary"
+                            abp-tooltip="@L["ApplicationForms.Configuration:AddLink"].Value">
+                        <i class="fl fl-plus"></i> @L["ApplicationForms.Configuration:AddLink"].Value
+                    </button>
+                </div>
+                <div id="relatedLinksContainer">
+                @{
+                    var relatedLinks = Model?.RelatedLinks ?? [];
+                }
+                @for (var i = 0; i < relatedLinks.Count; i++)
+                {
+                    var link = relatedLinks[i];
+                    <div class="related-link-row row mt-2">
+                        <div class="col-12 col-md-4">
+                            <label class="visually-hidden" for="relatedLinkUri_@i">@L["ApplicationForms.Configuration:LinkUrl"].Value</label>
+                            <input type="url"
+                                   id="relatedLinkUri_@i"
+                                   class="form-control related-link-uri"
+                                   value="@link.Uri"
+                                   maxlength="2048"
+                                   placeholder="https://..." />
+                            <span class="field-error text-danger small"></span>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label class="visually-hidden" for="relatedLinkTitle_@i">@L["ApplicationForms.Configuration:LinkDisplayName"].Value</label>
+                            <input type="text"
+                                   id="relatedLinkTitle_@i"
+                                   class="form-control related-link-title"
+                                   value="@link.Title"
+                                   maxlength="255"
+                                   placeholder="@L["ApplicationForms.Configuration:LinkDisplayName"].Value" />
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label class="visually-hidden" for="relatedLinkDescription_@i">@L["ApplicationForms.Configuration:LinkDescription"].Value</label>
+                            <input type="text"
+                                   id="relatedLinkDescription_@i"
+                                   class="form-control related-link-description"
+                                   value="@link.Description"
+                                   maxlength="512"
+                                   placeholder="@L["ApplicationForms.Configuration:LinkDescription"].Value" />
+                        </div>
+                        <div class="col-6 col-md-1 d-flex align-items-center">
+                            <div class="form-check unt-form-switch form-switch">
+                                <label class="visually-hidden" for="relatedLinkPublished_@i">@L["ApplicationForms.Configuration:ShowOtherLinksInPortal"].Value</label>
+                                <input id="relatedLinkPublished_@i"
+                                       class="form-check-input related-link-published"
+                                       checked="@link.Published"
+                                       type="checkbox"
+                                       style="cursor:pointer">
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-1 d-flex align-items-center">
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-danger btn-remove-related-link"
+                                    abp-tooltip="@L["ApplicationForms.Configuration:RemoveLink"].Value">
+                                <i class="fl fl-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                }
+                </div>
+            </fieldset>
+            <span class="form-label note mt-1" style="display:block"><b>NOTE:</b> @L["ApplicationForms.Configuration.Notes:LinkVisibilityRequiresUrl"].Value</span>
+            <span class="form-label note mt-1" style="display:block"><b>NOTE:</b> @L["ApplicationForms.Configuration.Notes:MaxRelatedLinks"].Value</span>
+        </div>
+    </div>
 </form>
 </div>

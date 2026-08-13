@@ -124,7 +124,6 @@ public class ApplicationForm : FullAuditedAggregateRoot<Guid>, IMultiTenant
         for (var i = 0; i < relatedLinks.Count; i++)
         {
             relatedLinks[i].ExternalLinkType = ExternalLinkType.Related;
-            relatedLinks[i].Order = i;
             links.Add(relatedLinks[i]);
         }
 
