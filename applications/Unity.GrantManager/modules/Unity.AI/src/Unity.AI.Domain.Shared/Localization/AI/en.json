@@ -26,6 +26,11 @@
     "Setting:AI.AutomaticGenerationEnabled": "Automatically Generate AI Analysis",
     "Setting:AI.ManualGenerationEnabled": "Manually Initiate AI Analysis",
 
+    "LegalDisclaimer:Title": "Legal Disclaimer",
+    "LegalDisclaimer:Body": "The Platform does not provide legal, financial, or policy advice, and may not be relied on to determine program eligibility or make final decisions in place of the user, who will be solely responsible for the use of the Platform, including the review and validation of Unity AI outputs before use.",
+    "LegalDisclaimer:Confirm": "I Understand and Agree",
+    "LegalDisclaimer:Confirming": "Confirming...",
+
     "AI:AttachmentSummariesDisabled": "AI attachment summaries are not enabled.",
     "AI:ApplicationAnalysisDisabled": "AI application analysis is not enabled.",
     "AI:ScoringDisabled": "AI scoring is not enabled.",

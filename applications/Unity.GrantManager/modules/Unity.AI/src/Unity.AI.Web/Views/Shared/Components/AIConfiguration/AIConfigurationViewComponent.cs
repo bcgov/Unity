@@ -38,6 +38,8 @@ public class AIConfigurationViewComponent(
         public override void ConfigureBundle(BundleConfigurationContext context)
         {
             context.Files
+                .Add("/Views/Shared/Scripts/AILegalDisclaimer.js");
+            context.Files
                 .Add("/Views/Shared/Components/AIConfiguration/Default.js");
         }
     }

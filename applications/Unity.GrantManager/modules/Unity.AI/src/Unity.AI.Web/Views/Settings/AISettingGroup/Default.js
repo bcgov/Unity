@@ -7,10 +7,30 @@ $(function () {
 
     let initialFormState = uiElements.settingForm.serialize();
 
+    let lastSavedValues = {
+        automaticGenerationEnabled: $('#AutomaticGenerationEnabled').is(':checked'),
+        manualGenerationEnabled: $('#ManualGenerationEnabled').is(':checked')
+    };
+
     function checkFormChanges() {
         let isFormChanged = uiElements.settingForm.serialize() !== initialFormState;
         uiElements.saveButton.prop('disabled', !isFormChanged);
         uiElements.discardButton.prop('disabled', !isFormChanged);
+    }
+
+    function saveSettings(automaticEnabled, manualEnabled) {
+        unity.aI.settings.aIConfiguration.updateTenantConfiguration({
+            automaticGenerationEnabled: automaticEnabled,
+            manualGenerationEnabled: manualEnabled
+        }).then(function () {
+            lastSavedValues = {
+                automaticGenerationEnabled: automaticEnabled,
+                manualGenerationEnabled: manualEnabled
+            };
+            $(document).trigger('AbpSettingSaved');
+            initialFormState = uiElements.settingForm.serialize();
+            checkFormChanges();
+        });
     }
 
     uiElements.settingForm.on('change', function () {
@@ -22,14 +42,11 @@ $(function () {
 
         const automaticEnabled = $('#AutomaticGenerationEnabled').is(':checked');
         const manualEnabled = $('#ManualGenerationEnabled').is(':checked');
+        const turningOn = (automaticEnabled && !lastSavedValues.automaticGenerationEnabled) ||
+            (manualEnabled && !lastSavedValues.manualGenerationEnabled);
 
-        unity.aI.settings.aIConfiguration.updateTenantConfiguration({
-            automaticGenerationEnabled: automaticEnabled,
-            manualGenerationEnabled: manualEnabled
-        }).then(function () {
-            $(document).trigger('AbpSettingSaved');
-            initialFormState = uiElements.settingForm.serialize();
-            checkFormChanges();
+        unity.aI.legalDisclaimer.confirmIfNeeded(turningOn, function () {
+            saveSettings(automaticEnabled, manualEnabled);
         });
     });
 
