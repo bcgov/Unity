@@ -25,7 +25,7 @@
                             </div>
                         </div>
 
-                        <div class="form-check form-switch">
+                        <div class="form-check form-switch mb-3">
                             <input class="form-check-input"
                                    type="checkbox"
                                    id="ManualGenerationEnabled"
@@ -37,6 +37,21 @@
                             </label>
                             <div class="text-muted small">
                                 When enabled, users with appropriate permissions can manually generate or regenerate AI analysis.
+                            </div>
+                        </div>
+
+                        <div class="form-check form-switch">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   id="ReportingEnabled"
+                                   name="ReportingEnabled"
+                                   value="true"
+                                   @(Model.ReportingEnabled ? "checked" : "") />
+                            <label class="form-check-label fw-bold" for="ReportingEnabled">
+                                AI Reporting
+                            </label>
+                            <div class="text-muted small">
+                                When enabled, users with the AI Reporting permission can access the AI Reporting dashboard.
                             </div>
                         </div>
                     </abp-column>
