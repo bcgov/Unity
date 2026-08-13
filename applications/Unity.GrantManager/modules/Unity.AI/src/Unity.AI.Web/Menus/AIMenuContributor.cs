@@ -9,6 +9,7 @@ using Unity.Modules.Shared.Permissions;
 using Volo.Abp.Features;
 using Volo.Abp.Settings;
 using Volo.Abp.UI.Navigation;
+using Volo.Abp.Users;
 
 namespace Unity.AI.Web.Menus;
 
@@ -40,10 +41,13 @@ public class AIMenuContributor : IMenuContributor
             ).OnlyWhenInRole(IdentityConsts.ITOperationsRoleName));
         }
 
+        var currentUser = context.ServiceProvider.GetRequiredService<ICurrentUser>();
+        var isItAdmin = currentUser.IsInRole(IdentityConsts.ITAdminRoleName);
+
         var reportingEnabled = await featureChecker.IsEnabledAsync("Unity.AIReporting")
             && await settingProvider.GetAsync<bool>(AISettings.ReportingEnabled, defaultValue: false);
 
-        if (reportingEnabled)
+        if (reportingEnabled || isItAdmin)
         {
             context.Menu.AddItem(new ApplicationMenuItem(
                 name: AIMenus.Reporting,
