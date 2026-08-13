@@ -75,26 +75,12 @@ public class AIPromptDataSeederTests
         var promptRepository = Substitute.For<IRepository<AIPrompt, Guid>>();
         promptRepository
             .FirstOrDefaultAsync(Arg.Any<Expression<Func<AIPrompt, bool>>>())
-            .Returns(callInfo =>
-            {
-                var predicate = callInfo.Arg<Expression<Func<AIPrompt, bool>>>();
-                var prompt = predicate.Compile()(existingPrompt)
-                    ? existingPrompt
-                    : new AIPrompt(Guid.NewGuid(), "unused", -1, "unused", "unused");
-                return Task.FromResult(prompt);
-            });
+            .ReturnsForAnyArgs(existingPrompt);
         promptRepository
             .FirstOrDefaultAsync(
                 Arg.Any<Expression<Func<AIPrompt, bool>>>(),
                 Arg.Any<System.Threading.CancellationToken>())
-            .Returns(callInfo =>
-            {
-                var predicate = callInfo.Arg<Expression<Func<AIPrompt, bool>>>();
-                var prompt = predicate.Compile()(existingPrompt)
-                    ? existingPrompt
-                    : new AIPrompt(Guid.NewGuid(), "unused", -1, "unused", "unused");
-                return Task.FromResult(prompt);
-            });
+            .ReturnsForAnyArgs(existingPrompt);
         promptRepository
             .UpdateAsync(Arg.Any<AIPrompt>(), true, Arg.Any<System.Threading.CancellationToken>())
             .Returns(callInfo =>
