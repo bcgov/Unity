@@ -1,4 +1,4 @@
-﻿using NSubstitute;
+using NSubstitute;
 using Shouldly;
 using System;
 using System.Collections.Generic;
@@ -397,7 +397,8 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
             customFieldRepository ?? Substitute.For<IRepository<CustomField, Guid>>(),
             generationReviewRepository ?? Substitute.For<IGenerationReviewRepository>(),
             Substitute.For<Unity.Flex.Domain.WorksheetLinks.IWorksheetLinkRepository>(),
-            Substitute.For<IScoresheetRepository>());
+            Substitute.For<IScoresheetRepository>(),
+            Substitute.For<Unity.Flex.Domain.WorksheetInstances.IWorksheetInstanceRepository>());
         return service;
     }
 

@@ -295,7 +295,8 @@ public class ApplicationFormVersionAppServiceMappingReviewTests(ITestOutputHelpe
             Substitute.For<IRepository<CustomField, Guid>>(),
             reviewRepository,
             worksheetLinkRepository ?? Substitute.For<IWorksheetLinkRepository>(),
-            Substitute.For<IScoresheetRepository>());
+            Substitute.For<IScoresheetRepository>(),
+            Substitute.For<Unity.Flex.Domain.WorksheetInstances.IWorksheetInstanceRepository>());
         service.LazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
         return service;
     }

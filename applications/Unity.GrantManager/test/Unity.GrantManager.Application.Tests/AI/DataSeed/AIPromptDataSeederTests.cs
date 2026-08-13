@@ -75,12 +75,26 @@ public class AIPromptDataSeederTests
         var promptRepository = Substitute.For<IRepository<AIPrompt, Guid>>();
         promptRepository
             .FirstOrDefaultAsync(Arg.Any<Expression<Func<AIPrompt, bool>>>())
-            .ReturnsForAnyArgs(existingPrompt);
+            .Returns(callInfo =>
+            {
+                var predicate = callInfo.Arg<Expression<Func<AIPrompt, bool>>>();
+                var prompt = predicate.Compile()(existingPrompt)
+                    ? existingPrompt
+                    : new AIPrompt(Guid.NewGuid(), "unused", -1, "unused", "unused");
+                return Task.FromResult(prompt);
+            });
         promptRepository
             .FirstOrDefaultAsync(
                 Arg.Any<Expression<Func<AIPrompt, bool>>>(),
                 Arg.Any<System.Threading.CancellationToken>())
-            .ReturnsForAnyArgs(existingPrompt);
+            .Returns(callInfo =>
+            {
+                var predicate = callInfo.Arg<Expression<Func<AIPrompt, bool>>>();
+                var prompt = predicate.Compile()(existingPrompt)
+                    ? existingPrompt
+                    : new AIPrompt(Guid.NewGuid(), "unused", -1, "unused", "unused");
+                return Task.FromResult(prompt);
+            });
         promptRepository
             .UpdateAsync(Arg.Any<AIPrompt>(), true, Arg.Any<System.Threading.CancellationToken>())
             .Returns(callInfo =>
@@ -97,8 +111,8 @@ public class AIPromptDataSeederTests
         await seeder.SeedAsync(new DataSeedContext());
 
         existingPrompt.SystemPrompt.ShouldNotBe("old system prompt");
-        existingPrompt.UserPrompt.ShouldContain("all applicable field suggestions");
-        existingPrompt.UserPrompt.ShouldContain("empty fields array");
+        existingPrompt.UserPrompt.ShouldContain("SCORESHEET CONTEXT");
+        existingPrompt.UserPrompt.ShouldContain("all applicable questions");
         existingPrompt.MetadataJson.ShouldContain("DATA");
         existingPrompt.IsActive.ShouldBeTrue();
         await promptRepository.Received().UpdateAsync(existingPrompt, true, Arg.Any<System.Threading.CancellationToken>());

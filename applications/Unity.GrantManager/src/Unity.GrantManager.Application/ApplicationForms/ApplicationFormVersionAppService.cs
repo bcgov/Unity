@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Localization;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -8,8 +9,13 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Unity.AI.Features;
+using Unity.AI.Localization;
 using Unity.AI.Generation;
+using Unity.AI.Operations;
 using Unity.AI.Permissions;
+using Unity.AI.Requests;
+using Unity.AI.Runtime.Execution;
 using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Scoresheets.Enums;
@@ -29,6 +35,9 @@ using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
 using Volo.Abp.Uow;
 using Unity.Flex.Domain.WorksheetLinks;
+using Unity.Flex.Domain.WorksheetInstances;
+using Unity.Flex.Domain.ScoresheetInstances;
+using Unity.Flex.Permissions;
 using Unity.Modules.Shared.Correlation;
 
 namespace Unity.GrantManager.ApplicationForms
@@ -42,12 +51,15 @@ namespace Unity.GrantManager.ApplicationForms
         IApplicationFormSubmissionRepository formSubmissionRepository,
         IReportingFieldsGeneratorService reportingFieldsGeneratorService,
         IFeatureChecker featureChecker,
+        IStringLocalizer<AIResource> localizer,
         IAIGenerationAppService aiGenerationAppService,
         IWorksheetRepository worksheetRepository,
         IRepository<CustomField, Guid> customFieldRepository,
         IGenerationReviewRepository generationReviewRepository,
         IWorksheetLinkRepository worksheetLinkRepository,
-        IScoresheetRepository scoresheetRepository) :
+        IScoresheetRepository scoresheetRepository,
+        IWorksheetInstanceRepository worksheetInstanceRepository,
+        IScoresheetInstanceRepository scoresheetInstanceRepository) :
         CrudAppService<
             ApplicationFormVersion,
             ApplicationFormVersionDto,
@@ -61,6 +73,7 @@ namespace Unity.GrantManager.ApplicationForms
         public override async Task<ApplicationFormVersionDto> CreateAsync(CreateUpdateApplicationFormVersionDto input) =>
             await base.CreateAsync(input);
 
+        [RemoteService(false)]
         [Authorize]
         public override async Task<ApplicationFormVersionDto> UpdateAsync(Guid id, CreateUpdateApplicationFormVersionDto input) =>
             await base.UpdateAsync(id, input);
@@ -345,20 +358,10 @@ namespace Unity.GrantManager.ApplicationForms
             var review = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(
                 AIGenerationOperations.FormMapping,
                 id);
-            if (review == null || review.Status != GenerationReviewStatus.Active)
+            if (review?.Status == GenerationReviewStatus.Active)
             {
-                review = new GenerationReview(
-                    GuidGenerator.Create(),
-                    AIGenerationOperations.FormMapping,
-                    id,
-                    review?.Sequence + 1 ?? 1);
-                await generationReviewRepository.InsertAsync(review);
+                throw new UserFriendlyException(localizer[AILocalizationKeys.FormGenerationReviewActive]);
             }
-
-            var payload = GetMappingReviewPayload(review);
-            review.SetStatus(GenerationReviewStatus.Active);
-            SetMappingReviewPayload(review, payload);
-            await generationReviewRepository.UpdateAsync(review);
             await _aiGenerationAppService.SubmitAsync(
                 AIGenerationOperations.FormMapping,
                 new AIGenerationSubmissionDto
@@ -392,16 +395,16 @@ namespace Unity.GrantManager.ApplicationForms
             var review = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(
                     AIGenerationOperations.FormMapping,
                     formVersionId)
-                ?? throw new UserFriendlyException("No mapping review is pending.");
+                ?? throw new UserFriendlyException(localizer[AILocalizationKeys.MappingReviewPending]);
             if (review.Status != GenerationReviewStatus.Active)
             {
-                throw new UserFriendlyException("The mapping review is no longer active.");
+                throw new UserFriendlyException(localizer[AILocalizationKeys.MappingReviewInactive]);
             }
 
             var suggestionIds = input?.SuggestionIds?.Distinct().ToHashSet() ?? [];
             if (suggestionIds.Count == 0)
             {
-                throw new UserFriendlyException("Select at least one mapping suggestion.");
+                throw new UserFriendlyException(localizer[AILocalizationKeys.MappingSelectionRequired]);
             }
 
             var payload = GetMappingReviewPayload(review);
@@ -410,7 +413,7 @@ namespace Unity.GrantManager.ApplicationForms
                 .ToList();
             if (selectedSuggestions.Count != suggestionIds.Count)
             {
-                throw new UserFriendlyException("One or more mapping suggestions are no longer available.");
+                throw new UserFriendlyException(localizer[AILocalizationKeys.MappingSelectionInvalid]);
             }
 
             var formVersion = await Repository.GetAsync(formVersionId);
@@ -476,7 +479,7 @@ namespace Unity.GrantManager.ApplicationForms
 
                 if (phase != FormMappingReviewPhase.WorksheetReview)
                 {
-                    throw new UserFriendlyException("No mapping review is pending.");
+                    throw new UserFriendlyException(localizer[AILocalizationKeys.MappingReviewPending]);
                 }
 
                 return;
@@ -487,7 +490,7 @@ namespace Unity.GrantManager.ApplicationForms
             {
                 if (payload.PendingSuggestions.Count > 0)
                 {
-                    throw new UserFriendlyException("Review or discard the pending mapping suggestions first.");
+                    throw new UserFriendlyException(localizer[AILocalizationKeys.MappingReviewPendingSuggestions]);
                 }
 
                 review.Complete();
@@ -498,7 +501,7 @@ namespace Unity.GrantManager.ApplicationForms
             }
             else
             {
-                throw new UserFriendlyException("That AI mapping workflow transition is not valid.");
+                throw new UserFriendlyException(localizer[AILocalizationKeys.MappingReviewTransitionInvalid]);
             }
 
             SetMappingReviewPayload(review, payload);
@@ -508,6 +511,7 @@ namespace Unity.GrantManager.ApplicationForms
         [HttpPost("api/app/application-form-version/reset-ai-flow")]
         public virtual async Task ResetAiFlowAsync(Guid formVersionId)
         {
+            await CheckPolicyAsync(FlexPermissions.Worksheets.Delete);
             await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormMapping);
             await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormWorksheet);
             var formVersion = await Repository.GetAsync(formVersionId);
@@ -526,19 +530,14 @@ namespace Unity.GrantManager.ApplicationForms
 
             foreach (var worksheetId in worksheetIds)
             {
-                var links = await worksheetLinkRepository.GetListByWorksheetAsync(worksheetId, CorrelationConsts.FormVersion);
-                foreach (var link in links)
-                {
-                    await worksheetLinkRepository.DeleteAsync(link, true);
-                }
-
                 var worksheet = await worksheetRepository.FindAsync(worksheetId);
-                if (worksheet != null)
+                if (worksheet == null)
                 {
-                    await worksheetRepository.DeleteAsync(worksheet, true);
+                    continue;
                 }
-            }
 
+                await DeleteAiWorksheetSuggestionAsync(worksheet, formVersionId);
+            }
             await generationReviewRepository.DeleteManyAsync(mappingReviews.Concat(worksheetReviews), true);
             formVersion.SubmissionHeaderMapping = "{}";
             await Repository.UpdateAsync(formVersion, true);
@@ -552,7 +551,7 @@ namespace Unity.GrantManager.ApplicationForms
             var review = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(
                     AIGenerationOperations.FormMapping,
                     formVersionId)
-                ?? throw new UserFriendlyException("No mapping review is pending.");
+                ?? throw new UserFriendlyException(localizer[AILocalizationKeys.MappingReviewPending]);
             var worksheetReview = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(
                 AIGenerationOperations.FormWorksheet,
                 formVersionId);
@@ -563,7 +562,7 @@ namespace Unity.GrantManager.ApplicationForms
                 GetWorksheetReviewPayload(worksheetReview).NoSuggestionsGenerated ||
                 !await HasNoRemainingDraftsOrAssignedDraftAsync(worksheetReview))
             {
-                throw new UserFriendlyException("Publish and assign the AI worksheet drafts before generating mapping.");
+                throw new UserFriendlyException(localizer[AILocalizationKeys.WorksheetDraftsMustBePublished]);
             }
             review.Complete();
             await generationReviewRepository.UpdateAsync(review, true);
@@ -589,30 +588,29 @@ namespace Unity.GrantManager.ApplicationForms
         public virtual async Task CreateAiWorksheetDraftAsync(Guid formVersionId, CreateAiWorksheetDraftDto input)
         {
             await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormWorksheet);
-
             var worksheet = await GetPendingAiWorksheetEntityAsync(formVersionId);
             if (worksheet == null || worksheet.Id != input.SessionId)
             {
-                throw new UserFriendlyException("The AI worksheet is no longer available for review.");
+                throw new UserFriendlyException(localizer[AILocalizationKeys.FormWorksheetUnavailable]);
             }
 
             var title = input.Title?.Trim();
             if (string.IsNullOrWhiteSpace(title))
             {
-                throw new UserFriendlyException("A worksheet title is required.");
+                throw new UserFriendlyException(localizer[AILocalizationKeys.WorksheetTitleRequired]);
             }
 
             var selectedFieldIds = input.SelectedFieldIds?.ToHashSet() ?? [];
             if (selectedFieldIds.Count == 0)
             {
-                throw new UserFriendlyException("Select at least one suggested field.");
+                throw new UserFriendlyException(localizer[AILocalizationKeys.WorksheetSelectionRequired]);
             }
 
             var fields = worksheet.Sections.SelectMany(section => section.Fields).ToList();
             var unknownFieldIds = selectedFieldIds.Except(fields.Select(field => field.Id)).ToList();
             if (unknownFieldIds.Count > 0)
             {
-                throw new UserFriendlyException("The AI worksheet selection is invalid.");
+                throw new UserFriendlyException(localizer[AILocalizationKeys.FormWorksheetSelectionInvalid]);
             }
 
             var draftName = await GetNextAiWorksheetDraftNameAsync(title);
@@ -663,7 +661,7 @@ namespace Unity.GrantManager.ApplicationForms
 
             if (worksheet.Sections.All(section => section.Fields.Count == 0))
             {
-                await worksheetRepository.DeleteAsync(worksheet, true);
+                await DeleteAiWorksheetSuggestionAsync(worksheet, formVersionId);
                 if (worksheetReview != null)
                 {
                     worksheetReview.Complete();
@@ -679,11 +677,10 @@ namespace Unity.GrantManager.ApplicationForms
         public virtual async Task DiscardAiWorksheetSuggestionsAsync(Guid formVersionId)
         {
             await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormWorksheet);
-
             var worksheet = await GetPendingAiWorksheetEntityAsync(formVersionId);
             if (worksheet != null)
             {
-                await worksheetRepository.DeleteAsync(worksheet, true);
+                await DeleteAiWorksheetSuggestionAsync(worksheet, formVersionId);
                 var review = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(
                     AIGenerationOperations.FormWorksheet,
                     formVersionId);
@@ -698,7 +695,7 @@ namespace Unity.GrantManager.ApplicationForms
         [HttpGet("api/app/application-form-version/pending-ai-scoresheet")]
         public virtual async Task<AiScoresheetReviewDto?> GetPendingAiScoresheetAsync(Guid formVersionId)
         {
-            await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormScoresheet);
+            await CheckPolicyAsync(AIPermissions.Analysis.ViewFormScoresheet);
 
             var review = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(
                 AIGenerationOperations.FormScoresheet,
@@ -722,25 +719,25 @@ namespace Unity.GrantManager.ApplicationForms
             var suggestion = await GetPendingAiScoresheetEntityAsync(formVersionId);
             if (suggestion == null || suggestion.Id != input.SessionId)
             {
-                throw new UserFriendlyException("The AI scoresheet is no longer available for review.");
+                throw new UserFriendlyException(localizer[AILocalizationKeys.FormScoresheetUnavailable]);
             }
 
             var title = input.Title?.Trim();
             if (string.IsNullOrWhiteSpace(title))
             {
-                throw new UserFriendlyException("A scoresheet title is required.");
+                throw new UserFriendlyException(localizer[AILocalizationKeys.FormScoresheetTitleRequired]);
             }
 
             var selectedIds = input.SelectedQuestionIds?.ToHashSet() ?? [];
             if (selectedIds.Count == 0)
             {
-                throw new UserFriendlyException("Select at least one suggested question.");
+                throw new UserFriendlyException(localizer[AILocalizationKeys.FormScoresheetSelectionRequired]);
             }
 
             var questions = suggestion.Sections.SelectMany(section => section.Fields).ToList();
             if (selectedIds.Except(questions.Select(question => question.Id)).Any())
             {
-                throw new UserFriendlyException("The AI scoresheet selection is invalid.");
+                throw new UserFriendlyException(localizer[AILocalizationKeys.FormScoresheetSelectionInvalid]);
             }
 
             var draftName = await GetNextAiScoresheetDraftNameAsync(title);
@@ -785,7 +782,7 @@ namespace Unity.GrantManager.ApplicationForms
 
             if (suggestion.Sections.All(section => section.Fields.Count == 0))
             {
-                await scoresheetRepository.DeleteAsync(suggestion, true);
+                await DeleteAiScoresheetSuggestionAsync(suggestion);
                 var review = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(
                     AIGenerationOperations.FormScoresheet,
                     formVersionId);
@@ -811,7 +808,7 @@ namespace Unity.GrantManager.ApplicationForms
                 return;
             }
 
-            await scoresheetRepository.DeleteAsync(suggestion, true);
+            await DeleteAiScoresheetSuggestionAsync(suggestion);
             var review = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(
                 AIGenerationOperations.FormScoresheet,
                 formVersionId);
@@ -866,6 +863,37 @@ namespace Unity.GrantManager.ApplicationForms
                 }).ToList()
         };
 
+        private async Task DeleteAiWorksheetSuggestionAsync(Worksheet worksheet, Guid formVersionId)
+        {
+            var links = await worksheetLinkRepository.GetListByWorksheetAsync(worksheet.Id, CorrelationConsts.FormVersion) ?? [];
+            if (worksheet.Published ||
+                links.Any(link => link.CorrelationId != formVersionId) ||
+                await worksheetInstanceRepository.AnyByWorksheetAndFormVersionAsync(worksheet.Id, formVersionId))
+            {
+                throw new UserFriendlyException(localizer[AILocalizationKeys.FormWorksheetDeleteProtected]);
+            }
+
+            foreach (var link in links.Where(link => link.CorrelationId == formVersionId))
+            {
+                await worksheetLinkRepository.DeleteAsync(link, true);
+            }
+
+            await worksheetRepository.DeleteAsync(worksheet, true);
+        }
+
+        private async Task DeleteAiScoresheetSuggestionAsync(Scoresheet scoresheet)
+        {
+            if (scoresheet.Published || scoresheet.IsArchived)
+            {
+                throw new UserFriendlyException(localizer[AILocalizationKeys.FormScoresheetDeleteProtected]);
+            }
+            if (await scoresheetInstanceRepository.AnyByScoresheetAsync(scoresheet.Id))
+            {
+                throw new UserFriendlyException(localizer[AILocalizationKeys.FormScoresheetHasInstances]);
+            }
+
+            await scoresheetRepository.DeleteAsync(scoresheet, true);
+        }
         private async Task<Worksheet?> GetPendingAiWorksheetEntityAsync(Guid formVersionId)
         {
             var review = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(
@@ -1078,32 +1106,32 @@ namespace Unity.GrantManager.ApplicationForms
                 _ => FormMappingReviewPhase.Completed
             };
 
-        private static string GetWorkflowLabel(FormGenerationWorkflowState state) =>
+        private string GetWorkflowLabel(FormGenerationWorkflowState state) =>
             state switch
             {
-                FormGenerationWorkflowState.GenerateInitialMapping => "Generate Initial Mapping",
-                FormGenerationWorkflowState.ReviewInitialMapping => "Review Initial Mapping",
-                FormGenerationWorkflowState.GenerateWorksheets => "Generate Worksheets",
-                FormGenerationWorkflowState.ReviewWorksheets => "Review Worksheets",
-                FormGenerationWorkflowState.PublishAndAssignWorksheets => "Publish & Assign Worksheets",
-                FormGenerationWorkflowState.GenerateFinalMapping => "Generate Final Mapping",
-                FormGenerationWorkflowState.ReviewFinalMapping => "Review Final Mapping",
-                _ => "Completed"
+                FormGenerationWorkflowState.GenerateInitialMapping => localizer[AILocalizationKeys.WorkflowGenerateInitialMapping],
+                FormGenerationWorkflowState.ReviewInitialMapping => localizer[AILocalizationKeys.WorkflowReviewInitialMapping],
+                FormGenerationWorkflowState.GenerateWorksheets => localizer[AILocalizationKeys.WorkflowGenerateWorksheets],
+                FormGenerationWorkflowState.ReviewWorksheets => localizer[AILocalizationKeys.WorkflowReviewWorksheets],
+                FormGenerationWorkflowState.PublishAndAssignWorksheets => localizer[AILocalizationKeys.WorkflowPublishAssignWorksheets],
+                FormGenerationWorkflowState.GenerateFinalMapping => localizer[AILocalizationKeys.WorkflowGenerateFinalMapping],
+                FormGenerationWorkflowState.ReviewFinalMapping => localizer[AILocalizationKeys.WorkflowReviewFinalMapping],
+                _ => localizer[AILocalizationKeys.WorkflowCompleted]
             };
 
-        private static string GetWorkflowLabel(FormGenerationWorkflowAction action) =>
+        private string GetWorkflowLabel(FormGenerationWorkflowAction action) =>
             action switch
             {
-                FormGenerationWorkflowAction.GenerateInitialMapping => "Generate Initial Mapping",
-                FormGenerationWorkflowAction.ReviewInitialMapping => "Review Initial Mapping",
+                FormGenerationWorkflowAction.GenerateInitialMapping => localizer[AILocalizationKeys.WorkflowGenerateInitialMapping],
+                FormGenerationWorkflowAction.ReviewInitialMapping => localizer[AILocalizationKeys.WorkflowReviewInitialMapping],
                 FormGenerationWorkflowAction.GenerateWorksheets or
-                    FormGenerationWorkflowAction.GenerateWorksheetsNextCycle => "Generate Worksheets",
-                FormGenerationWorkflowAction.ReviewWorksheets => "Review Worksheets",
-                FormGenerationWorkflowAction.PublishAndAssignWorksheets => "Publish & Assign Worksheets",
-                FormGenerationWorkflowAction.GenerateFinalMapping => "Generate Final Mapping",
-                FormGenerationWorkflowAction.GenerateMapping => "Generate Mapping",
-                FormGenerationWorkflowAction.ReviewFinalMapping => "Review Final Mapping",
-                _ => "Completed"
+                    FormGenerationWorkflowAction.GenerateWorksheetsNextCycle => localizer[AILocalizationKeys.WorkflowGenerateWorksheets],
+                FormGenerationWorkflowAction.ReviewWorksheets => localizer[AILocalizationKeys.WorkflowReviewWorksheets],
+                FormGenerationWorkflowAction.PublishAndAssignWorksheets => localizer[AILocalizationKeys.WorkflowPublishAssignWorksheets],
+                FormGenerationWorkflowAction.GenerateFinalMapping => localizer[AILocalizationKeys.WorkflowGenerateFinalMapping],
+                FormGenerationWorkflowAction.GenerateMapping => localizer[AILocalizationKeys.WorkflowGenerateMapping],
+                FormGenerationWorkflowAction.ReviewFinalMapping => localizer[AILocalizationKeys.WorkflowReviewFinalMapping],
+                _ => localizer[AILocalizationKeys.WorkflowCompleted]
             };
 
         private sealed record FormWorkflowResult(

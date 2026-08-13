@@ -405,7 +405,10 @@ namespace Unity.AI.Runtime.Execution
 
                 if (result.Outcome != AIOperationOutcome.Success)
                 {
-                    return new FormMappingResponse();
+                    return new FormMappingResponse
+                    {
+                        FailureReason = result.FailureReason ?? $"Mapping generation failed with outcome {result.Outcome}."
+                    };
                 }
 
                 return new FormMappingResponse
@@ -420,7 +423,7 @@ namespace Unity.AI.Runtime.Execution
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Mapping suggestion generation failed.");
-                return new FormMappingResponse();
+                return new FormMappingResponse { FailureReason = ex.Message };
             }
         }
 

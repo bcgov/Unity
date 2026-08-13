@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -43,6 +43,11 @@ public sealed class FormMappingOperationExecutor(
             Data = FormMappingPromptDataBuilder.Build(readModel),
             PromptVersion = args.PromptVersion
         });
+
+        if (!string.IsNullOrWhiteSpace(response.FailureReason))
+        {
+            throw new InvalidOperationException(response.FailureReason);
+        }
 
         if (review == null || review.Status != GenerationReviewStatus.Active)
         {
