@@ -52,7 +52,7 @@ public class PromptResponseValidatorTests
 
         result.IsValid.ShouldBeFalse();
         result.FailureCategory.ShouldBe(AIFailureCategory.InvalidOutput);
-        result.Reason.ShouldContain("q1");
+        result.Reason!.ShouldContain("q1");
     }
 
     [Fact]
@@ -96,7 +96,7 @@ public class PromptResponseValidatorTests
 
         result.IsValid.ShouldBeFalse();
         result.FailureCategory.ShouldBe(AIFailureCategory.InvalidOutput);
-        result.Reason.ShouldContain("Expected 'PROCEED' or 'HOLD'");
+        result.Reason!.ShouldContain("Expected 'PROCEED' or 'HOLD'");
     }
 
     [Fact]
@@ -270,7 +270,7 @@ public class PromptResponseValidatorTests
         var result = AIProviderPayloadValidator.ValidateFormScoresheetJson(response);
 
         result.IsValid.ShouldBeFalse();
-        result.Reason.ShouldContain("duplicate field names");
+        result.Reason!.ShouldContain("duplicate field names");
     }
 
     [Fact]
@@ -284,7 +284,7 @@ public class PromptResponseValidatorTests
         var result = AIProviderPayloadValidator.ValidateFormScoresheetJson(response);
 
         result.IsValid.ShouldBeFalse();
-        result.Reason.ShouldContain("duplicate section names");
+        result.Reason!.ShouldContain("duplicate section names");
     }
 
     private const string ValidFormScoresheetJson = """

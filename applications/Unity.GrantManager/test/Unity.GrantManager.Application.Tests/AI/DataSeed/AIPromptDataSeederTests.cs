@@ -74,7 +74,10 @@ public class AIPromptDataSeederTests
         };
         var promptRepository = Substitute.For<IRepository<AIPrompt, Guid>>();
         promptRepository
-            .FirstOrDefaultAsync(Arg.Any<Expression<Func<AIPrompt, bool>>>())
+            .FirstOrDefaultAsync(
+                Arg.Any<Expression<Func<AIPrompt, bool>>>(),
+                Arg.Any<bool>(),
+                Arg.Any<System.Threading.CancellationToken>())
             .Returns(callInfo =>
             {
                 var predicate = callInfo.Arg<Expression<Func<AIPrompt, bool>>>().Compile();

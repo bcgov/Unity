@@ -30,6 +30,7 @@ public class AIModelDataSeederTests
             .Returns(callInfo =>
             {
                 var model = callInfo.Arg<AIModel>();
+                ArgumentNullException.ThrowIfNull(model);
                 insertedModels.Add(model);
                 return Task.FromResult(model);
             });
@@ -70,9 +71,10 @@ public class AIModelDataSeederTests
                 cancellationToken: Arg.Any<System.Threading.CancellationToken>())
             .Returns(callInfo =>
             {
-                var predicate = callInfo
-                    .Arg<System.Linq.Expressions.Expression<Func<AIModel, bool>>>()
-                    .Compile();
+                var predicateExpression = callInfo
+                    .Arg<System.Linq.Expressions.Expression<Func<AIModel, bool>>>();
+                ArgumentNullException.ThrowIfNull(predicateExpression);
+                var predicate = predicateExpression.Compile();
                 return Task.FromResult(new[] { existingModel }.Where(predicate).ToList());
             });
 
@@ -85,7 +87,7 @@ public class AIModelDataSeederTests
         DeserializeSettings(existingModel.SettingsJson).MaxOutputTokenCountSupported.ShouldBeFalse();
         await modelRepository.Received(1).UpdateAsync(existingModel, autoSave: true);
         await modelRepository.DidNotReceive().InsertAsync(
-            Arg.Is<AIModel>(model => model.Name == existingModel.Name),
+            Arg.Is<AIModel>(model => model?.Name == existingModel.Name),
             Arg.Any<bool>(),
             Arg.Any<System.Threading.CancellationToken>());
     }
