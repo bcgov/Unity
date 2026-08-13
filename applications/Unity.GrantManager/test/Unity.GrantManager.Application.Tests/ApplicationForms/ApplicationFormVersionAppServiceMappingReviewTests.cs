@@ -9,6 +9,7 @@ using Unity.AI.Operations;
 using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.Domain.WorksheetLinks;
 using Unity.Flex.Worksheets;
+using Unity.Flex.Domain.Scoresheets;
 using Unity.GrantManager.ApplicationForms.Mapping;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
@@ -177,7 +178,8 @@ public class ApplicationFormVersionAppServiceMappingReviewTests(ITestOutputHelpe
             worksheetRepository ?? Substitute.For<IWorksheetRepository>(),
             Substitute.For<IRepository<CustomField, Guid>>(),
             reviewRepository,
-            worksheetLinkRepository ?? Substitute.For<IWorksheetLinkRepository>());
+            worksheetLinkRepository ?? Substitute.For<IWorksheetLinkRepository>(),
+            Substitute.For<IScoresheetRepository>());
         service.LazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
         return service;
     }

@@ -57,6 +57,27 @@
         ReviewLaterActionId = "btn-review-later-ai-worksheet",
         DiscardActionId = "btn-discard-ai-worksheet"
     };
+    var scoresheetReviewModal = new AiSuggestionReviewModalModel
+    {
+        ModalId = "aiScoresheetReviewModal",
+        ModalLabelId = "aiScoresheetReviewModalLabel",
+        Title = "Review AI Scoresheet Suggestions",
+        SourceColumnTitle = "Generated Question",
+        TargetColumnTitle = "Section",
+        FieldsId = "aiScoresheetReviewFields",
+        EmptyId = "aiScoresheetReviewEmpty",
+        EmptyText = "No scoresheet questions remain.",
+        SelectAllId = "aiScoresheetReviewSelectAll",
+        TitleInputId = "aiScoresheetTitle",
+        TitleInputLabel = "Scoresheet Title",
+        TitleInputPlaceholder = "e.g., Application Assessment",
+        PrimaryActionId = "btn-create-ai-scoresheet-draft",
+        PrimaryActionText = "Add to Scoresheet",
+        PrimaryActionDisabled = true,
+        ReviewLaterActionId = "btn-review-later-ai-scoresheet",
+        DiscardActionId = "btn-discard-ai-scoresheet",
+        SectionDataAttribute = "section-id"
+    };
 }
 @section scripts
 {
@@ -69,6 +90,7 @@
 }
 
 @section styles {
+    <abp-style src="/Pages/GrantApplications/ai-generation-button.css" />
     <abp-style src="/Pages/ApplicationForms/Mapping.css" />
     <abp-style src="/Views/Shared/Components/CustomFields/Default.css" />
 }
@@ -203,31 +225,17 @@
                                 <span>Review Final Mapping</span>
                             </span>
                         </button>
-                        <button type="button" id="btn-generate-next-mapping" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn d-none"
-                                title="Start the next mapping review cycle">
-                            <span class="ai-button-content">
-                                <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
-                                <span>Generate Mapping</span>
-                            </span>
-                        </button>
-                    }
-                    @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormWorksheet.Generate))
-                    {
-                        <button type="button" id="btn-generate-next-worksheets" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn d-none"
-                                title="Start the next worksheet review cycle">
-                            <span class="ai-button-content">
-                                <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
-                                <span>Generate Worksheets</span>
-                            </span>
-                        </button>
                     }
                     @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormMapping.Generate)
                         && await PermissionChecker.IsGrantedAsync(AIPermissions.FormWorksheet.Generate))
                     {
-                        <button type="button" id="btn-restart-ai-flow" class="btn btn-outline-danger ai-generate-btn"
+                        <button type="button" id="btn-restart-ai-flow" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn d-none"
+                                data-ai-review-action="true"
                                 title="Delete AI workflow progress, AI worksheets, and saved mappings for this form version">
-                            <i class="unt-icon-sm fa-solid fa-rotate-left"></i>
-                            <span>Restart AI Flow</span>
+                            <span class="ai-button-content">
+                                <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
+                                <span>Restart AI Flow</span>
+                            </span>
                         </button>
                     }
                     <abp-button id="btn-save" text="Save" icon-type="Other" icon="fl fl-save"
@@ -426,4 +434,5 @@
     </abp-modal>
     <partial name="_AiSuggestionReviewModal" model="@mappingReviewModal" />
     <partial name="_AiSuggestionReviewModal" model="@worksheetReviewModal" />
+    <partial name="_AiSuggestionReviewModal" model="@scoresheetReviewModal" />
 </div>

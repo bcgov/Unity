@@ -19,4 +19,5 @@ public sealed class AiSuggestionReviewModalModel
     public bool PrimaryActionDisabled { get; init; }
     public string ReviewLaterActionId { get; init; } = string.Empty;
     public string DiscardActionId { get; init; } = string.Empty;
+    public string? SectionDataAttribute { get; init; }
 }

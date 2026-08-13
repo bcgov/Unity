@@ -14,6 +14,7 @@ using Unity.AI.Requests;
 using Unity.AI.Responses;
 using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.Worksheets;
+using Unity.Flex.Domain.Scoresheets;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.ApplicationForms.Mapping;
 using Unity.GrantManager.Applications;
@@ -357,7 +358,8 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
             worksheetRepository ?? Substitute.For<IWorksheetRepository>(),
             customFieldRepository ?? Substitute.For<IRepository<CustomField, Guid>>(),
             Substitute.For<IGenerationReviewRepository>(),
-            Substitute.For<Unity.Flex.Domain.WorksheetLinks.IWorksheetLinkRepository>());
+            Substitute.For<Unity.Flex.Domain.WorksheetLinks.IWorksheetLinkRepository>(),
+            Substitute.For<IScoresheetRepository>());
         return service;
     }
 }

@@ -61,11 +61,16 @@
         btnGenerateWorksheet: $('#btn-generate-worksheet'),
         btnGenerateScoresheet: $('#btn-generate-scoresheet'),
         btnReviewWorksheet: $('#btn-review-worksheet'),
+        scoresheetReviewModal: $('#aiScoresheetReviewModal'),
+        scoresheetReviewFields: $('#aiScoresheetReviewFields'),
+        scoresheetReviewEmpty: $('#aiScoresheetReviewEmpty'),
+        scoresheetReviewSelectAll: $('#aiScoresheetReviewSelectAll'),
+        scoresheetTitle: $('#aiScoresheetTitle'),
+        btnCreateScoresheetDraft: $('#btn-create-ai-scoresheet-draft'),
+        btnDiscardScoresheet: $('#btn-discard-ai-scoresheet'),
         btnPublishAssignWorksheets: $('#btn-publish-assign-worksheets'),
         btnGenerateFinalMapping: $('#btn-generate-final-mapping'),
         btnReviewFinalMapping: $('#btn-review-final-mapping'),
-        btnGenerateNextMapping: $('#btn-generate-next-mapping'),
-        btnGenerateNextWorksheets: $('#btn-generate-next-worksheets'),
         btnRestartAiFlow: $('#btn-restart-ai-flow'),
         worksheetReviewModal: $('#aiWorksheetReviewModal'),
         mappingReviewModal: $('#aiMappingReviewModal'),
@@ -107,6 +112,7 @@
         setupTooltips();
         initializeUIConfiguration();
         loadMappingReview(false);
+        loadAiScoresheetReview(false);
     }
 
     function setupTooltips() {
@@ -140,10 +146,14 @@
         });
         UIElements.btnGenerateWorksheet.on('click', queueFormWorksheet);
         UIElements.btnGenerateFinalMapping.on('click', finalizeMappingReview);
-        UIElements.btnGenerateNextMapping.on('click', queueFormMapping);
-        UIElements.btnGenerateNextWorksheets.on('click', queueFormWorksheet);
         UIElements.btnRestartAiFlow.on('click', restartAiFlow);
         UIElements.btnGenerateScoresheet.on('click', queueFormScoresheet);
+        UIElements.btnCreateScoresheetDraft.on('click', createAiScoresheetDraft);
+        UIElements.btnDiscardScoresheet.on('click', discardAiScoresheetSuggestions);
+        UIElements.scoresheetReviewFields.on('change', 'input[data-question-id]', updateAiScoresheetReview);
+        UIElements.scoresheetReviewFields.on('change', 'input[data-section-id]', toggleAiScoresheetSection);
+        UIElements.scoresheetReviewSelectAll.on('change', toggleAiScoresheetReviewAll);
+        UIElements.scoresheetTitle.on('input', updateAiScoresheetDraftButton);
         UIElements.btnReviewWorksheet.on('click', loadAiWorksheetReview);
         UIElements.btnAddMapping.on('click', addSelectedMappingSuggestion);
         UIElements.btnReviewLaterMapping.on('click', function () {
@@ -232,6 +242,11 @@
         const $button = $(buttonElement);
         const existingHtml = $button.html();
 
+        if ($button.attr('data-ai-pending') === 'true') {
+            loadAiScoresheetReview(true);
+            return;
+        }
+
         if ($button.prop('disabled')) {
             return;
         }
@@ -275,7 +290,6 @@
         }
 
         const buttonElement = triggerButton?.currentTarget || triggerButton?.target || triggerButton || UIElements.btnGenerateWorksheet?.get?.(0);
-        const $button = $(buttonElement);
 
         if (isAiWorksheetPending()) {
             loadAiWorksheetReview();
@@ -283,7 +297,7 @@
         }
 
         startWorksheetPhase(function () {
-            queueFormWorksheetCore(triggerButton);
+            queueFormWorksheetCore(buttonElement);
         });
     }
 
@@ -293,10 +307,6 @@
         const buttonElement = triggerButton?.currentTarget || triggerButton?.target || triggerButton || UIElements.btnGenerateWorksheet?.get?.(0);
         const $button = $(buttonElement);
         const existingHtml = $button.html();
-
-        if ($button.prop('disabled')) {
-            return;
-        }
 
         globalThis.AIGenerationButtonState?.setGenerating($button);
 
@@ -611,6 +621,7 @@
         UIElements.mappingReviewModal.modal('hide');
         abp.notify.success('', 'Publish and assign the worksheet drafts, then return here to generate mapping.');
         loadMappingReview(false);
+        loadAiScoresheetReview(false);
     }
 
     function finalizeMappingReview() {
@@ -660,10 +671,165 @@
     }
 
     function refreshScoresheetAfterGeneration() {
-        abp.notify.success('', 'Scoresheet generated and assigned successfully. Reloading page.');
-        setTimeout(function () {
-            globalThis.location.reload();
-        }, 500);
+        setAiScoresheetPending(true);
+        abp.notify.success('', 'Scoresheet suggestions are ready for review.');
+        loadAiScoresheetReview(true);
+    }
+
+    function setAiScoresheetPending(isPending) {
+        UIElements.btnGenerateScoresheet.attr('data-ai-pending', isPending ? 'true' : 'false');
+        UIElements.btnGenerateScoresheet.find('.ai-button-content span:last-child').text(
+            isPending ? 'Review Scoresheet' : 'Generate Scoresheet');
+    }
+
+    function loadAiScoresheetReview(showModal = true) {
+        const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
+        if (!validateGuid(formVersion)) {
+            return;
+        }
+
+        return abp.ajax({
+            url: `/api/app/application-form-version/pending-ai-scoresheet?formVersionId=${encodeURIComponent(formVersion)}`,
+            type: 'GET'
+        }).done(function (review) {
+            if (!review) {
+                setAiScoresheetPending(false);
+                UIElements.scoresheetReviewModal.modal('hide');
+                return;
+            }
+
+            setAiScoresheetPending(true);
+            renderAiScoresheetReview(review);
+            if (showModal) {
+                UIElements.scoresheetReviewModal.modal('show');
+            }
+        }).fail(function () {
+            if (showModal) {
+                abp.notify.error('', 'Unable to load AI scoresheet suggestions.');
+            }
+        });
+    }
+
+    function renderAiScoresheetReview(review) {
+        UIElements.scoresheetReviewFields.empty();
+        UIElements.scoresheetReviewSelectAll.prop('checked', false);
+        UIElements.scoresheetTitle.val(review.title || '');
+        UIElements.scoresheetReviewFields.attr('data-session-id', review.sessionId || '');
+
+        const sections = review.sections || [];
+        UIElements.scoresheetReviewEmpty.toggle(sections.length === 0);
+        sections.forEach(function (section) {
+            const $section = $('<div/>', { class: 'ai-suggestion-review__section' });
+            const $header = $('<div/>', { class: 'ai-suggestion-review__section-header' });
+            $('<span/>', { text: section.name || 'Section' }).appendTo($header);
+            $('<label/>', { class: 'form-check-label' })
+                .append($('<input/>', { type: 'checkbox', class: 'form-check-input', 'data-section-id': section.id }))
+                .append(' Select all')
+                .appendTo($header);
+            $section.append($header);
+
+            (section.questions || []).forEach(function (question) {
+                const $row = $('<div/>', { class: 'ai-suggestion-review__field' });
+                const $checkbox = $('<input/>', {
+                    type: 'checkbox',
+                    class: 'form-check-input',
+                    'data-question-id': question.id,
+                    'data-question-section-id': section.id,
+                    checked: question.selected !== false
+                });
+                $('<div/>', { class: 'ai-suggestion-review__source', text: question.label || question.name || '' }).prepend($checkbox).appendTo($row);
+                $('<div/>', { class: 'ai-suggestion-review__arrow', text: '→' }).appendTo($row);
+                $('<div/>', { class: 'ai-suggestion-review__target', text: section.name || '' }).appendTo($row);
+                $section.append($row);
+            });
+            UIElements.scoresheetReviewFields.append($section);
+        });
+
+        updateAiScoresheetReview();
+    }
+
+    function updateAiScoresheetReview() {
+        UIElements.scoresheetReviewFields.find('input[data-section-id]').each(function () {
+            const sectionId = $(this).attr('data-section-id');
+            const $questions = UIElements.scoresheetReviewFields.find('input[data-question-section-id]').filter(function () {
+                return $(this).attr('data-question-section-id') === sectionId;
+            });
+            $(this).prop('checked', $questions.length > 0 && $questions.filter(':checked').length === $questions.length);
+        });
+        const $questions = UIElements.scoresheetReviewFields.find('input[data-question-id]');
+        UIElements.scoresheetReviewSelectAll.prop('checked', $questions.length > 0 && $questions.filter(':checked').length === $questions.length);
+        updateAiScoresheetDraftButton();
+    }
+
+    function toggleAiScoresheetSection() {
+        const sectionId = $(this).attr('data-section-id');
+        const checked = $(this).prop('checked');
+        UIElements.scoresheetReviewFields.find('input[data-question-section-id]').filter(function () {
+            return $(this).attr('data-question-section-id') === sectionId;
+        }).prop('checked', checked);
+        updateAiScoresheetReview();
+    }
+
+    function toggleAiScoresheetReviewAll() {
+        UIElements.scoresheetReviewFields.find('input[data-question-id]').prop('checked', $(this).prop('checked'));
+        updateAiScoresheetReview();
+    }
+
+    function updateAiScoresheetDraftButton() {
+        const title = String(UIElements.scoresheetTitle.val() || '').trim();
+        const selected = UIElements.scoresheetReviewFields.find('input[data-question-id]:checked').length;
+        UIElements.btnCreateScoresheetDraft.prop('disabled', !title || selected === 0);
+    }
+
+    function createAiScoresheetDraft() {
+        const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
+        const sessionId = String(UIElements.scoresheetReviewFields.attr('data-session-id') || '').trim();
+        const title = String(UIElements.scoresheetTitle.val() || '').trim();
+        const selectedQuestionIds = UIElements.scoresheetReviewFields.find('input[data-question-id]:checked').map(function () {
+            return $(this).attr('data-question-id');
+        }).get();
+        if (!validateGuid(formVersion) || !validateGuid(sessionId) || !title || selectedQuestionIds.length === 0) {
+            updateAiScoresheetDraftButton();
+            return;
+        }
+
+        UIElements.btnCreateScoresheetDraft.prop('disabled', true);
+        abp.ajax({
+            url: `/api/app/application-form-version/create-ai-scoresheet-draft?formVersionId=${encodeURIComponent(formVersion)}`,
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ sessionId: sessionId, title: title, selectedQuestionIds: selectedQuestionIds })
+        }).done(function () {
+            abp.notify.success('', 'Scoresheet draft created.');
+            loadAiScoresheetReview(true);
+        }).fail(function (error) {
+            abp.notify.error('', error?.responseJSON?.error?.message || 'Unable to create the scoresheet draft.');
+            updateAiScoresheetDraftButton();
+        });
+    }
+
+    function discardAiScoresheetSuggestions() {
+        const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
+        if (!validateGuid(formVersion)) {
+            return;
+        }
+        abp.message.confirm('This will permanently remove the remaining AI scoresheet suggestions.', 'Discard remaining suggestions?')
+            .then(function (confirmed) {
+                if (!confirmed) return;
+                UIElements.btnDiscardScoresheet.prop('disabled', true);
+                abp.ajax({
+                    url: `/api/app/application-form-version/discard-ai-scoresheet-suggestions?formVersionId=${encodeURIComponent(formVersion)}`,
+                    type: 'POST'
+                }).done(function () {
+                    setAiScoresheetPending(false);
+                    UIElements.scoresheetReviewModal.modal('hide');
+                    abp.notify.success('', 'Remaining AI scoresheet suggestions discarded.');
+                }).fail(function () {
+                    abp.notify.error('', 'Unable to discard the remaining AI scoresheet suggestions.');
+                }).always(function () {
+                    UIElements.btnDiscardScoresheet.prop('disabled', false);
+                });
+            });
     }
 
     function monitorFormMappingGeneration(applicationId, $button, existingHtml) {
@@ -715,8 +881,6 @@
     function updateWorkflowActions(review) {
         const action = getWorkflowAction(review);
         const state = getWorkflowState(review);
-        const actions = (review?.availableActions || []).map(getActionName);
-        const isActionAvailable = name => actions.includes(name);
         const isInitial = action === 'GenerateInitialMapping';
         const isInitialReview = action === 'ReviewInitialMapping';
         const isGenerateWorksheets = action === 'GenerateWorksheets';
@@ -733,8 +897,7 @@
         UIElements.btnPublishAssignWorksheets.toggleClass('d-none', !isPublishAssign);
         UIElements.btnGenerateFinalMapping.toggleClass('d-none', !isFinalMapping);
         UIElements.btnReviewFinalMapping.toggleClass('d-none', !isFinalReview);
-        UIElements.btnGenerateNextMapping.toggleClass('d-none', !isCompleted || !isActionAvailable('GenerateMapping'));
-        UIElements.btnGenerateNextWorksheets.toggleClass('d-none', !isCompleted || !isActionAvailable('GenerateWorksheetsNextCycle'));
+        UIElements.btnRestartAiFlow.toggleClass('d-none', !isCompleted);
         UIElements.btnGenerate.prop('disabled', !review?.actionEnabled && isInitial);
         UIElements.btnGenerateFinalMapping.prop('disabled', !review?.actionEnabled);
 
@@ -761,20 +924,6 @@
             return review.action;
         }
         return getEnumName(review?.workflowAction, {
-            10: 'GenerateInitialMapping',
-            20: 'ReviewInitialMapping',
-            30: 'GenerateWorksheets',
-            40: 'ReviewWorksheets',
-            50: 'PublishAndAssignWorksheets',
-            60: 'GenerateFinalMapping',
-            70: 'ReviewFinalMapping',
-            80: 'GenerateMapping',
-            90: 'GenerateWorksheetsNextCycle'
-        });
-    }
-
-    function getActionName(action) {
-        return getEnumName(action, {
             10: 'GenerateInitialMapping',
             20: 'ReviewInitialMapping',
             30: 'GenerateWorksheets',

@@ -16,6 +16,7 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
+using Volo.Abp.Guids;
 
 using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 
@@ -25,7 +26,9 @@ public sealed class FormScoresheetOperationExecutor(
     IApplicationFormVersionRepository applicationFormVersionRepository,
     IApplicationFormRepository applicationFormRepository,
     IScoresheetRepository scoresheetRepository,
-    IFormScoresheetService aiService) : AIGenerationOperationExecutor, ITransientDependency
+    IFormScoresheetService aiService,
+    IGenerationReviewRepository generationReviewRepository,
+    IGuidGenerator guidGenerator) : AIGenerationOperationExecutor, ITransientDependency
 {
     private static readonly JsonSerializerOptions CaseInsensitiveJsonOptions = new()
     {
@@ -41,10 +44,15 @@ public sealed class FormScoresheetOperationExecutor(
         var formVersion = await applicationFormVersionRepository.GetAsync(applicationFormVersionId);
         var applicationForm = await applicationFormRepository.GetAsync(formVersion.ApplicationFormId);
         var scoresheetName = BuildScoresheetName(formVersion.Id, applicationForm.Id);
-        var existingScoresheet = await scoresheetRepository.GetByNameAsync(scoresheetName, true)
-            ?? (applicationForm.ScoresheetId.HasValue
-                ? await scoresheetRepository.GetWithChildrenAsync(applicationForm.ScoresheetId.Value)
-                : null);
+        var existingScoresheet = await scoresheetRepository.GetByNameAsync(scoresheetName, true);
+        var review = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(
+            AIGenerationOperations.FormScoresheet,
+            applicationFormVersionId);
+
+        if (existingScoresheet != null && review?.Status == GenerationReviewStatus.Active)
+        {
+            return false;
+        }
 
         var promptData = new
         {
@@ -95,7 +103,7 @@ public sealed class FormScoresheetOperationExecutor(
         var scoresheet = existingScoresheet == null
             ? BuildScoresheet(importDto, scoresheetJson, scoresheetName)
             : RebuildScoresheet(existingScoresheet, importDto, scoresheetJson, scoresheetName);
-        scoresheet.Published = true;
+        scoresheet.Published = false;
         if (existingScoresheet == null)
         {
             await scoresheetRepository.InsertAsync(scoresheet);
@@ -105,8 +113,17 @@ public sealed class FormScoresheetOperationExecutor(
             await scoresheetRepository.UpdateAsync(scoresheet);
         }
 
-        applicationForm.ScoresheetId = scoresheet.Id;
-        await applicationFormRepository.UpdateAsync(applicationForm);
+        if (review == null || review.Status != GenerationReviewStatus.Active)
+        {
+            review = new GenerationReview(
+                guidGenerator.Create(),
+                AIGenerationOperations.FormScoresheet,
+                applicationFormVersionId,
+                review?.Sequence + 1 ?? 1);
+            await generationReviewRepository.InsertAsync(review);
+        }
+
+        await generationReviewRepository.UpdateAsync(review, true);
 
         return true;
     }

@@ -203,6 +203,24 @@
     padding-inline: 0.75rem;
 }
 
+.ai-suggestion-review__section-header {
+    align-items: center;
+    background: #eef3f7;
+    border-top: 1px solid #d8e1eb;
+    color: #334e68;
+    display: flex;
+    font-weight: 700;
+    justify-content: space-between;
+    padding: 0.65rem 0.75rem;
+}
+
+.ai-suggestion-review__source {
+    align-items: center;
+    display: flex;
+    gap: 0.5rem;
+    overflow-wrap: anywhere;
+}
+
 .ai-suggestion-review__field + .ai-suggestion-review__field {
     border-top: 1px solid #edf1f5;
 }

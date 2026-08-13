@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 using Unity.AI.Generation;
 using Unity.AI.Permissions;
 using Unity.Flex.Domain.Worksheets;
+using Unity.Flex.Domain.Scoresheets;
+using Unity.Flex.Scoresheets.Enums;
 using Unity.GrantManager.ApplicationForms.Mapping;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
@@ -26,7 +28,6 @@ using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
 using Volo.Abp.Uow;
-using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.Domain.WorksheetLinks;
 using Unity.Modules.Shared.Correlation;
 
@@ -45,7 +46,8 @@ namespace Unity.GrantManager.ApplicationForms
         IWorksheetRepository worksheetRepository,
         IRepository<CustomField, Guid> customFieldRepository,
         IGenerationReviewRepository generationReviewRepository,
-        IWorksheetLinkRepository worksheetLinkRepository) :
+        IWorksheetLinkRepository worksheetLinkRepository,
+        IScoresheetRepository scoresheetRepository) :
         CrudAppService<
             ApplicationFormVersion,
             ApplicationFormVersionDto,
@@ -510,6 +512,7 @@ namespace Unity.GrantManager.ApplicationForms
             var formVersion = await Repository.GetAsync(formVersionId);
             var mappingReviews = await generationReviewRepository.GetListByOperationAndFormVersionAsync(AIGenerationOperations.FormMapping, formVersionId);
             var worksheetReviews = await generationReviewRepository.GetListByOperationAndFormVersionAsync(AIGenerationOperations.FormWorksheet, formVersionId);
+            var scoresheetReviews = await generationReviewRepository.GetListByOperationAndFormVersionAsync(AIGenerationOperations.FormScoresheet, formVersionId);
             var worksheetIds = worksheetReviews
                 .SelectMany(review => GetWorksheetReviewPayload(review).DraftWorksheetIds)
                 .Distinct()
@@ -530,7 +533,15 @@ namespace Unity.GrantManager.ApplicationForms
                 }
             }
 
-            await generationReviewRepository.DeleteManyAsync(mappingReviews.Concat(worksheetReviews), true);
+            var resetFormVersion = await formVersionRepository.GetAsync(formVersionId);
+            var suggestionScoresheet = await scoresheetRepository.GetByNameAsync(
+                BuildAiScoresheetSuggestionName(resetFormVersion.ApplicationFormId, resetFormVersion.Id), true);
+            if (suggestionScoresheet != null)
+            {
+                await scoresheetRepository.DeleteAsync(suggestionScoresheet, true);
+            }
+
+            await generationReviewRepository.DeleteManyAsync(mappingReviews.Concat(worksheetReviews).Concat(scoresheetReviews), true);
             formVersion.SubmissionHeaderMapping = "{}";
             await Repository.UpdateAsync(formVersion, true);
         }
@@ -684,6 +695,176 @@ namespace Unity.GrantManager.ApplicationForms
                 }
             }
         }
+
+        [HttpGet("api/app/application-form-version/pending-ai-scoresheet")]
+        public virtual async Task<AiScoresheetReviewDto?> GetPendingAiScoresheetAsync(Guid formVersionId)
+        {
+            await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormScoresheet);
+
+            var review = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(
+                AIGenerationOperations.FormScoresheet,
+                formVersionId);
+            if (review == null || review.Status != GenerationReviewStatus.Active)
+            {
+                return null;
+            }
+
+            var formVersion = await formVersionRepository.GetAsync(formVersionId);
+            var scoresheet = await scoresheetRepository.GetByNameAsync(
+                BuildAiScoresheetSuggestionName(formVersion.ApplicationFormId, formVersion.Id), true);
+            return scoresheet?.Published == false ? MapAiScoresheetReview(scoresheet) : null;
+        }
+
+        [HttpPost("api/app/application-form-version/create-ai-scoresheet-draft")]
+        public virtual async Task CreateAiScoresheetDraftAsync(Guid formVersionId, CreateAiScoresheetDraftDto input)
+        {
+            await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormScoresheet);
+
+            var suggestion = await GetPendingAiScoresheetEntityAsync(formVersionId);
+            if (suggestion == null || suggestion.Id != input.SessionId)
+            {
+                throw new UserFriendlyException("The AI scoresheet is no longer available for review.");
+            }
+
+            var title = input.Title?.Trim();
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                throw new UserFriendlyException("A scoresheet title is required.");
+            }
+
+            var selectedIds = input.SelectedQuestionIds?.ToHashSet() ?? [];
+            if (selectedIds.Count == 0)
+            {
+                throw new UserFriendlyException("Select at least one suggested question.");
+            }
+
+            var questions = suggestion.Sections.SelectMany(section => section.Fields).ToList();
+            if (selectedIds.Except(questions.Select(question => question.Id)).Any())
+            {
+                throw new UserFriendlyException("The AI scoresheet selection is invalid.");
+            }
+
+            var draft = new Scoresheet(GuidGenerator.Create(), title, $"ai-scoresheet-draft-{GuidGenerator.Create():N}");
+            foreach (var sourceSection in suggestion.Sections.OrderBy(section => section.Order))
+            {
+                var selectedQuestions = sourceSection.Fields
+                    .Where(question => selectedIds.Contains(question.Id))
+                    .OrderBy(question => question.Order)
+                    .ToList();
+                if (selectedQuestions.Count == 0)
+                {
+                    continue;
+                }
+
+                var section = new ScoresheetSection(GuidGenerator.Create(), sourceSection.Name, sourceSection.Order);
+                draft.AddSection(section);
+                foreach (var sourceQuestion in selectedQuestions)
+                {
+                    var draftQuestion = new Question(
+                        GuidGenerator.Create(),
+                        sourceQuestion.Name,
+                        sourceQuestion.Label,
+                        sourceQuestion.Type,
+                        sourceQuestion.Order,
+                        sourceQuestion.Description,
+                        sourceQuestion.Definition)
+                    {
+                        SectionId = section.Id
+                    };
+                    section.Fields.Add(draftQuestion);
+                }
+            }
+
+            await scoresheetRepository.InsertAsync(draft, true);
+
+            foreach (var question in questions.Where(question => selectedIds.Contains(question.Id)).ToList())
+            {
+                var sourceSection = suggestion.Sections.First(section => section.Fields.Contains(question));
+                sourceSection.Fields.Remove(question);
+            }
+
+            if (suggestion.Sections.All(section => section.Fields.Count == 0))
+            {
+                await scoresheetRepository.DeleteAsync(suggestion, true);
+                var review = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(
+                    AIGenerationOperations.FormScoresheet,
+                    formVersionId);
+                review?.Complete();
+                if (review != null)
+                {
+                    await generationReviewRepository.UpdateAsync(review, true);
+                }
+            }
+            else
+            {
+                await scoresheetRepository.UpdateAsync(suggestion, true);
+            }
+        }
+
+        [HttpPost("api/app/application-form-version/discard-ai-scoresheet-suggestions")]
+        public virtual async Task DiscardAiScoresheetSuggestionsAsync(Guid formVersionId)
+        {
+            await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormScoresheet);
+            var suggestion = await GetPendingAiScoresheetEntityAsync(formVersionId);
+            if (suggestion == null)
+            {
+                return;
+            }
+
+            await scoresheetRepository.DeleteAsync(suggestion, true);
+            var review = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(
+                AIGenerationOperations.FormScoresheet,
+                formVersionId);
+            if (review != null)
+            {
+                review.Discard();
+                await generationReviewRepository.UpdateAsync(review, true);
+            }
+        }
+
+        private async Task<Scoresheet?> GetPendingAiScoresheetEntityAsync(Guid formVersionId)
+        {
+            var review = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(
+                AIGenerationOperations.FormScoresheet,
+                formVersionId);
+            if (review == null || review.Status != GenerationReviewStatus.Active)
+            {
+                return null;
+            }
+
+            var formVersion = await formVersionRepository.GetAsync(formVersionId);
+            var scoresheet = await scoresheetRepository.GetByNameAsync(
+                BuildAiScoresheetSuggestionName(formVersion.ApplicationFormId, formVersion.Id), true);
+            return scoresheet?.Published == false ? scoresheet : null;
+        }
+
+        private static string BuildAiScoresheetSuggestionName(Guid formId, Guid formVersionId) =>
+            $"ai-form-{formId}-version-{formVersionId}-scoresheet";
+
+        private static AiScoresheetReviewDto MapAiScoresheetReview(Scoresheet scoresheet) => new()
+        {
+            SessionId = scoresheet.Id,
+            Title = scoresheet.Title,
+            Sections = scoresheet.Sections
+                .OrderBy(section => section.Order)
+                .Select(section => new AiScoresheetReviewSectionDto
+                {
+                    Id = section.Id,
+                    Name = section.Name,
+                    Order = section.Order,
+                    Questions = section.Fields.OrderBy(question => question.Order)
+                        .Select(question => new AiScoresheetReviewQuestionDto
+                        {
+                            Id = question.Id,
+                            SectionId = section.Id,
+                            Name = question.Name,
+                            Label = question.Label,
+                            Description = question.Description,
+                            Type = question.Type.ToString(),
+                            Selected = true
+                        }).ToList()
+                }).ToList()
+        };
 
         private async Task<Worksheet?> GetPendingAiWorksheetEntityAsync(Guid formVersionId)
         {
