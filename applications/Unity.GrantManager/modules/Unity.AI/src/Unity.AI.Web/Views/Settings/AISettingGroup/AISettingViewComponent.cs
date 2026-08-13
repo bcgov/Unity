@@ -31,7 +31,7 @@ public class AISettingViewComponent(ISettingProvider settingProvider) : AbpViewC
     {
         public override void ConfigureBundle(BundleConfigurationContext context)
         {
-            context.Files.Add("/Views/Shared/Scripts/AILegalDisclaimer.js");
+            context.Files.Add("/Views/Shared/Scripts/AiLegalDisclaimer.js");
             context.Files.Add("/Views/Settings/AISettingGroup/Default.js");
         }
     }
