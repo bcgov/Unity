@@ -22,7 +22,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 table: "ApplicationForms",
                 type: "jsonb",
                 nullable: false,
-                defaultValue: "{}");
+                defaultValue: "[]");
         }
 
         /// <inheritdoc />
