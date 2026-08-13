@@ -986,7 +986,7 @@
             .done(function (review) {
                 setAiWorkflowReady();
                 updateWorkflowActions(review);
-                if (!review || !review.pendingSuggestions || review.pendingSuggestions.length === 0) {
+                if (!review?.pendingSuggestions?.length) {
                     if (showModal && (review?.noSuggestionsGenerated ||
                         (review?.unchangedSuggestionCount > 0 && review?.state === 'Completed'))) {
                         showEmptyReviewConfirmation(reviewConfigs.mapping);
