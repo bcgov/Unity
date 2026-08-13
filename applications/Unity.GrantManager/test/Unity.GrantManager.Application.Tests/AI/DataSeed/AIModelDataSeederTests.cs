@@ -87,7 +87,7 @@ public class AIModelDataSeederTests
         DeserializeSettings(existingModel.SettingsJson).MaxOutputTokenCountSupported.ShouldBeFalse();
         await modelRepository.Received(1).UpdateAsync(existingModel, autoSave: true);
         await modelRepository.DidNotReceive().InsertAsync(
-            Arg.Is<AIModel>(model => model?.Name == existingModel.Name),
+            Arg.Is<AIModel>(model => model != null && model.Name == existingModel.Name),
             Arg.Any<bool>(),
             Arg.Any<System.Threading.CancellationToken>());
     }
