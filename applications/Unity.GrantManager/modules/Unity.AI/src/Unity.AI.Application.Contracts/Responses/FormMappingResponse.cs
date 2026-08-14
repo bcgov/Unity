@@ -7,6 +7,8 @@ public class FormMappingResponse
 {
     public string Mapping { get; set; } = string.Empty;
 
+    public string? FailureReason { get; set; }
+
     [JsonPropertyName("coreFieldMatches")]
     public List<FormMappingMatchResponse> CoreFieldMatches { get; set; } = [];
 

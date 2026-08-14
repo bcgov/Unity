@@ -27,7 +27,9 @@ public class AIConfigurationAppService(
             AutomaticGenerationEnabled = await _settingProvider.GetAsync<bool>(
                 AISettings.AutomaticGenerationEnabled, defaultValue: false),
             ManualGenerationEnabled = await _settingProvider.GetAsync<bool>(
-                AISettings.ManualGenerationEnabled, defaultValue: false)
+                AISettings.ManualGenerationEnabled, defaultValue: false),
+            ReportingEnabled = await _settingProvider.GetAsync<bool>(
+                AISettings.ReportingEnabled, defaultValue: false)
         };
     }
 
@@ -44,6 +46,12 @@ public class AIConfigurationAppService(
         await _settingManager.SetAsync(
             AISettings.ManualGenerationEnabled,
             input.ManualGenerationEnabled.ToString().ToLowerInvariant(),
+            TenantSettingValueProvider.ProviderName,
+            _currentTenant.Id?.ToString());
+
+        await _settingManager.SetAsync(
+            AISettings.ReportingEnabled,
+            input.ReportingEnabled.ToString().ToLowerInvariant(),
             TenantSettingValueProvider.ProviderName,
             _currentTenant.Id?.ToString());
     }

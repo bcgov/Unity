@@ -106,7 +106,9 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
                 Arg.Any<TimeSpan?>())
             .Returns(callInfo =>
             {
-                jobs.Add(callInfo.Arg<AIGenerationBackgroundJobArgs>());
+                var job = callInfo.Arg<AIGenerationBackgroundJobArgs>();
+                ArgumentNullException.ThrowIfNull(job);
+                jobs.Add(job);
                 return Task.FromResult(string.Empty);
             });
         return backgroundJobManager;
@@ -141,11 +143,21 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
         asyncQueryableExecuter.FirstOrDefaultAsync(
                 Arg.Any<IQueryable<AIOperation>>(),
                 Arg.Any<CancellationToken>())
-            .Returns(callInfo => Task.FromResult(callInfo.Arg<IQueryable<AIOperation>>().FirstOrDefault()));
+            .Returns(callInfo =>
+            {
+                var operations = callInfo.Arg<IQueryable<AIOperation>>();
+                ArgumentNullException.ThrowIfNull(operations);
+                return Task.FromResult(operations.FirstOrDefault());
+            });
         asyncQueryableExecuter.FirstOrDefaultAsync(
                 Arg.Any<IQueryable<AIGenerationRequest>>(),
                 Arg.Any<CancellationToken>())
-            .Returns(callInfo => Task.FromResult(callInfo.Arg<IQueryable<AIGenerationRequest>>().FirstOrDefault()));
+            .Returns(callInfo =>
+            {
+                var requests = callInfo.Arg<IQueryable<AIGenerationRequest>>();
+                ArgumentNullException.ThrowIfNull(requests);
+                return Task.FromResult(requests.FirstOrDefault());
+            });
 
         return new ApplicationGenerationQueue(
             backgroundJobManager,
