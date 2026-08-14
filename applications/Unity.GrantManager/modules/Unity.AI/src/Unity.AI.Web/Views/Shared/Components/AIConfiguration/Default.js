@@ -28,21 +28,32 @@ $(function () {
     }
 
     function handleSave() {
+        const automaticEnabled = UIElements.automaticCheckbox.is(':checked');
+        const manualEnabled = UIElements.manualCheckbox.is(':checked');
+        const turningOn = (automaticEnabled && !lastSavedAIValues.automaticallyGenerateAIAnalysis) ||
+            (manualEnabled && !lastSavedAIValues.manuallyInitiateAIAnalysis);
+
+        unity.aI.legalDisclaimer.confirmIfNeeded(turningOn, function () {
+            saveAiConfig(automaticEnabled, manualEnabled);
+        });
+    }
+
+    function saveAiConfig(automaticEnabled, manualEnabled) {
         UIElements.btnSave.prop('disabled', true);
 
         abp.ajax({
             url: `/api/app/application-form/${UIElements.formId.val()}/ai-config`,
             type: 'PATCH',
             data: JSON.stringify({
-                automaticallyGenerateAIAnalysis: UIElements.automaticCheckbox.is(':checked'),
-                manuallyInitiateAIAnalysis: UIElements.manualCheckbox.is(':checked')
+                automaticallyGenerateAIAnalysis: automaticEnabled,
+                manuallyInitiateAIAnalysis: manualEnabled
             }),
             contentType: 'application/json'
         })
             .done(function () {
                 lastSavedAIValues = {
-                    automaticallyGenerateAIAnalysis: UIElements.automaticCheckbox.is(':checked'),
-                    manuallyInitiateAIAnalysis: UIElements.manualCheckbox.is(':checked')
+                    automaticallyGenerateAIAnalysis: automaticEnabled,
+                    manuallyInitiateAIAnalysis: manualEnabled
                 };
                 abp.notify.success('AI configuration saved successfully.');
             })
