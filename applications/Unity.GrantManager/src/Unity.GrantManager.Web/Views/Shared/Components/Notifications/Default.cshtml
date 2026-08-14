@@ -122,10 +122,17 @@
                                 <div class="template-preview-container">
                                     <div id="templatePreview" class="p-2 template-preview-text"></div>
                                 </div>
+                                <label id="templateAttachmentsLabel" class="form-label hidden-section">Attachments (<span id="templateAttachmentsCount">0</span>)</label>
+                                <div id="template-attachments-section" class="template-attachments-section hidden-section">
+                                    <table id="TemplateAttachmentsTable" class="table table-striped attachments-table nowrap"></table>
+                                </div>
                             </div>
 
                         </div>
                     </form>
+                </div>
+                <div id="template-attachments-note" class="notification-info-note">
+                    <strong>Note:</strong> Email templates and attachments cannot be edited here. To make changes, update the selected template in <a id="templateConfigurationLink" href="/ConfigurationManagement">Configuration Management</a>.
                 </div>
                 <div class="notification-info-note">
                     <strong>Note:</strong> If Recipients are not found, then no email will be drafted or sent.
