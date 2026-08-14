@@ -310,7 +310,10 @@ namespace Unity.AI.Runtime.Execution
                 {
                     Worksheet = result.Outcome == AIOperationOutcome.Success
                         ? AIResponseJson.CleanJsonResponse(result.Content)
-                        : "{}"
+                        : "{}",
+                    FailureReason = result.Outcome == AIOperationOutcome.Success
+                        ? null
+                        : result.FailureReason ?? $"Worksheet generation failed with outcome {result.Outcome}."
                 };
             }
             catch (OperationCanceledException)
@@ -320,7 +323,7 @@ namespace Unity.AI.Runtime.Execution
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Form worksheet generation failed.");
-                return new FormWorksheetResponse();
+                return new FormWorksheetResponse { FailureReason = ex.Message };
             }
         }
 
