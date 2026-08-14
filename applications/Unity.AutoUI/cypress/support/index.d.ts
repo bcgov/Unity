@@ -89,7 +89,8 @@ declare namespace Cypress {
      * Uses session cookies automatically from Cypress.
      *
      * @param options - Optional filters for selecting submissions
-     * @returns Chainable containing the confirmation ID
+     * @returns Chainable containing the confirmation ID, or an empty string
+     *   if no application matches the given filters (does not throw)
      *
      * @example
      * // Get first available submission
@@ -108,5 +109,15 @@ declare namespace Cypress {
      * @returns Chainable containing array of grant applications
      */
     fetchAllSubmissions(): Chainable<GrantApplication[]>;
+
+    /**
+     * Seeds exactly one submission in CHEFS via API (logs in once via the
+     * CHEFS UI to capture an auth token, then POSTs the submission directly)
+     * and writes the confirmation ID to
+     * cypress/scripts/last-submission-id.json. Disabled for PROD.
+     *
+     * @returns Chainable containing the confirmation ID of the created submission
+     */
+    seedApprovalFlowSubmission(): Chainable<string>;
   }
 }

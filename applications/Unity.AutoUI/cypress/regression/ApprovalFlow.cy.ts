@@ -506,10 +506,25 @@ const APPLICATIONS_PATH = "GrantApplications";
           return;
         }
 
-        // Priority 3: fetch the latest matching submission from the Unity API
+        // Priority 3: fetch the latest matching submission from the Unity API,
+        // falling back to seeding a fresh one via CHEFS if none currently
+        // match (e.g. every existing seeded submission has already been
+        // approved by a prior run) — so this spec is self-sufficient and
+        // doesn't depend on a separate seed step running first.
         cy.fetchDynamicSubmission(TEST_CONFIG.fetchOptions).then((id) => {
-          submissionId = id;
-          cy.log(`✅ Fetched dynamic submission ID: ${submissionId}`);
+          if (id) {
+            submissionId = id;
+            cy.log(`✅ Fetched dynamic submission ID: ${submissionId}`);
+            return;
+          }
+
+          cy.log(
+            "⚠️ No matching submission found — seeding a fresh one via CHEFS",
+          );
+          cy.seedApprovalFlowSubmission().then((seededId) => {
+            submissionId = seededId;
+            cy.log(`✅ Seeded and using submission ID: ${submissionId}`);
+          });
         });
       },
     );
