@@ -1403,6 +1403,7 @@ $(function () {
                     }
                 }
             } catch (err) {
+                console.error('Unable to apply saved mapping.', err);
                 abp.notify.error('', aiL('AI:SavedMappingApplyFailed'));
             }
         }
