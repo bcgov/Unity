@@ -1323,10 +1323,10 @@ $(function () {
     function handleSaveEditMapping() {
         try {
             let jsonText = $('#jsonText').val();
-            $.parseJSON(jsonText);
+            JSON.parse(jsonText);
             let mappingJsonStr = jsonText.replaceAll(/\s+/g, ' ').replaceAll(/(\r\n|\n|\r)/gm, "");
             UIElements.btnSaveMapping.prop('disabled', true);
-            handleSaveMapping($.parseJSON(mappingJsonStr));
+            handleSaveMapping(JSON.parse(mappingJsonStr));
             handleCancelMapping();
 
             abp.notify.success(
