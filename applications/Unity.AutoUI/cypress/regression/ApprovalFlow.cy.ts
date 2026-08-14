@@ -619,6 +619,25 @@ const APPLICATIONS_PATH = "GrantApplications";
       .enterSupplierNumber(TEST_CONFIG.supplierNumber)
       .clickElsewhere()
       .clickPaymentInfoSave();
+
+    // Saving the supplier number calls out to CAS to resolve it, which can
+    // transiently fail with "GetAuthTokenAsync: Error retrieving Token".
+    // When that happens the save silently doesn't attach a supplier, leaving
+    // SupplierId empty for the rest of the flow — dismiss and retry once.
+    cy.get("body").then(($body) => {
+      const hasTokenError =
+        $body.text().includes("GetAuthTokenAsync") ||
+        $body.text().includes("Error retrieving Token");
+
+      if (hasTokenError) {
+        cy.log("⚠️ Transient CAS token error on payment save — retrying once");
+        detailsPage.dismissErrorModalIfPresent();
+        detailsPage
+          .enterSupplierNumber(TEST_CONFIG.supplierNumber)
+          .clickElsewhere()
+          .clickPaymentInfoSave();
+      }
+    });
   });
 
   // Must use function() (not arrow) so this.skip() is accessible
