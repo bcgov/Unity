@@ -180,6 +180,7 @@ public class ApplicationGenerationQueue(
                     ApplicationFormVersionId = request.ApplicationFormVersionId,
                     AttachmentIds = request.AttachmentIds,
                     OperationId = persistedOperation.Id,
+                    GenerationRequestId = generationRequest.Id,
                     PromptVersion = request.PromptVersion,
                     RequestedByUserId = currentUser.Id,
                     TenantId = tenantId

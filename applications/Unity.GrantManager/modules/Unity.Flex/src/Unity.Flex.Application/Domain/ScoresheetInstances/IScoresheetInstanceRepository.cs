@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 
@@ -8,5 +8,6 @@ namespace Unity.Flex.Domain.ScoresheetInstances
     {
         Task<ScoresheetInstance?> GetByCorrelationAsync(Guid correlationId);
         Task<ScoresheetInstance?> GetWithAnswersAsync(Guid scoresheetInstanceId);
+        Task<bool> AnyByScoresheetAsync(Guid scoresheetId);
     }
 }

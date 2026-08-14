@@ -21,6 +21,25 @@ Use these existing operations as the canonical references:
 6. Expose a generate surface and UI only when users need one.
 7. Add focused catalog, runtime, executor, and persistence tests.
 
+## Staged form mapping
+
+`FormMapping` and `FormWorksheet` remain independent operations. The Mapping
+tab can guide an administrator through them as a staged form-configuration flow:
+
+1. Generate mapping suggestions using the form fields, core fields, assigned
+   custom fields, and current saved mapping.
+2. Persist suggestions for review; accept them individually so existing
+   non-empty mappings always win.
+3. Generate and review `FormWorksheet` suggestions, either after mapping review
+   or directly from the idle state.
+4. Publish and assign created worksheet drafts through the normal worksheet
+   configuration UI.
+5. Invoke the same `FormMapping` operation again after publication and
+   assignment.
+
+Keep mapping review state scoped to the form version. Do not auto-link unpublished
+AI worksheet drafts to a UI anchor just to make their fields visible to mapping.
+
 ## Rules
 - Keep prompt content and operation/model configuration in the database.
 - Reuse the shared generation pipeline.

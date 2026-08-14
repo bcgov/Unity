@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,6 +20,7 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
+using Volo.Abp.Guids;
 
 using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 
@@ -31,6 +32,8 @@ public sealed class FormWorksheetOperationExecutor(
     IWorksheetRepository worksheetRepository,
     IApplicationFormVersionMappingReadService mappingReadService,
     IFormWorksheetService aiService,
+    IGenerationReviewRepository generationReviewRepository,
+    IGuidGenerator guidGenerator,
     ILogger<FormWorksheetOperationExecutor> logger) : AIGenerationOperationExecutor, ITransientDependency
 {
     private static readonly JsonSerializerOptions CaseInsensitiveJsonOptions = new()
@@ -46,22 +49,25 @@ public sealed class FormWorksheetOperationExecutor(
             ?? throw new InvalidOperationException("Form worksheet generation requires an application form version.");
         var formVersion = await applicationFormVersionRepository.GetAsync(applicationFormVersionId);
         var applicationForm = await applicationFormRepository.GetAsync(formVersion.ApplicationFormId);
-        var worksheetName = AiWorksheetSuggestionName.Build(applicationForm.Id, formVersion.Id);
+        var baseWorksheetName = AiWorksheetSuggestionName.Build(applicationForm.Id, formVersion.Id);
+        var review = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(
+            AIGenerationOperations.FormWorksheet,
+            applicationFormVersionId);
+        if (review?.Status == GenerationReviewStatus.Active)
+        {
+            return false;
+        }
+
+        var worksheetName = baseWorksheetName;
         var existingWorksheet = await worksheetRepository.GetByNameAsync(worksheetName, true);
+        EnsureCanonicalSuggestionWorksheetState(existingWorksheet);
+        var noSuggestionsGenerated = existingWorksheet != null &&
+            existingWorksheet.Sections.SelectMany(section => section.Fields).Any() == false;
         if (existingWorksheet != null)
         {
-            if (existingWorksheet.Published)
-            {
-                logger.LogWarning(
-                    "A published worksheet already uses AI suggestion name {WorksheetName}; leaving it unchanged.",
-                    worksheetName);
-            }
-            else
-            {
-                logger.LogInformation(
-                    "An AI suggestion worksheet is pending review for form version {FormVersionId}; leaving it unchanged.",
-                    formVersion.Id);
-            }
+            logger.LogInformation(
+                "An AI suggestion worksheet is pending review for form version {FormVersionId}; leaving it unchanged.",
+                formVersion.Id);
         }
         else
         {
@@ -95,13 +101,47 @@ public sealed class FormWorksheetOperationExecutor(
             });
 
             var suggestions = ParseWorksheetDefinition(worksheetResponse.Worksheet);
-            var worksheet = BuildWorksheet(suggestions, worksheetName);
-            worksheet.SetPublished(false);
-            await worksheetRepository.InsertAsync(worksheet);
+            noSuggestionsGenerated = suggestions.Count == 0;
+            if (!noSuggestionsGenerated)
+            {
+                var worksheet = BuildWorksheet(suggestions, worksheetName);
+                worksheet.SetPublished(false);
+                await worksheetRepository.InsertAsync(worksheet);
+            }
 
         }
 
+        if (review == null || review.Status != GenerationReviewStatus.Active)
+        {
+            review = new GenerationReview(
+                guidGenerator.Create(),
+                AIGenerationOperations.FormWorksheet,
+                applicationFormVersionId,
+                review?.Sequence + 1 ?? 1);
+            await generationReviewRepository.InsertAsync(review);
+        }
+
+        if (noSuggestionsGenerated)
+        {
+            review.SetReviewData(JsonSerializer.Serialize(new FormWorksheetReviewPayload
+            {
+                NoSuggestionsGenerated = true
+            }));
+            review.Complete();
+        }
+
+        await generationReviewRepository.UpdateAsync(review, true);
+
         return existingWorksheet == null;
+    }
+
+    internal static void EnsureCanonicalSuggestionWorksheetState(Worksheet? worksheet)
+    {
+        if (worksheet?.Published == true)
+        {
+            throw new InvalidOperationException(
+                "The canonical AI suggestion worksheet is published and cannot be regenerated.");
+        }
     }
 
     internal static List<AiWorksheetFieldSuggestion> ParseWorksheetDefinition(string json)

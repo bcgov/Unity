@@ -908,9 +908,6 @@ function queueApplicationScoring(triggerButton = null) {
 
 $(function () {
     // Static buttons
-    $(document).on('click', '#regenerateAiScoresheetBtn', function () {
-        queueApplicationScoring();
-    });
     $(document).on('click', '#btn-expand-all', function () {
         expandAllAccordions('assessment-scoresheet');
     });

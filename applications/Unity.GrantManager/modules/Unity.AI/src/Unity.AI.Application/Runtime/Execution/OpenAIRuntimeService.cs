@@ -357,9 +357,8 @@ namespace Unity.AI.Runtime.Execution
 
                 return new FormScoresheetResponse
                 {
-                    Scoresheet = result.Outcome == AIOperationOutcome.Success
-                        ? AIResponseJson.CleanJsonResponse(result.Content)
-                        : "{}"
+                    Scoresheet = AIResponseJson.CleanJsonResponse(result.Content),
+                    FailureReason = result.FailureReason
                 };
             }
             catch (OperationCanceledException)
@@ -406,7 +405,10 @@ namespace Unity.AI.Runtime.Execution
 
                 if (result.Outcome != AIOperationOutcome.Success)
                 {
-                    return new FormMappingResponse();
+                    return new FormMappingResponse
+                    {
+                        FailureReason = result.FailureReason ?? $"Mapping generation failed with outcome {result.Outcome}."
+                    };
                 }
 
                 return new FormMappingResponse
@@ -421,7 +423,7 @@ namespace Unity.AI.Runtime.Execution
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Mapping suggestion generation failed.");
-                return new FormMappingResponse();
+                return new FormMappingResponse { FailureReason = ex.Message };
             }
         }
 
@@ -449,7 +451,10 @@ namespace Unity.AI.Runtime.Execution
                         return lastResult;
                     }
 
-                    lastResult = lastResult.WithOutcome(AIOperationOutcome.InvalidOutput, validationResult.FailureCategory);
+                    lastResult = lastResult.WithOutcome(
+                        AIOperationOutcome.InvalidOutput,
+                        validationResult.FailureCategory,
+                        validationResult.Reason);
 
                     _logger.LogWarning(
                         "AI {OperationName} attempt {Attempt}/{MaxAttempts} returned invalid response shape ({FailureCategory}): {Reason}; will retry if attempts remain",
