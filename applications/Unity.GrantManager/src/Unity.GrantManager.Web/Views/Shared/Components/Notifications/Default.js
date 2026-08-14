@@ -649,7 +649,7 @@
                         className: 'data-table-header',
                         width: '90px',
                         render: function (data) {
-                            if (!data) return '—';
+                            if (data === null || data === undefined) return '—';
                             const mb = data * 0.000001;
                             return mb >= 1 ? mb.toFixed(2) + ' MB' : (data / 1024).toFixed(0) + ' KB';
                         }
@@ -821,6 +821,8 @@
             updatePreview();
         });
         document.getElementById('templateConfigurationLink')?.addEventListener('click', () => {
+            localStorage.setItem('ConfigurationManagement_ActiveMenu', 'notifications-menu-item');
+            localStorage.setItem('notifications-active-tab', 'nav-template-tab');
             const templateId = document.getElementById('templateSelect')?.value;
             if (templateId) {
                 localStorage.setItem('notifications-template-to-select', templateId);

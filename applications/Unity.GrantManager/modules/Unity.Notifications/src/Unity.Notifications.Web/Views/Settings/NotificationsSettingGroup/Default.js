@@ -469,7 +469,7 @@ $(function () {
             return Swal.fire({
                 icon: 'warning',
                 title: 'Template changes',
-                html: `<p><strong>Warning:</strong> This template is currently associated with ${planNames.length} notification plan${planNames.length === 1 ? '' : 's'}. Any changes made to this template may impact these notification plan(s).</p>`,
+                html: '<p><strong>Warning:</strong> This template is currently associated with ' + planNames.length + ' notification plan' + (planNames.length === 1 ? '' : 's') + '. Any changes made to this template may impact these notification plan' + (planNames.length === 1 ? '' : 's') + '.</p>',
                 showCancelButton: true,
                 confirmButtonText: 'OK',
                 cancelButtonText: 'Cancel',
@@ -1271,7 +1271,7 @@ function checkScheduledPlanImpactForAttachmentDelete(templateId) {
         return Swal.fire({
             icon: 'warning',
             title: 'Scheduled notification impact',
-            html: `<p><strong>Warning:</strong> This template is currently associated with ${planNames.length} notification plan${planNames.length === 1 ? '' : 's'}. Any changes made to this template may impact these notification plan(s).</p>`,
+            html: '<p><strong>Warning:</strong> This template is currently associated with ' + planNames.length + ' notification plan' + (planNames.length === 1 ? '' : 's') + '. Any changes made to this template may impact these notification plan' + (planNames.length === 1 ? '' : 's') + '.</p>',
             showCancelButton: true,
             confirmButtonText: 'OK',
             cancelButtonText: 'Cancel',
