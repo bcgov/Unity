@@ -24,7 +24,7 @@
                                 <span>@Model.TargetColumnTitle</span>
                             }
                             <div class="form-check unt-form-switch form-switch mb-0 ai-suggestion-review__select-all">
-                                <input id="@Model.SelectAllId" class="form-check-input" type="checkbox" aria-label="Include all suggestions" />
+                                <input id="@Model.SelectAllId" class="form-check-input" type="checkbox" aria-label="Include all suggestions" disabled="@(!Model.CanMutate)" />
                             </div>
                         </div>
                         <div id="@Model.FieldsId" data-section-data-attribute="@Model.SectionDataAttribute"></div>
@@ -34,9 +34,15 @@
                     </div>
                 </div>
                 <div class="modal-footer ai-suggestion-review__footer">
-                    <button type="button" id="@Model.PrimaryActionId" class="btn unt-btn-primary btn-primary" disabled="@Model.PrimaryActionDisabled">@Model.PrimaryActionText</button>
+                    @if (Model.CanMutate)
+                    {
+                        <button type="button" id="@Model.PrimaryActionId" class="btn unt-btn-primary btn-primary" disabled="@Model.PrimaryActionDisabled">@Model.PrimaryActionText</button>
+                    }
                     <button type="button" id="@Model.ReviewLaterActionId" class="btn unt-btn-outline-primary btn-outline-primary" data-bs-dismiss="modal">Review later</button>
-                    <button type="button" id="@Model.DiscardActionId" class="btn btn-outline-danger ai-suggestion-review__discard">Discard remaining</button>
+                    @if (Model.CanMutate)
+                    {
+                        <button type="button" id="@Model.DiscardActionId" class="btn btn-outline-danger ai-suggestion-review__discard">Discard remaining</button>
+                    }
                 </div>
             </div>
         </div>

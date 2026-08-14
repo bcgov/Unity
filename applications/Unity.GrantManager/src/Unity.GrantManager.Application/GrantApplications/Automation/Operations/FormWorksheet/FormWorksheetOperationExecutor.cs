@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -53,6 +53,11 @@ public sealed class FormWorksheetOperationExecutor(
         var review = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(
             AIGenerationOperations.FormWorksheet,
             applicationFormVersionId);
+        if (review?.Status == GenerationReviewStatus.Active)
+        {
+            return false;
+        }
+
         var worksheetName = baseWorksheetName;
         var existingWorksheet = await worksheetRepository.GetByNameAsync(worksheetName, true);
         EnsureCanonicalSuggestionWorksheetState(existingWorksheet);

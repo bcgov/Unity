@@ -511,7 +511,6 @@ namespace Unity.GrantManager.ApplicationForms
         [HttpPost("api/app/application-form-version/reset-ai-flow")]
         public virtual async Task ResetAiFlowAsync(Guid formVersionId)
         {
-            await CheckPolicyAsync(FlexPermissions.Worksheets.Delete);
             await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormMapping);
             await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormWorksheet);
             var formVersion = await Repository.GetAsync(formVersionId);

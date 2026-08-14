@@ -17,6 +17,7 @@ public sealed class AiSuggestionReviewModalModel
     public string? TitleInputId { get; init; }
     public string? TitleInputLabel { get; init; }
     public string? TitleInputPlaceholder { get; init; }
+    public bool CanMutate { get; init; } = true;
     public string PrimaryActionId { get; init; } = string.Empty;
     public string PrimaryActionText { get; init; } = string.Empty;
     public bool PrimaryActionDisabled { get; init; }

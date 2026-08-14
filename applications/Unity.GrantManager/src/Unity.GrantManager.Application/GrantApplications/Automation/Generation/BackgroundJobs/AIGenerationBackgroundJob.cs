@@ -36,7 +36,8 @@ public sealed class AIGenerationBackgroundJob(
                 generationRequestRepository,
                 args.TenantId,
                 args.ApplicationId,
-                args.OperationId);
+                args.OperationId,
+                args.GenerationRequestId);
 
             try
             {
@@ -56,7 +57,8 @@ public sealed class AIGenerationBackgroundJob(
                     generationRequestRepository,
                     args.TenantId,
                     args.ApplicationId,
-                    args.OperationId);
+                    args.OperationId,
+                    args.GenerationRequestId);
             }
             catch (Exception ex)
             {
@@ -66,7 +68,8 @@ public sealed class AIGenerationBackgroundJob(
                     args.TenantId,
                     args.ApplicationId,
                     args.OperationId,
-                    ex.Message);
+                    ex.Message,
+                    args.GenerationRequestId);
                 throw;
             }
         }

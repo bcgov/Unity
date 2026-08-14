@@ -3,6 +3,8 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using NSubstitute;
+using Microsoft.Extensions.Localization;
+using Unity.AI.Localization;
 using Shouldly;
 using Unity.AI.Generation;
 using Unity.AI.Operations;
@@ -290,13 +292,15 @@ public class ApplicationFormVersionAppServiceMappingReviewTests(ITestOutputHelpe
             Substitute.For<IApplicationFormSubmissionRepository>(),
             Substitute.For<IReportingFieldsGeneratorService>(),
             Substitute.For<Volo.Abp.Features.IFeatureChecker>(),
+            Substitute.For<IStringLocalizer<AIResource>>(),
             generationService ?? Substitute.For<IAIGenerationAppService>(),
             worksheetRepository ?? Substitute.For<IWorksheetRepository>(),
             Substitute.For<IRepository<CustomField, Guid>>(),
             reviewRepository,
             worksheetLinkRepository ?? Substitute.For<IWorksheetLinkRepository>(),
             Substitute.For<IScoresheetRepository>(),
-            Substitute.For<Unity.Flex.Domain.WorksheetInstances.IWorksheetInstanceRepository>());
+            Substitute.For<Unity.Flex.Domain.WorksheetInstances.IWorksheetInstanceRepository>(),
+            Substitute.For<Unity.Flex.Domain.ScoresheetInstances.IScoresheetInstanceRepository>());
         service.LazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
         return service;
     }

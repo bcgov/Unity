@@ -78,14 +78,11 @@ public static class AIGenerationRequestJobHelper
         IRepository<AIGenerationRequest, Guid> generationRequestRepository,
         Guid? tenantId,
         Guid applicationId,
-        Guid operationId)
+        Guid operationId,
+        Guid? generationRequestId = null)
     {
         using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
-        var request = await GetLatestRequestAsync(
-            generationRequestRepository,
-            x => x.TenantId == tenantId
-                 && x.ApplicationId == applicationId
-                 && x.OperationId == operationId);
+        var request = await GetRequestAsync(generationRequestRepository, generationRequestId, tenantId, applicationId, operationId);
         await MarkRunningAsync(generationRequestRepository, request);
         await uow.CompleteAsync();
     }
@@ -95,14 +92,11 @@ public static class AIGenerationRequestJobHelper
         IRepository<AIGenerationRequest, Guid> generationRequestRepository,
         Guid? tenantId,
         Guid applicationId,
-        Guid operationId)
+        Guid operationId,
+        Guid? generationRequestId = null)
     {
         using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
-        var request = await GetLatestRequestAsync(
-            generationRequestRepository,
-            x => x.TenantId == tenantId
-                 && x.ApplicationId == applicationId
-                 && x.OperationId == operationId);
+        var request = await GetRequestAsync(generationRequestRepository, generationRequestId, tenantId, applicationId, operationId);
         await MarkCompletedAsync(generationRequestRepository, request);
         await uow.CompleteAsync();
     }
@@ -113,16 +107,31 @@ public static class AIGenerationRequestJobHelper
         Guid? tenantId,
         Guid applicationId,
         Guid operationId,
-        string? failureReason)
+        string? failureReason,
+        Guid? generationRequestId = null)
     {
         using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
-        var request = await GetLatestRequestAsync(
+        var request = await GetRequestAsync(generationRequestRepository, generationRequestId, tenantId, applicationId, operationId);
+        await MarkFailedAsync(generationRequestRepository, request, failureReason);
+        await uow.CompleteAsync();
+    }
+    private static async Task<AIGenerationRequest?> GetRequestAsync(
+        IRepository<AIGenerationRequest, Guid> generationRequestRepository,
+        Guid? generationRequestId,
+        Guid? tenantId,
+        Guid applicationId,
+        Guid operationId)
+    {
+        if (generationRequestId.HasValue)
+        {
+            return await generationRequestRepository.FindAsync(generationRequestId.Value);
+        }
+
+        return await GetLatestRequestAsync(
             generationRequestRepository,
             x => x.TenantId == tenantId
                  && x.ApplicationId == applicationId
                  && x.OperationId == operationId);
-        await MarkFailedAsync(generationRequestRepository, request, failureReason);
-        await uow.CompleteAsync();
     }
 
     public static async Task StampCooldownBestEffortAsync(

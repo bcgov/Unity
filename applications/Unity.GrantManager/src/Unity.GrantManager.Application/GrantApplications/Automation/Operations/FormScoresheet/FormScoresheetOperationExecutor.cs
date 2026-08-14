@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Localization;
 using System;
 using System.Linq;
 using System.Text.Json;
@@ -6,10 +7,12 @@ using System.Threading.Tasks;
 using Unity.AI.Domain;
 using Unity.AI.Generation;
 using Unity.AI.Operations;
+using Unity.AI.Localization;
 using Unity.AI.Requests;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.Flex.Domain.Scoresheets;
+using Unity.Flex.Domain.ScoresheetInstances;
 using Unity.Flex.Scoresheets;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
@@ -26,9 +29,11 @@ public sealed class FormScoresheetOperationExecutor(
     IApplicationFormVersionRepository applicationFormVersionRepository,
     IApplicationFormRepository applicationFormRepository,
     IScoresheetRepository scoresheetRepository,
+    IScoresheetInstanceRepository scoresheetInstanceRepository,
     IFormScoresheetService aiService,
     IGenerationReviewRepository generationReviewRepository,
-    IGuidGenerator guidGenerator) : AIGenerationOperationExecutor, ITransientDependency
+    IGuidGenerator guidGenerator,
+    IStringLocalizer<AIResource> localizer) : AIGenerationOperationExecutor, ITransientDependency
 {
     private static readonly JsonSerializerOptions CaseInsensitiveJsonOptions = new()
     {
@@ -40,7 +45,7 @@ public sealed class FormScoresheetOperationExecutor(
     protected override async Task<bool> ExecuteAsync(AIGenerationBackgroundJobArgs args)
     {
         var applicationFormVersionId = args.ApplicationFormVersionId
-            ?? throw new InvalidOperationException("Form scoresheet generation requires an application form version.");
+            ?? throw new InvalidOperationException(localizer[AILocalizationKeys.ScoresheetGenerationRequiresFormVersion]);
         var formVersion = await applicationFormVersionRepository.GetAsync(applicationFormVersionId);
         var applicationForm = await applicationFormRepository.GetAsync(formVersion.ApplicationFormId);
         var scoresheetName = BuildScoresheetName(formVersion.Id, applicationForm.Id);
@@ -49,9 +54,15 @@ public sealed class FormScoresheetOperationExecutor(
             AIGenerationOperations.FormScoresheet,
             applicationFormVersionId);
 
-        if (existingScoresheet != null && review?.Status == GenerationReviewStatus.Active)
+        if (review?.Status == GenerationReviewStatus.Active)
         {
             return false;
+        }
+
+        if (existingScoresheet is { Published: true } || existingScoresheet?.IsArchived == true
+            || existingScoresheet != null && await scoresheetInstanceRepository.AnyByScoresheetAsync(existingScoresheet.Id))
+        {
+            throw new InvalidOperationException(localizer[AILocalizationKeys.ScoresheetGenerationProtected]);
         }
 
         var promptData = new
@@ -102,10 +113,28 @@ public sealed class FormScoresheetOperationExecutor(
         if (!string.IsNullOrWhiteSpace(scoresheetResponse.FailureReason))
         {
             throw new InvalidOperationException(
-                $"Scoresheet generation returned invalid output: {scoresheetResponse.FailureReason}");
+                localizer[AILocalizationKeys.ScoresheetGenerationInvalidOutput, scoresheetResponse.FailureReason]);
         }
 
         var importDto = ParseScoresheetDefinition(scoresheetJson);
+        var parsed = ParseScoresheetElement(scoresheetJson);
+        if (!HasGeneratedQuestions(parsed))
+        {
+            if (review == null || review.Status != GenerationReviewStatus.Active)
+            {
+                review = new GenerationReview(
+                    guidGenerator.Create(),
+                    AIGenerationOperations.FormScoresheet,
+                    applicationFormVersionId,
+                    review?.Sequence + 1 ?? 1);
+                await generationReviewRepository.InsertAsync(review);
+            }
+
+            review.Complete();
+            await generationReviewRepository.UpdateAsync(review, true);
+            return false;
+        }
+
         var scoresheet = existingScoresheet == null
             ? BuildScoresheet(importDto, scoresheetJson, scoresheetName)
             : RebuildScoresheet(existingScoresheet, importDto, scoresheetJson, scoresheetName);
@@ -134,18 +163,18 @@ public sealed class FormScoresheetOperationExecutor(
         return true;
     }
 
-    private static CreateScoresheetDto ParseScoresheetDefinition(string json)
+    private CreateScoresheetDto ParseScoresheetDefinition(string json)
     {
         if (string.IsNullOrWhiteSpace(json))
         {
-            throw new InvalidOperationException("Scoresheet generation returned empty content.");
+            throw new InvalidOperationException(localizer[AILocalizationKeys.ScoresheetGenerationEmpty]);
         }
 
         var dto = JsonSerializer.Deserialize<CreateScoresheetDto>(json, CaseInsensitiveJsonOptions);
 
         if (dto == null || string.IsNullOrWhiteSpace(dto.Title) || string.IsNullOrWhiteSpace(dto.Name))
         {
-            throw new InvalidOperationException("Scoresheet generation returned an unusable scoresheet definition.");
+            throw new InvalidOperationException(localizer[AILocalizationKeys.ScoresheetGenerationUnusable]);
         }
 
         return dto;
@@ -156,20 +185,20 @@ public sealed class FormScoresheetOperationExecutor(
         return $"ai-form-{formId}-version-{formVersionId}-scoresheet";
     }
 
-    private static Scoresheet BuildScoresheet(CreateScoresheetDto dto, string json, string scoresheetName)
+    private Scoresheet BuildScoresheet(CreateScoresheetDto dto, string json, string scoresheetName)
     {
         var scoresheet = new Scoresheet(Guid.NewGuid(), dto.Title, scoresheetName);
         var parsed = ParseScoresheetElement(json);
         if (!TryGetNumberProperty(parsed, "Version", out var version))
         {
-            throw new InvalidOperationException("Scoresheet generation returned a definition without a valid Version.");
+            throw new InvalidOperationException(localizer[AILocalizationKeys.ScoresheetGenerationNoVersion]);
         }
 
         scoresheet.Version = version;
 
         if (!TryGetProperty(parsed, "Sections", out var sectionsElement) || sectionsElement.ValueKind != JsonValueKind.Array)
         {
-            throw new InvalidOperationException("Scoresheet generation returned a definition without Sections.");
+            throw new InvalidOperationException(localizer[AILocalizationKeys.ScoresheetGenerationNoSections]);
         }
 
         foreach (var section in sectionsElement.EnumerateArray())
@@ -181,7 +210,7 @@ public sealed class FormScoresheetOperationExecutor(
 
             if (!TryGetProperty(section, "Fields", out var fieldsElement) || fieldsElement.ValueKind != JsonValueKind.Array)
             {
-                throw new InvalidOperationException($"Scoresheet generation returned section '{sectionName}' without Fields.");
+                throw new InvalidOperationException(localizer[AILocalizationKeys.ScoresheetGenerationSectionNoFields, sectionName]);
             }
 
             foreach (var field in fieldsElement.EnumerateArray())
@@ -211,12 +240,12 @@ public sealed class FormScoresheetOperationExecutor(
         return scoresheet;
     }
 
-    private static Scoresheet RebuildScoresheet(Scoresheet scoresheet, CreateScoresheetDto dto, string json, string scoresheetName)
+    private Scoresheet RebuildScoresheet(Scoresheet scoresheet, CreateScoresheetDto dto, string json, string scoresheetName)
     {
         var parsed = ParseScoresheetElement(json);
         if (!TryGetNumberProperty(parsed, "Version", out var version))
         {
-            throw new InvalidOperationException("Scoresheet generation returned a definition without a valid Version.");
+            throw new InvalidOperationException(localizer[AILocalizationKeys.ScoresheetGenerationNoVersion]);
         }
 
         scoresheet.SetName(scoresheetName);
@@ -231,7 +260,7 @@ public sealed class FormScoresheetOperationExecutor(
 
         if (!TryGetProperty(parsed, "Sections", out var sectionsElement) || sectionsElement.ValueKind != JsonValueKind.Array)
         {
-            throw new InvalidOperationException("Scoresheet generation returned a definition without Sections.");
+            throw new InvalidOperationException(localizer[AILocalizationKeys.ScoresheetGenerationNoSections]);
         }
 
         foreach (var section in sectionsElement.EnumerateArray())
@@ -243,7 +272,7 @@ public sealed class FormScoresheetOperationExecutor(
 
             if (!TryGetProperty(section, "Fields", out var fieldsElement) || fieldsElement.ValueKind != JsonValueKind.Array)
             {
-                throw new InvalidOperationException($"Scoresheet generation returned section '{sectionName}' without Fields.");
+                throw new InvalidOperationException(localizer[AILocalizationKeys.ScoresheetGenerationSectionNoFields, sectionName]);
             }
 
             foreach (var field in fieldsElement.EnumerateArray())
@@ -266,6 +295,16 @@ public sealed class FormScoresheetOperationExecutor(
         }
 
         return scoresheet;
+    }
+
+    private static bool HasGeneratedQuestions(JsonElement parsed)
+    {
+        return TryGetProperty(parsed, "Sections", out var sections)
+            && sections.ValueKind == JsonValueKind.Array
+            && sections.EnumerateArray().Any(section =>
+                TryGetProperty(section, "Fields", out var fields)
+                && fields.ValueKind == JsonValueKind.Array
+                && fields.GetArrayLength() > 0);
     }
 
     private static JsonElement ParseScoresheetElement(string json)
@@ -285,7 +324,7 @@ public sealed class FormScoresheetOperationExecutor(
         return false;
     }
 
-    private static string GetRequiredStringProperty(JsonElement element, string propertyName, string sourceName, bool allowEmpty = false)
+    private string GetRequiredStringProperty(JsonElement element, string propertyName, string sourceName, bool allowEmpty = false)
     {
         if (TryGetProperty(element, propertyName, out var property)
             && property.ValueKind == JsonValueKind.String
@@ -294,7 +333,7 @@ public sealed class FormScoresheetOperationExecutor(
             return property.GetString()!;
         }
 
-        throw new InvalidOperationException($"Scoresheet generation returned a {sourceName} without a valid {propertyName}.");
+        throw new InvalidOperationException(localizer[AILocalizationKeys.ScoresheetGenerationPropertyInvalid, sourceName, propertyName]);
     }
 
     private static bool TryGetProperty(JsonElement element, string propertyName, out JsonElement property)
@@ -320,13 +359,13 @@ public sealed class FormScoresheetOperationExecutor(
         return false;
     }
 
-    private static uint GetRequiredNumberProperty(JsonElement element, string propertyName, string sourceName)
+    private uint GetRequiredNumberProperty(JsonElement element, string propertyName, string sourceName)
     {
         if (TryGetNumberProperty(element, propertyName, out var value))
         {
             return value;
         }
 
-        throw new InvalidOperationException($"Scoresheet generation returned a {sourceName} without a valid {propertyName}.");
+        throw new InvalidOperationException(localizer[AILocalizationKeys.ScoresheetGenerationPropertyInvalid, sourceName, propertyName]);
     }
 }

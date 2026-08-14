@@ -8,6 +8,8 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.AI;
 using Unity.AI.Features;
+using Unity.AI.Localization;
+using Microsoft.Extensions.Localization;
 using Unity.AI.Generation;
 using Unity.AI.Operations;
 using Unity.AI.Requests;
@@ -60,6 +62,23 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
                 request != null
                 && request.ApplicationId == formVersion.ApplicationFormId
                 && request.ApplicationFormVersionId == formVersionId));
+    }
+
+    [Fact]
+    public async Task GenerateMappingAsync_Should_Reject_When_Review_Is_Active()
+    {
+        var formVersionId = Guid.NewGuid();
+        var repository = Substitute.For<IRepository<ApplicationFormVersion, Guid>>();
+        repository.GetAsync(formVersionId).Returns(new ApplicationFormVersion { ApplicationFormId = Guid.NewGuid() });
+        var generationService = Substitute.For<IAIGenerationAppService>();
+        var reviewRepository = Substitute.For<IGenerationReviewRepository>();
+        reviewRepository.FindLatestByOperationAndFormVersionAsync(AIGenerationOperations.FormMapping, formVersionId)
+            .Returns(new GenerationReview(Guid.NewGuid(), AIGenerationOperations.FormMapping, formVersionId));
+        var service = CreateService(repository, generationService, generationReviewRepository: reviewRepository);
+        service.LazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
+
+        await Should.ThrowAsync<Volo.Abp.UserFriendlyException>(() => service.GenerateMappingAsync(formVersionId));
+        await generationService.DidNotReceive().SubmitAsync(Arg.Any<string>(), Arg.Any<AIGenerationSubmissionDto>());
     }
 
     [Fact]
@@ -255,6 +274,29 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
         await worksheetRepository.Received(1).DeleteAsync(worksheet, true);
     }
 
+    [Fact]
+    public async Task DiscardAiScoresheetSuggestionsAsync_Should_Preserve_Scoresheet_With_Instances()
+    {
+        var formVersionId = Guid.NewGuid();
+        var formId = Guid.NewGuid();
+        var formVersionRepository = Substitute.For<IApplicationFormVersionRepository>();
+        formVersionRepository.GetAsync(formVersionId).Returns(new ApplicationFormVersion { ApplicationFormId = formId });
+        var scoresheet = new Scoresheet(Guid.NewGuid(), "AI Scoresheet", $"ai-form-{formId}-version-{formVersionId}-scoresheet");
+        scoresheet.Instances.Add(new Unity.Flex.Domain.ScoresheetInstances.ScoresheetInstance(Guid.NewGuid(), scoresheet.Id, Guid.NewGuid(), "FormVersion"));
+        var scoresheetRepository = Substitute.For<IScoresheetRepository>();
+        scoresheetRepository.GetByNameAsync(Arg.Any<string>(), true).Returns(scoresheet);
+        var reviewRepository = Substitute.For<IGenerationReviewRepository>();
+        var scoresheetInstanceRepository = Substitute.For<Unity.Flex.Domain.ScoresheetInstances.IScoresheetInstanceRepository>();
+        scoresheetInstanceRepository.AnyByScoresheetAsync(scoresheet.Id).Returns(true);
+        var review = new GenerationReview(Guid.NewGuid(), AIGenerationOperations.FormScoresheet, formVersionId);
+        reviewRepository.FindLatestByOperationAndFormVersionAsync(AIGenerationOperations.FormScoresheet, formVersionId).Returns(review);
+
+        var service = CreateService(Substitute.For<IRepository<ApplicationFormVersion, Guid>>(), Substitute.For<IAIGenerationAppService>(), formVersionRepository, scoresheetRepository: scoresheetRepository, generationReviewRepository: reviewRepository, scoresheetInstanceRepository: scoresheetInstanceRepository);
+        service.LazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
+
+        await Should.ThrowAsync<Volo.Abp.UserFriendlyException>(() => service.DiscardAiScoresheetSuggestionsAsync(formVersionId));
+        await scoresheetRepository.DidNotReceive().DeleteAsync(Arg.Any<Scoresheet>(), Arg.Any<bool>());
+    }
     [Theory]
     [InlineData(GenerationReviewStatus.Completed)]
     [InlineData(GenerationReviewStatus.Discarded)]
@@ -380,7 +422,9 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
         IApplicationFormVersionRepository? formVersionRepository = null,
         IWorksheetRepository? worksheetRepository = null,
         IRepository<CustomField, Guid>? customFieldRepository = null,
-        IGenerationReviewRepository? generationReviewRepository = null)
+        IGenerationReviewRepository? generationReviewRepository = null,
+        IScoresheetRepository? scoresheetRepository = null,
+        Unity.Flex.Domain.ScoresheetInstances.IScoresheetInstanceRepository? scoresheetInstanceRepository = null)
     {
         var featureChecker = Substitute.For<IFeatureChecker>();
         var service = new ApplicationFormVersionAppService(
@@ -392,13 +436,15 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
             Substitute.For<IApplicationFormSubmissionRepository>(),
             Substitute.For<IReportingFieldsGeneratorService>(),
             featureChecker,
+            Substitute.For<IStringLocalizer<AIResource>>(),
             aiGenerationAppService,
             worksheetRepository ?? Substitute.For<IWorksheetRepository>(),
             customFieldRepository ?? Substitute.For<IRepository<CustomField, Guid>>(),
             generationReviewRepository ?? Substitute.For<IGenerationReviewRepository>(),
             Substitute.For<Unity.Flex.Domain.WorksheetLinks.IWorksheetLinkRepository>(),
-            Substitute.For<IScoresheetRepository>(),
-            Substitute.For<Unity.Flex.Domain.WorksheetInstances.IWorksheetInstanceRepository>());
+            scoresheetRepository ?? Substitute.For<IScoresheetRepository>(),
+            Substitute.For<Unity.Flex.Domain.WorksheetInstances.IWorksheetInstanceRepository>(),
+            scoresheetInstanceRepository ?? Substitute.For<Unity.Flex.Domain.ScoresheetInstances.IScoresheetInstanceRepository>());
         return service;
     }
 

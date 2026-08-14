@@ -27,7 +27,7 @@ public class AIPromptDataSeederTests
             .Returns((AIPrompt?)null);
         promptRepository
             .InsertAsync(Arg.Any<AIPrompt>(), Arg.Any<bool>(), Arg.Any<System.Threading.CancellationToken>())
-            .Returns(callInfo =>
+            .ReturnsForAnyArgs(callInfo =>
             {
                 var prompt = callInfo.Arg<AIPrompt>();
                 ArgumentNullException.ThrowIfNull(prompt);
@@ -59,51 +59,49 @@ public class AIPromptDataSeederTests
         worksheetPrompt.UserPrompt.ShouldContain("empty fields array");
     }
 
+
     [Fact]
     public async Task Should_Update_Existing_Prompt_To_Current_Definition()
     {
-        var existingPrompt = new AIPrompt(
-            Guid.NewGuid(),
-            AIPromptTypes.FormWorksheet,
-            2,
-            "old system prompt",
-            "old user prompt")
+        var existingPrompt = new AIPrompt(Guid.NewGuid(), AIPromptTypes.FormWorksheet, 2, "old system prompt", "old user prompt")
         {
             MetadataJson = "old metadata",
             IsActive = false
         };
+        var promptName = existingPrompt.Name;
+        var promptVersion = existingPrompt.VersionNumber;
         var promptRepository = Substitute.For<IRepository<AIPrompt, Guid>>();
         promptRepository
             .FirstOrDefaultAsync(Arg.Any<Expression<Func<AIPrompt, bool>>>())
-            .ReturnsForAnyArgs(existingPrompt);
+            .ReturnsForAnyArgs(callInfo =>
+            {
+                var predicate = callInfo.Arg<Expression<Func<AIPrompt, bool>>>().Compile();
+                var probe = new AIPrompt(Guid.NewGuid(), promptName, promptVersion, string.Empty, string.Empty);
+                return Task.FromResult<AIPrompt>(predicate(probe) ? existingPrompt : null!);
+            });
         promptRepository
-            .FirstOrDefaultAsync(
-                Arg.Any<Expression<Func<AIPrompt, bool>>>(),
-                Arg.Any<System.Threading.CancellationToken>())
-            .ReturnsForAnyArgs(existingPrompt);
+            .FirstOrDefaultAsync(Arg.Any<Expression<Func<AIPrompt, bool>>>(), Arg.Any<System.Threading.CancellationToken>())
+            .ReturnsForAnyArgs(callInfo =>
+            {
+                var predicate = callInfo.Arg<Expression<Func<AIPrompt, bool>>>().Compile();
+                var probe = new AIPrompt(Guid.NewGuid(), promptName, promptVersion, string.Empty, string.Empty);
+                return Task.FromResult<AIPrompt>(predicate(probe) ? existingPrompt : null!);
+            });
         promptRepository
             .UpdateAsync(Arg.Any<AIPrompt>(), true, Arg.Any<System.Threading.CancellationToken>())
-            .Returns(callInfo =>
-            {
-                var prompt = callInfo.Arg<AIPrompt>();
-                ArgumentNullException.ThrowIfNull(prompt);
-                return Task.FromResult(prompt);
-            });
+            .ReturnsForAnyArgs(callInfo => Task.FromResult(callInfo.Arg<AIPrompt>()));
 
         var currentTenant = Substitute.For<ICurrentTenant>();
         currentTenant.Change(null).Returns(Substitute.For<IDisposable>());
         var seeder = new AIPromptDataSeeder(promptRepository, currentTenant);
-
         await seeder.SeedAsync(new DataSeedContext());
 
         existingPrompt.SystemPrompt.ShouldNotBe("old system prompt");
-        existingPrompt.UserPrompt.ShouldContain("SCORESHEET CONTEXT");
-        existingPrompt.UserPrompt.ShouldContain("one scoresheet definition JSON object only");
+        existingPrompt.UserPrompt.ShouldContain("WORKSHEET");
         existingPrompt.MetadataJson.ShouldContain("DATA");
         existingPrompt.IsActive.ShouldBeTrue();
         await promptRepository.Received().UpdateAsync(existingPrompt, true, Arg.Any<System.Threading.CancellationToken>());
     }
-
     private static void AssertVersions(
         IEnumerable<AIPrompt> prompts,
         string promptName,

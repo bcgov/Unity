@@ -1,4 +1,4 @@
-﻿@page
+@page
 @using Unity.GrantManager.ApplicationForms
 @using Unity.Reporting.Permissions
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout;
@@ -25,6 +25,7 @@
     {
         ModalId = "aiMappingReviewModal",
         ModalLabelId = "aiMappingReviewModalLabel",
+        CanMutate = await PermissionChecker.IsGrantedAsync(AIPermissions.FormMapping.Generate),
         Title = "Review AI Mapping Suggestions",
         SourceColumnTitle = "CHEFS Field",
         TargetColumnTitle = "Unity Core Field",
@@ -42,6 +43,7 @@
     {
         ModalId = "aiWorksheetReviewModal",
         ModalLabelId = "aiWorksheetReviewModalLabel",
+        CanMutate = await PermissionChecker.IsGrantedAsync(AIPermissions.FormWorksheet.Generate),
         Title = "Create Worksheet Draft",
         SourceColumnTitle = "Source Field",
         TargetColumnTitle = "Worksheet Field",
@@ -63,6 +65,7 @@
     {
         ModalId = "aiScoresheetReviewModal",
         ModalLabelId = "aiScoresheetReviewModalLabel",
+        CanMutate = await PermissionChecker.IsGrantedAsync(AIPermissions.FormScoresheet.Generate),
         Title = "Review AI Scoresheet Suggestions",
         SourceColumnTitle = "Generated Question",
         TargetColumnTitle = "Section",
@@ -174,6 +177,9 @@
                                 <span>Generate Initial Mapping</span>
                             </span>
                         </button>
+                    }
+                    @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormMapping.View))
+                    {
                         <button type="button" id="btn-review-mapping" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none"
                                 data-ai-review-action="true"
                                 title="Review pending mapping suggestions">
@@ -193,7 +199,10 @@
                                 <span>Generate Worksheets</span>
                             </span>
                         </button>
-                        <button type="button" id="btn-review-worksheet" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none"
+                    }
+                    @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormWorksheet.View))
+                        {
+                            <button type="button" id="btn-review-worksheet" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none"
                                 data-ai-review-action="true"
                                 title="Review pending worksheet suggestions">
                             <span class="ai-button-content">
@@ -221,7 +230,10 @@
                                 <span>Generate Final Mapping</span>
                             </span>
                         </button>
-                        <button type="button" id="btn-review-final-mapping" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none"
+                    }
+                    @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormMapping.View))
+                        {
+                            <button type="button" id="btn-review-final-mapping" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none"
                                 data-ai-review-action="true"
                                 title="Review final mapping suggestions">
                             <span class="ai-button-content">

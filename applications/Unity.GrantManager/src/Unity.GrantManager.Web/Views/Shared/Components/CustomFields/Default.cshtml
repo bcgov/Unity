@@ -12,9 +12,10 @@
         <h5>Scoresheet & Worksheets Configuration</h5>
     </div>
     <div class="col-12 col-md-4 btn-wrapper">
-        @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormScoresheet.Generate))
+        @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormScoresheet.View))
         {
             <button type="button" id="btn-generate-scoresheet" class="btn ai-generate-btn unt-btn-outline-primary btn-outline-primary"
+                    data-ai-can-generate="@(await PermissionChecker.IsGrantedAsync(AIPermissions.FormScoresheet.Generate) ? "true" : "false")"
                     data-ai-cooldown-checking="1" data-ai-rate-limit-disabled="1" disabled
                     title="Generate a scoresheet for the current form version">
                 <span class="ai-button-content">

@@ -1,4 +1,5 @@
-﻿$(function () {
+$(function () {
+    const aiL = abp.localization.getResource('AI');
     let availableChefFieldsString = document.getElementById('availableChefsFields').value;
     let existingMappingString = document.getElementById('existingMapping').value;
     let intakeFieldsString = document.getElementById('intakeProperties').value;
@@ -209,6 +210,11 @@
         UIElements.btnGenerateScoresheet.on('click', function () {
             if (UIElements.btnGenerateScoresheet.attr('data-ai-pending') === 'true') {
                 loadAiScoresheetReview(true);
+                return;
+            }
+
+            if (UIElements.btnGenerateScoresheet.attr('data-ai-can-generate') !== 'true') {
+                abp.notify.error('', aiL('AI:GenerateFormScoresheetPermissionRequired'));
                 return;
             }
 
@@ -1400,7 +1406,7 @@
                     }
                 }
             } catch (err) {
-                console.log(err);
+                abp.notify.error('', aiL('AI:SavedMappingApplyFailed'));
             }
         }
     }
