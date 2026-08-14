@@ -61,6 +61,7 @@ $(function () {
         btnReviewMapping: $('#btn-review-mapping'),
         btnGenerateWorksheet: $('#btn-generate-worksheet'),
         btnGenerateScoresheet: $('#btn-generate-scoresheet'),
+        btnReviewScoresheet: $('#btn-review-scoresheet'),
         btnReviewWorksheet: $('#btn-review-worksheet'),
         scoresheetReviewModal: $('#aiScoresheetReviewModal'),
         scoresheetReviewFields: $('#aiScoresheetReviewFields'),
@@ -208,17 +209,15 @@ $(function () {
         UIElements.btnGenerateFinalMapping.on('click', finalizeMappingReview);
         UIElements.btnRestartAiFlow.on('click', restartAiFlow);
         UIElements.btnGenerateScoresheet.on('click', function () {
-            if (UIElements.btnGenerateScoresheet.attr('data-ai-pending') === 'true') {
-                loadAiScoresheetReview(true);
-                return;
-            }
-
             if (UIElements.btnGenerateScoresheet.attr('data-ai-can-generate') !== 'true') {
                 abp.notify.error('', aiL('AI:GenerateFormScoresheetPermissionRequired'));
                 return;
             }
 
             queueFormScoresheet(this);
+        });
+        UIElements.btnReviewScoresheet.on('click', function () {
+            loadAiScoresheetReview(true);
         });
         UIElements.btnCreateScoresheetDraft.on('click', function () {
             if (UIElements.btnCreateScoresheetDraft.attr('data-empty-confirmation') === 'true') {
@@ -772,15 +771,8 @@ $(function () {
     }
 
     function setAiScoresheetPending(isPending) {
-        UIElements.btnGenerateScoresheet
-            .attr('data-ai-pending', isPending ? 'true' : 'false');
-        if (isPending) {
-            UIElements.btnGenerateScoresheet.attr('data-ai-review-action', 'true');
-        } else {
-            UIElements.btnGenerateScoresheet.removeAttr('data-ai-review-action');
-        }
-        UIElements.btnGenerateScoresheet.find('.ai-button-content span:last-child').text(
-            isPending ? 'Review Scoresheet' : 'Generate Scoresheet');
+        UIElements.btnGenerateScoresheet.toggleClass('d-none', isPending);
+        UIElements.btnReviewScoresheet.toggleClass('d-none', !isPending);
 
         if (isPending) {
             UIElements.btnGenerateScoresheet

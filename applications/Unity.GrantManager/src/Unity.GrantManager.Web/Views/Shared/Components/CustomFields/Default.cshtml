@@ -24,6 +24,17 @@
                 </span>
             </button>
         }
+        @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormScoresheet.View))
+        {
+            <button type="button" id="btn-review-scoresheet" class="btn ai-generate-btn unt-btn-outline-primary btn-outline-primary d-none"
+                    data-ai-review-action="true"
+                    title="Review pending scoresheet suggestions">
+                <span class="ai-button-content">
+                    <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Review Scoresheet</span>
+                </span>
+            </button>
+        }
         <abp-button id="btn-save-worksheet-config"
                     text="Save"
                     type="submit"
