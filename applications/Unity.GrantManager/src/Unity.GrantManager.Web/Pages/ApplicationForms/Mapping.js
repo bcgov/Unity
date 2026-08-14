@@ -774,6 +774,11 @@ $(function () {
     function setAiScoresheetPending(isPending) {
         UIElements.btnGenerateScoresheet
             .attr('data-ai-pending', isPending ? 'true' : 'false');
+        if (isPending) {
+            UIElements.btnGenerateScoresheet.attr('data-ai-review-action', 'true');
+        } else {
+            UIElements.btnGenerateScoresheet.removeAttr('data-ai-review-action');
+        }
         UIElements.btnGenerateScoresheet.find('.ai-button-content span:last-child').text(
             isPending ? 'Review Scoresheet' : 'Generate Scoresheet');
 
