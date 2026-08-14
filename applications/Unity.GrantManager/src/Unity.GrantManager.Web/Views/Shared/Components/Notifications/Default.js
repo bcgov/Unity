@@ -1,7 +1,6 @@
 (function () {
     let formId;
     let notificationsTable;
-    let templateAttachmentsTable;
     let select2Ready = false;
     let select2Loading = false;
     let initialized = false;  // Guard against reinitializing
@@ -585,8 +584,6 @@
         if ($.fn.dataTable.isDataTable(table)) {
             table.DataTable().destroy();
         }
-        templateAttachmentsTable = null;
-
         section.classList.add('hidden-section');
         label?.classList.add('hidden-section');
         if (countLabel) countLabel.textContent = '0';
@@ -595,7 +592,7 @@
             return;
         }
 
-        templateAttachmentsTable = table.DataTable(
+        table.DataTable(
             abp.libs.datatables.normalizeConfiguration({
                 serverSide: false,
                 order: [[2, 'asc']],

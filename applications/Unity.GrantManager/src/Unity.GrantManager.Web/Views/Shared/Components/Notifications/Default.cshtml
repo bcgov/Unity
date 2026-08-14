@@ -122,9 +122,18 @@
                                 <div class="template-preview-container">
                                     <div id="templatePreview" class="p-2 template-preview-text"></div>
                                 </div>
-                                <label id="templateAttachmentsLabel" class="form-label hidden-section">Attachments (<span id="templateAttachmentsCount">0</span>)</label>
+                                <h6 id="templateAttachmentsLabel" class="form-label hidden-section">Attachments (<span id="templateAttachmentsCount">0</span>)</h6>
                                 <div id="template-attachments-section" class="template-attachments-section hidden-section">
-                                    <table id="TemplateAttachmentsTable" class="table table-striped attachments-table nowrap"></table>
+                                    <table id="TemplateAttachmentsTable" class="table table-striped attachments-table nowrap">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">Document Name</th>
+                                                <th scope="col">Date</th>
+                                                <th scope="col">Attached by</th>
+                                                <th scope="col">File Size</th>
+                                            </tr>
+                                        </thead>
+                                    </table>
                                 </div>
                             </div>
 
