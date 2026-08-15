@@ -553,10 +553,110 @@
         const preview = document.getElementById('templatePreview');
         if (sel === null || preview === null) return;
         const val = sel.value;
+        updateTemplateAttachments(val);
         fetch('/api/form-notifications/templates').then(r => r.json()).then(list => {
             const t = list.find(x => String(x.id) === String(val));
             renderTemplatePreview(preview, t);
         });
+    }
+
+    function notifyAttachmentCount(count) {
+        if (count === 0) return;
+
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'info',
+            text: count === 1 ? '1 attachment is associated with this template.' : `${count} attachments are associated with this template.`,
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+        });
+    }
+
+    function updateTemplateAttachments(templateId) {
+        const section = document.getElementById('template-attachments-section');
+        const label = document.getElementById('templateAttachmentsLabel');
+        const countLabel = document.getElementById('templateAttachmentsCount');
+        const table = $('#TemplateAttachmentsTable');
+        if (!section || !table.length) return;
+
+        if ($.fn.dataTable.isDataTable(table)) {
+            table.DataTable().destroy();
+        }
+        section.classList.add('hidden-section');
+        label?.classList.add('hidden-section');
+        if (countLabel) countLabel.textContent = '0';
+
+        if (!templateId) {
+            return;
+        }
+
+        table.DataTable(
+            abp.libs.datatables.normalizeConfiguration({
+                serverSide: false,
+                order: [[2, 'asc']],
+                searching: false,
+                paging: false,
+                select: false,
+                info: false,
+                scrollX: true,
+                scrollY: '80px', // ~2 rows visible before scrolling
+                scrollCollapse: true,
+                drawCallback: function () {
+                    const count = this.api().rows().count();
+                    if (countLabel) countLabel.textContent = String(count);
+                    section.classList.toggle('hidden-section', count === 0);
+                    label?.classList.toggle('hidden-section', count === 0);
+                    notifyAttachmentCount(count);
+                },
+                ajax: abp.libs.datatables.createAjax(
+                    unity.notifications.emails.emailLogAttachment.getListByTemplateId,
+                    function () { return templateId; },
+                    function (result) { return { data: result }; }
+                ),
+                columnDefs: [
+                    {
+                        title: '<i class="fl fl-paperclip"></i>',
+                        width: '40px',
+                        className: 'text-center',
+                        orderable: false,
+                        render: function () {
+                            return '<i class="fl fl-paperclip"></i>';
+                        }
+                    },
+                    {
+                        title: 'Document Name',
+                        data: 'fileName',
+                        className: 'data-table-header text-break',
+                        width: '55%'
+                    },
+                    {
+                        title: 'Date',
+                        data: 'time',
+                        className: 'data-table-header',
+                        width: '130px',
+                        render: function (data, type) {
+                            if (type === 'display' || type === 'filter') {
+                                return new Date(data).toDateString();
+                            }
+                            return data;
+                        }
+                    },
+                    {
+                        title: 'File Size',
+                        data: 'fileSize',
+                        className: 'data-table-header',
+                        width: '90px',
+                        render: function (data) {
+                            if (data === null || data === undefined) return '—';
+                            const mb = data * 0.000001;
+                            return mb >= 1 ? mb.toFixed(2) + ' MB' : (data / 1024).toFixed(0) + ' KB';
+                        }
+                    }
+                ]
+            })
+        );
     }
 
     function showModal() {
@@ -575,6 +675,7 @@
         document.getElementById('eventOptions')?.classList.add('hidden-section');
         document.getElementById('recipientOptions')?.classList.add('hidden-section');
         renderTemplatePreview(document.getElementById('templatePreview'), null);
+        updateTemplateAttachments('');
 
         const modalEl = document.getElementById('notificationModal');
         if (modalEl === null) return;
@@ -659,9 +760,7 @@
         if (modalEl && modalEl.parentElement !== document.body) {
             document.body.appendChild(modalEl);
         }
-        
-        console.debug('init() starting');
-        
+
         formId = document.getElementById('applicationFormId')?.value;
         if (!formId) {
             console.warn('formId not found, returning from init()');
@@ -675,7 +774,10 @@
 
         if (modalEl) {
             // Always reset validation when modal is fully closed
-            modalEl.addEventListener('hidden.bs.modal', () => resetValidationState());
+            modalEl.addEventListener('hidden.bs.modal', () => {
+                resetValidationState();
+                updateTemplateAttachments('');
+            });
             // Also reset when modal starts opening
             modalEl.addEventListener('show.bs.modal', () => resetValidationState());
             // Refresh select2 when modal is shown
@@ -717,6 +819,16 @@
         document.getElementById('templateSelect')?.addEventListener('change', (e) => {
             e.target.classList.remove('is-invalid');
             updatePreview();
+        });
+        document.getElementById('templateConfigurationLink')?.addEventListener('click', () => {
+            localStorage.setItem('ConfigurationManagement_ActiveMenu', 'notifications-menu-item');
+            localStorage.setItem('notifications-active-tab', 'nav-template-tab');
+            const templateId = document.getElementById('templateSelect')?.value;
+            if (templateId) {
+                localStorage.setItem('notifications-template-to-select', templateId);
+            } else {
+                localStorage.removeItem('notifications-template-to-select');
+            }
         });
         ['dateType', 'moduleSelect', 'statusSelect'].forEach(id => {
             document.getElementById(id)?.addEventListener('change', (e) => {

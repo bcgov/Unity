@@ -364,18 +364,47 @@ namespace Unity.GrantManager.Web.Controllers
             var result = await _automatedNotificationAppService.GetListAsync(
                 new Notifications.GetNotificationsInput { MaxResultCount = 1000 });
 
-            var inUse = result.Items.Any(n => n.EmailTemplateId == templateId);
+            var associatedPlans = result.Items
+                .Where(n => n.EmailTemplateId == templateId)
+                .Select(n =>
+                    string.IsNullOrWhiteSpace(n.TriggerDetail)
+                        ? $"{n.TriggerType} notification"
+                        : $"{n.TriggerType} notification - {n.TriggerDetail}")
+                .Distinct()
+                .ToList();
+
+            var inUse = associatedPlans.Count > 0;
 
             if (inUse)
             {
                 return Ok(new
                 {
                     canDelete = false,
-                    errorMessage = "This template cannot be deleted because it is assigned to one or more Scheduled Notifications. Please remove the template from all Scheduled Notifications before deleting."
+                    errorMessage = "This template cannot be deleted because it is assigned to one or more Scheduled Notifications. Please remove the template from all Scheduled Notifications before deleting.",
+                    notificationPlanNames = associatedPlans
                 });
             }
 
-            return Ok(new { canDelete = true, errorMessage = (string?)null });
+            return Ok(new { canDelete = true, errorMessage = (string?)null, notificationPlanNames = Array.Empty<string>() });
+        }
+
+        [HttpGet("template-notification-plans/{templateId:guid}")]
+        public async Task<ActionResult<object>> GetTemplateNotificationPlans(Guid templateId)
+        {
+            var result = await _automatedNotificationAppService.GetListAsync(
+                new Notifications.GetNotificationsInput { MaxResultCount = 1000 });
+            var template = await _templateService.GetTemplateById(templateId);
+
+            var templateName = template?.Name ?? "Template";
+            var planNames = result.Items
+                .Where(n => n.IsActive && n.EmailTemplateId == templateId)
+                .Select(n => string.IsNullOrWhiteSpace(n.TriggerDetail)
+                    ? $"{templateName} - {n.TriggerType} notification"
+                    : $"{templateName} - {n.TriggerType} notification - {n.TriggerDetail}")
+                .Distinct()
+                .ToList();
+
+            return Ok(new { notificationPlanNames = planNames });
         }
 
         [HttpPut("{formId}/{id:guid}")]

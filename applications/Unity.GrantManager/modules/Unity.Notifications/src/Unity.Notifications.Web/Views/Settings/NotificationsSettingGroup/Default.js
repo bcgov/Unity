@@ -29,6 +29,7 @@ $(function () {
     let emailAttachmentsTable = null;
     let templatesDataTable = null;
     let originalFormValues = {};
+    let attachmentChangesPending = false;
 
     function init() {
         $('#email-attachments-section').hide();
@@ -296,6 +297,7 @@ $(function () {
         
         UiElements.deleteButton.show();
         $('#email-attachments-section').show();
+        attachmentChangesPending = false;
         initEmailAttachmentsTable(data.id);
         
         // Recalculate table columns after initialization
@@ -328,6 +330,7 @@ $(function () {
         $('#templateRecipientSelect').empty().val([]).trigger('change');
         UiElements.deleteButton.hide();
         $('#email-attachments-section').hide();
+        attachmentChangesPending = false;
         // Don't load attachments for new templates - they have no ID yet
     }
 
@@ -424,6 +427,7 @@ $(function () {
         };
 
         const isNewTemplate = !templateId || templateId.trim() === '';
+        const templateChangesPending = hasTemplateChanges(templateData) || attachmentChangesPending;
 
         // Check template name uniqueness before saving
         checkTemplateNameUnique(templateName.trim(), templateId, function (isUnique) {
@@ -431,9 +435,55 @@ $(function () {
                 markFieldError('templateName', 'Template name must be unique.');
                 return;
             }
-            performSave(isNewTemplate, templateId, templateData, templateName, sendFrom, subject, bodyHTML);
+            confirmTemplateAttachmentImpact(templateId, isNewTemplate, templateChangesPending)
+                .then(function (confirmed) {
+                    if (confirmed) {
+                        performSave(isNewTemplate, templateId, templateData, templateName, sendFrom, subject, bodyHTML);
+                    }
+                });
         });
     });
+
+    function hasTemplateChanges(templateData) {
+        const original = originalFormValues;
+        const fields = ['name', 'description', 'sendFrom', 'subject', 'bodyText', 'bodyHTML', 'recipientCategory', 'recipientIdentifier'];
+
+        return fields.some(field => String(templateData[field] ?? '') !== String(original[field] ?? ''));
+    }
+
+    function confirmTemplateAttachmentImpact(templateId, isNewTemplate, templateChangesPending) {
+        if (isNewTemplate || !templateChangesPending) {
+            return Promise.resolve(true);
+        }
+
+        return $.ajax({
+            url: `/api/form-notifications/template-notification-plans/${encodeURIComponent(templateId)}`,
+            type: 'GET',
+            dataType: 'json'
+        }).then(function (response) {
+            const planNames = response.notificationPlanNames || [];
+            if (planNames.length === 0) {
+                return true;
+            }
+
+            return Swal.fire({
+                icon: 'warning',
+                title: 'Template changes',
+                html: '<p><strong>Warning:</strong> This template is currently associated with ' + planNames.length + ' notification plan' + (planNames.length === 1 ? '' : 's') + '. Any changes made to this template may impact these notification plan' + (planNames.length === 1 ? '' : 's') + '.</p>',
+                showCancelButton: true,
+                confirmButtonText: 'OK',
+                cancelButtonText: 'Cancel',
+                customClass: {
+                    confirmButton: 'btn btn-primary',
+                    cancelButton: 'btn btn-secondary'
+                }
+            }).then(result => result.isConfirmed);
+        }).catch(function (e) {
+            console.warn('Failed to check template notification plans:', e);
+            abp.notify.error('Unable to verify whether this template is used by a notification plan. The template was not saved.');
+            return false;
+        });
+    }
 
     function performSave(isNewTemplate, templateId, templateData, templateName, sendFrom, subject, bodyHTML) {
         if (isNewTemplate) {
@@ -472,6 +522,7 @@ $(function () {
             unity.notifications.templates.template
                 .updateTemplate(templateId, templateData)
                 .then(function () {
+                    attachmentChangesPending = false;
                     abp.notify.success('Template updated successfully.');
                     // Update original values after successful save
                     originalFormValues = {
@@ -481,7 +532,9 @@ $(function () {
                         sendFrom: sendFrom,
                         subject: subject,
                         bodyText: '',
-                        bodyHTML: bodyHTML
+                        bodyHTML: bodyHTML,
+                        recipientCategory: templateData.recipientCategory || '',
+                        recipientIdentifier: templateData.recipientIdentifier || ''
                     };
                     PubSub.publish('reload_templates_table_no_close');
                 })
@@ -969,6 +1022,7 @@ $(function () {
                 $('#attachment-upload-progress').show();
             },
             success: function () {
+                attachmentChangesPending = true;
                 PubSub.publish('reload_email_attachments_table');
             },
             error: function (xhr) {
@@ -1045,6 +1099,10 @@ $(function () {
 
     PubSub.subscribe('reload_email_attachments_table', () => {
         reloadEmailAttachmentsTable();
+    });
+
+    PubSub.subscribe('template_attachment_changed', () => {
+        attachmentChangesPending = true;
     });
 
     function reloadEmailAttachmentsTable() {
@@ -1162,14 +1220,24 @@ function generateEmailAttachmentButtonContent(attachmentId) {
  * @param {string} attachmentId - Attachment ID to delete
  */
 function deleteEmailAttachment(attachmentId) {
-    abp.message.confirm(
-        'Are you sure you want to delete this attachment?',
-        'Delete Attachment',
-        function (confirmed) {
-            if (confirmed) {
+    const templateId = $('#templateId').val();
+    const planImpactCheck = isConfigurationManagementTemplateEditor()
+        ? checkScheduledPlanImpactForAttachmentDelete(templateId)
+        : Promise.resolve(true);
+
+    planImpactCheck.then(function (confirmed) {
+        if (!confirmed) return;
+
+        abp.message.confirm(
+            'Are you sure you want to delete this attachment?',
+            'Delete Attachment',
+            function (deleteConfirmed) {
+                if (!deleteConfirmed) return;
+
                 unity.notifications.emails.emailLogAttachment
                     .delete(attachmentId)
                     .then(function () {
+                        PubSub.publish('template_attachment_changed');
                         abp.notify.success('Attachment deleted successfully.');
                         PubSub.publish('reload_email_attachments_table');
                     })
@@ -1178,8 +1246,45 @@ function deleteEmailAttachment(attachmentId) {
                         abp.notify.error('Failed to delete attachment.');
                     });
             }
-        }
-    );
+        );
+    });
+}
+
+function isConfigurationManagementTemplateEditor() {
+    return window.location.pathname.toLowerCase() === '/configurationmanagement' &&
+        $('#nav-template').length > 0 &&
+        $('#TemplatesTable').length > 0 &&
+        $('#templateId').length > 0;
+}
+
+function checkScheduledPlanImpactForAttachmentDelete(templateId) {
+    if (!templateId) return Promise.resolve(true);
+
+    return $.ajax({
+        url: `/api/form-notifications/template-notification-plans/${encodeURIComponent(templateId)}`,
+        type: 'GET',
+        dataType: 'json'
+    }).then(function (response) {
+        const planNames = response.notificationPlanNames || [];
+        if (planNames.length === 0) return true;
+
+        return Swal.fire({
+            icon: 'warning',
+            title: 'Scheduled notification impact',
+            html: '<p><strong>Warning:</strong> This template is currently associated with ' + planNames.length + ' notification plan' + (planNames.length === 1 ? '' : 's') + '. Any changes made to this template may impact these notification plan' + (planNames.length === 1 ? '' : 's') + '.</p>',
+            showCancelButton: true,
+            confirmButtonText: 'OK',
+            cancelButtonText: 'Cancel',
+            customClass: {
+                confirmButton: 'btn btn-primary',
+                cancelButton: 'btn btn-secondary'
+            }
+        }).then(result => result.isConfirmed);
+    }).catch(function (e) {
+        console.warn('Failed to check template notification plans:', e);
+        abp.notify.error('Unable to verify whether this template is used by a scheduled notification plan. The attachment was not deleted.');
+        return false;
+    });
 }
 
 /**
