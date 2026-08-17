@@ -3,10 +3,30 @@ import FormData from "form-data";
 import fs from "fs";
 import path from "path";
 
+function loadLocalEnvironmentConfig(): Record<string, unknown> {
+  const environmentName = (
+    process.env.UNITY_CYPRESS_ENV || "dev"
+  ).toLowerCase();
+  const environmentFilePath = path.resolve(
+    "cypress",
+    "config",
+    `${environmentName}.json`,
+  );
+
+  try {
+    const content = fs.readFileSync(environmentFilePath, "utf-8");
+    return JSON.parse(content) as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
+
 // https://docs.cypress.io/guides/references/configuration
 export default defineConfig({
   e2e: {
-    setupNodeEvents(on) {
+    setupNodeEvents(on, config) {
+      const environmentConfig = loadLocalEnvironmentConfig();
+
       on("task", {
         readJsonIfExists(filePath: string): Record<string, unknown> | null {
           try {
@@ -59,6 +79,17 @@ export default defineConfig({
           return response.json();
         },
       });
+
+      return {
+        ...config,
+        baseUrl:
+          (environmentConfig["webapp.url"] as string | undefined) ||
+          config.baseUrl,
+        env: {
+          ...config.env,
+          ...environmentConfig,
+        },
+      };
     },
     specPattern: [
       "cypress/e2e/**/*.cy.{js,jsx,ts,tsx}",
