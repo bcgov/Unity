@@ -24,7 +24,9 @@ public class AIExecutionModeResolverTests
                 cancellationToken: Arg.Any<CancellationToken>())
             .Returns(callInfo =>
             {
-                var predicate = callInfo.Arg<Expression<Func<AIOperation, bool>>>();
+                var predicateExpression = callInfo.Arg<Expression<Func<AIOperation, bool>>>();
+                ArgumentNullException.ThrowIfNull(predicateExpression);
+                var predicate = predicateExpression.Compile();
                 return Task.FromResult(new[]
                 {
                     new AIOperation(Guid.NewGuid(), AIPromptTypes.ApplicationScoring, Guid.NewGuid())
@@ -32,7 +34,7 @@ public class AIExecutionModeResolverTests
                         ExecutionMode = AIExecutionMode.Batch,
                         IsActive = true
                     }
-                }.Where(predicate.Compile()).ToList());
+                }.Where(predicate).ToList());
             });
 
         var resolver = new AIExecutionModeResolver(repository);

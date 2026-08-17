@@ -7,10 +7,33 @@ $(function () {
 
     let initialFormState = uiElements.settingForm.serialize();
 
+    let lastSavedValues = {
+        automaticGenerationEnabled: $('#AutomaticGenerationEnabled').is(':checked'),
+        manualGenerationEnabled: $('#ManualGenerationEnabled').is(':checked'),
+        reportingEnabled: $('#ReportingEnabled').is(':checked')
+    };
+
     function checkFormChanges() {
         let isFormChanged = uiElements.settingForm.serialize() !== initialFormState;
         uiElements.saveButton.prop('disabled', !isFormChanged);
         uiElements.discardButton.prop('disabled', !isFormChanged);
+    }
+
+    function saveSettings(automaticEnabled, manualEnabled, reportingEnabled) {
+        unity.aI.settings.aIConfiguration.updateTenantConfiguration({
+            automaticGenerationEnabled: automaticEnabled,
+            manualGenerationEnabled: manualEnabled,
+            reportingEnabled: reportingEnabled
+        }).then(function () {
+            lastSavedValues = {
+                automaticGenerationEnabled: automaticEnabled,
+                manualGenerationEnabled: manualEnabled,
+                reportingEnabled: reportingEnabled
+            };
+            $(document).trigger('AbpSettingSaved');
+            initialFormState = uiElements.settingForm.serialize();
+            checkFormChanges();
+        });
     }
 
     uiElements.settingForm.on('change', function () {
@@ -22,14 +45,13 @@ $(function () {
 
         const automaticEnabled = $('#AutomaticGenerationEnabled').is(':checked');
         const manualEnabled = $('#ManualGenerationEnabled').is(':checked');
+        const reportingEnabled = $('#ReportingEnabled').is(':checked');
+        const turningOn = (automaticEnabled && !lastSavedValues.automaticGenerationEnabled) ||
+            (manualEnabled && !lastSavedValues.manualGenerationEnabled) ||
+            (reportingEnabled && !lastSavedValues.reportingEnabled);
 
-        unity.aI.settings.aIConfiguration.updateTenantConfiguration({
-            automaticGenerationEnabled: automaticEnabled,
-            manualGenerationEnabled: manualEnabled
-        }).then(function () {
-            $(document).trigger('AbpSettingSaved');
-            initialFormState = uiElements.settingForm.serialize();
-            checkFormChanges();
+        unity.aI.legalDisclaimer.confirmIfNeeded(turningOn, function () {
+            saveSettings(automaticEnabled, manualEnabled, reportingEnabled);
         });
     });
 

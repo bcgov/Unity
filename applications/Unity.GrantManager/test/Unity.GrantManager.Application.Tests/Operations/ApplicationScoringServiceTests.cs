@@ -35,7 +35,9 @@ public class ApplicationScoringServiceTests
                 cancellationToken: Arg.Any<CancellationToken>())
             .Returns(callInfo =>
             {
-                var predicate = callInfo.Arg<System.Linq.Expressions.Expression<Func<AIOperation, bool>>>();
+                var predicateExpression = callInfo.Arg<System.Linq.Expressions.Expression<Func<AIOperation, bool>>>();
+                ArgumentNullException.ThrowIfNull(predicateExpression);
+                var predicate = predicateExpression.Compile();
                 return Task.FromResult(new[]
                 {
                     new AIOperation(Guid.NewGuid(), AIPromptTypes.ApplicationScoring, Guid.NewGuid())
@@ -43,7 +45,7 @@ public class ApplicationScoringServiceTests
                         ExecutionMode = AIExecutionMode.Sequential,
                         IsActive = true
                     }
-                }.Where(predicate.Compile()).ToList());
+                }.Where(predicate).ToList());
             });
 
         var service = new ApplicationScoringService(

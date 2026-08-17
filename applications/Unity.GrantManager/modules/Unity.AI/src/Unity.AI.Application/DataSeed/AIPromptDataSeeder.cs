@@ -868,7 +868,8 @@ public class AIPromptDataSeeder(
         }
 
         Rules:
-        - Return one field-suggestion JSON object only.
+        - Return one JSON object containing all applicable field suggestions. Review the full form schema and every unmapped CHEFS field before responding; include every additional custom field genuinely needed, not just the first match.
+        - Return an empty fields array when no additional custom fields are needed.
         - chefsFields contains the available CHEFS source fields.
         - unityCoreFields contains existing Unity core fields. Do not create a custom field when one of these already fits.
         - existingMapping contains the current saved Unity-to-CHEFS mappings. Do not duplicate those mappings with a custom field.
@@ -932,6 +933,8 @@ public class AIPromptDataSeeder(
 
         Rules:
         - Return one scoresheet definition JSON object only.
+        - Title and Name must be non-empty strings; Sections must contain at least one section and every section must contain at least one field.
+        - Every field Name and Label must be non-empty, Order and Type must be non-negative integers, and Definition must be a valid JSON object encoded as a string.
         - The context contains CHEFS form fields, allowed Unity Flex question types, and a scoresheet template.
         - Fill out the scoresheet template to generate the rubric assessors use to score submitted applications.
         - Use CHEFS form fields as evidence for assessment criteria, but do not create one question per form field.

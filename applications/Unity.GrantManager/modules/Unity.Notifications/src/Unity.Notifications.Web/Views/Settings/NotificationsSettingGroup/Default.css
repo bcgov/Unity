@@ -189,6 +189,10 @@ body {
     justify-content: center;
 }
 
+.split-container.split-active .left-pane {
+    flex: 0 0 48%;
+}
+
 /* ── Right pane ───────────────────────────────────────────────────────────── */
 .right-pane {
     flex-shrink: 0;
@@ -203,6 +207,19 @@ body {
     top: 10px;
     /* Explicit height (not max-height) so h-100 on the inner card resolves correctly */
     height: calc(100vh - 230px);
+}
+
+.right-pane > .card {
+    min-height: 0;
+}
+
+.right-pane .editor-body {
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
+#email-attachments-section {
+    flex-shrink: 0;
 }
 
 
@@ -220,6 +237,15 @@ body {
     min-height: 0;    /* required for overflow-y:auto to work inside a flex column */
     margin-top: 50px;
     padding: 2px;
+}
+
+#email-attachments-section .d-flex.justify-content-end.mt-2.mb-1 {
+    padding-bottom: 50px !important;
+    display: flex !important;
+}
+
+.right-pane .card-body.editor-body.overflow-auto {
+    padding-bottom: 20px !important;
 }
 
 /* ── Resizable textareas ──────────────────────────────────────────────────── */

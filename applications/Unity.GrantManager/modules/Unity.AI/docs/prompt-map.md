@@ -8,6 +8,12 @@
 - `FormWorksheet` - worksheet generation
 - `FormScoresheet` - scoresheet generation
 
+`FormMapping` and `FormWorksheet` are independent operations with complete
+context inputs. The Mapping tab can guide them through mapping review, worksheet
+review, publish and assignment, and another mapping run. Review suggestions are
+persisted until accepted or discarded. Initial-review suggestions preserve existing
+non-empty mappings; accepted final-review suggestions may replace conflicting mappings.
+
 ## Versions
 - Built-in prompt rows are defined and seeded by `AIPromptDataSeeder`.
 - Families may have `v0`, `v1`, and `v2` rows; a new operation only needs the versions it supports.

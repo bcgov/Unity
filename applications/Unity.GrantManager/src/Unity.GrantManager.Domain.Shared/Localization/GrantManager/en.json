@@ -638,6 +638,11 @@
     "DataTable:ContextMenu:Copy": "Copy",
     "DataTable:ContextMenu:CopiedToClipboard": "Copied to clipboard",
     "DataTable:ContextMenu:Filter": "Filter",
-    "DataTable:ContextMenu:ClearFilter": "Clear Filters"
+    "DataTable:ContextMenu:ClearFilter": "Clear Filters",
+
+    "WrongTenantError:Title": "An Error Occurred",
+    "WrongTenantError:ApplicationTenant": "This application is in Tenant: {0}",
+    "WrongTenantError:CurrentTenant": "You are currently in Tenant: {0}",
+    "WrongTenantError:Instructions": "Please click on the Profile menu at the top right of the corner, click on Switch Grant Programs, and select the correct Tenant before proceeding to view the link."
   }
 }
