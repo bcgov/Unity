@@ -21,12 +21,18 @@
     PageLayout.Content.MenuItemName = "GrantManager.ApplicationForms";
     PageLayout.Content.Title = "Application Mapping";
     ViewBag.PageTitle = "Application Forms Mapping";
+    var canViewFormMapping = await FeatureChecker.IsEnabledAsync("Unity.AI.FormMapping") && await PermissionChecker.IsGrantedAsync(AIPermissions.FormMapping.View);
+    var canGenerateFormMapping = await FeatureChecker.IsEnabledAsync("Unity.AI.FormMapping") && await PermissionChecker.IsGrantedAsync(AIPermissions.FormMapping.Generate);
+    var canViewFormWorksheet = await FeatureChecker.IsEnabledAsync("Unity.AI.FormWorksheet") && await PermissionChecker.IsGrantedAsync(AIPermissions.FormWorksheet.View);
+    var canGenerateFormWorksheet = await FeatureChecker.IsEnabledAsync("Unity.AI.FormWorksheet") && await PermissionChecker.IsGrantedAsync(AIPermissions.FormWorksheet.Generate);
+    var canViewFormScoresheet = await FeatureChecker.IsEnabledAsync("Unity.AI.FormScoresheet") && await PermissionChecker.IsGrantedAsync(AIPermissions.FormScoresheet.View);
+    var canGenerateFormScoresheet = await FeatureChecker.IsEnabledAsync("Unity.AI.FormScoresheet") && await PermissionChecker.IsGrantedAsync(AIPermissions.FormScoresheet.Generate);
     var mappingReviewModal = new AiSuggestionReviewModalModel
     {
         ModalId = "aiMappingReviewModal",
         ModalLabelId = "aiMappingReviewModalLabel",
-        CanMutate = await PermissionChecker.IsGrantedAsync(AIPermissions.FormMapping.Generate),
-        Title = "Review AI Mapping Suggestions",
+        CanMutate = canGenerateFormMapping,
+        Title = "Review Mapping Suggestions",
         SourceColumnTitle = "CHEFS Field",
         TargetColumnTitle = "Unity Core Field",
         FieldsId = "aiMappingReviewFields",
@@ -43,8 +49,8 @@
     {
         ModalId = "aiWorksheetReviewModal",
         ModalLabelId = "aiWorksheetReviewModalLabel",
-        CanMutate = await PermissionChecker.IsGrantedAsync(AIPermissions.FormWorksheet.Generate),
-        Title = "Create Worksheet Draft",
+        CanMutate = canGenerateFormWorksheet,
+        Title = "Review Worksheet Suggestions",
         SourceColumnTitle = "Source Field",
         TargetColumnTitle = "Worksheet Field",
         FieldsId = "aiWorksheetReviewFields",
@@ -54,7 +60,7 @@
         SelectAllId = "aiWorksheetReviewSelectAll",
         TitleInputId = "aiWorksheetTitle",
         TitleInputLabel = "Worksheet Title",
-        TitleInputPlaceholder = "e.g., Project details",
+        TitleInputPlaceholder = "e.g., Project worksheet",
         PrimaryActionId = "btn-create-ai-worksheet-draft",
         PrimaryActionText = "Create Draft",
         PrimaryActionDisabled = true,
@@ -65,8 +71,8 @@
     {
         ModalId = "aiScoresheetReviewModal",
         ModalLabelId = "aiScoresheetReviewModalLabel",
-        CanMutate = await PermissionChecker.IsGrantedAsync(AIPermissions.FormScoresheet.Generate),
-        Title = "Review AI Scoresheet Suggestions",
+        CanMutate = canGenerateFormScoresheet,
+        Title = "Review Scoresheet Suggestions",
         SourceColumnTitle = "Generated Question",
         TargetColumnTitle = "Section",
         FieldsId = "aiScoresheetReviewFields",
@@ -76,7 +82,7 @@
         SelectAllId = "aiScoresheetReviewSelectAll",
         TitleInputId = "aiScoresheetTitle",
         TitleInputLabel = "Scoresheet Title",
-        TitleInputPlaceholder = "e.g., Application Assessment",
+        TitleInputPlaceholder = "e.g., Project scoresheet",
         PrimaryActionId = "btn-create-ai-scoresheet-draft",
         PrimaryActionText = "Add to Scoresheet",
         PrimaryActionDisabled = true,
@@ -90,6 +96,8 @@
 {
     <abp-script src="/Views/Shared/Components/_Shared/string-utils.js" />
     <abp-script src="/Pages/ApplicationForms/mapping-utils.js" />
+    <abp-script src="/Pages/ApplicationForms/ai-form-workflow-api.js" />
+    <abp-script src="/Pages/GrantApplications/ai-generation-api.js" />
     <abp-script src="/Pages/GrantApplications/ai-generation-button-state.js" />
     <abp-script src="/Pages/GrantApplications/ai-rate-limit.js" />
     <abp-script src="/Pages/ApplicationForms/Mapping.js" />
@@ -108,6 +116,12 @@
 <input type="hidden" id="existingMapping" value="@Model.ApplicationFormVersionDto?.SubmissionHeaderMapping" />
 <input type="hidden" id="formVersionId" value="@Model.ApplicationFormVersionDto?.Id" />
 <input type="hidden" id="applicationFormId" value="@Model.ApplicationFormDto?.Id" />
+<input type="hidden" id="AIFormMappingViewEnabled" value="@(canViewFormMapping.ToString().ToLower())" />
+<input type="hidden" id="AIFormMappingGenerateEnabled" value="@(canGenerateFormMapping.ToString().ToLower())" />
+<input type="hidden" id="AIFormWorksheetViewEnabled" value="@(canViewFormWorksheet.ToString().ToLower())" />
+<input type="hidden" id="AIFormWorksheetGenerateEnabled" value="@(canGenerateFormWorksheet.ToString().ToLower())" />
+<input type="hidden" id="AIFormScoresheetViewEnabled" value="@(canViewFormScoresheet.ToString().ToLower())" />
+<input type="hidden" id="AIFormScoresheetGenerateEnabled" value="@(canGenerateFormScoresheet.ToString().ToLower())" />
 <input type="hidden" id="chefsFormId" value="@Model.ApplicationFormDto?.ChefsApplicationFormGuid" />
 <input type="hidden" id="formName" value="@Model.ApplicationFormDto?.ApplicationFormName" />
 
@@ -167,7 +181,7 @@
                     <h5>Mapping Configuration</h5>
                 </div>
                 <div class="col-12 col-md-4 btn-wrapper" data-ai-workflow-loading="true">
-                    @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormMapping.Generate))
+                    @if (canGenerateFormMapping)
                     {
                         <button type="button" id="btn-generate" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none"
                                 data-ai-cooldown-checking="1" data-ai-rate-limit-disabled="1" disabled
@@ -178,7 +192,7 @@
                             </span>
                         </button>
                     }
-                    @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormMapping.View))
+                    @if (canViewFormMapping)
                     {
                         <button type="button" id="btn-review-mapping" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none"
                                 data-ai-review-action="true"
@@ -189,7 +203,7 @@
                             </span>
                         </button>
                     }
-                    @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormWorksheet.Generate))
+                    @if (canGenerateFormWorksheet)
                     {
                         <button type="button" id="btn-generate-worksheet" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none"
                                 data-ai-cooldown-checking="1" data-ai-rate-limit-disabled="1" data-ai-pending="false" disabled
@@ -200,7 +214,7 @@
                             </span>
                         </button>
                     }
-                    @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormWorksheet.View))
+                    @if (canViewFormWorksheet)
                         {
                             <button type="button" id="btn-review-worksheet" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none"
                                 data-ai-review-action="true"
@@ -211,7 +225,7 @@
                             </span>
                         </button>
                     }
-                    @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormWorksheet.Generate))
+                    @if (canGenerateFormWorksheet)
                     {
                         <button type="button" id="btn-publish-assign-worksheets" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none" disabled
                                 title="Publish and assign worksheet drafts before generating the final mapping">
@@ -221,7 +235,7 @@
                             </span>
                         </button>
                     }
-                    @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormMapping.Generate))
+                    @if (canGenerateFormMapping)
                     {
                         <button type="button" id="btn-generate-final-mapping" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none"
                                 title="Generate the final mapping for the current form version">
@@ -231,7 +245,7 @@
                             </span>
                         </button>
                     }
-                    @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormMapping.View))
+                    @if (canViewFormMapping)
                         {
                             <button type="button" id="btn-review-final-mapping" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none"
                                 data-ai-review-action="true"
@@ -242,8 +256,7 @@
                             </span>
                         </button>
                     }
-                    @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormMapping.Generate)
-                        && await PermissionChecker.IsGrantedAsync(AIPermissions.FormWorksheet.Generate))
+                    @if (canGenerateFormMapping && canGenerateFormWorksheet)
                     {
                         <button type="button" id="btn-restart-ai-flow" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none"
                                 data-ai-review-action="true"
@@ -378,7 +391,9 @@
                 <div id="customFieldsWidget">
                     @await Component.InvokeAsync("CustomFields",
                         new {   formVersionId = Model?.ApplicationFormVersionDto?.ChefsFormVersionGuid?.ToString(),
-                                formName = Model?.ApplicationFormDto?.ApplicationFormName
+                                formName = Model?.ApplicationFormDto?.ApplicationFormName,
+                                canViewScoresheet = canViewFormScoresheet,
+                                canGenerateScoresheet = canGenerateFormScoresheet
                             }
                     )
                 </div>

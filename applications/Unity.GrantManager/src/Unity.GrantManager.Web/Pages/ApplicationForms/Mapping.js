@@ -1,5 +1,4 @@
 $(function () {
-    const aiL = abp.localization.getResource('AI');
     let availableChefFieldsString = document.getElementById('availableChefsFields').value;
     let existingMappingString = document.getElementById('existingMapping').value;
     let intakeFieldsString = document.getElementById('intakeProperties').value;
@@ -146,10 +145,7 @@ $(function () {
             primaryText: 'Add to Scoresheet',
             continueReview: function () {
                 const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
-                abp.ajax({
-                    url: `/api/app/application-form-version/discard-ai-scoresheet-suggestions?formVersionId=${encodeURIComponent(formVersion)}`,
-                    type: 'POST'
-                }).done(function () {
+                globalThis.AIFormWorkflowApi.discardScoresheetSuggestions(formVersion).done(function () {
                     setAiScoresheetPending(false);
                     UIElements.scoresheetReviewModal.modal('hide');
                     loadMappingReview(false);
@@ -172,6 +168,7 @@ $(function () {
         bindExistingMaps();
         setupTooltips();
         initializeUIConfiguration();
+        restoreActiveGenerationMonitors();
         loadMappingReview(false);
         loadAiScoresheetReview(false);
     }
@@ -182,13 +179,86 @@ $(function () {
         });
     }
 
-    function startWorksheetPhase(callback) {
+    function isCapabilityEnabled(flagId) {
+        return String($(`#${flagId}`).val() ?? '').toLowerCase() === 'true';
+    }
+
+    function isAiFormScoresheetViewEnabled() {
+        return isCapabilityEnabled('AIFormScoresheetViewEnabled');
+    }
+
+    function isAiFormScoresheetGenerateEnabled() {
+        return isCapabilityEnabled('AIFormScoresheetGenerateEnabled');
+    }
+
+    function isAiFormMappingViewEnabled() {
+        return isCapabilityEnabled('AIFormMappingViewEnabled');
+    }
+
+    function isAiFormMappingGenerateEnabled() {
+        return isCapabilityEnabled('AIFormMappingGenerateEnabled');
+    }
+
+    function isAiFormWorksheetViewEnabled() {
+        return isCapabilityEnabled('AIFormWorksheetViewEnabled');
+    }
+
+    function isAiFormWorksheetGenerateEnabled() {
+        return isCapabilityEnabled('AIFormWorksheetGenerateEnabled');
+    }
+
+    function resumeGenerationMonitorOnLoad({ isEnabled, $button, operationType, monitorGeneration }) {
+        if (!isEnabled || !$button?.length) {
+            return;
+        }
+
+        const applicationId = String(document.getElementById('applicationFormId')?.value ?? '').trim();
+        if (!validateGuid(applicationId)) {
+            return;
+        }
+
+        globalThis.AIGenerationApi.getStatus(applicationId, operationType).done(function (generationStatus) {
+            if (generationStatus?.generationRequest?.isActive !== true) {
+                return;
+            }
+
+            const existingHtml = $button.html();
+            globalThis.AIGenerationButtonState?.setGenerating($button);
+            monitorGeneration(applicationId, $button, existingHtml);
+        });
+    }
+
+    function restoreActiveGenerationMonitors() {
+        resumeGenerationMonitorOnLoad({
+            isEnabled: isAiFormMappingGenerateEnabled(),
+            $button: UIElements.btnGenerate,
+            operationType: 'form-mapping',
+            monitorGeneration: monitorFormMappingGeneration
+        });
+
+        resumeGenerationMonitorOnLoad({
+            isEnabled: isAiFormWorksheetGenerateEnabled(),
+            $button: UIElements.btnGenerateWorksheet,
+            operationType: 'form-worksheet',
+            monitorGeneration: monitorFormWorksheetGeneration
+        });
+
+        resumeGenerationMonitorOnLoad({
+            isEnabled: isAiFormScoresheetGenerateEnabled(),
+            $button: UIElements.btnGenerateScoresheet,
+            operationType: 'form-scoresheet',
+            monitorGeneration: monitorFormScoresheetGeneration
+        });
+    }
+
+    function transitionToWorksheetReview(onSuccess, fallbackErrorMessage) {
         const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
-        return abp.ajax({
-            url: `/api/app/application-form-version/mapping-review-phase?formVersionId=${encodeURIComponent(formVersion)}&phase=WorksheetReview`,
-            type: 'POST'
-        }).done(callback).fail(function () {
-            abp.notify.error('', 'Unable to start worksheet generation.');
+        return globalThis.AIFormWorkflowApi.startWorksheetReviewPhase(formVersion).done(function (result) {
+            if (typeof onSuccess === 'function') {
+                onSuccess(result);
+            }
+        }).fail(function (error) {
+            abp.notify.error('', error?.responseJSON?.error?.message || fallbackErrorMessage);
         });
     }
 
@@ -209,11 +279,6 @@ $(function () {
         UIElements.btnGenerateFinalMapping.on('click', finalizeMappingReview);
         UIElements.btnRestartAiFlow.on('click', restartAiFlow);
         UIElements.btnGenerateScoresheet.on('click', function () {
-            if (UIElements.btnGenerateScoresheet.attr('data-ai-can-generate') !== 'true') {
-                abp.notify.error('', aiL('AI:GenerateFormScoresheetPermissionRequired'));
-                return;
-            }
-
             queueFormScoresheet(this);
         });
         UIElements.btnReviewScoresheet.on('click', function () {
@@ -311,6 +376,10 @@ $(function () {
     }
 
     function queueFormMapping(triggerButton = null) {
+        if (!isAiFormMappingGenerateEnabled() || !UIElements.btnGenerate.length) {
+            return;
+        }
+
         if (UIElements.btnGenerate.attr('data-ai-pending') === 'true') {
             loadMappingReview(true);
             return;
@@ -342,10 +411,7 @@ $(function () {
 
         globalThis.AIGenerationButtonState?.setGenerating($button);
 
-        abp.ajax({
-            url: `/api/app/ai/generation/form-mapping?applicationId=${encodeURIComponent(applicationId)}&applicationFormVersionId=${encodeURIComponent(formVersion)}`,
-            type: 'POST',
-        })
+        globalThis.AIGenerationApi.queueFormMapping(applicationId, formVersion)
             .done(function (generationStatus) {
                 const request = generationStatus?.generationRequest;
                 const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
@@ -371,6 +437,10 @@ $(function () {
     }
 
     function queueFormWorksheet(triggerButton = null) {
+        if (!isAiFormWorksheetGenerateEnabled() || !UIElements.btnGenerateWorksheet.length) {
+            return;
+        }
+
         const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
         const applicationId = String(document.getElementById('applicationFormId')?.value ?? '').trim();
         if (!validateGuid(formVersion) || !validateGuid(applicationId)) {
@@ -385,9 +455,9 @@ $(function () {
             return;
         }
 
-        startWorksheetPhase(function () {
+        transitionToWorksheetReview(function () {
             queueFormWorksheetCore(buttonElement);
-        });
+        }, 'Unable to start worksheet generation.');
     }
 
     function queueFormWorksheetCore(triggerButton = null) {
@@ -399,10 +469,7 @@ $(function () {
 
         globalThis.AIGenerationButtonState?.setGenerating($button);
 
-        abp.ajax({
-            url: `/api/app/ai/generation/form-worksheet?applicationId=${encodeURIComponent(applicationId)}&applicationFormVersionId=${encodeURIComponent(formVersion)}`,
-            type: 'POST',
-        })
+        globalThis.AIGenerationApi.queueFormWorksheet(applicationId, formVersion)
             .done(function (generationStatus) {
                 const request = generationStatus?.generationRequest;
                 const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
@@ -427,13 +494,14 @@ $(function () {
     }
 
     function monitorFormWorksheetGeneration(applicationId, $button, existingHtml) {
+        if (!isAiFormWorksheetGenerateEnabled() || !$button || !$button.length) {
+            return;
+        }
+
         globalThis.AIGenerationButtonState?.monitor({
             $button,
             originalHtml: existingHtml,
-            getStatus: () => abp.ajax({
-                url: `/api/app/ai/generation/status?applicationId=${encodeURIComponent(applicationId)}&operationType=form-worksheet`,
-                type: 'GET'
-            }),
+            getStatus: () => globalThis.AIGenerationApi.getStatus(applicationId, 'form-worksheet'),
             onComplete: function () {
                 refreshWorksheetAfterGeneration();
             },
@@ -447,6 +515,10 @@ $(function () {
     }
 
     function queueFormScoresheet(triggerButton = null) {
+        if (!isAiFormScoresheetGenerateEnabled() || !UIElements.btnGenerateScoresheet.length) {
+            return;
+        }
+
         const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
         const applicationId = String(document.getElementById('applicationFormId')?.value ?? '').trim();
         if (!validateGuid(formVersion) || !validateGuid(applicationId)) {
@@ -464,10 +536,7 @@ $(function () {
 
         globalThis.AIGenerationButtonState?.setGenerating($button);
 
-        abp.ajax({
-            url: `/api/app/ai/generation/form-scoresheet?applicationId=${encodeURIComponent(applicationId)}&applicationFormVersionId=${encodeURIComponent(formVersion)}`,
-            type: 'POST',
-        })
+        globalThis.AIGenerationApi.queueFormScoresheet(applicationId, formVersion)
             .done(function (generationStatus) {
                 const request = generationStatus?.generationRequest;
                 const status = globalThis.AIGenerationButtonState?.resolveStatus(request?.status) ?? '';
@@ -492,13 +561,14 @@ $(function () {
     }
 
     function monitorFormScoresheetGeneration(applicationId, $button, existingHtml) {
+        if (!isAiFormScoresheetGenerateEnabled() || !$button || !$button.length) {
+            return;
+        }
+
         globalThis.AIGenerationButtonState?.monitor({
             $button,
             originalHtml: existingHtml,
-            getStatus: () => abp.ajax({
-                url: `/api/app/ai/generation/status?applicationId=${encodeURIComponent(applicationId)}&operationType=form-scoresheet`,
-                type: 'GET'
-            }),
+            getStatus: () => globalThis.AIGenerationApi.getStatus(applicationId, 'form-scoresheet'),
             onComplete: function () {
                 refreshScoresheetAfterGeneration();
             },
@@ -532,16 +602,17 @@ $(function () {
     }
 
     function loadAiWorksheetReview() {
+        if (!isAiFormWorksheetViewEnabled() || !UIElements.btnReviewWorksheet.length) {
+            return;
+        }
+
         const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
         if (!validateGuid(formVersion)) {
             abp.notify.error('', 'Unable to review the worksheet because the Form Version ID is invalid.');
             return;
         }
 
-        abp.ajax({
-            url: `/api/app/application-form-version/pending-ai-worksheet?formVersionId=${encodeURIComponent(formVersion)}`,
-            type: 'GET'
-        })
+        globalThis.AIFormWorkflowApi.getPendingWorksheet(formVersion)
             .done(function (worksheet) {
                 if (!worksheet) {
                     setAiWorksheetPending(false);
@@ -587,7 +658,7 @@ $(function () {
                 .attr('id', fieldId)
                 .attr('data-field-id', field.id)
                 .attr('aria-label', `Include ${field.label || field.key || 'field'}`)
-                .prop('checked', field.selected !== false)
+                .prop('checked', false)
                 .appendTo($switchContainer);
             $switchContainer.appendTo($switch);
             $switch.appendTo($row);
@@ -636,12 +707,7 @@ $(function () {
         UIElements.btnCreateWorksheetDraft.prop('disabled', true);
         UIElements.btnDiscardWorksheet.prop('disabled', true);
 
-        abp.ajax({
-            url: `/api/app/application-form-version/create-ai-worksheet-draft?formVersionId=${encodeURIComponent(formVersion)}`,
-            type: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({ sessionId, title, selectedFieldIds })
-        })
+        globalThis.AIFormWorkflowApi.createWorksheetDraft(formVersion, { sessionId, title, selectedFieldIds })
             .done(function () {
                 UIElements.worksheetTitle.val('');
                 abp.notify.success('', 'Draft worksheet created.');
@@ -657,10 +723,7 @@ $(function () {
     }
 
     function refreshAiWorksheetReviewAfterDraftCreation(formVersion) {
-        abp.ajax({
-            url: `/api/app/application-form-version/pending-ai-worksheet?formVersionId=${encodeURIComponent(formVersion)}`,
-            type: 'GET'
-        })
+        globalThis.AIFormWorkflowApi.getPendingWorksheet(formVersion)
             .done(function (worksheet) {
                 if (!worksheet) {
                     UIElements.worksheetReviewModal.modal('hide');
@@ -692,10 +755,7 @@ $(function () {
 
                 UIElements.btnCreateWorksheetDraft.prop('disabled', true);
                 UIElements.btnDiscardWorksheet.prop('disabled', true);
-                abp.ajax({
-                    url: `/api/app/application-form-version/discard-ai-worksheet-suggestions?formVersionId=${encodeURIComponent(formVersion)}`,
-                    type: 'POST'
-                })
+                globalThis.AIFormWorkflowApi.discardWorksheetSuggestions(formVersion)
                     .done(function () {
                         setAiWorksheetPending(false);
                         UIElements.worksheetReviewModal.modal('hide');
@@ -720,12 +780,13 @@ $(function () {
     }
 
     function finalizeMappingReview() {
+        if (!isAiFormMappingGenerateEnabled()) {
+            return;
+        }
+
         const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
         const applicationId = String(document.getElementById('applicationFormId')?.value ?? '').trim();
-        abp.ajax({
-            url: `/api/app/application-form-version/finalize-mapping-review?formVersionId=${encodeURIComponent(formVersion)}`,
-            type: 'POST'
-        }).done(function () {
+        globalThis.AIFormWorkflowApi.finalizeMappingReview(formVersion).done(function () {
             monitorFormMappingGeneration(applicationId, UIElements.btnGenerate, UIElements.btnGenerate.html());
         }).fail(function (error) {
             abp.notify.error('', error?.responseJSON?.error?.message || 'Publish and assign all AI worksheet drafts before generating mapping.');
@@ -734,11 +795,12 @@ $(function () {
     }
 
     function checkMappingReviewComplete() {
+        if (!isAiFormMappingViewEnabled()) {
+            return;
+        }
+
         const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
-        abp.ajax({
-            url: `/api/app/application-form-version/mapping-review?formVersionId=${encodeURIComponent(formVersion)}`,
-            type: 'GET'
-        }).done(function (review) {
+        globalThis.AIFormWorkflowApi.getMappingReview(formVersion).done(function (review) {
             if (!review?.pendingSuggestions?.length) {
                 UIElements.mappingReviewModal.modal('hide');
                 if (isFinalMappingPhase(review.phase)) {
@@ -752,10 +814,7 @@ $(function () {
 
     function completeMappingReview() {
         const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
-        abp.ajax({
-            url: `/api/app/application-form-version/mapping-review-phase?formVersionId=${encodeURIComponent(formVersion)}&phase=Completed`,
-            type: 'POST'
-        }).done(function () {
+        globalThis.AIFormWorkflowApi.completeMappingReviewPhase(formVersion).done(function () {
             UIElements.btnGenerate.attr('data-ai-pending', 'false');
             abp.notify.success('', 'AI mapping review completed.');
         });
@@ -774,7 +833,7 @@ $(function () {
         UIElements.btnGenerateScoresheet.toggleClass('d-none', isPending);
         UIElements.btnReviewScoresheet.toggleClass('d-none', !isPending);
 
-        if (isPending) {
+        if (!isPending) {
             UIElements.btnGenerateScoresheet
                 .removeAttr('data-ai-cooldown-checking data-ai-rate-limit-disabled')
                 .prop('disabled', false);
@@ -782,15 +841,17 @@ $(function () {
     }
 
     function loadAiScoresheetReview(showModal = true, showEmpty = true) {
+        if (!isAiFormScoresheetViewEnabled() || !UIElements.btnReviewScoresheet.length) {
+            setAiScoresheetPending(false);
+            return;
+        }
+
         const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
         if (!validateGuid(formVersion)) {
             return;
         }
 
-        return abp.ajax({
-            url: `/api/app/application-form-version/pending-ai-scoresheet?formVersionId=${encodeURIComponent(formVersion)}`,
-            type: 'GET'
-        }).done(function (review) {
+        return globalThis.AIFormWorkflowApi.getPendingScoresheet(formVersion).done(function (review) {
             if (!review) {
                 setAiScoresheetPending(false);
                 if (showModal && showEmpty) {
@@ -814,6 +875,7 @@ $(function () {
                 }
             }
         }).fail(function () {
+            setAiScoresheetPending(false);
             if (showModal) {
                 abp.notify.error('', 'Unable to load AI scoresheet suggestions.');
             }
@@ -824,7 +886,7 @@ $(function () {
         resetEmptyReviewModal(reviewConfigs.scoresheet);
         UIElements.scoresheetReviewFields.empty();
         UIElements.scoresheetReviewSelectAll.prop('checked', false);
-        UIElements.scoresheetTitle.val(review.title || '');
+        UIElements.scoresheetTitle.val('');
         UIElements.scoresheetReviewFields.attr('data-session-id', review.sessionId || '');
 
         const sections = review.sections || [];
@@ -850,7 +912,7 @@ $(function () {
                     class: 'form-check-input',
                     'data-question-id': question.id,
                     'data-question-section-id': section.id,
-                    checked: question.selected !== false
+                    checked: false
                 });
                 $('<div/>', { class: 'ai-suggestion-review__source', text: question.label || question.name || '' }).appendTo($row);
                 if (!UIElements.scoresheetReviewModal.find('.ai-suggestion-review__panel').attr('data-hide-target-column')) {
@@ -918,11 +980,10 @@ $(function () {
         }
 
         UIElements.btnCreateScoresheetDraft.prop('disabled', true);
-        abp.ajax({
-            url: `/api/app/application-form-version/create-ai-scoresheet-draft?formVersionId=${encodeURIComponent(formVersion)}`,
-            type: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify({ sessionId: sessionId, title: title, selectedQuestionIds: selectedQuestionIds })
+        globalThis.AIFormWorkflowApi.createScoresheetDraft(formVersion, {
+            sessionId: sessionId,
+            title: title,
+            selectedQuestionIds: selectedQuestionIds
         }).done(function () {
             abp.notify.success('', 'Scoresheet draft created.');
             loadAiScoresheetReview(true, false);
@@ -941,10 +1002,7 @@ $(function () {
             .then(function (confirmed) {
                 if (!confirmed) return;
                 UIElements.btnDiscardScoresheet.prop('disabled', true);
-                abp.ajax({
-                    url: `/api/app/application-form-version/discard-ai-scoresheet-suggestions?formVersionId=${encodeURIComponent(formVersion)}`,
-                    type: 'POST'
-                }).done(function () {
+                globalThis.AIFormWorkflowApi.discardScoresheetSuggestions(formVersion).done(function () {
                     setAiScoresheetPending(false);
                     UIElements.scoresheetReviewModal.modal('hide');
                     abp.notify.success('', 'Remaining AI scoresheet suggestions discarded.');
@@ -957,13 +1015,14 @@ $(function () {
     }
 
     function monitorFormMappingGeneration(applicationId, $button, existingHtml) {
+        if (!isAiFormMappingGenerateEnabled() || !$button || !$button.length) {
+            return;
+        }
+
         globalThis.AIGenerationButtonState?.monitor({
             $button,
             originalHtml: existingHtml,
-            getStatus: () => abp.ajax({
-                url: `/api/app/ai/generation/status?applicationId=${encodeURIComponent(applicationId)}&operationType=form-mapping`,
-                type: 'GET'
-            }),
+            getStatus: () => globalThis.AIGenerationApi.getStatus(applicationId, 'form-mapping'),
             onComplete: function () {
                 refreshMappingAfterGeneration(applicationId);
             },
@@ -977,15 +1036,16 @@ $(function () {
     }
 
     function loadMappingReview(showModal = true) {
+        if (!isAiFormMappingViewEnabled() || (!UIElements.btnReviewMapping.length && !UIElements.btnReviewFinalMapping.length)) {
+            return;
+        }
+
         const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
         if (!validateGuid(formVersion)) {
             return;
         }
 
-        return abp.ajax({
-            url: `/api/app/application-form-version/mapping-review?formVersionId=${encodeURIComponent(formVersion)}`,
-            type: 'GET'
-        })
+        return globalThis.AIFormWorkflowApi.getMappingReview(formVersion)
             .done(function (review) {
                 setAiWorkflowReady();
                 updateWorkflowActions(review);
@@ -1183,12 +1243,7 @@ $(function () {
         UIElements.btnAddMapping.prop('disabled', true);
         let result;
         try {
-            result = await abp.ajax({
-                url: `/api/app/application-form-version/accept-mapping-suggestions?formVersionId=${encodeURIComponent(formVersion)}`,
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({ suggestionIds })
-            });
+            result = await globalThis.AIFormWorkflowApi.acceptMappingSuggestions(formVersion, suggestionIds);
         } catch (error) {
             abp.notify.error(
                 '',
@@ -1219,10 +1274,7 @@ $(function () {
                     return;
                 }
 
-                return abp.ajax({
-                    url: `/api/app/application-form-version/discard-mapping-suggestions?formVersionId=${encodeURIComponent(formVersion)}`,
-                    type: 'POST'
-                })
+                return globalThis.AIFormWorkflowApi.discardMappingSuggestions(formVersion)
                     .done(function () {
                         UIElements.mappingReviewModal.modal('hide');
                         if (isFinalMappingPhase(UIElements.mappingReviewFields.attr('data-phase'))) {
@@ -1252,10 +1304,7 @@ $(function () {
                 }
 
                 UIElements.btnRestartAiFlow.prop('disabled', true);
-                return abp.ajax({
-                    url: `/api/app/application-form-version/reset-ai-flow?formVersionId=${encodeURIComponent(formVersion)}`,
-                    type: 'POST'
-                }).done(function () {
+                return globalThis.AIFormWorkflowApi.resetAiFlow(formVersion).done(function () {
                     globalThis.location.reload();
                 }).fail(function (error) {
                     abp.notify.error('', error?.responseJSON?.error?.message || 'Unable to restart the AI flow.');
@@ -1271,14 +1320,9 @@ $(function () {
             return;
         }
 
-        return abp.ajax({
-            url: `/api/app/application-form-version/mapping-review-phase?formVersionId=${encodeURIComponent(formVersion)}&phase=WorksheetReview`,
-            type: 'POST'
-        }).done(function () {
+        return transitionToWorksheetReview(function () {
             loadMappingReview(false);
-        }).fail(function (error) {
-            abp.notify.error('', error?.responseJSON?.error?.message || 'Unable to continue to worksheet generation.');
-        });
+        }, 'Unable to continue to worksheet generation.');
     }
 
     function refreshMappingAfterGeneration(applicationId, formVersion = null) {
