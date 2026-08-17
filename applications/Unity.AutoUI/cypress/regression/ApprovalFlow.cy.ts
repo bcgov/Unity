@@ -506,10 +506,25 @@ const APPLICATIONS_PATH = "GrantApplications";
           return;
         }
 
-        // Priority 3: fetch the latest matching submission from the Unity API
+        // Priority 3: fetch the latest matching submission from the Unity API,
+        // falling back to seeding a fresh one via CHEFS if none currently
+        // match (e.g. every existing seeded submission has already been
+        // approved by a prior run) — so this spec is self-sufficient and
+        // doesn't depend on a separate seed step running first.
         cy.fetchDynamicSubmission(TEST_CONFIG.fetchOptions).then((id) => {
-          submissionId = id;
-          cy.log(`✅ Fetched dynamic submission ID: ${submissionId}`);
+          if (id) {
+            submissionId = id;
+            cy.log(`✅ Fetched dynamic submission ID: ${submissionId}`);
+            return;
+          }
+
+          cy.log(
+            "⚠️ No matching submission found — seeding a fresh one via CHEFS",
+          );
+          cy.seedApprovalFlowSubmission().then((seededId) => {
+            submissionId = seededId;
+            cy.log(`✅ Seeded and using submission ID: ${submissionId}`);
+          });
         });
       },
     );
@@ -619,6 +634,25 @@ const APPLICATIONS_PATH = "GrantApplications";
       .enterSupplierNumber(TEST_CONFIG.supplierNumber)
       .clickElsewhere()
       .clickPaymentInfoSave();
+
+    // Saving the supplier number calls out to CAS to resolve it, which can
+    // transiently fail with "GetAuthTokenAsync: Error retrieving Token".
+    // When that happens the save silently doesn't attach a supplier, leaving
+    // SupplierId empty for the rest of the flow — dismiss and retry once.
+    cy.get("body").then(($body) => {
+      const hasTokenError =
+        $body.text().includes("GetAuthTokenAsync") ||
+        $body.text().includes("Error retrieving Token");
+
+      if (hasTokenError) {
+        cy.log("⚠️ Transient CAS token error on payment save — retrying once");
+        detailsPage.dismissErrorModalIfPresent();
+        detailsPage
+          .enterSupplierNumber(TEST_CONFIG.supplierNumber)
+          .clickElsewhere()
+          .clickPaymentInfoSave();
+      }
+    });
   });
 
   // Must use function() (not arrow) so this.skip() is accessible
