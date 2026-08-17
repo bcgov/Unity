@@ -248,8 +248,6 @@
 }
 
 .emails-widget-scope button {
-    margin-top: 0px;
-    margin-bottom: 0px;
     height: 36px;
     min-height: 36px;
     display: inline-flex;
@@ -259,6 +257,7 @@
     padding-top: 0px;
     padding-bottom: 0px;
     box-sizing: border-box;
+    margin: 2px;
 }
 
 .emails-widget-scope #user-dropdown > button {
@@ -297,8 +296,7 @@
 }
 
 .emails-widget-scope .btn-send-close {
-    margin-top: 0px;
-    margin-bottom: 0px;
+    margin: 4px;
 }
 
 /* Send dropdown button styling */
@@ -485,10 +483,6 @@
     margin: 4px;
 }
 
-.emails-widget-scope .btn-send-close {
-    margin: 4px;
-}
-
 .emails-widget-scope #modal-background {
     display: none;
     position: fixed;
@@ -580,10 +574,6 @@
 .emails-widget-scope .email-spinner-text {
     display: flex;
     padding-right: 100px;
-}
-
-.emails-widget-scope button {
-    margin: 2px;
 }
 
 .emails-widget-scope button:hover {

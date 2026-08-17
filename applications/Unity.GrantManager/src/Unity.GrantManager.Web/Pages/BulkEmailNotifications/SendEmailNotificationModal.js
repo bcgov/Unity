@@ -362,7 +362,7 @@ $(function () {
         // rather than assuming it's whatever row happens to be selected right now, since the user may have
         // switched rows while the save was still in flight. Fall back to the current selection for any other
         // publisher of this topic that doesn't pass one.
-        const savedApplicationId = (data && data.applicationId) || selectedApplicationId;
+        const savedApplicationId = data?.applicationId || selectedApplicationId;
         if (!savedApplicationId) {
             return;
         }
