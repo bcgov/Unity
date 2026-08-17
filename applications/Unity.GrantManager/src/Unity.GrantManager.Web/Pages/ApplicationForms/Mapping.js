@@ -61,6 +61,7 @@ $(function () {
         btnReviewMapping: $('#btn-review-mapping'),
         btnGenerateWorksheet: $('#btn-generate-worksheet'),
         btnGenerateScoresheet: $('#btn-generate-scoresheet'),
+        btnReviewScoresheet: $('#btn-review-scoresheet'),
         btnReviewWorksheet: $('#btn-review-worksheet'),
         scoresheetReviewModal: $('#aiScoresheetReviewModal'),
         scoresheetReviewFields: $('#aiScoresheetReviewFields'),
@@ -208,17 +209,15 @@ $(function () {
         UIElements.btnGenerateFinalMapping.on('click', finalizeMappingReview);
         UIElements.btnRestartAiFlow.on('click', restartAiFlow);
         UIElements.btnGenerateScoresheet.on('click', function () {
-            if (UIElements.btnGenerateScoresheet.attr('data-ai-pending') === 'true') {
-                loadAiScoresheetReview(true);
-                return;
-            }
-
             if (UIElements.btnGenerateScoresheet.attr('data-ai-can-generate') !== 'true') {
                 abp.notify.error('', aiL('AI:GenerateFormScoresheetPermissionRequired'));
                 return;
             }
 
             queueFormScoresheet(this);
+        });
+        UIElements.btnReviewScoresheet.on('click', function () {
+            loadAiScoresheetReview(true);
         });
         UIElements.btnCreateScoresheetDraft.on('click', function () {
             if (UIElements.btnCreateScoresheetDraft.attr('data-empty-confirmation') === 'true') {
@@ -772,10 +771,8 @@ $(function () {
     }
 
     function setAiScoresheetPending(isPending) {
-        UIElements.btnGenerateScoresheet
-            .attr('data-ai-pending', isPending ? 'true' : 'false');
-        UIElements.btnGenerateScoresheet.find('.ai-button-content span:last-child').text(
-            isPending ? 'Review Scoresheet' : 'Generate Scoresheet');
+        UIElements.btnGenerateScoresheet.toggleClass('d-none', isPending);
+        UIElements.btnReviewScoresheet.toggleClass('d-none', !isPending);
 
         if (isPending) {
             UIElements.btnGenerateScoresheet
@@ -1326,10 +1323,10 @@ $(function () {
     function handleSaveEditMapping() {
         try {
             let jsonText = $('#jsonText').val();
-            $.parseJSON(jsonText);
+            JSON.parse(jsonText);
             let mappingJsonStr = jsonText.replaceAll(/\s+/g, ' ').replaceAll(/(\r\n|\n|\r)/gm, "");
             UIElements.btnSaveMapping.prop('disabled', true);
-            handleSaveMapping($.parseJSON(mappingJsonStr));
+            handleSaveMapping(JSON.parse(mappingJsonStr));
             handleCancelMapping();
 
             abp.notify.success(
@@ -1406,6 +1403,7 @@ $(function () {
                     }
                 }
             } catch (err) {
+                console.error('Unable to apply saved mapping.', err);
                 abp.notify.error('', aiL('AI:SavedMappingApplyFailed'));
             }
         }

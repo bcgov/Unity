@@ -100,6 +100,11 @@ public sealed class FormWorksheetOperationExecutor(
                 PromptVersion = args.PromptVersion
             });
 
+            if (!string.IsNullOrWhiteSpace(worksheetResponse.FailureReason))
+            {
+                throw new InvalidOperationException(worksheetResponse.FailureReason);
+            }
+
             var suggestions = ParseWorksheetDefinition(worksheetResponse.Worksheet);
             noSuggestionsGenerated = suggestions.Count == 0;
             if (!noSuggestionsGenerated)
