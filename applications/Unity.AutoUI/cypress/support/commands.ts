@@ -414,167 +414,21 @@ interface ChefsSeedSubmissionPayload {
   };
 }
 
-const CHEFS_SEED_TOKEN_PROPERTY_KEYS = [
-  "access_token",
-  "accessToken",
-  "token",
-  "id_token",
-  "idToken",
-];
-
-function isChefsSeedJwtLike(value: string): boolean {
-  return /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/.test(value);
-}
-
-function extractChefsSeedTokenFromValue(value: unknown): string {
-  if (typeof value === "string") {
-    const trimmed = value.trim();
-
-    if (trimmed.toLowerCase().startsWith("bearer ")) {
-      const bearerToken = trimmed.replace(/^Bearer\s+/i, "").trim();
-      if (isChefsSeedJwtLike(bearerToken)) {
-        return bearerToken;
-      }
-    }
-
-    if (isChefsSeedJwtLike(trimmed)) {
-      return trimmed;
-    }
-
-    try {
-      return extractChefsSeedTokenFromValue(JSON.parse(trimmed));
-    } catch {
-      return "";
-    }
-  }
-
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      const token = extractChefsSeedTokenFromValue(item);
-      if (token) {
-        return token;
-      }
-    }
-    return "";
-  }
-
-  if (value && typeof value === "object") {
-    const obj = value as Record<string, unknown>;
-    for (const key of CHEFS_SEED_TOKEN_PROPERTY_KEYS) {
-      const token = extractChefsSeedTokenFromValue(obj[key]);
-      if (token) {
-        return token;
-      }
-    }
-    return extractChefsSeedTokenFromValue(Object.values(obj));
-  }
-
-  return "";
-}
-
-function extractChefsSeedTokenFromStorage(win: Window): string {
-  const storages = [win.localStorage, win.sessionStorage];
-
-  for (const storage of storages) {
-    for (let index = 0; index < storage.length; index += 1) {
-      const key = storage.key(index);
-      if (!key) {
-        continue;
-      }
-
-      const value = storage.getItem(key);
-      if (!value) {
-        continue;
-      }
-
-      const token = extractChefsSeedTokenFromValue(value);
-      if (token) {
-        return token;
-      }
-    }
-  }
-
-  return "";
-}
-
-function getChefsSeedHostname(baseURL: string): string {
-  return new URL(baseURL).hostname;
-}
-
-function completeChefsSeedLogin(
-  environment: ChefsSeedEnvironment,
-  timeout: number,
-): void {
-  const chefsHostname = getChefsSeedHostname(environment.baseURL);
-
-  cy.visit(`${environment.baseURL}/app`);
-
-  // A session from an earlier CHEFS visit this run can already be
-  // authenticated (LOGOUT button visible instead of LOGIN) — only drive the
-  // login flow when it's actually needed.
-  cy.get("body", { timeout }).then(($body) => {
-    if ($body.find("#loginButton").length === 0) {
-      cy.log("Already logged in to CHEFS");
-      return;
-    }
-
-    cy.get("#loginButton", { timeout }).should("be.visible").click();
-    cy.get('[data-test="idir"]', { timeout }).should("be.visible").click();
-
-    cy.location("hostname", { timeout }).should((hostname) => {
-      const onChefs = hostname === chefsHostname;
-      const onBcGovIdentity = hostname.endsWith("gov.bc.ca");
-      expect(
-        onChefs || onBcGovIdentity,
-        `Expected CHEFS or BC Gov identity host, got '${hostname}'`,
-      ).to.eq(true);
-    });
-
-    cy.location("hostname", { timeout }).then((hostname) => {
-      if (hostname === chefsHostname) {
-        cy.log("Already logged in to CHEFS");
-        return;
-      }
-
-      cy.get("#user", { timeout })
-        .should("be.visible")
-        .clear()
-        .type(Cypress.env("test1username"), { log: false });
-
-      cy.get("#password", { timeout })
-        .should("be.visible")
-        .clear()
-        .type(Cypress.env("test1password"), { log: false });
-
-      cy.contains("Continue", { timeout }).should("be.visible").click();
-
-      cy.location("hostname", { timeout }).should("eq", chefsHostname);
-    });
-  });
-}
-
-function visitChefsSeedForm(
-  environment: ChefsSeedEnvironment,
-  timeout: number,
-): void {
-  cy.visit(`${environment.baseURL}/app/form/submit?f=${environment.formId}`);
-  cy.location("hostname", { timeout }).should(
-    "eq",
-    getChefsSeedHostname(environment.baseURL),
-  );
-  cy.location("pathname", { timeout }).should("include", "/app");
-}
-
 /**
- * Seeds exactly one submission in CHEFS via API (logs in once via the CHEFS
- * UI to capture an auth token, then POSTs the submission directly) and
- * writes the confirmation ID to cypress/scripts/last-submission-id.json.
+ * Seeds exactly one submission in CHEFS via its form-level Basic Auth API
+ * key (formId:apiKey) — a single direct POST, no browser/IDIR login
+ * required — and writes the confirmation ID to
+ * cypress/scripts/last-submission-id.json.
  *
- * This is the same logic cypress/scripts/chefs-api-submission.cy.ts runs as
- * a standalone spec — extracted here so ApprovalFlow.cy.ts (or any other
- * spec) can call it directly as a fallback when no existing submission
- * matches its search criteria, without needing a separate seed step run
- * first.
+ * This is the same auth approach used by cypress- seeder/support/apiCalls.ts,
+ * applied here so ApprovalFlow.cy.ts (or any other spec) can call it
+ * directly as a fallback when no existing submission matches its search
+ * criteria, without needing a separate seed step — and without the
+ * IDIR/MFA-picker flakiness a UI-driven login carries.
+ *
+ * Requires a `chefsApiKey` value for the current environment, set in
+ * cypress/config/{env}.json (gitignored) — the form's API key from CHEFS
+ * form management settings.
  *
  * @returns Chainable containing the confirmation ID of the created submission
  */
@@ -591,7 +445,12 @@ Cypress.Commands.add("seedApprovalFlowSubmission", () => {
     );
   }
 
-  const authTimeout = 60000;
+  const apiKey = Cypress.env("chefsApiKey") as string | undefined;
+
+  expect(
+    apiKey,
+    `Missing chefsApiKey for '${envKey}' — set it in cypress/config/${envKey}.json`,
+  ).to.exist;
 
   return cy
     .readFile<ChefsSeedApiConfig>("cypress/scripts/chefs-api-config.json")
@@ -603,7 +462,7 @@ Cypress.Commands.add("seedApprovalFlowSubmission", () => {
         `Missing CHEFS environment configuration for '${envKey}'`,
       ).to.exist;
 
-      cy.log(`🌱 Seeding submission — environment: ${envKey}`);
+      cy.log(`🌱 Seeding submission via CHEFS API key — environment: ${envKey}`);
 
       return cy
         .readFile<ChefsSeedSubmissionPayload>(
@@ -613,74 +472,47 @@ Cypress.Commands.add("seedApprovalFlowSubmission", () => {
           submissionPayload.submission.metadata.origin = environment.baseURL;
           submissionPayload.submission.metadata.referrer = `${environment.baseURL}/app/form/submit?f=${environment.formId}`;
 
-          let capturedToken = "";
-
-          cy.intercept("**/app/api/v1/**", (req) => {
-            const authHeader = req.headers["authorization"] as string;
-            if (authHeader && !capturedToken) {
-              capturedToken = authHeader.replace(/^Bearer\s+/i, "");
-            }
-          }).as("chefsSeedApiCalls");
-
-          completeChefsSeedLogin(environment, authTimeout);
-          visitChefsSeedForm(environment, authTimeout);
+          const basicCredentials = btoa(`${environment.formId}:${apiKey}`);
+          const submissionUrl = `${environment.baseURL}/app/api/v1/forms/${environment.formId}/versions/${environment.versionId}/submissions`;
 
           return cy
-            .window({ timeout: authTimeout })
-            .should((win) => {
-              const tokenFromStorage = extractChefsSeedTokenFromStorage(win);
-              const resolvedToken = capturedToken || tokenFromStorage;
-
-              expect(
-                resolvedToken,
-                "Waiting for authenticated CHEFS API token from request or browser storage",
-              ).to.not.equal("");
-
-              if (!capturedToken && tokenFromStorage) {
-                capturedToken = tokenFromStorage;
-              }
+            .request({
+              method: "POST",
+              url: submissionUrl,
+              headers: {
+                ...apiConfig.headers,
+                Authorization: `Basic ${basicCredentials}`,
+              },
+              body: {
+                ...submissionPayload,
+                createdBy: `${Cypress.env("test1username")}@idir`,
+                updatedBy: `${Cypress.env("test1username")}@idir`,
+              },
+              failOnStatusCode: false,
             })
-            .then(() => {
-              const authToken = capturedToken;
-              const submissionUrl = `${environment.baseURL}/app/api/v1/forms/${environment.formId}/versions/${environment.versionId}/submissions`;
+            .then((response) => {
+              if (response.status === 401) {
+                throw new Error(
+                  "Authentication failed (401) while seeding a submission via cy.seedApprovalFlowSubmission(). Check that chefsApiKey is valid for this environment's form.",
+                );
+              }
+
+              expect(response.status).to.be.oneOf([200, 201]);
+              expect(response.body).to.have.property("id");
+
+              const confirmationId =
+                response.body.confirmationId || response.body.id;
+              Cypress.log({
+                name: "seed",
+                message: `✅ Seeded submission with confirmation ID: ${confirmationId}`,
+              });
 
               return cy
-                .request({
-                  method: "POST",
-                  url: submissionUrl,
-                  headers: {
-                    ...apiConfig.headers,
-                    Authorization: `Bearer ${authToken}`,
-                    Origin: environment.baseURL,
-                    Referer: `${environment.baseURL}/app/form/submit?f=${environment.formId}`,
-                  },
-                  body: submissionPayload,
-                  failOnStatusCode: false,
+                .writeFile("cypress/scripts/last-submission-id.json", {
+                  submissionId: confirmationId,
+                  createdAt: new Date().toISOString(),
                 })
-                .then((response) => {
-                  if (response.status === 401) {
-                    throw new Error(
-                      "Authentication failed (401) while seeding a submission via cy.seedApprovalFlowSubmission(). Check that test1username/test1password credentials are valid and that the CHEFS UI login succeeded.",
-                    );
-                  }
-
-                  expect(response.status).to.be.oneOf([200, 201]);
-                  expect(response.body).to.have.property("id");
-
-                  const confirmationId =
-                    response.body.confirmationId || response.body.id;
-                  Cypress.log({
-                    name: "seed",
-                    message: `✅ Seeded submission with confirmation ID: ${confirmationId}`,
-                  });
-
-                  return cy
-                    .writeFile("cypress/scripts/last-submission-id.json", {
-                      submissionId: confirmationId,
-                      createdAt: new Date().toISOString(),
-                    })
-                    .then(() => confirmationId as string);
-                });
+                .then(() => confirmationId as string);
             });
         });
     });
