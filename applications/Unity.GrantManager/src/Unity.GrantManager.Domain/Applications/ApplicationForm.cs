@@ -117,7 +117,6 @@ public class ApplicationForm : FullAuditedAggregateRoot<Guid>, IMultiTenant
         if (renewalLink is not null)
         {
             renewalLink.ExternalLinkType = ExternalLinkType.Renewal;
-            renewalLink.Order = 0;
             links.Add(renewalLink);
         }
 
