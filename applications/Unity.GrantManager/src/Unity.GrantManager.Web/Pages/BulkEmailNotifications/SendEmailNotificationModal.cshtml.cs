@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
@@ -80,10 +81,10 @@ public class SendEmailNotificationModalModel(IBulkEmailNotificationAppService bu
                     EmailSubject = application.EmailSubject,
                     ApplicationStatus = application.ApplicationStatus,
                     FormName = application.FormName,
-                    RequestedAmount = application.RequestedAmount,
-                    RecommendedAmount = application.RecommendedAmount,
                     ApprovedAmount = application.ApprovedAmount,
                     DecisionDate = application.DecisionDate,
+                    CreatedByName = application.CreatedByName,
+                    LastModified = application.LastModified,
                     IsValid = application.IsValid
                 };
 
@@ -118,6 +119,39 @@ public class SendEmailNotificationModalModel(IBulkEmailNotificationAppService bu
         }
 
         bulkEmailNotification.Notes = notes;
+    }
+
+    /// <summary>
+    /// Re-validate a single application's draft state (called after a Save in the right-hand edit panel)
+    /// so the row's validity/notes/Created By/Last Modified can be refreshed without reloading the whole batch.
+    /// </summary>
+    public async Task<IActionResult> OnGetRevalidateAsync(Guid applicationId)
+    {
+        try
+        {
+            var application = await bulkEmailNotificationAppService.RevalidateApplicationForBulkEmail(applicationId);
+
+            var viewModel = new BulkEmailNotificationViewModel { ApplicationId = application.ApplicationId };
+            SetNotes(application, viewModel);
+
+            return new OkObjectResult(new
+            {
+                applicationId = application.ApplicationId,
+                emailId = application.EmailId,
+                isValid = application.IsValid,
+                createdByName = application.CreatedByName,
+                lastModified = application.LastModified,
+                notes = viewModel.Notes
+            });
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error revalidating application {ApplicationId} for bulk email", applicationId);
+            // A 2xx status (including 204 No Content) is treated as success by the client's $.ajax().done()
+            // handler, which immediately dereferences fields on the response body — an empty success response
+            // would throw client-side. Return a genuine error status so it lands in .fail() instead.
+            return StatusCode(StatusCodes.Status500InternalServerError);
+        }
     }
 
     public async Task<IActionResult> OnPostAsync()

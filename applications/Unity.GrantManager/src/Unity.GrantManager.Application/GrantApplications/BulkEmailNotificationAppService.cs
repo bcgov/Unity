@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -10,14 +11,23 @@ using Unity.Modules.Shared.Utils;
 using Unity.Notifications.Emails;
 using Unity.Notifications.Permissions;
 using Volo.Abp;
+using Volo.Abp.Users;
 
 namespace Unity.GrantManager.GrantApplications
 {
+    // The right-panel editor reuses EmailsWidget, whose edit fieldset/Save/attachment handling all require
+    // Notifications.Email.Send (a sibling permission, not a parent of SendBulk) — so both are required here
+    // too, not just SendBulk, or a user granted SendBulk alone could reach this API into a state the UI can't
+    // actually support. Two stacked [Authorize] attributes compose as AND per standard ASP.NET Core semantics.
     [Authorize(NotificationsPermissions.Email.SendBulk)]
+    [Authorize(NotificationsPermissions.Email.Send)]
     public class BulkEmailNotificationAppService(
         IApplicationRepository applicationRepository,
         IEmailLogsRepository emailLogsRepository,
-        IEmailAppService emailAppService) : GrantManagerAppService, IBulkEmailNotificationAppService
+        IEmailLogAttachmentRepository emailLogAttachmentRepository,
+        IEmailAppService emailAppService,
+        IExternalUserLookupServiceProvider externalUserLookupServiceProvider,
+        IConfiguration configuration) : GrantManagerAppService, IBulkEmailNotificationAppService
     {
         /// <summary>
         /// Get applications for bulk email with added draft validation information
@@ -29,15 +39,51 @@ namespace Unity.GrantManager.GrantApplications
             var applications = await applicationRepository.GetListByIdsAsync(applicationGuids);
             var draftEmails = await emailLogsRepository.GetByApplicationIdsAndStatusAsync([.. applicationGuids], EmailStatus.Draft);
             var draftsByApplication = draftEmails.GroupBy(e => e.ApplicationId).ToDictionary(g => g.Key, g => g.ToList());
+            var draftAuthorsById = await GetDraftAuthorsAsync(draftEmails);
 
             var applicationsForEmail = new List<BulkEmailNotificationDto>();
             foreach (var application in applications)
             {
                 draftsByApplication.TryGetValue(application.Id, out var drafts);
-                applicationsForEmail.Add(MapBulkEmailNotification(application, drafts ?? []));
+                applicationsForEmail.Add(MapBulkEmailNotification(application, drafts ?? [], draftAuthorsById));
             }
 
             return applicationsForEmail;
+        }
+
+        /// <summary>
+        /// Re-validate a single application's draft state (e.g. after an in-panel Save) without re-fetching the whole batch
+        /// </summary>
+        /// <param name="applicationId"></param>
+        /// <returns></returns>
+        public async Task<BulkEmailNotificationDto> RevalidateApplicationForBulkEmail(Guid applicationId)
+        {
+            var applications = await applicationRepository.GetListByIdsAsync([applicationId]);
+            var application = applications.Single();
+            var drafts = await emailLogsRepository.GetByApplicationIdsAndStatusAsync([applicationId], EmailStatus.Draft);
+            var draftAuthorsById = await GetDraftAuthorsAsync(drafts);
+
+            return MapBulkEmailNotification(application, drafts, draftAuthorsById);
+        }
+
+        private async Task<Dictionary<Guid, IUserData>> GetDraftAuthorsAsync(List<EmailLog> drafts)
+        {
+            var creatorIds = drafts
+                .Where(d => d.CreatorId.HasValue)
+                .Select(d => d.CreatorId!.Value)
+                .Distinct();
+
+            var draftAuthorsById = new Dictionary<Guid, IUserData>();
+            foreach (var creatorId in creatorIds)
+            {
+                var userInfo = await externalUserLookupServiceProvider.FindByIdAsync(creatorId);
+                if (userInfo != null)
+                {
+                    draftAuthorsById[creatorId] = userInfo;
+                }
+            }
+
+            return draftAuthorsById;
         }
 
         /// <summary>
@@ -102,6 +148,25 @@ namespace Unity.GrantManager.GrantApplications
                         throw new UserFriendlyException("Draft email is missing a To address. Please update the draft before proceeding.");
                     }
 
+                    // Neither the per-upload size gate nor the modal's own UI check can catch every path an
+                    // attachment can arrive by (e.g. copying a template's attachments onto a draft applies no
+                    // size check at all), and this endpoint can be reached directly regardless of what the UI
+                    // showed. FileSize is recorded on upload/copy, not derived from S3, so this is a cheap
+                    // in-database check, not a storage round-trip.
+                    var attachments = await emailLogAttachmentRepository.GetByEmailLogIdAsync(draft.Id);
+                    var totalAttachmentMb = attachments.Sum(a => a.FileSize) * 0.000001;
+                    // Same TryParse-with-fallback as AttachmentController's own total-size check: a missing,
+                    // empty, malformed, or non-positive config value falls back to 25 rather than throwing —
+                    // double.Parse would otherwise fail every row in the batch on a bad config value alone.
+                    if (!double.TryParse(configuration["S3:EmailAttachmentsTotalMaxFileSize"], out double maxAttachmentMb) || maxAttachmentMb <= 0)
+                    {
+                        maxAttachmentMb = 25;
+                    }
+                    if (totalAttachmentMb > maxAttachmentMb)
+                    {
+                        throw new UserFriendlyException($"The total size of all attachments ({totalAttachmentMb:F2} MB) exceeds the maximum allowed {maxAttachmentMb} MB. Please remove one or more attachments before proceeding.");
+                    }
+
                     await emailAppService.SendAsync(new CreateEmailDto
                     {
                         EmailId = draft.Id,
@@ -137,11 +202,13 @@ namespace Unity.GrantManager.GrantApplications
         /// <param name="application"></param>
         /// <param name="drafts"></param>
         /// <returns></returns>
-        private static BulkEmailNotificationDto MapBulkEmailNotification(Application application, List<EmailLog> drafts)
+        private static BulkEmailNotificationDto MapBulkEmailNotification(Application application, List<EmailLog> drafts, Dictionary<Guid, IUserData> draftAuthorsById)
         {
             var validationMessages = new List<string>();
             Guid? emailId = null;
             string? emailSubject = null;
+            string? createdByName = null;
+            DateTime? lastModified = null;
 
             if (drafts.Count == 0)
             {
@@ -156,6 +223,12 @@ namespace Unity.GrantManager.GrantApplications
                 var draft = drafts[0];
                 emailId = draft.Id;
                 emailSubject = draft.Subject;
+                lastModified = draft.LastModificationTime ?? draft.CreationTime;
+
+                if (draft.CreatorId.HasValue && draftAuthorsById.TryGetValue(draft.CreatorId.Value, out var author))
+                {
+                    createdByName = $"{author.Name} {author.Surname}".Trim();
+                }
 
                 if (string.IsNullOrWhiteSpace(draft.Subject))
                 {
@@ -184,10 +257,10 @@ namespace Unity.GrantManager.GrantApplications
                 ApplicantName = application.Applicant?.ApplicantName ?? string.Empty,
                 ApplicationStatus = application.ApplicationStatus.InternalStatus,
                 FormName = application.ApplicationForm?.ApplicationFormName ?? string.Empty,
-                RequestedAmount = application.RequestedAmount,
-                RecommendedAmount = application.RecommendedAmount,
                 ApprovedAmount = application.ApprovedAmount,
                 DecisionDate = application.FinalDecisionDate,
+                CreatedByName = createdByName,
+                LastModified = lastModified,
                 ValidationMessages = validationMessages,
                 IsValid = validationMessages.Count == 0
             };

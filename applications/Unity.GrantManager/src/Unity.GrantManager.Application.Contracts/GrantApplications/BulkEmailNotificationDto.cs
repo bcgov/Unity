@@ -24,9 +24,9 @@ namespace Unity.GrantManager.GrantApplications
         public string ApplicantName { get; set; }
         public string FormName { get; set; }
         public string ApplicationStatus { get; set; }
-        public decimal RequestedAmount { get; set; }
-        public decimal RecommendedAmount { get; set; }
         public decimal ApprovedAmount { get; set; }
         public DateTime? DecisionDate { get; set; }
+        public string? CreatedByName { get; set; }
+        public DateTime? LastModified { get; set; }
     }
 }

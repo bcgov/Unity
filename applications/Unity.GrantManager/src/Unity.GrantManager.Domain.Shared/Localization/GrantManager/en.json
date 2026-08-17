@@ -91,7 +91,7 @@
     "ApplicationList:StartAssessmentButton": "Start Assessment",
     "ApplicationList:CompleteAssessmentButton": "Complete Assessment",
     "ApplicationList:TagButton": "Tags",
-    "ApplicationList:SendEmailButton": "Send Email",
+    "ApplicationList:SendEmailButton": "Send Drafted Email",
     "ApplicationList:ResyncSubmissionAttachmentsButton": "Resync",
     "ApplicationList:ManageTagButton": "Manage Tags",
 
