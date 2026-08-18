@@ -148,6 +148,7 @@
     margin-top: 9px;
     margin-bottom: 0px;
     flex-grow: 1;
+    position: relative;
 }
 
 .emails-widget-scope .email-form label {
@@ -440,9 +441,14 @@
 
 .emails-widget-scope .from-field-container .field-validation-error {
     position: absolute;
-    top: 85%;
+    top: calc(100% + 0.25rem);
+    left: 0;
     margin-left: 0;
     display: inline-block;
+}
+
+.emails-widget-scope #EmailForm .row:has(.from-field-container .field-validation-error) {
+    padding-bottom: 1.75rem !important;
 }
 
 .emails-widget-scope .confirmation-label {
@@ -848,7 +854,7 @@
 }
 
 .emails-widget-scope input#EmailFrom.input-validation-error {
-    margin-bottom: -20px !important;
+    margin-bottom: 0 !important;
 }
 
 

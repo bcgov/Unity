@@ -71,8 +71,11 @@ function setMaxCountError(visible) {
 }
 
 function validBatchCount() {
-    let applicationsCount = $('#ApplicationsCount').val();
-    let maxBatchCount = $('#MaxBatchCount').val();
+    // .val() returns strings; comparing them with <= directly does a lexicographic (character-by-character)
+    // comparison, not a numeric one — e.g. "6" <= "50" is false, because '6' sorts after '5'. Parse both sides
+    // to numbers first so counts like 6-9 (and 60-69, 70-79, ...) aren't misreported as exceeding the max.
+    let applicationsCount = Number.parseInt($('#ApplicationsCount').val(), 10);
+    let maxBatchCount = Number.parseInt($('#MaxBatchCount').val(), 10);
     return applicationsCount <= maxBatchCount;
 }
 
@@ -248,6 +251,15 @@ function loadDraftIntoPanel(applicationId, emailId) {
         }
 
         $('#bulkEmailEditPanelWidget').html(html);
+
+        // jquery-validation-unobtrusive only converts data-val-* attributes into jQuery Validate rules once,
+        // automatically, against whatever is already in the DOM when $(document).ready() fires. This markup
+        // arrives later over AJAX, so without re-parsing it here, EmailsWidget's own $(emailForm).valid() call
+        // (used for Subject/From/Body) would silently pass no matter what those fields contain — only the
+        // hand-validated "To" field would still be enforced client-side.
+        if (window.jQuery && $.validator && $.validator.unobtrusive) {
+            $.validator.unobtrusive.parse('#bulkEmailEditPanelWidget');
+        }
 
         // EmailsWidget/Default.js normally sets itself up exactly once, at page load, against markup that's
         // already server-rendered on the page. Its edit fields/buttons/attachment handlers only just got
