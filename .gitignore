@@ -119,3 +119,8 @@ appsettings.json
 /applications/Orchestrator
 *.env
 /applications/Unity.GrantManager/src/Unity.GrantManager.Web/package-lock.json
+/applications/Unity.AutoUI/cypress/config/dev.json
+/applications/Unity.AutoUI/cypress/config/dev2.json
+/applications/Unity.AutoUI/cypress/config/test.json
+/applications/Unity.AutoUI/cypress/config/uat.json
+/applications/Unity.AutoUI/cypress/config/prod.json
