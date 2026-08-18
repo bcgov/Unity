@@ -34,5 +34,6 @@ namespace Unity.GrantManager.ApplicationForms
         public SuffixConfigType? SuffixType { get; set; }
         public int? DefaultPaymentGroup { get; set; }
         public List<ExternalLinkConfigDto> ExternalLinks { get; set; } = [];
+        public string ApplicantMessage { get; set; } = string.Empty;
     }
 }

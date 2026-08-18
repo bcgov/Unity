@@ -56,7 +56,7 @@ public class ApplicationFormConfigWidget : AbpViewComponent
             RenewalLinkUri = renewalLink?.Uri ?? string.Empty,
             RenewalLinkTitle = renewalLink?.Title ?? string.Empty,
             RenewalLinkPublished = renewalLink?.Published ?? false,
-            ApplicantMessage = renewalLink?.Description ?? string.Empty,
+            ApplicantMessage = applicationForm?.ApplicantMessage ?? string.Empty,
             RelatedLinks = relatedLinks
         };
 

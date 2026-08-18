@@ -68,23 +68,25 @@ namespace Unity.GrantManager.ApplicantProfile
                         application.ReferenceNo,
                         application.EligibleForRenewal,
                         FormName = form.ApplicationFormName ?? string.Empty,
-                        form.ExternalLinks,
+                        form.ExternalLinksConfig,
                         Status = application.ExternalStatusVisibility
                             ? status.NotifiedStatus ?? status.ExternalStatus
                             : status.ExternalStatus,
                     }).ToListAsync();
 
-                // ExternalLinks is a JSON-mapped complex collection; filtering it as part of the join
-                // requires an APPLY operation that the SQLite test provider does not support, so the
-                // form's external links are resolved in-memory below instead of within the query.
+                // ExternalLinksConfig is a JSON-mapped complex property; filtering its nested links as
+                // part of the join requires an APPLY operation that the SQLite test provider does not
+                // support, so the form's external links are resolved in-memory below instead of within
+                // the query.
                 dto.Submissions.AddRange(results.Select(s =>
                 {
-                    var renewalLink = s.EligibleForRenewal ? s.ExternalLinks
+                    var renewalLinkEntity = s.EligibleForRenewal ? s.ExternalLinksConfig.Links
                         .Where(x => x.Published && x.ExternalLinkType == ExternalLinkType.Renewal)
-                        .Select(ToExternalLinkDto)
                         .FirstOrDefault() : null;
 
-                    var relatedLinks = s.ExternalLinks
+                    var renewalLink = renewalLinkEntity is null ? null : ToExternalLinkDto(renewalLinkEntity);
+
+                    var relatedLinks = s.ExternalLinksConfig.Links
                         .Where(x => x.Published && x.ExternalLinkType == ExternalLinkType.Related)
                         .OrderBy(x => x.Order == -1 ? int.MaxValue : x.Order) // Links without an order default to -1
                         .Select(ToExternalLinkDto)
@@ -100,7 +102,9 @@ namespace Unity.GrantManager.ApplicantProfile
                         Type = s.FormName,
                         Status = s.Status,
                         RenewalLink = renewalLink,
-                        RelatedLinks = relatedLinks
+                        RelatedLinks = relatedLinks,
+                        EligibleForRenewal = s.EligibleForRenewal,
+                        ApplicantMessage = renewalLinkEntity is null ? string.Empty : s.ExternalLinksConfig.ApplicantMessage
                     };
                 }));
             }

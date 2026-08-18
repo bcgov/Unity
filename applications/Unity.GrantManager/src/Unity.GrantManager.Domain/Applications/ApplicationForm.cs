@@ -34,7 +34,7 @@ public class ApplicationForm : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public FormHierarchyType? FormHierarchy { get; set; }
     public Guid? ParentFormId { get; set; }
     public bool IsDirectApproval { get; set; } = false;
-    public List<ExternalLink> ExternalLinks { get; set; } = [];
+    public ExternalLinksConfig ExternalLinksConfig { get; set; } = new();
 
     public bool AutomaticallyGenerateAIAnalysis { get; set; } = false;
     public bool ManuallyInitiateAIAnalysis { get; set; } = false;
@@ -90,7 +90,7 @@ public class ApplicationForm : FullAuditedAggregateRoot<Guid>, IMultiTenant
     /// Replaces the Renewal and Related external links as a set, enforcing that a link
     /// cannot be marked visible in the Applicant Portal without a valid URI.
     /// </summary>
-    public ApplicationForm SetExternalLinks(ExternalLink? renewalLink, List<ExternalLink> relatedLinks)
+    public ApplicationForm SetExternalLinks(ExternalLink? renewalLink, List<ExternalLink> relatedLinks, string applicantMessage = "")
     {
         ArgumentNullException.ThrowIfNull(relatedLinks);
 
@@ -126,7 +126,11 @@ public class ApplicationForm : FullAuditedAggregateRoot<Guid>, IMultiTenant
             links.Add(relatedLinks[i]);
         }
 
-        ExternalLinks = links;
+        ExternalLinksConfig = new ExternalLinksConfig
+        {
+            ApplicantMessage = applicantMessage,
+            Links = links
+        };
 
         return this;
     }

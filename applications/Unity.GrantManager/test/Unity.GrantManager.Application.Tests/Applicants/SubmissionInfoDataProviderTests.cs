@@ -532,8 +532,10 @@ namespace Unity.GrantManager.Applicants
                     a.ApplicationFormId = formId;
                     a.EligibleForRenewal = true;
                 })],
-                [CreateForm(formId, "Form", f => f.ExternalLinks =
-                    [CreateExternalLink(ExternalLinkType.Renewal, published: true, uri: "https://renewal.example.com")])],
+                [CreateForm(formId, "Form", f => f.ExternalLinksConfig = new ExternalLinksConfig
+                {
+                    Links = [CreateExternalLink(ExternalLinkType.Renewal, published: true, uri: "https://renewal.example.com")]
+                })],
                 [CreateStatus(statusId, "Submitted")]);
 
             // Act
@@ -561,8 +563,10 @@ namespace Unity.GrantManager.Applicants
                     a.ApplicationFormId = formId;
                     a.EligibleForRenewal = false;
                 })],
-                [CreateForm(formId, "Form", f => f.ExternalLinks =
-                    [CreateExternalLink(ExternalLinkType.Renewal, published: true)])],
+                [CreateForm(formId, "Form", f => f.ExternalLinksConfig = new ExternalLinksConfig
+                {
+                    Links = [CreateExternalLink(ExternalLinkType.Renewal, published: true)]
+                })],
                 [CreateStatus(statusId, "Submitted")]);
 
             // Act
@@ -589,8 +593,10 @@ namespace Unity.GrantManager.Applicants
                     a.ApplicationFormId = formId;
                     a.EligibleForRenewal = true;
                 })],
-                [CreateForm(formId, "Form", f => f.ExternalLinks =
-                    [CreateExternalLink(ExternalLinkType.Renewal, published: false)])],
+                [CreateForm(formId, "Form", f => f.ExternalLinksConfig = new ExternalLinksConfig
+                {
+                    Links = [CreateExternalLink(ExternalLinkType.Renewal, published: false)]
+                })],
                 [CreateStatus(statusId, "Submitted")]);
 
             // Act
@@ -613,11 +619,14 @@ namespace Unity.GrantManager.Applicants
             SetupQueryables(
                 [CreateSubmission(applicationId, "TESTUSER")],
                 [CreateApplication(applicationId, statusId, a => a.ApplicationFormId = formId)],
-                [CreateForm(formId, "Form", f => f.ExternalLinks =
-                [
-                    CreateExternalLink(ExternalLinkType.Related, published: true, order: 1, uri: "https://published.example.com"),
-                    CreateExternalLink(ExternalLinkType.Related, published: false, order: 2, uri: "https://unpublished.example.com")
-                ])],
+                [CreateForm(formId, "Form", f => f.ExternalLinksConfig = new ExternalLinksConfig
+                {
+                    Links =
+                    [
+                        CreateExternalLink(ExternalLinkType.Related, published: true, order: 1, uri: "https://published.example.com"),
+                        CreateExternalLink(ExternalLinkType.Related, published: false, order: 2, uri: "https://unpublished.example.com")
+                    ]
+                })],
                 [CreateStatus(statusId, "Submitted")]);
 
             // Act
@@ -641,12 +650,15 @@ namespace Unity.GrantManager.Applicants
             SetupQueryables(
                 [CreateSubmission(applicationId, "TESTUSER")],
                 [CreateApplication(applicationId, statusId, a => a.ApplicationFormId = formId)],
-                [CreateForm(formId, "Form", f => f.ExternalLinks =
-                [
-                    CreateExternalLink(ExternalLinkType.Related, published: true, order: 2, uri: "https://second.example.com"),
-                    CreateExternalLink(ExternalLinkType.Related, published: true, order: 0, uri: "https://first.example.com"),
-                    CreateExternalLink(ExternalLinkType.Related, published: true, order: 1, uri: "https://middle.example.com")
-                ])],
+                [CreateForm(formId, "Form", f => f.ExternalLinksConfig = new ExternalLinksConfig
+                {
+                    Links =
+                    [
+                        CreateExternalLink(ExternalLinkType.Related, published: true, order: 2, uri: "https://second.example.com"),
+                        CreateExternalLink(ExternalLinkType.Related, published: true, order: 0, uri: "https://first.example.com"),
+                        CreateExternalLink(ExternalLinkType.Related, published: true, order: 1, uri: "https://middle.example.com")
+                    ]
+                })],
                 [CreateStatus(statusId, "Submitted")]);
 
             // Act
@@ -673,11 +685,14 @@ namespace Unity.GrantManager.Applicants
             SetupQueryables(
                 [CreateSubmission(applicationId, "TESTUSER")],
                 [CreateApplication(applicationId, statusId, a => a.ApplicationFormId = formId)],
-                [CreateForm(formId, "Form", f => f.ExternalLinks =
-                [
-                    CreateExternalLink(ExternalLinkType.Related, published: true, order: -1, uri: "https://unordered.example.com"),
-                    CreateExternalLink(ExternalLinkType.Related, published: true, order: 0, uri: "https://ordered.example.com")
-                ])],
+                [CreateForm(formId, "Form", f => f.ExternalLinksConfig = new ExternalLinksConfig
+                {
+                    Links =
+                    [
+                        CreateExternalLink(ExternalLinkType.Related, published: true, order: -1, uri: "https://unordered.example.com"),
+                        CreateExternalLink(ExternalLinkType.Related, published: true, order: 0, uri: "https://ordered.example.com")
+                    ]
+                })],
                 [CreateStatus(statusId, "Submitted")]);
 
             // Act
@@ -707,11 +722,14 @@ namespace Unity.GrantManager.Applicants
                     a.ApplicationFormId = formId;
                     a.EligibleForRenewal = true;
                 })],
-                [CreateForm(formId, "Form", f => f.ExternalLinks =
-                [
-                    CreateExternalLink(ExternalLinkType.Renewal, published: true, uri: "https://renewal.example.com"),
-                    CreateExternalLink(ExternalLinkType.Related, published: true, uri: "https://related.example.com")
-                ])],
+                [CreateForm(formId, "Form", f => f.ExternalLinksConfig = new ExternalLinksConfig
+                {
+                    Links =
+                    [
+                        CreateExternalLink(ExternalLinkType.Renewal, published: true, uri: "https://renewal.example.com"),
+                        CreateExternalLink(ExternalLinkType.Related, published: true, uri: "https://related.example.com")
+                    ]
+                })],
                 [CreateStatus(statusId, "Submitted")]);
 
             // Act

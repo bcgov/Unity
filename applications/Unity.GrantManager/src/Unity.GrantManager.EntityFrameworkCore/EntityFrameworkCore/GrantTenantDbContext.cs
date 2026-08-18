@@ -1,8 +1,11 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using System.Linq;
+using System.Text.Json;
 using Unity.Flex.EntityFrameworkCore;
+using Unity.GrantManager.ApplicantProfile;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
@@ -68,6 +71,12 @@ namespace Unity.GrantManager.EntityFrameworkCore
         {
             base.OnModelCreating(modelBuilder);
 
+            // ExternalLinksConfig is mapped as a JSON-serialized scalar via HasConversion below,
+            // not as an owned/entity type, so exclude it (and its nested ExternalLink type) from
+            // convention-based entity discovery.
+            modelBuilder.Ignore<ExternalLinksConfig>();
+            modelBuilder.Ignore<ExternalLink>();
+
             modelBuilder.Entity<Person>(b =>
             {
                 b.ToTable(GrantManagerConsts.TenantTablePrefix + "Persons",
@@ -123,7 +132,20 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
                 b.ConfigureByConvention(); //auto configure for the base class props
                 b.Property(x => x.ApplicationFormName).IsRequired().HasMaxLength(255);
-                b.ComplexCollection(x => x.ExternalLinks, e => e.ToJson());
+                // Mapped as a JSON-serialized scalar (rather than EF's native JSON complex-type
+                // support) because that feature is relational-only and breaks under the
+                // EFCore.InMemory provider used by Unity.GrantManager.Web.Tests.
+                b.Property(x => x.ExternalLinksConfig)
+                    .HasColumnName("ExternalLinks")
+                    .HasColumnType("jsonb")
+                    .IsRequired()
+                    .HasConversion(
+                        config => JsonSerializer.Serialize(config, (JsonSerializerOptions?)null),
+                        json => JsonSerializer.Deserialize<ExternalLinksConfig>(json, (JsonSerializerOptions?)null)!,
+                        new ValueComparer<ExternalLinksConfig>(
+                            (left, right) => JsonSerializer.Serialize(left, (JsonSerializerOptions?)null) == JsonSerializer.Serialize(right, (JsonSerializerOptions?)null),
+                            config => JsonSerializer.Serialize(config, (JsonSerializerOptions?)null).GetHashCode(),
+                            config => JsonSerializer.Deserialize<ExternalLinksConfig>(JsonSerializer.Serialize(config, (JsonSerializerOptions?)null), (JsonSerializerOptions?)null)!));
 
                 b.HasOne<Intake>().WithMany().HasForeignKey(x => x.IntakeId).IsRequired();
 
