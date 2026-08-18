@@ -19,14 +19,29 @@ function invalidatePendingPanelRequest() {
 }
 
 function removeApplicationEmail(containerId) {
-    if (selectedApplicationId && containerId === selectedApplicationId + '_container') {
-        resetEditPanel();
-    }
+    const $row = $('#' + containerId);
+    const referenceNo = $row.find('input[name$=".ReferenceNo"]').val();
 
-    $('#' + containerId).remove();
-    let applicationsCount = $('#ApplicationsCount').val();
-    $('#ApplicationsCount').val(applicationsCount - 1);
-    runValidations();
+    abp.message.confirm(
+        referenceNo
+            ? 'Remove application ' + referenceNo + ' from this batch?'
+            : 'Remove this application from this batch?',
+        'Remove Application',
+        function (confirmed) {
+            if (!confirmed) {
+                return;
+            }
+
+            if (selectedApplicationId && containerId === selectedApplicationId + '_container') {
+                resetEditPanel();
+            }
+
+            $row.remove();
+            let applicationsCount = $('#ApplicationsCount').val();
+            $('#ApplicationsCount').val(applicationsCount - 1);
+            runValidations();
+        }
+    );
 }
 
 function runValidations() {
@@ -483,16 +498,29 @@ $(function () {
             return;
         }
 
-        if (!hasUnsavedEditorChanges()) {
-            return;
-        }
-
+        // Past this point the click is actually going to send the batch, so it always needs an explicit
+        // confirmation first — this button has no "are you sure" of its own otherwise, and an accidental click
+        // would send every drafted email in the list right away with nothing to stop it.
         event.preventDefault();
         event.stopImmediatePropagation();
 
+        if (hasUnsavedEditorChanges()) {
+            abp.message.confirm(
+                'The currently open draft has unsaved changes. They will not be included in this send unless you save first. Send anyway?',
+                'Unsaved Changes',
+                function (confirmed) {
+                    if (confirmed) {
+                        bulkEmailSendConfirmed = true;
+                        $('#btnSubmitBulkEmail').trigger('click');
+                    }
+                }
+            );
+            return;
+        }
+
         abp.message.confirm(
-            'The currently open draft has unsaved changes. They will not be included in this send unless you save first. Send anyway?',
-            'Unsaved Changes',
+            'Are you sure you want to send the drafted emails for all applications in this batch?',
+            'Send Drafted Email',
             function (confirmed) {
                 if (confirmed) {
                     bulkEmailSendConfirmed = true;
