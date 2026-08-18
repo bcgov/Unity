@@ -117,6 +117,7 @@
         const toggleInput = document.createElement('input');
         toggleInput.type = 'checkbox';
         toggleInput.className = 'form-check-input related-link-published';
+        toggleInput.setAttribute('aria-label', l('ApplicationForms.Configuration:ShowOtherLinksInPortal'));
         toggleInput.style.cursor = 'pointer';
         toggleInput.checked = data.published;
         switchWrapper.appendChild(toggleInput);
@@ -127,6 +128,7 @@
         const removeButton = document.createElement('button');
         removeButton.type = 'button';
         removeButton.className = 'btn btn-sm btn-outline-danger btn-remove-related-link';
+        removeButton.setAttribute('aria-label', 'Remove Link');
         const removeIcon = document.createElement('i');
         removeIcon.className = 'fl fl-trash';
         removeButton.appendChild(removeIcon);
@@ -138,15 +140,25 @@
         row.appendChild(toggleCol);
         row.appendChild(removeCol);
 
-        removeButton.addEventListener('click', function () {
-            row.remove();
-            updateAddButtonState();
-            saveButton.disabled = false;
-            cancelButton.disabled = false;
-        });
-
         return row;
     }
+
+    relatedLinksContainer.addEventListener('click', function (event) {
+        const removeButton = event.target.closest('.btn-remove-related-link');
+        if (!removeButton || !relatedLinksContainer.contains(removeButton)) {
+            return;
+        }
+
+        const row = removeButton.closest('.related-link-row');
+        if (!row) {
+            return;
+        }
+
+        row.remove();
+        updateAddButtonState();
+        saveButton.disabled = false;
+        cancelButton.disabled = false;
+    });
 
     function rebuildRelatedLinkRows(links) {
         relatedLinksContainer.innerHTML = '';
@@ -379,7 +391,7 @@
             })
             .catch(function () {
                 // Keep the form dirty so the user can retry after a partial failure.
-                abp.notify.error('Failed to save other configuration.');
+                abp.notify.error('Failed to save configuration.');
                 saveButton.disabled = false;
                 cancelButton.disabled = false;
             })

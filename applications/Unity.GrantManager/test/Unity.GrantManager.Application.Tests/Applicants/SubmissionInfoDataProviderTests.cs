@@ -117,12 +117,23 @@ namespace Unity.GrantManager.Applicants
             return entity;
         }
 
-        private static ApplicationForm CreateForm(Guid id, string formName)
+        private static ApplicationForm CreateForm(Guid id, string formName, Action<ApplicationForm>? configure = null)
         {
             var entity = new ApplicationForm { ApplicationFormName = formName };
             EntityHelper.TrySetId(entity, () => id);
+            configure?.Invoke(entity);
             return entity;
         }
+
+        private static ExternalLink CreateExternalLink(
+            ExternalLinkType type, bool published, int order = -1, string uri = "https://example.com")
+            => new()
+            {
+                Uri = uri,
+                ExternalLinkType = type,
+                Published = published,
+                Order = order
+            };
 
         [Fact]
         public async Task GetDataAsync_ShouldChangeTenant()
@@ -503,6 +514,215 @@ namespace Unity.GrantManager.Applicants
             // Assert
             var dto = result.ShouldBeOfType<ApplicantSubmissionInfoDto>();
             dto.Submissions[0].SubmissionTime.ShouldBe(creationTime);
+        }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldReturnRenewalLink_WhenEligibleAndPublished()
+        {
+            // Arrange
+            var request = CreateRequest();
+            var applicationId = Guid.NewGuid();
+            var formId = Guid.NewGuid();
+            var statusId = Guid.NewGuid();
+
+            SetupQueryables(
+                [CreateSubmission(applicationId, "TESTUSER")],
+                [CreateApplication(applicationId, statusId, a =>
+                {
+                    a.ApplicationFormId = formId;
+                    a.EligibleForRenewal = true;
+                })],
+                [CreateForm(formId, "Form", f => f.ExternalLinks =
+                    [CreateExternalLink(ExternalLinkType.Renewal, published: true, uri: "https://renewal.example.com")])],
+                [CreateStatus(statusId, "Submitted")]);
+
+            // Act
+            var result = await _provider.GetDataAsync(request);
+
+            // Assert
+            var dto = result.ShouldBeOfType<ApplicantSubmissionInfoDto>();
+            dto.Submissions[0].RenewalLink.ShouldNotBeNull();
+            dto.Submissions[0].RenewalLink!.Uri.ShouldBe("https://renewal.example.com");
+        }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldNotReturnRenewalLink_WhenNotEligibleForRenewal()
+        {
+            // Arrange
+            var request = CreateRequest();
+            var applicationId = Guid.NewGuid();
+            var formId = Guid.NewGuid();
+            var statusId = Guid.NewGuid();
+
+            SetupQueryables(
+                [CreateSubmission(applicationId, "TESTUSER")],
+                [CreateApplication(applicationId, statusId, a =>
+                {
+                    a.ApplicationFormId = formId;
+                    a.EligibleForRenewal = false;
+                })],
+                [CreateForm(formId, "Form", f => f.ExternalLinks =
+                    [CreateExternalLink(ExternalLinkType.Renewal, published: true)])],
+                [CreateStatus(statusId, "Submitted")]);
+
+            // Act
+            var result = await _provider.GetDataAsync(request);
+
+            // Assert
+            var dto = result.ShouldBeOfType<ApplicantSubmissionInfoDto>();
+            dto.Submissions[0].RenewalLink.ShouldBeNull();
+        }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldNotReturnRenewalLink_WhenUnpublished()
+        {
+            // Arrange
+            var request = CreateRequest();
+            var applicationId = Guid.NewGuid();
+            var formId = Guid.NewGuid();
+            var statusId = Guid.NewGuid();
+
+            SetupQueryables(
+                [CreateSubmission(applicationId, "TESTUSER")],
+                [CreateApplication(applicationId, statusId, a =>
+                {
+                    a.ApplicationFormId = formId;
+                    a.EligibleForRenewal = true;
+                })],
+                [CreateForm(formId, "Form", f => f.ExternalLinks =
+                    [CreateExternalLink(ExternalLinkType.Renewal, published: false)])],
+                [CreateStatus(statusId, "Submitted")]);
+
+            // Act
+            var result = await _provider.GetDataAsync(request);
+
+            // Assert
+            var dto = result.ShouldBeOfType<ApplicantSubmissionInfoDto>();
+            dto.Submissions[0].RenewalLink.ShouldBeNull();
+        }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldExcludeUnpublishedRelatedLinks()
+        {
+            // Arrange
+            var request = CreateRequest();
+            var applicationId = Guid.NewGuid();
+            var formId = Guid.NewGuid();
+            var statusId = Guid.NewGuid();
+
+            SetupQueryables(
+                [CreateSubmission(applicationId, "TESTUSER")],
+                [CreateApplication(applicationId, statusId, a => a.ApplicationFormId = formId)],
+                [CreateForm(formId, "Form", f => f.ExternalLinks =
+                [
+                    CreateExternalLink(ExternalLinkType.Related, published: true, order: 1, uri: "https://published.example.com"),
+                    CreateExternalLink(ExternalLinkType.Related, published: false, order: 2, uri: "https://unpublished.example.com")
+                ])],
+                [CreateStatus(statusId, "Submitted")]);
+
+            // Act
+            var result = await _provider.GetDataAsync(request);
+
+            // Assert
+            var dto = result.ShouldBeOfType<ApplicantSubmissionInfoDto>();
+            dto.Submissions[0].RelatedLinks.Count.ShouldBe(1);
+            dto.Submissions[0].RelatedLinks[0].Uri.ShouldBe("https://published.example.com");
+        }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldReturnRelatedLinksInConfiguredOrder()
+        {
+            // Arrange
+            var request = CreateRequest();
+            var applicationId = Guid.NewGuid();
+            var formId = Guid.NewGuid();
+            var statusId = Guid.NewGuid();
+
+            SetupQueryables(
+                [CreateSubmission(applicationId, "TESTUSER")],
+                [CreateApplication(applicationId, statusId, a => a.ApplicationFormId = formId)],
+                [CreateForm(formId, "Form", f => f.ExternalLinks =
+                [
+                    CreateExternalLink(ExternalLinkType.Related, published: true, order: 2, uri: "https://second.example.com"),
+                    CreateExternalLink(ExternalLinkType.Related, published: true, order: 0, uri: "https://first.example.com"),
+                    CreateExternalLink(ExternalLinkType.Related, published: true, order: 1, uri: "https://middle.example.com")
+                ])],
+                [CreateStatus(statusId, "Submitted")]);
+
+            // Act
+            var result = await _provider.GetDataAsync(request);
+
+            // Assert
+            var dto = result.ShouldBeOfType<ApplicantSubmissionInfoDto>();
+            var relatedLinks = dto.Submissions[0].RelatedLinks;
+            relatedLinks.Count.ShouldBe(3);
+            relatedLinks[0].Uri.ShouldBe("https://first.example.com");
+            relatedLinks[1].Uri.ShouldBe("https://middle.example.com");
+            relatedLinks[2].Uri.ShouldBe("https://second.example.com");
+        }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldOrderUnorderedRelatedLinksLast()
+        {
+            // Arrange
+            var request = CreateRequest();
+            var applicationId = Guid.NewGuid();
+            var formId = Guid.NewGuid();
+            var statusId = Guid.NewGuid();
+
+            SetupQueryables(
+                [CreateSubmission(applicationId, "TESTUSER")],
+                [CreateApplication(applicationId, statusId, a => a.ApplicationFormId = formId)],
+                [CreateForm(formId, "Form", f => f.ExternalLinks =
+                [
+                    CreateExternalLink(ExternalLinkType.Related, published: true, order: -1, uri: "https://unordered.example.com"),
+                    CreateExternalLink(ExternalLinkType.Related, published: true, order: 0, uri: "https://ordered.example.com")
+                ])],
+                [CreateStatus(statusId, "Submitted")]);
+
+            // Act
+            var result = await _provider.GetDataAsync(request);
+
+            // Assert
+            var dto = result.ShouldBeOfType<ApplicantSubmissionInfoDto>();
+            var relatedLinks = dto.Submissions[0].RelatedLinks;
+            relatedLinks.Count.ShouldBe(2);
+            relatedLinks[0].Uri.ShouldBe("https://ordered.example.com");
+            relatedLinks[1].Uri.ShouldBe("https://unordered.example.com");
+        }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldNotMixRenewalAndRelatedLinks()
+        {
+            // Arrange
+            var request = CreateRequest();
+            var applicationId = Guid.NewGuid();
+            var formId = Guid.NewGuid();
+            var statusId = Guid.NewGuid();
+
+            SetupQueryables(
+                [CreateSubmission(applicationId, "TESTUSER")],
+                [CreateApplication(applicationId, statusId, a =>
+                {
+                    a.ApplicationFormId = formId;
+                    a.EligibleForRenewal = true;
+                })],
+                [CreateForm(formId, "Form", f => f.ExternalLinks =
+                [
+                    CreateExternalLink(ExternalLinkType.Renewal, published: true, uri: "https://renewal.example.com"),
+                    CreateExternalLink(ExternalLinkType.Related, published: true, uri: "https://related.example.com")
+                ])],
+                [CreateStatus(statusId, "Submitted")]);
+
+            // Act
+            var result = await _provider.GetDataAsync(request);
+
+            // Assert
+            var dto = result.ShouldBeOfType<ApplicantSubmissionInfoDto>();
+            dto.Submissions[0].RenewalLink.ShouldNotBeNull();
+            dto.Submissions[0].RenewalLink!.Uri.ShouldBe("https://renewal.example.com");
+            dto.Submissions[0].RelatedLinks.Count.ShouldBe(1);
+            dto.Submissions[0].RelatedLinks[0].Uri.ShouldBe("https://related.example.com");
         }
     }
 }

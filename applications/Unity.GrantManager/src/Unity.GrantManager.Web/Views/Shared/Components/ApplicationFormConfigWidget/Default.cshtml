@@ -140,7 +140,7 @@
                            name="renewalLinkUri"
                            value="@Model?.RenewalLinkUri"
                            maxlength="2048"
-                           placeholder="https://..." />
+                           placeholder="https://" />
                     <span class="field-error text-danger small"></span>
                 </div>
                 <div class="col-12 col-md-4">
@@ -181,7 +181,7 @@
 
             <hr class="my-3" />
 
-            <fieldset>
+            <fieldset disabled class="visually-hidden">
                 <legend class="visually-hidden">@L["ApplicationForms.Configuration:OtherLinks"].Value</legend>
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <span class="form-label mb-0" aria-hidden="true">@L["ApplicationForms.Configuration:OtherLinks"].Value</span>

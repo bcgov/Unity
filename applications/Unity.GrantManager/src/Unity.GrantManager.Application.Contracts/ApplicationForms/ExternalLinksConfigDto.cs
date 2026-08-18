@@ -21,6 +21,14 @@ public class ExternalLinksConfigDto : IValidatableObject
                 [nameof(RenewalLink)]);
         }
 
+        if (RelatedLinks is null || RelatedLinks.Exists(link => link is null))
+        {
+            yield return new ValidationResult(
+                "Related links must be provided as a list of non-null items.",
+                [nameof(RelatedLinks)]);
+            yield break;
+        }
+
         if (RelatedLinks.Count > MaxRelatedLinks)
         {
             yield return new ValidationResult(
