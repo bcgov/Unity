@@ -528,8 +528,7 @@ namespace Unity.GrantManager.ApplicationForms
                 .SelectMany(review => GetWorksheetReviewPayload(review).DraftWorksheetIds)
                 .Distinct()
                 .ToList();
-            var suggestionWorksheet = await worksheetRepository.GetByNameAsync(
-                AiWorksheetSuggestionName.Build(formVersion.ApplicationFormId, formVersion.Id), true);
+            var suggestionWorksheet = await GetAiSuggestionWorksheetAsync(formVersion);
             if (suggestionWorksheet != null && !worksheetIds.Contains(suggestionWorksheet.Id))
             {
                 worksheetIds.Add(suggestionWorksheet.Id);
@@ -909,8 +908,7 @@ namespace Unity.GrantManager.ApplicationForms
             }
 
             var formVersion = await formVersionRepository.GetAsync(formVersionId);
-            var worksheet = await worksheetRepository.GetByNameAsync(
-                AiWorksheetSuggestionName.Build(formVersion.ApplicationFormId, formVersion.Id), true);
+            var worksheet = await GetAiSuggestionWorksheetAsync(formVersion);
 
             if (worksheet?.Published == false)
             {
@@ -918,6 +916,12 @@ namespace Unity.GrantManager.ApplicationForms
             }
 
             return null;
+        }
+
+        private async Task<Worksheet?> GetAiSuggestionWorksheetAsync(ApplicationFormVersion formVersion)
+        {
+            return await worksheetRepository.GetByNameAsync(
+                AiWorksheetSuggestionName.Build(formVersion.ApplicationFormId, formVersion.Id), true);
         }
 
         private static AiWorksheetReviewDto MapAiWorksheetReview(Worksheet worksheet) => new()

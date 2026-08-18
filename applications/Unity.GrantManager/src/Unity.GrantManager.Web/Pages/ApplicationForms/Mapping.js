@@ -834,9 +834,7 @@ $(function () {
         UIElements.btnReviewScoresheet.toggleClass('d-none', !isPending);
 
         if (!isPending) {
-            UIElements.btnGenerateScoresheet
-                .removeAttr('data-ai-cooldown-checking data-ai-rate-limit-disabled')
-                .prop('disabled', false);
+            globalThis.syncAIRateLimitButtons?.();
         }
     }
 
