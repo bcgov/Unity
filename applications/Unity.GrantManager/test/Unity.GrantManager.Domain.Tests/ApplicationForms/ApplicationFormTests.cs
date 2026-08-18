@@ -90,15 +90,18 @@ namespace Unity.GrantManager.ApplicationForms
                 [
                     new ExternalLink { Uri = "https://example.com/one", Order = 2 },
                     new ExternalLink { Uri = "https://example.com/two", Order = 1}
-                ]);
+                ],
+                "Please renew soon.");
 
-            form.ExternalLinks.Count.ShouldBe(3);
-            form.ExternalLinks[0].ExternalLinkType.ShouldBe(ExternalLinkType.Renewal);
-            form.ExternalLinks[0].Order.ShouldBe(-1);
-            form.ExternalLinks[1].ExternalLinkType.ShouldBe(ExternalLinkType.Related);
-            form.ExternalLinks[1].Order.ShouldBe(2);
-            form.ExternalLinks[2].ExternalLinkType.ShouldBe(ExternalLinkType.Related);
-            form.ExternalLinks[2].Order.ShouldBe(1);
+            var links = form.ExternalLinksConfig.Links;
+            links.Count.ShouldBe(3);
+            links[0].ExternalLinkType.ShouldBe(ExternalLinkType.Renewal);
+            links[0].Order.ShouldBe(-1);
+            links[1].ExternalLinkType.ShouldBe(ExternalLinkType.Related);
+            links[1].Order.ShouldBe(2);
+            links[2].ExternalLinkType.ShouldBe(ExternalLinkType.Related);
+            links[2].Order.ShouldBe(1);
+            form.ExternalLinksConfig.ApplicantMessage.ShouldBe("Please renew soon.");
         }
     }
 }

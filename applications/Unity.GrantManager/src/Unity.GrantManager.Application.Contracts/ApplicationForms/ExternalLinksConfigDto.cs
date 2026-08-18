@@ -12,6 +12,9 @@ public class ExternalLinksConfigDto : IValidatableObject
 
     public List<ExternalLinkConfigDto> RelatedLinks { get; set; } = [];
 
+    [MaxLength(512)]
+    public string ApplicantMessage { get; set; } = string.Empty;
+
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (RenewalLink is { Published: true } && !ExternalLinkUriValidator.IsValidHttpUri(RenewalLink.Uri))

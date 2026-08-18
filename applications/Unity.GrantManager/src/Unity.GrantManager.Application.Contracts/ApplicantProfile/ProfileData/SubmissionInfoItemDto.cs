@@ -14,4 +14,6 @@ public class SubmissionInfoItemDto
     public string Status { get; set; } = string.Empty;
     public ExternalLinkDto? RenewalLink { get; set; }
     public List<ExternalLinkDto> RelatedLinks { get; set; } = [];
+    public bool EligibleForRenewal { get; set; }
+    public string ApplicantMessage { get; set; } = string.Empty;
 }

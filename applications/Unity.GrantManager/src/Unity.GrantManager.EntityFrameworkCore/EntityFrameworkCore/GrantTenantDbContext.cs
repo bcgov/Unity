@@ -123,7 +123,11 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
                 b.ConfigureByConvention(); //auto configure for the base class props
                 b.Property(x => x.ApplicationFormName).IsRequired().HasMaxLength(255);
-                b.ComplexCollection(x => x.ExternalLinks, e => e.ToJson());
+                b.ComplexProperty(x => x.ExternalLinksConfig, cb =>
+                {
+                    cb.ComplexCollection(c => c.Links);
+                    cb.ToJson("ExternalLinks");
+                });
 
                 b.HasOne<Intake>().WithMany().HasForeignKey(x => x.IntakeId).IsRequired();
 

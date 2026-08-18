@@ -223,7 +223,6 @@
             renewalLink: renewalUriValue ? {
                 uri: renewalUriValue,
                 title: renewalLinkTitle.value,
-                description: applicantMessage.value,
                 published: renewalLinkPublished.checked,
                 externalLinkType: EXTERNAL_LINK_TYPE_RENEWAL,
                 order: 0
@@ -239,7 +238,8 @@
                         order: index
                     };
                 })
-                .filter(function (link) { return link.uri; })
+                .filter(function (link) { return link.uri; }),
+            applicantMessage: applicantMessage.value
         };
     }
 

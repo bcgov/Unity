@@ -55,19 +55,21 @@ public class ExternalLinksConfigValidationTests : GrantManagerApplicationTestBas
                         Published = false,
                         ExternalLinkType = ExternalLinkType.Related
                     }
-                ]
+                ],
+                ApplicantMessage = "Renewal message for applicants."
             });
 
         var form = await _applicationFormRepository.GetAsync(GrantManagerTestData.ApplicationForm1_Id);
 
-        form.ExternalLinks.Count.ShouldBe(3);
-        var renewalLink = form.ExternalLinks.Single(l => l.ExternalLinkType == ExternalLinkType.Renewal);
+        form.ExternalLinksConfig.Links.Count.ShouldBe(3);
+        form.ExternalLinksConfig.ApplicantMessage.ShouldBe("Renewal message for applicants.");
+        var renewalLink = form.ExternalLinksConfig.Links.Single(l => l.ExternalLinkType == ExternalLinkType.Renewal);
         renewalLink.Uri.ShouldBe("https://chefs-test.apps.silver.devops.gov.bc.ca/app/form");
         renewalLink.Title.ShouldBe("Renew Now");
         renewalLink.Description.ShouldBe("Please renew before the deadline.");
         renewalLink.Published.ShouldBeTrue();
 
-        var relatedLinks = form.ExternalLinks
+        var relatedLinks = form.ExternalLinksConfig.Links
             .Where(l => l.ExternalLinkType == ExternalLinkType.Related)
             .OrderBy(l => l.Order)
             .ToList();
@@ -103,7 +105,7 @@ public class ExternalLinksConfigValidationTests : GrantManagerApplicationTestBas
             });
 
         var form = await _applicationFormRepository.GetAsync(GrantManagerTestData.ApplicationForm1_Id);
-        var relatedLinks = form.ExternalLinks.Where(l => l.ExternalLinkType == ExternalLinkType.Related).ToList();
+        var relatedLinks = form.ExternalLinksConfig.Links.Where(l => l.ExternalLinkType == ExternalLinkType.Related).ToList();
 
         relatedLinks.Count.ShouldBe(2);
         relatedLinks.ShouldNotContain(l => l.Uri.EndsWith("first", StringComparison.Ordinal));

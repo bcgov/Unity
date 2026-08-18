@@ -126,6 +126,11 @@ public class ApplicationFormAppService
         var dto = await base.GetAsync(id);
         dto.ApiKey = _stringEncryptionService.Decrypt(dto.ApiKey);
         dto.ApiToken = _stringEncryptionService.Decrypt(dto.ApiToken);
+
+        var form = await Repository.GetAsync(id);
+        dto.ExternalLinks = form.ExternalLinksConfig.Links.Select(MapToExternalLinkConfigDto).ToList();
+        dto.ApplicantMessage = form.ExternalLinksConfig.ApplicantMessage;
+
         return dto;
     }
 
@@ -198,7 +203,7 @@ public class ApplicationFormAppService
         var renewalLink = config.RenewalLink is null ? null : MapToExternalLink(config.RenewalLink);
         var relatedLinks = (config.RelatedLinks ?? []).Select(MapToExternalLink).ToList();
 
-        form.SetExternalLinks(renewalLink, relatedLinks);
+        form.SetExternalLinks(renewalLink, relatedLinks, config.ApplicantMessage);
 
         await Repository.UpdateAsync(form);
     }
@@ -211,6 +216,16 @@ public class ApplicationFormAppService
         Published = dto.Published,
         ExternalLinkType = dto.ExternalLinkType,
         Order = dto.Order
+    };
+
+    private static ExternalLinkConfigDto MapToExternalLinkConfigDto(ExternalLink link) => new()
+    {
+        Uri = link.Uri,
+        Title = link.Title,
+        Description = link.Description,
+        Published = link.Published,
+        ExternalLinkType = link.ExternalLinkType,
+        Order = link.Order
     };
 
     [Authorize(PaymentsPermissions.Payments.EditFormPaymentConfiguration)]
