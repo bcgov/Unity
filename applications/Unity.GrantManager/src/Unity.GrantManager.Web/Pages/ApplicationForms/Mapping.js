@@ -494,7 +494,7 @@ $(function () {
     }
 
     function monitorFormWorksheetGeneration(applicationId, $button, existingHtml) {
-        if (!isAiFormWorksheetGenerateEnabled() || !$button || !$button.length) {
+        if (!isAiFormWorksheetGenerateEnabled() || !$button?.length) {
             return;
         }
 
@@ -561,7 +561,7 @@ $(function () {
     }
 
     function monitorFormScoresheetGeneration(applicationId, $button, existingHtml) {
-        if (!isAiFormScoresheetGenerateEnabled() || !$button || !$button.length) {
+        if (!isAiFormScoresheetGenerateEnabled() || !$button?.length) {
             return;
         }
 
@@ -1013,7 +1013,7 @@ $(function () {
     }
 
     function monitorFormMappingGeneration(applicationId, $button, existingHtml) {
-        if (!isAiFormMappingGenerateEnabled() || !$button || !$button.length) {
+        if (!isAiFormMappingGenerateEnabled() || !$button?.length) {
             return;
         }
 
