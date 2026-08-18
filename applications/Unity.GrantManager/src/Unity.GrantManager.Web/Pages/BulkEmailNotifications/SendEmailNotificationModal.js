@@ -257,7 +257,7 @@ function loadDraftIntoPanel(applicationId, emailId) {
         // arrives later over AJAX, so without re-parsing it here, EmailsWidget's own $(emailForm).valid() call
         // (used for Subject/From/Body) would silently pass no matter what those fields contain — only the
         // hand-validated "To" field would still be enforced client-side.
-        if (window.jQuery && $.validator && $.validator.unobtrusive) {
+        if ($.validator?.unobtrusive) {
             $.validator.unobtrusive.parse('#bulkEmailEditPanelWidget');
         }
 
