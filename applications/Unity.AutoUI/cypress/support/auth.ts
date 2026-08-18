@@ -191,7 +191,10 @@ function ensureGrantApplicationsPage(timeout: number): void {
  * Performs the actual login flow
  */
 function performLogin(options: LoginOptions = {}): void {
-  const baseUrl = options.baseUrl || (Cypress.env("webapp.url") as string);
+  const baseUrl =
+    options.baseUrl ||
+    (Cypress.env("webapp.url") as string | undefined) ||
+    Cypress.config("baseUrl");
   const useMfa = options.useMfa || false;
   const timeout = options.timeout || 20000;
 
@@ -237,7 +240,10 @@ export function loginIfNeeded(
   options: LoginOptions = {},
 ): void {
   const username = options.username || (Cypress.env("test1username") as string);
-  const baseUrl = options.baseUrl || (Cypress.env("webapp.url") as string);
+  const baseUrl =
+    options.baseUrl ||
+    (Cypress.env("webapp.url") as string | undefined) ||
+    Cypress.config("baseUrl");
   const sessionId = `unity-${baseUrl}-${username}`;
 
   cy.session(

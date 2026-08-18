@@ -13,9 +13,9 @@ using Unity.AI.Features;
 using Unity.AI.Localization;
 using Unity.AI.Generation;
 using Unity.AI.Operations;
-using Unity.AI.Permissions;
 using Unity.AI.Requests;
 using Unity.AI.Runtime.Execution;
+using Unity.AI.Settings;
 using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Scoresheets.Enums;
@@ -51,6 +51,7 @@ namespace Unity.GrantManager.ApplicationForms
         IApplicationFormSubmissionRepository formSubmissionRepository,
         IReportingFieldsGeneratorService reportingFieldsGeneratorService,
         IFeatureChecker featureChecker,
+        AIFeatureGuard aiFeatureGuard,
         IStringLocalizer<AIResource> localizer,
         IAIGenerationAppService aiGenerationAppService,
         IWorksheetRepository worksheetRepository,
@@ -69,6 +70,13 @@ namespace Unity.GrantManager.ApplicationForms
         IApplicationFormVersionAppService
     {
         private readonly IAIGenerationAppService _aiGenerationAppService = aiGenerationAppService;
+
+        private async Task EnsureAiOperationAccessAsync(string operationType, bool requiresGeneratePermission)
+        {
+            var operation = AIGenerationOperations.Get(operationType);
+            await aiFeatureGuard.EnsureEnabledAsync(operation.FeatureName, operation.DisabledLocalizationKey);
+            await CheckPolicyAsync(requiresGeneratePermission ? operation.GeneratePermission : operation.ViewPermission);
+        }
 
         public override async Task<ApplicationFormVersionDto> CreateAsync(CreateUpdateApplicationFormVersionDto input) =>
             await base.CreateAsync(input);
@@ -379,7 +387,7 @@ namespace Unity.GrantManager.ApplicationForms
         [HttpGet("api/app/application-form-version/mapping-review")]
         public virtual async Task<FormMappingReviewDto> GetMappingReviewAsync(Guid formVersionId)
         {
-            await CheckPolicyAsync(AIPermissions.Analysis.ViewFormMapping);
+            await EnsureAiOperationAccessAsync(AIGenerationOperations.FormMapping, requiresGeneratePermission: false);
             var review = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(
                 AIGenerationOperations.FormMapping,
                 formVersionId);
@@ -391,7 +399,7 @@ namespace Unity.GrantManager.ApplicationForms
             Guid formVersionId,
             AcceptMappingSuggestionsDto input)
         {
-            await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormMapping);
+            await EnsureAiOperationAccessAsync(AIGenerationOperations.FormMapping, requiresGeneratePermission: true);
             var review = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(
                     AIGenerationOperations.FormMapping,
                     formVersionId)
@@ -439,7 +447,7 @@ namespace Unity.GrantManager.ApplicationForms
         [HttpPost("api/app/application-form-version/discard-mapping-suggestions")]
         public virtual async Task DiscardMappingSuggestionsAsync(Guid formVersionId)
         {
-            await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormMapping);
+            await EnsureAiOperationAccessAsync(AIGenerationOperations.FormMapping, requiresGeneratePermission: true);
             var review = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(
                 AIGenerationOperations.FormMapping,
                 formVersionId);
@@ -458,7 +466,7 @@ namespace Unity.GrantManager.ApplicationForms
         [HttpPost("api/app/application-form-version/mapping-review-phase")]
         public virtual async Task SetMappingReviewPhaseAsync(Guid formVersionId, FormMappingReviewPhase phase)
         {
-            await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormMapping);
+            await EnsureAiOperationAccessAsync(AIGenerationOperations.FormMapping, requiresGeneratePermission: true);
             var review = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(
                 AIGenerationOperations.FormMapping,
                 formVersionId);
@@ -511,8 +519,8 @@ namespace Unity.GrantManager.ApplicationForms
         [HttpPost("api/app/application-form-version/reset-ai-flow")]
         public virtual async Task ResetAiFlowAsync(Guid formVersionId)
         {
-            await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormMapping);
-            await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormWorksheet);
+            await EnsureAiOperationAccessAsync(AIGenerationOperations.FormMapping, requiresGeneratePermission: true);
+            await EnsureAiOperationAccessAsync(AIGenerationOperations.FormWorksheet, requiresGeneratePermission: true);
             var formVersion = await Repository.GetAsync(formVersionId);
             var mappingReviews = await generationReviewRepository.GetListByOperationAndFormVersionAsync(AIGenerationOperations.FormMapping, formVersionId);
             var worksheetReviews = await generationReviewRepository.GetListByOperationAndFormVersionAsync(AIGenerationOperations.FormWorksheet, formVersionId);
@@ -520,8 +528,7 @@ namespace Unity.GrantManager.ApplicationForms
                 .SelectMany(review => GetWorksheetReviewPayload(review).DraftWorksheetIds)
                 .Distinct()
                 .ToList();
-            var suggestionWorksheet = await worksheetRepository.GetByNameAsync(
-                AiWorksheetSuggestionName.Build(formVersion.ApplicationFormId, formVersion.Id), true);
+            var suggestionWorksheet = await GetAiSuggestionWorksheetAsync(formVersion);
             if (suggestionWorksheet != null && !worksheetIds.Contains(suggestionWorksheet.Id))
             {
                 worksheetIds.Add(suggestionWorksheet.Id);
@@ -545,7 +552,7 @@ namespace Unity.GrantManager.ApplicationForms
         [HttpPost("api/app/application-form-version/finalize-mapping-review")]
         public virtual async Task FinalizeMappingReviewAsync(Guid formVersionId)
         {
-            await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormMapping);
+            await EnsureAiOperationAccessAsync(AIGenerationOperations.FormMapping, requiresGeneratePermission: true);
             var formVersion = await Repository.GetAsync(formVersionId);
             var review = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(
                     AIGenerationOperations.FormMapping,
@@ -577,7 +584,7 @@ namespace Unity.GrantManager.ApplicationForms
         [HttpGet("api/app/application-form-version/pending-ai-worksheet")]
         public virtual async Task<AiWorksheetReviewDto?> GetPendingAiWorksheetAsync(Guid formVersionId)
         {
-            await CheckPolicyAsync(AIPermissions.Analysis.ViewFormWorksheet);
+            await EnsureAiOperationAccessAsync(AIGenerationOperations.FormWorksheet, requiresGeneratePermission: false);
 
             var worksheet = await GetPendingAiWorksheetEntityAsync(formVersionId);
             return worksheet == null ? null : MapAiWorksheetReview(worksheet);
@@ -586,7 +593,7 @@ namespace Unity.GrantManager.ApplicationForms
         [HttpPost("api/app/application-form-version/create-ai-worksheet-draft")]
         public virtual async Task CreateAiWorksheetDraftAsync(Guid formVersionId, CreateAiWorksheetDraftDto input)
         {
-            await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormWorksheet);
+            await EnsureAiOperationAccessAsync(AIGenerationOperations.FormWorksheet, requiresGeneratePermission: true);
             var worksheet = await GetPendingAiWorksheetEntityAsync(formVersionId);
             if (worksheet == null || worksheet.Id != input.SessionId)
             {
@@ -675,7 +682,7 @@ namespace Unity.GrantManager.ApplicationForms
         [HttpPost("api/app/application-form-version/discard-ai-worksheet-suggestions")]
         public virtual async Task DiscardAiWorksheetSuggestionsAsync(Guid formVersionId)
         {
-            await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormWorksheet);
+            await EnsureAiOperationAccessAsync(AIGenerationOperations.FormWorksheet, requiresGeneratePermission: true);
             var worksheet = await GetPendingAiWorksheetEntityAsync(formVersionId);
             if (worksheet != null)
             {
@@ -694,7 +701,7 @@ namespace Unity.GrantManager.ApplicationForms
         [HttpGet("api/app/application-form-version/pending-ai-scoresheet")]
         public virtual async Task<AiScoresheetReviewDto?> GetPendingAiScoresheetAsync(Guid formVersionId)
         {
-            await CheckPolicyAsync(AIPermissions.Analysis.ViewFormScoresheet);
+            await EnsureAiOperationAccessAsync(AIGenerationOperations.FormScoresheet, requiresGeneratePermission: false);
 
             var review = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(
                 AIGenerationOperations.FormScoresheet,
@@ -706,14 +713,14 @@ namespace Unity.GrantManager.ApplicationForms
 
             var formVersion = await formVersionRepository.GetAsync(formVersionId);
             var scoresheet = await scoresheetRepository.GetByNameAsync(
-                BuildAiScoresheetSuggestionName(formVersion.ApplicationFormId, formVersion.Id), true);
+                AiScoresheetSuggestionName.Build(formVersion.ApplicationFormId, formVersion.Id), true);
             return scoresheet?.Published == false ? MapAiScoresheetReview(scoresheet) : null;
         }
 
         [HttpPost("api/app/application-form-version/create-ai-scoresheet-draft")]
         public virtual async Task CreateAiScoresheetDraftAsync(Guid formVersionId, CreateAiScoresheetDraftDto input)
         {
-            await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormScoresheet);
+            await EnsureAiOperationAccessAsync(AIGenerationOperations.FormScoresheet, requiresGeneratePermission: true);
 
             var suggestion = await GetPendingAiScoresheetEntityAsync(formVersionId);
             if (suggestion == null || suggestion.Id != input.SessionId)
@@ -800,7 +807,7 @@ namespace Unity.GrantManager.ApplicationForms
         [HttpPost("api/app/application-form-version/discard-ai-scoresheet-suggestions")]
         public virtual async Task DiscardAiScoresheetSuggestionsAsync(Guid formVersionId)
         {
-            await CheckPolicyAsync(AIPermissions.Analysis.GenerateFormScoresheet);
+            await EnsureAiOperationAccessAsync(AIGenerationOperations.FormScoresheet, requiresGeneratePermission: true);
             var suggestion = await GetPendingAiScoresheetEntityAsync(formVersionId);
             if (suggestion == null)
             {
@@ -830,12 +837,9 @@ namespace Unity.GrantManager.ApplicationForms
 
             var formVersion = await formVersionRepository.GetAsync(formVersionId);
             var scoresheet = await scoresheetRepository.GetByNameAsync(
-                BuildAiScoresheetSuggestionName(formVersion.ApplicationFormId, formVersion.Id), true);
+                AiScoresheetSuggestionName.Build(formVersion.ApplicationFormId, formVersion.Id), true);
             return scoresheet?.Published == false ? scoresheet : null;
         }
-
-        private static string BuildAiScoresheetSuggestionName(Guid formId, Guid formVersionId) =>
-            $"ai-form-{formId}-version-{formVersionId}-scoresheet";
 
         private static AiScoresheetReviewDto MapAiScoresheetReview(Scoresheet scoresheet) => new()
         {
@@ -904,8 +908,7 @@ namespace Unity.GrantManager.ApplicationForms
             }
 
             var formVersion = await formVersionRepository.GetAsync(formVersionId);
-            var worksheet = await worksheetRepository.GetByNameAsync(
-                AiWorksheetSuggestionName.Build(formVersion.ApplicationFormId, formVersion.Id), true);
+            var worksheet = await GetAiSuggestionWorksheetAsync(formVersion);
 
             if (worksheet?.Published == false)
             {
@@ -913,6 +916,12 @@ namespace Unity.GrantManager.ApplicationForms
             }
 
             return null;
+        }
+
+        private async Task<Worksheet?> GetAiSuggestionWorksheetAsync(ApplicationFormVersion formVersion)
+        {
+            return await worksheetRepository.GetByNameAsync(
+                AiWorksheetSuggestionName.Build(formVersion.ApplicationFormId, formVersion.Id), true);
         }
 
         private static AiWorksheetReviewDto MapAiWorksheetReview(Worksheet worksheet) => new()

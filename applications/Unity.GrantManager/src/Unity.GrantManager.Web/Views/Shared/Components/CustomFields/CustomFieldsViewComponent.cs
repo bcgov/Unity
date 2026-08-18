@@ -33,7 +33,11 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CustomFields
 
         public string AccountCodeList { get; set; } = string.Empty;
 
-        public async Task<IViewComponentResult> InvokeAsync(string? formVersionId, string formName)
+        public async Task<IViewComponentResult> InvokeAsync(
+            string? formVersionId,
+            string formName,
+            bool canViewScoresheet = false,
+            bool canGenerateScoresheet = false)
         {
             var model = new CustomFieldsViewModel { };
             model.ChefsFormVersionId = Guid.Parse(formVersionId ?? Guid.Empty.ToString());
@@ -67,6 +71,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CustomFields
                 ? await applicationFormRepository.FindAsync(x => x.Id == applicationFormId.Value)
                 : null;
             model.ScoresheetId = applicationForm?.ScoresheetId;
+            model.CanViewScoresheet = canViewScoresheet;
+            model.CanGenerateScoresheet = canGenerateScoresheet;
 
             var scoresheets = await scoresheetAppService.GetAllPublishedScoresheetsAsync();
             model.ScoresheetOptionsList = [];

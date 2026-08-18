@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Unity.AI;
 using Unity.AI.Features;
 using Unity.AI.Localization;
+using Unity.AI.Settings;
 using Microsoft.Extensions.Localization;
 using Unity.AI.Generation;
 using Unity.AI.Operations;
@@ -427,6 +428,8 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
         Unity.Flex.Domain.ScoresheetInstances.IScoresheetInstanceRepository? scoresheetInstanceRepository = null)
     {
         var featureChecker = Substitute.For<IFeatureChecker>();
+        featureChecker.IsEnabledAsync(Arg.Any<string>()).Returns(true);
+        var localizer = Substitute.For<IStringLocalizer<AIResource>>();
         var service = new ApplicationFormVersionAppService(
             repository,
             Substitute.For<IIntakeFormSubmissionMapper>(),
@@ -436,7 +439,8 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
             Substitute.For<IApplicationFormSubmissionRepository>(),
             Substitute.For<IReportingFieldsGeneratorService>(),
             featureChecker,
-            Substitute.For<IStringLocalizer<AIResource>>(),
+            new AIFeatureGuard(featureChecker, localizer),
+            localizer,
             aiGenerationAppService,
             worksheetRepository ?? Substitute.For<IWorksheetRepository>(),
             customFieldRepository ?? Substitute.For<IRepository<CustomField, Guid>>(),

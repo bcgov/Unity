@@ -8,6 +8,7 @@ using Unity.AI.Localization;
 using Shouldly;
 using Unity.AI.Generation;
 using Unity.AI.Operations;
+using Unity.AI.Settings;
 using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.Domain.WorksheetLinks;
 using Unity.Flex.Worksheets;
@@ -283,6 +284,9 @@ public class ApplicationFormVersionAppServiceMappingReviewTests(ITestOutputHelpe
         IWorksheetRepository? worksheetRepository = null,
         IWorksheetLinkRepository? worksheetLinkRepository = null)
     {
+        var featureChecker = Substitute.For<Volo.Abp.Features.IFeatureChecker>();
+        featureChecker.IsEnabledAsync(Arg.Any<string>()).Returns(true);
+        var localizer = Substitute.For<IStringLocalizer<AIResource>>();
         var service = new ApplicationFormVersionAppService(
             repository,
             Substitute.For<IIntakeFormSubmissionMapper>(),
@@ -291,8 +295,9 @@ public class ApplicationFormVersionAppServiceMappingReviewTests(ITestOutputHelpe
             Substitute.For<IApplicationFormVersionRepository>(),
             Substitute.For<IApplicationFormSubmissionRepository>(),
             Substitute.For<IReportingFieldsGeneratorService>(),
-            Substitute.For<Volo.Abp.Features.IFeatureChecker>(),
-            Substitute.For<IStringLocalizer<AIResource>>(),
+            featureChecker,
+            new AIFeatureGuard(featureChecker, localizer),
+            localizer,
             generationService ?? Substitute.For<IAIGenerationAppService>(),
             worksheetRepository ?? Substitute.For<IWorksheetRepository>(),
             Substitute.For<IRepository<CustomField, Guid>>(),

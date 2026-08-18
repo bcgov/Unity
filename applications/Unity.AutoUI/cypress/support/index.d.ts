@@ -111,10 +111,12 @@ declare namespace Cypress {
     fetchAllSubmissions(): Chainable<GrantApplication[]>;
 
     /**
-     * Seeds exactly one submission in CHEFS via API (logs in once via the
-     * CHEFS UI to capture an auth token, then POSTs the submission directly)
-     * and writes the confirmation ID to
-     * cypress/scripts/last-submission-id.json. Disabled for PROD.
+     * Seeds exactly one submission in CHEFS via its form-level Basic Auth
+     * API key (formId:apiKey) — a single direct POST, no browser/IDIR login
+     * required — and writes the confirmation ID to
+     * cypress/scripts/last-submission-id.json. Disabled for PROD. Requires
+     * a `chefsApiKey` value for the current environment in
+     * cypress/config/{env}.json.
      *
      * @returns Chainable containing the confirmation ID of the created submission
      */

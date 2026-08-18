@@ -10,6 +10,7 @@ using Unity.AI.Operations;
 using Unity.AI.Localization;
 using Unity.AI.Requests;
 using Unity.GrantManager.ApplicationForms;
+using Unity.GrantManager.ApplicationForms.Mapping;
 using Unity.GrantManager.Applications;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Domain.ScoresheetInstances;
@@ -48,7 +49,7 @@ public sealed class FormScoresheetOperationExecutor(
             ?? throw new InvalidOperationException(localizer[AILocalizationKeys.ScoresheetGenerationRequiresFormVersion]);
         var formVersion = await applicationFormVersionRepository.GetAsync(applicationFormVersionId);
         var applicationForm = await applicationFormRepository.GetAsync(formVersion.ApplicationFormId);
-        var scoresheetName = BuildScoresheetName(formVersion.Id, applicationForm.Id);
+        var scoresheetName = AiScoresheetSuggestionName.Build(applicationForm.Id, formVersion.Id);
         var existingScoresheet = await scoresheetRepository.GetByNameAsync(scoresheetName, true);
         var review = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(
             AIGenerationOperations.FormScoresheet,
@@ -178,11 +179,6 @@ public sealed class FormScoresheetOperationExecutor(
         }
 
         return dto;
-    }
-
-    private static string BuildScoresheetName(Guid formVersionId, Guid formId)
-    {
-        return $"ai-form-{formId}-version-{formVersionId}-scoresheet";
     }
 
     private Scoresheet BuildScoresheet(CreateScoresheetDto dto, string json, string scoresheetName)
