@@ -1,21 +1,31 @@
 {
-    "environments": {
-        "test": {
-            "baseURL": "https://chefs-test.apps.silver.devops.gov.bc.ca",
-            "formId": "46e25863-0ead-4aa8-897f-51e45f79e137",
-            "versionId": "4ef52ead-2cc3-4bdb-a7b7-73be983a7838"
-        },
-        "dev": {
-            "baseURL": "https://chefs-dev.apps.silver.devops.gov.bc.ca",
-            "formId": "233f47f9-b566-46c3-926a-73d565bf710f",
-            "versionId": "1e209d6b-46f5-4ddb-bc79-6e04033231cb"
-        },
-        "uat": {
-            "baseURL": "https://chefs-test.apps.silver.devops.gov.bc.ca",
-            "formId": "f2f45aa7-62c5-49ca-8846-b214e02adb46",
-            "versionId": "1d4d73ec-00e7-4b57-98c9-49d1e0c7d15b"
-        }
+  "environments": {
+    "dev": {
+      "baseURL": "https://chefs-dev.apps.silver.devops.gov.bc.ca",
+      "formId": "233f47f9-b566-46c3-926a-73d565bf710f",
+      "versionId": "1e209d6b-46f5-4ddb-bc79-6e04033231cb"
     },
+    "dev2": {
+      "baseURL": "https://chefs-dev.apps.silver.devops.gov.bc.ca",
+      "formId": "92c0df4c-34f9-4a9a-a1b4-61c12495749c",
+      "versionId": "8218c285-7fa3-42df-b445-7e8ae835fad0"
+    },
+    "test": {
+      "baseURL": "https://chefs-test.apps.silver.devops.gov.bc.ca",
+      "formId": "46e25863-0ead-4aa8-897f-51e45f79e137",
+      "versionId": "4ef52ead-2cc3-4bdb-a7b7-73be983a7838"
+    },
+    "uat": {
+      "baseURL": "https://chefs-test.apps.silver.devops.gov.bc.ca",
+      "formId": "f2f45aa7-62c5-49ca-8846-b214e02adb46",
+      "versionId": "1d4d73ec-00e7-4b57-98c9-49d1e0c7d15b"
+    },
+    "prod": {
+      "baseURL": "https://submit.digital.gov.bc.ca",
+      "formId": "4defd3bf-f57c-4969-94a1-ced745a99ccf",
+      "versionId": "d8736cde-a11a-41be-8800-084f2dfcb825"
+    }
+  },
     "headers": {
         "Accept": "application/json",
         "Content-Type": "application/json"
