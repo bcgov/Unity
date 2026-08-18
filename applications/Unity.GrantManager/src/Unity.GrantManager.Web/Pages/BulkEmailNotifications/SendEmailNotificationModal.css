@@ -19,8 +19,7 @@
 
 .bulk-email-modal-body {
     display: flex;
-    gap: 1rem;
-    align-items: flex-start;
+    align-items: stretch;
 }
 
 .bulk-email-list-panel {
@@ -37,8 +36,47 @@
     min-width: 0;
     max-height: 75vh;
     overflow-y: auto;
-    border-left: var(--bs-border-width) solid var(--bs-border-color);
     padding-left: 1rem;
+}
+
+/* Draggable divider between the two panels. The border that used to sit on .bulk-email-edit-panel now lives
+   here instead, since this element is the visual (and interactive) separator between them. */
+.bulk-email-panel-divider {
+    flex: 0 0 auto;
+    width: 13px;
+    margin: 0 -6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: col-resize;
+    position: relative;
+    z-index: 1;
+}
+
+.bulk-email-panel-divider::before {
+    content: '';
+    width: var(--bs-border-width, 1px);
+    height: 100%;
+    background-color: var(--bs-border-color);
+    transition: background-color 0.15s ease, width 0.15s ease;
+}
+
+.bulk-email-panel-divider:hover::before,
+.bulk-email-panel-divider.dragging::before,
+.bulk-email-panel-divider:focus-visible::before {
+    width: 3px;
+    background-color: var(--bc-colors-blue-text-links);
+}
+
+.bulk-email-panel-divider:focus-visible {
+    outline: none;
+}
+
+/* Applied to <body> for the duration of a drag so text selection and the resize cursor stay consistent even
+   if the pointer briefly moves outside the divider itself while dragging. */
+body.bulk-email-resizing {
+    cursor: col-resize;
+    user-select: none;
 }
 
 /* Compressed row spacing for the left list, so it reads as a compact selectable index rather than

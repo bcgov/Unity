@@ -21,7 +21,7 @@
         else
         {
             <div class="bulk-email-modal-body">
-                <div class="bulk-email-list-panel">
+                <div class="bulk-email-list-panel" id="bulkEmailListPanel">
                     @* This form wraps only the left panel — deliberately not the whole modal. The right panel
                        injects EmailsWidget dynamically, which renders its own <form id="EmailForm">; nesting
                        that inside this form would be invalid HTML with unreliable browser parsing behavior.
@@ -110,7 +110,14 @@
                     </div>
                 </div>
 
-                <div class="bulk-email-edit-panel">
+                <div class="bulk-email-panel-divider"
+                     id="bulkEmailPanelDivider"
+                     role="separator"
+                     aria-orientation="vertical"
+                     aria-label="Resize the application list and draft editor panels"
+                     tabindex="0"></div>
+
+                <div class="bulk-email-edit-panel" id="bulkEmailEditPanel">
                         <div id="bulkEmailEditPanelEmpty" class="bulk-email-edit-empty">
                             Select an application to view its draft email.
                         </div>

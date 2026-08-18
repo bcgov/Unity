@@ -356,6 +356,80 @@ function revalidateRow(applicationId) {
     });
 }
 
+// ---- Draggable divider between the list and edit panels ----
+
+const PANEL_DIVIDER_MIN_LIST_WIDTH = 280;
+const PANEL_DIVIDER_MIN_EDIT_WIDTH = 400;
+const PANEL_DIVIDER_KEYBOARD_STEP = 24;
+
+function getPanelDividerElements() {
+    return {
+        $container: $('.bulk-email-modal-body'),
+        $list: $('#bulkEmailListPanel'),
+        $divider: $('#bulkEmailPanelDivider')
+    };
+}
+
+// Sets the list panel to an explicit pixel width (clamped so neither panel can be dragged/keyed below a
+// usable minimum — the edit panel in particular needs enough room for TinyMCE's toolbar to lay out sanely)
+// and keeps the divider's aria-value* attributes in sync for screen reader users, whether or not they ever
+// actually drag it.
+function applyListPanelWidth(widthPx) {
+    const { $container, $list, $divider } = getPanelDividerElements();
+    if (!$container.length || !$list.length) {
+        return;
+    }
+
+    const containerWidth = $container.width();
+    const dividerWidth = $divider.outerWidth() || 0;
+    const maxListWidth = Math.max(containerWidth - dividerWidth - PANEL_DIVIDER_MIN_EDIT_WIDTH, PANEL_DIVIDER_MIN_LIST_WIDTH);
+    const clampedWidth = Math.min(Math.max(widthPx, PANEL_DIVIDER_MIN_LIST_WIDTH), maxListWidth);
+
+    $list.css('flex', '0 0 ' + clampedWidth + 'px');
+
+    $divider.attr({
+        'aria-valuenow': Math.round(clampedWidth),
+        'aria-valuemin': PANEL_DIVIDER_MIN_LIST_WIDTH,
+        'aria-valuemax': Math.round(maxListWidth)
+    });
+}
+
+function startPanelDividerDrag(event) {
+    event.preventDefault();
+
+    const { $list, $divider } = getPanelDividerElements();
+    const startX = event.pageX;
+    const startWidth = $list.outerWidth();
+
+    $divider.addClass('dragging');
+    $('body').addClass('bulk-email-resizing');
+
+    function onDragMove(moveEvent) {
+        applyListPanelWidth(startWidth + (moveEvent.pageX - startX));
+    }
+
+    function onDragEnd() {
+        $(document).off('mousemove.bulkEmailDivider', onDragMove);
+        $(document).off('mouseup.bulkEmailDivider', onDragEnd);
+        $divider.removeClass('dragging');
+        $('body').removeClass('bulk-email-resizing');
+    }
+
+    $(document).on('mousemove.bulkEmailDivider', onDragMove);
+    $(document).on('mouseup.bulkEmailDivider', onDragEnd);
+}
+
+function handlePanelDividerKeydown(event) {
+    if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
+        return;
+    }
+
+    event.preventDefault();
+    const { $list } = getPanelDividerElements();
+    const step = event.key === 'ArrowLeft' ? -PANEL_DIVIDER_KEYBOARD_STEP : PANEL_DIVIDER_KEYBOARD_STEP;
+    applyListPanelWidth($list.outerWidth() + step);
+}
+
 $(function () {
     PubSub.subscribe('refresh_application_emails', function (_msg, data) {
         // EmailsWidget publishes the applicationId that was actually saved/sent (see Default.js) — use that
@@ -414,6 +488,23 @@ $(function () {
                 }
             }
         );
+    });
+
+    // Delegated (rather than bound directly to #bulkEmailPanelDivider) because this script is bundled once at
+    // page load, while the divider itself is part of the modal's DOM, which ABP's ModalManager destroys and
+    // freshly re-renders on every open.
+    $(document).on('mousedown', '#bulkEmailPanelDivider', startPanelDividerDrag);
+    $(document).on('keydown', '#bulkEmailPanelDivider', handlePanelDividerKeydown);
+
+    // Initializes the divider's aria-value* attributes against the panel's default CSS-defined width (40%),
+    // without changing anything visually — applyListPanelWidth just re-expresses the current rendered width
+    // as an explicit pixel flex-basis, which future drags/keypresses then adjust from. Needed so a keyboard
+    // user tabbing to the divider without ever dragging it still gets correct aria-valuenow/min/max.
+    $(document).on('shown.bs.modal', '#sendEmailNotificationModal', function () {
+        const $list = $('#bulkEmailListPanel');
+        if ($list.length) {
+            applyListPanelWidth($list.outerWidth());
+        }
     });
 
     // This script is bundled once per page load, but the modal's DOM (including #bulkEmailEditPanelWidget)
