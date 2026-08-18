@@ -11,8 +11,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             // Existing rows store ExternalLinks as a bare JSON array. Wrap them in the new
-            // { ApplicantMessage, Links } object shape so the complex-type JSON mapping can
-            // deserialize them.
+            // { ApplicantMessage, Links } object shape expected by the current mapping.
             migrationBuilder.Sql(
                 """
                 UPDATE "ApplicationForms"

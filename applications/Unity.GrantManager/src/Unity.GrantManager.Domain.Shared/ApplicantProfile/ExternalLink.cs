@@ -1,12 +1,10 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Unity.GrantManager.ApplicantProfile;
 
 /// <summary>
 /// Represents a link to be used within the Applicant Portal, including the URI, title, and description.
 /// </summary>
-[ComplexType]
 public class ExternalLink
 {
     [MaxLength(2048)]
