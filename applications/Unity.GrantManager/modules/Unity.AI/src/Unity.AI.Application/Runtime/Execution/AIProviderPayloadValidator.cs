@@ -206,7 +206,8 @@ namespace Unity.AI.Runtime.Execution
                     return sectionNameResult;
                 }
 
-                if (!sectionNames.Add(section.GetProperty("Name").GetString()!))
+                if (!TryGetProperty(section, "Name", out var sectionName)
+                    || !sectionNames.Add(sectionName.GetString()!))
                 {
                     return AIResponseValidationResult.Invalid($"{responseName} response contains duplicate section names.");
                 }
@@ -235,7 +236,8 @@ namespace Unity.AI.Runtime.Execution
                         return result;
                     }
 
-                    if (!fieldNames.Add(field.GetProperty("Name").GetString()!))
+                    if (!TryGetProperty(field, "Name", out var fieldName)
+                        || !fieldNames.Add(fieldName.GetString()!))
                     {
                         return AIResponseValidationResult.Invalid($"{responseName} response contains duplicate field names.");
                     }
@@ -353,6 +355,18 @@ namespace Unity.AI.Runtime.Execution
             if (element.ValueKind == JsonValueKind.Object && element.TryGetProperty(propertyName, out property))
             {
                 return true;
+            }
+
+            if (element.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var candidate in element.EnumerateObject())
+                {
+                    if (string.Equals(candidate.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        property = candidate.Value;
+                        return true;
+                    }
+                }
             }
 
             property = default;

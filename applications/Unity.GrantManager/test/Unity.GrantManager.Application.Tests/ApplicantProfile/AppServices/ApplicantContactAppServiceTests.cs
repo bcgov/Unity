@@ -90,7 +90,8 @@ namespace Unity.GrantManager.ApplicantProfile
                 applicantId,
                 contactId,
                 Arg.Is<ContactInput>(ci =>
-                    ci.Name == input.Name
+                    ci != null
+                    && ci.Name == input.Name
                     && ci.Title == input.Title
                     && ci.Email == input.Email
                     && ci.HomePhoneNumber == null

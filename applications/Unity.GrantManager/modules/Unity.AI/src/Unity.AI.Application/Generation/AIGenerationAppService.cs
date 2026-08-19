@@ -25,6 +25,7 @@ public class AIGenerationAppService(
     [HttpPost("submit")]
     public virtual async Task SubmitAsync(string operationType, AIGenerationSubmissionDto request)
     {
+        // All generation routes converge here so authorization, feature, and form-version rules stay consistent.
         var operation = AIGenerationOperations.Get(operationType);
         await featureGuard.EnsureEnabledAsync(operation.FeatureName, operation.DisabledLocalizationKey);
 

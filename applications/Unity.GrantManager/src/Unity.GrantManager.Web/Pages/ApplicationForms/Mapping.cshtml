@@ -1,4 +1,4 @@
-﻿@page
+@page
 @using Unity.GrantManager.ApplicationForms
 @using Unity.Reporting.Permissions
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout;
@@ -21,11 +21,83 @@
     PageLayout.Content.MenuItemName = "GrantManager.ApplicationForms";
     PageLayout.Content.Title = "Application Mapping";
     ViewBag.PageTitle = "Application Forms Mapping";
+    var canViewFormMapping = await FeatureChecker.IsEnabledAsync("Unity.AI.FormMapping") && await PermissionChecker.IsGrantedAsync(AIPermissions.FormMapping.View);
+    var canGenerateFormMapping = await FeatureChecker.IsEnabledAsync("Unity.AI.FormMapping") && await PermissionChecker.IsGrantedAsync(AIPermissions.FormMapping.Generate);
+    var canViewFormWorksheet = await FeatureChecker.IsEnabledAsync("Unity.AI.FormWorksheet") && await PermissionChecker.IsGrantedAsync(AIPermissions.FormWorksheet.View);
+    var canGenerateFormWorksheet = await FeatureChecker.IsEnabledAsync("Unity.AI.FormWorksheet") && await PermissionChecker.IsGrantedAsync(AIPermissions.FormWorksheet.Generate);
+    var canViewFormScoresheet = await FeatureChecker.IsEnabledAsync("Unity.AI.FormScoresheet") && await PermissionChecker.IsGrantedAsync(AIPermissions.FormScoresheet.View);
+    var canGenerateFormScoresheet = await FeatureChecker.IsEnabledAsync("Unity.AI.FormScoresheet") && await PermissionChecker.IsGrantedAsync(AIPermissions.FormScoresheet.Generate);
+    var mappingReviewModal = new AiSuggestionReviewModalModel
+    {
+        ModalId = "aiMappingReviewModal",
+        ModalLabelId = "aiMappingReviewModalLabel",
+        CanMutate = canGenerateFormMapping,
+        Title = "Review Mapping Suggestions",
+        SourceColumnTitle = "CHEFS Field",
+        TargetColumnTitle = "Unity Core Field",
+        FieldsId = "aiMappingReviewFields",
+        EmptyId = "aiMappingReviewEmpty",
+        EmptyTitle = "No mapping changes found",
+        EmptyText = "AI completed its review but did not find any new mappings that need attention. Existing mappings were left unchanged.",
+        SelectAllId = "aiMappingReviewSelectAll",
+        PrimaryActionId = "btn-add-ai-mapping",
+        PrimaryActionText = "Add selected to map",
+        ReviewLaterActionId = "btn-review-later-ai-mapping",
+        DiscardActionId = "btn-discard-ai-mapping"
+    };
+    var worksheetReviewModal = new AiSuggestionReviewModalModel
+    {
+        ModalId = "aiWorksheetReviewModal",
+        ModalLabelId = "aiWorksheetReviewModalLabel",
+        CanMutate = canGenerateFormWorksheet,
+        Title = "Review Worksheet Suggestions",
+        SourceColumnTitle = "Source Field",
+        TargetColumnTitle = "Worksheet Field",
+        FieldsId = "aiWorksheetReviewFields",
+        EmptyId = "aiWorksheetReviewEmpty",
+        EmptyTitle = "No worksheet fields found",
+        EmptyText = "AI completed its review but did not find any additional worksheet fields that need to be created.",
+        SelectAllId = "aiWorksheetReviewSelectAll",
+        TitleInputId = "aiWorksheetTitle",
+        TitleInputLabel = "Worksheet Title",
+        TitleInputPlaceholder = "e.g., Project worksheet",
+        PrimaryActionId = "btn-create-ai-worksheet-draft",
+        PrimaryActionText = "Create Draft",
+        PrimaryActionDisabled = true,
+        ReviewLaterActionId = "btn-review-later-ai-worksheet",
+        DiscardActionId = "btn-discard-ai-worksheet"
+    };
+    var scoresheetReviewModal = new AiSuggestionReviewModalModel
+    {
+        ModalId = "aiScoresheetReviewModal",
+        ModalLabelId = "aiScoresheetReviewModalLabel",
+        CanMutate = canGenerateFormScoresheet,
+        Title = "Review Scoresheet Suggestions",
+        SourceColumnTitle = "Generated Question",
+        TargetColumnTitle = "Section",
+        FieldsId = "aiScoresheetReviewFields",
+        EmptyId = "aiScoresheetReviewEmpty",
+        EmptyTitle = "No scoresheet questions found",
+        EmptyText = "AI completed its review but did not find any additional scoresheet questions that need to be added.",
+        SelectAllId = "aiScoresheetReviewSelectAll",
+        TitleInputId = "aiScoresheetTitle",
+        TitleInputLabel = "Scoresheet Title",
+        TitleInputPlaceholder = "e.g., Project scoresheet",
+        PrimaryActionId = "btn-create-ai-scoresheet-draft",
+        PrimaryActionText = "Add to Scoresheet",
+        PrimaryActionDisabled = true,
+        ReviewLaterActionId = "btn-review-later-ai-scoresheet",
+        DiscardActionId = "btn-discard-ai-scoresheet",
+        HideTargetColumn = true,
+        SectionDataAttribute = "section-id"
+    };
 }
 @section scripts
 {
     <abp-script src="/Views/Shared/Components/_Shared/string-utils.js" />
     <abp-script src="/Pages/ApplicationForms/mapping-utils.js" />
+    <abp-script src="/Pages/ApplicationForms/ai-form-workflow-api.js" />
+    <abp-script src="/Pages/GrantApplications/ai-generation-api.js" />
     <abp-script src="/Pages/GrantApplications/ai-generation-button-state.js" />
     <abp-script src="/Pages/GrantApplications/ai-rate-limit.js" />
     <abp-script src="/Pages/ApplicationForms/Mapping.js" />
@@ -33,7 +105,9 @@
 }
 
 @section styles {
+    <abp-style src="/Pages/GrantApplications/ai-generation-button.css" />
     <abp-style src="/Pages/ApplicationForms/Mapping.css" />
+    <abp-style src="/Views/Shared/Components/CustomFields/Default.css" />
 }
 
 <input type="hidden" id="intakeProperties" value="@Model.IntakeProperties" />
@@ -42,6 +116,12 @@
 <input type="hidden" id="existingMapping" value="@Model.ApplicationFormVersionDto?.SubmissionHeaderMapping" />
 <input type="hidden" id="formVersionId" value="@Model.ApplicationFormVersionDto?.Id" />
 <input type="hidden" id="applicationFormId" value="@Model.ApplicationFormDto?.Id" />
+<input type="hidden" id="AIFormMappingViewEnabled" value="@(canViewFormMapping.ToString().ToLower())" />
+<input type="hidden" id="AIFormMappingGenerateEnabled" value="@(canGenerateFormMapping.ToString().ToLower())" />
+<input type="hidden" id="AIFormWorksheetViewEnabled" value="@(canViewFormWorksheet.ToString().ToLower())" />
+<input type="hidden" id="AIFormWorksheetGenerateEnabled" value="@(canGenerateFormWorksheet.ToString().ToLower())" />
+<input type="hidden" id="AIFormScoresheetViewEnabled" value="@(canViewFormScoresheet.ToString().ToLower())" />
+<input type="hidden" id="AIFormScoresheetGenerateEnabled" value="@(canGenerateFormScoresheet.ToString().ToLower())" />
 <input type="hidden" id="chefsFormId" value="@Model.ApplicationFormDto?.ChefsApplicationFormGuid" />
 <input type="hidden" id="formName" value="@Model.ApplicationFormDto?.ApplicationFormName" />
 
@@ -80,9 +160,9 @@
             }
             <button class="nav-link" id="nav-other-configuration-tab" data-bs-toggle="tab"
                 data-bs-target="#nav-other-configuration" type="button" role="tab">Other Configuration</button>
-                
+
             @if (await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.NotificationsTab))
-            {    
+            {
             <button class="nav-link" id="nav-notifications-tab" data-bs-toggle="tab" data-bs-target="#nav-notifications" type="button" role="tab">Notifications</button>
             }
             @if (Model?.ShowAITab == true)
@@ -100,7 +180,93 @@
                 <div class="col-12 col-md-8">
                     <h5>Mapping Configuration</h5>
                 </div>
-                <div class="col-12 col-md-4 btn-wrapper">
+                <div class="col-12 col-md-4 btn-wrapper" data-ai-workflow-loading="true">
+                    @if (canGenerateFormMapping)
+                    {
+                        <button type="button" id="btn-generate" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none"
+                                data-ai-cooldown-checking="1" data-ai-rate-limit-disabled="1" disabled
+                                title="Generate the mapping for the current form version">
+                            <span class="ai-button-content">
+                                <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
+                                <span>Generate Initial Mapping</span>
+                            </span>
+                        </button>
+                    }
+                    @if (canViewFormMapping)
+                    {
+                        <button type="button" id="btn-review-mapping" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none"
+                                data-ai-review-action="true"
+                                title="Review pending mapping suggestions">
+                            <span class="ai-button-content">
+                                <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
+                                <span>Review Initial Mapping</span>
+                            </span>
+                        </button>
+                    }
+                    @if (canGenerateFormWorksheet)
+                    {
+                        <button type="button" id="btn-generate-worksheet" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none"
+                                data-ai-cooldown-checking="1" data-ai-rate-limit-disabled="1" data-ai-pending="false" disabled
+                                title="Generate worksheet suggestions for the current form version">
+                            <span class="ai-button-content">
+                                <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
+                                <span>Generate Worksheets</span>
+                            </span>
+                        </button>
+                    }
+                    @if (canViewFormWorksheet)
+                        {
+                            <button type="button" id="btn-review-worksheet" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none"
+                                data-ai-review-action="true"
+                                title="Review pending worksheet suggestions">
+                            <span class="ai-button-content">
+                                <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
+                                <span>Review Worksheets</span>
+                            </span>
+                        </button>
+                    }
+                    @if (canGenerateFormWorksheet)
+                    {
+                        <button type="button" id="btn-publish-assign-worksheets" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none" disabled
+                                title="Publish and assign worksheet drafts before generating the final mapping">
+                            <span class="ai-button-content">
+                                <i class="unt-icon-sm fa-solid fa-link"></i>
+                                <span>Publish &amp; Assign Worksheets</span>
+                            </span>
+                        </button>
+                    }
+                    @if (canGenerateFormMapping)
+                    {
+                        <button type="button" id="btn-generate-final-mapping" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none"
+                                title="Generate the final mapping for the current form version">
+                            <span class="ai-button-content">
+                                <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
+                                <span>Generate Final Mapping</span>
+                            </span>
+                        </button>
+                    }
+                    @if (canViewFormMapping)
+                        {
+                            <button type="button" id="btn-review-final-mapping" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none"
+                                data-ai-review-action="true"
+                                title="Review final mapping suggestions">
+                            <span class="ai-button-content">
+                                <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
+                                <span>Review Final Mapping</span>
+                            </span>
+                        </button>
+                    }
+                    @if (canGenerateFormMapping && canGenerateFormWorksheet)
+                    {
+                        <button type="button" id="btn-restart-ai-flow" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn ai-workflow-action d-none"
+                                data-ai-review-action="true"
+                                title="Delete AI workflow progress, AI worksheets, and saved mappings for this form version">
+                            <span class="ai-button-content">
+                                <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
+                                <span>Restart AI Flow</span>
+                            </span>
+                        </button>
+                    }
                     <abp-button id="btn-save" text="Save" icon-type="Other" icon="fl fl-save"
                                 class="btn unt-btn-primary btn-primary"
                                 style="pointer-events: all;"
@@ -110,17 +276,6 @@
                                 icon="fl fl-edit" class="btn unt-btn-primary btn-primary" data-toggle="modal"
                                 style="pointer-events: all;" abp-tooltip="Edit the Mapping JSON Manually"
                                 button-type="Primary" />
-                    @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormMapping.Generate))
-                    {
-                        <button type="button" id="btn-generate" class="btn ai-generate-btn unt-btn-outline-primary btn-outline-primary"
-                                data-ai-cooldown-checking="1" data-ai-rate-limit-disabled="1" disabled
-                                title="Generate the mapping for the current form version">
-                            <span class="ai-button-content">
-                                <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
-                                <span>Generate Mapping</span>
-                            </span>
-                        </button>
-                    }
                     <abp-button id="btn-reset" text="Reset Mapping" icon-type="Other" icon="fl fl-undo"
                                 class="btn unt-btn-outline-primary btn-outline-primary"
                                 abp-tooltip="This button resets the mapping to the last saved state" />
@@ -234,9 +389,11 @@
         {
             <div id="nav-custom-fields" class="tab-pane fade container-fluid" role="tabpanel" aria-labelledby="nav-custom-fields-tab">
                 <div id="customFieldsWidget">
-                    @await Component.InvokeAsync("CustomFields", 
-                        new {   formVersionId = Model?.ApplicationFormVersionDto?.ChefsFormVersionGuid?.ToString(), 
-                                formName = Model?.ApplicationFormDto?.ApplicationFormName 
+                    @await Component.InvokeAsync("CustomFields",
+                        new {   formVersionId = Model?.ApplicationFormVersionDto?.ChefsFormVersionGuid?.ToString(),
+                                formName = Model?.ApplicationFormDto?.ApplicationFormName,
+                                canViewScoresheet = canViewFormScoresheet,
+                                canGenerateScoresheet = canGenerateFormScoresheet
                             }
                     )
                 </div>
@@ -260,9 +417,9 @@
                 && await PermissionChecker.IsGrantedAsync(ReportingPermissions.Configuration.Default))
         {
             <!--Tab Content: Reporting Configuration-->
-            <div class="tab-pane fade" 
-                 id="nav-reporting-configuration" 
-                 role="tabpanel" 
+            <div class="tab-pane fade"
+                 id="nav-reporting-configuration"
+                 role="tabpanel"
                  aria-labelledby="nav-reporting-configuration-tab">
                 @await Component.InvokeAsync("ReportingConfiguration", new { formid = @Model?.ApplicationFormDto?.Id })
             </div>
@@ -288,66 +445,7 @@
         {
             <!--Tab Content: AI Configuration-->
             <div id="nav-ai-configuration" class="tab-pane fade container-fluid" role="tabpanel" aria-labelledby="nav-ai-configuration-tab">
-                <div class="configuration-action-bar row px-0">
-                    <div class="col-12 col-md-8">
-                        <h5>AI Configuration</h5>
-                    </div>
-                    <div class="col-12 col-md-4 btn-wrapper">
-                        <abp-button id="btn-save-ai-config"
-                                    text="Save"
-                                    icon-type="Other"
-                                    icon="fl fl-save"
-                                    class="btn unt-btn-primary btn-primary"
-                                    button-type="Primary" />
-                        <abp-button id="btn-cancel-ai-config"
-                                    class="btn unt-btn-outline-primary btn-outline-primary mx-1"
-                                    icon-type="Other" icon="fl fl-undo"
-                                    text="Cancel"
-                                    abp-tooltip="Cancel changes"></abp-button>
-                        <abp-button id="btn-back-ai-config" text="Back"
-                                    class="btn unt-btn-outline-primary btn-outline-primary"
-                                    abp-tooltip="Navigate back to the Forms" />
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-12 p-3">
-                    @if (Model?.ShowAutomatic == true)
-                    {
-                        <div class="form-check form-switch mb-3">
-                            <input class="form-check-input"
-                                    type="checkbox"
-                                    id="AutomaticallyGenerateAIAnalysis"
-                                    name="AutomaticallyGenerateAIAnalysis"
-                                    @(Model.ApplicationFormDto?.AutomaticallyGenerateAIAnalysis == true ? "checked" : "") />
-                            <label class="form-check-label fw-bold" for="AutomaticallyGenerateAIAnalysis">
-                                Automatically Generate AI Analysis
-                            </label>
-                            <div class="text-muted small">
-                                When enabled, all AI analysis features run automatically when a new application is submitted through this form.
-                                Requires tenant-level Automatic AI Generation to also be enabled.
-                            </div>
-                        </div>
-                    }
-
-                    @if (Model?.ShowManual == true)
-                    {
-                        <div class="form-check form-switch mb-3">
-                            <input class="form-check-input"
-                                    type="checkbox"
-                                    id="ManuallyInitiateAIAnalysis"
-                                    name="ManuallyInitiateAIAnalysis"
-                                    @(Model.ApplicationFormDto?.ManuallyInitiateAIAnalysis == true ? "checked" : "") />
-                            <label class="form-check-label fw-bold" for="ManuallyInitiateAIAnalysis">
-                                Manually Initiate AI Analysis
-                            </label>
-                            <div class="text-muted small">
-                                When enabled, users with appropriate permissions can manually generate or regenerate AI analysis for applications submitted through this form.
-                                Includes: AI Attachment Summary, Application Analysis, AI Scoring.
-                            </div>
-                        </div>
-                    }
-                    </div>
-                </div>
+                @await Component.InvokeAsync("AIConfiguration", new { formId = Model?.ApplicationFormDto?.Id })
             </div>
         }
     </div>
@@ -365,4 +463,7 @@
                 abp-tooltip="Cancel the Edit" button-type="Secondary" />
         </abp-modal-footer>
     </abp-modal>
+    <partial name="_AiSuggestionReviewModal" model="@mappingReviewModal" />
+    <partial name="_AiSuggestionReviewModal" model="@worksheetReviewModal" />
+    <partial name="_AiSuggestionReviewModal" model="@scoresheetReviewModal" />
 </div>

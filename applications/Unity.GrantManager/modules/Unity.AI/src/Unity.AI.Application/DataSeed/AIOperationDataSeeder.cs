@@ -19,7 +19,7 @@ public class AIOperationDataSeeder(
     ICurrentTenant currentTenant,
     ILogger<AIOperationDataSeeder> logger) : ITransientDependency
 {
-    private const string DefaultModelName = "Gpt5Mini";
+    private const string DefaultModelName = "gpt-5-mini";
 
     private static readonly BuiltInOperationDefinition[] BuiltInOperations =
     [
@@ -28,7 +28,7 @@ public class AIOperationDataSeeder(
         new(AIPromptTypes.ApplicationScoring, 8000),
         new(AIPromptTypes.FormMapping, 2000),
         new(AIPromptTypes.FormWorksheet, 4000),
-        new(AIPromptTypes.FormScoresheet, 4000)
+        new(AIPromptTypes.FormScoresheet, 8000)
     ];
 
     public async Task SeedAsync(DataSeedContext context)

@@ -18,8 +18,12 @@ namespace Unity.GrantManager.Web.Middleware;
 /// </summary>
 public sealed class ErrorCountingLoggerSink : ILogEventSink
 {
+    private static readonly TimeSpan PersistenceBackoff = TimeSpan.FromSeconds(30);
     private static IServiceScopeFactory? _scopeFactory;
     private static readonly AsyncLocal<bool> IsPersistingExceptionLog = new();
+    private readonly object _persistenceGate = new();
+    private bool _persistenceInFlight;
+    private DateTimeOffset _persistenceDisabledUntil;
 
     internal static readonly Counter ErrorCounter =
         Metrics.CreateCounter(
@@ -57,6 +61,16 @@ public sealed class ErrorCountingLoggerSink : ILogEventSink
         if (scopeFactory == null)
         {
             return;
+        }
+
+        lock (_persistenceGate)
+        {
+            if (_persistenceInFlight || DateTimeOffset.UtcNow < _persistenceDisabledUntil)
+            {
+                return;
+            }
+
+            _persistenceInFlight = true;
         }
 
         _ = Task.Run(async () =>
@@ -116,11 +130,19 @@ public sealed class ErrorCountingLoggerSink : ILogEventSink
             }
             catch
             {
-                // Swallow to avoid recursive logging from logger sink failures.
+                lock (_persistenceGate)
+                {
+                    _persistenceDisabledUntil = DateTimeOffset.UtcNow.Add(PersistenceBackoff);
+                }
             }
             finally
             {
                 IsPersistingExceptionLog.Value = false;
+
+                lock (_persistenceGate)
+                {
+                    _persistenceInFlight = false;
+                }
             }
         });
     }

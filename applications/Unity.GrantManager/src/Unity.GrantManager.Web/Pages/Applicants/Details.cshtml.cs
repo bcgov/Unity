@@ -5,6 +5,7 @@ using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Permissions;
+using Volo.Abp.TenantManagement;
 using Volo.Abp.Users;
 
 namespace Unity.GrantManager.Web.Pages.Applicants
@@ -14,12 +15,16 @@ namespace Unity.GrantManager.Web.Pages.Applicants
     {
         private readonly IApplicantRepository _applicantRepository;
         private readonly IApplicationRepository _applicationRepository;
+        private readonly ITenantRepository _tenantRepository;
 
         [BindProperty(SupportsGet = true)]
         public Guid ApplicantId { get; set; }
 
         [BindProperty(SupportsGet = true)]
         public Guid? ApplicationId { get; set; } = null;
+
+        [BindProperty(SupportsGet = true)]
+        public Guid? TenantId { get; set; }
 
         public Applicant? Applicant { get; set; }
         public bool ApplicantIsDeleted { get; set; }
@@ -34,11 +39,13 @@ namespace Unity.GrantManager.Web.Pages.Applicants
         public DetailsModel(
             IApplicantRepository applicantRepository,
             IApplicationRepository applicationRepository,
+            ITenantRepository tenantRepository,
             ICurrentUser currentUser,
             IConfiguration configuration)
         {
             _applicantRepository = applicantRepository;
             _applicationRepository = applicationRepository;
+            _tenantRepository = tenantRepository;
             CurrentUserId = currentUser.Id;
             CurrentUserName = currentUser.SurName + ", " + currentUser.Name;
             AllowedFileTypes = configuration["S3:AllowedFileTypes"] ?? "";
@@ -47,6 +54,17 @@ namespace Unity.GrantManager.Web.Pages.Applicants
 
         public async Task<IActionResult> OnGetAsync()
         {
+            if (TenantId.HasValue && TenantId.Value != CurrentTenant.Id)
+            {
+                var applicationTenant = await _tenantRepository.FindAsync(TenantId.Value);
+                return RedirectToPage("/Error", new
+                {
+                    httpStatusCode = 409,
+                    applicationTenantName = applicationTenant?.Name ?? TenantId.Value.ToString(),
+                    currentTenantName = CurrentTenant.Name ?? "Host"
+                });
+            }
+
             // Resolve ApplicantId from ApplicationId if needed
             if (ApplicantId == Guid.Empty && ApplicationId.HasValue)
             {

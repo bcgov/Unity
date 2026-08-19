@@ -12,8 +12,7 @@ using Volo.Abp.MultiTenancy;
 namespace Unity.AI.DataSeed;
 
 /// <summary>
-/// Seeds the built-in AI prompts (application analysis, attachment summary, application scoring) into the host database.
-/// Each prompt family is represented as versioned rows in AIPrompts.
+/// Seeds host-owned, versioned built-in AI prompts.
 /// </summary>
 public class AIPromptDataSeeder(
     IRepository<AIPrompt, Guid> promptRepository,
@@ -21,7 +20,10 @@ public class AIPromptDataSeeder(
 {
     public async Task SeedAsync(DataSeedContext context)
     {
-        if (context.TenantId != null) return; // host database only
+        if (context.TenantId != null)
+        {
+            return;
+        }
 
         using (currentTenant.Change(null))
         {
@@ -177,7 +179,7 @@ public class AIPromptDataSeeder(
     }
 
     // ═════════════════════════════════════════════════════════════════════════
-    // PROMPT CONTENT — mirrors Runtime/Prompts/Versions/ text files verbatim
+    // PROMPT CONTENT — authoritative built-in database seed definitions
     // ═════════════════════════════════════════════════════════════════════════
 
     // ── v0/analysis.system.txt ───────────────────────────────────────────────
@@ -866,7 +868,8 @@ public class AIPromptDataSeeder(
         }
 
         Rules:
-        - Return one field-suggestion JSON object only.
+        - Return one JSON object containing all applicable field suggestions. Review the full form schema and every unmapped CHEFS field before responding; include every additional custom field genuinely needed, not just the first match.
+        - Return an empty fields array when no additional custom fields are needed.
         - chefsFields contains the available CHEFS source fields.
         - unityCoreFields contains existing Unity core fields. Do not create a custom field when one of these already fits.
         - existingMapping contains the current saved Unity-to-CHEFS mappings. Do not duplicate those mappings with a custom field.
@@ -930,6 +933,8 @@ public class AIPromptDataSeeder(
 
         Rules:
         - Return one scoresheet definition JSON object only.
+        - Title and Name must be non-empty strings; Sections must contain at least one section and every section must contain at least one field.
+        - Every field Name and Label must be non-empty, Order and Type must be non-negative integers, and Definition must be a valid JSON object encoded as a string.
         - The context contains CHEFS form fields, allowed Unity Flex question types, and a scoresheet template.
         - Fill out the scoresheet template to generate the rubric assessors use to score submitted applications.
         - Use CHEFS form fields as evidence for assessment criteria, but do not create one question per form field.

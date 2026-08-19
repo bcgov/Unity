@@ -7,6 +7,8 @@ public class FormScoresheetResponse
 {
     public string Scoresheet { get; set; } = string.Empty;
 
+    public string? FailureReason { get; set; }
+
     [JsonPropertyName("title")]
     public string Title { get; set; } = string.Empty;
 

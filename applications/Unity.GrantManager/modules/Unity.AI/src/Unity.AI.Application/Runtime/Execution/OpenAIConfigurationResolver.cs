@@ -23,6 +23,7 @@ public class OpenAIConfigurationResolver(
     IDataFilter<IMultiTenant> multiTenantDataFilter,
     ICurrentTenant currentTenant) : ITransientDependency
 {
+    private const string DefaultProviderName = "OpenAI";
     private static readonly TimeSpan SettingsCacheDuration = TimeSpan.FromMinutes(5);
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -37,12 +38,11 @@ public class OpenAIConfigurationResolver(
     private readonly IDataFilter<IMultiTenant> _multiTenantDataFilter = multiTenantDataFilter;
     private readonly ICurrentTenant _currentTenant = currentTenant;
 
-    public string ResolveProviderName() => Required("Azure:Operations:Defaults:Provider");
+    public string ResolveProviderName() => DefaultProviderName;
 
     public Task<string> ResolveApiKeyAsync(string? modelName = null, CancellationToken cancellationToken = default)
     {
-        var providerName = Required("Azure:Operations:Defaults:Provider");
-        return Task.FromResult(Required($"Azure:{providerName}:ApiKey"));
+        return Task.FromResult(Required($"Azure:{DefaultProviderName}:ApiKey"));
     }
 
     public async Task<OpenAIOperationSettings> ResolveOperationSettingsAsync(
@@ -68,7 +68,12 @@ public class OpenAIConfigurationResolver(
         }
 
         var modelSettings = ResolveModelSettings(model);
-        var providerName = Required("Azure:Operations:Defaults:Provider");
+        var providerName = model.Provider;
+        if (!string.Equals(providerName, DefaultProviderName, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException($"AI provider '{providerName}' is not supported.");
+        }
+
         var endpoint = Required($"Azure:{providerName}:Endpoint");
         if (!Uri.TryCreate(endpoint, UriKind.Absolute, out _))
         {
@@ -91,7 +96,7 @@ public class OpenAIConfigurationResolver(
             model.Name,
             apiKey,
             new Uri(endpoint),
-            Required($"Azure:{providerName}:Profiles:{model.Name}:DeploymentName"),
+            model.Name,
             modelSettings.MaxOutputTokenCountSupported,
             modelSettings.Temperature,
             operation.CompletionTokens,
@@ -117,19 +122,6 @@ public class OpenAIConfigurationResolver(
         var modelConfiguration = await ResolveModelConfigurationAsync(modelName, cancellationToken);
         if (modelConfiguration != null)
         {
-            var providerName = Required("Azure:Operations:Defaults:Provider");
-            var profileName = modelConfiguration.Value.Model.Name;
-            var configuredValue = Optional($"Azure:{providerName}:Profiles:{profileName}:MaxOutputTokenCountSupported");
-            if (configuredValue != null)
-            {
-                if (bool.TryParse(configuredValue, out var parsedValue))
-                {
-                    return parsedValue;
-                }
-
-                throw new InvalidOperationException($"Azure:{providerName}:Profiles:{profileName}:MaxOutputTokenCountSupported is not a valid boolean.");
-            }
-
             return modelConfiguration.Value.Settings.MaxOutputTokenCountSupported;
         }
 
@@ -168,8 +160,7 @@ public class OpenAIConfigurationResolver(
         var modelConfiguration = await ResolveModelConfigurationAsync(modelName, cancellationToken);
         if (modelConfiguration != null)
         {
-            var providerName = Required("Azure:Operations:Defaults:Provider");
-            return new Uri(Required($"Azure:{providerName}:Endpoint"));
+            return new Uri(Required($"Azure:{modelConfiguration.Value.Model.Provider}:Endpoint"));
         }
 
         throw new InvalidOperationException("AI model is not configured.");
@@ -180,8 +171,7 @@ public class OpenAIConfigurationResolver(
         var modelConfiguration = await ResolveModelConfigurationAsync(modelName, cancellationToken);
         if (modelConfiguration != null)
         {
-            var providerName = Required("Azure:Operations:Defaults:Provider");
-            return Required($"Azure:{providerName}:Profiles:{modelConfiguration.Value.Model.Name}:DeploymentName");
+            return modelConfiguration.Value.Model.Name;
         }
 
         throw new InvalidOperationException("AI model is not configured.");
@@ -240,17 +230,6 @@ public class OpenAIConfigurationResolver(
         {
             return activeModels.FirstOrDefault(model =>
                 string.Equals(model.Name, modelName, StringComparison.OrdinalIgnoreCase));
-        }
-
-        var configuredDefaultProfile = Optional("Azure:Operations:Defaults:Profile");
-        if (!string.IsNullOrWhiteSpace(configuredDefaultProfile))
-        {
-            var configuredDefaultModel = activeModels.FirstOrDefault(model =>
-                string.Equals(model.Name, configuredDefaultProfile, StringComparison.OrdinalIgnoreCase));
-            if (configuredDefaultModel != null)
-            {
-                return configuredDefaultModel;
-            }
         }
 
         return null;

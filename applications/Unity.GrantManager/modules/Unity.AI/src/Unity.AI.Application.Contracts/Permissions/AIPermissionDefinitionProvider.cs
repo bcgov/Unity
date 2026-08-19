@@ -95,7 +95,8 @@ public class AIPermissionDefinitionProvider : PermissionDefinitionProvider
             "Unity.AI.ApplicationAnalysis",
             "Unity.AI.FormMapping",
             "Unity.AI.FormWorksheet",
-            "Unity.AI.FormScoresheet"));
+            "Unity.AI.FormScoresheet",
+            "Unity.AIReporting"));
     }
 
     private static LocalizableString L(string name)

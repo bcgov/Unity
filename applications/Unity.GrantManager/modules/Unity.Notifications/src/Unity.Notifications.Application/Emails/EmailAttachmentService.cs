@@ -178,6 +178,63 @@ public class EmailAttachmentService : ITransientDependency
         return await _emailLogAttachmentRepository.GetByEmailLogIdAsync(emailLogId);
     }
 
+    public async Task<int> CopyTemplateAttachmentsAsync(Guid templateId, Guid emailLogId, Guid? tenantId)
+    {
+        var templateAttachments = await _emailLogAttachmentRepository.GetByTemplateIdAsync(templateId);
+        var existingAttachments = await _emailLogAttachmentRepository.GetByEmailLogIdAsync(emailLogId);
+        // Dedup by (FileName, FileSize, ContentType) rather than S3ObjectKey: each copy gets its own
+        // S3 object (see below), so a re-run of this method for the same emailLogId/templateId would
+        // never see a matching key even though the attachment was already copied.
+        var alreadyCopied = existingAttachments
+            .Where(a => a.OriginTemplateId == templateId)
+            .Select(a => (a.FileName, a.FileSize, a.ContentType))
+            .ToHashSet();
+
+        var bucket = _configuration[S3BucketConfigKey];
+        var copiedAttachmentCount = 0;
+        foreach (var templateAttachment in templateAttachments)
+        {
+            var identity = (templateAttachment.FileName, templateAttachment.FileSize, templateAttachment.ContentType);
+            if (!alreadyCopied.Add(identity))
+            {
+                continue;
+            }
+
+            // Physically duplicate the S3 object under a new key instead of pointing at the
+            // template attachment's own key. EmailLogAttachmentAppService.DeleteAsync deletes the
+            // underlying S3 object whenever a template attachment (TemplateId.HasValue) is removed;
+            // sharing the key would silently break the attachment on every scheduled email that had
+            // already copied it.
+            var copiedS3Key = BuildUserAttachmentS3Key(
+                tenantId, emailLogId, Guid.NewGuid(), templateAttachment.FileName ?? templateAttachment.DisplayName ?? "attachment");
+            await _amazonS3Client.CopyObjectAsync(new CopyObjectRequest
+            {
+                SourceBucket = bucket,
+                SourceKey = templateAttachment.S3ObjectKey,
+                DestinationBucket = bucket,
+                DestinationKey = copiedS3Key
+            });
+
+            await _emailLogAttachmentRepository.InsertAsync(new EmailLogAttachment
+            {
+                EmailLogId = emailLogId,
+                TemplateId = null,
+                OriginTemplateId = templateId,
+                S3ObjectKey = copiedS3Key,
+                FileName = templateAttachment.FileName,
+                DisplayName = templateAttachment.DisplayName,
+                ContentType = templateAttachment.ContentType,
+                FileSize = templateAttachment.FileSize,
+                Time = DateTime.UtcNow,
+                UserId = Guid.Empty,
+                TenantId = tenantId
+            });
+            copiedAttachmentCount++;
+        }
+
+        return copiedAttachmentCount;
+    }
+
     public async Task<long> GetTotalFileSizeAsync(Guid? emailLogId, Guid? templateId)
     {
         if(emailLogId != null)

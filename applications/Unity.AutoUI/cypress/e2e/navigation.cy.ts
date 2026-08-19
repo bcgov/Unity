@@ -11,10 +11,9 @@ describe('Grant Manager Login and Top Navigation', () => {
 
     it('Verify navigation options in the top banner', () => {
 
-        // 3.) Verify Default Grant Program tenant is selected.
+        navPage.switchToDefaultGrantsProgramIfAvailable()
         navPage.verifyCurrentTenant('Default Grants Program')
 
-        // 4.) Ensure all expected headings are present.
         navPage.verifyAllNavItemsExist()
 
         // 5.) Applications

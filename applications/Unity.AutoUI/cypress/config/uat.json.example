@@ -7,5 +7,6 @@
     "test2password": "",
     "TEST_EMAIL_TO": "",
     "TEST_EMAIL_CC": "",
-    "TEST_EMAIL_BCC": ""
+    "TEST_EMAIL_BCC": "",
+    "chefsApiKey": ""
 }

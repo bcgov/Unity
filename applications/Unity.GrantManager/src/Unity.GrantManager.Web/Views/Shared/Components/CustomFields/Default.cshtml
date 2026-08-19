@@ -1,6 +1,4 @@
 @using Unity.GrantManager.Web.Views.Shared.Components.CustomFields @* Suppress:S1128 *@
-@using Unity.AI.Permissions
-@inject Volo.Abp.Authorization.Permissions.IPermissionChecker PermissionChecker
 @model CustomFieldsViewModel
 
 @{
@@ -12,34 +10,7 @@
         <h5>Scoresheet & Worksheets Configuration</h5>
     </div>
     <div class="col-12 col-md-4 btn-wrapper">
-        <abp-button id="btn-save-worksheet-config"
-                    text="Save"
-                    type="submit"
-                    icon-type="Other"
-                    icon="fl fl-save"
-                    class="btn unt-btn-primary btn-primary"
-                    abp-tooltip="Save the worksheet associations for mapping to the available Unity worksheet fields"
-                    button-type="Primary"
-                    form="worksheet-config-form" />
-        @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormWorksheet.Generate))
-        {
-            <button type="button" id="btn-generate-worksheet" class="btn ai-generate-btn unt-btn-outline-primary btn-outline-primary @(Model.HasPendingAiWorksheet ? "d-none" : string.Empty)"
-                    data-ai-cooldown-checking="1" data-ai-rate-limit-disabled="1" data-ai-pending="@(Model.HasPendingAiWorksheet.ToString().ToLowerInvariant())" disabled
-                    title="Generate a worksheet for the current form version">
-                <span class="ai-button-content">
-                    <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
-                    <span>Generate Worksheet</span>
-                </span>
-            </button>
-            <button type="button" id="btn-review-worksheet" class="btn unt-btn-outline-primary btn-outline-primary @(Model.HasPendingAiWorksheet ? string.Empty : "d-none")"
-                    title="Review the pending AI worksheet">
-                <span class="ai-button-content">
-                    <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
-                    <span>Review Worksheet</span>
-                </span>
-            </button>
-        }
-        @if (await PermissionChecker.IsGrantedAsync(AIPermissions.FormScoresheet.Generate))
+        @if (Model.CanGenerateScoresheet)
         {
             <button type="button" id="btn-generate-scoresheet" class="btn ai-generate-btn unt-btn-outline-primary btn-outline-primary"
                     data-ai-cooldown-checking="1" data-ai-rate-limit-disabled="1" disabled
@@ -50,6 +21,26 @@
                 </span>
             </button>
         }
+        @if (Model.CanViewScoresheet)
+        {
+            <button type="button" id="btn-review-scoresheet" class="btn ai-generate-btn unt-btn-outline-primary btn-outline-primary d-none"
+                    data-ai-review-action="true"
+                    title="Review pending scoresheet suggestions">
+                <span class="ai-button-content">
+                    <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
+                    <span>Review Scoresheet</span>
+                </span>
+            </button>
+        }
+        <abp-button id="btn-save-worksheet-config"
+                    text="Save"
+                    type="submit"
+                    icon-type="Other"
+                    icon="fl fl-save"
+                    class="btn unt-btn-primary btn-primary"
+                    abp-tooltip="Save the worksheet associations for mapping to the available Unity worksheet fields"
+                    button-type="Primary"
+                    form="worksheet-config-form" />
         <abp-button id="btn-back-worksheet-config"
                     text="Back"
                     class="btn unt-btn-outline-primary btn-outline-primary"
@@ -188,41 +179,4 @@
             </div>
         </div>
     </form>
-</div>
-
-<div class="modal fade" id="aiWorksheetReviewModal" tabindex="-1" aria-labelledby="aiWorksheetReviewModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content ai-worksheet-review">
-            <div class="ai-worksheet-review__panel">
-                <div class="modal-header ai-worksheet-review__header">
-                    <div>
-                        <h5 class="modal-title" id="aiWorksheetReviewModalLabel">Create worksheet draft</h5>
-                    </div>
-                </div>
-                <div class="modal-body ai-worksheet-review__body">
-                    <div class="ai-worksheet-review__title-group">
-                        <label for="aiWorksheetTitle" class="form-label">Worksheet title</label>
-                        <input id="aiWorksheetTitle" class="form-control" type="text" required maxlength="256" placeholder="e.g., Project details" autocomplete="off" />
-                    </div>
-                    <div class="ai-worksheet-review__list">
-                        <div class="ai-worksheet-review__table-header">
-                            <span>Source field</span>
-                            <span aria-hidden="true"></span>
-                            <span>Worksheet field</span>
-                            <div class="form-check unt-form-switch form-switch mb-0 ai-worksheet-review__select-all">
-                                <input id="aiWorksheetReviewSelectAll" class="form-check-input" type="checkbox" aria-label="Include all suggested fields" />
-                            </div>
-                        </div>
-                        <div id="aiWorksheetReviewFields"></div>
-                        <div id="aiWorksheetReviewEmpty" class="ai-worksheet-review__empty d-none">No custom fields were suggested.</div>
-                    </div>
-                </div>
-                <div class="modal-footer ai-worksheet-review__footer">
-                    <button type="button" id="btn-create-ai-worksheet-draft" class="btn unt-btn-primary btn-primary" disabled>Create draft</button>
-                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" data-bs-dismiss="modal">Review later</button>
-                    <button type="button" id="btn-discard-ai-worksheet" class="btn btn-outline-danger ai-worksheet-review__discard">Discard remaining</button>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>

@@ -15,7 +15,8 @@ namespace Unity.GrantManager.Integrations.Endpoints
 {
     public class EndpointManagementAppService(
         IRepository<DynamicUrl, Guid> repository,
-        IDistributedCache cache) :
+        IDistributedCache cache,
+        IUnitOfWorkManager unitOfWorkManager) :
         CrudAppService<
             DynamicUrl,
             DynamicUrlDto,
@@ -25,6 +26,7 @@ namespace Unity.GrantManager.Integrations.Endpoints
         IEndpointManagementAppService
     {
         private readonly IDistributedCache _cache = cache;
+        private readonly IUnitOfWorkManager _unitOfWorkManager = unitOfWorkManager;
         private const string CACHE_KEY_SET_PREFIX = "DynamicUrl:KeySet";
 
         private static string BuildCacheKey(string keyName, bool tenantSpecific, Guid? tenantId)
@@ -156,13 +158,17 @@ namespace Unity.GrantManager.Integrations.Endpoints
 
         private async Task<string?> GetUrlValueAsync(string keyName, Guid? tenantId)
         {
+            using var uow = _unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
             var queryable = await Repository.GetQueryableAsync();
 
-            return await AsyncExecuter.FirstOrDefaultAsync(
+            var url = await AsyncExecuter.FirstOrDefaultAsync(
                 queryable
                     .AsNoTracking()
                     .Where(x => x.KeyName == keyName && x.TenantId == tenantId)
                     .Select(x => x.Url));
+
+            await uow.CompleteAsync();
+            return url;
         }
 
         // ------------------------------

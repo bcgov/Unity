@@ -12,10 +12,8 @@ using Volo.Abp.Users;
 namespace Unity.AI.RateLimit;
 
 /// <summary>
-/// Per-user cooldown for AI generate calls. KISS: a single cache entry per user
-/// holds the cooldown end ticks; the cache TTL matches the cooldown so a missing
-/// entry means the user can generate again. Anonymous/system callers are not
-/// rate-limited (background event handlers also flow through the AI queue).
+/// Per-user AI cooldown. Anonymous and system callers bypass it; activity providers
+/// augment the state returned to authenticated users.
 /// </summary>
 public class AIRateLimiter(
     IDistributedCache cache,

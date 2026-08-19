@@ -20,6 +20,7 @@ namespace Unity.GrantManager.EntityFrameworkCore;
 public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
     IServiceProvider serviceProvider,
     IStringEncryptionService encryptionService,
+    IConfiguration configuration,
     ILogger<EntityFrameworkCoreGrantManagerDbSchemaMigrator> logger)
     : IGrantManagerDbSchemaMigrator, ITransientDependency
 {
@@ -30,13 +31,10 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
      * "Initial" and would make Database.MigrateAsync() below try to re-run Initial's
      * CreateTable operations against a schema that already has them.
      *
-     * ReconcileMigrationHistoryAsync resets history to just the Initial row *before*
-     * MigrateAsync() is called, so EF sees it as already applied and skips it. Brand
-     * new databases (including newly provisioned tenants) have an empty or nonexistent
-     * history table at this point, so the reconciliation is a no-op and MigrateAsync()
-     * runs Initial for real to build the schema. Safe to run unconditionally on every
-     * migrator invocation, forever - after the first run per database, history only
-     * ever contains the Initial row so the guard clause never fires again.
+     * ReconcileMigrationHistoryAsync resets history to just the Initial row before
+     * MigrateAsync() is called, so EF sees it as already applied and skips it. This is
+     * an explicit one-time operation because running it during normal migration startup
+     * would also remove legitimate migrations added after the flattening.
      */
     private const string HostInitialMigrationId = "20260722193713_Initial";
     private const string TenantInitialMigrationId = "20260721203242_Initial";
@@ -44,6 +42,7 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
 
     private readonly IServiceProvider _serviceProvider = serviceProvider;
     private readonly IStringEncryptionService _encryptionService = encryptionService;
+    private readonly bool _flattenMigrations = configuration.GetValue<bool>("Database:FlattenMigrations");
     private readonly ILogger<EntityFrameworkCoreGrantManagerDbSchemaMigrator> _logger = logger;
 
     public async Task MigrateAsync(Tenant? tenant)
@@ -104,7 +103,10 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
                 await tenantDb.ExecuteSqlRawAsync(
                     tenantDb.GetService<IHistoryRepository>().GetCreateIfNotExistsScript());
 
-                await ReconcileMigrationHistoryAsync(tenantDb, TenantInitialMigrationId);
+                if (_flattenMigrations)
+                {
+                    await ReconcileMigrationHistoryAsync(tenantDb, TenantInitialMigrationId);
+                }
 
                 // Run migrations as admin against the tenant database
                 await MigrateAndLogAsync(tenantDb, $"tenant:{tenant.Name}");
@@ -162,7 +164,10 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
             await hostDb.ExecuteSqlRawAsync(
                 hostDb.GetService<IHistoryRepository>().GetCreateIfNotExistsScript());
 
-            await ReconcileMigrationHistoryAsync(hostDb, HostInitialMigrationId);
+            if (_flattenMigrations)
+            {
+                await ReconcileMigrationHistoryAsync(hostDb, HostInitialMigrationId);
+            }
 
             await MigrateAndLogAsync(hostDb, "host");
         }

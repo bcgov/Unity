@@ -28,4 +28,5 @@ public class ApplicantListDto : AuditedEntityDto<Guid>
     public int? FiscalDay { get; set; }
     public DateTime? StartedOperatingDate { get; set; }
     public bool IsDuplicated { get; set; }
+    public DateOnly? FiscalYearEnd { get; set; }
 }

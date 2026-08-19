@@ -12,9 +12,10 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Unity.AI.Generation;
 using Unity.AI.Models;
-using Unity.AI.Permissions;
 using Unity.AI.Responses;
+using Unity.AI.Settings;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets;
 using Unity.GrantManager.Applicants;
@@ -25,7 +26,6 @@ using Unity.GrantManager.Flex;
 using Unity.GrantManager.GlobalTag;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Payments;
-using Unity.GrantManager.GrantApplications.Automation;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
 using Unity.Modules.Shared.Specializations;
@@ -48,7 +48,6 @@ namespace Unity.GrantManager.GrantApplications;
 public class GrantApplicationAppService(
     IApplicationManager applicationManager,
     IApplicationRepository applicationRepository,
-    IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
     IApplicationStatusRepository applicationStatusRepository,
     IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
     IApplicantRepository applicantRepository,
@@ -57,7 +56,8 @@ public class GrantApplicationAppService(
     IApplicantAddressRepository applicantAddressRepository,
     IApplicantSupplierAppService applicantSupplierService,
     IPaymentRequestAppService paymentRequestService,
-    IFeatureChecker featureChecker)
+    IFeatureChecker featureChecker,
+    AIFeatureGuard aiFeatureGuard)
     : GrantManagerAppService, IGrantApplicationAppService
 #pragma warning restore S107 // Methods should not have too many parameters
 {
@@ -70,6 +70,25 @@ public class GrantApplicationAppService(
     {
         WriteIndented = true
     };
+
+    private async Task EnsureAiOperationAccessAsync(string operationType, bool requiresGeneratePermission)
+    {
+        var operation = AIGenerationOperations.Get(operationType);
+        await aiFeatureGuard.EnsureEnabledAsync(operation.FeatureName, operation.DisabledLocalizationKey);
+        await CheckPolicyAsync(requiresGeneratePermission ? operation.GeneratePermission : operation.ViewPermission);
+    }
+
+    private async Task<bool> CanAccessAiOperationAsync(string operationType, bool requiresGeneratePermission)
+    {
+        var operation = AIGenerationOperations.Get(operationType);
+        if (!await featureChecker.IsEnabledAsync(operation.FeatureName))
+        {
+            return false;
+        }
+
+        var permission = requiresGeneratePermission ? operation.GeneratePermission : operation.ViewPermission;
+        return await AuthorizationService.IsGrantedAsync(permission);
+    }
 
     public async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(GrantApplicationListInputDto input)
     {
@@ -159,9 +178,11 @@ public class GrantApplicationAppService(
                 RiskRanking = rec.RiskRanking,
                 UnityApplicationId = rec.UnityApplicationId,
                 ExternalStatusVisibility = rec.ExternalStatusVisibility,
-
+                
                 // From ApplicationStatus
                 Status = rec.Status,
+                ExternalStatus = rec.ExternalStatus,
+                PublishedStatus = rec.PublishedStatus,
 
                 // From ApplicationForm
                 Category = rec.Category,
@@ -352,7 +373,15 @@ public class GrantApplicationAppService(
             appDto.SectorSubSectorIndustryDesc = application.Applicant.SectorSubSectorIndustryDesc;
         }
 
-        appDto.AIAnalysisData = ParseAiAnalysisData(appDto.AIAnalysis);
+        if (await CanAccessAiOperationAsync(AIGenerationOperations.ApplicationAnalysis, requiresGeneratePermission: false))
+        {
+            appDto.AIAnalysisData = ParseAiAnalysisData(appDto.AIAnalysis);
+        }
+        else
+        {
+            appDto.AIAnalysis = null;
+            appDto.AIAnalysisData = null;
+        }
 
         return appDto;
     }
@@ -1200,65 +1229,6 @@ public class GrantApplicationAppService(
         return applicationManager.GetWorkflowDiagram(isDirectApproval);
     }
 
-    private async Task EnsureAttachmentSummariesEnabledAsync()
-    {
-        if (!await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries"))
-        {
-            throw new UserFriendlyException("AI attachment summaries are not enabled.");
-        }
-    }
-
-    private async Task<List<Guid>> ResolveAttachmentSummaryIdsAsync(QueueAttachmentSummaryRequestDto input)
-    {
-        if (input == null)
-        {
-            throw new UserFriendlyException("Attachment summary request is required.");
-        }
-
-        if (input.ApplicationId == Guid.Empty)
-        {
-            throw new UserFriendlyException("Application id is required.");
-        }
-
-        var applicationAttachmentIds = (await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == input.ApplicationId))
-            .Select(a => a.Id)
-            .ToList();
-
-        if (applicationAttachmentIds.Count == 0)
-        {
-            throw new UserFriendlyException("No attachments were found to generate summaries.");
-        }
-
-        if (input.AttachmentIds is not { Count: > 0 })
-        {
-            return applicationAttachmentIds;
-        }
-
-        var applicationAttachmentIdSet = applicationAttachmentIds.ToHashSet();
-        var selectedAttachmentIds = input.AttachmentIds.Distinct().ToList();
-        if (selectedAttachmentIds.Any(id => !applicationAttachmentIdSet.Contains(id)))
-        {
-            throw new UserFriendlyException("One or more selected attachments do not belong to the application.");
-        }
-
-        return selectedAttachmentIds;
-    }
-
-    private async Task EnsureAIAnalysisEnabledAsync()
-    {
-        if (!await featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis"))
-        {
-            throw new UserFriendlyException("AI application analysis is not enabled.");
-        }
-    }
-
-    private async Task EnsureScoringEnabledAsync()
-    {
-        if (!await featureChecker.IsEnabledAsync("Unity.AI.Scoring"))
-        {
-            throw new UserFriendlyException("AI scoring is not enabled.");
-        }
-    }
     #endregion APPLICATION WORKFLOW
 
     public async Task<List<GrantApplicationLiteDto>> GetAllApplicationsAsync()
@@ -1329,11 +1299,13 @@ public class GrantApplicationAppService(
 
     public async Task<string> DismissAIAnalysisItemAsync(Guid applicationId, string itemId)
     {
+        await EnsureAiOperationAccessAsync(AIGenerationOperations.ApplicationAnalysis, requiresGeneratePermission: true);
         return await UpdateAIAnalysisItemDismissedStateAsync(applicationId, itemId, isDismissed: true);
     }
 
     public async Task<string> RestoreAIAnalysisItemAsync(Guid applicationId, string itemId)
     {
+        await EnsureAiOperationAccessAsync(AIGenerationOperations.ApplicationAnalysis, requiresGeneratePermission: true);
         return await UpdateAIAnalysisItemDismissedStateAsync(applicationId, itemId, isDismissed: false);
     }
 

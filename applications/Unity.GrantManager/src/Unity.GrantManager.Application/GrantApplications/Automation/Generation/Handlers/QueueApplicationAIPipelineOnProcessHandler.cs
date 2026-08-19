@@ -27,6 +27,7 @@ public class QueueApplicationAIPipelineOnProcessHandler(
             return;
         }
 
+        // Automatic generation requires tenant and form opt-in plus at least one enabled intake feature.
         var automaticGenerationEnabled = await settingProvider.GetAsync<bool>(AISettings.AutomaticGenerationEnabled, defaultValue: false);
         if (!automaticGenerationEnabled)
         {

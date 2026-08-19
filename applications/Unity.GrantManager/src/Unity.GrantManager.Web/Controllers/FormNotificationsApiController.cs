@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Unity.Notifications.Emails;
 using Volo.Abp.Users;
 using Unity.GrantManager.Events;
+using Unity.Payments.Enums;
 using Volo.Abp.Identity.Integration;
 
 namespace Unity.GrantManager.Web.Controllers
@@ -40,6 +41,15 @@ namespace Unity.GrantManager.Web.Controllers
             _grantApplicationAppService = grantApplicationAppService;
             _scheduledNotificationHelper = scheduledNotificationHelper;
         }
+
+                [HttpGet("payment-statuses")]
+                public ActionResult<List<object>> GetPaymentStatuses()
+                {
+                    var statuses = Enum.GetNames<PaymentRequestStatus>()
+                        .Select(status => (object)new { id = status, internalStatus = status })
+                        .ToList();
+                    return Ok(statuses);
+                }
         // In-memory storage removed; persisting to ScheduledNotifications table via IAutomatedNotificationAppService
 
 
@@ -245,8 +255,9 @@ namespace Unity.GrantManager.Web.Controllers
                 TemplateId = e.EmailTemplateId,
                 TemplateName = templateMap.TryGetValue(e.EmailTemplateId, out var t) && t != null ? t.Name : string.Empty,
                 TriggerType = e.TriggerType,
+                Module = e.Module ?? (e.TriggerType == "Event" ? "Application" : null),
                 DateType = e.DateField,
-                EventStatus = e.ApplicationStatus,
+                EventStatus = e.EventType ?? e.ApplicationStatus,
                 ApplicationStatusId = e.ApplicationStatusId,
                 RecipientCategory = e.RecipientCategory,
                 RecipientIdentifier = e.RecipientIdentifier,
@@ -262,9 +273,25 @@ namespace Unity.GrantManager.Web.Controllers
         {
             if (input.TemplateId == Guid.Empty) return BadRequest("TemplateId required");
 
+            if (!ValidateModule(input, out var moduleError)) return BadRequest(moduleError);
+
             if (string.Equals(input.TriggerType, "Event", StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(input.RecipientIdentifier))
             {
                 return BadRequest("RecipientIdentifier required for Event trigger");
+            }
+
+            if (string.Equals(input.TriggerType, "Event", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(input.Module, "Payment", StringComparison.OrdinalIgnoreCase) &&
+                string.IsNullOrWhiteSpace(input.EventStatus))
+            {
+                return BadRequest("EventStatus required for Event trigger");
+            }
+
+            if (string.Equals(input.TriggerType, "Event", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(input.Module, "Application", StringComparison.OrdinalIgnoreCase) &&
+                !input.ApplicationStatusId.HasValue)
+            {
+                return BadRequest("ApplicationStatusId required for Application event trigger");
             }
 
             var template = await _templateService.GetTemplateById(input.TemplateId);
@@ -285,10 +312,11 @@ namespace Unity.GrantManager.Web.Controllers
                 FormId = parsedFormId,
                 EmailTemplateId = template.Id,
                 TriggerType = input.TriggerType,
-                TriggerDetail = input.TriggerType == "Date" ? input.DateType : statusLabel,
+                Module = input.Module,
+                TriggerDetail = input.TriggerType == "Date" ? input.DateType : input.Module == "Payment" ? input.EventStatus : statusLabel,
                 IsActive = true,
-                EventType = null,
-                ApplicationStatusId = input.ApplicationStatusId,
+                EventType = input.Module == "Payment" ? input.EventStatus : null,
+                ApplicationStatusId = input.Module == "Application" ? input.ApplicationStatusId : null,
                 ApplicationStatus = statusLabel,
                 DateField = input.DateType,
                 RecipientCategory = input.RecipientCategory,
@@ -303,8 +331,9 @@ namespace Unity.GrantManager.Web.Controllers
                 TemplateId = input.TemplateId,
                 TemplateName = template.Name,
                 TriggerType = created.TriggerType,
+                Module = created.Module,
                 DateType = created.DateField,
-                EventStatus = created.ApplicationStatus,
+                EventStatus = created.EventType ?? created.ApplicationStatus,
                 ApplicationStatusId = created.ApplicationStatusId,
                 RecipientCategory = created.RecipientCategory,
                 RecipientIdentifier = created.RecipientIdentifier,
@@ -335,18 +364,47 @@ namespace Unity.GrantManager.Web.Controllers
             var result = await _automatedNotificationAppService.GetListAsync(
                 new Notifications.GetNotificationsInput { MaxResultCount = 1000 });
 
-            var inUse = result.Items.Any(n => n.EmailTemplateId == templateId);
+            var associatedPlans = result.Items
+                .Where(n => n.EmailTemplateId == templateId)
+                .Select(n =>
+                    string.IsNullOrWhiteSpace(n.TriggerDetail)
+                        ? $"{n.TriggerType} notification"
+                        : $"{n.TriggerType} notification - {n.TriggerDetail}")
+                .Distinct()
+                .ToList();
+
+            var inUse = associatedPlans.Count > 0;
 
             if (inUse)
             {
                 return Ok(new
                 {
                     canDelete = false,
-                    errorMessage = "This template cannot be deleted because it is assigned to one or more Scheduled Notifications. Please remove the template from all Scheduled Notifications before deleting."
+                    errorMessage = "This template cannot be deleted because it is assigned to one or more Scheduled Notifications. Please remove the template from all Scheduled Notifications before deleting.",
+                    notificationPlanNames = associatedPlans
                 });
             }
 
-            return Ok(new { canDelete = true, errorMessage = (string?)null });
+            return Ok(new { canDelete = true, errorMessage = (string?)null, notificationPlanNames = Array.Empty<string>() });
+        }
+
+        [HttpGet("template-notification-plans/{templateId:guid}")]
+        public async Task<ActionResult<object>> GetTemplateNotificationPlans(Guid templateId)
+        {
+            var result = await _automatedNotificationAppService.GetListAsync(
+                new Notifications.GetNotificationsInput { MaxResultCount = 1000 });
+            var template = await _templateService.GetTemplateById(templateId);
+
+            var templateName = template?.Name ?? "Template";
+            var planNames = result.Items
+                .Where(n => n.IsActive && n.EmailTemplateId == templateId)
+                .Select(n => string.IsNullOrWhiteSpace(n.TriggerDetail)
+                    ? $"{templateName} - {n.TriggerType} notification"
+                    : $"{templateName} - {n.TriggerType} notification - {n.TriggerDetail}")
+                .Distinct()
+                .ToList();
+
+            return Ok(new { notificationPlanNames = planNames });
         }
 
         [HttpPut("{formId}/{id:guid}")]
@@ -354,6 +412,8 @@ namespace Unity.GrantManager.Web.Controllers
         {
             if (!Guid.TryParse(formId, out var parsedFormId)) return BadRequest("Invalid form id");
             if (input.TemplateId == Guid.Empty) return BadRequest("TemplateId required");
+
+            if (!ValidateModule(input, out var moduleError)) return BadRequest(moduleError);
 
             var template = await _templateService.GetTemplateById(input.TemplateId);
             if (template == null) return BadRequest("Template not found");
@@ -371,10 +431,11 @@ namespace Unity.GrantManager.Web.Controllers
                 FormId = parsedFormId,
                 EmailTemplateId = template.Id,
                 TriggerType = input.TriggerType,
-                TriggerDetail = input.TriggerType == "Date" ? input.DateType : statusLabel,
+                Module = input.Module,
+                TriggerDetail = input.TriggerType == "Date" ? input.DateType : input.Module == "Payment" ? input.EventStatus : statusLabel,
                 IsActive = true,
-                EventType = null,
-                ApplicationStatusId = input.ApplicationStatusId,
+                EventType = input.Module == "Payment" ? input.EventStatus : null,
+                ApplicationStatusId = input.Module == "Application" ? input.ApplicationStatusId : null,
                 ApplicationStatus = statusLabel,
                 DateField = input.DateType,
                 RecipientCategory = input.RecipientCategory,
@@ -389,8 +450,9 @@ namespace Unity.GrantManager.Web.Controllers
                 TemplateId = input.TemplateId,
                 TemplateName = template.Name,
                 TriggerType = updated.TriggerType,
+                Module = updated.Module,
                 DateType = updated.DateField,
-                EventStatus = updated.ApplicationStatus,
+                EventStatus = updated.EventType ?? updated.ApplicationStatus,
                 ApplicationStatusId = updated.ApplicationStatusId,
                 RecipientCategory = updated.RecipientCategory,
                 RecipientIdentifier = updated.RecipientIdentifier,
@@ -398,6 +460,30 @@ namespace Unity.GrantManager.Web.Controllers
             };
 
             return Ok(dto);
+        }
+
+        private static bool ValidateModule(CreateScheduledNotificationInput input, out string error)
+        {
+            error = string.Empty;
+            if (!string.Equals(input.TriggerType, "Event", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (string.IsNullOrWhiteSpace(input.Module))
+            {
+                error = "Module required for Event trigger";
+                return false;
+            }
+
+            if (!string.Equals(input.Module, "Application", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(input.Module, "Payment", StringComparison.OrdinalIgnoreCase))
+            {
+                error = "Module must be Application or Payment";
+                return false;
+            }
+
+            return true;
         }
     }
 
@@ -418,6 +504,7 @@ namespace Unity.GrantManager.Web.Controllers
         public Guid TemplateId { get; init; }
         public string TemplateName { get; init; } = string.Empty;
         public string TriggerType { get; init; } = string.Empty;
+        public string? Module { get; init; }
         public string? DateType { get; init; }
         public string? EventStatus { get; init; }
         public Guid? ApplicationStatusId { get; init; }
@@ -431,6 +518,7 @@ namespace Unity.GrantManager.Web.Controllers
     {
         public Guid TemplateId { get; init; }
         public string TriggerType { get; init; } = "Date";
+        public string? Module { get; init; }
         public string? DateType { get; init; }
         public Guid? ApplicationStatusId { get; init; }
         public string? EventStatus { get; init; }

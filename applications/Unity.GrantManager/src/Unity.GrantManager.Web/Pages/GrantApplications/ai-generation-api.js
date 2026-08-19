@@ -38,6 +38,24 @@
                 'application/json'
             );
         },
+        queueFormMapping(applicationId, applicationFormVersionId) {
+            return request(
+                `/api/app/ai/generation/form-mapping?applicationId=${encodeURIComponent(applicationId)}&applicationFormVersionId=${encodeURIComponent(applicationFormVersionId)}`,
+                'POST'
+            );
+        },
+        queueFormWorksheet(applicationId, applicationFormVersionId) {
+            return request(
+                `/api/app/ai/generation/form-worksheet?applicationId=${encodeURIComponent(applicationId)}&applicationFormVersionId=${encodeURIComponent(applicationFormVersionId)}`,
+                'POST'
+            );
+        },
+        queueFormScoresheet(applicationId, applicationFormVersionId) {
+            return request(
+                `/api/app/ai/generation/form-scoresheet?applicationId=${encodeURIComponent(applicationId)}&applicationFormVersionId=${encodeURIComponent(applicationFormVersionId)}`,
+                'POST'
+            );
+        },
         getStatus(applicationId, operationType) {
             return request(
                 `/api/app/ai/generation/status?applicationId=${encodeURIComponent(applicationId)}&operationType=${encodeURIComponent(operationType)}`,
