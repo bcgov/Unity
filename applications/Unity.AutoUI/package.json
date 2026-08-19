@@ -1,5 +1,9 @@
 {
   "scripts": {
+    "selectors:report": "node scripts/selector-contract.mjs",
+    "selectors:diff": "node scripts/selector-diff-report.mjs",
+    "selectors:fix": "node scripts/selector-diff-report.mjs --fix",
+    "selectors:apply": "node scripts/selector-diff-report.mjs --apply",
     "test": "node ./scripts/run-cypress.js run --spec \"cypress/e2e/**/*.cy.ts\" --browser chrome",
     "test:e2e": "node ./scripts/run-cypress.js run --spec \"cypress/e2e/**/*.cy.ts\" --browser chrome",
     "test:regression-headed": "node ./scripts/run-cypress.js run --spec \"cypress/regression/**/*.cy.ts\" --headed --browser chrome",
