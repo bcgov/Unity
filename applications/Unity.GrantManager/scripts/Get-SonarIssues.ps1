@@ -280,9 +280,9 @@ function Get-SonarIssuePage {
         if (-not $response.IsSuccessStatusCode) {
             $status = [int]$response.StatusCode
             if ($status -eq 401 -or $status -eq 403) {
-                throw "SonarQube returned $status for '$ProjectKey' at '$ServerUrl'. Pass -Token (or set `$env:SONAR_TOKEN) with browse access to this project."
+                throw "Sonar server returned $status for '$ProjectKey' at '$ServerUrl'. Pass -Token (or set `$env:SONAR_TOKEN) with browse access to this project."
             }
-            throw "SonarCloud returned $status`: $text"
+            throw "Sonar server returned $status`: $text"
         }
 
         return $text | ConvertFrom-Json
