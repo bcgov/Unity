@@ -1,11 +1,15 @@
-﻿using Microsoft.AspNetCore.Mvc.RazorPages;
+﻿using System;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Unity.Notifications.Localization;
 using Unity.Notifications.Web.Menus;
+using Unity.Notifications.Web.Realtime;
 using Unity.Notifications.Web.Views.Settings;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.Localization;
+using Volo.Abp.AspNetCore.SignalR;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
 using Volo.Abp.Mapperly;
 using Volo.Abp.BackgroundJobs;
@@ -22,11 +26,19 @@ namespace Unity.Notifications.Web;
     typeof(NotificationsApplicationModule),
     typeof(NotificationsApplicationContractsModule),
     typeof(AbpAspNetCoreMvcUiThemeSharedModule),
+    typeof(AbpAspNetCoreSignalRModule),
     typeof(AbpMapperlyModule),
     typeof(AbpSettingManagementWebModule)
     )]
 public class NotificationsWebModule : AbpModule
 {
+    private const string RedisPasswordKey = "Redis:Password";
+    private const string RedisHostKey = "Redis:Host";
+    private const string RedisPortKey = "Redis:Port";
+    private const string RedisDefaultDatabaseKey = "Redis:DatabaseId";
+    private const string RedisConfigurationKey = "Redis:Configuration";
+    private const string RedisSentinelMasterNameKey = "Redis:SentinelMasterName";
+
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
         context.Services.PreConfigure<AbpMvcDataAnnotationsLocalizationOptions>(options =>
@@ -48,6 +60,19 @@ public class NotificationsWebModule : AbpModule
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         var configuration = context.Services.GetConfiguration();
+
+        var signalRBuilder = context.Services
+            .AddSignalR()
+            .AddHubOptions<NotificationHub>(options =>
+            {
+                options.EnableDetailedErrors = false;
+            });
+
+        ConfigureSignalRRedisBackplane(signalRBuilder, configuration);
+
+        context.Services.AddSingleton<INotificationPresenceTracker, NotificationPresenceTracker>();
+        context.Services.AddTransient<NotificationLogCreatedRealtimeHandler>();
+
         Configure<AbpBackgroundJobOptions>(options =>
         {
             options.IsJobExecutionEnabled = configuration.GetValue<bool>("BackgroundJobs:IsJobExecutionEnabled");
@@ -61,6 +86,7 @@ public class NotificationsWebModule : AbpModule
         Configure<AbpNavigationOptions>(options =>
         {
             options.MenuContributors.Add(new NotificationsMenuContributor());
+            options.MenuContributors.Add(new NotificationLogsUserMenuContributor());
         });
 
         Configure<AbpVirtualFileSystemOptions>(options =>
@@ -79,5 +105,77 @@ public class NotificationsWebModule : AbpModule
         {
             //Configure authorization.
         });
+    }
+
+    private static void ConfigureSignalRRedisBackplane(ISignalRServerBuilder signalRBuilder, IConfiguration configuration)
+    {
+        if (!Convert.ToBoolean(configuration["Redis:IsEnabled"]))
+        {
+            return;
+        }
+
+        var useSentinel = Convert.ToBoolean(configuration["Redis:UseSentinel"]);
+        var channelPrefix = configuration["Notifications:SignalR:ChannelPrefix"] ?? "unity:signalr";
+
+        if (useSentinel)
+        {
+            signalRBuilder.AddStackExchangeRedis(options =>
+            {
+                options.Configuration = BuildSentinelOptions(configuration);
+                options.Configuration.ChannelPrefix = StackExchange.Redis.RedisChannel.Literal(channelPrefix);
+            });
+
+            return;
+        }
+
+        var connectionString = BuildStandardConnectionString(configuration);
+
+        if (string.IsNullOrWhiteSpace(connectionString))
+        {
+            return;
+        }
+
+        signalRBuilder.AddStackExchangeRedis(connectionString, options =>
+        {
+            options.Configuration.ChannelPrefix = StackExchange.Redis.RedisChannel.Literal(channelPrefix);
+        });
+    }
+
+    private static StackExchange.Redis.ConfigurationOptions BuildSentinelOptions(IConfiguration configuration)
+    {
+        var options = new StackExchange.Redis.ConfigurationOptions
+        {
+            ServiceName = configuration[RedisSentinelMasterNameKey],
+            Password = configuration[RedisPasswordKey],
+            AbortOnConnectFail = false,
+            AllowAdmin = true,
+            DefaultVersion = new Version(7, 0, 0),
+            DefaultDatabase = configuration.GetValue<int>(RedisDefaultDatabaseKey, 0)
+        };
+
+        var endpoints = configuration[RedisConfigurationKey]?.Split(',', StringSplitOptions.RemoveEmptyEntries);
+
+        if (endpoints != null)
+        {
+            foreach (var endpoint in endpoints)
+            {
+                options.EndPoints.Add(endpoint.Trim());
+            }
+        }
+
+        return options;
+    }
+
+    private static string BuildStandardConnectionString(IConfiguration configuration)
+    {
+        var host = configuration[RedisHostKey];
+        var port = configuration[RedisPortKey];
+
+        if (string.IsNullOrWhiteSpace(host) || string.IsNullOrWhiteSpace(port))
+        {
+            return string.Empty;
+        }
+
+        return $"{host}:{port},password={configuration[RedisPasswordKey]},abortConnect=false";
     }
 }

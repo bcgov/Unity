@@ -80,7 +80,7 @@ namespace Unity.GrantManager.Web.Middleware
         {
             var trace = new StackTrace(ex, true);
 
-            foreach (var frame in trace.GetFrames() ?? Array.Empty<StackFrame>())
+            foreach (var frame in trace.GetFrames() ?? [])
             {
                 var file = frame.GetFileName();
                 var line = frame.GetFileLineNumber();

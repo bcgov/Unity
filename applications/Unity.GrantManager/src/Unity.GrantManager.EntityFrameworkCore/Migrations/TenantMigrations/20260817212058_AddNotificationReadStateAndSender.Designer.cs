@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260817212058_AddNotificationMessagingTables")]
+    partial class AddNotificationMessagingTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1357,9 +1360,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("ElectoralDistrict")
                         .HasColumnType("text");
 
-                    b.Property<bool>("EligibleForRenewal")
-                        .HasColumnType("boolean");
-
                     b.Property<bool>("ExternalStatusVisibility")
                         .HasColumnType("boolean");
 
@@ -1819,11 +1819,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<int?>("ElectoralDistrictAddressType")
                         .HasColumnType("integer");
-
-                    b.Property<string>("ExternalLinksConfig")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("ExternalLinks");
 
                     b.Property<string>("ExtraProperties")
                         .IsRequired()

@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
 using Unity.Notifications.Emails;
+using Unity.Notifications.Logs;
+using Unity.Notifications.ReadStates;
 using Unity.Notifications.Templates;
 using Unity.Notifications.EmailGroups;
 using Volo.Abp;
@@ -142,6 +144,41 @@ public static class NotificationsDbContextModelCreatingExtensions
             b.HasOne<EmailGroup>()
               .WithMany()
               .HasForeignKey(x => x.GroupId);
+        });
+
+        modelBuilder.Entity<NotificationLog>(b =>
+        {
+            b.ToTable(NotificationsDbProperties.DbTablePrefix + "NotificationLogs", NotificationsDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.Property(x => x.NotificationType).HasConversion<string>().HasMaxLength(64);
+            b.Property(x => x.Channel).HasConversion<string>().HasMaxLength(32);
+            b.Property(x => x.Severity).HasConversion<string>().HasMaxLength(32);
+            b.Property(x => x.Title).IsRequired().HasMaxLength(256);
+            b.Property(x => x.Message).IsRequired();
+            b.Property(x => x.Source).IsRequired().HasMaxLength(200);
+            b.Property(x => x.SourceReference).HasMaxLength(256);
+            b.Property(x => x.CorrelationId).HasMaxLength(128);
+            b.Property(x => x.DeliveryTarget).HasMaxLength(256);
+            b.Property(x => x.ExceptionType).HasMaxLength(256);
+            b.Property(x => x.Environment).HasMaxLength(64);
+            b.Property(x => x.CommitSha).HasMaxLength(64);
+            b.Property(x => x.PayloadJson).HasColumnType("jsonb");
+            b.Property(x => x.SenderDisplayName).HasMaxLength(256);
+
+            b.HasIndex(x => new { x.TenantId, x.CreationTime });
+            b.HasIndex(x => new { x.NotificationType, x.CreationTime });
+            b.HasIndex(x => x.CorrelationId);
+        });
+
+        modelBuilder.Entity<NotificationReadState>(b =>
+        {
+            b.ToTable(NotificationsDbProperties.DbTablePrefix + "NotificationReadStates", NotificationsDbProperties.DbSchema);
+
+            b.ConfigureByConvention();
+
+            b.HasIndex(x => new { x.TenantId, x.UserId }).IsUnique();
         });
     }
 }

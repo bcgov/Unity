@@ -486,6 +486,7 @@ public class GrantManagerWebModule : AbpModule
                 .Configure(UnityThemeUX2Bundles.Styles.Global, bundle =>
                 {
                     bundle.AddFiles("/global-styles.css");
+                    bundle.AddFiles("/css/notifications-realtime-widget.css");
                 });
 
             options.StyleBundles.Configure(
@@ -493,6 +494,13 @@ public class GrantManagerWebModule : AbpModule
                 bundle =>
                 {
                     bundle.AddContributors(typeof(NotificationsStyleBundleContributor));
+                });
+
+            options.ScriptBundles.Configure(
+                UnityThemeUX2Bundles.Scripts.Global,
+                bundle =>
+                {
+                    bundle.AddContributors(typeof(NotificationsScriptBundleContributor));
                 });
         });
     }
