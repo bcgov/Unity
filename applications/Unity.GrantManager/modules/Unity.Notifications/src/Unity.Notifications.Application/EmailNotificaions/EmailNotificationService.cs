@@ -282,7 +282,8 @@ public class EmailNotificationService(
     }
 
     /// <summary>
-    /// Loads an email template from the Views/EmailTemplates directory.
+    /// Loads an email template from the Application assembly's embedded resources.
+    /// The resource name follows the format Unity.Notifications.EmailTemplates.{templateName}.cshtml.
     /// </summary>
     /// <param name="templateName">Template name without extension (e.g., "CommentNotification")</param>
     /// <returns>Template content as a string</returns>

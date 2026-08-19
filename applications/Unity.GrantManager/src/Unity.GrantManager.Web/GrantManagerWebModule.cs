@@ -676,7 +676,6 @@ public class GrantManagerWebModule : AbpModule
         app.UseStaticFiles();
         app.UseMiddleware<RequestCancellationMiddleware>();
         app.UseMiddleware<ExceptionCounterMiddleware>();
-        app.UseMiddleware<TimezoneMiddleware>();
         app.UseRouting();
         app.UseHttpMetrics();
         app.UseAuthentication();
@@ -689,6 +688,7 @@ public class GrantManagerWebModule : AbpModule
         app.UseUnitOfWork();
         app.UseDynamicClaims();
         app.UseAuthorization();
+        app.UseMiddleware<TimezoneMiddleware>();
         if (IsProfilingAllowed(env, configuration))
         {
             app.UseMiniProfiler();

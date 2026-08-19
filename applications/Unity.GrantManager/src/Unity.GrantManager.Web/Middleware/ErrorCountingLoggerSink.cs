@@ -65,6 +65,16 @@ public sealed class ErrorCountingLoggerSink : ILogEventSink
             return;
         }
 
+        lock (_persistenceGate)
+        {
+            if (_persistenceInFlight || DateTimeOffset.UtcNow < _persistenceDisabledUntil)
+            {
+                return;
+            }
+
+            _persistenceInFlight = true;
+        }
+
         Guid? tenantId = null;
         Guid? userId = null;
         string? userName = null;
@@ -81,16 +91,6 @@ public sealed class ErrorCountingLoggerSink : ILogEventSink
         catch
         {
             // Persistence is best-effort; continue with host/unknown metadata.
-        }
-
-        lock (_persistenceGate)
-        {
-            if (_persistenceInFlight || DateTimeOffset.UtcNow < _persistenceDisabledUntil)
-            {
-                return;
-            }
-
-            _persistenceInFlight = true;
         }
 
         // Do not inherit the request's ambient ABP unit of work. The request may be
