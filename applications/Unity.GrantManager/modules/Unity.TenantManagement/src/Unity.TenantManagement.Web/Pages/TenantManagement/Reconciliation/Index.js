@@ -146,12 +146,12 @@ $(function () {
     setExternalSearchFilter(iDt);
 
     if ($('#btn-toggle-filter').length) {
-        if (typeof $.fn.dataTable !== 'undefined' && typeof $.fn.dataTable.FilterRow !== 'undefined') {
+        if ($.fn.dataTable !== undefined && $.fn.dataTable.FilterRow !== undefined) {
             const filterRow = new $.fn.dataTable.FilterRow(iDt.settings()[0], {
                 buttonId: 'btn-toggle-filter',
                 buttonText: FilterDesc.Default,
                 buttonTextActive: FilterDesc.With_Filter,
-                enablePopover: typeof $.fn.popover !== 'undefined'
+                enablePopover: $.fn.popover !== undefined
             });
 
             iDt.settings()[0]._filterRow = filterRow;

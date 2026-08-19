@@ -57,13 +57,16 @@ if (container) {
         }
 
         if (reportingUrl) {
-            unity.grantManager.identity.jwtToken.generateJWTToken()
-                .then((token) => {
+            const initializeReporting = async () => {
+                try {
+                    const token = await unity.grantManager.identity.jwtToken.generateJWTToken();
                     container.appendChild(buildReportingIframe(reportingUrl, token));
-                })
-                .catch((error) => {
+                } catch (error) {
                     showInitializationError(container, 'Failed to initialize AI Reporting. Please refresh the page and try again.', error);
-                });
+                }
+            };
+
+            initializeReporting();
         }
     }
 }
