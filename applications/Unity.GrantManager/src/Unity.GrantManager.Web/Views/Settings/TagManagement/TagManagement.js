@@ -44,9 +44,7 @@ function defineTagSummaryColumnDefs() {
         title: "Count",
         name: 'totalCount',
         data: 'totalCount'
-    });
-
-    columnDefs.push({
+    }, {
         title: "Actions",
         name: 'actions',
         data: 'tag.name',

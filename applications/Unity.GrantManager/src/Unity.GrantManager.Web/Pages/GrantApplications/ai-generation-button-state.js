@@ -21,7 +21,7 @@
             || error?.responseText
             || '';
 
-        const match = String(message).match(/try again in\s+(\d+)\s+second/i);
+        const match = /try again in\s+(\d+)\s+second/i.exec(String(message));
         return match ? Number(match[1]) : 0;
     }
 

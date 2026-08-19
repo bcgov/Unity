@@ -444,7 +444,7 @@ const emailGroupsManager = {
             'createAddUserBtn',
             function(selectedUser) {
                 // Add to selected users if not already there
-                if (!selectedUsers.find(u => u.userId === selectedUser.userId)) {
+                if (!selectedUsers.some(u => u.userId === selectedUser.userId)) {
                     const newUser = {
                         userId: selectedUser.userId,
                         userName: selectedUser.userName,
