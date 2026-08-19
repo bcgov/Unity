@@ -1,4 +1,10 @@
 (function () {
+    if (globalThis.__unityRealtimeWidgetInitialized) {
+        return;
+    }
+
+    globalThis.__unityRealtimeWidgetInitialized = true;
+
     whenReady(init);
 
     function whenReady(callback) {
@@ -296,6 +302,10 @@
                 return;
             }
 
+            if (message.length > 4000) {
+                return;
+            }
+
             if (connection.state !== signalR.HubConnectionState.Connected) {
                 return;
             }
@@ -562,6 +572,12 @@
 })();
 
 (function () {
+    if (globalThis.__unityRealtimeWidgetInitialized) {
+        return;
+    }
+
+    globalThis.__unityRealtimeWidgetInitialized = true;
+
     whenReady(init);
 
     function whenReady(callback) {
