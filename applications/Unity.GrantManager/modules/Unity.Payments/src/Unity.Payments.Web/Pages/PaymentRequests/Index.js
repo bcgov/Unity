@@ -1042,7 +1042,7 @@ $(function () {
     }
 
     function formatName(userData) {
-        return typeof userData !== 'undefined' && userData !== null ? `${userData?.name} ${userData?.surname}` : "";
+        return userData !== undefined && userData !== null ? `${userData?.name} ${userData?.surname}` : "";
     }
 
     function getApprovalDateColumn(columnIndex, level) {

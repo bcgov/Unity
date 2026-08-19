@@ -73,9 +73,9 @@ $(function () {
         let groupedValues = Object.values(groupedTags);
         if (groupedValues.length === 0) return [];
         
-        return groupedValues.reduce(function (prev, next) {
+        return groupedValues.slice(1).reduce(function (prev, next) {
             return prev.filter(p => hasMatchingTagId(p, next));
-        });
+        }, groupedValues[0]);
     }
 
     function filterUncommonTags(tagList, commonTags) {

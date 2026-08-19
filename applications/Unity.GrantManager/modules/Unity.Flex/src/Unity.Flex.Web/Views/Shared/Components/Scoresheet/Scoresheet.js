@@ -360,9 +360,12 @@ $(function () {
             return hash;
         }
         for (let i = 0; i < str.length; i++) {
-            const char = str.charCodeAt(i);
+            const char = str.codePointAt(i);
             hash = ((hash << 5) - hash) + char;
             hash |= 0;
+            if (char > 0xFFFF) {
+                i++;
+            }
         }
         return hash;
     }

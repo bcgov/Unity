@@ -5,32 +5,7 @@ const showInitializationError = (container, message, error) => {
 const reportingAiUrl = globalThis.reportingAiUrl;
 const container = document.getElementById('container');
 
-const initializeAIReporting = async () => {
-    if (!container) {
-        return;
-    }
-
-    if (!reportingAiUrl) {
-        showInitializationError(container, 'AI Reporting is not configured.');
-        return;
-    }
-
-    let reportingUrl;
-    try {
-        reportingUrl = new URL(reportingAiUrl);
-    } catch (error) {
-        showInitializationError(container, 'AI Reporting is not configured correctly.', error);
-        return;
-    }
-
-    let token;
-    try {
-        token = await unity.grantManager.identity.jwtToken.generateJWTToken();
-    } catch (error) {
-        showInitializationError(container, 'Failed to initialize AI Reporting. Please refresh the page and try again.', error);
-        return;
-    }
-
+const buildReportingIframe = (reportingUrl, token) => {
     const iframe = document.createElement('iframe');
 
     iframe.style.width = '100%';
@@ -66,7 +41,29 @@ const initializeAIReporting = async () => {
     };
 
     iframe.src = reportingUrl.href;
-    container.appendChild(iframe);
+    return iframe;
 };
 
-initializeAIReporting();
+if (container) {
+    if (!reportingAiUrl) {
+        showInitializationError(container, 'AI Reporting is not configured.');
+    } else {
+        let reportingUrl;
+        try {
+            reportingUrl = new URL(reportingAiUrl);
+        } catch (error) {
+            reportingUrl = null;
+            showInitializationError(container, 'AI Reporting is not configured correctly.', error);
+        }
+
+        if (reportingUrl) {
+            unity.grantManager.identity.jwtToken.generateJWTToken()
+                .then((token) => {
+                    container.appendChild(buildReportingIframe(reportingUrl, token));
+                })
+                .catch((error) => {
+                    showInitializationError(container, 'Failed to initialize AI Reporting. Please refresh the page and try again.', error);
+                });
+        }
+    }
+}

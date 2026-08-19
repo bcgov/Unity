@@ -8,11 +8,10 @@
     or attaching to a PR instead of screen-scraping the SonarQube UI.
 
 .PARAMETER ServerUrl
-    SonarQube server URL. Default: https://sonarqube.econ.gov.bc.ca/sonar. Set this to
-    https://sonarcloud.io when querying SonarCloud.
+    SonarQube server URL. Default: https://sonarcloud.io, matching sonar-project.properties.
 
 .PARAMETER ProjectKey
-    SonarQube project (component) key. Default: UnityScanKey.
+    SonarQube project (component) key. Default: bcgov_Unity.
 
 .PARAMETER Branch
     Branch name to query. If omitted, you'll be prompted to pick the current git branch, one of
@@ -70,9 +69,9 @@
     .\Get-SonarIssues.ps1 -Branch main -FixLevel Quick
 #>
 param(
-    [string]$ServerUrl = "https://sonarqube.econ.gov.bc.ca/sonar",
+    [string]$ServerUrl = "https://sonarcloud.io",
 
-    [string]$ProjectKey = "UnityScanKey",
+    [string]$ProjectKey = "bcgov_Unity",
 
     [string]$Branch = "",
 
@@ -281,7 +280,7 @@ function Get-SonarIssuePage {
         if (-not $response.IsSuccessStatusCode) {
             $status = [int]$response.StatusCode
             if ($status -eq 401 -or $status -eq 403) {
-                throw "SonarCloud returned $status - pass -Token (or set `$env:SONAR_TOKEN) with access to '$ProjectKey'."
+                throw "SonarQube returned $status for '$ProjectKey' at '$ServerUrl'. Pass -Token (or set `$env:SONAR_TOKEN) with browse access to this project."
             }
             throw "SonarCloud returned $status`: $text"
         }
