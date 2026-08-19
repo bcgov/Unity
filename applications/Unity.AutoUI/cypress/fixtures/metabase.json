@@ -18,7 +18,7 @@
     },
     {
       "unityEnv": "PROD",
-      "baseURL": "https://unity-reporting.apps.gold.devops.gov.bc.ca/"
+      "baseURL": "https://unity-reporting.apps.silver.devops.gov.bc.ca/"
     }
   ]
 }

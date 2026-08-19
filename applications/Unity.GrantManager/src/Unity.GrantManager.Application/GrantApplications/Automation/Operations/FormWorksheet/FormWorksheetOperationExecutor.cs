@@ -58,8 +58,8 @@ public sealed class FormWorksheetOperationExecutor(
             return false;
         }
 
-        var worksheetName = baseWorksheetName;
-        var existingWorksheet = await worksheetRepository.GetByNameAsync(worksheetName, true);
+        var existingWorksheet = await worksheetRepository.GetByNameAsync(baseWorksheetName, true);
+        var worksheetName = existingWorksheet?.Name ?? baseWorksheetName;
         EnsureCanonicalSuggestionWorksheetState(existingWorksheet);
         var noSuggestionsGenerated = existingWorksheet != null &&
             existingWorksheet.Sections.SelectMany(section => section.Fields).Any() == false;
@@ -99,6 +99,11 @@ public sealed class FormWorksheetOperationExecutor(
                 Data = JsonSerializer.SerializeToElement(promptData),
                 PromptVersion = args.PromptVersion
             });
+
+            if (!string.IsNullOrWhiteSpace(worksheetResponse.FailureReason))
+            {
+                throw new InvalidOperationException(worksheetResponse.FailureReason);
+            }
 
             var suggestions = ParseWorksheetDefinition(worksheetResponse.Worksheet);
             noSuggestionsGenerated = suggestions.Count == 0;

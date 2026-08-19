@@ -3,10 +3,67 @@ import FormData from "form-data";
 import fs from "fs";
 import path from "path";
 
+function loadLocalEnvironmentConfig(requestedEnvironment?: string): {
+  environmentName: string;
+  environmentSource: string;
+  environmentConfig: Record<string, unknown>;
+} {
+  let environmentName: string;
+  let environmentSource: string;
+
+  if (requestedEnvironment) {
+    environmentName = requestedEnvironment.toLowerCase();
+    environmentSource = "--env environment";
+  } else if (process.env.UNITY_CYPRESS_ENV) {
+    environmentName = process.env.UNITY_CYPRESS_ENV.toLowerCase();
+    environmentSource = "UNITY_CYPRESS_ENV";
+  } else {
+    environmentName = "dev";
+    environmentSource = "default";
+  }
+
+  const environmentFilePath = path.resolve(
+    "cypress",
+    "config",
+    `${environmentName}.json`,
+  );
+
+  try {
+    const content = fs.readFileSync(environmentFilePath, "utf-8");
+    return {
+      environmentName,
+      environmentSource,
+      environmentConfig: JSON.parse(content) as Record<string, unknown>,
+    };
+  } catch {
+    return { environmentName, environmentSource, environmentConfig: {} };
+  }
+}
+
 // https://docs.cypress.io/guides/references/configuration
 export default defineConfig({
   e2e: {
-    setupNodeEvents(on) {
+    setupNodeEvents(on, config) {
+      // Supports selecting the environment either via Cypress's native
+      // `--env environment=<name>` CLI flag or the UNITY_CYPRESS_ENV OS
+      // environment variable (the flag takes precedence).
+      const { environmentName, environmentSource, environmentConfig } =
+        loadLocalEnvironmentConfig(
+          config.env?.environment as string | undefined,
+        );
+
+      // eslint-disable-next-line no-console
+      console.log(
+        `\n[Cypress] Running against environment: ${environmentName} (source: ${environmentSource})\n`,
+      );
+
+      on("after:run", () => {
+        // eslint-disable-next-line no-console
+        console.log(
+          `\n[Cypress] Finished run against environment: ${environmentName} (source: ${environmentSource})\n`,
+        );
+      });
+
       on("task", {
         readJsonIfExists(filePath: string): Record<string, unknown> | null {
           try {
@@ -59,6 +116,17 @@ export default defineConfig({
           return response.json();
         },
       });
+
+      return {
+        ...config,
+        baseUrl:
+          (environmentConfig["webapp.url"] as string | undefined) ||
+          config.baseUrl,
+        env: {
+          ...config.env,
+          ...environmentConfig,
+        },
+      };
     },
     specPattern: [
       "cypress/e2e/**/*.cy.{js,jsx,ts,tsx}",

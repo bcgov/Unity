@@ -70,6 +70,7 @@ namespace Unity.GrantManager.Permissions
         public readonly List<string> Notifications_CommonPermissions = [
             NotificationsPermissions.Email.Default,
             NotificationsPermissions.Email.Send,
+            NotificationsPermissions.Email.SendBulk,
             NotificationsPermissions.Email.DeleteDraft
         ];
 

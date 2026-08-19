@@ -91,6 +91,7 @@
     "ApplicationList:StartAssessmentButton": "Start Assessment",
     "ApplicationList:CompleteAssessmentButton": "Complete Assessment",
     "ApplicationList:TagButton": "Tags",
+    "ApplicationList:SendEmailButton": "Send Drafted Email",
     "ApplicationList:ResyncSubmissionAttachmentsButton": "Resync",
     "ApplicationList:ManageTagButton": "Manage Tags",
 
@@ -192,6 +193,24 @@
     "ApplicationForms.Configuration.Notes:BypassAssessmentWorkflow": "Enabling this feature will bypass the Assessment workflow when you approve or deny submissions associated with this form.",
     "ApplicationForms.Configuration.Notes:SelectedApplicantElectoralAddress": "The selected address type will determine which submitted applicant address is used to extract the electoral district.",
     "ApplicationForms.Configuration.Warnings:ApplicantElectoralAddressTypeChange": "Changing the address type will only affect new submissions. Existing applications will retain the electoral district extracted from their original address type.",
+    "ApplicationForms.Configuration:ApplicantPortalLinks": "Applicant Portal Related Links & Visibility",
+    "ApplicationForms.Configuration:RenewalLink": "Renewal Link",
+    "ApplicationForms.Configuration:LinkUrl": "Link URL",
+    "ApplicationForms.Configuration:RenewalLinkDisplayName": "Renewal Link Display Name",
+    "ApplicationForms.Configuration:ShowRenewalLinksInPortal": "Show Renewal Links in Portal",
+    "ApplicationForms.Configuration:ApplicantMessage": "Applicant Message",
+    "ApplicationForms.Configuration:OtherLinks": "Other Links",
+    "ApplicationForms.Configuration:ShowOtherLinksInPortal": "Show in Portal",
+    "ApplicationForms.Configuration:LinkDisplayName": "Display Name",
+    "ApplicationForms.Configuration:LinkDescription": "Description",
+    "ApplicationForms.Configuration:AddLink": "Add Link",
+    "ApplicationForms.Configuration:RemoveLink": "Remove Link",
+    "ApplicationForms.Configuration.Notes:LinkVisibilityRequiresUrl": "If there is no link provided when Visibility is enabled, nothing will be displayed.",
+    "ApplicationForms.Configuration.Notes:MaxRelatedLinks": "A maximum of 8 other links can be added.",
+    "ApplicationForms.Configuration.Errors:InvalidUrl": "Please enter a valid, absolute http or https URL.",
+    "ApplicationForms.Configuration.Errors:RenewalLinkRequiredForVisibility": "A valid renewal link URL is required before enabling visibility.",
+    "ApplicationForms.Configuration.Errors:OtherLinkRequiredForVisibility": "A valid URL is required before enabling visibility for this link.",
+    "ApplicationForms.Configuration.Errors:MaxRelatedLinksReached": "A maximum of 8 other links is allowed.",
 
     "Intakes": "Intakes",
 
@@ -271,6 +290,10 @@
     "GrantManager:PayableFormRequiresHierarchy": "Please select a form hierarchy before saving a payable form.",
     "GrantManager:ChildFormRequiresParentForm": "Please select a parent form when the form hierarchy is set to Child.",
     "GrantManager:ChildFormCannotReferenceSelf": "A form cannot reference itself as the parent.",
+    "GrantManager:RenewalLinkRequiredForVisibility": "A valid renewal link URL is required before enabling renewal link visibility.",
+    "GrantManager:RenewalLinkInvalidUri": "The renewal link URL must be a valid, absolute http or https URL.",
+    "GrantManager:RelatedLinkInvalidUri": "Related link URLs must be valid, absolute http or https URLs.",
+    "GrantManager:TooManyRelatedLinks": "A maximum of 8 related links is allowed.",
     "GrantManager:CannotModifyAiAssessment": "AI assessments are read-only.",
     "GrantManager:CannotCloneNonAiAssessment": "Only AI assessments can be cloned.",
     "GrantManager:NotCommentOwner": "You can only delete your own comments.",
@@ -535,6 +558,17 @@
     "ApplicationBatchApprovalRequest:InvalidApprovedAmount": "Invalid Approved Amount, it must be greater than 0.00",
     "ApplicationBatchApprovalRequest:InvalidRecommendedAmount": "Invalid Recommended Amount, it must be greater than 0.00",
 
+    "SendEmailNotificationRequest:Title": "Send Email Notification",
+    "SendEmailNotificationRequest:SubmitButtonText": "Send",
+    "SendEmailNotificationRequest:CancelButtonText": "Cancel",
+    "SendEmailNotificationRequest:MaxCountExceeded": "You have exceeded the maximum number of items for bulk email. Please reduce the number to {0} or fewer",
+    "SendEmailNotificationRequest:NoDraftFound": "No draft email found for this application. Please create a draft email before proceeding.",
+    "SendEmailNotificationRequest:MultipleDraftsFound": "Multiple draft emails found for this application. Please retain only one draft before proceeding.",
+    "SendEmailNotificationRequest:MissingSubject": "Draft email is missing a Subject. Please update the draft before proceeding.",
+    "SendEmailNotificationRequest:MissingToAddress": "Draft email is missing a To address. Please update the draft before proceeding.",
+    "SendEmailNotificationRequest:MissingFromAddress": "Draft email is missing a From address. Please update the draft before proceeding.",
+    "SendEmailNotificationRequest:MissingBody": "Draft email is missing a Body. Please update the draft before proceeding.",
+
     "ApplicationBatchPublishRequest:MaxCountExceeded": "You have exceeded the maximum number of items for bulk status publishing. Please reduce the number to {0} or fewer",
     "ApplicationBatchPublishRequest:MinCountExceeded": "You have no items selected for bulk status publishing. Please close this prompt to continue",
     "ApplicationBatchPublishRequest:ConfirmationNote": "By confirming, the selected application statuses will be published and made visible to applicants in the portal.",
@@ -620,7 +654,10 @@
 
     "WrongTenantError:Title": "An Error Occurred",
     "WrongTenantError:ApplicationTenant": "This application is in Tenant: {0}",
+    "WrongTenantError:ApplicantTenant": "This applicant is in Tenant: {0}",
     "WrongTenantError:CurrentTenant": "You are currently in Tenant: {0}",
-    "WrongTenantError:Instructions": "Please click on the Profile menu at the top right of the corner, click on Switch Grant Programs, and select the correct Tenant before proceeding to view the link."
+    "WrongTenantError:Instructions": "Please click on the Profile menu at the top right of the corner, click on Switch Grant Programs, and select the correct Tenant before proceeding to view the link.",
+    "WrongTenantError:ApplicantNotFoundPossibleTenant": "This applicant was not found in the current Tenant and may exist in another Tenant.",
+    "WrongTenantError:ApplicationNotFoundPossibleTenant": "This application was not found in the current Tenant and may exist in another Tenant."
   }
 }

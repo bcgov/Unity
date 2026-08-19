@@ -20,6 +20,7 @@ using Unity.GrantManager.Zones;
 using Unity.Modules.Shared.Correlation;
 using Unity.Modules.Shared.Specializations;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Features;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.Users;
@@ -128,6 +129,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
                 return RedirectToPage("/Error", new
                 {
                     httpStatusCode = 409,
+                    entityType = "Application",
                     applicationTenantName = applicationTenant?.Name ?? TenantId.Value.ToString(),
                     currentTenantName = CurrentTenant.Name ?? "Host"
                 });
@@ -138,7 +140,20 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
                 ViewData["ActiveNavHref"] = "/TenantManagement/Onboarding";
             }
 
-            ApplicationFormSubmission applicationFormSubmission = await _grantApplicationAppService.GetFormSubmissionByApplicationId(ApplicationId);
+            ApplicationFormSubmission applicationFormSubmission;
+            try
+            {
+                applicationFormSubmission = await _grantApplicationAppService.GetFormSubmissionByApplicationId(ApplicationId);
+            }
+            catch (EntityNotFoundException)
+            {
+                return RedirectToPage("/Error", new
+                {
+                    httpStatusCode = 404,
+                    entityType = "Application",
+                    currentTenantName = CurrentTenant.Name ?? "Host"
+                });
+            }
             ZoneStateSet = await _zoneManagementAppService.GetZoneStateSetAsync(applicationFormSubmission.ApplicationFormId);
             
             var formVersion = applicationFormSubmission.ApplicationFormVersionId.HasValue

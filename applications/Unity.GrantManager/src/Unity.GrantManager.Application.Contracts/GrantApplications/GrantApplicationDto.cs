@@ -90,4 +90,5 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public Guid? DefaultSiteId { get; set; }
     public ApplicationAnalysisResponse? AIAnalysisData { get; set; }
     public string? AIScoresheetAnswers { get; set; }
+    public bool EligibleForRenewal { get; set; }
 }
