@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:abp.io)",
+      "Bash(abp help *)",
+      "Bash(abp add-package *)",
+      "Bash(abp install-libs *)",
+      "Bash(grep -o \"Bundling\\\\\\\\\\\\\\\\[A-Za-z]*\\\\.cs\" \"C:\\\\Users\\\\JPASTA\\\\.claude\\\\projects\\\\c--Work-Economy-UnityOnGit-Unity\\\\99eba763-b7c1-4034-93ab-933cde9f37db\\\\tool-results\\\\by1m66sl2.txt\")",
+      "Bash(find 'C:\\\\Users\\\\JPASTA/.nuget/packages/volo.abp.aspnetcore.mvc.ui' -iname *.dll)",
+      "Bash(find 'C:\\\\Users\\\\JPASTA/.nuget/packages' -maxdepth 1 -iname *bundl*)",
+      "Bash(find 'C:\\\\Users\\\\JPASTA/.nuget/packages/volo.abp.aspnetcore.mvc.ui.theme.shared' -iname *.dll)",
+      "Bash(tasklist //FI \"PID eq 19060\")"
+    ]
+  }
+}

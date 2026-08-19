@@ -11,6 +11,7 @@ public static class NotificationsPermissions
     {
         public const string Default = "Notifications.Email";
         public const string Send = "Notifications.Email.Send";
+        public const string SendBulk = "Notifications.Email.SendBulk";
         public const string DeleteDraft = "Notifications.Email.DeleteDraft";
         public const string CancelScheduled = "Notifications.Email.CancelScheduled";
         public const string Schedule = "Notifications.Email.Schedule";

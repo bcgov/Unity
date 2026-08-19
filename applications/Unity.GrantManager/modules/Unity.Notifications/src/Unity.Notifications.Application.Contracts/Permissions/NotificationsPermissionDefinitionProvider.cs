@@ -21,6 +21,10 @@ public class NotificationsPermissionDefinitionProvider : PermissionDefinitionPro
             L($"Permission:{NotificationsPermissions.Email.Send}"));
 
         notificationsPermissions.AddChild(
+            NotificationsPermissions.Email.SendBulk,
+            L($"Permission:{NotificationsPermissions.Email.SendBulk}"));
+
+        notificationsPermissions.AddChild(
             NotificationsPermissions.Email.DeleteDraft,
             L($"Permission:{NotificationsPermissions.Email.DeleteDraft}"));
 

@@ -1,7 +1,15 @@
-﻿$(document).ready(function () {
+﻿// Wrapped in a named, re-callable function (rather than a bare $(document).ready IIFE) so this widget can be
+// mounted more than once per page — e.g. re-initialized against a freshly swapped-in DOM each time a different
+// application's draft is selected in the bulk-send modal's edit panel. Every handler bound to a *persistent*
+// target (document, a page-level scroll container, PubSub's own global subscriber registry) is explicitly
+// unbound/unsubscribed before re-binding below, so repeated calls don't accumulate duplicate listeners. Handlers
+// bound to elements that are part of this widget's own markup (e.g. #btn-save-top, the attachments table) don't
+// need that treatment: each call captures fresh references to the newly-rendered DOM, and the previous DOM (with
+// whatever was bound to it) is simply discarded along with the old closure.
+function initializeEmailsWidget() {
     const BC_PERMANENT_DST_ZONE = 'UTC-7';
     // Close dropdown menus when clicking outside
-    $(document).on('click', function (e) {
+    $(document).off('click.emailWidgetDropdown').on('click.emailWidgetDropdown', function (e) {
         if (!$(e.target).closest('.tinymce-menu-button, .custom-dropdown-menu').length) {
             $('.custom-dropdown-menu').remove();
         }
@@ -104,6 +112,17 @@
         $('.btn-send-menu').off('click');
         $('.btn-schedule-send-menu').off('click');
 
+        // #EmailForm contains a type="submit" button (#btn-send-top). Clicking it is safely intercepted by
+        // handleSendEmail's preventDefault(), but pressing Enter in a single-line field (To/From/CC/BCC/Subject)
+        // triggers the browser's *implicit* form submission directly, bypassing that click handler entirely.
+        // Every real Save/Send path here is already JS/AJAX-driven, so a native submit of this form is never
+        // correct — block it outright. This matters more now that this form can end up nested inside another
+        // <form> (the bulk-send modal's own form) when this widget is reused there; nested forms are invalid
+        // HTML, and an unhandled native submit in that context would be especially disruptive.
+        UIElements.emailForm.off('submit.emailWidgetGuard').on('submit.emailWidgetGuard', function (e) {
+            e.preventDefault();
+        });
+
         // Bind button handlers
         UIElements.btnNewEmail.on('click', function (e) {
             e.preventDefault();
@@ -186,7 +205,7 @@
 
         bindDelayModeEvents();
 
-        $('.details-scrollable').on('scroll.emailWidget', function () {
+        $('.details-scrollable').off('scroll.emailWidget').on('scroll.emailWidget', function () {
             $('.tox-toolbar__overflow').hide();
         });
 
@@ -1482,7 +1501,10 @@
             hideConfirmation();
             handleCloseEmail();
             abp.notify.success('Your email is being sent');
-            PubSub.publish('refresh_application_emails');
+            // Pass along which application this save/send actually belonged to — a listener elsewhere on the
+            // page (e.g. a multi-application context switching selection) can't otherwise tell which row this
+            // completion is for, since UIElements.applicationId isn't visible outside this closure.
+            PubSub.publish('refresh_application_emails', { applicationId: UIElements.applicationId });
         }).fail(function () {
             hideConfirmation();
             abp.notify.error('An error ocurred your email could not be sent.');
@@ -1553,7 +1575,8 @@
                 isNewEmailDraft = false; newDraftId = null;
                 handleCloseEmail();
                 abp.notify.success('Your email has been saved.');
-                PubSub.publish('refresh_application_emails');
+                // See the matching comment in performSendEmail's success handler above.
+                PubSub.publish('refresh_application_emails', { applicationId: UIElements.applicationId });
             }).fail(function () {
                 UIElements.btnSave.prop('disabled', false);
                 abp.notify.error('An error ocurred your email could not be saved.');
@@ -2067,6 +2090,15 @@
         });
     }
 
+    // This widget is the sole subscriber to each of these four topics anywhere in the app (confirmed by
+    // project-wide search) — unsubscribe before re-subscribing so repeated initializeEmailsWidget() calls
+    // don't leave stale handlers (bound to a previous, now-discarded DOM/closure) stacking up alongside the
+    // current one.
+    PubSub.unsubscribe('email_selected');
+    PubSub.unsubscribe('applicant_info_updated');
+    PubSub.unsubscribe('draft_email_deleted');
+    PubSub.unsubscribe('reload_email_attachments_table');
+
     PubSub.subscribe('email_selected', (msg, data) => {
         console.log("EMAIL SELECTED EVENT FIRED", data);
 
@@ -2351,10 +2383,10 @@
                 'maximum allowed ' + totalMaxFileSize + ' MB. Please remove one or more attachments before sending.'
             );
             $('#email-attachment-size-error').show();
-            $('#btn-send').prop('disabled', true);
+            $('#btn-send-top').prop('disabled', true);
         } else {
             $('#email-attachment-size-error').hide();
-            $('#btn-send').prop('disabled', false);
+            $('#btn-send-top').prop('disabled', false);
         }
     }
 
@@ -2481,7 +2513,25 @@
             }
         });
     }
+}
+
+$(document).ready(function () {
+    // This script is now also bundled on pages (e.g. GrantApplications' list page) that mount this widget's
+    // markup dynamically, later, only for users with the right permission/feature — never as part of the
+    // page's own initial HTML. Only auto-run setup if the widget's markup (and the ambient hidden fields it
+    // reads, like #DetailsViewApplicationId) is actually already present, as it always is on the page that
+    // server-renders this widget directly (GrantApplications/Details). Callers that mount this widget
+    // dynamically elsewhere call window.EmailsWidget.reinitialize() themselves once their markup exists.
+    if ($('#EmailForm').length) {
+        initializeEmailsWidget();
+    }
 });
+
+// Exposed so callers that dynamically (re)mount this widget's markup elsewhere on the page — outside the
+// normal single server-rendered-once-per-page usage on GrantApplications/Details — can re-run its setup
+// against the freshly-inserted DOM. See SendEmailNotificationModal.js for the current caller.
+window.EmailsWidget = window.EmailsWidget || {};
+window.EmailsWidget.reinitialize = initializeEmailsWidget;
 
 
 /**

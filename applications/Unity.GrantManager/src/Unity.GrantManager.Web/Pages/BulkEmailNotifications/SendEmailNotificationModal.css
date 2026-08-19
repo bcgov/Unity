@@ -1,0 +1,126 @@
+/* Row/summary styling (.batch-approval-container, .approval-details-header, .approval-note-prefix, etc.)
+   is shared with the Approve Applications modal via ApproveApplicationsModal.css, loaded in the same bundle. */
+
+/* Wider Submission # column for the send-email summary table: the shared .col-20/.col-75 split from
+   ApproveApplicationsModal.css is too narrow for this table's smaller (default-size) modal. */
+.custom-table .col-35 {
+    width: 35%;
+}
+
+.custom-table .col-60 {
+    width: 60%;
+}
+
+/* ---- Two-column layout: compressed application list on the left, draft editor on the right ---- */
+
+#sendEmailNotificationModal .modal-dialog {
+    max-width: 95vw;
+}
+
+.bulk-email-modal-body {
+    display: flex;
+    align-items: stretch;
+}
+
+.bulk-email-list-panel {
+    flex: 0 0 40%;
+    min-width: 0;
+}
+
+.bulk-email-list-panel .batch-approval-card {
+    max-height: 75vh;
+}
+
+.bulk-email-edit-panel {
+    flex: 1 1 60%;
+    min-width: 0;
+    max-height: 75vh;
+    overflow-y: auto;
+    padding-left: 1rem;
+}
+
+/* Draggable divider between the two panels. The border that used to sit on .bulk-email-edit-panel now lives
+   here instead, since this element is the visual (and interactive) separator between them. */
+.bulk-email-panel-divider {
+    flex: 0 0 auto;
+    width: 13px;
+    margin: 0 -6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: col-resize;
+    position: relative;
+    z-index: 1;
+}
+
+.bulk-email-panel-divider::before {
+    content: '';
+    width: var(--bs-border-width, 1px);
+    height: 100%;
+    background-color: var(--bs-border-color);
+    transition: background-color 0.15s ease, width 0.15s ease;
+}
+
+.bulk-email-panel-divider:hover::before,
+.bulk-email-panel-divider.dragging::before,
+.bulk-email-panel-divider:focus-visible::before {
+    width: 3px;
+    background-color: var(--bc-colors-blue-text-links);
+}
+
+.bulk-email-panel-divider:focus-visible {
+    outline: none;
+}
+
+/* Applied to <body> for the duration of a drag so text selection and the resize cursor stay consistent even
+   if the pointer briefly moves outside the divider itself while dragging. */
+body.bulk-email-resizing {
+    cursor: col-resize;
+    user-select: none;
+}
+
+/* Compressed row spacing for the left list, so it reads as a compact selectable index rather than
+   the full-width row layout used by the Approve Applications modal. */
+.bulk-email-row {
+    cursor: pointer;
+}
+
+.bulk-email-row.row-selected {
+    border-color: var(--bc-colors-blue-text-links);
+    border-width: 2px;
+    background-color: var(--bc-colors-blue-light, #f0f6ff);
+}
+
+.bulk-email-details-row {
+    padding: 0.25rem 0.5rem !important;
+}
+
+.bulk-email-details-row abp-input,
+.bulk-email-details-row .form-group {
+    margin-bottom: 0.25rem;
+}
+
+/* ---- Right-panel empty/error/loading placeholders ---- */
+
+.bulk-email-edit-empty,
+.bulk-email-edit-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    min-height: 20rem;
+    text-align: center;
+    color: var(--bc-type-color-secondary);
+    padding: 2rem;
+}
+
+/* ---- EmailsWidget reuse: hide actions that don't apply inside the bulk-send edit panel.
+   Sending happens only via the bottom "Send" button once the whole batch is valid; Save/Discard
+   stay available so the user can fix and persist a draft in place. ---- */
+.bulk-email-edit-panel #btn-send-top,
+.bulk-email-edit-panel #btn-send-dropdown,
+.bulk-email-edit-panel #btn-new-email,
+.bulk-email-edit-panel #btn-send-close-top,
+.bulk-email-edit-panel #email-alert-readonly {
+    display: none !important;
+}

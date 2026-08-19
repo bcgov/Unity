@@ -87,7 +87,6 @@ $(function () {
 
             messageInput.val('');
         } catch (error) {
-            console.error('Failed to send realtime message.', error);
             if (window.abp && abp.notify && typeof abp.notify.error === 'function') {
                 abp.notify.error(l('RealtimeOps:MessageSendFailed'));
             }
