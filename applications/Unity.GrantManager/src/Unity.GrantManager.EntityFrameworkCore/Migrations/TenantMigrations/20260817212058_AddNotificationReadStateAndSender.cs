@@ -42,11 +42,6 @@ public partial class AddNotificationMessagingTables : Migration
                 CONSTRAINT ""PK_NotificationLogs"" PRIMARY KEY (""Id"")
             );
 
-            ALTER TABLE ""Notifications"".""NotificationLogs""
-                ADD COLUMN IF NOT EXISTS ""SenderUserId"" uuid;
-            ALTER TABLE ""Notifications"".""NotificationLogs""
-                ADD COLUMN IF NOT EXISTS ""SenderDisplayName"" character varying(256);
-
             CREATE INDEX IF NOT EXISTS ""IX_NotificationLogs_CorrelationId""
                 ON ""Notifications"".""NotificationLogs"" (""CorrelationId"");
             CREATE INDEX IF NOT EXISTS ""IX_NotificationLogs_NotificationType_CreationTime""

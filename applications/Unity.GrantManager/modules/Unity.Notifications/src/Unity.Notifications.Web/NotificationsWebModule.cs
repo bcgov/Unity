@@ -170,12 +170,14 @@ public class NotificationsWebModule : AbpModule
     {
         var host = configuration[RedisHostKey];
         var port = configuration[RedisPortKey];
+        var password = configuration[RedisPasswordKey];
 
         if (string.IsNullOrWhiteSpace(host) || string.IsNullOrWhiteSpace(port))
         {
             return string.Empty;
         }
 
-        return $"{host}:{port},password={configuration[RedisPasswordKey]},abortConnect=false";
+        var passwordSegment = string.IsNullOrWhiteSpace(password) ? string.Empty : $",password={password}";
+        return $"{host}:{port}{passwordSegment},abortConnect=false";
     }
 }

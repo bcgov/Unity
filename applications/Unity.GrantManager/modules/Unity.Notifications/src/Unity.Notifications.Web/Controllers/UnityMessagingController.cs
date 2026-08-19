@@ -98,6 +98,11 @@ public class UnityMessagingController : AbpControllerBase
             return BadRequest("TargetTenantId and Message are required.");
         }
 
+        if (currentTenant.Id.HasValue && currentTenant.Id.Value != request.TargetTenantId)
+        {
+            return Forbid();
+        }
+
         var senderUserId = CurrentUser.Id?.ToString() ?? "unknown";
         var senderName = DisplayNameHelper.Resolve(CurrentUser);
 

@@ -67,13 +67,6 @@
   dependencies:
     "@abp/utils" "~10.5.0"
 
-"@abp/core@~10.6.0":
-  version "10.6.0"
-  resolved "https://registry.yarnpkg.com/@abp/core/-/core-10.6.0.tgz#604018588e331db3e40d2179c6232b6918cc640e"
-  integrity sha512-iF175HkoSmD6j6qhdhDA/m5kd80YrdW06T+xsl/xo9K4U5zbpu3hR7uq1hpt8+CqBh6IYDsuaU6EB/b1MuUItg==
-  dependencies:
-    "@abp/utils" "~10.6.0"
-
 "@abp/datatables.net-bs5@~10.5.0":
   version "10.5.0"
   resolved "https://registry.yarnpkg.com/@abp/datatables.net-bs5/-/datatables.net-bs5-10.5.0.tgz#21b0e2ae9c78473980dedf89a07fdcb72f31bee2"
@@ -169,12 +162,12 @@
     "@abp/core" "~10.5.0"
     select2 "^4.0.13"
 
-"@abp/signalr@~10.6.0":
-  version "10.6.0"
-  resolved "https://registry.yarnpkg.com/@abp/signalr/-/signalr-10.6.0.tgz#89f9fadd0169f3e4bb23e3df31b10ec2473b789f"
-  integrity sha512-A5OEtemXnja2N7QkaRPEtE5sb1mSwd2fg9ZwteFOqoZm4MFJ1CMMqcQYChSloGz5rJzbxO76BBxm8Gf98Ki+AQ==
+"@abp/signalr@~10.5.0":
+  version "10.5.0"
+  resolved "https://registry.yarnpkg.com/@abp/signalr/-/signalr-10.5.0.tgz#009eff8e23f5eb2ce441d09950aa0e0f051c56da"
+  integrity sha512-/t8QdgPONmeVpE3YCKrVT50jvach5hXZ4yfR0lC96jsjCsy58d61DLa+J4r7c2KcHEL90iDFU/aTj9peK8FyRg==
   dependencies:
-    "@abp/core" "~10.6.0"
+    "@abp/core" "~10.5.0"
     "@microsoft/signalr" "~9.0.6"
 
 "@abp/sweetalert2@~10.5.0":
@@ -197,13 +190,6 @@
   version "10.5.0"
   resolved "https://registry.yarnpkg.com/@abp/utils/-/utils-10.5.0.tgz#d0c5cb23b2ad9c74fb5e0b9ecfa4fe96bbd3240a"
   integrity sha512-00mcBklr6+/4HzmR1BjWSupUPjsjrzcPXsuWyJH9ylyLfaIEh13uzHqwpw3goCNsAf1NU9MaOdqlIbGAaNB9cA==
-  dependencies:
-    just-compare "^2.3.0"
-
-"@abp/utils@~10.6.0":
-  version "10.6.0"
-  resolved "https://registry.yarnpkg.com/@abp/utils/-/utils-10.6.0.tgz#6ff03d75b7b22a1e83b7a0149a3f6ff54bf30b69"
-  integrity sha512-dQaHPKNKcsyeyCot28UOwOhU5ykS6tqVVNXqRvQrrQIvqj5tOAGtWMeXRP1eP47JRCmF4kOgOSZcMvVnuoUrUQ==
   dependencies:
     just-compare "^2.3.0"
 

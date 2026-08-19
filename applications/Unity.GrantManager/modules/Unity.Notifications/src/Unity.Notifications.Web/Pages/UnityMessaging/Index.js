@@ -71,13 +71,15 @@ $(function () {
                 await abp.ajax({
                     url: '/api/notifications/unity-messaging/message-user',
                     type: 'POST',
-                    data: JSON.stringify({ targetUserId: id, message })
+                    data: JSON.stringify({ targetUserId: id, message }),
+                    contentType: 'application/json'
                 });
             } else if (kind === 'tenant') {
                 await abp.ajax({
                     url: '/api/notifications/unity-messaging/message-tenant',
                     type: 'POST',
-                    data: JSON.stringify({ targetTenantId: id, message })
+                    data: JSON.stringify({ targetTenantId: id, message }),
+                    contentType: 'application/json'
                 });
             } else {
                 return;
