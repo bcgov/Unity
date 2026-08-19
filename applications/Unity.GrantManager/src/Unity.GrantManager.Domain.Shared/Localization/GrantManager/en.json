@@ -642,7 +642,10 @@
 
     "WrongTenantError:Title": "An Error Occurred",
     "WrongTenantError:ApplicationTenant": "This application is in Tenant: {0}",
+    "WrongTenantError:ApplicantTenant": "This applicant is in Tenant: {0}",
     "WrongTenantError:CurrentTenant": "You are currently in Tenant: {0}",
-    "WrongTenantError:Instructions": "Please click on the Profile menu at the top right of the corner, click on Switch Grant Programs, and select the correct Tenant before proceeding to view the link."
+    "WrongTenantError:Instructions": "Please click on the Profile menu at the top right of the corner, click on Switch Grant Programs, and select the correct Tenant before proceeding to view the link.",
+    "WrongTenantError:ApplicantNotFoundPossibleTenant": "This applicant was not found in the current Tenant and may exist in another Tenant.",
+    "WrongTenantError:ApplicationNotFoundPossibleTenant": "This application was not found in the current Tenant and may exist in another Tenant."
   }
 }
