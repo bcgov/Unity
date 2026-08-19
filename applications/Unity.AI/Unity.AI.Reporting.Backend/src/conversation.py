@@ -40,7 +40,7 @@ def previous_turn(past_questions: Optional[List[Dict]]) -> Optional[Dict]:
     entry generated with context would be stored as though it had none — the
     original bug, reintroduced.
     """
-    if not past_questions or len(past_questions) < 2:
+    if not isinstance(past_questions, list) or len(past_questions) < 2:
         return None
 
     candidate = past_questions[-2]
