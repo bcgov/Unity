@@ -27,13 +27,12 @@
             return;
         }
 
-        if (!window.abp || !abp.currentUser || !abp.currentUser.isAuthenticated) {
+        if (!window.abp?.currentUser?.isAuthenticated) {
             return;
         }
 
-        const l = (window.abp.localization && abp.localization.getResource)
-            ? abp.localization.getResource('Notifications')
-            : function (key) { return key; };
+        const l = window.abp?.localization?.getResource?.('Notifications')
+            || function (key) { return key; };
 
         const myUserId = abp.currentUser.id || null;
 
@@ -54,12 +53,12 @@
             .build();
 
         connection.on('directMessageReceived', function (eventData) {
-            const scope = (eventData && eventData.scope) || 'user';
-            const sender = (eventData && (eventData.senderName || eventData.senderId)) || 'unknown';
-            const senderId = eventData && eventData.senderId;
-            const message = (eventData && eventData.message) || '';
+            const scope = eventData?.scope || 'user';
+            const sender = eventData?.senderName || eventData?.senderId || 'unknown';
+            const senderId = eventData?.senderId;
+            const message = eventData?.message || '';
             const targetId = scope === 'tenant'
-                ? eventData.tenantId || (currentTenant && currentTenant.id)
+                ? eventData?.tenantId || currentTenant?.id
                 : senderId;
 
             if (!targetId) {
@@ -67,7 +66,7 @@
             }
 
             const mode = scope === 'tenant' ? 'tenant' : 'individual';
-            addMessage(mode, targetId, sender, senderId, message, eventData && eventData.timestamp);
+            addMessage(mode, targetId, sender, senderId, message, eventData?.timestamp);
 
             if (scope === 'user') {
                 activeMode = 'individual';
@@ -177,7 +176,7 @@
 
         function applyPeers(result) {
             peers = (Array.isArray(result) ? result : []).filter(function (p) {
-                return p && p.userId && p.userId !== myUserId;
+                return p?.userId && p.userId !== myUserId;
             });
             renderTargetOptions();
         }
@@ -238,12 +237,12 @@
         }
 
         function getPeerStatus(peer) {
-            if (!peer || !peer.isOnline) {
+            if (!peer?.isOnline) {
                 return { className: 'offline', label: l('RealtimeWidget:StatusOffline') };
             }
 
             const lastActivity = peer.lastActivityUtc ? new Date(peer.lastActivityUtc) : null;
-            const ageMs = lastActivity && !isNaN(lastActivity.getTime())
+            const ageMs = lastActivity && !Number.isNaN(lastActivity.getTime())
                 ? Date.now() - lastActivity.getTime()
                 : Number.POSITIVE_INFINITY;
 
@@ -325,7 +324,7 @@
                 unreadCount += 1;
                 updateBadge();
                 widget.bubble.classList.remove('rt-widget-bounce');
-                void widget.bubble.offsetWidth;
+                widget.bubble.offsetWidth;
                 widget.bubble.classList.add('rt-widget-bounce');
             }
 
@@ -390,7 +389,7 @@
 
         function formatTime(value) {
             const date = value ? new Date(value) : new Date();
-            return isNaN(date.getTime()) ? '' : date.toLocaleTimeString();
+            return Number.isNaN(date.getTime()) ? '' : date.toLocaleTimeString();
         }
 
         function updateBadge() {
@@ -417,7 +416,7 @@
                 return;
             }
 
-            if (window.abp && abp.notify && typeof abp.notify.info === 'function') {
+            if (window.abp?.notify?.info && typeof window.abp.notify.info === 'function') {
                 abp.notify.info(`${sender}: ${message}`);
             }
         }
@@ -445,7 +444,7 @@
         }
 
         function escapeAttribute(value) {
-            return escapeHtml(value).replace(/"/g, '&quot;');
+            return escapeHtml(value).replaceAll('"', '&quot;');
         }
 
         function buildWidget() {

@@ -197,7 +197,8 @@ $(function () {
 
         try {
             await connection.start();
-        } catch {
+        } catch (error) {
+            console.error('Unable to connect to the realtime messaging hub.', error);
         }
     }
 
@@ -348,7 +349,7 @@ $(function () {
     }
 
     async function loadTenants() {
-        if (!window.unity || !unity.tenantManagement || !unity.tenantManagement.tenant) {
+        if (!window.unity?.tenantManagement?.tenant) {
             return;
         }
 
@@ -357,8 +358,8 @@ $(function () {
                 maxResultCount: 1000
             });
 
-            const tenants = (result && result.items ? result.items : [])
-                .filter(t => !!t && !!t.id)
+            const tenants = (result?.items || [])
+                .filter(t => t?.id)
                 .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
             tenantNamesById = {};
@@ -394,16 +395,17 @@ $(function () {
         const currentValue = sendTarget.val();
         const selectedTenantId = sendTenantFilter.val();
 
-        const options = messageMode === 'tenant'
-            ? availableTenants
+        let options = '';
+        if (messageMode === 'tenant') {
+            options = availableTenants
                 .map(t => `<option value="tenant:${sanitizeHtml(t.id)}">${sanitizeHtml(t.name || t.id)}</option>`)
                 .join('')
-            : selectedTenantId
-                ? lastKnownUsers
+        } else if (selectedTenantId) {
+            options = lastKnownUsers
                 .filter(u => !!u && !!u.userId && u.tenantId === selectedTenantId)
                 .map(u => `<option value="user:${sanitizeHtml(u.userId)}">${sanitizeHtml(u.userName || u.userId)}</option>`)
-                .join('')
-                : '';
+                .join('');
+        }
 
         sendTarget.html(`
             <option value=""></option>
@@ -464,7 +466,7 @@ $(function () {
 
     function getActivityStatus(lastActivityUtc) {
         const lastActivity = lastActivityUtc ? new Date(lastActivityUtc) : null;
-        const ageMs = lastActivity && !isNaN(lastActivity.getTime())
+        const ageMs = lastActivity && !Number.isNaN(lastActivity.getTime())
             ? Date.now() - lastActivity.getTime()
             : Number.POSITIVE_INFINITY;
 

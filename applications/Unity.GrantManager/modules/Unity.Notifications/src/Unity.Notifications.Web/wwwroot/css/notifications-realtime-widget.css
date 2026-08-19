@@ -107,7 +107,7 @@
 }
 
 .rt-widget-empty {
-    color: #6c757d;
+    color: #495057;
     text-align: center;
     padding: 20px 0;
     font-size: 0.9rem;
@@ -126,7 +126,7 @@
     display: flex;
     justify-content: space-between;
     font-size: 0.75rem;
-    color: #6c757d;
+    color: #495057;
     margin-bottom: 2px;
 }
 
@@ -137,7 +137,7 @@
 
 .rt-widget-message-text {
     font-size: 0.9rem;
-    word-break: break-word;
+    overflow-wrap: anywhere;
     white-space: pre-wrap;
 }
 
@@ -279,7 +279,7 @@
 
 .rt-status-legend {
     font-size: 0.8rem;
-    color: #6c757d;
+    color: #495057;
 }
 
 .rt-status-legend .rt-status-dot {
