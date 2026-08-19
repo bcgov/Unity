@@ -6,6 +6,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Unity.GrantManager.Logs;
+using Volo.Abp.MultiTenancy;
+using Volo.Abp.Users;
 using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Web.Middleware;
@@ -63,6 +65,24 @@ public sealed class ErrorCountingLoggerSink : ILogEventSink
             return;
         }
 
+        Guid? tenantId = null;
+        Guid? userId = null;
+        string? userName = null;
+
+        try
+        {
+            using var metadataScope = scopeFactory.CreateScope();
+            var currentTenant = metadataScope.ServiceProvider.GetRequiredService<ICurrentTenant>();
+            var currentUser = metadataScope.ServiceProvider.GetRequiredService<ICurrentUser>();
+            tenantId = currentTenant.Id;
+            userId = currentUser.Id;
+            userName = AbpUserTenantAccessor.GetCurrentUserName(metadataScope.ServiceProvider);
+        }
+        catch
+        {
+            // Persistence is best-effort; continue with host/unknown metadata.
+        }
+
         lock (_persistenceGate)
         {
             if (_persistenceInFlight || DateTimeOffset.UtcNow < _persistenceDisabledUntil)
@@ -73,77 +93,81 @@ public sealed class ErrorCountingLoggerSink : ILogEventSink
             _persistenceInFlight = true;
         }
 
-        _ = Task.Run(async () =>
+        // Do not inherit the request's ambient ABP unit of work. The request may be
+        // disposing its DbContext while this fire-and-forget persistence is running.
+        using (ExecutionContext.SuppressFlow())
         {
-            IsPersistingExceptionLog.Value = true;
-
-            try
+            _ = Task.Run(async () =>
             {
-                await using var scope = scopeFactory.CreateAsyncScope();
-                var exceptionLogs = scope.ServiceProvider.GetService<IExceptionLogAppService>();
+                IsPersistingExceptionLog.Value = true;
 
-                if (exceptionLogs == null)
+                try
                 {
-                    return;
+                    await using var scope = scopeFactory.CreateAsyncScope();
+                    var exceptionLogs = scope.ServiceProvider.GetService<IExceptionLogAppService>();
+
+                    if (exceptionLogs == null)
+                    {
+                        return;
+                    }
+
+                    using (scope.ServiceProvider.GetRequiredService<ICurrentTenant>().Change(tenantId))
+                    {
+                        var frame = logEvent.Exception == null
+                            ? null
+                            : ExceptionNotificationHelpers.GetTopFrame(logEvent.Exception);
+                        string? sourceFile = frame?.File == null
+                            ? null
+                            : ExceptionNotificationHelpers.NormalizeRepoPath(frame.Value.File);
+
+                        // A fresh unit of work owns the context used by the background write.
+                        using var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWorkManager>()
+                            .Begin(requiresNew: true, isTransactional: false);
+
+                        await exceptionLogs.CreateAsync(new CreateExceptionLogDto
+                        {
+                            UserId = userId,
+                            UserName = userName,
+                            TenantName = await AbpUserTenantAccessor.GetCurrentTenantNameAsync(scope.ServiceProvider),
+                            NotificationType = logEvent.Exception == null
+                                ? ExceptionLogType.PrometheusErrorCounterEvent
+                                : ExceptionLogType.PrometheusExceptionCounterEvent,
+                            Channel = ExceptionLogChannel.Prometheus,
+                            Severity = logEvent.Level >= LogEventLevel.Fatal
+                                ? ExceptionLogSeverity.Critical
+                                : ExceptionLogSeverity.Error,
+                            Title = "Prometheus Error Counter Event",
+                            Message = logEvent.RenderMessage(),
+                            Source = nameof(ErrorCountingLoggerSink),
+                            IsDeliveredRealtime = false,
+                            ExceptionType = logEvent.Exception?.GetType().FullName,
+                            ExceptionMessage = logEvent.Exception?.Message,
+                            StackExcerpt = logEvent.Exception?.StackTrace,
+                            SourceFile = sourceFile,
+                            SourceLine = frame?.Line,
+                            Environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+                        });
+
+                        await uow.CompleteAsync();
+                    }
                 }
-
-                var frame = logEvent.Exception == null
-                    ? null
-                    : ExceptionNotificationHelpers.GetTopFrame(logEvent.Exception);
-                string? sourceFile = frame?.File == null
-                    ? null
-                    : ExceptionNotificationHelpers.NormalizeRepoPath(frame.Value.File);
-
-                // Isolate this from whatever ambient unit of work/DbContext happens to be flowing
-                // through the captured ExecutionContext (e.g. the request that triggered this log
-                // event may still be mid-operation on its own DbContext) - without requiresNew,
-                // ABP's implicit [UnitOfWork] on CreateAsync would join that ambient one instead of
-                // getting its own, causing "a second operation was started on this context instance".
-                using var uow = scope.ServiceProvider.GetRequiredService<IUnitOfWorkManager>()
-                    .Begin(requiresNew: true, isTransactional: false);
-
-                await exceptionLogs.CreateAsync(new CreateExceptionLogDto
+                catch
                 {
-                    UserId = AbpUserTenantAccessor.GetCurrentUserId(scope.ServiceProvider),
-                    UserName = AbpUserTenantAccessor.GetCurrentUserName(scope.ServiceProvider),
-                    TenantName = await AbpUserTenantAccessor.GetCurrentTenantNameAsync(scope.ServiceProvider),
-                    NotificationType = logEvent.Exception == null
-                        ? ExceptionLogType.PrometheusErrorCounterEvent
-                        : ExceptionLogType.PrometheusExceptionCounterEvent,
-                    Channel = ExceptionLogChannel.Prometheus,
-                    Severity = logEvent.Level >= LogEventLevel.Fatal
-                        ? ExceptionLogSeverity.Critical
-                        : ExceptionLogSeverity.Error,
-                    Title = "Prometheus Error Counter Event",
-                    Message = logEvent.RenderMessage(),
-                    Source = nameof(ErrorCountingLoggerSink),
-                    IsDeliveredRealtime = false,
-                    ExceptionType = logEvent.Exception?.GetType().FullName,
-                    ExceptionMessage = logEvent.Exception?.Message,
-                    StackExcerpt = logEvent.Exception?.StackTrace,
-                    SourceFile = sourceFile,
-                    SourceLine = frame?.Line,
-                    Environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
-                });
-
-                await uow.CompleteAsync();
-            }
-            catch
-            {
-                lock (_persistenceGate)
-                {
-                    _persistenceDisabledUntil = DateTimeOffset.UtcNow.Add(PersistenceBackoff);
+                    lock (_persistenceGate)
+                    {
+                        _persistenceDisabledUntil = DateTimeOffset.UtcNow.Add(PersistenceBackoff);
+                    }
                 }
-            }
-            finally
-            {
-                IsPersistingExceptionLog.Value = false;
-
-                lock (_persistenceGate)
+                finally
                 {
-                    _persistenceInFlight = false;
+                    IsPersistingExceptionLog.Value = false;
+
+                    lock (_persistenceGate)
+                    {
+                        _persistenceInFlight = false;
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 }
