@@ -699,37 +699,6 @@ class CacheRepository:
                     }
         return None
 
-    def find_similar(self, tenant_id: str, db_id: int, schema_types: list,
-                     collection_name: str, embedding: list,
-                     threshold: float, context_key: str) -> Optional[Dict[str, Any]]:
-        """Layer 2: cosine similarity search via pgvector."""
-        fp = self.build_fingerprint(db_id, schema_types, collection_name)
-        embedding_str = "[" + ",".join(str(v) for v in embedding) + "]"
-        with self.db.get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute("SET hnsw.ef_search = 64")
-                cur.execute("""
-                    SELECT cache_id, response_payload,
-                           1 - (query_embedding <=> %s::halfvec) AS similarity
-                    FROM query_cache
-                    WHERE tenant_id = %s
-                      AND db_id = %s
-                      AND schema_fingerprint = %s
-                      AND context_key = %s
-                      AND 1 - (query_embedding <=> %s::halfvec) >= %s
-                    ORDER BY query_embedding <=> %s::halfvec
-                    LIMIT 1
-                """, (embedding_str, tenant_id, db_id, fp, context_key,
-                      embedding_str, threshold, embedding_str))
-                row = cur.fetchone()
-                if row:
-                    return {
-                        "cache_id": str(row[0]),
-                        "response_payload": row[1],
-                        "similarity": float(row[2])
-                    }
-        return None
-
     def find_similar_topk(
         self, tenant_id: str, db_id: int, schema_types: list,
         collection_name: str, embedding: list,
