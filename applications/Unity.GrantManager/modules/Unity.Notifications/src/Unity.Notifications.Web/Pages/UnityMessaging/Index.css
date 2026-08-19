@@ -1,0 +1,118 @@
+.messaging-split-layout {
+    display: flex;
+    align-items: stretch;
+    gap: 1rem;
+    width: 100%;
+    margin-bottom: 1rem;
+    min-width: 0;
+}
+
+.messaging-split-panel {
+    flex: 0 1 50%;
+    width: 50%;
+    min-width: 0;
+    margin-bottom: 0;
+    overflow: hidden;
+}
+
+.messaging-split-panel .card-body {
+    min-width: 0;
+    overflow: auto;
+}
+
+.messaging-split-divider {
+    width: 8px;
+    flex: 0 0 8px;
+    border-left: 1px solid #ced4da;
+    border-right: 1px solid #ced4da;
+    background: #dee2e6;
+    cursor: col-resize;
+    align-self: stretch;
+}
+
+.messaging-split-divider:hover,
+.messaging-split-divider:focus {
+    background: #adb5bd;
+    outline: none;
+}
+
+.messaging-activity-card {
+    display: flex;
+    flex-direction: column;
+    min-height: 320px;
+    height: calc(100vh - 390px);
+    overflow: hidden;
+}
+
+.messaging-activity-card > .card-header {
+    flex: 0 0 auto;
+}
+
+.messaging-activity-card > .card-body {
+    flex: 0 0 auto;
+}
+
+.messaging-activity-card > .card-body.p-0 {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.messaging-activity-card #UnityMessagingActivityTable_wrapper,
+.messaging-activity-card #UnityMessagingActivityTable_wrapper .dt-container,
+.messaging-activity-card #UnityMessagingActivityTable_wrapper .dt-layout-table,
+.messaging-activity-card #UnityMessagingActivityTable_wrapper .dt-scroll {
+    min-height: 0;
+}
+
+.messaging-activity-card #UnityMessagingActivityTable_wrapper,
+.messaging-activity-card #UnityMessagingActivityTable_wrapper .dt-container {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.messaging-activity-card #UnityMessagingActivityTable_wrapper .dt-layout-table,
+.messaging-activity-card #UnityMessagingActivityTable_wrapper .dt-scroll {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.messaging-activity-card #UnityMessagingActivityTable_wrapper .dt-scroll-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none !important;
+    overflow: auto !important;
+}
+
+.messaging-activity-card #UnityMessagingActivityTable_wrapper .dt-layout-row:last-child {
+    flex: 0 0 auto;
+    min-height: 48px;
+    margin: 0;
+    padding: 0.5rem 0;
+    background: var(--bs-card-bg, #fff);
+}
+
+@media (max-width: 992px) {
+    .messaging-split-layout {
+        flex-direction: column;
+    }
+
+    .messaging-split-panel {
+        width: 100%;
+    }
+
+    .messaging-split-divider {
+        display: none;
+    }
+
+    .messaging-activity-card {
+        height: auto;
+        min-height: 420px;
+    }
+}

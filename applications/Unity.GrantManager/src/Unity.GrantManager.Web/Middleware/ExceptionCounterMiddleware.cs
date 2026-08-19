@@ -42,7 +42,7 @@ public class ExceptionCounterMiddleware(
             "Total number of application exceptions",
             new CounterConfiguration
             {
-                LabelNames = new[] { "type" }
+                LabelNames = ["type"]
             });
 
     internal static readonly string CommitSha = ParseCommitSha(
@@ -194,7 +194,7 @@ public class ExceptionCounterMiddleware(
                                 if (blame != null)
                                 {
                                     facts.Add(new Fact { Name = "Author", Value = $"{blame.Author} <{blame.Email}>" });
-                                    var shortSha = !string.IsNullOrEmpty(blame.CommitSha) && blame.CommitSha.Length > 7 ? blame.CommitSha.Substring(0, 7) : blame.CommitSha;
+                                    var shortSha = !string.IsNullOrEmpty(blame.CommitSha) && blame.CommitSha.Length > 7 ? blame.CommitSha[..7] : blame.CommitSha;
                                     facts.Add(new Fact { Name = "Commit", Value = $"{shortSha} {blame.Message}" });
 
                                     if (blame.PullRequestUrl != null)
