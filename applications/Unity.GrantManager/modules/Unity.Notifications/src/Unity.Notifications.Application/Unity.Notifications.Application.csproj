@@ -30,6 +30,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="..\Unity.Notifications.Web\Views\EmailTemplates\*.cshtml"
+                      LogicalName="Unity.Notifications.EmailTemplates.%(Filename)%(Extension)" />
     <PackageReference Update="ConfigureAwait.Fody" Version="3.4.1" />
     <PackageReference Update="Fody" Version="6.9.3">
       <PrivateAssets>all</PrivateAssets>
