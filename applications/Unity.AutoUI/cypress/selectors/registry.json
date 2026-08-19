@@ -1,15 +1,15 @@
 {
   "schemaVersion": 2,
   "mode": "report-only",
-  "generatedAt": "2026-08-19T15:19:21.451Z",
+  "generatedAt": "2026-08-19T20:53:21.994Z",
   "summary": {
-    "total": 365,
-    "matched": 147,
-    "missing": 41,
-    "unverified": 85,
-    "exempt": 92,
+    "total": 360,
+    "matched": 146,
+    "missing": 42,
+    "unverified": 81,
+    "exempt": 91,
     "syntax": {
-      "css": 365,
+      "css": 360,
       "xpath": 0
     }
   },
@@ -718,19 +718,6 @@
       "missingTokens": [],
       "usedBy": [
         "applications/Unity.AutoUI/cypress/pages/ListPages.ts:362"
-      ],
-      "applicationMatches": []
-    },
-    {
-      "selector": "[data-test=\"idir\"]",
-      "kind": "css",
-      "syntaxKind": "css",
-      "ownership": "unclassified",
-      "status": "unverified",
-      "missingTokens": [],
-      "usedBy": [
-        "applications/Unity.AutoUI/cypress/scripts/chefs-api-submission-with-attachment.cy.ts:178",
-        "applications/Unity.AutoUI/cypress/scripts/chefs-api-submission-with-pdf-pptx-attachments.cy.ts:170"
       ],
       "applicationMatches": []
     },
@@ -1789,6 +1776,7 @@
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260806202244_AB33799_FixCheckboxGroupEmptyValues.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260807224046_AB33996_AddApplicantFiscalYearEndRestricted.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260813164219_AB33234_ApplicantPortalExternalLinks.Designer.cs",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260818211028_AB33234_ExternalLinksApplicantMessage.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/GrantTenantDbContextModelSnapshot.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/GrantApplications/Details.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/GrantApplications/Details.js",
@@ -1847,6 +1835,7 @@
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260806202244_AB33799_FixCheckboxGroupEmptyValues.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260807224046_AB33996_AddApplicantFiscalYearEndRestricted.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260813164219_AB33234_ApplicantPortalExternalLinks.Designer.cs",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260818211028_AB33234_ExternalLinksApplicantMessage.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/GrantTenantDbContextModelSnapshot.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/AssigneeSelection/AssigneeSelectionModal.cshtml"
       ]
@@ -2331,14 +2320,14 @@
       "kind": "id",
       "syntaxKind": "css",
       "ownership": "application",
-      "status": "matched",
-      "missingTokens": [],
+      "status": "missing",
+      "missingTokens": [
+        "id:ContactInfo_Phone"
+      ],
       "usedBy": [
         "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:136"
       ],
-      "applicationMatches": [
-        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantInfo/Default.cshtml"
-      ]
+      "applicationMatches": []
     },
     {
       "selector": "#ContactInfo_Phone2",
@@ -2999,21 +2988,6 @@
       ]
     },
     {
-      "selector": "#loginButton",
-      "kind": "id",
-      "syntaxKind": "css",
-      "ownership": "external",
-      "status": "exempt",
-      "missingTokens": [
-        "id:loginButton"
-      ],
-      "usedBy": [
-        "applications/Unity.AutoUI/cypress/scripts/chefs-api-submission-with-attachment.cy.ts:176",
-        "applications/Unity.AutoUI/cypress/scripts/chefs-api-submission-with-pdf-pptx-attachments.cy.ts:168"
-      ],
-      "applicationMatches": []
-    },
-    {
       "selector": "#main-left",
       "kind": "id",
       "syntaxKind": "css",
@@ -3189,6 +3163,7 @@
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260806202244_AB33799_FixCheckboxGroupEmptyValues.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260807224046_AB33996_AddApplicantFiscalYearEndRestricted.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260813164219_AB33234_ApplicantPortalExternalLinks.Designer.cs",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260818211028_AB33234_ExternalLinksApplicantMessage.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/GrantTenantDbContextModelSnapshot.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/ApplicantHistory/ReportsHistoryModalViewModel.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantHistory/Default.js",
@@ -3205,8 +3180,6 @@
       "missingTokens": [],
       "usedBy": [
         "applications/Unity.AutoUI/cypress/pages/LoginPage.ts:13",
-        "applications/Unity.AutoUI/cypress/scripts/chefs-api-submission-with-attachment.cy.ts:193",
-        "applications/Unity.AutoUI/cypress/scripts/chefs-api-submission-with-pdf-pptx-attachments.cy.ts:185",
         "applications/Unity.AutoUI/cypress/support/commands.ts:185",
         "applications/Unity.AutoUI/cypress/support/commands.ts:24"
       ],
@@ -3466,6 +3439,7 @@
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260806202244_AB33799_FixCheckboxGroupEmptyValues.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260807224046_AB33996_AddApplicantFiscalYearEndRestricted.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260813164219_AB33234_ApplicantPortalExternalLinks.Designer.cs",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260818211028_AB33234_ExternalLinksApplicantMessage.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/GrantTenantDbContextModelSnapshot.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/GrantApplications/Index.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantSubmissions/Default.js",
@@ -3791,6 +3765,7 @@
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260806202244_AB33799_FixCheckboxGroupEmptyValues.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260807224046_AB33996_AddApplicantFiscalYearEndRestricted.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260813164219_AB33234_ApplicantPortalExternalLinks.Designer.cs",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260818211028_AB33234_ExternalLinksApplicantMessage.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/GrantTenantDbContextModelSnapshot.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantInfo/Default.js"
       ]
@@ -3887,8 +3862,6 @@
       "missingTokens": [],
       "usedBy": [
         "applications/Unity.AutoUI/cypress/pages/LoginPage.ts:12",
-        "applications/Unity.AutoUI/cypress/scripts/chefs-api-submission-with-attachment.cy.ts:188",
-        "applications/Unity.AutoUI/cypress/scripts/chefs-api-submission-with-pdf-pptx-attachments.cy.ts:180",
         "applications/Unity.AutoUI/cypress/support/commands.ts:182",
         "applications/Unity.AutoUI/cypress/support/commands.ts:184",
         "applications/Unity.AutoUI/cypress/support/commands.ts:21",
@@ -4374,18 +4347,6 @@
       "missingTokens": [],
       "usedBy": [
         "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:22"
-      ],
-      "applicationMatches": []
-    },
-    {
-      "selector": "environmental-impact-assessment.pdf",
-      "kind": "css",
-      "syntaxKind": "css",
-      "ownership": "unclassified",
-      "status": "unverified",
-      "missingTokens": [],
-      "usedBy": [
-        "applications/Unity.AutoUI/cypress/scripts/chefs-api-submission-with-attachment.cy.ts:228"
       ],
       "applicationMatches": []
     },
@@ -5030,30 +4991,6 @@
       "missingTokens": [],
       "usedBy": [
         "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:320"
-      ],
-      "applicationMatches": []
-    },
-    {
-      "selector": "project-overview-presentation.pptx",
-      "kind": "css",
-      "syntaxKind": "css",
-      "ownership": "unclassified",
-      "status": "unverified",
-      "missingTokens": [],
-      "usedBy": [
-        "applications/Unity.AutoUI/cypress/scripts/chefs-api-submission-with-attachment.cy.ts:234"
-      ],
-      "applicationMatches": []
-    },
-    {
-      "selector": "project-supporting-document.txt",
-      "kind": "css",
-      "syntaxKind": "css",
-      "ownership": "unclassified",
-      "status": "unverified",
-      "missingTokens": [],
-      "usedBy": [
-        "applications/Unity.AutoUI/cypress/scripts/chefs-api-submission-with-attachment.cy.ts:223"
       ],
       "applicationMatches": []
     },

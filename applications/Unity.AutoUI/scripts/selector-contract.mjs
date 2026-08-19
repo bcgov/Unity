@@ -3,6 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
 import ts from "typescript";
 
 export const autoUiRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -37,6 +38,33 @@ export function walk(root, extensions) {
     }
   }
   return results;
+}
+
+// Only scan files git actually tracks — a raw filesystem walk would also
+// pick up local scratch/untracked files (e.g. a spec someone is drafting
+// but never committed), which would leak into usedBy/applicationMatches in
+// the committed registry and be internally inconsistent for anyone who
+// doesn't have those same untracked files sitting on disk. Falls back to
+// the plain filesystem walk if git isn't available at all (e.g. a tarball
+// checkout with no .git directory).
+export function trackedFiles(root, extensions) {
+  const relRoot = path.relative(repoRoot, root);
+  try {
+    const output = execFileSync("git", ["ls-files", "--", relRoot], {
+      cwd: repoRoot,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    return output
+      .split("\n")
+      .filter(Boolean)
+      .map((tracked) => path.join(repoRoot, tracked))
+      .filter((fullPath) => extensions.has(path.extname(fullPath).toLowerCase()))
+      .filter((fullPath) => !fullPath.includes(`${path.sep}wwwroot${path.sep}libs${path.sep}`))
+      .sort();
+  } catch {
+    return walk(root, extensions);
+  }
 }
 
 function selectorText(node, sourceFile) {
@@ -75,7 +103,7 @@ export function syntaxKind(selector, usedViaXpathCall) {
 export function extractSelectors(config) {
   const files = config.cypressRoots
     .map((root) => path.join(repoRoot, root))
-    .flatMap((root) => walk(root, new Set([".ts", ".tsx", ".js", ".jsx"])))
+    .flatMap((root) => trackedFiles(root, new Set([".ts", ".tsx", ".js", ".jsx"])))
     .sort();
   const selectors = new Map();
   for (const file of files) {
@@ -138,7 +166,7 @@ export function buildNeedles(token) {
 export function applicationIndex(config) {
   return config.applicationRoots
     .map((root) => path.join(repoRoot, root))
-    .flatMap((root) => walk(root, new Set([".cshtml", ".razor", ".html", ".js", ".ts", ".tsx", ".cs"])))
+    .flatMap((root) => trackedFiles(root, new Set([".cshtml", ".razor", ".html", ".js", ".ts", ".tsx", ".cs"])))
     .sort()
     .map((file) => ({ file: path.relative(repoRoot, file).replaceAll(path.sep, "/"), text: fs.readFileSync(file, "utf8") }));
 }
