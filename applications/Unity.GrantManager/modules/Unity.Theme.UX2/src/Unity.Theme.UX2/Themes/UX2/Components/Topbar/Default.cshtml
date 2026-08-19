@@ -56,7 +56,10 @@
             @if (CurrentUser.IsInRole("ITOperations"))
             {
                 <abp-dropdown-item href="/UnityAdmin">Unity Admin</abp-dropdown-item>
-                <abp-dropdown-item href="/UnityMessaging">Unity Messaging</abp-dropdown-item>
+                @if (await FeatureChecker.IsEnabledAsync("Unity.Notifications.DirectMessaging"))
+                {
+                    <abp-dropdown-item href="/UnityMessaging">Unity Messaging</abp-dropdown-item>
+                }
                 <abp-dropdown-item href="/ExceptionLogs">Exception Logs</abp-dropdown-item>
             }
 
