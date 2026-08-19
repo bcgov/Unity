@@ -113,27 +113,9 @@
      * @returns
      */
     let toCamelCaseInternal = function (str) {
-        let regexs = [
-            /(^[A-Z])/, // first char of string
-            /((\.)[A-Z])/ // first char after a dot (.)
-        ];
-
-        regexs.forEach(
-            function (regex) {
-                let infLoopAvoider = 0;
-
-                while (regex.test(str)) {
-                    str = str
-                        .replace(regex, function ($1) { return $1.toLowerCase(); });
-
-                    if (infLoopAvoider++ > 1000) {
-                        break;
-                    }
-                }
-            }
-        );
-
-        return str;
+        return str
+            .replace(/^[A-Z]/, match => match.toLowerCase())
+            .replace(/\.[A-Z]/g, match => match.toLowerCase());
     }
 
     /**
