@@ -33,6 +33,10 @@ on:
         required: false
         type: string
         default: ""
+      git_ref:
+        description: "Branch/tag/SHA of bcgov/Unity to check out — must be the triggering commit, not github.sha (workflow_run events set github.sha to the default branch, not the triggering branch)"
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -69,7 +73,7 @@ jobs:
           JOB_REF=$(oc process unity-cypress-job \
             -p ENV=${{ inputs.env_name }} \
             -p CYPRESS_CONFIG_KEY=${{ inputs.cypress_config_key }} \
-            -p GIT_REF=$GITHUB_SHA \
+            -p GIT_REF="${{ inputs.git_ref }}" \
             -p GIT_TOKEN=$GH_TOKEN \
             -p BASE_URL="${{ inputs.base_url }}" \
             -n $TOOLS_NAMESPACE \
