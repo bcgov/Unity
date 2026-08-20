@@ -1,4 +1,10 @@
 (function () {
+    if (globalThis.__unityRealtimeWidgetInitialized) {
+        return;
+    }
+
+    globalThis.__unityRealtimeWidgetInitialized = true;
+
     whenReady(init);
 
     function whenReady(callback) {
@@ -293,6 +299,10 @@
             const message = widget.composeInput.value.trim();
 
             if (!targetId || !message) {
+                return;
+            }
+
+            if (message.length > 4000) {
                 return;
             }
 
