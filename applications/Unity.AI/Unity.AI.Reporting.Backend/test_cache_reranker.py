@@ -14,6 +14,12 @@ Covers:
   4. cached_entry_is_temporally_valid — the composed rule, exercised across a
      year boundary via the injected clock.
 
+Plus the conversation-context key (AB#34050):
+  5. conversation.previous_turn — which prior turn, if any, conditions this
+     request; malformed history must yield None rather than raise.
+  6. build_context_key — the ticket's repro pair must land on different keys,
+     including when only the predecessor's SQL differs.
+
 Everything under test is a pure function, so nothing is stubbed here. In
 particular llm_client is imported for real (via cache_reranker) rather than
 faked: a sys.modules stub would shadow it for any other test module sharing the
@@ -36,6 +42,19 @@ try:
     _OK = True
 except ImportError:  # pragma: no cover - e.g. rapidfuzz or the openai SDK missing
     _OK = False
+
+# conversation is stdlib-only, so it imports even where rapidfuzz/openai are absent.
+import conversation
+
+
+def _turn(question, sql="SELECT 1"):
+    """One answered conversation turn, in the shape the frontend posts."""
+    return {"question": question, "SQL": sql}
+
+
+# The in-flight turn the frontend appends before calling /api/ask: it always
+# carries an empty SQL, which is why the prior turn sits at [-2].
+_PENDING = {"question": "break it down by region", "SQL": ""}
 
 
 @unittest.skipUnless(_OK, "cache_reranker unavailable (rapidfuzz missing?)")
@@ -385,6 +404,156 @@ class TestCachedEntryIsTemporallyValid(unittest.TestCase):
             "How many applications this fiscal year?", self.PINNED_SQL,
             created_at=datetime(2026, 3, 31), now=datetime(2026, 4, 1),
         ))
+
+
+class TestPreviousTurn(unittest.TestCase):
+    """conversation.previous_turn — which prior turn conditions this request.
+
+    Nothing here may raise: past_questions comes straight off a client-posted
+    conversation, and a malformed turn must degrade to "no context" rather than
+    500 the request.
+    """
+
+    def test_first_question_of_a_chat(self):
+        # Only the in-flight turn is present — nothing precedes it.
+        self.assertIsNone(conversation.previous_turn([_PENDING]))
+
+    def test_empty_and_none(self):
+        self.assertIsNone(conversation.previous_turn([]))
+        self.assertIsNone(conversation.previous_turn(None))
+
+    def test_follow_up_returns_the_turn_before_the_pending_one(self):
+        history = [_turn("how many applications in 2026?"), _PENDING]
+        self.assertEqual(
+            conversation.previous_turn(history)["question"],
+            "how many applications in 2026?",
+        )
+
+    def test_only_the_immediate_predecessor_is_used(self):
+        # build_prompt conditions on [-2] alone, so the key must too — anything
+        # earlier does not reach the prompt and must not reach the key.
+        history = [_turn("first"), _turn("second"), _PENDING]
+        self.assertEqual(conversation.previous_turn(history)["question"], "second")
+
+    def test_missing_keys_are_not_fatal(self):
+        self.assertIsNone(conversation.previous_turn([{"SQL": "SELECT 1"}, _PENDING]))
+        self.assertIsNone(conversation.previous_turn([{"question": "q"}, _PENDING]))
+
+    def test_blank_values_are_rejected(self):
+        # A predecessor that errored carries SQL "". Conditioning on 'the
+        # generated SQL was: ""' is noise, so it counts as no context at all.
+        self.assertIsNone(conversation.previous_turn([_turn("q", ""), _PENDING]))
+        self.assertIsNone(conversation.previous_turn([_turn("q", "   "), _PENDING]))
+        self.assertIsNone(conversation.previous_turn([_turn("  ", "SELECT 1"), _PENDING]))
+
+    def test_non_dict_turn_is_not_fatal(self):
+        self.assertIsNone(conversation.previous_turn(["not a turn", _PENDING]))
+        self.assertIsNone(conversation.previous_turn([None, _PENDING]))
+
+
+@unittest.skipUnless(_OK, "cache_reranker unavailable (rapidfuzz missing?)")
+class TestContextKey(unittest.TestCase):
+    """build_context_key — the AB#34050 regression suite.
+
+    The bug: a follow-up answered against "how many applications in 2026?" was
+    cached under the bare text "break it down by region", then served as an
+    exact (similarity 1.0) hit to a fresh chat typing those same words.
+    """
+
+    REPRO = [_turn("how many applications in 2026?"), _PENDING]
+
+    def test_first_question_has_no_context(self):
+        self.assertEqual(cache_reranker.build_context_key([_PENDING]), "")
+        self.assertEqual(cache_reranker.build_context_key([]), "")
+        self.assertEqual(cache_reranker.build_context_key(None), "")
+
+    def test_ticket_repro_follow_up_and_fresh_chat_differ(self):
+        follow_up = cache_reranker.build_context_key(self.REPRO)
+        fresh_chat = cache_reranker.build_context_key([_PENDING])
+        self.assertNotEqual(follow_up, fresh_chat)
+        self.assertEqual(fresh_chat, "")
+
+    def test_same_predecessor_is_stable(self):
+        self.assertEqual(
+            cache_reranker.build_context_key(self.REPRO),
+            cache_reranker.build_context_key(
+                [_turn("how many applications in 2026?"), _PENDING]
+            ),
+        )
+
+    def test_predecessor_phrasing_is_normalized(self):
+        # normalize_query folds case and trailing punctuation, so two chats that
+        # opened with the same question still share their follow-up's key.
+        self.assertEqual(
+            cache_reranker.build_context_key(self.REPRO),
+            cache_reranker.build_context_key(
+                [_turn("How many applications in 2026?!"), _PENDING]
+            ),
+        )
+
+    def test_different_predecessor_questions_differ(self):
+        self.assertNotEqual(
+            cache_reranker.build_context_key(self.REPRO),
+            cache_reranker.build_context_key(
+                [_turn("how many applications in 2024?"), _PENDING]
+            ),
+        )
+
+    def test_same_predecessor_question_different_sql_differs(self):
+        """The second version of this bug: the SQL is prompt context too.
+
+        A predecessor can be regenerated — a cache miss, "Get fresh answer", or
+        the k-sample majority vote landing elsewhere — and yield different SQL.
+        A follow-up cached under the old SQL must not be served to a prompt
+        carrying the new one.
+        """
+        self.assertNotEqual(
+            cache_reranker.build_context_key(
+                [_turn("how many applications in 2026?", "SELECT count(*) FROM a"), _PENDING]
+            ),
+            cache_reranker.build_context_key(
+                [_turn("how many applications in 2026?", "SELECT count(1) FROM a"), _PENDING]
+            ),
+        )
+
+    def test_sql_whitespace_is_significant(self):
+        # Raw, not normalized: whitespace inside a string literal is meaningful,
+        # and only the verbatim text matches what reached the prompt.
+        self.assertNotEqual(
+            cache_reranker.build_context_key(
+                [_turn("q", "SELECT 'a  b'"), _PENDING]
+            ),
+            cache_reranker.build_context_key(
+                [_turn("q", "SELECT 'a b'"), _PENDING]
+            ),
+        )
+
+    def test_unusable_context_collapses_to_standalone(self):
+        # Safe only because build_prompt drops the same turn — see the
+        # prompt/key parity test in test_cache_context.py.
+        self.assertEqual(
+            cache_reranker.build_context_key([_turn("q", ""), _PENDING]), ""
+        )
+
+    def test_serialization_cannot_be_forged(self):
+        # A question containing the SQL delimiter must not be able to imitate a
+        # different turn's key — json.dumps escapes rather than concatenates.
+        self.assertNotEqual(
+            cache_reranker.build_context_key([_turn('a", "sql": "X', "Y"), _PENDING]),
+            cache_reranker.build_context_key([_turn("a", 'X", "Y'), _PENDING]),
+        )
+
+    def test_key_is_a_full_sha256_digest(self):
+        key = cache_reranker.build_context_key(self.REPRO)
+        self.assertEqual(len(key), 64)
+        self.assertTrue(all(c in "0123456789abcdef" for c in key))
+
+    def test_context_label_for_logs(self):
+        self.assertEqual(cache_reranker.context_label(""), "-")
+        self.assertEqual(
+            cache_reranker.context_label(cache_reranker.build_context_key(self.REPRO)),
+            cache_reranker.build_context_key(self.REPRO)[:8],
+        )
 
 
 if __name__ == "__main__":  # pragma: no cover

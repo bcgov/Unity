@@ -5,7 +5,11 @@ Phase 2: normalize_query — whitespace, punctuation, domain abbreviation expans
 Phase 3: LLMJudge — binary equivalence judge for borderline cosine zone.
 Phase 4: discriminator guard + temporal validity — deterministic rejection of
          cache candidates whose salient literals or time period differ (AB#33664).
+Phase 5: conversation-context key — an entry generated against a previous turn
+         is only ever served back under that same previous turn (AB#34050).
 """
+import hashlib
+import json
 import logging
 import re
 from datetime import datetime
@@ -13,6 +17,7 @@ from typing import Optional, List, Dict
 
 from rapidfuzz import fuzz, process
 
+from conversation import previous_turn
 from llm_client import chat_completion
 
 logger = logging.getLogger(__name__)
@@ -268,6 +273,54 @@ def cached_entry_is_temporally_valid(
         # Relative question + pinned date + unknown age — not worth the risk.
         return False
     return same_period(created_at, granularity, now, fiscal=fiscal)
+
+
+# ── Phase 5: conversation-context key ─────────────────────────────────────────
+# sql_generator.build_prompt conditions a follow-up on the previous turn, so
+# "break it down by region" answered after "how many applications in 2026?"
+# produces SQL that is only correct under that predecessor. Keyed on the bare
+# follow-up text, that entry was then an *exact* (similarity 1.0) hit for the
+# same words typed as the first question of a fresh chat — ahead of every
+# reranker, guard and judge, none of which run on an exact match. The fix is to
+# put the context in the key, not to tune a threshold (AB#34050).
+
+
+def build_context_key(past_questions: Optional[List[Dict]] = None) -> str:
+    """Stable identity for the conversation context an entry was generated under.
+
+    "" means "no prior turn" — what a fresh chat's first question carries — so a
+    standalone question and a follow-up can never collide.
+
+    Both halves of the prompt context are hashed, not just the question. The
+    same predecessor question can yield different SQL (a regenerated answer, or
+    the k-sample majority vote landing elsewhere), and a follow-up cached under
+    the old SQL must not be served to a prompt carrying the new SQL. In practice
+    this costs little: a first question is itself usually answered *from cache*,
+    so two conversations opening the same way get byte-identical SQL and their
+    follow-ups share a key. It diverges exactly when the predecessor really was
+    regenerated — the case that has to miss.
+
+    The question is normalised (so casing and punctuation variants of the same
+    predecessor agree) but the SQL is hashed raw: whitespace inside a string
+    literal is meaningful, and only the verbatim text matches what reached the
+    prompt. json.dumps with sorted keys and fixed separators keeps the
+    serialisation unambiguous, so no question can be crafted to forge another
+    turn's key.
+    """
+    prior = previous_turn(past_questions)
+    if prior is None:
+        return ""
+    payload = json.dumps(
+        {"question": normalize_query(prior["question"]), "sql": prior["SQL"]},
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def context_label(context_key: str) -> str:
+    """Short form of a context key for log lines; "-" for the standalone case."""
+    return context_key[:8] if context_key else "-"
 
 
 class FuzzyMatcher:

@@ -549,10 +549,12 @@ def _drop_conflicting_candidates(tenant_id, db_id, normalized_query, candidates,
     return kept
 
 
-async def _fuzzy_cache_lookup(tenant_id, db_id, schema_types, collection_name, normalized_query):
+async def _fuzzy_cache_lookup(tenant_id, db_id, schema_types, collection_name,
+                              normalized_query, context_key):
     """Layer 1.5: rapidfuzz match against recent normalized queries."""
     recent = cache_repository.get_recent_normalized_queries(
-        tenant_id, db_id, schema_types, collection_name, config.app.fuzzy_match_limit
+        tenant_id, db_id, schema_types, collection_name, context_key,
+        config.app.fuzzy_match_limit
     )
     recent = _drop_conflicting_candidates(
         tenant_id, db_id, normalized_query, recent, "normalized_query"
@@ -562,8 +564,12 @@ async def _fuzzy_cache_lookup(tenant_id, db_id, schema_types, collection_name, n
     )
     if not fuzzy_match:
         return None
+    # Same context_key as the candidate fetch above — the fuzzy match only
+    # yields a query string, and re-reading it without the context filter would
+    # walk straight back around the scoping.
     cache_hit = cache_repository.find_exact(
-        tenant_id, db_id, schema_types, collection_name, fuzzy_match["normalized_query"]
+        tenant_id, db_id, schema_types, collection_name,
+        fuzzy_match["normalized_query"], context_key
     )
     if not cache_hit:
         return None
@@ -638,7 +644,8 @@ async def _llm_judge_lookup(tenant_id, db_id, normalized_query, candidates):
     return None
 
 
-async def _embedding_cache_lookup(tenant_id, db_id, schema_types, collection_name, normalized_query):
+async def _embedding_cache_lookup(tenant_id, db_id, schema_types, collection_name,
+                                  normalized_query, context_key):
     """Layer 2: dense embedding top-K search, then the LLM judge.
 
     Returns (cache_hit_or_None, query_embedding).
@@ -651,6 +658,7 @@ async def _embedding_cache_lookup(tenant_id, db_id, schema_types, collection_nam
         tenant_id, db_id, schema_types, collection_name,
         query_embedding,
         threshold=config.app.semantic_cache_borderline_low,
+        context_key=context_key,
         k=config.app.semantic_cache_top_k,
     )
     candidates = _drop_conflicting_candidates(
@@ -662,6 +670,7 @@ async def _embedding_cache_lookup(tenant_id, db_id, schema_types, collection_nam
     candidate_sims = ', '.join(f"{c['similarity']:.4f}" for c in candidates)
     logger.info(
         f"[cache:candidates] tenant={tenant_id} db={db_id} "
+        f"ctx={cache_reranker.context_label(context_key)} "
         f"count={len(candidates)} similarities=[{candidate_sims}]"
     )
 
@@ -680,27 +689,42 @@ async def _embedding_cache_lookup(tenant_id, db_id, schema_types, collection_nam
     return None, query_embedding
 
 
-async def _semantic_cache_lookup(tenant_id, db_id, schema_types, collection_name, normalized_query):
-    """Orchestrate all three cache layers; return (cache_hit_or_None, query_embedding_or_None)."""
+async def _semantic_cache_lookup(tenant_id, db_id, schema_types, collection_name,
+                                 normalized_query, context_key):
+    """Orchestrate all three cache layers; return (cache_hit_or_None, query_embedding_or_None).
+
+    context_key scopes every layer. Layer 1 is where the AB#34050 bug bit: an
+    exact match short-circuits ahead of the fuzzy matcher, the discriminator
+    guard and the LLM judge, so nothing downstream ever got a chance to reject a
+    follow-up's entry being served to a fresh chat.
+    """
     cache_hit = cache_repository.find_exact(
-        tenant_id, db_id, schema_types, collection_name, normalized_query
+        tenant_id, db_id, schema_types, collection_name, normalized_query, context_key
     )
     if cache_hit:
         return cache_hit, None
 
     if config.app.fuzzy_match_enabled:
         cache_hit = await _fuzzy_cache_lookup(
-            tenant_id, db_id, schema_types, collection_name, normalized_query
+            tenant_id, db_id, schema_types, collection_name, normalized_query, context_key
         )
         if cache_hit:
             return cache_hit, None
 
-    return await _embedding_cache_lookup(tenant_id, db_id, schema_types, collection_name, normalized_query)
+    return await _embedding_cache_lookup(
+        tenant_id, db_id, schema_types, collection_name, normalized_query, context_key
+    )
 
 
-async def _serve_cache_hit(cache_hit, db_id, collection_id, tenant_id, normalized_query):
-    """Validate cached SQL and build the cache-hit response. Returns None if SQL is no longer valid."""
+async def _serve_cache_hit(cache_hit, db_id, collection_id, tenant_id,
+                           normalized_query, context_key):
+    """Validate cached SQL and build the cache-hit response. Returns None if SQL is no longer valid.
+
+    context_key is carried for logging only — the entry was already scoped to it
+    at lookup time.
+    """
     cached = cache_hit["response_payload"]
+    ctx = cache_reranker.context_label(context_key)
 
     # Relative-time questions ("this year", "last quarter") may have had their
     # period frozen as a literal at generation time. Checked here so it covers
@@ -711,7 +735,7 @@ async def _serve_cache_hit(cache_hit, db_id, collection_id, tenant_id, normalize
         normalized_query, cached.get("sql", ""), cache_hit.get("created_at")
     ):
         logger.info(
-            f"[cache:stale_relative_date] tenant={tenant_id} db={db_id} "
+            f"[cache:stale_relative_date] tenant={tenant_id} db={db_id} ctx={ctx} "
             f"granularity={cache_reranker.relative_time_granularity(normalized_query)} "
             f"created_at={cache_hit.get('created_at')}"
         )
@@ -727,7 +751,7 @@ async def _serve_cache_hit(cache_hit, db_id, collection_id, tenant_id, normalize
 
     if not is_valid:
         logger.info(
-            f"[cache:rejected] tenant={tenant_id} db={db_id} "
+            f"[cache:rejected] tenant={tenant_id} db={db_id} ctx={ctx} "
             f"similarity={cache_hit['similarity']:.4f} reason=sql_validation_failed"
         )
         return None
@@ -745,13 +769,13 @@ async def _serve_cache_hit(cache_hit, db_id, collection_id, tenant_id, normalize
 
     if hit_type == "semantic_hit":
         logger.info(
-            f"[cache:semantic_hit] tenant={tenant_id} db={db_id} "
+            f"[cache:semantic_hit] tenant={tenant_id} db={db_id} ctx={ctx} "
             f"similarity={cache_hit['similarity']:.4f} "
             f"threshold={config.app.semantic_cache_threshold} tokens_saved={tokens_saved}"
         )
     else:
         logger.info(
-            f"[cache:{hit_type}] tenant={tenant_id} db={db_id} "
+            f"[cache:{hit_type}] tenant={tenant_id} db={db_id} ctx={ctx} "
             f"similarity={cache_hit['similarity']:.4f} tokens_saved={tokens_saved}"
         )
 
@@ -776,8 +800,13 @@ async def _serve_cache_hit(cache_hit, db_id, collection_id, tenant_id, normalize
 
 
 async def _store_query_cache(tenant_id, db_id, schema_types, collection_name,
-                             question, normalized_query, query_embedding, sql, metadata, sql_tokens):
-    """Persist a successful SQL generation result to the semantic cache (non-fatal)."""
+                             question, normalized_query, query_embedding, sql, metadata,
+                             sql_tokens, context_key):
+    """Persist a successful SQL generation result to the semantic cache (non-fatal).
+
+    Stored under the same context_key the lookup used, so this SQL is only ever
+    reused by a request carrying the same previous turn that produced it.
+    """
     try:
         if query_embedding is None:
             loop = asyncio.get_event_loop()
@@ -795,23 +824,28 @@ async def _store_query_cache(tenant_id, db_id, schema_types, collection_name,
                 "visualization_options": metadata.get("visualization_options", []),
                 "tokens": sql_tokens,
             },
+            context_key,
         )
         cache_repository.ensure_hnsw_index()
-        logger.info(f"Cache stored: tenant={tenant_id} tokens={sql_tokens.get('total_tokens', 0)}")
+        logger.info(
+            f"Cache stored: tenant={tenant_id} "
+            f"ctx={cache_reranker.context_label(context_key)} "
+            f"tokens={sql_tokens.get('total_tokens', 0)}"
+        )
     except Exception as cache_err:
         logger.warning(f"Cache store failed (non-fatal): {cache_err}")
 
 
 async def _try_serve_from_cache(tenant_id, db_id, schema_types, collection_name,
-                                collection_id, normalized_query):
+                                collection_id, normalized_query, context_key):
     """Run all cache layers; return (response_or_None, query_embedding_or_None)."""
     cache_hit, query_embedding = await _semantic_cache_lookup(
-        tenant_id, db_id, schema_types, collection_name, normalized_query
+        tenant_id, db_id, schema_types, collection_name, normalized_query, context_key
     )
     if not cache_hit:
         return None, query_embedding
     served = await _serve_cache_hit(
-        cache_hit, db_id, collection_id, tenant_id, normalized_query
+        cache_hit, db_id, collection_id, tenant_id, normalized_query, context_key
     )
     return served, query_embedding
 
@@ -840,17 +874,26 @@ async def _async_ask(data, user_data):
     logger.debug(f"Extracted {len(past_questions)} past questions")
 
     normalized_query = cache_reranker.normalize_query(question)
+    # The cache identity has to cover the conversation context, not just the
+    # question: generate_sql below conditions a follow-up on the previous turn,
+    # so the SQL it produces is only correct under that turn (AB#34050). Derived
+    # from the same past_questions the generator receives, via the shared
+    # conversation.previous_turn.
+    context_key = cache_reranker.build_context_key(past_questions)
     query_embedding = None
 
     # ── Semantic cache lookup ────────────────────────────────────────────────
     if config.app.semantic_cache_enabled and not is_retry:
         response, query_embedding = await _try_serve_from_cache(
-            tenant_id, db_id, schema_types, collection_name, collection_id, normalized_query
+            tenant_id, db_id, schema_types, collection_name, collection_id,
+            normalized_query, context_key
         )
         if response is not None:
             return response
         logger.info(
-            f"[cache:miss] tenant={tenant_id} db={db_id} query=\"{normalized_query[:80]}\""
+            f"[cache:miss] tenant={tenant_id} db={db_id} "
+            f"ctx={cache_reranker.context_label(context_key)} "
+            f"query=\"{normalized_query[:80]}\""
         )
     # ── End cache lookup ─────────────────────────────────────────────────────
 
@@ -886,7 +929,8 @@ async def _async_ask(data, user_data):
     if config.app.semantic_cache_enabled and not error_detail:
         await _store_query_cache(
             tenant_id, db_id, schema_types, collection_name,
-            question, normalized_query, query_embedding, sql, metadata, sql_tokens
+            question, normalized_query, query_embedding, sql, metadata, sql_tokens,
+            context_key
         )
     # ── End cache store ──────────────────────────────────────────────────────
 
