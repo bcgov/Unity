@@ -31,6 +31,7 @@ public class NotificationHub(
 {
     public const string HubRoute = "/signalr/notifications";
     public const string NotificationLogsOpsGroup = "ops:notification-logs";
+    public const int MaxDirectMessageLength = 4000;
 
     public override async Task OnConnectedAsync()
     {
@@ -145,6 +146,11 @@ public class NotificationHub(
         if (string.IsNullOrWhiteSpace(targetUserId) || string.IsNullOrWhiteSpace(message))
         {
             throw new HubException("Target user and message are required.");
+        }
+
+        if (message.Length > MaxDirectMessageLength)
+        {
+            throw new HubException($"Messages cannot exceed {MaxDirectMessageLength} characters.");
         }
 
         var senderId = GetCurrentUserId() ?? string.Empty;
