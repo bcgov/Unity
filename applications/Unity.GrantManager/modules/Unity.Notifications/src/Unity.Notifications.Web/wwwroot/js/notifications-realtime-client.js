@@ -15,25 +15,49 @@
         }
     }
 
+    function shouldInit() {
+        shouldInit.depth = (shouldInit.depth || 0) + 1;
+
+        try {
+            if (shouldInit.depth > 10) {
+                console.error('RECURSIVE shouldInit DETECTED');
+                console.trace();
+                return false;
+            }
+
+            const path = window.location.pathname.toLowerCase();
+            const guardedPaths = ['/account/login', '/login', '/splash'];
+
+            for (const guardedPath of guardedPaths) {
+                if (path.includes(guardedPath)) {
+                    return false;
+                }
+            }
+
+            if (path === '/') {
+                return false;
+            }
+
+            if (!window.abp) {
+                return false;
+            }
+
+            if (!window.abp?.currentUser?.isAuthenticated) {
+                return false;
+            }
+
+            if (!window.signalR) {
+                return false;
+            }
+
+            return true;
+        } finally {
+            shouldInit.depth--;
+        }
+    }
+
     function init() {
-        if (/\/(account\/login|login|splash)(?:\/|$)/i.test(window.location.pathname)) {
-            return;
-        }
-
-        if (window.location.pathname === '/') {
-            return;
-        }
-
-        if (abp.features && typeof abp.features.isEnabled === 'function'
-            && !abp.features.isEnabled('Unity.Notifications.DirectMessaging')) {
-            return;
-        }
-
-        if (typeof signalR === 'undefined') {
-            return;
-        }
-
-        if (!window.abp?.currentUser?.isAuthenticated) {
+        if (!shouldInit()) {
             return;
         }
 
@@ -47,16 +71,42 @@
         let peers = [];
         let activeMode = 'individual';
         let currentTenant = null;
+        const selectedTargets = { individual: '', tenant: '' };
+        const modeNotificationCounts = { individual: 0, tenant: 0 };
+        let targetSelect2Open = false;
+        let targetOptionsRefreshPending = false;
         const histories = {};
         const MAX_HISTORY_ITEMS = 100;
         const STATUS_GREEN_MS = 10 * 60 * 1000;
         const STATUS_ORANGE_MS = 30 * 60 * 1000;
+        const BUBBLE_POSITION_STORAGE_KEY = 'unity.notifications.realtime.bubble-position';
+        const PANEL_SIZE_STORAGE_KEY = 'unity.notifications.realtime.panel-size';
+        const PANEL_POSITION_STORAGE_KEY = 'unity.notifications.realtime.panel-position';
         const widget = buildWidget();
+        setupBubbleDragging();
+        setupPanelResizing();
+        setupPanelDragging();
+        setupTargetSelect2();
 
         const connection = new signalR.HubConnectionBuilder()
             .withUrl('/signalr/notifications')
             .withAutomaticReconnect()
             .build();
+        let connectionStartTask = null;
+
+        function startConnection() {
+            if (connection.state === signalR.HubConnectionState.Connected) {
+                return Promise.resolve();
+            }
+
+            if (!connectionStartTask) {
+                connectionStartTask = connection.start().finally(function () {
+                    connectionStartTask = null;
+                });
+            }
+
+            return connectionStartTask;
+        }
 
         connection.on('directMessageReceived', function (eventData) {
             const scope = eventData?.scope || 'user';
@@ -75,16 +125,13 @@
             addMessage(mode, targetId, sender, senderId, message, eventData?.timestamp);
 
             if (scope === 'user') {
-                activeMode = 'individual';
                 ensurePeerOption(senderId, sender);
-            } else {
-                activeMode = 'tenant';
             }
 
-            widget.modeTabs.forEach(tab => tab.classList.toggle('active', tab.dataset.mode === activeMode));
-            renderTargetOptions();
-            widget.target.value = targetId;
-            renderConversation();
+            if (senderId !== myUserId) {
+                modeNotificationCounts[mode] += 1;
+                updateModeTabCounts();
+            }
 
             if (eventData.source === 'UnityMessagingController' && senderId && senderId !== myUserId) {
                 showIncomingToast(sender, message);
@@ -98,10 +145,10 @@
 
         const HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000;
         const ACTIVITY_HEARTBEAT_THROTTLE_MS = 60 * 1000;
-        const ACTIVITY_EVENTS = ['click', 'keydown', 'mousemove', 'scroll'];
+        const ACTIVITY_EVENTS = ['click', 'keydown', 'scroll'];
         let lastHeartbeatSentAt = 0;
 
-        connection.start().then(function () {
+        startConnection().then(function () {
             sendHeartbeat(true);
             refreshPeers();
             refreshTenant();
@@ -121,13 +168,25 @@
             }
 
             connection.invoke('GetUnreadMessagesAsync').then(function (messages) {
+                let firstUnreadMode = null;
+                let firstUnreadTarget = null;
+
                 (Array.isArray(messages) ? messages : []).forEach(function (eventData) {
                     const scope = eventData.scope === 'tenant' ? 'tenant' : 'user';
                     const senderId = eventData.senderId || null;
-                    const targetId = scope === 'tenant' ? eventData.targetId : senderId;
+                    const targetId = scope === 'tenant'
+                        ? eventData.targetId
+                        : eventData.targetId || senderId;
 
                     if (!targetId) {
                         return;
+                    }
+
+                    modeNotificationCounts[scope === 'tenant' ? 'tenant' : 'individual'] += 1;
+
+                    if (!firstUnreadTarget) {
+                        firstUnreadMode = scope === 'tenant' ? 'tenant' : 'individual';
+                        firstUnreadTarget = targetId;
                     }
 
                     addMessage(
@@ -147,6 +206,19 @@
                         showIncomingToast(eventData.senderName || senderId, eventData.message || '');
                     }
                 });
+
+                if (firstUnreadTarget) {
+                    activeMode = firstUnreadMode;
+                    widget.modeTabs.forEach(function (tab) {
+                        tab.classList.toggle('active', tab.dataset.mode === activeMode);
+                    });
+                    renderTargetOptions();
+                    widget.target.value = firstUnreadTarget;
+                    refreshTargetSelect2();
+                    renderConversation();
+                }
+
+                updateModeTabCounts();
             }).catch(function () {
                 // Unread history is a convenience; realtime delivery remains available.
             });
@@ -184,6 +256,12 @@
             peers = (Array.isArray(result) ? result : []).filter(function (p) {
                 return p?.userId && p.userId !== myUserId;
             });
+
+            if (targetSelect2Open) {
+                targetOptionsRefreshPending = true;
+                return;
+            }
+
             renderTargetOptions();
         }
 
@@ -194,6 +272,12 @@
 
             connection.invoke('GetCurrentTenantAsync').then(function (result) {
                 currentTenant = result || null;
+
+                if (targetSelect2Open) {
+                    targetOptionsRefreshPending = true;
+                    return;
+                }
+
                 renderTargetOptions();
             }).catch(function () {
                 currentTenant = null;
@@ -201,7 +285,12 @@
         }
 
         function renderTargetOptions() {
-            const currentValue = widget.target.value;
+            if (targetSelect2Open || (window.jQuery?.('.select2-container--open').length > 0)) {
+                targetOptionsRefreshPending = true;
+                return;
+            }
+
+            const currentValue = selectedTargets[activeMode] || widget.target.value;
 
             if (activeMode === 'tenant') {
                 widget.targetControl.style.display = 'none';
@@ -211,7 +300,9 @@
                 widget.target.disabled = !currentTenant;
                 if (currentTenant) {
                     widget.target.value = currentTenant.id;
+                    selectedTargets.tenant = currentTenant.id;
                 }
+                refreshTargetSelect2();
                 updateTargetStatusDot();
                 renderConversation();
                 return;
@@ -222,6 +313,7 @@
             if (peers.length === 0) {
                 widget.target.innerHTML = `<option value="">${l('RealtimeWidget:NoOnlineUsers')}</option>`;
                 widget.target.disabled = true;
+                refreshTargetSelect2();
                 updateTargetStatusDot();
                 return;
             }
@@ -229,17 +321,115 @@
             widget.target.disabled = false;
             widget.target.innerHTML = `<option value="">${l('RealtimeWidget:To')}</option>` + peers
                 .map(function (p) {
-                    const suffix = p.isOnline ? '' : ` (${l('RealtimeWidget:StatusOffline')})`;
-                    return `<option value="${escapeAttribute(p.userId)}">${escapeHtml(p.userName || p.userId)}${suffix}</option>`;
+                    return `<option value="${escapeAttribute(p.userId)}">${escapeHtml(p.userName || p.userId)}</option>`;
                 })
                 .join('');
 
             if (currentValue && peers.some(function (p) { return p.userId === currentValue; })) {
                 widget.target.value = currentValue;
+                selectedTargets.individual = currentValue;
             }
 
+            refreshTargetSelect2();
             updateTargetStatusDot();
             renderConversation();
+        }
+
+        function setupTargetSelect2() {
+            if (!window.jQuery || !window.jQuery.fn?.select2) {
+                return;
+            }
+
+            window.jQuery(widget.target).select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: l('RealtimeWidget:To'),
+                allowClear: true,
+                dropdownParent: window.jQuery(widget.targetControl),
+                templateResult: renderTargetSelect2Option,
+                templateSelection: renderTargetSelect2Option,
+                escapeMarkup: function (markup) { return markup; }
+            });
+
+            window.jQuery(widget.target)
+                .on('select2:open', function () {
+                    targetSelect2Open = true;
+                    syncTargetSelect2DropdownSize();
+                })
+                .on('select2:close', function () {
+                    targetSelect2Open = false;
+                    if (targetOptionsRefreshPending) {
+                        targetOptionsRefreshPending = false;
+                        renderTargetOptions();
+                    } else {
+                        refreshTargetSelect2();
+                    }
+                });
+
+            window.addEventListener('resize', syncTargetSelect2DropdownSize);
+        }
+
+        function syncTargetSelect2DropdownSize() {
+            if (!window.jQuery?.fn?.select2 || !window.jQuery(widget.target).data('select2')) {
+                return;
+            }
+
+            const dropdown = widget.targetControl.querySelector('.select2-dropdown');
+            if (dropdown && window.jQuery?.('.select2-container--open').length > 0) {
+                dropdown.style.setProperty('width', `${widget.targetControl.getBoundingClientRect().width}px`, 'important');
+            }
+        }
+
+        function refreshTargetSelect2() {
+            const select2MenuOpen = targetSelect2Open
+                || (window.jQuery?.('.select2-container--open').length > 0);
+
+            if (!select2MenuOpen
+                && window.jQuery
+                && window.jQuery.fn?.select2
+                && window.jQuery(widget.target).data('select2')) {
+                window.jQuery(widget.target).trigger('change.select2');
+            }
+        }
+
+        function renderTargetSelect2Option(data) {
+            if (!data.id) {
+                return data.text;
+            }
+
+            const peer = peers.find(function (item) { return item.userId === data.id; });
+            const status = activeMode === 'tenant' ? null : getPeerStatus(peer);
+            const statusMarkup = status
+                ? `<span class="rt-status-dot rt-status-${status.className}" title="${escapeAttribute(status.label)}"></span>`
+                : '';
+
+            return `<span class="rt-widget-target-option-content">${statusMarkup}<span>${escapeHtml(data.text)}</span></span>`;
+        }
+
+        function loadConversationHistory(mode, targetId) {
+            if (!targetId || connection.state !== signalR.HubConnectionState.Connected) {
+                return;
+            }
+
+            connection.invoke('GetConversationHistoryAsync', mode, targetId).then(function (messages) {
+                if (activeMode !== mode || widget.target.value !== targetId) {
+                    return;
+                }
+
+                const key = `${mode}:${targetId}`;
+                histories[key] = (Array.isArray(messages) ? messages : []).map(function (eventData) {
+                    return {
+                        sender: eventData.senderName || eventData.senderId || 'unknown',
+                        senderId: eventData.senderId || null,
+                        message: eventData.message || '',
+                        timestamp: eventData.timestamp,
+                        mode
+                    };
+                }).slice(-MAX_HISTORY_ITEMS);
+                renderConversation();
+            }).catch(function () {
+                // Conversation history is optional; realtime and unread messages remain available.
+            });
         }
 
         function getPeerStatus(peer) {
@@ -270,21 +460,343 @@
             }
 
             const peer = peers.find(function (p) { return p.userId === widget.target.value; });
+            if (!peer || !widget.target.value) {
+                widget.targetStatus.className = 'rt-status-dot rt-widget-target-status rt-status-hidden';
+                widget.targetStatus.removeAttribute('title');
+                return;
+            }
+
             const status = getPeerStatus(peer);
             widget.targetStatus.className = `rt-status-dot rt-widget-target-status rt-status-${status.className}`;
             widget.targetStatus.title = status.label;
         }
 
+        function setupBubbleDragging() {
+            let dragState = null;
+            let suppressNextClick = false;
+
+            restoreBubblePosition();
+
+            widget.bubble.addEventListener('pointerdown', function (event) {
+                if (event.button !== 0) {
+                    return;
+                }
+
+                const bounds = widget.container.getBoundingClientRect();
+                dragState = {
+                    startX: event.clientX,
+                    startY: event.clientY,
+                    left: bounds.left,
+                    top: bounds.top,
+                    moved: false
+                };
+                widget.bubble.setPointerCapture(event.pointerId);
+                event.preventDefault();
+            });
+
+            widget.bubble.addEventListener('pointermove', function (event) {
+                if (!dragState) {
+                    return;
+                }
+
+                const deltaX = event.clientX - dragState.startX;
+                const deltaY = event.clientY - dragState.startY;
+                dragState.moved = dragState.moved || Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3;
+
+                if (!dragState.moved) {
+                    return;
+                }
+
+                const position = clampBubblePosition(
+                    dragState.left + deltaX,
+                    dragState.top + deltaY
+                );
+                setBubblePosition(position.left, position.top);
+                event.preventDefault();
+            });
+
+            widget.bubble.addEventListener('pointerup', finishDrag);
+            widget.bubble.addEventListener('pointercancel', finishDrag);
+
+            widget.bubble.addEventListener('click', function (event) {
+                if (suppressNextClick) {
+                    suppressNextClick = false;
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                }
+            }, true);
+
+            function finishDrag(event) {
+                if (!dragState) {
+                    return;
+                }
+
+                if (dragState.moved) {
+                    const bounds = widget.container.getBoundingClientRect();
+                    saveBubblePosition(bounds.left, bounds.top);
+                    suppressNextClick = true;
+                }
+
+                if (widget.bubble.hasPointerCapture(event.pointerId)) {
+                    widget.bubble.releasePointerCapture(event.pointerId);
+                }
+                dragState = null;
+            }
+        }
+
+        function clampBubblePosition(left, top) {
+            const bounds = widget.bubble.getBoundingClientRect();
+            const margin = 8;
+            const maxLeft = Math.max(margin, window.innerWidth - bounds.width - margin);
+            const maxTop = Math.max(margin, window.innerHeight - bounds.height - margin);
+
+            return {
+                left: Math.min(Math.max(left, margin), maxLeft),
+                top: Math.min(Math.max(top, margin), maxTop)
+            };
+        }
+
+        function setBubblePosition(left, top) {
+            widget.container.style.left = `${left}px`;
+            widget.container.style.top = `${top}px`;
+            widget.container.style.right = 'auto';
+            widget.container.style.bottom = 'auto';
+        }
+
+        function reportNonFatalError(message, error) {
+            console.warn(message, error);
+        }
+
+        function saveBubblePosition(left, top) {
+            try {
+                localStorage.setItem(BUBBLE_POSITION_STORAGE_KEY, JSON.stringify({ left, top }));
+            } catch (error) {
+                reportNonFatalError('Unable to save bubble position.', error);
+            }
+        }
+
+        function restoreBubblePosition() {
+            try {
+                const storedPosition = JSON.parse(localStorage.getItem(BUBBLE_POSITION_STORAGE_KEY));
+                if (Number.isFinite(storedPosition?.left) && Number.isFinite(storedPosition?.top)) {
+                    const position = clampBubblePosition(storedPosition.left, storedPosition.top);
+                    setBubblePosition(position.left, position.top);
+                }
+            } catch (error) {
+                reportNonFatalError('Unable to restore bubble position.', error);
+            }
+        }
+
+        function setupPanelResizing() {
+            let resizeState = null;
+
+            restorePanelSize();
+
+            widget.resizeHandle.addEventListener('pointerdown', function (event) {
+                if (event.button !== 0) {
+                    return;
+                }
+
+                const bounds = widget.panel.getBoundingClientRect();
+                resizeState = {
+                    startX: event.clientX,
+                    startY: event.clientY,
+                    width: bounds.width,
+                    height: bounds.height
+                };
+                widget.resizeHandle.setPointerCapture(event.pointerId);
+                event.preventDefault();
+                event.stopPropagation();
+            });
+
+            widget.resizeHandle.addEventListener('pointermove', function (event) {
+                if (!resizeState) {
+                    return;
+                }
+
+                const size = clampPanelSize(
+                    resizeState.width + event.clientX - resizeState.startX,
+                    resizeState.height + event.clientY - resizeState.startY
+                );
+                widget.panel.style.width = `${size.width}px`;
+                widget.panel.style.height = `${size.height}px`;
+                syncTargetSelect2DropdownSize();
+                event.preventDefault();
+            });
+
+            widget.resizeHandle.addEventListener('pointerup', finishResize);
+            widget.resizeHandle.addEventListener('pointercancel', finishResize);
+
+            function finishResize(event) {
+                if (!resizeState) {
+                    return;
+                }
+
+                const bounds = widget.panel.getBoundingClientRect();
+                savePanelSize(bounds.width, bounds.height);
+
+                if (widget.resizeHandle.hasPointerCapture(event.pointerId)) {
+                    widget.resizeHandle.releasePointerCapture(event.pointerId);
+                }
+                resizeState = null;
+            }
+        }
+
+        function setupPanelDragging() {
+            let dragState = null;
+
+            restorePanelPosition();
+
+            widget.header.addEventListener('pointerdown', function (event) {
+                if (event.button !== 0 || event.target.closest('button')) {
+                    return;
+                }
+
+                const bounds = widget.panel.getBoundingClientRect();
+                setPanelPosition(bounds.left, bounds.top);
+                dragState = {
+                    startX: event.clientX,
+                    startY: event.clientY,
+                    left: bounds.left,
+                    top: bounds.top
+                };
+                widget.header.setPointerCapture(event.pointerId);
+                event.preventDefault();
+            });
+
+            widget.header.addEventListener('pointermove', function (event) {
+                if (!dragState) {
+                    return;
+                }
+
+                const position = clampPanelPosition(
+                    dragState.left + event.clientX - dragState.startX,
+                    dragState.top + event.clientY - dragState.startY
+                );
+                setPanelPosition(position.left, position.top);
+                event.preventDefault();
+            });
+
+            widget.header.addEventListener('pointerup', finishDrag);
+            widget.header.addEventListener('pointercancel', finishDrag);
+
+            function finishDrag(event) {
+                if (!dragState) {
+                    return;
+                }
+
+                const bounds = widget.panel.getBoundingClientRect();
+                savePanelPosition(bounds.left, bounds.top);
+
+                if (widget.header.hasPointerCapture(event.pointerId)) {
+                    widget.header.releasePointerCapture(event.pointerId);
+                }
+                dragState = null;
+            }
+        }
+
+        function clampPanelPosition(left, top) {
+            const bounds = widget.panel.getBoundingClientRect();
+            const margin = 8;
+            const maxLeft = Math.max(margin, window.innerWidth - bounds.width - margin);
+            const maxTop = Math.max(margin, window.innerHeight - bounds.height - margin);
+
+            return {
+                left: Math.min(Math.max(left, margin), maxLeft),
+                top: Math.min(Math.max(top, margin), maxTop)
+            };
+        }
+
+        function setPanelPosition(left, top) {
+            widget.panel.style.left = `${left}px`;
+            widget.panel.style.top = `${top}px`;
+            widget.panel.style.right = 'auto';
+            widget.panel.style.bottom = 'auto';
+        }
+
+        function savePanelPosition(left, top) {
+            try {
+                localStorage.setItem(PANEL_POSITION_STORAGE_KEY, JSON.stringify({ left, top }));
+            } catch (error) {
+                reportNonFatalError('Unable to save panel position.', error);
+            }
+        }
+
+        function restorePanelPosition() {
+            try {
+                const storedPosition = JSON.parse(localStorage.getItem(PANEL_POSITION_STORAGE_KEY));
+                if (Number.isFinite(storedPosition?.left) && Number.isFinite(storedPosition?.top)) {
+                    setPanelPosition(storedPosition.left, storedPosition.top);
+                }
+            } catch (error) {
+                reportNonFatalError('Unable to restore panel position.', error);
+            }
+        }
+
+        function clampPanelSize(width, height) {
+            const margin = 16;
+            const minWidth = 260;
+            const minHeight = 240;
+            const maxWidth = Math.max(minWidth, window.innerWidth - margin * 2);
+            const maxHeight = Math.max(minHeight, window.innerHeight - margin * 2);
+
+            return {
+                width: Math.min(Math.max(width, minWidth), maxWidth),
+                height: Math.min(Math.max(height, minHeight), maxHeight)
+            };
+        }
+
+        function savePanelSize(width, height) {
+            try {
+                localStorage.setItem(PANEL_SIZE_STORAGE_KEY, JSON.stringify({ width, height }));
+            } catch (error) {
+                reportNonFatalError('Unable to save panel size.', error);
+            }
+        }
+
+        function restorePanelSize() {
+            try {
+                const storedSize = JSON.parse(localStorage.getItem(PANEL_SIZE_STORAGE_KEY));
+                if (Number.isFinite(storedSize?.width) && Number.isFinite(storedSize?.height)) {
+                    const size = clampPanelSize(storedSize.width, storedSize.height);
+                    widget.panel.style.width = `${size.width}px`;
+                    widget.panel.style.height = `${size.height}px`;
+                }
+            } catch (error) {
+                reportNonFatalError('Unable to restore panel size.', error);
+            }
+        }
+
         widget.composeSend.addEventListener('click', sendComposeMessage);
         widget.target.addEventListener('change', function () {
+            selectedTargets[activeMode] = widget.target.value;
             updateTargetStatusDot();
             renderConversation();
         });
+        if (window.jQuery) {
+            window.jQuery(widget.target).on('select2:select select2:clear', function () {
+                selectedTargets[activeMode] = widget.target.value;
+                updateTargetStatusDot();
+                renderConversation();
+
+                if (widget.target.value) {
+                    loadConversationHistory(activeMode, widget.target.value);
+                }
+            });
+        }
         widget.modeTabs.forEach(function (tab) {
             tab.addEventListener('click', function () {
+                selectedTargets[activeMode] = widget.target.value;
                 activeMode = tab.dataset.mode;
+                modeNotificationCounts[activeMode] = 0;
+                updateModeTabCounts();
                 widget.modeTabs.forEach(item => item.classList.toggle('active', item === tab));
                 renderTargetOptions();
+                renderConversation();
+
+                if (widget.target.value) {
+                    loadConversationHistory(activeMode, widget.target.value);
+                }
             });
         });
         widget.composeInput.addEventListener('keydown', function (e) {
@@ -295,6 +807,7 @@
         });
 
         function sendComposeMessage() {
+            const messageMode = activeMode;
             const targetId = widget.target.value;
             const message = widget.composeInput.value.trim();
 
@@ -306,18 +819,29 @@
                 return;
             }
 
-            if (connection.state !== signalR.HubConnectionState.Connected) {
-                return;
-            }
+            const sendTask = startConnection().then(function () {
+                if (connection.state !== signalR.HubConnectionState.Connected) {
+                    throw new Error('Realtime connection is unavailable.');
+                }
 
-            const sendTask = activeMode === 'tenant'
-                ? connection.invoke('SendTenantMessageAsync', message)
-                : connection.invoke('SendPeerMessageAsync', targetId, message);
+                return activeMode === 'tenant'
+                    ? connection.invoke('SendTenantMessageAsync', message)
+                    : connection.invoke('SendPeerMessageAsync', targetId, message);
+            });
 
             sendTask.then(function () {
-                if (activeMode !== 'tenant') {
-                    addMessage(activeMode, targetId, l('RealtimeWidget:You'), null, message, new Date().toISOString());
+                if (messageMode !== 'tenant') {
+                    addMessage(messageMode, targetId, l('RealtimeWidget:You'), null, message, new Date().toISOString());
                 }
+
+                activeMode = messageMode;
+                widget.modeTabs.forEach(function (tab) {
+                    tab.classList.toggle('active', tab.dataset.mode === activeMode);
+                });
+                renderTargetOptions();
+                widget.target.value = targetId;
+                refreshTargetSelect2();
+                renderConversation();
                 widget.composeInput.value = '';
             }).catch(function () {
                 // Recipient is invalid or outside the tenant; leave the draft in place.
@@ -431,6 +955,20 @@
             }
         }
 
+        function updateModeTabCounts() {
+            widget.modeTabs.forEach(function (tab) {
+                const count = modeNotificationCounts[tab.dataset.mode] || 0;
+                const countElement = tab.querySelector('.rt-widget-mode-count');
+
+                if (!countElement) {
+                    return;
+                }
+
+                countElement.textContent = count > 9 ? '9+' : String(count);
+                countElement.classList.toggle('rt-widget-hidden', count === 0);
+            });
+        }
+
         function togglePanel() {
             panelOpen = !panelOpen;
             widget.panel.classList.toggle('rt-widget-panel-open', panelOpen);
@@ -463,6 +1001,12 @@
 
             const panel = document.createElement('div');
             panel.className = 'rt-widget-panel';
+
+            const resizeHandle = document.createElement('span');
+            resizeHandle.className = 'rt-widget-resize-handle';
+            resizeHandle.setAttribute('role', 'presentation');
+            resizeHandle.setAttribute('aria-hidden', 'true');
+            panel.appendChild(resizeHandle);
 
             const header = document.createElement('div');
             header.className = 'rt-widget-panel-header';
@@ -499,12 +1043,14 @@
             individualTab.className = 'rt-widget-mode-tab active';
             individualTab.dataset.mode = 'individual';
             individualTab.textContent = l('RealtimeWidget:Individual');
+            appendModeCount(individualTab);
 
             const tenantTab = document.createElement('button');
             tenantTab.type = 'button';
             tenantTab.className = 'rt-widget-mode-tab';
             tenantTab.dataset.mode = 'tenant';
             tenantTab.textContent = l('RealtimeWidget:Tenant');
+            appendModeCount(tenantTab);
 
             modeTabs.appendChild(individualTab);
             modeTabs.appendChild(tenantTab);
@@ -566,7 +1112,13 @@
             container.appendChild(bubble);
             document.body.appendChild(container);
 
-            return { container, panel, list, bubble, badge, modeTabs: [individualTab, tenantTab], targetControl, target, targetStatus, composeInput, composeSend };
+            return { container, panel, list, bubble, badge, resizeHandle, header, modeTabs: [individualTab, tenantTab], targetControl, target, targetStatus, composeInput, composeSend };
+
+            function appendModeCount(tab) {
+                const count = document.createElement('span');
+                count.className = 'rt-widget-mode-count rt-widget-hidden';
+                tab.appendChild(count);
+            }
         }
     }
 })();
