@@ -31,6 +31,7 @@ public class UnityThemeUX2GlobalScriptContributor : BundleContributor
         context.Files.AddIfNotContains("/libs/datatables.net-colreorder-bs5/js/colReorder.bootstrap5.min.js");
 
         context.Files.AddIfNotContains("/libs/echarts/echarts.min.js");
+        context.Files.AddIfNotContains("/libs/tributejs/dist/tribute.min.js");
 
         context.Files.AddIfNotContains("/libs/tinymce/tinymce.min.js");
         context.Files.AddIfNotContains("/libs/tinymce/themes/silver/theme.min.js");
