@@ -111,11 +111,29 @@
             && await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.SendBulk)
             && await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.Send))
         {
-        <abp-button id="sendEmailNotification"
-            data-selector="applications-table-actions"
-            text="@L["ApplicationList:SendEmailButton"].Value"
-            class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
-            button-type="Secondary" />
+        <div class="btn-group flex-none">
+            <abp-button id="sendEmailNotification"
+                data-selector="applications-table-actions"
+                text="@L["ApplicationList:SendEmailButton"].Value"
+                class="custom-table-btn btn btn-secondary action-bar-btn-unavailable"
+                button-type="Secondary" />
+            <button id="sendEmailNotificationDropdownToggle"
+                type="button"
+                data-selector="applications-table-actions"
+                data-bs-reference="parent"
+                class="custom-table-btn btn btn-secondary dropdown-toggle dropdown-toggle-split action-bar-btn-unavailable"
+                data-bs-toggle="dropdown"
+                aria-expanded="false">
+                <span class="visually-hidden">Toggle Dropdown</span>
+            </button>
+            <ul class="dropdown-menu send-email-dropdown-menu" aria-labelledby="sendEmailNotificationDropdownToggle">
+                <li>
+                    <button id="composeAndSendEmail" type="button" class="custom-table-btn btn btn-secondary">
+                        @L["ApplicationList:ComposeAndSendEmailButton"].Value
+                    </button>
+                </li>
+            </ul>
+        </div>
         @* EmailsWidget (reused inside the bulk-send modal's edit panel) expects these ambient hidden
            fields to exist on the host page — normally provided by GrantApplications/Details.cshtml.
            DetailsViewApplicationId's value is updated per row selection by SendEmailNotificationModal.js. *@
