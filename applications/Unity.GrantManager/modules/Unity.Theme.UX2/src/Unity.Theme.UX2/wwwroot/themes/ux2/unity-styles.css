@@ -675,9 +675,12 @@ div.dt-container div.dt-search {
 
 #app-version-id {
     position: absolute;
+    top: 0;
     right: 0;
+    z-index: 1;
     font-size: 0.7rem;
     opacity: 0.5;
+    white-space: nowrap;
 }
 
 .worksheet_section_label {
