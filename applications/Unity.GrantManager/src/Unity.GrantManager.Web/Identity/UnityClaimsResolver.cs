@@ -1,4 +1,6 @@
-﻿namespace Unity.GrantManager.Web.Identity;
+﻿using Unity.GrantManager.Identity;
+
+namespace Unity.GrantManager.Web.Identity;
 
 public static class UnityClaimsResolver
 {

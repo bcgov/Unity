@@ -14,6 +14,7 @@ using Volo.Abp.TenantManagement.Localization;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.VirtualFileSystem;
 using Volo.Abp.Threading;
+using Unity.GrantManager.Localization;
 using Unity.Modules.Shared.Permissions;
 using Unity.TenantManagement.Web.Navigation;
 
@@ -62,6 +63,8 @@ public class UnityTenantManagementWebModule : AbpModule
             options.Conventions.AuthorizePage("/TenantManagement/Tenants/AssignManagerModal", TenantManagementPermissions.Tenants.Create);
             options.Conventions.AuthorizePage("/TenantManagement/Tenants/ConfigurationModal", TenantManagementPermissions.Policies.TenantsOrITOps);
             options.Conventions.AuthorizePage("/TenantManagement/Onboarding/Index", IdentityConsts.ITOperationsPermissionName);
+            options.Conventions.AuthorizePage("/TenantManagement/ITRoles/Index", IdentityConsts.ITAdminPolicyName);
+            options.Conventions.AuthorizePage("/TenantManagement/ITRoles/AssignModal", IdentityConsts.ITAdminPolicyName);
         });
 
         Configure<AbpPageToolbarOptions>(options =>
@@ -74,6 +77,19 @@ public class UnityTenantManagementWebModule : AbpModule
                         icon: " fl fl-add-to",
                         name: "CreateTenant",
                         requiredPolicyName: TenantManagementPermissions.Tenants.Create,
+                        type: Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Button.AbpButtonType.Light
+                    );
+                }
+            );
+
+            options.Configure<Pages.TenantManagement.ITRoles.IndexModel>(
+                toolbar =>
+                {
+                    toolbar.AddButton(
+                        LocalizableString.Create<GrantManagerResource>("ITRoles:AssignRole"),
+                        icon: " fl fl-add-to",
+                        name: "AssignRole",
+                        requiredPolicyName: IdentityConsts.ITAdminPolicyName,
                         type: Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Button.AbpButtonType.Light
                     );
                 }

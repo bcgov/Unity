@@ -30,13 +30,15 @@ internal static class PolicyRegistrant
         authorizationBuilder.AddPolicy(MetricsAccessPolicy,
             policy => policy.AddRequirements(new InternalNetworkRequirement()));
 
-        // IT Administrator / IT Operations role policies
+        // IT Administrator / IT Operations role policies. Uses RoleClaimRequirement (not plain
+        // .RequireRole()) so a role claim stamped in the UserClaims table is also honoured, not
+        // just the Keycloak-issued token claim - see RoleClaimAuthorizationHandler.
         authorizationBuilder.AddPolicy(IdentityConsts.ITAdminPolicyName,
-            policy => policy.RequireRole(IdentityConsts.ITAdminRoleName));
+            policy => policy.AddRequirements(new RoleClaimRequirement([IdentityConsts.ITAdminRoleName])));
         authorizationBuilder.AddPolicy(IdentityConsts.ITOperationsPolicyName,
-            policy => policy.RequireRole(IdentityConsts.ITOperationsRoleName));
+            policy => policy.AddRequirements(new RoleClaimRequirement([IdentityConsts.ITOperationsRoleName])));
         authorizationBuilder.AddPolicy(IdentityConsts.ITAdminOrITOperationsPolicyName,
-            policy => policy.RequireRole(ITAdminOrITOperationsRoles));
+            policy => policy.AddRequirements(new RoleClaimRequirement(ITAdminOrITOperationsRoles)));
 
         // Tenant management combined: Tenants.<X> OR ITAdmin/ITOperations
         // NOTE: TenantManagementPermissions.Tenants.Default/Create/Update/Delete/ManageConnectionStrings

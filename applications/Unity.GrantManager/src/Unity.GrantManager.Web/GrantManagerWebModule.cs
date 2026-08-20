@@ -30,6 +30,7 @@ using Unity.GrantManager.Controllers.Authentication.FormSubmission;
 using Unity.GrantManager.Controllers.Authentication.FormSubmission.FormIdResolvers;
 using Unity.GrantManager.EntityFrameworkCore;
 using Unity.GrantManager.HealthChecks;
+using Unity.GrantManager.Identity;
 using Unity.GrantManager.Localization;
 using Unity.GrantManager.MultiTenancy;
 using Unity.GrantManager.Web.Components.MiniProfiler;

@@ -151,6 +151,18 @@ public class GrantManagerMenuContributor : IMenuContributor
             .OnlyWhenInRole(IdentityConsts.ITOperationsRoleName)
         );
 
+        // Provisions ITAdministrator/ITOperations designations independent of Keycloak -
+        // ITAdmin-only, since granting either role is a privileged action.
+        await context.AddItemAsync(
+            new ApplicationMenuItem(
+                TenantManagementMenuNames.ITRoles,
+                l["Menu:ITRoles"],
+                "~/TenantManagement/ITRoles",
+                icon: "fl fl-settings",
+                order: 9
+            ).OnlyWhenInRole(IdentityConsts.ITAdminRoleName)
+        );
+
         // End Admin ********************
 #pragma warning disable S125 // Sections of code should not be commented out
         /* - will complete later after fixing ui sub menu issue */

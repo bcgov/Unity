@@ -24,8 +24,23 @@ namespace Unity.GrantManager.Repositories
         public async Task<IList<IdentityUser>> GetListByOidcSub(string oidcSub)
         {
             var dbSet = await GetDbSetAsync();
+            var normalizedSub = oidcSub.ToSubjectWithoutIdp();
+
+            // EF.Functions.ILike is Npgsql-only and isn't translatable under the SQLite provider
+            // used by domain/application tests. ToSubjectWithoutIdp() already upper-cases its
+            // result, so upper-casing the stored value and using a portable StartsWith reproduces
+            // the same case-insensitive prefix match while translating on both providers.
             return await dbSet.AsQueryable()
-                .Where(u => EF.Functions.ILike(EF.Property<string>(u, "OidcSub"), $"{oidcSub.ToSubjectWithoutIdp()}%"))
+                .Where(u => EF.Property<string>(u, "OidcSub") != null &&
+                            EF.Property<string>(u, "OidcSub")!.ToUpper().StartsWith(normalizedSub))
+                .ToListAsync();
+        }
+
+        public async Task<IList<IdentityUser>> GetHostAccountsAsync()
+        {
+            var dbSet = await GetDbSetAsync();
+            return await dbSet.AsQueryable()
+                .Where(u => u.TenantId == null)
                 .ToListAsync();
         }
 

@@ -7,5 +7,6 @@ namespace Unity.GrantManager.Identity
     public interface IUserAccountsRepository
     {
         Task<IList<IdentityUser>> GetListByOidcSub(string oidcSub);
+        Task<IList<IdentityUser>> GetHostAccountsAsync();
     }
 }
