@@ -28,8 +28,8 @@
             const path = window.location.pathname.toLowerCase();
             const guardedPaths = ['/account/login', '/login', '/splash'];
 
-            for (let i = 0; i < guardedPaths.length; i++) {
-                if (path.indexOf(guardedPaths[i]) !== -1) {
+            for (const guardedPath of guardedPaths) {
+                if (path.includes(guardedPath)) {
                     return false;
                 }
             }
@@ -42,8 +42,7 @@
                 return false;
             }
 
-            if (!window.abp.currentUser ||
-                !window.abp.currentUser.isAuthenticated) {
+            if (!window.abp?.currentUser?.isAuthenticated) {
                 return false;
             }
 
