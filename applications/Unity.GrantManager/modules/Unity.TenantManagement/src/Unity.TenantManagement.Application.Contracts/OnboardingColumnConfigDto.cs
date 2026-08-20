@@ -15,19 +15,23 @@ public class OnboardingColumnSchemaDto
 {
     public List<OnboardingColumnDto> Columns { get; set; } = [];
     public string? TenantNameFieldKey { get; set; }
+    public string? DisplayNameFieldKey { get; set; }
     public string? SuperUsersFieldKey { get; set; }
     public string? BranchFieldKey { get; set; }
     public string? FeaturesFieldKey { get; set; }
     public string? MinistryFieldKey { get; set; }
+    public string? DivisionFieldKey { get; set; }
     public string? ProgramAreaFieldKey { get; set; }
 }
 
 public class CreateTenantInputDto
 {
     public string? TenantNameFieldKey { get; set; }
+    public string? DisplayNameFieldKey { get; set; }
     public string? SuperUsersFieldKey { get; set; }
     public string? BranchFieldKey { get; set; }
     public string? FeaturesFieldKey { get; set; }
     public string? MinistryFieldKey { get; set; }
+    public string? DivisionFieldKey { get; set; }
     public string? ProgramAreaFieldKey { get; set; }
 }

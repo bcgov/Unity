@@ -18,12 +18,39 @@
         <div id="create-tenant-field-mapping" style="display:none;">
             <div class="row g-2 mb-3">
                 <div class="col-12">
+                    <label for="create-tenant-tenant-name-field" class="form-label small mb-1">@L["CreateTenantModal:TenantNameFieldLabel"]</label>
+                    <div class="input-group input-group-sm">
+                        <select id="create-tenant-tenant-name-field" class="form-select form-select-sm" style="flex:0 0 50%;">
+                            <option value="">@L["CreateTenantModal:MappingPlaceholder"]</option>
+                        </select>
+                        <span id="create-tenant-tenant-name-value" class="input-group-text text-muted fst-italic" style="flex:0 0 50%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <label for="create-tenant-display-name-field" class="form-label small mb-1">@L["CreateTenantModal:DisplayNameFieldLabel"]</label>
+                    <div class="input-group input-group-sm">
+                        <select id="create-tenant-display-name-field" class="form-select form-select-sm" style="flex:0 0 50%;">
+                            <option value="">@L["CreateTenantModal:MappingPlaceholder"]</option>
+                        </select>
+                        <span id="create-tenant-display-name-value" class="input-group-text text-muted fst-italic" style="flex:0 0 50%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
+                    </div>
+                </div>
+                <div class="col-12">
                     <label for="create-tenant-ministry-field" class="form-label small mb-1">@L["CreateTenantModal:Ministry"]</label>
                     <div class="input-group input-group-sm">
                         <select id="create-tenant-ministry-field" class="form-select form-select-sm" style="flex:0 0 50%;">
                             <option value="">@L["CreateTenantModal:MappingPlaceholder"]</option>
                         </select>
                         <span id="create-tenant-ministry-value" class="input-group-text text-muted fst-italic" style="flex:0 0 50%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <label for="create-tenant-division-field" class="form-label small mb-1">@L["CreateTenantModal:Division"]</label>
+                    <div class="input-group input-group-sm">
+                        <select id="create-tenant-division-field" class="form-select form-select-sm" style="flex:0 0 50%;">
+                            <option value="">@L["CreateTenantModal:MappingPlaceholder"]</option>
+                        </select>
+                        <span id="create-tenant-division-value" class="input-group-text text-muted fst-italic" style="flex:0 0 50%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
                     </div>
                 </div>
                 <div class="col-12">
@@ -51,15 +78,6 @@
                             <option value="">@L["CreateTenantModal:MappingPlaceholder"]</option>
                         </select>
                         <span id="create-tenant-features-value" class="input-group-text" style="flex:0 0 50%; height:auto; flex-wrap:wrap; row-gap:4px;"></span>
-                    </div>
-                </div>
-                <div class="col-12">
-                    <label for="create-tenant-tenant-name-field" class="form-label small mb-1">@L["CreateTenantModal:TenantNameFieldLabel"]</label>
-                    <div class="input-group input-group-sm">
-                        <select id="create-tenant-tenant-name-field" class="form-select form-select-sm" style="flex:0 0 50%;">
-                            <option value="">@L["CreateTenantModal:MappingPlaceholder"]</option>
-                        </select>
-                        <span id="create-tenant-tenant-name-value" class="input-group-text text-muted fst-italic" style="flex:0 0 50%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
                     </div>
                 </div>
                 <div class="col-12">

@@ -37,6 +37,8 @@ namespace Unity.GrantManager.Integrations
             public const string MATOMO_PROD_URL = $"{PROTOCOL}//prod-analytics-matomo.apps.silver.devops.gov.bc.ca";
             public const string GITHUB_REPO = $"{PROTOCOL}//github.com/bcgov/Unity";
             public const string GITHUB_GRAPHQL = $"{PROTOCOL}//api.github.com/graphql";
+            // No separate dev2 hostname - dev2 shares the dev Metabase route.
+            public const string METABASE_DEV_URL = $"{PROTOCOL}//dev-unity-reporting.apps.gold.devops.gov.bc.ca";
         }
 
         private static string GetMatomoUrl()
@@ -71,6 +73,7 @@ namespace Unity.GrantManager.Integrations
                     new() { KeyName = DynamicUrlKeyNames.ANALYTICS_MATOMO_BASE, Url = GetMatomoUrl(), Description = "Matomo Analytics" },
                     new() { KeyName = DynamicUrlKeyNames.GITHUB_REPO, Url = DynamicUrls.GITHUB_REPO, Description = "GitHub Repository" },
                     new() { KeyName = DynamicUrlKeyNames.GITHUB_GRAPHQL, Url = DynamicUrls.GITHUB_GRAPHQL, Description = "GitHub GraphQL Endpoint" },
+                    new() { KeyName = DynamicUrlKeyNames.METABASE_API_BASE, Url = DynamicUrls.METABASE_DEV_URL, Description = "Metabase Reporting API" },
                     new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
                     new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
                     new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },

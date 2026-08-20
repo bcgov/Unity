@@ -359,18 +359,22 @@
         $('#btn-confirm-create-tenant').prop('disabled', true);
 
         const tenantNameFieldKey  = $('#create-tenant-tenant-name-field').val() || null;
+        const displayNameFieldKey = $('#create-tenant-display-name-field').val() || null;
         const superUsersFieldKey  = $('#create-tenant-super-users-field').val() || null;
         const branchFieldKey      = $('#create-tenant-branch-field').val() || null;
         const featuresFieldKey    = $('#create-tenant-features-field').val() || null;
         const ministryFieldKey    = $('#create-tenant-ministry-field').val() || null;
+        const divisionFieldKey    = $('#create-tenant-division-field').val() || null;
         const programAreaFieldKey = $('#create-tenant-program-area-field').val() || null;
 
         const params = new URLSearchParams();
         if (tenantNameFieldKey)  params.append('tenantNameFieldKey',  tenantNameFieldKey);
+        if (displayNameFieldKey) params.append('displayNameFieldKey', displayNameFieldKey);
         if (superUsersFieldKey)  params.append('superUsersFieldKey',  superUsersFieldKey);
         if (branchFieldKey)      params.append('branchFieldKey',      branchFieldKey);
         if (featuresFieldKey)    params.append('featuresFieldKey',    featuresFieldKey);
         if (ministryFieldKey)    params.append('ministryFieldKey',    ministryFieldKey);
+        if (divisionFieldKey)    params.append('divisionFieldKey',    divisionFieldKey);
         if (programAreaFieldKey) params.append('programAreaFieldKey', programAreaFieldKey);
         const query = params.size ? '?' + params.toString() : '';
 
@@ -389,16 +393,18 @@
             $('#onboarding-creating').removeClass('d-none');
 
             const tenantNameFieldKey  = $('#create-tenant-tenant-name-field').val() || null;
+            const displayNameFieldKey = $('#create-tenant-display-name-field').val() || null;
             const superUsersFieldKey  = $('#create-tenant-super-users-field').val() || null;
             const branchFieldKey      = $('#create-tenant-branch-field').val() || null;
             const featuresFieldKey    = $('#create-tenant-features-field').val() || null;
             const ministryFieldKey    = $('#create-tenant-ministry-field').val() || null;
+            const divisionFieldKey    = $('#create-tenant-division-field').val() || null;
             const programAreaFieldKey = $('#create-tenant-program-area-field').val() || null;
 
             abp.ajax({
                 url: abp.appPath + 'api/onboarding-requests/' + applicationId + '/create-tenant',
                 type: 'POST',
-                data: JSON.stringify({ tenantNameFieldKey, superUsersFieldKey, branchFieldKey, featuresFieldKey, ministryFieldKey, programAreaFieldKey }),
+                data: JSON.stringify({ tenantNameFieldKey, displayNameFieldKey, superUsersFieldKey, branchFieldKey, featuresFieldKey, ministryFieldKey, divisionFieldKey, programAreaFieldKey }),
                 contentType: 'application/json'
             }).done(function () {
                 abp.notify.success(l('OnboardingModal:CreateSuccess'));
@@ -417,6 +423,9 @@
         $('#create-tenant-ministry-field').on('change', function () {
             _updateFieldPreview('create-tenant-ministry-field', 'create-tenant-ministry-value');
         });
+        $('#create-tenant-division-field').on('change', function () {
+            _updateFieldPreview('create-tenant-division-field', 'create-tenant-division-value');
+        });
         $('#create-tenant-branch-field').on('change', function () {
             _updateFieldPreview('create-tenant-branch-field', 'create-tenant-branch-value');
         });
@@ -428,6 +437,10 @@
         });
         $('#create-tenant-tenant-name-field').on('change', function () {
             _updateFieldPreview('create-tenant-tenant-name-field', 'create-tenant-tenant-name-value');
+            _triggerValidation(applicationId);
+        });
+        $('#create-tenant-display-name-field').on('change', function () {
+            _updateFieldPreview('create-tenant-display-name-field', 'create-tenant-display-name-value');
             _triggerValidation(applicationId);
         });
         $('#create-tenant-super-users-field').on('change', function () {
@@ -455,16 +468,20 @@
                 return;
             }
             _renderMappingDropdown('create-tenant-ministry-field',    schema.columns, MINISTRY_CANONICALS,     schema.ministryFieldKey);
+            _renderMappingDropdown('create-tenant-division-field',   schema.columns, DIVISION_CANONICALS,     schema.divisionFieldKey);
             _renderMappingDropdown('create-tenant-branch-field',      schema.columns, BRANCH_CANONICALS,        schema.branchFieldKey);
             _renderMappingDropdown('create-tenant-program-area-field', schema.columns, PROGRAM_AREA_CANONICALS, schema.programAreaFieldKey);
             _renderMappingDropdown('create-tenant-features-field',    schema.columns, FEATURES_CANONICALS,      schema.featuresFieldKey);
             _renderMappingDropdown('create-tenant-tenant-name-field', schema.columns, TENANT_NAME_CANONICALS,   schema.tenantNameFieldKey);
+            _renderMappingDropdown('create-tenant-display-name-field', schema.columns, DISPLAY_NAME_CANONICALS, schema.displayNameFieldKey);
             _renderMappingDropdown('create-tenant-super-users-field', schema.columns, SUPER_USERS_CANONICALS,   schema.superUsersFieldKey);
             _updateFieldPreview('create-tenant-ministry-field',    'create-tenant-ministry-value');
+            _updateFieldPreview('create-tenant-division-field',    'create-tenant-division-value');
             _updateFieldPreview('create-tenant-branch-field',      'create-tenant-branch-value');
             _updateFieldPreview('create-tenant-program-area-field', 'create-tenant-program-area-value');
             _updateFieldPreview('create-tenant-features-field',    'create-tenant-features-value', _buildCheckboxBadgesPreview);
             _updateFieldPreview('create-tenant-tenant-name-field', 'create-tenant-tenant-name-value');
+            _updateFieldPreview('create-tenant-display-name-field', 'create-tenant-display-name-value');
             _updateFieldPreview('create-tenant-super-users-field', 'create-tenant-super-users-value', _buildSuperUsersPreview);
             $('#create-tenant-field-mapping').show();
             _wireCreateTenantMappingHandlers(applicationId);
@@ -541,15 +558,26 @@
         return jaro + prefix * 0.1 * (1 - jaro);
     }
 
-    const TENANT_NAME_CANONICALS  = ['tenant name', 'organization name', 'company name', 'program name', 'applicant name', 'tenant abbreviation'];
+    const TENANT_NAME_CANONICALS  = ['name', 'tenant name', 'organization name', 'company name', 'program name', 'applicant name', 'tenant abbreviation'];
+    const DISPLAY_NAME_CANONICALS = ['display name', 'tenant display name', 'organization display name', 'public name'];
     const SUPER_USERS_CANONICALS  = ['super user', 'super users', 'admin email', 'program manager', 'manager email', 'administrator', 'user email'];
     const MINISTRY_CANONICALS     = ['ministry', 'ministry name', 'government ministry', 'responsible ministry'];
+    const DIVISION_CANONICALS     = ['division', 'ministry division', 'division name', 'responsible division'];
     const BRANCH_CANONICALS       = ['branch', 'division branch', 'ministry branch', 'business branch'];
     const PROGRAM_AREA_CANONICALS = ['program area', 'program area name', 'program name', 'program'];
     const FEATURES_CANONICALS     = ['features', 'feature flags', 'program features', 'modules', 'enabled features', 'features to be enabled'];
     const MATCH_THRESHOLD = 0.85;
 
     function _bestMatch(fields, canonicals) {
+        // Exact-match short-circuit: a field whose normalized label exactly equals one of the
+        // canonicals is an unambiguous match, so it wins outright without fuzzy scoring. This
+        // avoids e.g. "ProgramManagerEmail" (which shares a "program " prefix with the "program
+        // name" canonical, and so scores highly under Jaro-Winkler's prefix bonus) out-scoring a
+        // field that's literally labeled "Name" — "name" only appears as a *suffix* of every
+        // Tenant Name canonical, so it gets no prefix bonus and loses on fuzzy score alone.
+        const exact = fields.find(function (f) { return canonicals.includes(_normalizeLabel(f.label || f.key)); });
+        if (exact) return exact.key;
+
         let best = null, bestScore = 0;
         fields.forEach(function (f) {
             const norm = _normalizeLabel(f.label || f.key);

@@ -34,6 +34,7 @@ public class TenantAppService(
 {
     private IIdentityUserRepository IdentityUserRepository => LazyServiceProvider.LazyGetRequiredService<IIdentityUserRepository>();
 
+    private const string ExtraPropDisplayName = "DisplayName";
     private const string ExtraPropDivision = "Division";
     private const string ExtraPropBranch = "Branch";
     private const string ExtraPropDescription = "Description";
@@ -169,6 +170,7 @@ public class TenantAppService(
 
             // Set ExtraProperties from input
             tenant.ExtraProperties[UnityTenantManagementConsts.TenantLicencePlateExtraPropertyKey] = credentials.DbName;
+            tenant.ExtraProperties[ExtraPropDisplayName] = input.DisplayName ?? string.Empty;
             tenant.ExtraProperties[ExtraPropDivision] = input.Division ?? string.Empty;
             tenant.ExtraProperties[ExtraPropBranch] = input.Branch ?? string.Empty;
             tenant.ExtraProperties[ExtraPropDescription] = input.Description ?? string.Empty;
@@ -188,7 +190,8 @@ public class TenantAppService(
                     Properties =
                     {
                         { "UserIdentifier", input.UserIdentifier },
-                        { "FeatureKeys", input.FeatureKeys ?? string.Empty }
+                        { "FeatureKeys", input.FeatureKeys ?? string.Empty },
+                        { "MetabaseUserEmails", input.MetabaseUserEmails ?? string.Empty }
                     }
                 }
             );
@@ -206,6 +209,7 @@ public class TenantAppService(
         tenant.SetConcurrencyStampIfNotNull(input.ConcurrencyStamp);
         
         // Update ExtraProperties from input
+        tenant.ExtraProperties[ExtraPropDisplayName] = input.DisplayName ?? string.Empty;
         tenant.ExtraProperties[ExtraPropDivision] = input.Division ?? string.Empty;
         tenant.ExtraProperties[ExtraPropBranch] = input.Branch ?? string.Empty;
         tenant.ExtraProperties[ExtraPropDescription] = input.Description ?? string.Empty;
