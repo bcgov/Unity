@@ -99,11 +99,6 @@
         </abp-row>
     </div>
 
-    @* Loaded outside the bundle: re-minifying these already-minified libraries alongside the rest
-       of UX2.Global risks corrupting their internal closures (observed for SignalR's
-       automatic-reconnect logic; tribute.js's active regex scanning is suspected similarly). *@
-    <script src="~/libs/signalr/browser/signalr.min.js"></script>
-    <script src="~/libs/tributejs/dist/tribute.min.js"></script>
     <abp-script-bundle name="@UnityThemeUX2Bundles.Scripts.Global" />
 
     <script src="~/Abp/ApplicationLocalizationScript?cultureName=@CultureInfo.CurrentUICulture.Name"></script>

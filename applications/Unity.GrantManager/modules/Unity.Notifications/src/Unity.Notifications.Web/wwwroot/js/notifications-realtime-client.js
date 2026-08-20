@@ -15,25 +15,50 @@
         }
     }
 
+    function shouldInit() {
+        shouldInit.depth = (shouldInit.depth || 0) + 1;
+
+        try {
+            if (shouldInit.depth > 10) {
+                console.error('RECURSIVE shouldInit DETECTED');
+                console.trace();
+                return false;
+            }
+
+            const path = window.location.pathname.toLowerCase();
+            const guardedPaths = ['/account/login', '/login', '/splash'];
+
+            for (let i = 0; i < guardedPaths.length; i++) {
+                if (path.indexOf(guardedPaths[i]) !== -1) {
+                    return false;
+                }
+            }
+
+            if (path === '/') {
+                return false;
+            }
+
+            if (!window.abp) {
+                return false;
+            }
+
+            if (!window.abp.currentUser ||
+                !window.abp.currentUser.isAuthenticated) {
+                return false;
+            }
+
+            if (!window.signalR) {
+                return false;
+            }
+
+            return true;
+        } finally {
+            shouldInit.depth--;
+        }
+    }
+
     function init() {
-        if (/\/(account\/login|login|splash)(?:\/|$)/i.test(window.location.pathname)) {
-            return;
-        }
-
-        if (window.location.pathname === '/') {
-            return;
-        }
-
-        if (abp.features && typeof abp.features.isEnabled === 'function'
-            && !abp.features.isEnabled('Unity.Notifications.DirectMessaging')) {
-            return;
-        }
-
-        if (typeof signalR === 'undefined') {
-            return;
-        }
-
-        if (!window.abp?.currentUser?.isAuthenticated) {
+        if (!shouldInit()) {
             return;
         }
 
