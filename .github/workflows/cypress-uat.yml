@@ -24,4 +24,5 @@ jobs:
     with:
       env_name: uat
       cypress_config_key: CYPRESS_CONFIG_UAT
+      git_ref: ${{ github.event.workflow_run.head_sha || github.sha }}
     secrets: inherit
