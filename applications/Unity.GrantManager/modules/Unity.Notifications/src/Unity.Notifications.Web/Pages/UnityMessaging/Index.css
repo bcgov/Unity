@@ -1,3 +1,16 @@
+.messaging-page {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 70px);
+    height: calc(100dvh - 70px);
+    min-height: 0;
+}
+
+.messaging-page > h3,
+.messaging-page > .messaging-split-layout {
+    flex: 0 0 auto;
+}
+
 .messaging-split-layout {
     display: flex;
     align-items: stretch;
@@ -37,10 +50,12 @@
 }
 
 .messaging-activity-card {
+    flex: 1 1 auto;
     display: flex;
     flex-direction: column;
-    min-height: 320px;
-    height: calc(100vh - 390px);
+    min-height: 0;
+    height: auto;
+    margin-bottom: 0;
     overflow: hidden;
 }
 
@@ -72,7 +87,8 @@
     display: flex;
     flex: 1 1 auto;
     flex-direction: column;
-    overflow: hidden;
+    overflow: visible;
+    height: auto;
 }
 
 .messaging-activity-card #UnityMessagingActivityTable_wrapper .dt-layout-table,
@@ -98,6 +114,10 @@
     background: var(--bs-card-bg, #fff);
 }
 
+.messaging-activity-card .dt-unity-footer {
+    margin-bottom: 1rem;
+}
+
 @media (max-width: 992px) {
     .messaging-split-layout {
         flex-direction: column;
@@ -112,7 +132,13 @@
     }
 
     .messaging-activity-card {
+        flex: 0 0 auto;
         height: auto;
         min-height: 420px;
+    }
+
+    .messaging-page {
+        height: auto;
+        min-height: 0;
     }
 }

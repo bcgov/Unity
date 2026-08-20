@@ -481,6 +481,7 @@ public class GrantManagerWebModule : AbpModule
     {
         Configure<AbpBundlingOptions>(options =>
         {
+            options.Mode = BundlingMode.BundleAndMinify;
             options.MinificationIgnoredFiles.Add("/js/notifications-realtime-client.js");
             options
                 .StyleBundles
