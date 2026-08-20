@@ -71,6 +71,7 @@
         let peers = [];
         let activeMode = 'individual';
         let currentTenant = null;
+        const selectedTargets = { individual: '', tenant: '' };
         const modeNotificationCounts = { individual: 0, tenant: 0 };
         let targetSelect2Open = false;
         let targetOptionsRefreshPending = false;
@@ -284,12 +285,12 @@
         }
 
         function renderTargetOptions() {
-            if (targetSelect2Open || (window.jQuery && window.jQuery('.select2-container--open').length > 0)) {
+            if (targetSelect2Open || (window.jQuery?.('.select2-container--open').length > 0)) {
                 targetOptionsRefreshPending = true;
                 return;
             }
 
-            const currentValue = widget.target.value;
+            const currentValue = selectedTargets[activeMode] || widget.target.value;
 
             if (activeMode === 'tenant') {
                 widget.targetControl.style.display = 'none';
@@ -299,6 +300,7 @@
                 widget.target.disabled = !currentTenant;
                 if (currentTenant) {
                     widget.target.value = currentTenant.id;
+                    selectedTargets.tenant = currentTenant.id;
                 }
                 refreshTargetSelect2();
                 updateTargetStatusDot();
@@ -325,6 +327,7 @@
 
             if (currentValue && peers.some(function (p) { return p.userId === currentValue; })) {
                 widget.target.value = currentValue;
+                selectedTargets.individual = currentValue;
             }
 
             refreshTargetSelect2();
@@ -367,19 +370,19 @@
         }
 
         function syncTargetSelect2DropdownSize() {
-            if (!window.jQuery || !window.jQuery.fn?.select2 || !window.jQuery(widget.target).data('select2')) {
+            if (!window.jQuery?.fn?.select2 || !window.jQuery(widget.target).data('select2')) {
                 return;
             }
 
             const dropdown = widget.targetControl.querySelector('.select2-dropdown');
-            if (dropdown && window.jQuery('.select2-container--open').length > 0) {
+            if (dropdown && window.jQuery?.('.select2-container--open').length > 0) {
                 dropdown.style.setProperty('width', `${widget.targetControl.getBoundingClientRect().width}px`, 'important');
             }
         }
 
         function refreshTargetSelect2() {
             const select2MenuOpen = targetSelect2Open
-                || (window.jQuery && window.jQuery('.select2-container--open').length > 0);
+                || (window.jQuery?.('.select2-container--open').length > 0);
 
             if (!select2MenuOpen
                 && window.jQuery
@@ -560,11 +563,15 @@
             widget.container.style.bottom = 'auto';
         }
 
+        function reportNonFatalError(message, error) {
+            console.warn(message, error);
+        }
+
         function saveBubblePosition(left, top) {
             try {
                 localStorage.setItem(BUBBLE_POSITION_STORAGE_KEY, JSON.stringify({ left, top }));
             } catch (error) {
-                // Position persistence is optional when storage is unavailable.
+                reportNonFatalError('Unable to save bubble position.', error);
             }
         }
 
@@ -576,7 +583,7 @@
                     setBubblePosition(position.left, position.top);
                 }
             } catch (error) {
-                // Use the default bottom-right position when storage contains invalid data.
+                reportNonFatalError('Unable to restore bubble position.', error);
             }
         }
 
@@ -711,7 +718,7 @@
             try {
                 localStorage.setItem(PANEL_POSITION_STORAGE_KEY, JSON.stringify({ left, top }));
             } catch (error) {
-                // Position persistence is optional when storage is unavailable.
+                reportNonFatalError('Unable to save panel position.', error);
             }
         }
 
@@ -722,7 +729,7 @@
                     setPanelPosition(storedPosition.left, storedPosition.top);
                 }
             } catch (error) {
-                // Use the default bottom-right position when storage contains invalid data.
+                reportNonFatalError('Unable to restore panel position.', error);
             }
         }
 
@@ -743,7 +750,7 @@
             try {
                 localStorage.setItem(PANEL_SIZE_STORAGE_KEY, JSON.stringify({ width, height }));
             } catch (error) {
-                // Size persistence is optional when storage is unavailable.
+                reportNonFatalError('Unable to save panel size.', error);
             }
         }
 
@@ -756,17 +763,19 @@
                     widget.panel.style.height = `${size.height}px`;
                 }
             } catch (error) {
-                // Use the default panel dimensions when storage contains invalid data.
+                reportNonFatalError('Unable to restore panel size.', error);
             }
         }
 
         widget.composeSend.addEventListener('click', sendComposeMessage);
         widget.target.addEventListener('change', function () {
+            selectedTargets[activeMode] = widget.target.value;
             updateTargetStatusDot();
             renderConversation();
         });
         if (window.jQuery) {
             window.jQuery(widget.target).on('select2:select select2:clear', function () {
+                selectedTargets[activeMode] = widget.target.value;
                 updateTargetStatusDot();
                 renderConversation();
 
@@ -777,6 +786,7 @@
         }
         widget.modeTabs.forEach(function (tab) {
             tab.addEventListener('click', function () {
+                selectedTargets[activeMode] = widget.target.value;
                 activeMode = tab.dataset.mode;
                 modeNotificationCounts[activeMode] = 0;
                 updateModeTabCounts();
