@@ -60,7 +60,7 @@ jobs:
     - name: Get short commitId
       id: get_commit
       run: |
-        echo "SHA_SHORT=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        echo "SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
     outputs:
       SHA_SHORT: ${{steps.get_commit.outputs.SHA_SHORT}}
   Build:
