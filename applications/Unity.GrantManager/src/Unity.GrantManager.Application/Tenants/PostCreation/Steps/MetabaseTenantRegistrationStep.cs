@@ -114,8 +114,8 @@ public class MetabaseTenantRegistrationStep(
             if (userId == null)
             {
                 logger.LogWarning(
-                    "{Prefix} User '{Email}' not found in Metabase for tenant {TenantId} - they must log in via LDAP or be created under Admin > People before they can be added to a group.",
-                    LogPrefix, email, tenantId);
+                    "{Prefix} User '{MaskedEmail}' not found in Metabase for tenant {TenantId} - they must log in via LDAP or be created under Admin > People before they can be added to a group.",
+                    LogPrefix, MaskEmail(email), tenantId);
                 continue;
             }
             await metabaseApiClient.AddGroupMemberAsync(groupId, userId.Value);
@@ -140,6 +140,15 @@ public class MetabaseTenantRegistrationStep(
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
+    }
+
+    // Avoids writing a user's full email address to logs (CodeQL: exposure of private
+    // information) while keeping enough of it for an admin to correlate a "not found" warning
+    // with a known user.
+    private static string MaskEmail(string email)
+    {
+        var atIndex = email.IndexOf('@', StringComparison.Ordinal);
+        return atIndex <= 1 ? "***" : string.Concat(email.AsSpan(0, 1), "***", email.AsSpan(atIndex));
     }
 
     private static (string Host, int Port, string DbName, string Username, string Password) ParseConnectionString(string connectionString)

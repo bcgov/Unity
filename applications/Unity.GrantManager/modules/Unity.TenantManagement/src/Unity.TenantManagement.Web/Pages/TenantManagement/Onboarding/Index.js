@@ -509,7 +509,7 @@
 
         if ($('#create-tenant-metabase-save-as-default').prop('checked')) {
             let newDefaults = _metabaseNewlyAddedEmails.filter(function (email) {
-                return checked.indexOf(email) !== -1;
+                return checked.includes(email);
             });
             $('#create-tenant-metabase-new-default-user-emails').val(newDefaults.join(','));
         } else {

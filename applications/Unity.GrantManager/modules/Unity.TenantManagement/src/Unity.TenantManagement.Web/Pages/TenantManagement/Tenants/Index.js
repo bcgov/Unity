@@ -279,7 +279,7 @@
 
         if ($('#metabase-save-as-default').prop('checked')) {
             let newDefaults = _metabaseNewlyAddedEmails.filter(function (email) {
-                return checked.indexOf(email) !== -1;
+                return checked.includes(email);
             });
             $('#metabase-new-default-user-emails').val(newDefaults.join(','));
         } else {
@@ -320,10 +320,17 @@
 
     function _generateGuid() {
         if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-            let r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
+
+        // Fallback for environments without crypto.randomUUID - still CSPRNG-backed via
+        // crypto.getRandomValues, not Math.random(), since this key is used as a cache-busting
+        // provider key sent to the server, not truly security-sensitive, but there's no reason
+        // to reach for a weaker PRNG when getRandomValues is universally available.
+        const bytes = new Uint8Array(16);
+        globalThis.crypto.getRandomValues(bytes);
+        bytes[6] = (bytes[6] & 0x0f) | 0x40;
+        bytes[8] = (bytes[8] & 0x3f) | 0x80;
+        const hex = Array.from(bytes, function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+        return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16) + '-' + hex.slice(16, 20) + '-' + hex.slice(20);
     }
 
     function _renderFeatureItem(feature) {
