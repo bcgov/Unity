@@ -60,7 +60,7 @@ public class TenantAppService(
 
         var extraPropertySortFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            ExtraPropDivision, ExtraPropBranch, ExtraPropDescription, ExtraPropCasClientCode
+            ExtraPropDisplayName, ExtraPropDivision, ExtraPropBranch, ExtraPropDescription, ExtraPropCasClientCode
         };
 
         var dbSortFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -91,10 +91,13 @@ public class TenantAppService(
             );
         }
 
-        // In-memory path: needed when filtering on ExtraProperties or sorting on ExtraProperties
-        // Keep native name filtering in SQL and only layer ExtraProperties matching on top.
+        // In-memory path: needed when filtering on ExtraProperties or sorting on ExtraProperties.
+        // Fetch unfiltered here - the underlying repository's filter only matches against Name, so
+        // passing it through would exclude an ExtraProperty-only match (e.g. filtering by Division
+        // text that isn't also in the tenant's Name) before the OR-based filter below ever runs.
+        // Name + ExtraProperties matching is applied together, in memory, further down.
         var dbSorting = dbSortFields.Contains(sortField) ? input.Sorting : nameof(Tenant.Name);
-        var filteredTenants = await tenantRepository.GetListAsync(dbSorting, int.MaxValue, 0, input.Filter);
+        var filteredTenants = await tenantRepository.GetListAsync(dbSorting, int.MaxValue, 0, filter: null);
 
         IEnumerable<Tenant> result = filteredTenants;
 
@@ -104,6 +107,7 @@ public class TenantAppService(
             var filter = input.Filter.Trim();
             result = result.Where(t =>
                 (t.Name != null && t.Name.Contains(filter, StringComparison.OrdinalIgnoreCase)) ||
+                MatchesExtraProperty(t, ExtraPropDisplayName, filter) ||
                 MatchesExtraProperty(t, ExtraPropDivision, filter) ||
                 MatchesExtraProperty(t, ExtraPropBranch, filter) ||
                 MatchesExtraProperty(t, ExtraPropDescription, filter) ||

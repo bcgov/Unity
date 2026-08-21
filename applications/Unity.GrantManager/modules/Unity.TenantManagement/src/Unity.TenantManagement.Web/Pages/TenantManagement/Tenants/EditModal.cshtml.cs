@@ -49,6 +49,7 @@ public class EditModalModel(ITenantAppService tenantAppService, ICasClientCodeLo
         [DynamicStringLength(typeof(TenantConsts), nameof(TenantConsts.MaxNameLength))]
         [Display(Name = "DisplayName:TenantName")]
         public string Name { get; set; }
+        public string DisplayName { get; set; } = string.Empty;
         public string Division { get; set; } = string.Empty;
         public string Branch { get; set; }  = string.Empty;
         public string Description { get; set; } = string.Empty;

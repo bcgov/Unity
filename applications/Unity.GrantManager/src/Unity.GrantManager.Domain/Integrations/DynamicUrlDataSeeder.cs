@@ -52,6 +52,18 @@ namespace Unity.GrantManager.Integrations
             return DynamicUrls.MATOMO_PROD_URL;
         }
 
+        // Unlike Matomo, only dev has a known route baked in here. Test/UAT/prod are deliberately
+        // left blank - ops sets the real URL once via the Endpoint Management admin page, and
+        // (unlike Matomo) it's never overwritten afterward: this only ever inserts a row when one
+        // doesn't already exist, so whatever's in the database always takes precedence.
+        private static string GetMetabaseUrl()
+        {
+            var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? string.Empty;
+            return string.IsNullOrEmpty(env) || env.StartsWith("dev", StringComparison.OrdinalIgnoreCase)
+                ? DynamicUrls.METABASE_DEV_URL
+                : string.Empty;
+        }
+
         private async Task SeedDynamicUrlAsync()
         {
             if (currentTenant == null || currentTenant.Id == null)
@@ -73,7 +85,7 @@ namespace Unity.GrantManager.Integrations
                     new() { KeyName = DynamicUrlKeyNames.ANALYTICS_MATOMO_BASE, Url = GetMatomoUrl(), Description = "Matomo Analytics" },
                     new() { KeyName = DynamicUrlKeyNames.GITHUB_REPO, Url = DynamicUrls.GITHUB_REPO, Description = "GitHub Repository" },
                     new() { KeyName = DynamicUrlKeyNames.GITHUB_GRAPHQL, Url = DynamicUrls.GITHUB_GRAPHQL, Description = "GitHub GraphQL Endpoint" },
-                    new() { KeyName = DynamicUrlKeyNames.METABASE_API_BASE, Url = DynamicUrls.METABASE_DEV_URL, Description = "Metabase Reporting API" },
+                    new() { KeyName = DynamicUrlKeyNames.METABASE_API_BASE, Url = GetMetabaseUrl(), Description = "Metabase Reporting API" },
                     new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
                     new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
                     new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },

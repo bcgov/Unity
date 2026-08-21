@@ -13,9 +13,16 @@ namespace Unity.GrantManager.Tenants.PostCreation;
 /// <summary>
 /// Runs the registered <see cref="IPostTenantCreationStep"/> steps, one per job execution, in
 /// ascending <see cref="IPostTenantCreationStep.Order"/> order. Each execution re-enqueues itself
-/// for the next step, so the sequence is driven entirely by ABP's background job queue - every
-/// step is individually durable and retryable. A step whose <see cref="IPostTenantCreationStep.ContinueOnError"/>
-/// is false stops the sequence on failure; later steps are not run.
+/// for the next step, so the sequence is driven entirely by ABP's background job queue.
+///
+/// A step's exception is always caught and logged here rather than rethrown, so ABP's own
+/// background-job retry mechanism (which only engages when <c>ExecuteAsync</c> throws) never
+/// applies to an individual step - failures are best-effort, not retried automatically. A step
+/// whose <see cref="IPostTenantCreationStep.ContinueOnError"/> is true is logged and the sequence
+/// moves on to the next step regardless; one whose ContinueOnError is false stops the sequence
+/// entirely on failure (later steps do not run). Either way, the failed step itself does not get
+/// another automatic attempt - recovering it currently requires manually re-enqueuing a
+/// <see cref="PostTenantCreationStepArgs"/> for that step index.
 /// </summary>
 public class PostTenantCreationSequenceJob(
     IEnumerable<IPostTenantCreationStep> steps,

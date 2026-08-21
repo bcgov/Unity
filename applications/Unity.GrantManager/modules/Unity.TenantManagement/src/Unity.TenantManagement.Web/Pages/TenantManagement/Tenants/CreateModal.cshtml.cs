@@ -54,6 +54,22 @@ public class CreateModalModel : TenantManagementPageModel
     {
         ValidateModel();
 
+        // The Features/Metabase tabs are only hidden client-side for non-IT-Admin/Ops callers -
+        // TenantAppService.CreateAsync itself is reachable by anyone with plain Tenants.Create
+        // permission (TenantsCreateOrITOps), so a forged POST could otherwise set arbitrary
+        // FeatureKeys/MetabaseUserEmails. Re-check the same policy server-side and strip these
+        // privileged fields when it fails, mirroring ConfigurationModalModel's FeaturesJson guard.
+        var canManageFeatures = (await AuthorizationService
+            .AuthorizeAsync(User, IdentityConsts.ITAdminOrITOperationsPolicyName)).Succeeded;
+
+        if (!canManageFeatures)
+        {
+            Tenant.FeatureKeys = null;
+            Tenant.MetabaseUserEmails = null;
+            Tenant.MetabaseNewDefaultUserEmails = null;
+            Tenant.MetabaseRemovedDefaultUserEmails = null;
+        }
+
         var input = ObjectMapper.Map<TenantInfoModel, TenantCreateDto>(Tenant);
         await TenantAppService.CreateAsync(input);
 

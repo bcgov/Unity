@@ -76,6 +76,33 @@ public class TenantAppService_Tests : AbpTenantManagementApplicationTestBase
     }
 
     [Fact]
+    public async Task GetListAsync_Sorted_By_DisplayName()
+    {
+        var acme = UsingDbContext(dbContext => dbContext.Tenants.Single(t => t.Name == "acme"));
+        var volo = UsingDbContext(dbContext => dbContext.Tenants.Single(t => t.Name == "volosoft"));
+
+        await _tenantAppService.UpdateAsync(acme.Id, new TenantUpdateDto { Name = "acme", DisplayName = "Zeta Corp" });
+        await _tenantAppService.UpdateAsync(volo.Id, new TenantUpdateDto { Name = "volosoft", DisplayName = "Alpha Corp" });
+
+        var result = await _tenantAppService.GetListAsync(new GetTenantsInput { Sorting = "DisplayName ASC" });
+        var tenants = result.Items.ToList();
+
+        tenants.FindIndex(t => t.Name == "volosoft").ShouldBeLessThan(tenants.FindIndex(t => t.Name == "acme"));
+    }
+
+    [Fact]
+    public async Task GetListAsync_Filtered_By_DisplayName()
+    {
+        var acme = UsingDbContext(dbContext => dbContext.Tenants.Single(t => t.Name == "acme"));
+        await _tenantAppService.UpdateAsync(acme.Id, new TenantUpdateDto { Name = "acme", DisplayName = "UniqueDisplayNameXyz" });
+
+        var result = await _tenantAppService.GetListAsync(new GetTenantsInput { Filter = "UniqueDisplayNameXyz" });
+
+        result.Items.ShouldContain(t => t.Name == "acme");
+        result.Items.ShouldNotContain(t => t.Name == "volosoft");
+    }
+
+    [Fact]
     public async Task CreateAsync()
     {
         var tenancyName = Guid.NewGuid().ToString("N").ToLowerInvariant();

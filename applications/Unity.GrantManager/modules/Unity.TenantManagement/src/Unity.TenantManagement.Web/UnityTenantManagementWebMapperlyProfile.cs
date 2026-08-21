@@ -29,6 +29,7 @@ public class TenantDtoToEditTenantInfoMapper : MapperBase<TenantDto, EditModalMo
     {
         destination.Id = source.Id;
         destination.Name = source.Name;
+        destination.DisplayName = source.DisplayName;
         destination.Division = source.Division;
         destination.Branch = source.Branch;
         destination.Description = source.Description;
@@ -74,6 +75,7 @@ public class EditTenantInfoToTenantUpdateDtoMapper : MapperBase<EditModalModel.T
     public override void Map(EditModalModel.TenantInfoModel source, TenantUpdateDto destination)
     {
         destination.Name = source.Name;
+        destination.DisplayName = source.DisplayName;
         destination.Division = source.Division;
         destination.Branch = source.Branch;
         destination.Description = source.Description;
@@ -96,6 +98,7 @@ public class TenantDtoToConfigurationTenantInfoMapper : MapperBase<TenantDto, Te
     {
         destination.Id = source.Id;
         destination.Name = source.Name;
+        destination.DisplayName = source.DisplayName;
         destination.Division = source.Division;
         destination.Branch = source.Branch;
         destination.Description = source.Description;
@@ -117,6 +120,7 @@ public class ConfigurationTenantInfoToTenantUpdateDtoMapper : MapperBase<TenantI
     public override void Map(TenantInfoModel source, TenantUpdateDto destination)
     {
         destination.Name = source.Name;
+        destination.DisplayName = source.DisplayName;
         destination.Division = source.Division;
         destination.Branch = source.Branch;
         destination.Description = source.Description;

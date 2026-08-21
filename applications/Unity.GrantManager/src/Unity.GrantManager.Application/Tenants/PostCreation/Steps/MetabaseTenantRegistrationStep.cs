@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -114,8 +116,8 @@ public class MetabaseTenantRegistrationStep(
             if (userId == null)
             {
                 logger.LogWarning(
-                    "{Prefix} User '{MaskedEmail}' not found in Metabase for tenant {TenantId} - they must log in via LDAP or be created under Admin > People before they can be added to a group.",
-                    LogPrefix, MaskEmail(email), tenantId);
+                    "{Prefix} User (hash {EmailHash}) not found in Metabase for tenant {TenantId} - they must log in via LDAP or be created under Admin > People before they can be added to a group.",
+                    LogPrefix, HashEmail(email), tenantId);
                 continue;
             }
             await metabaseApiClient.AddGroupMemberAsync(groupId, userId.Value);
@@ -142,14 +144,13 @@ public class MetabaseTenantRegistrationStep(
             .ToList();
     }
 
-    // Avoids writing a user's full email address to logs (CodeQL: exposure of private
-    // information) while keeping enough of it for an admin to correlate a "not found" warning
-    // with a known user.
-    private static string MaskEmail(string email)
-    {
-        var atIndex = email.IndexOf('@', StringComparison.Ordinal);
-        return atIndex <= 1 ? "***" : string.Concat(email.AsSpan(0, 1), "***", email.AsSpan(atIndex));
-    }
+    // Avoids writing a user's email address to logs (CodeQL: exposure of private information).
+    // A substring/mask still contains real characters from the source string, so CodeQL's
+    // dataflow analysis still treats it as the same private data - a one-way hash is what's
+    // actually recognized as breaking that taint, while still letting an admin correlate repeated
+    // "not found" warnings against a known list of emails (by hashing candidates themselves).
+    private static string HashEmail(string email) =>
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(email.Trim().ToLowerInvariant())))[..8];
 
     private static (string Host, int Port, string DbName, string Username, string Password) ParseConnectionString(string connectionString)
     {
