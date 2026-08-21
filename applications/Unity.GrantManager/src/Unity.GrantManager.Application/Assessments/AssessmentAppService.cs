@@ -42,6 +42,7 @@ namespace Unity.GrantManager.Assessments
         private readonly ILocalEventBus _localEventBus;
         private readonly IFeatureChecker _featureChecker;
         private readonly IRepository<ApplicationForm, Guid> _applicationFormRepository;
+        private readonly IRepository<ApplicationScoresheetAnswers, Guid> _scoresheetAnswersRepository;
         private const string UnityFlex = "Unity.Flex";
 
         public AssessmentAppService(
@@ -54,7 +55,8 @@ namespace Unity.GrantManager.Assessments
             IFeatureChecker featureChecker,
             ILocalEventBus localEventBus,
             IScoresheetAppService scoresheetAppService,
-            IRepository<ApplicationForm, Guid> applicationFormRepository)
+            IRepository<ApplicationForm, Guid> applicationFormRepository,
+            IRepository<ApplicationScoresheetAnswers, Guid> scoresheetAnswersRepository)
         {
             _assessmentRepository = assessmentRepository;
             _assessmentManager = assessmentManager;
@@ -65,6 +67,7 @@ namespace Unity.GrantManager.Assessments
             _featureChecker = featureChecker;
             _localEventBus = localEventBus;
             _applicationFormRepository = applicationFormRepository;
+            _scoresheetAnswersRepository = scoresheetAnswersRepository;
         }
 
         public async Task<AssessmentDto> CreateAsync(CreateAssessmentDto dto)
@@ -385,7 +388,7 @@ namespace Unity.GrantManager.Assessments
 
         /// <summary>
         /// Creates a new human assessment by cloning an existing AI assessment.
-        /// Copies the AI scoresheet answers (from Application.AIScoresheetAnswers) as real
+        /// Copies the AI scoresheet answers (from AI.ApplicationScoresheetAnswers) as real
         /// Answer records on the new assessment's scoresheet instance, and carries over
         /// ApprovalRecommended as a starting point for the reviewer.
         /// </summary>
@@ -415,16 +418,22 @@ namespace Unity.GrantManager.Assessments
             newAssessment.ApprovalRecommended = aiAssessment.ApprovalRecommended;
             await _assessmentRepository.UpdateAsync(newAssessment);
 
-            if (await _featureChecker.IsEnabledAsync(UnityFlex) && !string.IsNullOrEmpty(application.AIScoresheetAnswers))
+            if (await _featureChecker.IsEnabledAsync(UnityFlex))
             {
-                await CopyAiAnswersToAssessmentAsync(application.AIScoresheetAnswers, newAssessment.Id);
+                var storedAiAnswers = await _scoresheetAnswersRepository
+                    .FindAsync(x => x.ApplicationId == aiAssessment.ApplicationId);
+
+                if (!string.IsNullOrEmpty(storedAiAnswers?.Answers))
+                {
+                    await CopyAiAnswersToAssessmentAsync(storedAiAnswers.Answers, newAssessment.Id);
+                }
             }
 
             return ObjectMapper.Map<Assessment, AssessmentDto>(newAssessment);
         }
 
         /// <summary>
-        /// Parses Application.AIScoresheetAnswers (JSONB) and writes each AI answer as a
+        /// Parses the stored AI scoresheet answers (JSONB) and writes each AI answer as a
         /// real Answer record on the new human assessment's scoresheet instance.
         /// <para>
         /// Question types are resolved via <see cref="IScoresheetAppService"/> so that each value
