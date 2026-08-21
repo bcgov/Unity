@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,6 +18,12 @@ public class MetabaseApiClient(
     IOptions<MetabaseOptions> options) : IMetabaseApiClient
 {
     private const string ApiKeyHeader = "x-api-key";
+
+    // Metabase's permissions/collection graph endpoints use an optimistic-concurrency "revision"
+    // number - a PUT with a stale revision (because another tenant registration updated the graph
+    // first) is rejected. Retry the whole read-mutate-write cycle against a freshly-fetched graph
+    // rather than surfacing a transient conflict as a permanent failure.
+    private const int MaxGraphUpdateAttempts = 3;
 
     public async Task<int> CreateDatabaseAsync(string name, string host, int port, string dbName, string username, string password, bool ssl, CancellationToken cancellationToken = default)
     {
@@ -54,23 +61,19 @@ public class MetabaseApiClient(
     public Task AddGroupMemberAsync(int groupId, int userId, CancellationToken cancellationToken = default) =>
         PostAsync("/api/permissions/membership", new { group_id = groupId, user_id = userId }, cancellationToken);
 
-    public async Task GrantGroupDatabaseAccessAsync(int groupId, int databaseId, CancellationToken cancellationToken = default)
-    {
-        var graph = await GetAsync("/api/permissions/graph", cancellationToken);
-        var groups = (JObject?)graph["groups"] ?? new JObject();
-        var groupKey = groupId.ToString();
-        var groupNode = (JObject?)groups[groupKey] ?? new JObject();
-
-        groupNode[databaseId.ToString()] = new JObject
+    public Task GrantGroupDatabaseAccessAsync(int groupId, int databaseId, CancellationToken cancellationToken = default) =>
+        UpdateGraphWithRetryAsync("/api/permissions/graph", groups =>
         {
-            ["view-data"] = "unrestricted",
-            ["create-queries"] = "query-builder-and-native"
-        };
-        groups[groupKey] = groupNode;
+            var groupKey = groupId.ToString();
+            var groupNode = (JObject?)groups[groupKey] ?? new JObject();
 
-        await PutAsync("/api/permissions/graph",
-            new { groups, revision = graph.Value<int>("revision") }, cancellationToken);
-    }
+            groupNode[databaseId.ToString()] = new JObject
+            {
+                ["view-data"] = "unrestricted",
+                ["create-queries"] = "query-builder-and-native"
+            };
+            groups[groupKey] = groupNode;
+        }, cancellationToken);
 
     public async Task<int> CreateCollectionAsync(string name, CancellationToken cancellationToken = default)
     {
@@ -78,18 +81,41 @@ public class MetabaseApiClient(
         return result.Value<int>("id");
     }
 
-    public async Task GrantGroupCollectionAccessAsync(int groupId, int collectionId, CancellationToken cancellationToken = default)
+    public Task GrantGroupCollectionAccessAsync(int groupId, int collectionId, CancellationToken cancellationToken = default) =>
+        UpdateGraphWithRetryAsync("/api/collection/graph", groups =>
+        {
+            var groupKey = groupId.ToString();
+            var groupNode = (JObject?)groups[groupKey] ?? new JObject();
+
+            groupNode[collectionId.ToString()] = "write";
+            groups[groupKey] = groupNode;
+        }, cancellationToken);
+
+    private async Task UpdateGraphWithRetryAsync(string graphPath, Action<JObject> applyMutation, CancellationToken cancellationToken)
     {
-        var graph = await GetAsync("/api/collection/graph", cancellationToken);
-        var groups = (JObject?)graph["groups"] ?? new JObject();
-        var groupKey = groupId.ToString();
-        var groupNode = (JObject?)groups[groupKey] ?? new JObject();
+        for (var attempt = 1; ; attempt++)
+        {
+            var graph = await GetAsync(graphPath, cancellationToken);
+            var groups = (JObject?)graph["groups"] ?? new JObject();
+            applyMutation(groups);
 
-        groupNode[collectionId.ToString()] = "write";
-        groups[groupKey] = groupNode;
+            var response = await PutRawAsync(graphPath,
+                new { groups, revision = graph.Value<int>("revision") }, cancellationToken);
 
-        await PutAsync("/api/collection/graph",
-            new { groups, revision = graph.Value<int>("revision") }, cancellationToken);
+            if (response.IsSuccessStatusCode)
+                return;
+
+            var isRevisionConflict = response.StatusCode is HttpStatusCode.Conflict or HttpStatusCode.BadRequest;
+            if (!isRevisionConflict || attempt >= MaxGraphUpdateAttempts)
+            {
+                var content = response.Content == null ? string.Empty : await response.Content.ReadAsStringAsync(cancellationToken);
+                throw new IntegrationServiceException(
+                    $"Metabase API call to '{graphPath}' failed with status {response.StatusCode}: {content}");
+            }
+
+            // Stale revision - another concurrent tenant registration updated the graph first.
+            // Loop around to re-fetch the latest graph and reapply this mutation on top of it.
+        }
     }
 
     private async Task<string> GetBaseUrlAsync() =>
@@ -114,12 +140,11 @@ public class MetabaseApiClient(
         return await ReadJsonAsync(response, path);
     }
 
-    private async Task<JObject> PutAsync(string path, object body, CancellationToken cancellationToken)
+    private async Task<HttpResponseMessage> PutRawAsync(string path, object body, CancellationToken cancellationToken)
     {
         var baseUrl = await GetBaseUrlAsync();
-        var response = await resilientHttpRequest.HttpAsync(
+        return await resilientHttpRequest.HttpAsync(
             HttpMethod.Put, $"{baseUrl}{path}", body, extraHeaders: BuildHeaders(), cancellationToken: cancellationToken);
-        return await ReadJsonAsync(response, path);
     }
 
     private static async Task<JObject> ReadJsonAsync(HttpResponseMessage response, string path)

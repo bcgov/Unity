@@ -76,11 +76,15 @@ namespace Unity.GrantManager.Handlers
         // Global default changes in the meantime.
         private async Task SaveMetabaseUserEmailsAsync(TenantCreatedEto eto, Guid tenantId)
         {
-            if (!eto.Properties.TryGetValue("MetabaseUserEmails", out var emailsRaw) || string.IsNullOrWhiteSpace(emailsRaw))
+            // An empty string is a deliberate "no Metabase users for this tenant" choice - it must
+            // still be persisted (not skipped), otherwise MetabaseTenantRegistrationStep's
+            // GetUserEmailsAsync falls back to the Global default list and grants users the
+            // tenant creator explicitly unchecked.
+            if (!eto.Properties.TryGetValue("MetabaseUserEmails", out var emailsRaw))
                 return;
 
             await _settingManager.SetAsync(
-                MetabaseSettings.UserEmails, emailsRaw, TenantSettingValueProvider.ProviderName, tenantId.ToString());
+                MetabaseSettings.UserEmails, emailsRaw ?? string.Empty, TenantSettingValueProvider.ProviderName, tenantId.ToString());
         }
 
         private async Task EnableRequestedFeaturesAsync(TenantCreatedEto eto, Guid tenantId)
