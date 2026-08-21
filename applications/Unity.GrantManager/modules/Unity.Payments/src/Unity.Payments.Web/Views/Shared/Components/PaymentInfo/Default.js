@@ -1,4 +1,4 @@
-﻿$(function () {
+$(function () {
     const l = abp.localization.getResource('Payments');
     $('.unity-currency-input').maskMoney({});
     $('.unity-currency-input').each(function () {
@@ -61,10 +61,8 @@
             inputElement.hasClass('unity-currency-input') ||
             inputElement.hasClass('numeric-mask')
         ) {
-            paymentInfoObj[input.name.split('.')[1]] = input.value.replace(
-                /,/g,
-                ''
-            );
+            const fieldName = input.name.split('.')[1];
+            paymentInfoObj[fieldName] = input.value.replaceAll(',', '');
         } else {
             paymentInfoObj[input.name.split('.')[1]] = input.value;
         }

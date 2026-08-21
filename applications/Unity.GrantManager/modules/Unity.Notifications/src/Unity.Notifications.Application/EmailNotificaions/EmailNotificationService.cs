@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -33,7 +32,6 @@ public class EmailNotificationService(
         ISettingManager settingManager,
         IFeatureChecker featureChecker,
         IConfiguration configuration,
-        IWebHostEnvironment webHostEnvironment,
         IMarkdownRenderer markdownRenderer) : ApplicationService, IEmailNotificationService
 {
 
@@ -284,7 +282,8 @@ public class EmailNotificationService(
     }
 
     /// <summary>
-    /// Loads an email template from the Views/EmailTemplates directory.
+    /// Loads an email template from the Application assembly's embedded resources.
+    /// The resource name follows the format Unity.Notifications.EmailTemplates.{templateName}.cshtml.
     /// </summary>
     /// <param name="templateName">Template name without extension (e.g., "CommentNotification")</param>
     /// <returns>Template content as a string</returns>
@@ -292,32 +291,17 @@ public class EmailNotificationService(
     {
         try
         {
-            // Content root is at: .../Unity.GrantManager/src/Unity.GrantManager.Web
-            // We need to go up 2 levels to reach Unity.GrantManager, then into modules
-            var contentRoot = webHostEnvironment.ContentRootPath;
-            
-            var templatePath = Path.Combine(
-                contentRoot,
-                "..",
-                "..",
-                "modules",
-                "Unity.Notifications",
-                "src",
-                "Unity.Notifications.Web",
-                "Views",
-                "EmailTemplates",
-                $"{templateName}.cshtml");
+            var assembly = typeof(EmailNotificationService).Assembly;
+            var resourceName = $"Unity.Notifications.EmailTemplates.{templateName}.cshtml";
+            await using var templateStream = assembly.GetManifestResourceStream(resourceName);
 
-            // Normalize the path to remove .. references
-            templatePath = Path.GetFullPath(templatePath);
-
-            if (!File.Exists(templatePath))
+            if (templateStream == null)
             {
-                throw new FileNotFoundException($"Email template not found at: {templatePath}");
+                throw new FileNotFoundException($"Embedded email template not found: {resourceName}");
             }
 
-            var content = await File.ReadAllTextAsync(templatePath);
-            return content;
+            using var reader = new StreamReader(templateStream);
+            return await reader.ReadToEndAsync();
         }
         catch (Exception ex)
         {

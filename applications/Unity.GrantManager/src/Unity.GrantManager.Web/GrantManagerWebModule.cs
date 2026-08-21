@@ -481,6 +481,8 @@ public class GrantManagerWebModule : AbpModule
     {
         Configure<AbpBundlingOptions>(options =>
         {
+            options.Mode = BundlingMode.BundleAndMinify;
+            options.MinificationIgnoredFiles.Add("/js/notifications-realtime-client.js");
             options
                 .StyleBundles
                 .Configure(UnityThemeUX2Bundles.Styles.Global, bundle =>
@@ -684,7 +686,6 @@ public class GrantManagerWebModule : AbpModule
         app.UseStaticFiles();
         app.UseMiddleware<RequestCancellationMiddleware>();
         app.UseMiddleware<ExceptionCounterMiddleware>();
-        app.UseMiddleware<TimezoneMiddleware>();
         app.UseRouting();
         app.UseHttpMetrics();
         app.UseAuthentication();
@@ -697,6 +698,7 @@ public class GrantManagerWebModule : AbpModule
         app.UseUnitOfWork();
         app.UseDynamicClaims();
         app.UseAuthorization();
+        app.UseMiddleware<TimezoneMiddleware>();
         if (IsProfilingAllowed(env, configuration))
         {
             app.UseMiniProfiler();

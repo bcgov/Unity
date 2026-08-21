@@ -31,6 +31,7 @@ public class NotificationHub(
 {
     public const string HubRoute = "/signalr/notifications";
     public const string NotificationLogsOpsGroup = "ops:notification-logs";
+    public const int MaxDirectMessageLength = 4000;
 
     public override async Task OnConnectedAsync()
     {
@@ -93,13 +94,63 @@ public class NotificationHub(
         return [.. messages.Select(message => new UnreadMessageInfo
         {
             Scope = message.UserId.HasValue ? "user" : "tenant",
-            TargetId = message.UserId.HasValue ? userId.ToString() : message.TenantId?.ToString(),
+            TargetId = message.UserId.HasValue
+                ? message.SenderUserId?.ToString()
+                : message.TenantId?.ToString(),
             SenderId = message.SenderUserId?.ToString(),
             SenderName = message.SenderDisplayName ?? message.SenderUserId?.ToString() ?? "unknown",
             Source = message.Source,
             Message = message.Message,
             Timestamp = message.CreationTime
         })];
+    }
+
+    public async Task<UnreadMessageInfo[]> GetConversationHistoryAsync(string scope, string? targetId)
+    {
+        if (!Guid.TryParse(GetCurrentUserId(), out var userId))
+        {
+            return [];
+        }
+
+        var query = await notificationLogsRepository.GetQueryableAsync();
+        var messageQuery = query.Where(x =>
+            x.NotificationType == NotificationLogType.SignalRDirectMessage
+            && x.TenantId == currentTenant.Id);
+
+        if (scope == "tenant")
+        {
+            messageQuery = messageQuery.Where(x => x.UserId == null);
+        }
+        else if (Guid.TryParse(targetId, out var peerUserId))
+        {
+            messageQuery = messageQuery.Where(x =>
+                (x.UserId == userId && x.SenderUserId == peerUserId)
+                || (x.UserId == peerUserId && x.SenderUserId == userId));
+        }
+        else
+        {
+            return [];
+        }
+
+        var messages = await messageQuery
+            .OrderByDescending(x => x.CreationTime)
+            .Take(100)
+            .ToListAsync();
+
+        return [.. messages
+            .OrderBy(x => x.CreationTime)
+            .Select(message => new UnreadMessageInfo
+            {
+                Scope = message.UserId.HasValue ? "user" : "tenant",
+                TargetId = message.UserId.HasValue
+                    ? (message.SenderUserId == userId ? message.UserId : message.SenderUserId)?.ToString()
+                    : message.TenantId?.ToString(),
+                SenderId = message.SenderUserId?.ToString(),
+                SenderName = message.SenderDisplayName ?? message.SenderUserId?.ToString() ?? "unknown",
+                Source = message.Source,
+                Message = message.Message,
+                Timestamp = message.CreationTime
+            })];
     }
 
     public Task MarkMessagesReadAsync()
@@ -145,6 +196,11 @@ public class NotificationHub(
         if (string.IsNullOrWhiteSpace(targetUserId) || string.IsNullOrWhiteSpace(message))
         {
             throw new HubException("Target user and message are required.");
+        }
+
+        if (message.Length > MaxDirectMessageLength)
+        {
+            throw new HubException($"Messages cannot exceed {MaxDirectMessageLength} characters.");
         }
 
         var senderId = GetCurrentUserId() ?? string.Empty;
