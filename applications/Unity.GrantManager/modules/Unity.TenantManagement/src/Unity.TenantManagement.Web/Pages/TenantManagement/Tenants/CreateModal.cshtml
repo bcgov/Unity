@@ -142,13 +142,15 @@
 
                     <div class="tab-pane fade" id="create-pane-metabase" aria-labelledby="create-tab-metabase">
                         <p class="text-muted small">Users checked here will be granted access to this tenant's data in Metabase.</p>
+                        <p class="text-muted small">Note: a user must already have a Metabase account (via SSO login, or created under Admin &gt; People) before they can be added to a group. Emails without an existing account are skipped during registration.</p>
 
                         <div id="metabase-user-list" class="mb-3">
                             @foreach (var email in Model.DefaultMetabaseUserEmails)
                             {
-                                <div class="form-check">
+                                <div class="form-check d-flex align-items-center">
                                     <input class="form-check-input metabase-user-checkbox" type="checkbox" value="@email" id="metabase-user-@email.GetHashCode()" checked>
-                                    <label class="form-check-label" for="metabase-user-@email.GetHashCode()">@email</label>
+                                    <label class="form-check-label flex-grow-1" for="metabase-user-@email.GetHashCode()">@email</label>
+                                    <button type="button" class="btn btn-sm btn-link text-danger p-0 ms-2 metabase-remove-default-btn" data-email="@email" title="Remove from default list" aria-label="Remove @email from default list">&times;</button>
                                 </div>
                             }
                         </div>
@@ -164,6 +166,7 @@
 
                         <input type="hidden" id="metabase-user-emails" asp-for="Tenant.MetabaseUserEmails" />
                         <input type="hidden" id="metabase-new-default-user-emails" asp-for="Tenant.MetabaseNewDefaultUserEmails" />
+                        <input type="hidden" id="metabase-removed-default-user-emails" asp-for="Tenant.MetabaseRemovedDefaultUserEmails" />
                     </div>
                 }
 

@@ -2,6 +2,7 @@ using System;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 using Shouldly;
 using Unity.GrantManager.Integrations.Metabase;
@@ -32,7 +33,7 @@ public class MetabaseTenantRegistrationStepTests
     }
 
     private static (MetabaseTenantRegistrationStep Step, IMetabaseApiClient MetabaseApiClient, ISettingManager SettingManager, Tenant Tenant)
-        CreateStep(string? encryptedReadOnlyConnectionString = "encrypted-blob")
+        CreateStep(string? encryptedReadOnlyConnectionString = "encrypted-blob", string? apiKey = "test-api-key", string? dbHostOverride = null, bool? dbSslOverride = null)
     {
         var tenant = CreateTenant("AG-MARB");
         if (encryptedReadOnlyConnectionString != null)
@@ -48,9 +49,15 @@ public class MetabaseTenantRegistrationStepTests
 
         var settingManager = Substitute.For<ISettingManager>();
         var metabaseApiClient = Substitute.For<IMetabaseApiClient>();
+        var metabaseOptions = Options.Create(new MetabaseOptions
+        {
+            ApiKey = apiKey ?? string.Empty,
+            DbHostOverride = dbHostOverride ?? string.Empty,
+            DbSslOverride = dbSslOverride
+        });
 
         var step = new MetabaseTenantRegistrationStep(
-            metabaseApiClient, tenantRepository, encryptionService, settingManager,
+            metabaseApiClient, tenantRepository, encryptionService, settingManager, metabaseOptions,
             Substitute.For<ILogger<MetabaseTenantRegistrationStep>>());
 
         return (step, metabaseApiClient, settingManager, tenant);
@@ -64,6 +71,25 @@ public class MetabaseTenantRegistrationStepTests
         step.ContinueOnError.ShouldBeTrue();
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task CanExecuteAsync_NoApiKeyConfigured_ReturnsFalse(string? apiKey)
+    {
+        var (step, _, _, tenant) = CreateStep(apiKey: apiKey);
+
+        (await step.CanExecuteAsync(tenant.Id)).ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task CanExecuteAsync_ApiKeyConfigured_ReturnsTrue()
+    {
+        var (step, _, _, tenant) = CreateStep();
+
+        (await step.CanExecuteAsync(tenant.Id)).ShouldBeTrue();
+    }
+
     [Fact]
     public async Task ExecuteAsync_NoReadonlyConnectionString_SkipsWithoutCallingMetabase()
     {
@@ -71,7 +97,7 @@ public class MetabaseTenantRegistrationStepTests
 
         await step.ExecuteAsync(tenant.Id);
 
-        await metabaseApiClient.DidNotReceiveWithAnyArgs().CreateDatabaseAsync(default!, default!, default, default!, default!, default!);
+        await metabaseApiClient.DidNotReceiveWithAnyArgs().CreateDatabaseAsync(default!, default!, default, default!, default!, default!, default);
     }
 
     [Fact]
@@ -83,7 +109,7 @@ public class MetabaseTenantRegistrationStepTests
         settingManager.GetOrNullGlobalAsync(MetabaseSettings.UserEmails).Returns("user1@gov.bc.ca,user2@gov.bc.ca");
 
         metabaseApiClient.CreateDatabaseAsync(
-                tenant.Name, "dev-crunchy-postgres-primary.ce395f-dev.svc", 5432, "T_ABC123", "t_abc123_readonly", "s3cr3t")
+                tenant.Name, "dev-crunchy-postgres-primary.ce395f-dev.svc", 5432, "T_ABC123", "t_abc123_readonly", "s3cr3t", true)
             .Returns(11);
         metabaseApiClient.CreateGroupAsync(tenant.Name).Returns(22);
         metabaseApiClient.FindUserIdByEmailAsync("user1@gov.bc.ca").Returns(101);
@@ -98,6 +124,38 @@ public class MetabaseTenantRegistrationStepTests
         await metabaseApiClient.DidNotReceive().AddGroupMemberAsync(22, Arg.Is<int>(id => id != 101));
         await metabaseApiClient.Received(1).GrantGroupDatabaseAccessAsync(22, 11);
         await metabaseApiClient.Received(1).GrantGroupCollectionAccessAsync(22, 33);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_DbHostOverrideConfigured_UsesOverrideHostInsteadOfConnectionStringHost()
+    {
+        var (step, metabaseApiClient, settingManager, tenant) = CreateStep(dbHostOverride: "host.docker.internal");
+        settingManager.GetOrNullAsync(MetabaseSettings.UserEmails, TenantSettingValueProvider.ProviderName, tenant.Id.ToString())
+            .Returns((string?)null);
+        settingManager.GetOrNullGlobalAsync(MetabaseSettings.UserEmails).Returns((string?)null);
+        metabaseApiClient.CreateGroupAsync(tenant.Name).Returns(22);
+        metabaseApiClient.CreateCollectionAsync(tenant.Name).Returns(33);
+
+        await step.ExecuteAsync(tenant.Id);
+
+        await metabaseApiClient.Received(1).CreateDatabaseAsync(
+            tenant.Name, "host.docker.internal", 5432, "T_ABC123", "t_abc123_readonly", "s3cr3t", true);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_DbSslOverrideFalse_DisablesSslForDatabaseConnection()
+    {
+        var (step, metabaseApiClient, settingManager, tenant) = CreateStep(dbSslOverride: false);
+        settingManager.GetOrNullAsync(MetabaseSettings.UserEmails, TenantSettingValueProvider.ProviderName, tenant.Id.ToString())
+            .Returns((string?)null);
+        settingManager.GetOrNullGlobalAsync(MetabaseSettings.UserEmails).Returns((string?)null);
+        metabaseApiClient.CreateGroupAsync(tenant.Name).Returns(22);
+        metabaseApiClient.CreateCollectionAsync(tenant.Name).Returns(33);
+
+        await step.ExecuteAsync(tenant.Id);
+
+        await metabaseApiClient.Received(1).CreateDatabaseAsync(
+            tenant.Name, "dev-crunchy-postgres-primary.ce395f-dev.svc", 5432, "T_ABC123", "t_abc123_readonly", "s3cr3t", false);
     }
 
     [Fact]

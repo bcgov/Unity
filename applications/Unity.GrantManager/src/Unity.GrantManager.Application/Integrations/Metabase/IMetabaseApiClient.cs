@@ -11,7 +11,7 @@ namespace Unity.GrantManager.Integrations.Metabase;
 /// </summary>
 public interface IMetabaseApiClient
 {
-    Task<int> CreateDatabaseAsync(string name, string host, int port, string dbName, string username, string password, CancellationToken cancellationToken = default);
+    Task<int> CreateDatabaseAsync(string name, string host, int port, string dbName, string username, string password, bool ssl, CancellationToken cancellationToken = default);
     Task SyncDatabaseSchemaAsync(int databaseId, CancellationToken cancellationToken = default);
     Task RescanDatabaseValuesAsync(int databaseId, CancellationToken cancellationToken = default);
     Task<int> CreateGroupAsync(string name, CancellationToken cancellationToken = default);

@@ -57,22 +57,23 @@ public class CreateModalModel : TenantManagementPageModel
         var input = ObjectMapper.Map<TenantInfoModel, TenantCreateDto>(Tenant);
         await TenantAppService.CreateAsync(input);
 
-        if (!string.IsNullOrWhiteSpace(Tenant.MetabaseNewDefaultUserEmails))
+        if (!string.IsNullOrWhiteSpace(Tenant.MetabaseNewDefaultUserEmails) || !string.IsNullOrWhiteSpace(Tenant.MetabaseRemovedDefaultUserEmails))
         {
-            await SaveNewMetabaseDefaultUserEmailsAsync(Tenant.MetabaseNewDefaultUserEmails);
+            await UpdateMetabaseDefaultUserEmailsAsync(Tenant.MetabaseNewDefaultUserEmails, Tenant.MetabaseRemovedDefaultUserEmails);
         }
 
         return NoContent();
     }
 
-    private async Task SaveNewMetabaseDefaultUserEmailsAsync(string newEmailsCsv)
+    private async Task UpdateMetabaseDefaultUserEmailsAsync(string? newEmailsCsv, string? removedEmailsCsv)
     {
-        var existing = SplitEmails(await SettingManager.GetOrNullGlobalAsync(MetabaseSettings.UserEmails));
-        var merged = existing
+        var removed = SplitEmails(removedEmailsCsv);
+        var updated = SplitEmails(await SettingManager.GetOrNullGlobalAsync(MetabaseSettings.UserEmails))
             .Concat(SplitEmails(newEmailsCsv))
+            .Where(email => !removed.Contains(email, StringComparer.OrdinalIgnoreCase))
             .Distinct(StringComparer.OrdinalIgnoreCase);
 
-        await SettingManager.SetGlobalAsync(MetabaseSettings.UserEmails, string.Join(",", merged));
+        await SettingManager.SetGlobalAsync(MetabaseSettings.UserEmails, string.Join(",", updated));
     }
 
     private static List<string> SplitEmails(string? emailsCsv) =>
@@ -102,6 +103,9 @@ public class CreateModalModel : TenantManagementPageModel
 
         /// <summary>Comma-separated subset of newly-added Metabase emails to persist as the new Global default.</summary>
         public string? MetabaseNewDefaultUserEmails { get; set; }
+
+        /// <summary>Comma-separated default Metabase emails explicitly removed - deleted from the Global default.</summary>
+        public string? MetabaseRemovedDefaultUserEmails { get; set; }
 
         [Required]
         public string UserIdentifier { get; set; } = string.Empty;

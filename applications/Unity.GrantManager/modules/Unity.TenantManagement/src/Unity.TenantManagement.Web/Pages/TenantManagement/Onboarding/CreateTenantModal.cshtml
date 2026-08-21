@@ -15,6 +15,26 @@
 
         <script id="create-tenant-fields-json" type="application/json">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.OnboardingRequest!.Fields))</script>
 
+        <ul class="nav nav-tabs mb-3" id="createTenantModalTabs">
+            <li class="nav-item">
+                <button class="nav-link active" id="ctm-tab-details" data-bs-toggle="tab"
+                        data-bs-target="#ctm-pane-details" type="button"
+                        aria-controls="ctm-pane-details">
+                    @L["CreateTenantModal:DetailsTab"]
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" id="ctm-tab-metabase" data-bs-toggle="tab"
+                        data-bs-target="#ctm-pane-metabase" type="button"
+                        aria-controls="ctm-pane-metabase">
+                    @L["CreateTenantModal:MetabaseTab"]
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="createTenantModalTabContent">
+        <div class="tab-pane fade show active" id="ctm-pane-details" aria-labelledby="ctm-tab-details">
+
         <div id="create-tenant-field-mapping" style="display:none;">
             <div class="row g-2 mb-3">
                 <div class="col-12">
@@ -90,6 +110,39 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        </div>
+
+        <div class="tab-pane fade" id="ctm-pane-metabase" aria-labelledby="ctm-tab-metabase">
+            <p class="text-muted small">@L["CreateTenantModal:MetabaseDescription"]</p>
+            <p class="text-muted small">@L["CreateTenantModal:MetabaseAccountNote"]</p>
+
+            <div id="create-tenant-metabase-user-list" class="mb-3">
+                @foreach (var email in Model.DefaultMetabaseUserEmails)
+                {
+                    <div class="form-check d-flex align-items-center">
+                        <input class="form-check-input create-tenant-metabase-user-checkbox" type="checkbox" value="@email" id="create-tenant-metabase-user-@email.GetHashCode()" checked>
+                        <label class="form-check-label flex-grow-1" for="create-tenant-metabase-user-@email.GetHashCode()">@email</label>
+                        <button type="button" class="btn btn-sm btn-link text-danger p-0 ms-2 create-tenant-metabase-remove-default-btn" data-email="@email" title="@L["CreateTenantModal:MetabaseRemoveDefaultTitle"]" aria-label="@L["CreateTenantModal:MetabaseRemoveDefaultTitle"]">&times;</button>
+                    </div>
+                }
+            </div>
+
+            <div class="input-group input-group-sm mb-2" style="max-width: 420px;">
+                <input type="email" id="create-tenant-metabase-new-user-email" class="form-control" placeholder="name@gov.bc.ca" aria-label="New Metabase user email" />
+                <button type="button" id="create-tenant-metabase-add-user-btn" class="btn btn-outline-secondary">@L["CreateTenantModal:MetabaseAddButton"]</button>
+            </div>
+            <div class="form-check mb-3">
+                <input class="form-check-input" type="checkbox" id="create-tenant-metabase-save-as-default">
+                <label class="form-check-label" for="create-tenant-metabase-save-as-default">@L["CreateTenantModal:MetabaseSaveAsDefaultLabel"]</label>
+            </div>
+
+            <input type="hidden" id="create-tenant-metabase-user-emails" />
+            <input type="hidden" id="create-tenant-metabase-new-default-user-emails" />
+            <input type="hidden" id="create-tenant-metabase-removed-default-user-emails" />
+        </div>
+
         </div>
 
         <div id="onboarding-validation-loading" class="text-muted">

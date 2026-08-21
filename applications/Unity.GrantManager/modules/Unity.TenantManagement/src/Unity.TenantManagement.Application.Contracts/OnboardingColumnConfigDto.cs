@@ -34,4 +34,13 @@ public class CreateTenantInputDto
     public string? MinistryFieldKey { get; set; }
     public string? DivisionFieldKey { get; set; }
     public string? ProgramAreaFieldKey { get; set; }
+
+    /// <summary>Comma-separated emails checked in the Metabase tab - sent to TenantCreateDto as-is.</summary>
+    public string? MetabaseUserEmails { get; set; }
+
+    /// <summary>Comma-separated subset of newly-added Metabase emails to persist as the new Global default.</summary>
+    public string? MetabaseNewDefaultUserEmails { get; set; }
+
+    /// <summary>Comma-separated default Metabase emails explicitly removed - deleted from the Global default.</summary>
+    public string? MetabaseRemovedDefaultUserEmails { get; set; }
 }

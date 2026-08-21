@@ -232,6 +232,7 @@
         $('#create-features-content').on('change', 'input[type="checkbox"]', _captureCreateFeaturesToForm);
 
         _metabaseNewlyAddedEmails = [];
+        _metabaseRemovedDefaultEmails = [];
         _captureMetabaseUsersToForm();
         $('#metabase-user-list').on('change', '.metabase-user-checkbox', _captureMetabaseUsersToForm);
         $('#metabase-save-as-default').on('change', _captureMetabaseUsersToForm);
@@ -245,6 +246,12 @@
                 e.preventDefault();
                 $('#metabase-add-user-btn').click();
             }
+        });
+        $('#metabase-user-list').on('click', '.metabase-remove-default-btn', function (e) {
+            e.preventDefault();
+            _metabaseRemovedDefaultEmails.push($(this).data('email'));
+            $(this).closest('.form-check').remove();
+            _captureMetabaseUsersToForm();
         });
 
         $('#create-pane-features').closest('form').on('invalid-form.validate', function (e, validator) {
@@ -260,6 +267,7 @@
     // ─── Metabase tab: user list ───────────────────────────────────────────────
 
     let _metabaseNewlyAddedEmails = [];
+    let _metabaseRemovedDefaultEmails = [];
 
     function _captureMetabaseUsersToForm() {
         let checked = [];
@@ -267,6 +275,7 @@
             checked.push($(this).val());
         });
         $('#metabase-user-emails').val(checked.join(','));
+        $('#metabase-removed-default-user-emails').val(_metabaseRemovedDefaultEmails.join(','));
 
         if ($('#metabase-save-as-default').prop('checked')) {
             let newDefaults = _metabaseNewlyAddedEmails.filter(function (email) {

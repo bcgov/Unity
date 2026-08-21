@@ -13,13 +13,15 @@ namespace Unity.GrantManager.Tenants.PostCreation;
 
 public class PostTenantCreationSequenceJobTests
 {
-    private sealed class FakeStep(int order, string name, bool continueOnError, Func<Guid, Task>? onExecute = null)
+    private sealed class FakeStep(int order, string name, bool continueOnError, Func<Guid, Task>? onExecute = null, bool canExecute = true)
         : IPostTenantCreationStep
     {
         public int Order { get; } = order;
         public string StepName { get; } = name;
         public bool ContinueOnError { get; } = continueOnError;
         public bool Executed { get; private set; }
+
+        public Task<bool> CanExecuteAsync(Guid tenantId) => Task.FromResult(canExecute);
 
         public async Task ExecuteAsync(Guid tenantId)
         {
@@ -104,6 +106,20 @@ public class PostTenantCreationSequenceJobTests
         await job.ExecuteAsync(new PostTenantCreationStepArgs { TenantId = Guid.NewGuid(), StepIndex = 0 });
 
         enqueued.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_CanExecuteAsyncReturnsFalse_SkipsExecuteButStillEnqueuesNextStep()
+    {
+        var step0 = new FakeStep(0, "Step0", continueOnError: false, canExecute: false);
+        var step1 = new FakeStep(1, "Step1", continueOnError: false);
+        var (job, enqueued) = CreateJob([step0, step1]);
+
+        await job.ExecuteAsync(new PostTenantCreationStepArgs { TenantId = Guid.NewGuid(), StepIndex = 0 });
+
+        step0.Executed.ShouldBeFalse();
+        var next = enqueued.ShouldHaveSingleItem();
+        next.StepIndex.ShouldBe(1);
     }
 
     [Fact]

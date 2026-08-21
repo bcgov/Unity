@@ -41,11 +41,20 @@ public class PostTenantCreationSequenceJob(
         {
             using (currentTenant.Change(args.TenantId))
             {
-                logger.LogInformation(
-                    "{Prefix} Running step {StepIndex} '{StepName}' for tenant {TenantId}",
-                    LogPrefix, args.StepIndex, step.StepName, args.TenantId);
+                if (!await step.CanExecuteAsync(args.TenantId))
+                {
+                    logger.LogInformation(
+                        "{Prefix} Skipping step {StepIndex} '{StepName}' for tenant {TenantId} - CanExecuteAsync returned false",
+                        LogPrefix, args.StepIndex, step.StepName, args.TenantId);
+                }
+                else
+                {
+                    logger.LogInformation(
+                        "{Prefix} Running step {StepIndex} '{StepName}' for tenant {TenantId}",
+                        LogPrefix, args.StepIndex, step.StepName, args.TenantId);
 
-                await step.ExecuteAsync(args.TenantId);
+                    await step.ExecuteAsync(args.TenantId);
+                }
             }
         }
         catch (Exception ex)

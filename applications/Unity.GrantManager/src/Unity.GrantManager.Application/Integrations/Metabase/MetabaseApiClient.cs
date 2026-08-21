@@ -18,14 +18,14 @@ public class MetabaseApiClient(
 {
     private const string ApiKeyHeader = "x-api-key";
 
-    public async Task<int> CreateDatabaseAsync(string name, string host, int port, string dbName, string username, string password, CancellationToken cancellationToken = default)
+    public async Task<int> CreateDatabaseAsync(string name, string host, int port, string dbName, string username, string password, bool ssl, CancellationToken cancellationToken = default)
     {
         var body = new
         {
             engine = "postgres",
             name,
             is_full_sync = true,
-            details = new { host, port, dbname = dbName, user = username, password, ssl = true }
+            details = new { host, port, dbname = dbName, user = username, password, ssl }
         };
         var result = await PostAsync("/api/database", body, cancellationToken);
         return result.Value<int>("id");

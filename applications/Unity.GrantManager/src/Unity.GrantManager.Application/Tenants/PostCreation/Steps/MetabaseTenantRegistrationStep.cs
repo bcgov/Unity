@@ -4,9 +4,11 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Unity.GrantManager.Integrations.Metabase;
 using Unity.Modules.Shared.PostTenantCreation;
 using Unity.TenantManagement.Metabase;
+using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Security.Encryption;
 using Volo.Abp.Settings;
@@ -40,11 +42,14 @@ namespace Unity.GrantManager.Tenants.PostCreation.Steps;
 /// <see cref="ContinueOnError"/> is true - a Metabase outage is logged but doesn't block tenant
 /// creation or later post-creation steps.
 /// </summary>
+[RemoteService(false)]
+[ExposeServices(typeof(IPostTenantCreationStep))]
 public class MetabaseTenantRegistrationStep(
     IMetabaseApiClient metabaseApiClient,
     ITenantRepository tenantRepository,
     IStringEncryptionService stringEncryptionService,
     ISettingManager settingManager,
+    IOptions<MetabaseOptions> metabaseOptions,
     ILogger<MetabaseTenantRegistrationStep> logger)
     : IPostTenantCreationStep, ITransientDependency
 {
@@ -57,6 +62,19 @@ public class MetabaseTenantRegistrationStep(
 
     // A Metabase outage shouldn't block other post-creation steps from running.
     public bool ContinueOnError => true;
+
+    public virtual Task<bool> CanExecuteAsync(Guid tenantId)
+    {
+        if (string.IsNullOrWhiteSpace(metabaseOptions.Value.ApiKey))
+        {
+            logger.LogInformation(
+                "{Prefix} No Metabase API key configured - skipping registration for tenant {TenantId}.",
+                LogPrefix, tenantId);
+            return Task.FromResult(false);
+        }
+
+        return Task.FromResult(true);
+    }
 
     public virtual async Task ExecuteAsync(Guid tenantId)
     {
@@ -74,7 +92,17 @@ public class MetabaseTenantRegistrationStep(
         var (host, port, dbName, username, password) =
             ParseConnectionString(stringEncryptionService.Decrypt(encryptedReadOnlyConnectionString));
 
-        var databaseId = await metabaseApiClient.CreateDatabaseAsync(tenant.Name, host, port, dbName, username, password);
+        if (!string.IsNullOrWhiteSpace(metabaseOptions.Value.DbHostOverride))
+        {
+            logger.LogInformation(
+                "{Prefix} Overriding Postgres host '{OriginalHost}' with '{OverrideHost}' for tenant {TenantId} (Metabase:DbHostOverride is set).",
+                LogPrefix, host, metabaseOptions.Value.DbHostOverride, tenantId);
+            host = metabaseOptions.Value.DbHostOverride;
+        }
+
+        var ssl = metabaseOptions.Value.DbSslOverride ?? true;
+
+        var databaseId = await metabaseApiClient.CreateDatabaseAsync(tenant.Name, host, port, dbName, username, password, ssl);
         await metabaseApiClient.SyncDatabaseSchemaAsync(databaseId);
         await metabaseApiClient.RescanDatabaseValuesAsync(databaseId);
 
