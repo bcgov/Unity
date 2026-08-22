@@ -114,9 +114,10 @@ namespace Unity.GrantManager.ApplicantProfile
                     ReferenceNo = r.ReferenceNo
                 }).ToList();
 
-                // Primary is scoped to the address type: within each type group that has no address
-                // flagged primary, the most recent one is surfaced as that group's primary.
-                foreach (var typeGroup in deduplicated.GroupBy(r => r.address.AddressType))
+                // Primary is scoped to the address type WITHIN an applicant: this provider can return
+                // addresses for more than one applicant, so grouping by type alone would let one
+                // applicant's flagged primary suppress the fallback for another.
+                foreach (var typeGroup in deduplicated.GroupBy(r => new { r.address.ApplicantId, r.address.AddressType }))
                 {
                     if (typeGroup.Any(r => r.address.IsFlaggedPrimary()))
                     {
