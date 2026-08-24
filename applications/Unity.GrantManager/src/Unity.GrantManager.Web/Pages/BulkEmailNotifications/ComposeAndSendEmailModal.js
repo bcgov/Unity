@@ -109,7 +109,7 @@
 
     function syncCurrentState() {
         if (currentStep === 1) {
-            masterState = { ...(masterState || {}), ...readVisibleEditor() };
+            masterState = { ...masterState, ...readVisibleEditor() };
             return;
         }
 
