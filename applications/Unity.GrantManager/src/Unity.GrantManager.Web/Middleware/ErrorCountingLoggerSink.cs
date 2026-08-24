@@ -1,10 +1,10 @@
+using Microsoft.Extensions.DependencyInjection;
 using Prometheus;
 using Serilog.Core;
 using Serilog.Events;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using Unity.GrantManager.Logs;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Users;
@@ -43,6 +43,7 @@ public sealed class ErrorCountingLoggerSink : ILogEventSink
 
     public void Emit(LogEvent logEvent)
     {
+        return;
         if (logEvent.Level < LogEventLevel.Error || IsPersistingExceptionLog.Value)
         {
             return;

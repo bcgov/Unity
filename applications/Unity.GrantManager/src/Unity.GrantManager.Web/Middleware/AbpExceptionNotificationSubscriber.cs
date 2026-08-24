@@ -1,12 +1,12 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using Unity.GrantManager.Logs;
 using Unity.GrantManager.Notifications;
 using Unity.GrantManager.Notifications.Logs;
-using Unity.GrantManager.Logs;
 using Volo.Abp.ExceptionHandling;
 using Volo.Abp.Uow;
 
@@ -29,8 +29,7 @@ public class AbpExceptionNotificationSubscriber(
         new(StringComparer.OrdinalIgnoreCase)
         {
             "Production",
-            "Test",
-            "Development"
+            "Test"
         };
 
     public Task HandleAsync(ExceptionNotificationContext context)

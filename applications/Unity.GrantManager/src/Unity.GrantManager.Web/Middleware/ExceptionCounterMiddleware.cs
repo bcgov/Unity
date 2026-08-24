@@ -1,16 +1,16 @@
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Prometheus;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Prometheus;
-using Unity.GrantManager.Notifications;
-using Volo.Abp.Uow;
-using Unity.GrantManager.Notifications.Logs;
 using Unity.GrantManager.Logs;
+using Unity.GrantManager.Notifications;
+using Unity.GrantManager.Notifications.Logs;
+using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Web.Middleware;
 
@@ -29,8 +29,7 @@ public class ExceptionCounterMiddleware(
         new(StringComparer.OrdinalIgnoreCase)
         {
             "Production",
-            "Test",
-            "Development"
+            "Test"
         };
 
     // Internal so AbpExceptionNotificationSubscriber can also increment it for ABP-handled

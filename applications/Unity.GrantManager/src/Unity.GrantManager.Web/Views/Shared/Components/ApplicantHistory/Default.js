@@ -71,9 +71,13 @@ $(function () {
             }
 
             const rawValue = $input.val();
-            data[fieldName.charAt(0).toLowerCase() + fieldName.slice(1)] = typeof rawValue === 'string'
-                ? (rawValue.trim() === '' ? null : rawValue)
-                : rawValue;
+            let fieldValue;
+            if (typeof rawValue === 'string') {
+                fieldValue = rawValue.trim() === '' ? null : rawValue;
+            } else {
+                fieldValue = rawValue;
+            }
+            data[fieldName.charAt(0).toLowerCase() + fieldName.slice(1)] = fieldValue;
         });
 
         return data;
