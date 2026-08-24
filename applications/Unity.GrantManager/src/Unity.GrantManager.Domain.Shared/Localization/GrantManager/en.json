@@ -145,7 +145,6 @@
     "Permission:GrantApplicationManagement.Applications.Default": "Applications",
     "Permission:GrantApplicationManagement.Applicants.Default": "Applicants",
     "Permission:GrantApplicationManagement.Applicants.Edit": "Edit Applicant",
-    "Permission:GrantApplicationManagement.Applicants.ViewList": "View Applicant List",
     "Permission:GrantApplicationManagement.Applicants.AssignApplicant": "Assign Applicant to an Application",
     "Permission:GrantApplicationManagement.Applicants.ApplicantInfo": "Applicant Info",
     "Permission:GrantApplicationManagement.Applicants.ApplicantInfo.EditRedStop": "Edit Red-Stop",

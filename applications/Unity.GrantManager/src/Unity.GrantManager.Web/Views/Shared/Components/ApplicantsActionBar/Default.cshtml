@@ -1,7 +1,8 @@
-@using Unity.GrantManager.Localization;
 @using Microsoft.AspNetCore.Authorization;
 @using Microsoft.Extensions.Localization;
+@using Unity.GrantManager.Localization;
 @using Unity.GrantManager.Permissions
+@using Unity.Modules.Shared
 @using Volo.Abp.Authorization.Permissions;
 
 @inject IStringLocalizer<GrantManagerResource> L
@@ -14,7 +15,7 @@
     </div>
 
     <div class="btn-group" id="app_custom_buttons">
-        @if (await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Applicants.ViewList))
+        @if (await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Applicant.Default))
         {
             <abp-button id="openApplicant"
                         text="@L["ApplicationList:OpenButton"].Value"
