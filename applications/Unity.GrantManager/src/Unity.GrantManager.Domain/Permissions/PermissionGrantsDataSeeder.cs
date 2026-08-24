@@ -114,6 +114,41 @@ namespace Unity.GrantManager.Permissions
             UnitySelector.Application.Status.BulkPublish
         ];
 
+        public readonly List<string> ApplicantManagement_CommonPermissions = [
+            UnitySelector.ApplicantManagement.Default,
+
+            UnitySelector.ApplicantManagement.Applicant.Default,
+            UnitySelector.ApplicantManagement.Applicant.Delete,
+            UnitySelector.ApplicantManagement.Applicant.Merge,
+
+            UnitySelector.ApplicantManagement.ApplicantInfo.Default,
+            UnitySelector.ApplicantManagement.ApplicantInfo.Update,
+            UnitySelector.ApplicantManagement.ApplicantInfo.EditRedStop,
+            UnitySelector.ApplicantManagement.ApplicantInfo.EditOrganizationInfo,
+
+            UnitySelector.ApplicantManagement.Contacts.Default,
+            UnitySelector.ApplicantManagement.Contacts.Update,
+
+            UnitySelector.ApplicantManagement.Addresses.Default,
+            UnitySelector.ApplicantManagement.Addresses.Update,
+
+            UnitySelector.ApplicantManagement.Payments.Default,
+            UnitySelector.ApplicantManagement.Payments.EditSupplierInfo,
+
+            UnitySelector.ApplicantManagement.History.Default,
+            UnitySelector.ApplicantManagement.History.FundingHistory.Update,
+            UnitySelector.ApplicantManagement.History.AuditHistory.Update,
+            UnitySelector.ApplicantManagement.History.IssueHistory.Update,
+            
+            UnitySelector.ApplicantManagement.Comments.Default,
+            UnitySelector.ApplicantManagement.Comments.Create,
+            
+            UnitySelector.ApplicantManagement.Attachments.Default,
+            UnitySelector.ApplicantManagement.Attachments.Upload,
+            UnitySelector.ApplicantManagement.Attachments.EditLabel,
+            
+        ];
+
         public async Task SeedAsync(DataSeedContext context)
         {
             // Default permission grants based on role
@@ -155,6 +190,7 @@ namespace Unity.GrantManager.Permissions
                     .. Dashboard_CommonPermissions,
                     .. Tags_CommonPermissions,
                     .. ExternalStatusVisibility_CommonPermissions,
+                    .. ApplicantManagement_CommonPermissions,
                     AIPermissions.Configuration.ConfigureAI,
                     FlexPermissions.Worksheets.Default,
                     FlexPermissions.Worksheets.Delete
@@ -221,6 +257,7 @@ namespace Unity.GrantManager.Permissions
                     .. Dashboard_CommonPermissions,
                     .. Tags_CommonPermissions,
                     .. ExternalStatusVisibility_CommonPermissions,
+                    .. ApplicantManagement_CommonPermissions,
 
                     // Role Specific Permissions
                     UnitySelector.Project.Summary.Update.UpdateFinalStateFields,
