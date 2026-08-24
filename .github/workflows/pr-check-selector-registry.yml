@@ -1,0 +1,70 @@
+name: Dev - Selector Registry Check
+
+# Static-analysis gate for the Cypress selector contract (applications/Unity.AutoUI/cypress/selectors/).
+# Unlike the Cypress e2e runner (cypress-e2e-runner.yml), this needs no OpenShift job,
+# no BC Gov network access, and no running app — it only parses source files with
+# node + git, so it runs directly on the GitHub-hosted runner.
+#
+# Two checks:
+#   1. cypress/selectors/registry.json must already reflect the current source
+#      (catches "changed a selector, forgot to regenerate/commit the registry").
+#   2. npm run selectors:diff must report no regressions against origin/main
+#      (catches "this branch broke a selector that worked on main").
+#
+# Never runs --fix/--apply here — auto-mutating a contributor's branch in CI is
+# out of scope; selectors:fix/selectors:apply remain a local/dev-workstation step.
+
+on:
+  pull_request:
+    branches:
+      - dev
+
+permissions:
+  contents: read
+
+jobs:
+  selector-registry-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: applications/Unity.AutoUI
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Ensure origin/main is fetchable (selectors:diff baseline)
+        run: git fetch origin main --depth=1
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          # NOTE: pick this to match whatever Node version the OpenShift
+          # Cypress job image uses (defined in the separate tenant-gitops-ce395f
+          # repo, not visible from here to confirm directly). 22 is a safe
+          # default that satisfies Cypress ^15.17.0's minimum (Node 20.19+ /
+          # 22.12+ / 24+, per package.json) — adjust if the real job image differs.
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: applications/Unity.AutoUI/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check selector registry is up to date
+        run: |
+          set -euo pipefail
+          BEFORE=$(git show "HEAD:applications/Unity.AutoUI/cypress/selectors/registry.json" | jq 'del(.generatedAt)')
+          npm run selectors:report
+          AFTER=$(jq 'del(.generatedAt)' cypress/selectors/registry.json)
+          if [ "$BEFORE" != "$AFTER" ]; then
+            echo "::error::cypress/selectors/registry.json is stale relative to the current source."
+            echo "::error::Run 'npm run selectors:report' in applications/Unity.AutoUI and commit the result."
+            diff <(echo "$BEFORE") <(echo "$AFTER") || true
+            exit 1
+          fi
+          echo "Registry is up to date."
+
+      - name: Check for selector regressions against main
+        run: npm run selectors:diff
