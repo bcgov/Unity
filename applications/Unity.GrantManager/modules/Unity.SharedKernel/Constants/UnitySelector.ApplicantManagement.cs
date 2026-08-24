@@ -57,17 +57,26 @@ public static partial class UnitySelector
 
             public static partial class FundingHistory
             {
-                public const string Update = "Unity.GrantManager.ApplicantManagement.History.FundingHistory.Update";
+                public const string Default = "Unity.GrantManager.ApplicantManagement.History.Funding";
+                public const string Update  = "Unity.GrantManager.ApplicantManagement.History.Funding.Update";
             }
 
             public static partial class AuditHistory
             {
-                public const string Update = "Unity.GrantManager.ApplicantManagement.History.AuditHistory.Update";
+                public const string Default = "Unity.GrantManager.ApplicantManagement.History.Audit";
+                public const string Update  = "Unity.GrantManager.ApplicantManagement.History.Audit.Update";
             }
 
             public static partial class IssueHistory
             {
-                public const string Update = "Unity.GrantManager.ApplicantManagement.History.IssueHistory.Update";
+                public const string Default = "Unity.GrantManager.ApplicantManagement.History.Issue";
+                public const string Update  = "Unity.GrantManager.ApplicantManagement.History.Issue.Update";
+            }
+
+            public static partial class ReportHistory
+            {
+                public const string Default = "Unity.GrantManager.ApplicantManagement.History.Report";
+                public const string Update  = "Unity.GrantManager.ApplicantManagement.History.Report.Update";
             }
         }
 

@@ -1,13 +1,27 @@
 @using Unity.GrantManager.Web.Views.Shared.Components.ApplicantHistory
+@using Unity.Modules.Shared
+@using Volo.Abp.Authorization.Permissions
+
+@inject IPermissionChecker PermissionChecker
 
 @model ApplicantHistoryViewModel
 
 @{
     Layout = null;
+    var permissionCheck = await PermissionChecker.IsGrantedAsync([
+        UnitySelector.ApplicantManagement.History.FundingHistory.Update,
+        UnitySelector.ApplicantManagement.History.AuditHistory.Update,
+        UnitySelector.ApplicantManagement.History.IssueHistory.Update,
+        UnitySelector.ApplicantManagement.History.ReportHistory.Update,
+    ]);
+
+    var hasViewPermission = permissionCheck.Result.Values.Any(x => x == PermissionGrantResult.Granted);
 }
 
 <div class="applicant-history-widget applicant-info-container px-1 pb-2 mb-4">
 
+    @if (hasViewPermission)
+    {
     <div class="save-button-container">
         <abp-button text="Save"
                     id="saveApplicantHistoryBtn"
@@ -17,11 +31,15 @@
                     button-type="Primary"
                     disabled="true" />
     </div>
+    }
 
     <form id="ApplicantHistoryNotesForm" autocomplete="off">
         <input type="hidden" id="ApplicantHistory_ApplicantId" value="@Model.ApplicantId" />
 
         @* ── Funding History ── *@
+        <zone id="@UnitySelector.ApplicantManagement.History.FundingHistory.Default" zone-type="PermissionOnly"
+            permission-requirement="@UnitySelector.ApplicantManagement.History.Default"
+            update-permission-requirement="@UnitySelector.ApplicantManagement.History.FundingHistory.Update">
         <section class="history-section">
             <div class="pb-1 pt-2">
                 <h6 class="fw-bold mb-0">Funding History</h6>
@@ -45,8 +63,12 @@
                           rows="4">@Model.FundingHistoryComments</textarea>
             </div>
         </section>
+        </zone>
 
         @* ── Issue Tracking ── *@
+        <zone id="@UnitySelector.ApplicantManagement.History.IssueHistory.Default" zone-type="PermissionOnly"
+            permission-requirement="@UnitySelector.ApplicantManagement.History.Default"
+            update-permission-requirement="@UnitySelector.ApplicantManagement.History.IssueHistory.Update">
         <section class="history-section">
             <div class="pb-1 pt-2">
                 <h6 class="fw-bold mb-0">Issue Tracking</h6>
@@ -70,8 +92,12 @@
                           rows="4">@Model.IssueTrackingComments</textarea>
             </div>
         </section>
+        </zone>
 
         @* ── Audit History ── *@
+        <zone id="@UnitySelector.ApplicantManagement.History.AuditHistory.Default" zone-type="PermissionOnly"
+            permission-requirement="@UnitySelector.ApplicantManagement.History.Default"
+            update-permission-requirement="@UnitySelector.ApplicantManagement.History.AuditHistory.Update">
         <section class="history-section">
             <div class="pb-1 pt-2">
                 <h6 class="fw-bold mb-0">Audit History</h6>
@@ -92,8 +118,12 @@
                           rows="4">@Model.AuditComments</textarea>
             </div>
         </section>
+        </zone>
 
         @* ── Reports History ── *@
+        <zone id="@UnitySelector.ApplicantManagement.History.ReportHistory.Default" zone-type="PermissionOnly"
+            permission-requirement="@UnitySelector.ApplicantManagement.History.Default"
+            update-permission-requirement="@UnitySelector.ApplicantManagement.History.ReportHistory.Update">
         <section class="history-section">
             <div class="pb-1 pt-2">
                 <h6 class="fw-bold mb-0">Reports History</h6>
@@ -117,5 +147,6 @@
                           rows="4">@Model.ReportsComments</textarea>
             </div>
         </section>
+        </zone>
     </form>
 </div>

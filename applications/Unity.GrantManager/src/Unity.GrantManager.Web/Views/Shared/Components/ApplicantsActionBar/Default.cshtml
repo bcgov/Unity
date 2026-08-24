@@ -23,7 +23,7 @@
                         class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
                         button-type="Secondary" />
         }
-        @if (await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Applicants.Edit))
+        @if (await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Applicant.Merge))
         {
             <abp-button id="mergeApplicants"
                         text="Merge"

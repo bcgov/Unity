@@ -1,7 +1,9 @@
+using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.Modules.Shared;
 
 namespace Unity.GrantManager.ApplicantProfile;
 
@@ -140,13 +142,55 @@ public class ApplicantHistoryAppService(
         await reportsHistoryRepository.DeleteAsync(id, autoSave: true);
     }
 
+    [Authorize(UnitySelector.ApplicantManagement.History.Default)]
     public async Task SaveNotesAsync(Guid applicantId, SaveApplicantHistoryNotesDto input)
     {
+        // Check if the user has permission to update any of the applicant history notes
+        if (!await AuthorizationService.IsGrantedAnyAsync(
+            UnitySelector.ApplicantManagement.History.FundingHistory.Update,
+            UnitySelector.ApplicantManagement.History.AuditHistory.Update,
+            UnitySelector.ApplicantManagement.History.IssueHistory.Update,
+            UnitySelector.ApplicantManagement.History.ReportHistory.Update
+        ))
+        {
+            throw new UnauthorizedAccessException("You do not have permission to update any applicant history notes.");
+        }
+
+        var modifiedFields = input.ModifiedFields.Count > 0
+            ? new HashSet<string>(input.ModifiedFields, StringComparer.OrdinalIgnoreCase)
+            : new HashSet<string>([
+                nameof(SaveApplicantHistoryNotesDto.FundingHistoryComments),
+                nameof(SaveApplicantHistoryNotesDto.IssueTrackingComments),
+                nameof(SaveApplicantHistoryNotesDto.AuditComments),
+                nameof(SaveApplicantHistoryNotesDto.ReportsComments)
+            ], StringComparer.OrdinalIgnoreCase);
+
         var applicant = await applicantRepository.GetAsync(applicantId);
-        applicant.FundingHistoryComments = input.FundingHistoryComments;
-        applicant.IssueTrackingComments = input.IssueTrackingComments;
-        applicant.AuditComments = input.AuditComments;
-        applicant.ReportsComments = input.ReportsComments;
+
+        if (modifiedFields.Contains(nameof(SaveApplicantHistoryNotesDto.FundingHistoryComments))
+            && await AuthorizationService.IsGrantedAsync(UnitySelector.ApplicantManagement.History.FundingHistory.Update))
+        {
+            applicant.FundingHistoryComments = input.FundingHistoryComments;
+        }
+
+        if (modifiedFields.Contains(nameof(SaveApplicantHistoryNotesDto.IssueTrackingComments))
+            && await AuthorizationService.IsGrantedAsync(UnitySelector.ApplicantManagement.History.IssueHistory.Update))
+        {
+            applicant.IssueTrackingComments = input.IssueTrackingComments;
+        }
+
+        if (modifiedFields.Contains(nameof(SaveApplicantHistoryNotesDto.AuditComments))
+            && await AuthorizationService.IsGrantedAsync(UnitySelector.ApplicantManagement.History.AuditHistory.Update))
+        {
+            applicant.AuditComments = input.AuditComments;
+        }
+
+        if (modifiedFields.Contains(nameof(SaveApplicantHistoryNotesDto.ReportsComments))
+            && await AuthorizationService.IsGrantedAsync(UnitySelector.ApplicantManagement.History.ReportHistory.Update))
+        {
+            applicant.ReportsComments = input.ReportsComments;
+        }
+
         await applicantRepository.UpdateAsync(applicant, autoSave: true);
     }
 }

@@ -145,6 +145,7 @@
     "Permission:GrantApplicationManagement.Applications.Default": "Applications",
     "Permission:GrantApplicationManagement.Applicants.Default": "Applicants",
     "Permission:GrantApplicationManagement.Applicants.Edit": "Edit Applicant",
+
     "Permission:GrantApplicationManagement.Applicants.AssignApplicant": "Assign Applicant to an Application",
     "Permission:GrantApplicationManagement.Applicants.ApplicantInfo": "Applicant Info",
     "Permission:GrantApplicationManagement.Applicants.ApplicantInfo.EditRedStop": "Edit Red-Stop",
@@ -300,9 +301,10 @@
     "Unity.GrantManager.ApplicantManagement.Payments.EditSupplierInfo": "Edit Supplier Info",
     
     "Unity.GrantManager.ApplicantManagement.History": "History",
-    "Unity.GrantManager.ApplicantManagement.History.FundingHistory.Update": "Edit Funding History",
-    "Unity.GrantManager.ApplicantManagement.History.AuditHistory.Update": "Edit Audit History",
-    "Unity.GrantManager.ApplicantManagement.History.IssueHistory.Update": "Edit Issue History",
+    "Unity.GrantManager.ApplicantManagement.History.Funding.Update": "Edit Funding History",
+    "Unity.GrantManager.ApplicantManagement.History.Audit.Update": "Edit Audit History",
+    "Unity.GrantManager.ApplicantManagement.History.Issue.Update": "Edit Issue History",
+    "Unity.GrantManager.ApplicantManagement.History.Report.Update": "Edit Report History",
     
     "Unity.GrantManager.ApplicantManagement.Comments": "Comments",
     "Unity.GrantManager.ApplicantManagement.Comments.Create": "Add Applicant Comment",
