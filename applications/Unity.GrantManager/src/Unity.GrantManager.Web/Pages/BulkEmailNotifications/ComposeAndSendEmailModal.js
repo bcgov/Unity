@@ -126,8 +126,18 @@
             return false;
         }
 
-        const text = $('<div>').html(body).text().replaceAll('\u00a0', ' ').trim();
-        return text.length > 0 || /<(img|table|hr)\b/i.test(body);
+        if (/<(img|table|hr)\b/i.test(body)) {
+            return true;
+        }
+
+        // This only checks for visible content; it must not interpret editor input as DOM HTML.
+        const text = body
+            .replace(/<!--[\s\S]*?-->/g, '')
+            .replace(/<[^>]*>/g, '')
+            .replace(/&(?:nbsp|#0*160|#x0*a0);/gi, ' ')
+            .replace(/[\u200B-\u200D\uFEFF]/g, '')
+            .trim();
+        return text.length > 0;
     }
 
     function splitAddresses(value) {

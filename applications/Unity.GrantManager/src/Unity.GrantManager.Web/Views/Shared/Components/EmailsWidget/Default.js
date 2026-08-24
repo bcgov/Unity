@@ -2596,45 +2596,17 @@ function resolveEmailRecordTemplateName(emailRecord) {
 
 /**
  * TinyMCE can throw when loading persisted blob: URIs without a matching blob cache entry.
- * Strip blob URLs from HTML before setContent to avoid editor initialization crashes.
+ * Strip blob URL values without interpreting the content as DOM HTML. This is not a
+ * general-purpose HTML security sanitizer.
  * @param {string} html - Raw HTML
- * @returns {string} Sanitized HTML safe for TinyMCE setContent
+ * @returns {string} HTML with persisted blob URL values removed
  */
 function sanitizeTinyMceHtml(html) {
     if (!html || typeof html !== 'string') {
         return html || '';
     }
 
-    try {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(`<div id="tinymce-sanitize-root">${html}</div>`, 'text/html');
-        const root = doc.getElementById('tinymce-sanitize-root');
-        if (!root) {
-            return html;
-        }
-
-        root.querySelectorAll('[src], [href], [style]').forEach((element) => {
-            const src = element.getAttribute('src');
-            if (src?.trim().toLowerCase().startsWith('blob:')) {
-                element.removeAttribute('src');
-            }
-
-            const href = element.getAttribute('href');
-            if (href?.trim().toLowerCase().startsWith('blob:')) {
-                element.removeAttribute('href');
-            }
-
-            const style = element.getAttribute('style');
-            if (style?.toLowerCase().includes('blob:')) {
-                element.setAttribute('style', style.replaceAll(/url\([^)]*blob:[^)]*\)/gi, 'url("")'));
-            }
-        });
-
-        return root.innerHTML;
-    } catch (e) {
-        console.warn('Failed to sanitize TinyMCE HTML content:', e);
-        return html;
-    }
+    return html.replace(/blob:[^"'()\s<>]+/gi, '');
 }
 
 
