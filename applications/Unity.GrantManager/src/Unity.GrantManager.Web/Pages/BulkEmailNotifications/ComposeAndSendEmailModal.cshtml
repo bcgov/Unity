@@ -124,11 +124,11 @@
                          tabindex="0"></div>
 
                     <section class="compose-editor-panel" aria-labelledby="composeStepTitle">
-                        <div id="composeRecipientSummary" class="alert alert-secondary compose-recipient-summary" role="status">
+                        <output id="composeRecipientSummary" class="alert alert-secondary compose-recipient-summary">
                             Each selected application will use its contact email as the initial recipient. You can review or edit recipients in Step 2.
-                        </div>
+                        </output>
                         <div id="composeEditorLoading" class="compose-editor-loading" style="display:none">
-                            <div class="spinner-grow" role="status"><span class="visually-hidden">Loading...</span></div>
+                            <output class="spinner-grow"><span class="visually-hidden">Loading...</span></output>
                         </div>
                         <div id="composeEmailEditor" class="emails-widget-scope">
                             @await Component.InvokeAsync("EmailsWidget", new

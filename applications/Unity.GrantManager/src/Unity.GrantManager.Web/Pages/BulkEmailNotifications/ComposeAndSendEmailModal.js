@@ -2,7 +2,7 @@
     const applicationDetailsCache = new Map();
     const attachmentCache = new Map();
     const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    const templateTokenPattern = /\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g;
+    const templateTokenPattern = /\{\{\s*(\w+)\s*\}\}/g;
 
     let applications = [];
     let templates = [];
@@ -66,9 +66,8 @@
         return editor ? editor.getContent() : ($('#EmailBody').val() || '');
     }
 
-    function sanitizeEditorHtml(value) {
-        const html = value || '';
-        return typeof sanitizeTinyMceHtml === 'function' ? sanitizeTinyMceHtml(html) : html;
+    function sanitizeEditorHtml(value = '') {
+        return typeof sanitizeTinyMceHtml === 'function' ? sanitizeTinyMceHtml(value) : value;
     }
 
     function setEditorBody(value) {
@@ -110,7 +109,7 @@
 
     function syncCurrentState() {
         if (currentStep === 1) {
-            masterState = Object.assign({}, masterState || {}, readVisibleEditor());
+            masterState = { ...(masterState || {}), ...readVisibleEditor() };
             return;
         }
 
@@ -119,7 +118,7 @@
         }
 
         const existing = applicationStates.get(selectedApplicationId);
-        applicationStates.set(selectedApplicationId, Object.assign({}, existing, readVisibleEditor()));
+        applicationStates.set(selectedApplicationId, { ...existing, ...readVisibleEditor() });
     }
 
     function bodyHasContent(body) {
@@ -499,11 +498,12 @@
             $('#EmailSubject').val(fields.subject);
             $('#EmailTemplateName').val(fields.name);
             setEditorBody(fields.body);
-            masterState = Object.assign({}, readVisibleEditor(), {
+            masterState = {
+                ...readVisibleEditor(),
                 templateId: String(fields.id),
                 templateName: fields.name,
                 attachmentBytes: getSelectedAttachmentBytes(fields.id)
-            });
+            };
             updateRecipientSummary(fields.id);
             showStepOneErrors(validateState(masterState, false));
             return true;
@@ -554,21 +554,24 @@
         await loadAttachments(null);
         $('#EmailTemplateName').val('');
         if (currentStep === 1) {
-            masterState = Object.assign({}, readVisibleEditor(), {
+            masterState = {
+                ...readVisibleEditor(),
                 templateId: null,
                 templateName: '',
                 attachmentBytes: 0
-            });
+            };
             updateRecipientSummary(null);
             showStepOneErrors(validateState(masterState, false));
             return true;
         }
 
-        const state = Object.assign({}, applicationStates.get(selectedApplicationId), readVisibleEditor(), {
+        const state = {
+            ...applicationStates.get(selectedApplicationId),
+            ...readVisibleEditor(),
             templateId: null,
             templateName: '',
             attachmentBytes: 0
-        });
+        };
         applicationStates.set(selectedApplicationId, state);
         updateRowValidation(selectedApplicationId);
         updateAllValidations();
