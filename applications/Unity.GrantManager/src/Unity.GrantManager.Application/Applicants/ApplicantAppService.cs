@@ -20,6 +20,7 @@ using Unity.Payments.Integrations.Cas;
 using Unity.Payments.Suppliers;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Authorization;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 
@@ -715,10 +716,23 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         }
     }
 
+    private async Task AuthorizeApplicantMerge()
+    {
+        if (!await AuthorizationService.IsGrantedAnyAsync(
+            UnitySelector.ApplicantManagement.Applicant.Merge,
+            UnitySelector.Application.Summary.Update))
+        {
+            throw new AbpAuthorizationException(code: AbpAuthorizationErrorCodes.GivenPolicyHasNotGranted);
+        }  
+    }
+
 
     [RemoteService(true)]
+    [Authorize]
     public async Task TransferApplicantApplicationsAsync(TransferApplicantApplicationsDto dto)
     {
+        await AuthorizeApplicantMerge();
+
         var principal = await applicantRepository.GetAsync(dto.PrincipalApplicantId);
         var nonPrincipal = await applicantRepository.GetAsync(dto.NonPrincipalApplicantId);
 
@@ -740,8 +754,11 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     }
 
     [RemoteService(true)]
+    [Authorize]
     public async Task SetDuplicatedAsync(SetApplicantDuplicateDto dto)
     {
+        await AuthorizeApplicantMerge();
+
         // Set principal as not duplicated
         var principal = await applicantRepository.GetAsync(dto.PrincipalApplicantId);
         var nonPrincipal = await applicantRepository.GetAsync(dto.NonPrincipalApplicantId);
