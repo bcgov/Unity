@@ -1,0 +1,173 @@
+#composeAndSendEmailModal .modal-dialog {
+    max-width: 95vw;
+}
+
+.compose-step-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.compose-step-heading h5 {
+    margin: 0;
+    font-size: 1.125rem;
+}
+
+.compose-step-number {
+    color: var(--bc-type-color-secondary, #606060);
+    font-size: 0.875rem;
+}
+
+.compose-email-layout {
+    display: flex;
+    align-items: stretch;
+    min-height: 34rem;
+    max-height: 75vh;
+}
+
+.compose-application-panel {
+    display: none;
+    flex: 0 0 40%;
+    min-width: 0;
+}
+
+.compose-step-two .compose-application-panel {
+    display: block;
+}
+
+.compose-step-two .compose-panel-divider {
+    display: flex;
+}
+
+.compose-application-row {
+    cursor: pointer;
+}
+
+.compose-application-row:hover,
+.compose-application-row:focus-visible {
+    border-color: var(--bc-colors-blue-text-links, #1a5a96);
+    outline: none;
+}
+
+.compose-application-row.row-selected {
+    border-color: var(--bc-colors-blue-text-links);
+    border-width: 2px;
+    background-color: var(--bc-colors-blue-light, #f0f6ff);
+}
+
+.compose-row-validation {
+    margin-top: 0.25rem;
+}
+
+.compose-row-validation:empty {
+    display: none;
+}
+
+.compose-row-validation .bulk-approval-notes-column + .bulk-approval-notes-column {
+    margin-top: 0.25rem;
+}
+
+.compose-panel-divider {
+    display: none;
+}
+
+.compose-editor-panel {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-y: auto;
+    padding-left: 1rem;
+}
+
+.compose-step-one .compose-editor-panel {
+    max-width: 960px;
+    margin: 0 auto;
+    padding-left: 0;
+}
+
+.compose-editor-loading {
+    min-height: 24rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.compose-recipient-summary {
+    margin: 0.25rem 0.5rem 0.75rem;
+    padding: 0.65rem 0.75rem;
+}
+
+.compose-step-two .compose-recipient-summary {
+    display: none;
+}
+
+#composeAndSendEmailModal .no-draft-preview-mode #EmailForm {
+    display: block;
+}
+
+#composeAndSendEmailModal .no-draft-preview-mode #btn-new-email,
+#composeAndSendEmailModal .no-draft-preview-mode #btn-send-top,
+#composeAndSendEmailModal .no-draft-preview-mode #btn-send-dropdown,
+#composeAndSendEmailModal .no-draft-preview-mode #btn-send-discard-top,
+#composeAndSendEmailModal .no-draft-preview-mode #btn-send-close-top,
+#composeAndSendEmailModal .no-draft-preview-mode #email_attachment_upload_btn,
+#composeAndSendEmailModal .no-draft-preview-mode #email-attachment-form,
+#composeAndSendEmailModal .no-draft-preview-mode #scheduled-delay-section,
+#composeAndSendEmailModal .no-draft-preview-mode #modal-content,
+#composeAndSendEmailModal .no-draft-preview-mode #modal-background,
+#composeAndSendEmailModal .no-draft-preview-mode #schedule-send-modal,
+#composeAndSendEmailModal .no-draft-preview-mode #schedule-modal-backdrop {
+    display: none !important;
+}
+
+#composeAndSendEmailModal .compose-step-one .compose-recipient-row,
+#composeAndSendEmailModal .compose-step-one #btn-save-top {
+    display: none !important;
+}
+
+#composeAndSendEmailModal .compose-step-two #btn-save-top {
+    display: inline-flex !important;
+}
+
+#composeAndSendEmailModal .compose-step-two #bcc-input-row {
+    display: flex;
+}
+
+#composeAndSendEmailModal .no-draft-preview-mode #btn-show-bcc {
+    display: none;
+}
+
+#composeAndSendEmailModal .no-draft-preview-mode .email-buttons-container {
+    width: 100%;
+}
+
+#composeAndSendEmailModal #email-attachments-section {
+    padding: 0 0.5rem !important;
+}
+
+body.compose-email-resizing {
+    cursor: col-resize;
+    user-select: none;
+}
+
+@media (max-width: 900px) {
+    .compose-email-layout,
+    .compose-step-two .compose-email-layout {
+        display: block;
+        max-height: none;
+    }
+
+    .compose-step-two .compose-application-panel {
+        min-width: 0;
+        max-height: 16rem;
+        padding: 0 0 0.75rem;
+    }
+
+    .compose-step-two .compose-panel-divider {
+        display: none;
+    }
+
+    .compose-editor-panel {
+        padding-left: 0;
+    }
+}

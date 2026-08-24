@@ -14,10 +14,14 @@
     var emailFieldsetState  = sendEmailGranted ? string.Empty : "disabled";
     var enableEmailDelay = Model.EnableEmailDelay;
     var scheduleEmailGranted = await PermissionChecker.IsGrantedAsync("Notifications.Email.Schedule");
-    var enableScheduleSend = enableEmailDelay && scheduleEmailGranted;
+    var enableScheduleSend = enableEmailDelay && scheduleEmailGranted && !Model.NoDraftPreviewMode;
 }
 
-<div id=" emails-div@(Model.ApplicationId)" class="mt-2  emails-container" data-count="0" data-counttag="application_emails_count">
+<div id="emails-div-@(Model.ApplicationId)"
+     class="mt-2 emails-container @(Model.NoDraftPreviewMode ? "no-draft-preview-mode" : string.Empty)"
+     data-count="0"
+     data-counttag="application_emails_count"
+     data-no-draft-preview="@Model.NoDraftPreviewMode.ToString().ToLowerInvariant()">
 
     <div id="modal-background"></div>
 
@@ -27,12 +31,12 @@
         icon-type="Other" 
         icon="fa-solid fa-plus" 
         button-type="Light"
-        abp-if="@sendEmailGranted" />
+        abp-if="@(sendEmailGranted && !Model.NoDraftPreviewMode)" />
 
     <abp-alert
         id="email-alert-readonly"
         alert-type="Secondary" 
-        abp-if="@(!sendEmailGranted)">
+        abp-if="@(!sendEmailGranted && !Model.NoDraftPreviewMode)">
         Please select from the email history below.
     </abp-alert>
 
@@ -70,6 +74,7 @@
 
     <form id="EmailForm" class="email-form" autocomplete="off">
         <abp-input type="hidden" id="ApplicationId" asp-for="@Model.ApplicationId" />
+        <input type="hidden" id="NoDraftPreviewMode" value="@Model.NoDraftPreviewMode.ToString().ToLowerInvariant()" />
         <input type="hidden" id="EmailTemplateName" name="EmailTemplateName" value="" />
         <fieldset @emailFieldsetState>
             <legend class="d-none">Email Form</legend>
@@ -153,7 +158,7 @@
                 </abp-row>
             </abp-row>        
 
-            <abp-row class="m-0 p-0 align-items-start">
+            <abp-row class="m-0 p-0 align-items-start compose-recipient-row compose-to-row">
                 <abp-column class="col-auto px-1 label-column-aligned mt-14">
                     <label for="EmailTo" class="form-label mb-0">To:</label>
                 </abp-column>
@@ -164,7 +169,7 @@
                     </button>
                 </abp-column>
             </abp-row>
-            <abp-row class="m-0 p-0 align-items-start row">
+            <abp-row class="m-0 p-0 align-items-start row compose-recipient-row compose-cc-row">
                 <abp-column class="col-auto px-1 mt-14">
                     <label for="EmailCC" class="form-label mb-0">Cc:</label>
                 </abp-column>
@@ -172,7 +177,7 @@
                     <abp-input asp-for="@Model.EmailCC" class="email-input" suppress-label="true" />
                 </abp-column>
             </abp-row>
-            <abp-row class="m-0 p-0 align-items-start row" id="bcc-input-row">
+            <abp-row class="m-0 p-0 align-items-start row compose-recipient-row compose-bcc-row" id="bcc-input-row">
                 <abp-column class="col-auto px-1 mt-14">
                     <label for="EmailBCC" class="form-label mb-0">Bcc:</label>
                 </abp-column>
@@ -180,6 +185,19 @@
                     <abp-input asp-for="@Model.EmailBCC" class="email-input" suppress-label="true" />
                 </abp-column>
             </abp-row>
+            @if (Model.NoDraftPreviewMode)
+            {
+                <abp-row class="m-0 p-0 align-items-start row compose-template-row">
+                    <abp-column size="_12" class="px-1">
+                        <abp-select asp-for="@Model.EmailTemplate"
+                                    asp-items="@Model.TemplatesList"
+                                    class="email-input"
+                                    suppress-label="true">
+                            <option value="">No template selected</option>
+                        </abp-select>
+                    </abp-column>
+                </abp-row>
+            }
             <abp-row class="m-0 p-0 align-items-start row">
                 <abp-column size="_12" class="px-1">
                     <abp-input asp-for="@Model.EmailSubject" class="email-input" suppress-label="true" />

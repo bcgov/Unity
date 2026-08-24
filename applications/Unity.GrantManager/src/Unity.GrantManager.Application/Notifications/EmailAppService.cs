@@ -56,6 +56,7 @@ namespace Unity.GrantManager.Notifications
                 Bcc = bccList,
                 Subject = dto.EmailSubject,
                 Body = dto.EmailBody,
+                TemplateId = dto.TemplateId ?? Guid.Empty,
                 EmailTemplateName = dto.EmailTemplateName,
                 SendOnDateTime = dto.SendOnDateTime
             };

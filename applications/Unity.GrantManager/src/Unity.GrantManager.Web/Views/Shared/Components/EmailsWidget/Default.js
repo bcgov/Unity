@@ -7,6 +7,10 @@
 // need that treatment: each call captures fresh references to the newly-rendered DOM, and the previous DOM (with
 // whatever was bound to it) is simply discarded along with the old closure.
 function initializeEmailsWidget() {
+    if ($('#composeAndSendEmailModal:visible #NoDraftPreviewMode[value="true"]').length > 0) {
+        return;
+    }
+
     const BC_PERMANENT_DST_ZONE = 'UTC-7';
     // Close dropdown menus when clicking outside
     $(document).off('click.emailWidgetDropdown').on('click.emailWidgetDropdown', function (e) {

@@ -9,5 +9,7 @@ namespace Unity.GrantManager.GrantApplications
         Task<BulkEmailNotificationResultDto> SendBulkEmailNotifications(List<BulkEmailNotificationDto> batchApplicationsToEmail);
         Task<List<BulkEmailNotificationDto>> GetApplicationsForBulkEmail(Guid[] applicationGuids);
         Task<BulkEmailNotificationDto> RevalidateApplicationForBulkEmail(Guid applicationId);
+        Task<List<ComposeEmailApplicationDto>> GetApplicationsForComposeEmail(Guid[] applicationGuids);
+        Task<BulkEmailNotificationResultDto> SendComposedBulkEmails(ComposeBulkEmailRequestDto request);
     }
 }
