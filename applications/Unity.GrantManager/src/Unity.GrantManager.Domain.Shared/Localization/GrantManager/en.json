@@ -283,7 +283,7 @@
     "Unity.GrantManager.ApplicantManagement.Applicant.Delete": "Delete Applicant",
     "Unity.GrantManager.ApplicantManagement.Applicant.Merge": "Merge Applicant",
     
-    "Unity.GrantManager.ApplicantManagement.ApplicantInfo.Default": "Applicant Info",
+    "Unity.GrantManager.ApplicantManagement.ApplicantInfo": "Applicant Info",
     "Unity.GrantManager.ApplicantManagement.ApplicantInfo.Update": "Edit Applicant Information",
     "Unity.GrantManager.ApplicantManagement.ApplicantInfo.EditRedStop": "Edit Red-Stop",
     "Unity.GrantManager.ApplicantManagement.ApplicantInfo.EditOrganizationInfo": "Edit Organization Information",
@@ -292,7 +292,7 @@
     "Unity.GrantManager.ApplicantManagement.Contacts.Update": "Edit Contacts",
     
     "Unity.GrantManager.ApplicantManagement.Addresses": "Addresses",
-    "Unity.GrantManager.ApplicantManagement.Addresses.EditAddresses": "Edit Addresses",
+    "Unity.GrantManager.ApplicantManagement.Addresses.Update": "Edit Addresses",
     
     "Unity.GrantManager.ApplicantManagement.Submissions": "Submissions",
     "Unity.GrantManager.ApplicantManagement.Submissions.AssignApplicant": "Assign Applicant",

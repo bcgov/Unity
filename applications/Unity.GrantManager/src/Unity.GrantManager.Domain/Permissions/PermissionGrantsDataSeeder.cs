@@ -304,6 +304,7 @@ namespace Unity.GrantManager.Permissions
                     NotificationsPermissions.Settings,
                     .. Dashboard_CommonPermissions,
                     .. Tags_CommonPermissions,
+                    .. ApplicantManagement_CommonPermissions,
                     UnitySettingManagementPermissions.ConfigurePayments,
                     UnitySettingManagementPermissions.BackgroundJobSettings,
                     AIPermissions.Configuration.ConfigureAI,
