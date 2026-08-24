@@ -12,7 +12,6 @@ using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Intakes.Mapping;
 using Unity.GrantManager.Integrations.Orgbook;
-using Unity.GrantManager.Permissions;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Utils;
 using Unity.Payments.Domain.Suppliers;
@@ -768,14 +767,14 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     }
 
     [RemoteService(true)]
-    [Authorize(GrantApplicationPermissions.Applicants.Delete)]
+    [Authorize(UnitySelector.ApplicantManagement.Applicant.Default)]
     public async Task<bool> HasSubmissionsAsync(Guid id)
     {
         return await applicationRepository.HasApplicationsByApplicantIdAsync(id);
     }
 
     [RemoteService(true)]
-    [Authorize(GrantApplicationPermissions.Applicants.Delete)]
+    [Authorize(UnitySelector.ApplicantManagement.Applicant.Delete)]
     public async Task DeleteApplicantAsync(Guid id)
     {
         if (await applicationRepository.HasApplicationsByApplicantIdAsync(id))
