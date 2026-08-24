@@ -73,7 +73,7 @@ public static partial class UnitySelector
                 public const string Update  = "Unity.GrantManager.ApplicantManagement.History.Issue.Update";
             }
 
-            public static partial class ReportHistory
+            public static partial class ReportsHistory
             {
                 public const string Default = "Unity.GrantManager.ApplicantManagement.History.Report";
                 public const string Update  = "Unity.GrantManager.ApplicantManagement.History.Report.Update";

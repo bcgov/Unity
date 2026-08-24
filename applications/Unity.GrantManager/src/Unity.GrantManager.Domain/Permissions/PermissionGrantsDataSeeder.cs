@@ -139,7 +139,7 @@ namespace Unity.GrantManager.Permissions
             UnitySelector.ApplicantManagement.History.FundingHistory.Update,
             UnitySelector.ApplicantManagement.History.AuditHistory.Update,
             UnitySelector.ApplicantManagement.History.IssueHistory.Update,
-            UnitySelector.ApplicantManagement.History.ReportHistory.Update,
+            UnitySelector.ApplicantManagement.History.ReportsHistory.Update,
             
             UnitySelector.ApplicantManagement.Comments.Default,
             UnitySelector.ApplicantManagement.Comments.Create,

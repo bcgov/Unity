@@ -226,6 +226,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             upx_History.AddUnityChild(UnitySelector.ApplicantManagement.History.FundingHistory.Update);
             upx_History.AddUnityChild(UnitySelector.ApplicantManagement.History.AuditHistory.Update);
             upx_History.AddUnityChild(UnitySelector.ApplicantManagement.History.IssueHistory.Update);
+            upx_History.AddUnityChild(UnitySelector.ApplicantManagement.History.ReportsHistory.Update);
 
             var upx_Comments = group.AddPermission(UnitySelector.ApplicantManagement.Comments.Default, L(UnitySelector.ApplicantManagement.Comments.Default));
             upx_Comments.AddUnityChild(UnitySelector.ApplicantManagement.Comments.Create);

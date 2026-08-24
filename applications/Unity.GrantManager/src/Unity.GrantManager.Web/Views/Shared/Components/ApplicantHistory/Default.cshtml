@@ -12,7 +12,7 @@
         UnitySelector.ApplicantManagement.History.FundingHistory.Update,
         UnitySelector.ApplicantManagement.History.AuditHistory.Update,
         UnitySelector.ApplicantManagement.History.IssueHistory.Update,
-        UnitySelector.ApplicantManagement.History.ReportHistory.Update,
+        UnitySelector.ApplicantManagement.History.ReportsHistory.Update,
     ]);
 
     var hasViewPermission = permissionCheck.Result.Values.Any(x => x == PermissionGrantResult.Granted);
@@ -37,7 +37,7 @@
         <input type="hidden" id="ApplicantHistory_ApplicantId" value="@Model.ApplicantId" />
 
         @* ── Funding History ── *@
-        <zone id="@UnitySelector.ApplicantManagement.History.FundingHistory.Default" zone-type="PermissionOnly"
+        <zone-fieldset id="@UnitySelector.ApplicantManagement.History.FundingHistory.Default" zone-type="PermissionOnly"
             permission-requirement="@UnitySelector.ApplicantManagement.History.Default"
             update-permission-requirement="@UnitySelector.ApplicantManagement.History.FundingHistory.Update">
         <section class="history-section">
@@ -63,10 +63,10 @@
                           rows="4">@Model.FundingHistoryComments</textarea>
             </div>
         </section>
-        </zone>
+        </zone-fieldset>
 
         @* ── Issue Tracking ── *@
-        <zone id="@UnitySelector.ApplicantManagement.History.IssueHistory.Default" zone-type="PermissionOnly"
+        <zone-fieldset id="@UnitySelector.ApplicantManagement.History.IssueHistory.Default" zone-type="PermissionOnly"
             permission-requirement="@UnitySelector.ApplicantManagement.History.Default"
             update-permission-requirement="@UnitySelector.ApplicantManagement.History.IssueHistory.Update">
         <section class="history-section">
@@ -92,10 +92,10 @@
                           rows="4">@Model.IssueTrackingComments</textarea>
             </div>
         </section>
-        </zone>
+        </zone-fieldset>
 
         @* ── Audit History ── *@
-        <zone id="@UnitySelector.ApplicantManagement.History.AuditHistory.Default" zone-type="PermissionOnly"
+        <zone-fieldset id="@UnitySelector.ApplicantManagement.History.AuditHistory.Default" zone-type="PermissionOnly"
             permission-requirement="@UnitySelector.ApplicantManagement.History.Default"
             update-permission-requirement="@UnitySelector.ApplicantManagement.History.AuditHistory.Update">
         <section class="history-section">
@@ -118,12 +118,12 @@
                           rows="4">@Model.AuditComments</textarea>
             </div>
         </section>
-        </zone>
+        </zone-fieldset>
 
         @* ── Reports History ── *@
-        <zone id="@UnitySelector.ApplicantManagement.History.ReportHistory.Default" zone-type="PermissionOnly"
+        <zone-fieldset id="@UnitySelector.ApplicantManagement.History.ReportsHistory.Default" zone-type="PermissionOnly"
             permission-requirement="@UnitySelector.ApplicantManagement.History.Default"
-            update-permission-requirement="@UnitySelector.ApplicantManagement.History.ReportHistory.Update">
+            update-permission-requirement="@UnitySelector.ApplicantManagement.History.ReportsHistory.Update">
         <section class="history-section">
             <div class="pb-1 pt-2">
                 <h6 class="fw-bold mb-0">Reports History</h6>
@@ -147,6 +147,6 @@
                           rows="4">@Model.ReportsComments</textarea>
             </div>
         </section>
-        </zone>
+        </zone-fieldset>
     </form>
 </div>
