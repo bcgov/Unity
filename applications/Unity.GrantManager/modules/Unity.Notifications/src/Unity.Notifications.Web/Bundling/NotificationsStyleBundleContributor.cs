@@ -7,6 +7,8 @@ namespace Unity.Notifications.Web.Bundling
     {
         public override void ConfigureBundle(BundleConfigurationContext context)
         {            
+            context.Files.AddIfNotContains("/libs/select2/dist/css/select2.css");
+            context.Files.AddIfNotContains("/libs/select2-bootstrap-5-theme/dist/select2-bootstrap-5-theme.css");
             context.Files.AddIfNotContains("/libs/tinymce/skins/ui/oxide/content.css");            
             context.Files.AddIfNotContains("/libs/tinymce/skins/ui/oxide/skin.css");
         }

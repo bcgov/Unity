@@ -54,6 +54,11 @@ public class UnityMessagingController : AbpControllerBase
             return BadRequest("TargetUserId and Message are required.");
         }
 
+        if (request.Message.Length > NotificationHub.MaxDirectMessageLength)
+        {
+            return BadRequest($"Messages cannot exceed {NotificationHub.MaxDirectMessageLength} characters.");
+        }
+
         var senderUserId = CurrentUser.Id?.ToString() ?? "unknown";
         var senderName = DisplayNameHelper.Resolve(CurrentUser);
 
@@ -96,6 +101,11 @@ public class UnityMessagingController : AbpControllerBase
         if (request.TargetTenantId == Guid.Empty || string.IsNullOrWhiteSpace(request.Message))
         {
             return BadRequest("TargetTenantId and Message are required.");
+        }
+
+        if (request.Message.Length > NotificationHub.MaxDirectMessageLength)
+        {
+            return BadRequest($"Messages cannot exceed {NotificationHub.MaxDirectMessageLength} characters.");
         }
 
         if (currentTenant.Id.HasValue && currentTenant.Id.Value != request.TargetTenantId)

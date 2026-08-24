@@ -88,7 +88,7 @@ $(function () {
 
     // Make sure input string have no error with the plugin
     LinksInput.prototype.anyErrors = function (string) {
-        if (!this.options.duplicate && this.arr.indexOf(string) != -1) {
+        if (!this.options.duplicate && this.arr.includes(string)) {
             console.log('duplicate found " ' + string + ' " ')
             return true;
         }
