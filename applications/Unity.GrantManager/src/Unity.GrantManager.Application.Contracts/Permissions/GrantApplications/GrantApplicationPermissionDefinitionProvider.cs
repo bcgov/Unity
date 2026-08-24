@@ -197,6 +197,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             var group = context.AddGroup(UnitySelector.ApplicantManagement.Default, L("Permission:GrantApplicantManagement"));
 
             var upx_Applicant = group.AddPermission(UnitySelector.ApplicantManagement.Applicant.Default, L(UnitySelector.ApplicantManagement.Applicant.Default));
+            upx_Applicant.AddUnityChild(UnitySelector.ApplicantManagement.Applicant.Update);
             upx_Applicant.AddUnityChild(UnitySelector.ApplicantManagement.Applicant.Delete);
             upx_Applicant.AddUnityChild(UnitySelector.ApplicantManagement.Applicant.Merge);
 

@@ -11,6 +11,7 @@ public static partial class UnitySelector
         {
             // Default includes View Applicants List
             public const string Default = "Unity.GrantManager.ApplicantManagement.Applicant";
+            public const string Update = "Unity.GrantManager.ApplicantManagement.Applicant.Update";
             public const string Delete  = "Unity.GrantManager.ApplicantManagement.Applicant.Delete";
             public const string Merge   = "Unity.GrantManager.ApplicantManagement.Applicant.Merge";
         }

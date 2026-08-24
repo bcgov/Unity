@@ -301,7 +301,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         return sparseDto;
     }
 
-    [Authorize(GrantApplicationPermissions.Applicants.Edit)]
+    [Authorize(UnitySelector.ApplicantManagement.Applicant.Update)]
     public async Task UpdateApplicantStatusAsync(Guid applicantId, string status)
     {
         if (status != "Active" && status != "Inactive")
@@ -314,6 +314,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         await applicantRepository.UpdateAsync(applicant);
     }
 
+    [Authorize(UnitySelector.ApplicantManagement.Addresses.Update)]
     public async Task UpdateApplicantContactAddressesAsync(Guid applicantId, UpdateApplicantContactAddressesDto input)
     {
         if (applicantId == Guid.Empty)

@@ -4,8 +4,8 @@
 
 @{
     Layout = null;
-    var canEditPrimaryPhysical = Model.PrimaryPhysicalAddress.IsEditable && Model.CanEditAddress;
-    var canEditPrimaryMailing = Model.PrimaryMailingAddress.IsEditable && Model.CanEditAddress;
+    var canEditPrimaryPhysical = Model.PrimaryPhysicalAddress.IsEditable && Model.CanEditAddresses;
+    var canEditPrimaryMailing = Model.PrimaryMailingAddress.IsEditable && Model.CanEditAddresses;
 }
 
 <div class="applicant-addresses-widget applicant-info-container px-1 pb-2 mb-4">
@@ -36,7 +36,7 @@
             }
 
             <div class="d-flex">
-                <div class="row m-0 physical-address-form pe-2" style="border-bottom:none;">
+                <zone-fieldset id="PrimaryPhysicalAddress" class="row m-0 physical-address-form pe-2" style="border-bottom:none;">
                     <div class="row m-0 p-0">
                         <div class="col-12 d-inline-flex justify-content-between pb-3 pt-2 ps-0 mt-3">
                             <div class="d-flex align-items-stretch justify-content-start">
@@ -68,8 +68,8 @@
                     {
                         <div class="text-muted mt-3 small">No primary physical address on record.</div>
                     }
-                </div>
-                <div class="row m-0 mailing-address-form ps-2" style="border-bottom:none;">
+                </zone-fieldset>
+                <zone-fieldset id="PrimaryMailingAddress" class="row m-0 mailing-address-form ps-2" style="border-bottom:none;">
                     <div class="row m-0 p-0">
                         <div class="col-12 d-inline-flex justify-content-between pb-3 pt-2 ps-0 mt-3">
                             <div class="d-flex align-items-stretch justify-content-start">
@@ -101,7 +101,7 @@
                     {
                         <div class="text-muted mt-3 small">No primary mailing address on record.</div>
                     }
-                </div>
+                </zone-fieldset>
             </div>
 
             <div class="table-card mt-3">

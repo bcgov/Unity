@@ -118,6 +118,7 @@ namespace Unity.GrantManager.Permissions
             UnitySelector.ApplicantManagement.Default,
 
             UnitySelector.ApplicantManagement.Applicant.Default,
+            UnitySelector.ApplicantManagement.Applicant.Update,
             UnitySelector.ApplicantManagement.Applicant.Delete,
             UnitySelector.ApplicantManagement.Applicant.Merge,
 

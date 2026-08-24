@@ -31,7 +31,7 @@
     @await Component.InvokeAsync("ApplicantBreadcrumbWidget", new { applicantId = @Model.ApplicantId })
 </div>
 
-@if (!Model.ApplicantIsDeleted && await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Applicants.Edit))
+@if (!Model.ApplicantIsDeleted && await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Applicant.Update))
 {
     <div class="action-bar p-2 fade-in-load" id="applicantActionBar">
         <div id="ApplicantActionBarStart" class="d-flex align-items-stretch justify-content-start gap-2">

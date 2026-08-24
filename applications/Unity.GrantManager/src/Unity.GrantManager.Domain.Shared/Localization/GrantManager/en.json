@@ -144,7 +144,6 @@
     "Permission:GrantApplicationManagement.Dashboard.RequestApprovedCount": "View Requested vs. Approved Funding",
     "Permission:GrantApplicationManagement.Applications.Default": "Applications",
     "Permission:GrantApplicationManagement.Applicants.Default": "Applicants",
-    "Permission:GrantApplicationManagement.Applicants.Edit": "Edit Applicant",
 
     "Permission:GrantApplicationManagement.Applicants.AssignApplicant": "Assign Applicant to an Application",
     "Permission:GrantApplicationManagement.Applicants.ApplicantInfo": "Applicant Info",
@@ -280,6 +279,7 @@
     "Unity.GrantManager.ApplicantManagement": "Grant Applicant Management",
 
     "Unity.GrantManager.ApplicantManagement.Applicant": "Applicant List",
+    "Unity.GrantManager.ApplicantManagement.Applicant.Update": "Edit Applicant Status",
     "Unity.GrantManager.ApplicantManagement.Applicant.Delete": "Delete Applicant",
     "Unity.GrantManager.ApplicantManagement.Applicant.Merge": "Merge Applicant",
 
