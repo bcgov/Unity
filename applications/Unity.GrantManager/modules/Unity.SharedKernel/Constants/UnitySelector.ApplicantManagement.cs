@@ -19,8 +19,13 @@ public static partial class UnitySelector
         {
             public const string Default              = "Unity.GrantManager.ApplicantManagement.ApplicantInfo";
             public const string Update               = "Unity.GrantManager.ApplicantManagement.ApplicantInfo.Update";
-            public const string EditRedStop          = "Unity.GrantManager.ApplicantManagement.ApplicantInfo.EditRedStop";
-            public const string EditOrganizationInfo = "Unity.GrantManager.ApplicantManagement.ApplicantInfo.EditOrganizationInfo";
+            public const string EditRedStop          = "Unity.GrantManager.ApplicantManagement.ApplicantInfo.Update.EditRedStop";
+
+            public static partial class OrganizationInfo
+            {
+                public const string Default = "Unity.GrantManager.ApplicantManagement.ApplicantInfo.OrganizationInfo";
+                public const string Update  = "Unity.GrantManager.ApplicantManagement.ApplicantInfo.OrganizationInfo.Update";
+            }
         }
 
             public static partial class Contacts

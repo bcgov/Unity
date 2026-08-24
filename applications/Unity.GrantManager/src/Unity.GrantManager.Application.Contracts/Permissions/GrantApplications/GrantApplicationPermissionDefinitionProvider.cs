@@ -47,12 +47,6 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             applicantPermissions.AddChild(GrantApplicationPermissions.Applicants.Edit, L("Permission:GrantApplicationManagement.Applicants.Edit"));
             applicantPermissions.AddChild(GrantApplicationPermissions.Applicants.AssignApplicant, L("Permission:GrantApplicationManagement.Applicants.AssignApplicant"));
             applicantPermissions.AddChild(GrantApplicationPermissions.Applicants.Delete, L("Permission:GrantApplicationManagement.Applicants.Delete"));
-            var applicantInfoPermissions = applicantPermissions.AddChild(
-                GrantApplicationPermissions.Applicants.ApplicantInfoDefault,
-                L("Permission:GrantApplicationManagement.Applicants.ApplicantInfo"));
-            applicantInfoPermissions.AddChild(
-                GrantApplicationPermissions.Applicants.EditRedStop,
-                L("Permission:GrantApplicationManagement.Applicants.ApplicantInfo.EditRedStop"));
 
             // Assignment
             var assignmentPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Assignments.Default, L("Permission:GrantApplicationManagement.Assignments.Default"));
@@ -207,9 +201,9 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             upx_Applicant.AddUnityChild(UnitySelector.ApplicantManagement.Applicant.Merge);
 
             var upx_ApplicantInfo = group.AddPermission(UnitySelector.ApplicantManagement.ApplicantInfo.Default, L(UnitySelector.ApplicantManagement.ApplicantInfo.Default));
-            upx_ApplicantInfo.AddUnityChild(UnitySelector.ApplicantManagement.ApplicantInfo.Update);
-            upx_ApplicantInfo.AddUnityChild(UnitySelector.ApplicantManagement.ApplicantInfo.EditRedStop);
-            upx_ApplicantInfo.AddUnityChild(UnitySelector.ApplicantManagement.ApplicantInfo.EditOrganizationInfo);
+            var upx_ApplicantInfo_Update = upx_ApplicantInfo.AddUnityChild(UnitySelector.ApplicantManagement.ApplicantInfo.Update);
+            upx_ApplicantInfo_Update.AddUnityChild(UnitySelector.ApplicantManagement.ApplicantInfo.EditRedStop);
+            upx_ApplicantInfo.AddUnityChild(UnitySelector.ApplicantManagement.ApplicantInfo.OrganizationInfo.Update);
 
 
             var upx_Contacts = group.AddPermission(UnitySelector.ApplicantManagement.Contacts.Default, L(UnitySelector.ApplicantManagement.Contacts.Default));

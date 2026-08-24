@@ -15,12 +15,12 @@
         UnitySelector.ApplicantManagement.History.ReportsHistory.Update,
     ]);
 
-    var hasViewPermission = permissionCheck.Result.Values.Any(x => x == PermissionGrantResult.Granted);
+    var hasSavePermission = permissionCheck.Result.Values.Any(x => x == PermissionGrantResult.Granted);
 }
 
 <div class="applicant-history-widget applicant-info-container px-1 pb-2 mb-4">
 
-    @if (hasViewPermission)
+    @if (hasSavePermission)
     {
     <div class="save-button-container">
         <abp-button text="Save"

@@ -124,7 +124,7 @@ namespace Unity.GrantManager.Permissions
             UnitySelector.ApplicantManagement.ApplicantInfo.Default,
             UnitySelector.ApplicantManagement.ApplicantInfo.Update,
             UnitySelector.ApplicantManagement.ApplicantInfo.EditRedStop,
-            UnitySelector.ApplicantManagement.ApplicantInfo.EditOrganizationInfo,
+            UnitySelector.ApplicantManagement.ApplicantInfo.OrganizationInfo.Update,
 
             UnitySelector.ApplicantManagement.Contacts.Default,
             UnitySelector.ApplicantManagement.Contacts.Update,

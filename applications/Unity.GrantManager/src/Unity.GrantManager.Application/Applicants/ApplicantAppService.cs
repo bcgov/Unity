@@ -179,7 +179,25 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         }
     }
 
-    [Authorize(UnitySelector.Applicant.Summary.Update)]
+    // Fields owned by the Organization Info zone; everything else belongs to the Applicant Info zone.
+    private static readonly HashSet<string> OrganizationInfoFields = new(StringComparer.OrdinalIgnoreCase)
+    {
+        nameof(UpdateApplicantSummaryDto.Sector),
+        nameof(UpdateApplicantSummaryDto.SubSector),
+        nameof(UpdateApplicantSummaryDto.OrgNumber),
+        nameof(UpdateApplicantSummaryDto.OrgName),
+        nameof(UpdateApplicantSummaryDto.NonRegOrgName),
+        nameof(UpdateApplicantSummaryDto.OrgStatus),
+        nameof(UpdateApplicantSummaryDto.BusinessNumber),
+        nameof(UpdateApplicantSummaryDto.OrganizationType),
+        nameof(UpdateApplicantSummaryDto.ApproxNumberOfEmployees),
+        nameof(UpdateApplicantSummaryDto.SectorSubSectorIndustryDesc),
+        nameof(UpdateApplicantSummaryDto.IndigenousOrgInd),
+        nameof(UpdateApplicantSummaryDto.FiscalDay),
+        nameof(UpdateApplicantSummaryDto.FiscalMonth),
+        nameof(UpdateApplicantSummaryDto.StartedOperatingDate)
+    };
+
     public async Task<Applicant> PartialUpdateApplicantSummaryAsync(Guid applicantId, PartialUpdateDto<UpdateApplicantSummaryDto> input)
     {
         if (applicantId == Guid.Empty)
@@ -191,9 +209,15 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
 
         ArgumentNullException.ThrowIfNull(input.Data);
 
-        var applicant = await applicantRepository.GetAsync(applicantId);
+        var canUpdateApplicantInfo = await AuthorizationService.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.Update);
+        var canUpdateOrganizationInfo = await AuthorizationService.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.OrganizationInfo.Update);
 
-        ObjectMapper.Map(input.Data, applicant);
+        if (!canUpdateApplicantInfo && !canUpdateOrganizationInfo)
+        {
+            throw new UnauthorizedAccessException("You do not have permission to update applicant information.");
+        }
+
+        var applicant = await applicantRepository.GetAsync(applicantId);
 
         List<string> modifiedSummaryFields = input.ModifiedFields?
             .Where(field => !string.IsNullOrWhiteSpace(field))
@@ -208,17 +232,41 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                 return segments[^1];
             })
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList() ?? [];
+            .ToList()
+            ?? [];
 
-        if (modifiedSummaryFields.Contains(nameof(UpdateApplicantSummaryDto.RedStop), StringComparer.OrdinalIgnoreCase)
-            && await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.Applicants.EditRedStop))
+        if (modifiedSummaryFields.Count == 0)
         {
-            applicant.RedStop = input.Data.RedStop;
+            modifiedSummaryFields = typeof(UpdateApplicantSummaryDto)
+                .GetProperties()
+                .Select(property => property.Name)
+                .ToList();
         }
 
-        if (modifiedSummaryFields.Contains(nameof(UpdateApplicantSummaryDto.IndigenousOrgInd), StringComparer.OrdinalIgnoreCase))
+        // Drop fields the caller isn't authorized to change for the relevant zone
+        modifiedSummaryFields = modifiedSummaryFields
+            .Where(field => OrganizationInfoFields.Contains(field) ? canUpdateOrganizationInfo : canUpdateApplicantInfo)
+            .ToList();
+
+        if (modifiedSummaryFields.Count == 0)
         {
-            applicant.IndigenousOrgInd = input.Data.IndigenousOrgInd switch
+            return applicant;
+        }
+
+        var modifiedSummary = CreateSparseDto(input.Data, modifiedSummaryFields);
+
+        ObjectMapper.Map(modifiedSummary, applicant);
+
+        if (modifiedSummaryFields.Contains(nameof(UpdateApplicantSummaryDto.RedStop), StringComparer.OrdinalIgnoreCase)
+            && await AuthorizationService.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.EditRedStop))
+        {
+            applicant.RedStop = modifiedSummary.RedStop;
+        }
+
+        if (modifiedSummaryFields.Contains(nameof(UpdateApplicantSummaryDto.IndigenousOrgInd), StringComparer.OrdinalIgnoreCase)
+            && canUpdateOrganizationInfo)
+        {
+            applicant.IndigenousOrgInd = modifiedSummary.IndigenousOrgInd switch
             {
                 true => "Yes",
                 false => "No",
@@ -226,12 +274,31 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             };
         }
 
-        if (modifiedSummaryFields.Count > 0)
-        {
-            PropertyHelper.ApplyNullValuesFromDto(input.Data, applicant, modifiedSummaryFields);
-        }
+        PropertyHelper.ApplyNullValuesFromDto(modifiedSummary, applicant, modifiedSummaryFields);
 
         return await applicantRepository.UpdateAsync(applicant);
+    }
+
+    private static TDto CreateSparseDto<TDto>(TDto source, IEnumerable<string> modifiedFields)
+        where TDto : class, new()
+    {
+        var sparseDto = new TDto();
+        var properties = typeof(TDto)
+            .GetProperties()
+            .Where(property => property.CanRead && property.CanWrite)
+            .ToDictionary(property => property.Name, property => property, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var fieldName in modifiedFields.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            if (!properties.TryGetValue(fieldName, out var property))
+            {
+                continue;
+            }
+
+            property.SetValue(sparseDto, property.GetValue(source));
+        }
+
+        return sparseDto;
     }
 
     [Authorize(GrantApplicationPermissions.Applicants.Edit)]
