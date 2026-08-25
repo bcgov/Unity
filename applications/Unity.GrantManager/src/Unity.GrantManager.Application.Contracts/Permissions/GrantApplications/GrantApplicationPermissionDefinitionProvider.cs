@@ -42,11 +42,6 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             // Application
             grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Applications.Default, L("Permission:GrantApplicationManagement.Applications.Default"));
 
-            // Applicant
-            var applicantPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Applicants.Default, L("Permission:GrantApplicationManagement.Applicants.Default"));
-            applicantPermissions.AddChild(GrantApplicationPermissions.Applicants.AssignApplicant, L("Permission:GrantApplicationManagement.Applicants.AssignApplicant"));
-            applicantPermissions.AddChild(GrantApplicationPermissions.Applicants.Delete, L("Permission:GrantApplicationManagement.Applicants.Delete"));
-
             // Assignment
             var assignmentPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Assignments.Default, L("Permission:GrantApplicationManagement.Assignments.Default"));
             assignmentPermissions.AddChild(GrantApplicationPermissions.Assignments.AssignInitial, L("Permission:GrantApplicationManagement.Assignments.AssignInitial"));
@@ -173,6 +168,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
 
             var upx_Applicant_Summary                           = upx_Applicant.AddUnityChild(UnitySelector.Applicant.Summary.Default);
             var upx_Applicant_Summary_Update                    = upx_Applicant_Summary.AddUnityChild(UnitySelector.Applicant.Summary.Update);
+            var upx_Applicant_Summary_Update_Assign             = upx_Applicant_Summary_Update.AddUnityChild(UnitySelector.Applicant.Summary.Update_AssignApplicant);
 
             var upx_Applicant_Contact                           = upx_Applicant.AddUnityChild(UnitySelector.Applicant.Contact.Default);
             var upx_Applicant_Contact_Create                    = upx_Applicant_Contact.AddUnityChild(UnitySelector.Applicant.Contact.Create);
