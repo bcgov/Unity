@@ -1541,14 +1541,14 @@ $(function () {
                     $('#existingMapping').val(data.submissionHeaderMapping);
                     existingMappingString = data.submissionHeaderMapping;
                     abp.notify.success(
-                        data.responseText,
-                        'Mapping Saved Successfully'
+                        'Mapping Saved Successfully',
+                        'Mapping'
                     );
                 },
                 error: function (data) {
                     abp.notify.error(
-                        data.responseText,
-                        'Mapping Not Saved Successful'
+                        'Mapping Not Saved Successful',
+                        'Mapping'
                     );
                 },
                 complete: function () {
