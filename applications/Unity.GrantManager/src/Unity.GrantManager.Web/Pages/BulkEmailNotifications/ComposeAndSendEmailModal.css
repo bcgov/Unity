@@ -1,4 +1,8 @@
 #composeAndSendEmailModal .modal-dialog {
+    max-width: min(1040px, 95vw);
+}
+
+#composeAndSendEmailModal.compose-dialog-step-two .modal-dialog {
     max-width: 95vw;
 }
 

@@ -694,6 +694,7 @@
             currentStep = 2;
             variablesButtonApi?.setEnabled(false);
             $('.compose-last-modified').val('');
+            $('#composeAndSendEmailModal').addClass('compose-dialog-step-two');
             $('#composeWorkflow').removeClass('compose-step-one').addClass('compose-step-two');
             $('#composeStepNumber').text('Step 2 of 2');
             $('#composeStepTitle').text('Review emails');
@@ -717,6 +718,7 @@
         variablesButtonApi?.setEnabled(true);
         selectedApplicationId = null;
         $('.compose-application-row').removeClass('row-selected');
+        $('#composeAndSendEmailModal').removeClass('compose-dialog-step-two');
         $('#composeWorkflow').removeClass('compose-step-two').addClass('compose-step-one');
         $('#composeStepNumber').text('Step 1 of 2');
         $('#composeStepTitle').text('Compose email');
@@ -1019,6 +1021,7 @@
         applicationStates = new Map();
         selectedApplicationId = null;
         currentStep = 1;
+        $('#composeAndSendEmailModal').removeClass('compose-dialog-step-two');
         sendConfirmed = false;
         editor = null;
         variablesButtonApi = null;
