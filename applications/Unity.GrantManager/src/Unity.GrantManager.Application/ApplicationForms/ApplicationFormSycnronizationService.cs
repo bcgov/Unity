@@ -309,13 +309,19 @@ namespace Unity.GrantManager.ApplicationForms
             {
                 string errorMessage = "Error calling ListFormSubmissions: " + content;
 
-                if (response.StatusCode == HttpStatusCode.TooManyRequests)
+                if (response.StatusCode == HttpStatusCode.TooManyRequests ||
+                    response.StatusCode == HttpStatusCode.BadGateway ||
+                    response.StatusCode == HttpStatusCode.ServiceUnavailable ||
+                    response.StatusCode == HttpStatusCode.GatewayTimeout ||
+                    response.StatusCode == HttpStatusCode.InternalServerError)
                 {
-                    // Transient/expected: CHEFS rate limiting. Skip quietly and let the next
-                    // scheduled sync pass retry, rather than paging anyone.
+                    // CHEFS or its router may be temporarily unavailable. The resilient client
+                    // has already retried the request, so let the next sync pass try again.
                     Logger.LogWarning(
-                        "CHEFS rate limit reached while calling ListFormSubmissions for form {FormId}. Skipping this synchronization pass.",
-                        applicationForm.ChefsApplicationFormGuid);
+                        "Transient CHEFS error while calling ListFormSubmissions for form {FormId}. Status: {StatusCode}, Url: {RequestUrl}. Skipping this synchronization pass.",
+                        applicationForm.ChefsApplicationFormGuid,
+                        (int)response.StatusCode,
+                        requestUrl);
                     return null;
                 }
 
