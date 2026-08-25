@@ -15,6 +15,7 @@
     let editor = null;
     let variablesButtonApi = null;
     let sendConfirmed = false;
+    let rightPanelValidatedApplications = new Set();
 
     function parseApplications() {
         try {
@@ -192,20 +193,34 @@
     }
 
     function clearFieldErrors() {
-        $('#composeEmailEditor .compose-field-error').remove();
-        $('#composeEmailEditor .input-validation-error').removeClass('input-validation-error');
+        const $editor = $('#composeEmailEditor');
+        $editor.find('.compose-field-error').remove();
+        $editor.find('.input-validation-error').removeClass('input-validation-error');
+        $editor.find('.field-validation-error')
+            .empty()
+            .removeClass('field-validation-error')
+            .addClass('field-validation-valid');
     }
 
     function addFieldError(selector, message) {
-        const $field = $(selector);
+        const $field = $('#composeEmailEditor').find(selector).first();
+        if (!$field.length) {
+            return;
+        }
+
         $field.addClass('input-validation-error');
-        $('<div class="compose-field-error text-danger"></div>').text(message).insertAfter($field);
+        $('<span class="compose-field-error field-validation-error"></span>')
+            .text(message)
+            .insertAfter($field);
     }
 
-    function showStepOneErrors(errors) {
+    function showEditorErrors(errors, includeRecipients) {
         clearFieldErrors();
         errors.forEach(function (error) {
-            if (error.startsWith('From')) addFieldError('#EmailFrom', error);
+            if (includeRecipients && error.startsWith('A valid To')) addFieldError('#EmailTo', error);
+            else if (includeRecipients && error.startsWith('CC')) addFieldError('#EmailCC', error);
+            else if (includeRecipients && error.startsWith('BCC')) addFieldError('#EmailBCC', error);
+            else if (error.startsWith('From')) addFieldError('#EmailFrom', error);
             else if (error.startsWith('Subject')) addFieldError('#EmailSubject', error);
             else if (error.startsWith('Body')) addFieldError('.tox-tinymce', error);
         });
@@ -213,6 +228,23 @@
         const attachmentError = errors.find(function (error) { return error.includes('attachments exceed'); });
         $('#email-attachment-size-error').toggle(Boolean(attachmentError));
         $('#email-attachment-size-error-message').text(attachmentError || '');
+    }
+
+    function showStepOneErrors(errors) {
+        showEditorErrors(errors, false);
+    }
+
+    function showStepTwoErrors(errors) {
+        showEditorErrors(errors, true);
+    }
+
+    function showStepTwoValidationToast(errors) {
+        if (typeof globalThis.showValidationErrorToast === 'function') {
+            globalThis.showValidationErrorToast(errors);
+            return;
+        }
+
+        abp.notify.error(errors.join('; '), errors.length > 1 ? 'Validation Errors' : 'Validation Error');
     }
 
     function updateRowValidation(applicationId) {
@@ -543,7 +575,10 @@
         nextState.attachmentBytes = getSelectedAttachmentBytes(fields.id);
         applicationStates.set(selectedApplicationId, nextState);
         writeVisibleEditor(nextState);
-        updateRowValidation(selectedApplicationId);
+        const errors = updateRowValidation(selectedApplicationId);
+        if (rightPanelValidatedApplications.has(selectedApplicationId)) {
+            showStepTwoErrors(errors);
+        }
         updateAllValidations();
         return true;
     }
@@ -583,7 +618,10 @@
             attachmentBytes: 0
         };
         applicationStates.set(selectedApplicationId, state);
-        updateRowValidation(selectedApplicationId);
+        const errors = updateRowValidation(selectedApplicationId);
+        if (rightPanelValidatedApplications.has(selectedApplicationId)) {
+            showStepTwoErrors(errors);
+        }
         updateAllValidations();
         $('#btn-save-top').prop('disabled', false);
         return true;
@@ -604,6 +642,9 @@
         writeVisibleEditor(state);
         await loadAttachments(state.templateId);
         clearFieldErrors();
+        if (rightPanelValidatedApplications.has(applicationId)) {
+            showStepTwoErrors(validateState(state, true));
+        }
         updateAllValidations();
     }
 
@@ -620,6 +661,7 @@
         $('#composeEmailEditor').hide();
         try {
             applicationStates = new Map();
+            rightPanelValidatedApplications = new Set();
             const preparedStates = await Promise.all(activeApplications().map(buildApplicationState));
             preparedStates.forEach(function (state) {
                 applicationStates.set(state.applicationId, state);
@@ -647,6 +689,7 @@
     async function moveToStepOne() {
         syncCurrentState();
         currentStep = 1;
+        rightPanelValidatedApplications = new Set();
         variablesButtonApi?.setEnabled(true);
         selectedApplicationId = null;
         $('.compose-application-row').removeClass('row-selected');
@@ -674,6 +717,7 @@
                 application.active = false;
                 $('#compose-row-' + applicationId).remove();
                 applicationStates.delete(applicationId);
+                rightPanelValidatedApplications.delete(applicationId);
                 $('#composeApplicationCount').val(activeApplications().length);
                 updateRecipientSummary(masterState?.templateId);
 
@@ -716,12 +760,18 @@
 
         $('#composeNextButton').off('click.compose').on('click.compose', moveToStepTwo);
         $('#composeBackButton').off('click.compose').on('click.compose', moveToStepOne);
-        $('#btn-save-top').off('click.compose').on('click.compose', function () {
+        $('#composeAndSendEmailModal #btn-save-top').off('click').on('click.compose', function (event) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
             syncCurrentState();
             const errors = updateRowValidation(selectedApplicationId);
             updateAllValidations();
+            rightPanelValidatedApplications.add(selectedApplicationId);
+            showStepTwoErrors(errors);
             $(this).prop('disabled', errors.length === 0);
-            if (errors.length === 0) {
+            if (errors.length > 0) {
+                showStepTwoValidationToast(errors);
+            } else {
                 setRowLastModified(selectedApplicationId);
                 abp.notify.success('Email changes saved for this application.');
             }
@@ -754,7 +804,10 @@
             .on('input.compose change.compose', function () {
                 syncCurrentState();
                 if (currentStep === 2 && selectedApplicationId) {
-                    updateRowValidation(selectedApplicationId);
+                    const errors = updateRowValidation(selectedApplicationId);
+                    if (rightPanelValidatedApplications.has(selectedApplicationId)) {
+                        showStepTwoErrors(errors);
+                    }
                     updateAllValidations();
                     $('#btn-save-top').prop('disabled', false);
                 }
@@ -906,7 +959,10 @@
                 tinyEditor.on('input change undo redo', function () {
                     syncCurrentState();
                     if (currentStep === 2 && selectedApplicationId) {
-                        updateRowValidation(selectedApplicationId);
+                        const errors = updateRowValidation(selectedApplicationId);
+                        if (rightPanelValidatedApplications.has(selectedApplicationId)) {
+                            showStepTwoErrors(errors);
+                        }
                         updateAllValidations();
                         $('#btn-save-top').prop('disabled', false);
                     }
@@ -942,6 +998,7 @@
         sendConfirmed = false;
         editor = null;
         variablesButtonApi = null;
+        rightPanelValidatedApplications = new Set();
         templates = [];
         templateVariables = [];
         templateVariablesByToken = new Map();
