@@ -11,6 +11,11 @@ function initializeEmailsWidget() {
         return;
     }
 
+    // Keep the guard outside the implementation; NUglify can otherwise move these handlers out of their variable scope.
+    initializeDraftEmailsWidget();
+}
+
+function initializeDraftEmailsWidget() {
     const BC_PERMANENT_DST_ZONE = 'UTC-7';
     // Close dropdown menus when clicking outside
     $(document).off('click.emailWidgetDropdown').on('click.emailWidgetDropdown', function (e) {
