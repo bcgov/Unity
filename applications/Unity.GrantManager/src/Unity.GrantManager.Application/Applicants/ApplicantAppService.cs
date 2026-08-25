@@ -258,7 +258,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         ObjectMapper.Map(modifiedSummary, applicant);
 
         if (modifiedSummaryFields.Contains(nameof(UpdateApplicantSummaryDto.RedStop), StringComparer.OrdinalIgnoreCase)
-            && await AuthorizationService.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.EditRedStop))
+            && await AuthorizationService.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.Update_RedStop))
         {
             applicant.RedStop = modifiedSummary.RedStop;
         }

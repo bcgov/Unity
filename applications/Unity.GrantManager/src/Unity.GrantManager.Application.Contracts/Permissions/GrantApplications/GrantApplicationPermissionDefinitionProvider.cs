@@ -198,7 +198,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
 
             var upx_ApplicantInfo = group.AddPermission(UnitySelector.ApplicantManagement.ApplicantInfo.Default, L(UnitySelector.ApplicantManagement.ApplicantInfo.Default));
             var upx_ApplicantInfo_Update = upx_ApplicantInfo.AddUnityChild(UnitySelector.ApplicantManagement.ApplicantInfo.Update);
-            upx_ApplicantInfo_Update.AddUnityChild(UnitySelector.ApplicantManagement.ApplicantInfo.EditRedStop);
+            upx_ApplicantInfo_Update.AddUnityChild(UnitySelector.ApplicantManagement.ApplicantInfo.Update_RedStop);
             upx_ApplicantInfo.AddUnityChild(UnitySelector.ApplicantManagement.ApplicantInfo.OrganizationInfo.Update);
 
 
@@ -210,20 +210,12 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             upx_Addresses.AddUnityChild(UnitySelector.ApplicantManagement.Addresses.Update);
 
             var upx_Payments = group.AddPermission(UnitySelector.ApplicantManagement.Payments.Default, L(UnitySelector.ApplicantManagement.Payments.Default));
-            upx_Payments.AddUnityChild(UnitySelector.ApplicantManagement.Payments.EditSupplierInfo);
 
             var upx_History = group.AddPermission(UnitySelector.ApplicantManagement.History.Default, L(UnitySelector.ApplicantManagement.History.Default));
             upx_History.AddUnityChild(UnitySelector.ApplicantManagement.History.FundingHistory.Update);
             upx_History.AddUnityChild(UnitySelector.ApplicantManagement.History.AuditHistory.Update);
             upx_History.AddUnityChild(UnitySelector.ApplicantManagement.History.IssueHistory.Update);
             upx_History.AddUnityChild(UnitySelector.ApplicantManagement.History.ReportsHistory.Update);
-
-            var upx_Comments = group.AddPermission(UnitySelector.ApplicantManagement.Comments.Default, L(UnitySelector.ApplicantManagement.Comments.Default));
-            upx_Comments.AddUnityChild(UnitySelector.ApplicantManagement.Comments.Create);
-
-            var upx_Attachments = group.AddPermission(UnitySelector.ApplicantManagement.Attachments.Default, L(UnitySelector.ApplicantManagement.Attachments.Default));
-            upx_Attachments.AddUnityChild(UnitySelector.ApplicantManagement.Attachments.Upload);
-            upx_Attachments.AddUnityChild(UnitySelector.ApplicantManagement.Attachments.EditLabel);
             #endregion
         }
 

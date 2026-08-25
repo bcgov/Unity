@@ -124,7 +124,7 @@ namespace Unity.GrantManager.Permissions
 
             UnitySelector.ApplicantManagement.ApplicantInfo.Default,
             UnitySelector.ApplicantManagement.ApplicantInfo.Update,
-            UnitySelector.ApplicantManagement.ApplicantInfo.EditRedStop,
+            UnitySelector.ApplicantManagement.ApplicantInfo.Update_RedStop,
             UnitySelector.ApplicantManagement.ApplicantInfo.OrganizationInfo.Update,
 
             UnitySelector.ApplicantManagement.Contacts.Default,
@@ -134,21 +134,12 @@ namespace Unity.GrantManager.Permissions
             UnitySelector.ApplicantManagement.Addresses.Update,
 
             UnitySelector.ApplicantManagement.Payments.Default,
-            UnitySelector.ApplicantManagement.Payments.EditSupplierInfo,
 
             UnitySelector.ApplicantManagement.History.Default,
             UnitySelector.ApplicantManagement.History.FundingHistory.Update,
             UnitySelector.ApplicantManagement.History.AuditHistory.Update,
             UnitySelector.ApplicantManagement.History.IssueHistory.Update,
-            UnitySelector.ApplicantManagement.History.ReportsHistory.Update,
-            
-            UnitySelector.ApplicantManagement.Comments.Default,
-            UnitySelector.ApplicantManagement.Comments.Create,
-            
-            UnitySelector.ApplicantManagement.Attachments.Default,
-            UnitySelector.ApplicantManagement.Attachments.Upload,
-            UnitySelector.ApplicantManagement.Attachments.EditLabel,
-            
+            UnitySelector.ApplicantManagement.History.ReportsHistory.Update
         ];
 
         public async Task SeedAsync(DataSeedContext context)

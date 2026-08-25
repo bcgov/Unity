@@ -18,9 +18,9 @@ public static partial class UnitySelector
 
         public static partial class ApplicantInfo
         {
-            public const string Default              = "Unity.GrantManager.ApplicantManagement.ApplicantInfo";
-            public const string Update               = "Unity.GrantManager.ApplicantManagement.ApplicantInfo.Update";
-            public const string EditRedStop          = "Unity.GrantManager.ApplicantManagement.ApplicantInfo.Update.EditRedStop";
+            public const string Default         = "Unity.GrantManager.ApplicantManagement.ApplicantInfo";
+            public const string Update          = "Unity.GrantManager.ApplicantManagement.ApplicantInfo.Update";
+            public const string Update_RedStop  = "Unity.GrantManager.ApplicantManagement.ApplicantInfo.Update.RedStop";
 
             public static partial class OrganizationInfo
             {

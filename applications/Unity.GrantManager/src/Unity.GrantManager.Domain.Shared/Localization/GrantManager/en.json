@@ -143,10 +143,6 @@
     "Permission:GrantApplicationManagement.Dashboard.RequestedAmountPerSubsector": "View Total Funding Requested per Sub-Sector",
     "Permission:GrantApplicationManagement.Dashboard.RequestApprovedCount": "View Requested vs. Approved Funding",
     "Permission:GrantApplicationManagement.Applications.Default": "Applications",
-    "Permission:GrantApplicationManagement.Applicants.Default": "Applicants",
-
-    "Permission:GrantApplicationManagement.Applicants.AssignApplicant": "Assign Applicant to an Application",
-    "Permission:GrantApplicationManagement.Applicants.ApplicantInfo": "Applicant Info",
     "Permission:GrantApplicationManagement.Assignments.Default": "Assignment",
     "Permission:GrantApplicationManagement.Assignments.AssignInitial": "Initial Assignment",
     "Permission:GrantApplicationManagement.Reviews.Default": "Reviews",
@@ -243,6 +239,7 @@
     "Unity.GrantManager.ApplicationManagement.Applicant": "Applicant Info",
     "Unity.GrantManager.ApplicationManagement.Applicant.Summary": "Applicant Info",
     "Unity.GrantManager.ApplicationManagement.Applicant.Summary.Update": "Edit Applicant Info",
+    "Unity.GrantManager.ApplicationManagement.Applicant.Summary.Update.RedStop": "Assign Applicant to an Application",
     "Unity.GrantManager.ApplicationManagement.Applicant.Contact": "Contact Info",
     "Unity.GrantManager.ApplicationManagement.Applicant.Contact.Create": "Create Contact Info",
     "Unity.GrantManager.ApplicationManagement.Applicant.Contact.Update": "Edit Contact Info",
@@ -283,7 +280,7 @@
 
     "Unity.GrantManager.ApplicantManagement.ApplicantInfo": "Applicant Info",
     "Unity.GrantManager.ApplicantManagement.ApplicantInfo.Update": "Edit Applicant Information",
-    "Unity.GrantManager.ApplicantManagement.ApplicantInfo.Update.EditRedStop": "Edit Red-Stop",
+    "Unity.GrantManager.ApplicantManagement.ApplicantInfo.Update.RedStop": "Edit Red-Stop",
     "Unity.GrantManager.ApplicantManagement.ApplicantInfo.OrganizationInfo.Update": "Edit Organization Information",
 
     "Unity.GrantManager.ApplicantManagement.Contacts": "Contacts",
@@ -302,7 +299,7 @@
     "Unity.GrantManager.ApplicantManagement.History.Funding.Update": "Edit Funding History",
     "Unity.GrantManager.ApplicantManagement.History.Audit.Update": "Edit Audit History",
     "Unity.GrantManager.ApplicantManagement.History.Issue.Update": "Edit Issue History",
-    "Unity.GrantManager.ApplicantManagement.History.Report.Update": "Edit Report History",
+    "Unity.GrantManager.ApplicantManagement.History.Report.Update": "Edit Reports History",
 
     "Unity.GrantManager.ApplicantManagement.Comments": "Comments",
     "Unity.GrantManager.ApplicantManagement.Comments.Create": "Add Applicant Comment",
