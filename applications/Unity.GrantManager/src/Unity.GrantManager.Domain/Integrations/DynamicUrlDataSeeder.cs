@@ -39,30 +39,28 @@ namespace Unity.GrantManager.Integrations
             public const string GITHUB_GRAPHQL = $"{PROTOCOL}//api.github.com/graphql";
             // No separate dev2 hostname - dev2 shares the dev Metabase route.
             public const string METABASE_DEV_URL = $"{PROTOCOL}//dev-unity-reporting.apps.gold.devops.gov.bc.ca";
+            public const string METABASE_TEST_URL = $"{PROTOCOL}//test-unity-reporting.apps.gold.devops.gov.bc.ca";
+            public const string METABASE_PROD_URL = $"{PROTOCOL}//prod-unity-reporting.apps.gold.devops.gov.bc.ca";
         }
 
-        private static string GetMatomoUrl()
+        internal static string GetEnvironmentUrl(string? aspNetCoreEnvironment, string devUrl, string testUrl, string prodUrl)
         {
-            var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? string.Empty;
+            var env = aspNetCoreEnvironment ?? string.Empty;
             if (string.IsNullOrEmpty(env) || env.StartsWith("dev", StringComparison.OrdinalIgnoreCase))
-                return DynamicUrls.MATOMO_DEV_URL;
+                return devUrl;
             if (env.StartsWith("test", StringComparison.OrdinalIgnoreCase) ||
                 env.Equals("uat", StringComparison.OrdinalIgnoreCase))
-                return DynamicUrls.MATOMO_TEST_URL;
-            return DynamicUrls.MATOMO_PROD_URL;
+                return testUrl;
+            return prodUrl;
         }
 
-        // Unlike Matomo, only dev has a known route baked in here. Test/UAT/prod are deliberately
-        // left blank - ops sets the real URL once via the Endpoint Management admin page, and
-        // (unlike Matomo) it's never overwritten afterward: this only ever inserts a row when one
-        // doesn't already exist, so whatever's in the database always takes precedence.
-        private static string GetMetabaseUrl()
-        {
-            var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? string.Empty;
-            return string.IsNullOrEmpty(env) || env.StartsWith("dev", StringComparison.OrdinalIgnoreCase)
-                ? DynamicUrls.METABASE_DEV_URL
-                : string.Empty;
-        }
+        private static string GetMatomoUrl() =>
+            GetEnvironmentUrl(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
+                DynamicUrls.MATOMO_DEV_URL, DynamicUrls.MATOMO_TEST_URL, DynamicUrls.MATOMO_PROD_URL);
+
+        private static string GetMetabaseUrl() =>
+            GetEnvironmentUrl(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
+                DynamicUrls.METABASE_DEV_URL, DynamicUrls.METABASE_TEST_URL, DynamicUrls.METABASE_PROD_URL);
 
         private async Task SeedDynamicUrlAsync()
         {
@@ -104,6 +102,19 @@ namespace Unity.GrantManager.Integrations
                     }
                     else if (existing.KeyName == DynamicUrlKeyNames.ANALYTICS_MATOMO_BASE &&
                              existing.Url != dynamicUrl.Url)
+                    {
+                        existing.Url = dynamicUrl.Url;
+                        await DynamicUrlRepository.UpdateAsync(existing);
+                    }
+                    // Unlike Matomo, Metabase is never kept in sync with the environment default
+                    // once a row exists - ops may point it at a different route via the Endpoint
+                    // Management admin page, and that choice must stick. Only fill in the
+                    // env-default value when the existing (host-level) row is still blank, so a
+                    // pre-existing row from before test/prod URLs were known here gets backfilled
+                    // exactly once, and a deliberately-set value is never overwritten.
+                    else if (existing.KeyName == DynamicUrlKeyNames.METABASE_API_BASE &&
+                             string.IsNullOrWhiteSpace(existing.Url) &&
+                             !string.IsNullOrWhiteSpace(dynamicUrl.Url))
                     {
                         existing.Url = dynamicUrl.Url;
                         await DynamicUrlRepository.UpdateAsync(existing);
