@@ -151,6 +151,12 @@ function main() {
   console.log(`  regressions: ${regressions.length}, new-and-already-broken: ${newlyBroken.length}`);
   console.log("");
 
+  // Non-zero exit is what lets CI gate on this script; local/interactive use
+  // (report, --fix, --apply) still prints the same detail either way.
+  if (regressions.length > 0 || newlyBroken.length > 0) {
+    process.exitCode = 1;
+  }
+
   if (regressions.length === 0 && newlyBroken.length === 0) {
     console.log("No selector regressions found relative to the baseline.");
     return;
