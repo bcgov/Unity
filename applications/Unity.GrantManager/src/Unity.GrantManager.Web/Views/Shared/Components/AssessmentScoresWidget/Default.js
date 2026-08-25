@@ -83,76 +83,180 @@ globalThis.saveAssessmentScoresWidgetState = saveAssessmentScoresWidgetState;
 abp.widgets.AssessmentScoresWidget = function ($wrapper) {
     return {
         init: function () {
+            // The widget is re-rendered (and init() re-run) whenever the
+            // selected application/review changes, without a full page
+            // reload. Section ids come from the scoresheet template and can
+            // be shared across assessments, so stale dirty/invalid state
+            // from a previously-viewed assessment must not carry over.
+            resetScoresheetSectionState();
             restoreAssessmentScoresWidgetState($wrapper[0]);
             updateSubtotal();
+            refreshBulkScoresheetActionButtons();
             globalThis.syncAIRateLimitButtons?.();
         },
     };
 };
 
-function saveScoresSection(formId, sectionId) {
-    const assessmentId = $('#AssessmentId').val();
-    const secSaveButton = document.getElementById(
-        'scoresheet-section-save-' + sectionId
+// sectionId -> { isDirty: bool, isValid: bool }
+const scoresheetSectionState = {};
+
+function resetScoresheetSectionState() {
+    Object.keys(scoresheetSectionState).forEach(
+        (id) => delete scoresheetSectionState[id]
     );
-    const secDiscardButton = document.getElementById(
-        'scoresheet-section-discard-' + sectionId
+}
+
+function getDirtySectionIds() {
+    return Object.keys(scoresheetSectionState).filter(
+        (id) => scoresheetSectionState[id].isDirty
     );
+}
 
-    const assessmentAnswersArr = [];
-    const inputFieldArr = [];
-    const origAnswersArr = [];
-    const formData = $(`#${formId}`).serializeArray();
+function getScoresheetSectionName(sectionId) {
+    const schemaInput = document.getElementById('AssessmentScoresheetSchemaJson');
+    if (!schemaInput) return sectionId;
 
-    //Handle form object data
-    $.each(formData, function (_, inputData) {
-        buildFormData(
-            assessmentAnswersArr,
-            inputData,
-            inputFieldArr,
-            origAnswersArr
-        );
-    });
+    let schema;
+    try {
+        schema = JSON.parse(schemaInput.value || '{}');
+    } catch {
+        return sectionId;
+    }
 
-    const data = {
-        AssessmentId: assessmentId,
-        AssessmentAnswers: assessmentAnswersArr.map(
-            ({ questionId, questionType, answer }) => ({
-                questionId,
-                questionType,
-                answer,
-            })
-        ),
-    };
+    const sections = schema.sections || schema.Sections || [];
+    const section = sections.find((s) => String(s.id ?? s.Id) === sectionId);
+    return section ? (section.name ?? section.Name) : sectionId;
+}
 
-    //Calls an enpoint and disabled buttons
-    secSaveButton.disabled = true;
-    secDiscardButton.disabled = true;
-    unity.grantManager.assessments.assessment
-        .saveScoresheetSectionAnswers(data)
-        .done(function () {
-            abp.notify.success(
-                'The answers have been saved successfully.',
-                'Save Answers'
-            );
+function updateSectionHeaderStyle(sectionId, isDirty) {
+    const headerButton = document.querySelector(
+        '#heading-' + sectionId + ' .accordion-button'
+    );
+    if (headerButton) {
+        headerButton.classList.toggle('section-unsaved', isDirty);
+    }
+}
 
-            if (inputFieldArr.length > 0) {
-                for (let item of inputFieldArr) {
-                    const inputField = document.getElementById(item);
-                    inputField.dataset.originalValue = inputField.value;
+// Selector is data-question-id based (rather than a #question-heading-{id}
+// id lookup) so this same function works unmodified on the Scoresheet
+// configuration preview too, which uses a different DOM id scheme for its
+// question headers but stamps the same data-question-id attribute.
+function updateQuestionHeaderStyle(questionId, isDirty) {
+    const headerButton = document.querySelector(
+        '.accordion-button[data-question-id="' + questionId + '"]'
+    );
+    if (headerButton) {
+        headerButton.classList.toggle('question-unsaved', isDirty);
+    }
+}
+
+function refreshBulkScoresheetActionButtons() {
+    const states = Object.values(scoresheetSectionState);
+    const anyDirty = states.some((s) => s.isDirty);
+    const anyInvalidDirty = states.some((s) => s.isDirty && !s.isValid);
+
+    const saveAllBtn = document.getElementById('scoresheetSaveAllBtn');
+    const discardAllBtn = document.getElementById('scoresheetDiscardAllBtn');
+    if (discardAllBtn) discardAllBtn.disabled = !anyDirty;
+    if (saveAllBtn) saveAllBtn.disabled = !anyDirty || anyInvalidDirty;
+}
+
+function saveAllScoresheetSections() {
+    const dirtySectionIds = getDirtySectionIds();
+    if (dirtySectionIds.length === 0) return;
+
+    const sectionNames = dirtySectionIds.map(getScoresheetSectionName);
+
+    Swal.fire({
+        title: 'Are you sure you want to save the changes made to the following section(s)?',
+        html:
+            '<ul class="text-start">' +
+            sectionNames
+                .map((n) => `<li>${$('<div>').text(n).html()}</li>`)
+                .join('') +
+            '</ul>',
+        showCancelButton: true,
+        confirmButtonText: 'Save Changes',
+        cancelButtonText: 'Cancel',
+        customClass: {
+            confirmButton: 'btn btn-primary',
+            cancelButton: 'btn btn-secondary',
+        },
+    }).then((result) => {
+        if (!result.isConfirmed) return;
+
+        const assessmentId = $('#AssessmentId').val();
+        document.getElementById('scoresheetSaveAllBtn').disabled = true;
+        document.getElementById('scoresheetDiscardAllBtn').disabled = true;
+
+        const combinedAnswers = [];
+        const combinedInputFieldArr = [];
+        dirtySectionIds.forEach((sectionId) => {
+            const answersArr = [];
+            const inputFieldArr = [];
+            const origAnswersArr = [];
+            $.each(
+                $(`#section-form-${sectionId}`).serializeArray(),
+                function (_, inputData) {
+                    buildFormData(
+                        answersArr,
+                        inputData,
+                        inputFieldArr,
+                        origAnswersArr
+                    );
                 }
-            }
-
-            updateSubtotal();
-            PubSub.publish(
-                'refresh_review_list_without_sidepanel',
-                assessmentId
             );
-        })
-        .fail(function () {
-            secSaveButton.disabled = false;
-            secDiscardButton.disabled = false;
+            combinedAnswers.push(
+                ...answersArr.map(({ questionId, questionType, answer }) => ({
+                    questionId,
+                    questionType,
+                    answer,
+                }))
+            );
+            combinedInputFieldArr.push(...inputFieldArr);
         });
+
+        unity.grantManager.assessments.assessment
+            .saveScoresheetSectionAnswers({
+                AssessmentId: assessmentId,
+                AssessmentAnswers: combinedAnswers,
+            })
+            .done(function () {
+                abp.notify.success(
+                    'The answers have been saved successfully.',
+                    'Save Answers'
+                );
+
+                combinedInputFieldArr.forEach((fieldId) => {
+                    const el = document.getElementById(fieldId);
+                    if (el) {
+                        el.dataset.originalValue = el.value;
+                        el.dataset.originalIsHumanConfirmed =
+                            el.dataset.isHumanConfirmed;
+                    }
+                    const questionId = fieldId.split('-').slice(2).join('-');
+                    updateQuestionHeaderStyle(questionId, false);
+                });
+
+                dirtySectionIds.forEach((sectionId) => {
+                    scoresheetSectionState[sectionId] = {
+                        isDirty: false,
+                        isValid: true,
+                    };
+                    updateSectionHeaderStyle(sectionId, false);
+                });
+
+                updateSubtotal();
+                PubSub.publish(
+                    'refresh_review_list_without_sidepanel',
+                    assessmentId
+                );
+                refreshBulkScoresheetActionButtons();
+            })
+            .fail(function () {
+                refreshBulkScoresheetActionButtons();
+            });
+    });
 }
 
 function markAsHumanConfirmed(inputElement) {
@@ -169,23 +273,29 @@ function markAsHumanConfirmed(inputElement) {
         inputElement.classList.remove('ai-generated-answer');
         inputElement.classList.add('human-confirmed-answer');
 
-        // Remove AI indicator if it exists
+        // Hide (not remove) the AI indicator and citation so they can be
+        // restored later if the user discards an unsaved edit.
         const aiIndicator = inputElement.parentElement.querySelector(
             '.ai-answer-indicator'
         );
-
         if (aiIndicator) {
-            aiIndicator.remove();
+            aiIndicator.classList.add('d-none');
+        }
+        const aiCitation = inputElement.parentElement.querySelector(
+            '.ai-citation'
+        );
+        if (aiCitation) {
+            aiCitation.classList.add('d-none');
         }
 
-        // Remove low-confidence-badge from the question header (accordion button)
+        // Hide the low-confidence badge from the question header (accordion button)
         const questionAccordion = inputElement.closest('.accordion-item');
         if (questionAccordion) {
             const lowConfidenceBadge = questionAccordion.querySelector(
                 '.low-confidence-badge'
             );
             if (lowConfidenceBadge) {
-                lowConfidenceBadge.remove();
+                lowConfidenceBadge.classList.add('d-none');
             }
 
             // Also remove the low-confidence-question class from the accordion item
@@ -197,6 +307,38 @@ function markAsHumanConfirmed(inputElement) {
             'Answer marked as human-confirmed for element:',
             inputElement.id
         );
+    }
+}
+
+function restoreAiIndicators(inputElement) {
+    inputElement.dataset.isHumanConfirmed = 'false';
+    inputElement.classList.remove('human-confirmed-answer');
+    inputElement.classList.add('ai-generated-answer');
+
+    const aiIndicator = inputElement.parentElement.querySelector(
+        '.ai-answer-indicator'
+    );
+    if (aiIndicator) {
+        aiIndicator.classList.remove('d-none');
+    }
+    const aiCitation = inputElement.parentElement.querySelector(
+        '.ai-citation'
+    );
+    if (aiCitation) {
+        aiCitation.classList.remove('d-none');
+    }
+
+    const questionAccordion = inputElement.closest('.accordion-item');
+    if (questionAccordion) {
+        const lowConfidenceBadge = questionAccordion.querySelector(
+            '.low-confidence-badge'
+        );
+        if (lowConfidenceBadge) {
+            // Its continued presence in the DOM (hidden, not removed) is itself
+            // the signal that this question was originally low-confidence.
+            lowConfidenceBadge.classList.remove('d-none');
+            questionAccordion.classList.add('low-confidence-question');
+        }
     }
 }
 
@@ -266,50 +408,80 @@ function debugAIAnswers() {
         })),
     };
 }
-function discardChangesScoresSection(formId, sectionId) {
-    const secSaveButton = document.getElementById(
-        'scoresheet-section-save-' + sectionId
-    );
-    const secDiscardButton = document.getElementById(
-        'scoresheet-section-discard-' + sectionId
-    );
 
-    const assessmentAnswersArr = [];
-    const inputFieldArr = [];
-    const origAnswersArr = [];
-    const formData = $(`#${formId}`).serializeArray();
+function discardAllScoresheetSections() {
+    const dirtySectionIds = getDirtySectionIds();
+    if (dirtySectionIds.length === 0) return;
 
-    $.each(formData, function (_, inputData) {
-        buildFormData(
-            assessmentAnswersArr,
-            inputData,
-            inputFieldArr,
-            origAnswersArr
-        );
-    });
+    const sectionNames = dirtySectionIds.map(getScoresheetSectionName);
 
-    //Handle dynamic data to bring back original values
-    if (inputFieldArr.length > 0) {
-        for (let item of inputFieldArr) {
-            let questionId = item.split('-').slice(2).join('-');
-            const inputField = document.getElementById(item);
-            const originalValue = inputField.dataset.originalValue;
-            inputField.value = originalValue;
+    Swal.fire({
+        title: 'You have unsaved changes in the following section(s):',
+        html:
+            '<ul class="text-start">' +
+            sectionNames
+                .map((n) => `<li>${$('<div>').text(n).html()}</li>`)
+                .join('') +
+            '</ul><p class="mt-3">Discarding changes will permanently remove all unsaved updates. This action cannot be undone.</p>',
+        showCancelButton: true,
+        confirmButtonText: 'Discard Changes',
+        cancelButtonText: 'Cancel',
+        customClass: {
+            confirmButton: 'btn btn-danger',
+            cancelButton: 'btn btn-secondary',
+        },
+    }).then((result) => {
+        if (!result.isConfirmed) return;
 
-            if (
-                item.includes('answer-number-') ||
-                item.includes('answer-text-')
-            ) {
+        dirtySectionIds.forEach((sectionId) => {
+            const answersArr = [];
+            const inputFieldArr = [];
+            const origAnswersArr = [];
+            $.each(
+                $(`#section-form-${sectionId}`).serializeArray(),
+                function (_, inputData) {
+                    buildFormData(
+                        answersArr,
+                        inputData,
+                        inputFieldArr,
+                        origAnswersArr
+                    );
+                }
+            );
+
+            inputFieldArr.forEach((fieldId) => {
+                const questionId = fieldId.split('-').slice(2).join('-');
+                const el = document.getElementById(fieldId);
+                el.value = el.dataset.originalValue;
+
                 const errorMessage = document.getElementById(
                     'error-message-' + questionId
                 );
-                errorMessage.textContent = '';
-            }
-        }
-    }
+                if (errorMessage) {
+                    errorMessage.textContent = '';
+                }
 
-    secSaveButton.disabled = true;
-    secDiscardButton.disabled = true;
+                // Only restore AI styling if the checkpoint itself was never
+                // human-confirmed - i.e. this edit was never saved.
+                if (
+                    el.dataset.originalIsHumanConfirmed === 'false' &&
+                    el.dataset.isHumanConfirmed === 'true'
+                ) {
+                    restoreAiIndicators(el);
+                }
+
+                updateQuestionHeaderStyle(questionId, false);
+            });
+
+            scoresheetSectionState[sectionId] = {
+                isDirty: false,
+                isValid: true,
+            };
+            updateSectionHeaderStyle(sectionId, false);
+        });
+
+        refreshBulkScoresheetActionButtons();
+    });
 }
 
 function buildFormData(
@@ -453,6 +625,40 @@ function compareObj(objA, objB) {
     return res;
 }
 
+function validateRequiredSelectField(selectField, errorMessage) {
+    if (selectField.validity.valueMissing) {
+        errorMessage.textContent = 'This field is required.';
+        return false;
+    }
+    errorMessage.textContent = '';
+    return true;
+}
+
+// questionType -> how to look up and validate that question's answer field.
+// Number (1) is always validated (range checks apply even when not
+// required); the other types are only validated when marked required.
+const QUESTION_TYPE_FIELD_CONFIG = {
+    1: { idPrefix: 'answer-number-', validate: validateNumericField, requiredOnly: false },
+    2: { idPrefix: 'answer-text-', validate: validateTextField, requiredOnly: true },
+    14: { idPrefix: 'answer-textarea-', validate: validateTextField, requiredOnly: true },
+    6: { idPrefix: 'answer-yesno-', validate: validateRequiredSelectField, requiredOnly: true },
+    12: { idPrefix: 'answer-selectlist-', validate: validateRequiredSelectField, requiredOnly: true },
+};
+
+function validateAnswerField(answer, errorMessage) {
+    const config = QUESTION_TYPE_FIELD_CONFIG[answer.questionType];
+    if (!config) {
+        return undefined;
+    }
+
+    const field = document.getElementById(config.idPrefix + answer.questionId);
+    if (config.requiredOnly && !field.required) {
+        return undefined;
+    }
+
+    return config.validate(field, errorMessage);
+}
+
 function handleInputChange(questionId, inputFieldPrefix) {
     const sectionFormId = $(`#${inputFieldPrefix + questionId}`)
         .closest('form')
@@ -461,12 +667,10 @@ function handleInputChange(questionId, inputFieldPrefix) {
         sectionFormId !== null
             ? sectionFormId?.split('-').slice(2).join('-')
             : null;
-    const secSaveButton = document.getElementById(
-        'scoresheet-section-save-' + sectionId
-    );
-    const secDiscardButton = document.getElementById(
-        'scoresheet-section-discard-' + sectionId
-    );
+
+    if (!sectionId) {
+        return;
+    }
 
     const assessmentAnswersArr = [];
     const inputFieldArr = [];
@@ -484,60 +688,48 @@ function handleInputChange(questionId, inputFieldPrefix) {
 
     //Handle values and objects comparison
     for (let x = 0; x < assessmentAnswersArr.length; x++) {
-        if (assessmentAnswersArr[x].questionType === 1) {
-            let inputNumberField = document.getElementById(
-                'answer-number-' + assessmentAnswersArr[x].questionId
-            );
-            let numberErrorMessage = document.getElementById(
-                'error-message-' + assessmentAnswersArr[x].questionId
-            );
-            assessmentAnswersArr[x].isValid = validateNumericField(
-                inputNumberField,
-                numberErrorMessage
-            );
-        } else if (assessmentAnswersArr[x].questionType === 2) {
-            let inputTextField = document.getElementById(
-                'answer-text-' + assessmentAnswersArr[x].questionId
-            );
-            let textErrorMessage = document.getElementById(
-                'error-message-' + assessmentAnswersArr[x].questionId
-            );
-
-            if (inputTextField.required) {
-                assessmentAnswersArr[x].isValid = validateTextField(
-                    inputTextField,
-                    textErrorMessage
-                );
-            }
-        }
-        assessmentAnswersArr[x].isSame = compareObj(
-            assessmentAnswersArr[x],
-            origAnswersArr[x]
+        const answer = assessmentAnswersArr[x];
+        const errorMessage = document.getElementById(
+            'error-message-' + answer.questionId
         );
+
+        // buildFormData() defaults isValid to true for both the current and
+        // original answer objects; only overwrite it when validation actually
+        // ran, so a skipped (optional, unvalidated) field keeps that shared
+        // default instead of comparing true against undefined below.
+        const isValid = validateAnswerField(answer, errorMessage);
+        if (typeof isValid === 'boolean') {
+            answer.isValid = isValid;
+        }
+        answer.isSame = compareObj(answer, origAnswersArr[x]);
+        updateQuestionHeaderStyle(answer.questionId, !answer.isSame);
     }
 
-    //Handle button events
+    //Handle section dirty/valid state
     let isNotSame = assessmentAnswersArr.some((item) => item.isSame === false);
     let isInValid = assessmentAnswersArr.some((item) => item.isValid === false);
 
-    if (isNotSame && isInValid) {
-        secSaveButton.disabled = true;
-        secDiscardButton.disabled = false;
-    }
+    scoresheetSectionState[sectionId] = {
+        isDirty: isNotSame,
+        isValid: !isInValid,
+    };
+    updateSectionHeaderStyle(sectionId, isNotSame);
+    refreshBulkScoresheetActionButtons();
 
-    if (isNotSame && !isInValid) {
-        secSaveButton.disabled = false;
-        secDiscardButton.disabled = false;
-    } else {
-        secSaveButton.disabled = true;
-    }
+    // Optional extension point: the Scoresheet configuration preview
+    // (Scoresheet.js) shares this function via the same script bundle and
+    // registers this hook to drive its own (separately-tracked) bulk
+    // Save All/Discard All state. No-op on the real AssessmentScoresWidget.
+    globalThis.onScoresheetSectionValidated?.(sectionId, isNotSame, isInValid);
 }
 
 function validateTextField(textInputField, errorMessage) {
     if (
-        textInputField.validity.tooShort ||
         textInputField.validity.valueMissing
     ) {
+        errorMessage.textContent = 'This field is required.';
+        return false;
+    } else if (textInputField.validity.tooShort) {
         errorMessage.textContent =
             'The answer is too short. Minimum length is ' +
             textInputField.minLength +
@@ -556,7 +748,10 @@ function validateTextField(textInputField, errorMessage) {
 }
 
 function validateNumericField(numericInputField, errorMessage) {
-    if (numericInputField.validity.rangeOverflow) {
+    if (numericInputField.validity.valueMissing) {
+        errorMessage.textContent = 'This field is required.';
+        return false;
+    } else if (numericInputField.validity.rangeOverflow) {
         errorMessage.textContent = `Value must be less than or equal to ${numericInputField.max}.`;
         return false;
     } else if (numericInputField.validity.rangeUnderflow) {
@@ -713,9 +908,6 @@ function queueApplicationScoring(triggerButton = null) {
 
 $(function () {
     // Static buttons
-    $(document).on('click', '#regenerateAiScoresheetBtn', function () {
-        queueApplicationScoring();
-    });
     $(document).on('click', '#btn-expand-all', function () {
         expandAllAccordions('assessment-scoresheet');
     });
@@ -726,12 +918,11 @@ $(function () {
         saveAssessmentScores();
     });
 
-    // Dynamically-generated section buttons (event delegation)
-    $(document).on('click', '[id^="scoresheet-section-save-"]', function () {
-        saveScoresSection($(this).data('form-id'), $(this).data('section-id'));
+    // Save All / Discard All (assessment-wide)
+    $(document).on('click', '#scoresheetSaveAllBtn', function () {
+        saveAllScoresheetSections();
     });
-    $(document).on('click', '[id^="scoresheet-section-discard-"]', function () {
-        discardChangesScoresSection($(this).data('form-id'), $(this).data('section-id'));
+    $(document).on('click', '#scoresheetDiscardAllBtn', function () {
+        discardAllScoresheetSections();
     });
-
 });

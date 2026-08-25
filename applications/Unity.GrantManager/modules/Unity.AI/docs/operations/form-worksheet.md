@@ -18,12 +18,14 @@ Generate a recommended worksheet definition for a form version.
 - `GET /api/app/ai/generation/status`
 
 ## Contract
-- Structured Flex worksheet JSON output. Returns an immediate queued result via API app service, queue, background job, and AI runtime.
+- Structured worksheet field-suggestion JSON. The POST request enqueues generation and returns without the generated payload; clients use the shared status endpoint while the background executor validates the suggestions and creates an unpublished worksheet for review.
 
 ## Output Shape
-- Full worksheet definition JSON.
-- Include only additional worksheet fields that the form needs beyond core Unity fields.
-- Keep the result valid JSON and compatible with Flex import.
+- A `fields` collection containing the suggested additional worksheet fields.
+- Include all applicable additional fields in the collection; do not limit the response to one suggestion.
+- Each suggestion supplies the field key, label, and supported custom-field type.
+- The executor builds the worksheet and its `Suggested Fields` section from the validated suggestions.
+- Keep the result valid JSON and include only fields that the form needs beyond core Unity fields.
 
 ## Notes
 - The AI output should stay valid JSON.

@@ -29,7 +29,13 @@
     </div>
     <div class="mb-3">
         <div class="d-flex template-field-div">
-            <label for="templateRecipientCategory" class="form-label template-field">Recipient Category</label>
+            <label for="templateRecipientCategory" class="form-label template-field">Recipient Category
+                <button type="button" class="notification-tooltip" aria-label="Recipient type information"
+                        data-bs-toggle="tooltip" data-bs-placement="top"
+                        data-bs-title="This selection will affect the options available in the Recipient/Contact field.">
+                    <span class="notification-tooltip-icon" aria-hidden="true">i</span>
+                </button>
+            </label>
             <div class="flex-grow-1">
                 <select id="templateRecipientCategory" class="form-control form-select" name="templateRecipientCategory">
                     <option value=""></option>
@@ -42,7 +48,13 @@
     </div>
     <div class="mb-3">
         <div class="d-flex template-field-div">
-            <label for="templateRecipientSelect" class="form-label template-field">Recipients</label>
+            <label for="templateRecipientSelect" class="form-label template-field">Recipients
+                <button type="button" class="notification-tooltip" aria-label="Recipient and contact information"
+                        data-bs-toggle="tooltip" data-bs-placement="top"
+                        data-bs-title="Internal choices are limited to the email distribution groups set up in Unity Notification. External choices are limited to Contacts, Signing Authority, and Additional Contacts available in the Unity Applicant's Contacts list.">
+                    <span class="notification-tooltip-icon" aria-hidden="true">i</span>
+                </button>
+            </label>
             <div class="flex-grow-1">
                 <select id="templateRecipientSelect" class="form-control form-select" name="templateRecipientSelect" multiple>
                 </select>

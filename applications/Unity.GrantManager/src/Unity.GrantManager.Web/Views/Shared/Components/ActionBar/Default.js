@@ -16,6 +16,12 @@ $(function () {
     let approveApplicationsSummaryModal = new abp.ModalManager({
         viewUrl: 'BulkApprovals/ApproveApplicationsSummaryModal'
     });
+    let sendEmailNotificationModal = new abp.ModalManager({
+        viewUrl: 'BulkEmailNotifications/SendEmailNotificationModal'
+    });
+    let sendEmailNotificationSummaryModal = new abp.ModalManager({
+        viewUrl: 'BulkEmailNotifications/SendEmailNotificationSummaryModal'
+    });
     let tagApplicationModal = new abp.ModalManager({
         viewUrl: 'ApplicationTags/ApplicationTagsSelectionModal',
     });
@@ -67,9 +73,9 @@ $(function () {
         let groupedValues = Object.values(groupedTags);
         if (groupedValues.length === 0) return [];
         
-        return groupedValues.reduce(function (prev, next) {
+        return groupedValues.slice(1).reduce(function (prev, next) {
             return prev.filter(p => hasMatchingTagId(p, next));
-        });
+        }, groupedValues[0]);
     }
 
     function filterUncommonTags(tagList, commonTags) {
@@ -327,6 +333,48 @@ $(function () {
         PubSub.publish("refresh_application_list");
     });
     //#endregion Batch Approval
+
+    //#region Send Email Notification
+    $('#sendEmailNotification').on("click", function () {
+        // Store application IDs in distributed cache to avoid URL length limits
+        unity.grantManager.applications.applicationBulkActions
+            .storeApplicationIds({ applicationIds: selectedApplicationIds })
+            .then(function(response) {
+                // Open modal with cache key instead of application IDs array
+                sendEmailNotificationModal.open({
+                    cacheKey: response.cacheKey
+                });
+            })
+            .catch(function(error) {
+                abp.notify.error('Failed to prepare bulk email. Please try again.');
+                console.error('Error storing application IDs:', error);
+            });
+    });
+    sendEmailNotificationModal.onResult(function (_, response) {
+        let transformedFailures = response.responseText.failures.map(failure => {
+            return {
+                Key: failure.key,
+                Value: failure.value
+            };
+        });
+        let successCount = response.responseText.successes.length;
+        if (successCount > 0) {
+            abp.notify.success(
+                successCount === 1
+                    ? 'The email has been successfully queued for delivery.'
+                    : successCount + ' emails have been successfully queued for delivery.',
+                'Send Email Notification'
+            );
+        }
+        let summaryJson = JSON.stringify(
+        {
+            Successes: response.responseText.successes,
+            Failures: transformedFailures
+        });
+        sendEmailNotificationSummaryModal.open({ summaryJson: summaryJson });
+        PubSub.publish("refresh_application_list");
+    });
+    //#endregion Send Email Notification
 
     //#region Selection Events
     PubSub.subscribe("select_application", (msg, data) => {

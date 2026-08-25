@@ -53,6 +53,7 @@
 @section styles
 {
     <abp-style src="/libs/formiojs/formio.form.css" />
+    <abp-style src="/Pages/GrantApplications/ai-generation-button.css" />
     <abp-style src="/Pages/GrantApplications/Details.css" />
 }
 @section scripts
@@ -173,7 +174,7 @@
                             <abp-column size="_12">
                                 <abp-row>
                                     <abp-column size="_12" class="back-button-container">
-                                        <abp-button id="backBtn" class="btn-sm back-btn" icon="angle-left" text="Back to Review List" />
+                                        <abp-button id="backBtn" class="btn-sm back-btn" icon-type="Other" icon="fa-solid fa-angle-left" text="Back to Review List" />
                                     </abp-column>
                                     <abp-column size="_8">
                                         <h4 class="review-heading">Assessment Result Attachments</h4>
@@ -283,7 +284,7 @@
             @if (aiApplicationAnalysisEnabled)
             {
                 <li class="nav-item">
-                    <button class="nav-link" id="ai-analysis-tab" data-bs-toggle="tab" data-bs-target="#ai-analysis" type="button" role="tab" aria-controls="ai-analysis" aria-selected="false" title="Application Analysis"><i class="fa fa-wand-sparkles" aria-hidden="true"></i></button>
+                    <button class="nav-link" id="ai-analysis-tab" data-bs-toggle="tab" data-bs-target="#ai-analysis" type="button" role="tab" aria-controls="ai-analysis" aria-selected="false" title="Application Analysis"><i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i></button>
                 </li>
             }
             </ul>
@@ -367,7 +368,7 @@
                 @if (notificationsFeatureEnabled && readEmailGranted)
                 {
                 <div class="tab-pane" id="emails" role="tabpanel" aria-labelledby="emails-tab">
-                    <div class="px-2 pb-2" id="applicationEmailsWidget">
+                    <div class="px-2 pb-2 emails-widget-scope" id="applicationEmailsWidget">
                         @await Component.InvokeAsync("EmailsWidget", new { applicationId = Model.ApplicationId, currentUserId = Model.CurrentUserId })
                     </div>
                     <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Email History</h6>
@@ -424,7 +425,7 @@
                         {
                             <button type="button" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn" id="regenerateApplicationAnalysis" data-ai-cooldown-checking="1" data-ai-rate-limit-disabled="1" disabled>
                                 <span class="ai-button-content">
-                                    <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
+                                    <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
                                     <span>Generate</span>
                                 </span>
                             </button>
@@ -473,7 +474,7 @@
                                 <div class="ai-analysis-section-actions">
                                     <button type="button" class="ai-analysis-section-toggle" data-element="hidden-toggle" style="display:none;"></button>
                                     <button type="button" class="ai-analysis-collapse-toggle" data-element="collapse-toggle" aria-expanded="true">
-                                        <i class="fa fa-chevron-down" aria-hidden="true"></i>
+                                        <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
                                     </button>
                                 </div>
                             </div>

@@ -35,6 +35,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Unity.AI.Application\Unity.AI.Application.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Unity.GrantManager.Application.Contracts\Unity.GrantManager.Application.Contracts.csproj" />
   </ItemGroup>
 
   <ItemGroup>

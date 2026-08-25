@@ -52,7 +52,11 @@ namespace Unity.Reporting.Configuration.FieldsProviders
                 .Select(ConvertToFieldPathType)
                 .Where(x => x != null)
                 .Select(x => x!)];
-            
+
+            // Stamp each field with its 1-based position in the source order as SourceOrder, which drives
+            // the report-config-table's default sort.
+            FieldOrderingUtils.AssignSourceOrder(convertedMetadata);
+
             // Create metadata information about the scoresheet used
             var mapMetadata = new MapMetadataDto();
             var scoresheetKey = $"scoresheet_{scoresheetId.Value}";

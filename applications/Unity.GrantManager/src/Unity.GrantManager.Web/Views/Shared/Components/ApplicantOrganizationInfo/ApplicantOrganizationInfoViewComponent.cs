@@ -68,6 +68,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationIn
                     // Financial Information
                     FiscalMonth = applicant.FiscalMonth ?? string.Empty,
                     FiscalDay = applicant.FiscalDay?.ToString() ?? string.Empty,
+                    FiscalYearEnd = applicant.FiscalYearEnd,
                     StartedOperatingDate = applicant.StartedOperatingDate?.ToDateTime(TimeOnly.MinValue),
                     RedStop = applicant.RedStop == true
                 };

@@ -10,11 +10,29 @@
     width: auto;
 }
 
+#nav-tabContent.unt-tab-content {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 230px);
+    min-height: 0;
+}
+
+#nav-tabContent.unt-tab-content > .tab-pane.show.active {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+}
+
 .configuration-action-bar {
     align-items: center;
     border-bottom: 1px solid #dee2e6;
     padding-bottom: 0.5rem;
     margin-bottom: 0.5rem;
+}
+
+.configuration-action-bar[data-ai-workflow-loading="true"] .ai-workflow-action {
+    visibility: hidden;
 }
 
     .configuration-action-bar h5 {
@@ -42,7 +60,7 @@
         float: left;
         width: 40%;
     }
-  
+
   /* Clear floats after the columns */
   .row:after {
     content: "";
@@ -101,7 +119,7 @@ caption {
 }
 
 table.dataTable thead th {
-    background-color: #859ab9 !important;
+    background-color: #55698A !important;
     color: white;
     font-weight: 500;
     font-size: 18px;
@@ -134,16 +152,6 @@ tr:nth-child(even) {background-color: #f2f2f2;}
     display: block;
 }
 
-.ai-generate-btn:disabled,
-.ai-generate-btn.disabled,
-.ai-generate-btn[data-ai-shared-generating='1'],
-.ai-generate-btn[data-ai-cooldown-active='1'],
-.ai-generate-btn[data-ai-cooldown-checking='1'] {
-    cursor: not-allowed;
-    opacity: 0.55;
-    pointer-events: none;
-}
-
 .buttons-div {
     display: inline-flex;
     padding: 20px;
@@ -164,7 +172,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
     color: var(--bc-colors-blue-background, #38598A);
 }
 
-.toast-top-center { 
+.toast-top-center {
     top: 220px;
     margin: 0 auto;
     left: 50%;
@@ -306,7 +314,7 @@ textarea {
 .input-button-wrapper {
     display: flex;
     flex-direction: row;
-    flex-wrap: nowrap;    
+    flex-wrap: nowrap;
     justify-content: flex-start;
     align-items: center;
     gap: 5px;
@@ -356,11 +364,11 @@ textarea {
     background: #fff;
 }
 
-.application-forms-table-content .table.dataTable { 
+.application-forms-table-content .table.dataTable {
     margin-top:0px !important;
 }
 .note{
-     font-size: 0.75rem; 
+     font-size: 0.75rem;
 }
 .direct-approval {
     font-size: 0.9rem;

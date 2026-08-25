@@ -144,8 +144,7 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public string? AIAnalysis { get; set; }
 
-    [Column(TypeName = "jsonb")]
-    public string? AIScoresheetAnswers { get; set; }
+    public bool EligibleForRenewal { get; set; }
 
     public bool IsInFinalDecisionState()
     {

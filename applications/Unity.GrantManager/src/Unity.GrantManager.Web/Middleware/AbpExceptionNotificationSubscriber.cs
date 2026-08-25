@@ -37,6 +37,14 @@ public class AbpExceptionNotificationSubscriber(
     {
         Exception ex = context.Exception;
 
+        if (ExceptionNotificationHelpers.IsExpected(ex))
+        {
+            logger.LogDebug(
+                "[ExceptionNotify] Ignoring expected exception {ExceptionType}",
+                ex.GetType().FullName);
+            return Task.CompletedTask;
+        }
+
         logger.LogInformation(
             "[ExceptionNotify] Processing exception {ExceptionType}",
             ex.GetType().FullName);

@@ -324,6 +324,7 @@
             populateRegisteredFields('', '', '', '', '');
         });
     }
+
     function calculateApplicantFiscalYearEnd($container) {
         const monthVal = $container.find('#ApplicantOrganizationInfo_FiscalMonth').val();
         const dayVal = $container.find('#ApplicantOrganizationInfo_FiscalDay').val();
@@ -348,26 +349,12 @@
             return;
         }
 
-        const today = new Date();
-        const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-        let year = todayDate.getFullYear();
-        const isValidMonthDay = (y) => {
-            const d = new Date(y, month - 1, day);
-            return d.getMonth() === month - 1 && d.getDate() === day;
-        };
+        const year = new Date().getFullYear();
+        const isValidMonthDay = new Date(year, month - 1, day).getMonth() === month - 1;
 
-        if (!isValidMonthDay(year)) {
+        if (!isValidMonthDay) {
             $yearEndField.val('');
             return;
-        }
-
-        const candidate = new Date(year, month - 1, day);
-        if (candidate < todayDate) {
-            year += 1;
-            if (!isValidMonthDay(year)) {
-                $yearEndField.val('');
-                return;
-            }
         }
 
         const mm = String(month).padStart(2, '0');

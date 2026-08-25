@@ -165,6 +165,11 @@ $(function () {
     function updatePreviewAccordion(sortedItems) {
         const previewDiv = document.getElementById('scoresheet-preview') || document.getElementById('preview');
 
+        // The whole preview is rebuilt from scratch here (drag/drop reorder,
+        // switching scoresheets, etc.) - any tracked dirty/invalid state from
+        // the previous render no longer maps to anything in the new DOM.
+        resetPreviewSectionState();
+
         if (sortedItems.length === 0) {
             previewDiv.innerHTML = '<p>No sections to display.</p>';
             return;
@@ -188,16 +193,6 @@ $(function () {
             if (item.classList.contains('section-item')) {
                 if (currentSectionItem) {
                     accordionHTML += `</div></div>
-                                        <div class="btn-group mx-3 py-2">
-                                            <button type="button" class="btn unt-btn-primary btn-primary mx-1 mb-2" disabled
-                                                form="section-form-${hashCode(item.innerText) - 1}" 
-                                                id="scoresheet-section-save-${hashCode(item.innerText) - 1}" 
-                                                onclick="savePreviewSectionChanges('section-form-${hashCode(item.innerText) - 1}', '${hashCode(item.innerText) - 1}')">Save Changes</button>
-                                            <button type="button" class="btn unt-btn-link btn-link mx-2 mb-2" disabled
-                                                form="section-form-${hashCode(item.innerText) - 1}" 
-                                                id="scoresheet-section-discard-${hashCode(item.innerText) - 1}" 
-                                                onclick="discardChangesScoresSection('section-form-${hashCode(item.innerText) - 1}', '${hashCode(item.innerText) - 1}')">Discard Changes</button>
-                                        </div>
                                     </div>
                                     </form>
                                 </div>`;
@@ -222,7 +217,7 @@ $(function () {
                 accordionHTML += `
                     <div class="accordion-item">
                         <h2 class="accordion-header" id="nested-panel${hashCode(item.innerText)}">
-                            <button class="accordion-button question-btn collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#nested-collapse${hashCode(item.innerText)}" aria-expanded="true" aria-controls="nested-collapse${hashCode(item.innerText)}">
+                            <button class="accordion-button question-btn collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#nested-collapse${hashCode(item.innerText)}" aria-expanded="true" aria-controls="nested-collapse${hashCode(item.innerText)}" data-question-id="${item.dataset.id}">
                                 ${sectionNumber}.${questionNumber}  ${sanitizeHtml(item.dataset.questionlabel)} ${item.dataset.required == 'True' ? '*' : ''}
                             </button>
                         </h2>
@@ -238,22 +233,16 @@ $(function () {
 
         if (currentSectionItem) {
             accordionHTML += `</div></div>
-                                     <div class="btn-group mx-3 py-2">
-                                        <button type="button" class="btn unt-btn-primary btn-primary mx-1 mb-2" disabled
-                                            form="section-form-${hashCode(currentSectionItem.innerText)}" 
-                                            id="scoresheet-section-save-${hashCode(currentSectionItem.innerText)}" 
-                                            onclick="savePreviewSectionChanges('section-form-${hashCode(currentSectionItem.innerText)}', '${hashCode(currentSectionItem.innerText)}')">Save Changes</button>
-                                        <button type="button" class="btn unt-btn-link btn-link mx-2 mb-2" disabled
-                                            form="section-form-${hashCode(currentSectionItem.innerText)}" 
-                                            id="scoresheet-section-discard-${hashCode(currentSectionItem.innerText)}"
-                                            onclick="discardChangesScoresSection('section-form-${hashCode(currentSectionItem.innerText)}', '${hashCode(currentSectionItem.innerText)}')">Discard Changes</button>
-                                    </div>
                                 </div>
                                 </form>
                             </div>`;
         }
 
         previewDiv.innerHTML = `
+            <div class="save-button-container" id="previewScoresheetActions">
+                <button type="button" class="btn unt-btn-link btn-link floating-save-btn" id="previewDiscardAllBtn" disabled onclick="discardAllPreviewSections()"><i class="fl fl-undo"></i> Discard Changes</button>
+                <button type="button" class="btn unt-btn-primary btn-primary floating-save-btn" id="previewSaveAllBtn" disabled onclick="savePreviewAllSections()"><i class="fl fl-save"></i> Save Changes</button>
+            </div>
             <div class="accordion unt-accordion" id="accordion-preview">
                 <div class="d-flex justify-content-end m-3">
                     <button type="button" class="btn unt-btn-outline-primary btn-outline-primary me-2" onclick="expandAllAccordions('accordion-preview')"><i class="unt-icon-sm fa-solid fa-angles-down"></i>Expand All</button>
@@ -277,7 +266,7 @@ $(function () {
     }
 
     function buildTextAreaFieldPreview(item) {
-        let req = item.dataset.required ? "required" : null;
+        let req = item.dataset.required === 'True' ? "required" : null;
         return `
                     <p>${sanitizeHtml(item.dataset.questiondesc)}</p>
                     <div class="mb-3">
@@ -296,6 +285,7 @@ $(function () {
             const truncatedValue = option.value.length > 100 ? option.value.substring(0, 100) + " ..." : option.value;
             return `<option data-numeric-value="${option.numeric_value}" value="${option.value}" title="${option.value}">${truncatedValue}</option>`;
         }).join('');
+        let req = item.dataset.required === 'True' ? "required" : null;
 
         return `
                     <p>${sanitizeHtml(item.dataset.questiondesc)}</p>
@@ -304,15 +294,17 @@ $(function () {
                         <select id="answer-selectlist-${item.dataset.id}"
                                 class="form-select form-control answer-selectlist-input"
                                 name="Answer-SelectList-${item.dataset.id}"
+                                ${req}
                                 data-original-value=""
                                 onchange="handleInputChange('${item.dataset.id}','answer-selectlist-')">
                             ${optionsHTML}
                         </select>
+                        <span id="error-message-${item.dataset.id}" class="text-danger field-validation-error"></span>
                     </div>`;
     }
 
     function buildNumberFieldPreview(item) {
-        let req = item.dataset.required ? "required" : null;
+        let req = item.dataset.required === 'True' ? "required" : null;
         return `
                     <p>${sanitizeHtml(item.dataset.questiondesc)}</p>
                     <div class="mb-3">
@@ -325,6 +317,8 @@ $(function () {
     }
 
     function buildYesNoFieldPreview(item) {
+        let req = item.dataset.required === 'True' ? "required" : null;
+
         return `
                     <p>${sanitizeHtml(item.dataset.questiondesc)}</p>
                     <div class="mb-3">
@@ -332,6 +326,7 @@ $(function () {
                         <select id="answer-yesno-${item.dataset.id}"
                                 class="form-select form-control answer-yesno-input"
                                 name="Answer-YesNo-${item.dataset.id}"
+                                ${req}
                                 data-original-value=""
                                 data-yes-numeric-value="${item.dataset.yesvalue}"
                                 data-no-numeric-value="${item.dataset.novalue}"
@@ -340,11 +335,12 @@ $(function () {
                             <option value="Yes">Yes</option>
                             <option value="No">No</option>
                         </select>
+                        <span id="error-message-${item.dataset.id}" class="text-danger field-validation-error"></span>
                     </div>`;
     }
 
     function buildTextFieldPreview(item) {
-        let req = item.dataset.required ? "required" : null;
+        let req = item.dataset.required === 'True' ? "required" : null;
 
         return `
                     <p>${sanitizeHtml(item.dataset.questiondesc)}</p>
@@ -364,9 +360,12 @@ $(function () {
             return hash;
         }
         for (let i = 0; i < str.length; i++) {
-            const char = str.charCodeAt(i);
+            const char = str.codePointAt(i);
             hash = ((hash << 5) - hash) + char;
             hash |= 0;
+            if (char > 0xFFFF) {
+                i++;
+            }
         }
         return hash;
     }
@@ -497,24 +496,124 @@ function savePreviewChanges(questionId, inputFieldPrefix, saveButtonPrefix, disc
     updateSubtotal();
 }
 
-function savePreviewSectionChanges(formId, sectionId) {
-    const secSaveButton = document.getElementById('scoresheet-section-save-' + sectionId);
-    const secDiscardButton = document.getElementById('scoresheet-section-discard-' + sectionId);
+// sectionId (hashCode-derived) -> { isDirty: bool, isValid: bool }
+// Kept separate from AssessmentScoresWidget's scoresheetSectionState: this
+// preview has no assessment, no backend save, and its own hashCode-based
+// section id scheme, so it tracks and acts on its own bulk button pair.
+let previewSectionState = {};
 
-    const assessmentAnswersArr = [];
-    const inputFieldArr = [];
-    const origAnswersArr = [];
-    const formData = $(`#${formId}`).serializeArray();
+function resetPreviewSectionState() {
+    previewSectionState = {};
+    refreshPreviewBulkActionButtons();
+}
 
-    //Handle form object data
-    $.each(formData, function (_, inputData) {
-        buildFormData(assessmentAnswersArr, inputData, inputFieldArr, origAnswersArr);
+function getDirtyPreviewSectionIds() {
+    return Object.keys(previewSectionState).filter(
+        (id) => previewSectionState[id].isDirty
+    );
+}
+
+function updatePreviewSectionHeaderStyle(sectionId, isDirty) {
+    const headerButton = document.querySelector(
+        '#panel-' + sectionId + ' .accordion-button'
+    );
+    if (headerButton) {
+        headerButton.classList.toggle('section-unsaved', isDirty);
+    }
+}
+
+function refreshPreviewBulkActionButtons() {
+    const states = Object.values(previewSectionState);
+    const anyDirty = states.some((s) => s.isDirty);
+    const anyInvalidDirty = states.some((s) => s.isDirty && !s.isValid);
+
+    const saveAllBtn = document.getElementById('previewSaveAllBtn');
+    const discardAllBtn = document.getElementById('previewDiscardAllBtn');
+    if (discardAllBtn) discardAllBtn.disabled = !anyDirty;
+    if (saveAllBtn) saveAllBtn.disabled = !anyDirty || anyInvalidDirty;
+}
+
+// Registered as an extension hook that AssessmentScoresWidget/Default.js's
+// shared handleInputChange() calls after validating a section - this script
+// bundles alongside it on the Scoresheet configuration page (see
+// ScoresheetViewComponent's script bundle contributor).
+globalThis.onScoresheetSectionValidated = function (sectionId, isDirty, isInvalid) {
+    previewSectionState[sectionId] = { isDirty, isValid: !isInvalid };
+    updatePreviewSectionHeaderStyle(sectionId, isDirty);
+    refreshPreviewBulkActionButtons();
+};
+
+// Local-only "save": there is no real assessment to persist to here, this
+// just accepts the current values as the new baseline, same as clicking
+// Save All would visually communicate on the real page.
+function savePreviewAllSections() {
+    const dirtySectionIds = getDirtyPreviewSectionIds();
+    if (dirtySectionIds.length === 0) return;
+
+    dirtySectionIds.forEach((sectionId) => {
+        const answersArr = [];
+        const inputFieldArr = [];
+        const origAnswersArr = [];
+        $.each(
+            $(`#section-form-${sectionId}`).serializeArray(),
+            function (_, inputData) {
+                buildFormData(answersArr, inputData, inputFieldArr, origAnswersArr);
+            }
+        );
+
+        inputFieldArr.forEach((fieldId) => {
+            const el = document.getElementById(fieldId);
+            if (el) {
+                el.dataset.originalValue = el.value;
+            }
+            const questionId = fieldId.split('-').slice(2).join('-');
+            updateQuestionHeaderStyle(questionId, false);
+        });
+
+        previewSectionState[sectionId] = { isDirty: false, isValid: true };
+        updatePreviewSectionHeaderStyle(sectionId, false);
     });
 
-    secSaveButton.disabled = true;
-    secDiscardButton.disabled = true;
+    updateSubtotal();
+    refreshPreviewBulkActionButtons();
+}
+
+function discardAllPreviewSections() {
+    const dirtySectionIds = getDirtyPreviewSectionIds();
+    if (dirtySectionIds.length === 0) return;
+
+    dirtySectionIds.forEach((sectionId) => {
+        const answersArr = [];
+        const inputFieldArr = [];
+        const origAnswersArr = [];
+        $.each(
+            $(`#section-form-${sectionId}`).serializeArray(),
+            function (_, inputData) {
+                buildFormData(answersArr, inputData, inputFieldArr, origAnswersArr);
+            }
+        );
+
+        inputFieldArr.forEach((fieldId) => {
+            const questionId = fieldId.split('-').slice(2).join('-');
+            const el = document.getElementById(fieldId);
+            el.value = el.dataset.originalValue;
+
+            const errorMessage = document.getElementById(
+                'error-message-' + questionId
+            );
+            if (errorMessage) {
+                errorMessage.textContent = '';
+            }
+
+            updateQuestionHeaderStyle(questionId, false);
+        });
+
+        previewSectionState[sectionId] = { isDirty: false, isValid: true };
+        updatePreviewSectionHeaderStyle(sectionId, false);
+    });
 
     updateSubtotal();
+    refreshPreviewBulkActionButtons();
 }
 
 

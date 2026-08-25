@@ -137,6 +137,9 @@
     function fetchStatuses() {
         return fetch('/api/form-notifications/statuses').then(r => r.json());
     }
+    function fetchPaymentStatuses() {
+        return fetch('/api/form-notifications/payment-statuses').then(r => r.json());
+    }
 
     function fetchRecipients(category) {
         return fetch('/api/form-notifications/recipients?category=' + encodeURIComponent(category)).then(r => r.json());
@@ -158,11 +161,19 @@
         return detail;
     }
 
+    function renderTriggerType(data, type, row) {
+        if (row.triggerType === 'Event' && row.module) {
+            return 'Event - ' + row.module;
+        }
+
+        return row.triggerType || '';
+    }
+
     function getNotificationColumns() {
         let index = 0;
         return [
             { title: 'Template',      name: 'templateName', data: 'templateName', visible: true, index: index++ },
-            { title: 'Trigger Type',  name: 'triggerType',  data: 'triggerType',  visible: true, index: index++ },
+            { title: 'Trigger Type',  name: 'triggerType',  data: 'triggerType',  visible: true, index: index++, render: renderTriggerType },
             { title: 'Trigger Detail',name: 'triggerDetail',data: null, visible: true, orderable: true, defaultContent: '', index: index++,
               render: renderTriggerDetail },
             { title: 'Status', name: 'status', data: 'isActive', visible: true, orderable: true, index: index++,
@@ -208,7 +219,10 @@
             responseCallback,
             actionButtons: [],
             pagingEnabled: true,
+            scrollY: 'calc(100vh - 280px)',
+            scrollCollapse: true,
             reorderEnabled: false,
+            fixedHeaders: true,
             languageSetValues: {},
             dynamicButtonContainerId: null,
             useNullPlaceholder: false,
@@ -230,6 +244,51 @@
         if (notificationsTable) {
             notificationsTable.ajax.reload();
         }
+    }
+
+    // ScrollResize skips sizing while the table is hidden (e.g. an inactive Bootstrap
+    // tab pane), so nothing pins the pagination bar to the bottom until we recalculate
+    // it ourselves once the tab holding this widget becomes visible.
+    function resizeNotificationsScrollBody() {
+        if (!notificationsTable) return;
+        const scrollResize = notificationsTable.settings?.()[0]?._scrollResize;
+        if (scrollResize && typeof scrollResize._size === 'function') {
+            scrollResize._size();
+            return;
+        }
+        try {
+            notificationsTable.columns.adjust();
+        } catch (e) {
+            console.debug('Notifications table column adjust failed:', e.message);
+        }
+    }
+
+    function bindTabVisibilityResize() {
+        document.addEventListener('shown.bs.tab', function (e) {
+            const target = e.target;
+            if (!target) return;
+            const isNotificationsTab =
+                target.id === 'nav-notifications-tab' ||
+                target.getAttribute?.('data-bs-target') === '#nav-notifications';
+            if (isNotificationsTab) {
+                resizeNotificationsScrollBody();
+            }
+        });
+
+        const notificationsSection = document.getElementById('notifications-div');
+        const notificationsMenuItem = document.getElementById('notifications-menu-item');
+        const resizeWhenVisible = () => {
+            if (!notificationsSection?.offsetParent) return;
+            setTimeout(resizeNotificationsScrollBody, 0);
+        };
+
+        notificationsMenuItem?.addEventListener('click', resizeWhenVisible);
+        if (notificationsSection && typeof MutationObserver !== 'undefined') {
+            const observer = new MutationObserver(resizeWhenVisible);
+            observer.observe(notificationsSection, { attributes: true, attributeFilter: ['class', 'style'] });
+        }
+
+        window.addEventListener('resize', resizeWhenVisible);
     }
 
     function onCancelNotification(id) {
@@ -295,7 +354,7 @@
         if (modalEl) {
             modalEl.dataset.editId = row.id;
         }
-        document.getElementById('notificationModal')?.addEventListener('shown.bs.modal', function () {
+        document.getElementById('notificationModal')?.addEventListener('shown.bs.modal', async function () {
             const setVal = (id, val) => {
                 document.getElementById(id).value = val ?? '';
             };
@@ -326,7 +385,9 @@
                 const values = row.recipientIdentifier ? row.recipientIdentifier.split(',').map(v => v.trim()) : [];
                 setSelectedRecipients(values);
             } else if (row.triggerType === 'Event') {
-                setVal('statusSelect', row.applicationStatusId);
+                setVal('moduleSelect', row.module);
+                await loadStatusesForModule(row.module);
+                setVal('statusSelect', row.applicationStatusId || row.eventStatus);
                 setVal('recipientCategory', row.recipientCategory);
                 // Set multiple values for recipient select
                 const values = row.recipientIdentifier ? row.recipientIdentifier.split(',').map(v => v.trim()) : [];
@@ -344,13 +405,15 @@
         blank.value = '';
         blank.text = '';
         sel.appendChild(blank);
-        templates.forEach(t => {
-            const opt = document.createElement('option');
-            // Use template id as the option value so we can reference templates reliably
-            opt.value = t.id;
-            opt.text = t.name + ' — ' + t.subject;
-            sel.appendChild(opt);
-        });
+        [...templates]
+            .sort((left, right) => left.name.localeCompare(right.name, undefined, { sensitivity: 'base' }))
+            .forEach(t => {
+                const opt = document.createElement('option');
+                // Use template id as the option value so we can reference templates reliably
+                opt.value = t.id;
+                opt.text = t.name + ' — ' + t.subject;
+                sel.appendChild(opt);
+            });
         updatePreview();
     }
 
@@ -368,6 +431,25 @@
             opt.text = s.internalStatus;
             sel.appendChild(opt);
         });
+    }
+    async function loadStatusesForModule(module) {
+        const statusSelect = document.getElementById('statusSelect');
+        if (!statusSelect) return;
+
+        statusSelect.innerHTML = '';
+        const blank = document.createElement('option');
+        blank.value = '';
+        blank.text = '';
+        statusSelect.appendChild(blank);
+        statusSelect.disabled = !module;
+
+        if (!module) return;
+
+        const statuses = module === 'Payment'
+            ? await fetchPaymentStatuses()
+            : await fetchStatuses();
+        populateStatuses(statuses);
+        statusSelect.disabled = false;
     }
 
     function populateRecipients(list) {
@@ -471,18 +553,119 @@
         const preview = document.getElementById('templatePreview');
         if (sel === null || preview === null) return;
         const val = sel.value;
+        updateTemplateAttachments(val);
         fetch('/api/form-notifications/templates').then(r => r.json()).then(list => {
             const t = list.find(x => String(x.id) === String(val));
             renderTemplatePreview(preview, t);
         });
     }
 
+    function notifyAttachmentCount(count) {
+        if (count === 0) return;
+
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'info',
+            text: count === 1 ? '1 attachment is associated with this template.' : `${count} attachments are associated with this template.`,
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+        });
+    }
+
+    function updateTemplateAttachments(templateId) {
+        const section = document.getElementById('template-attachments-section');
+        const label = document.getElementById('templateAttachmentsLabel');
+        const countLabel = document.getElementById('templateAttachmentsCount');
+        const table = $('#TemplateAttachmentsTable');
+        if (!section || !table.length) return;
+
+        if ($.fn.dataTable.isDataTable(table)) {
+            table.DataTable().destroy();
+        }
+        section.classList.add('hidden-section');
+        label?.classList.add('hidden-section');
+        if (countLabel) countLabel.textContent = '0';
+
+        if (!templateId) {
+            return;
+        }
+
+        table.DataTable(
+            abp.libs.datatables.normalizeConfiguration({
+                serverSide: false,
+                order: [[2, 'asc']],
+                searching: false,
+                paging: false,
+                select: false,
+                info: false,
+                scrollX: true,
+                scrollY: '80px', // ~2 rows visible before scrolling
+                scrollCollapse: true,
+                drawCallback: function () {
+                    const count = this.api().rows().count();
+                    if (countLabel) countLabel.textContent = String(count);
+                    section.classList.toggle('hidden-section', count === 0);
+                    label?.classList.toggle('hidden-section', count === 0);
+                    notifyAttachmentCount(count);
+                },
+                ajax: abp.libs.datatables.createAjax(
+                    unity.notifications.emails.emailLogAttachment.getListByTemplateId,
+                    function () { return templateId; },
+                    function (result) { return { data: result }; }
+                ),
+                columnDefs: [
+                    {
+                        title: '<i class="fl fl-paperclip"></i>',
+                        width: '40px',
+                        className: 'text-center',
+                        orderable: false,
+                        render: function () {
+                            return '<i class="fl fl-paperclip"></i>';
+                        }
+                    },
+                    {
+                        title: 'Document Name',
+                        data: 'fileName',
+                        className: 'data-table-header text-break',
+                        width: '55%'
+                    },
+                    {
+                        title: 'Date',
+                        data: 'time',
+                        className: 'data-table-header',
+                        width: '130px',
+                        render: function (data, type) {
+                            if (type === 'display' || type === 'filter') {
+                                return new Date(data).toDateString();
+                            }
+                            return data;
+                        }
+                    },
+                    {
+                        title: 'File Size',
+                        data: 'fileSize',
+                        className: 'data-table-header',
+                        width: '90px',
+                        render: function (data) {
+                            if (data === null || data === undefined) return '—';
+                            const mb = data * 0.000001;
+                            return mb >= 1 ? mb.toFixed(2) + ' MB' : (data / 1024).toFixed(0) + ' KB';
+                        }
+                    }
+                ]
+            })
+        );
+    }
+
     function showModal() {
         resetValidationState();
 
-        ['templateSelect', 'triggerType', 'dateType', 'statusSelect', 'recipientCategory'].forEach(id => {
+        ['templateSelect', 'triggerType', 'dateType', 'moduleSelect', 'statusSelect', 'recipientCategory'].forEach(id => {
             document.getElementById(id).value = '';
         });
+        document.getElementById('statusSelect').disabled = true;
 
         // Clear the recipient select
         clearSelectedRecipients();
@@ -492,6 +675,7 @@
         document.getElementById('eventOptions')?.classList.add('hidden-section');
         document.getElementById('recipientOptions')?.classList.add('hidden-section');
         renderTemplatePreview(document.getElementById('templatePreview'), null);
+        updateTemplateAttachments('');
 
         const modalEl = document.getElementById('notificationModal');
         if (modalEl === null) return;
@@ -506,7 +690,7 @@
 
         const requiredAlways = ['templateSelect', 'triggerType'];
         const requiredForDate = ['dateType', 'recipientCategory', 'recipientSelect'];
-        const requiredForEvent = ['statusSelect', 'recipientCategory', 'recipientSelect'];
+        const requiredForEvent = ['moduleSelect', 'statusSelect', 'recipientCategory', 'recipientSelect'];
 
         const fieldsToValidate = [
             ...requiredAlways,
@@ -571,9 +755,12 @@
             console.warn('init() called again but already initialized, returning early');
             return;
         }
-        
-        console.debug('init() starting');
-        
+
+        const modalEl = document.getElementById('notificationModal');
+        if (modalEl && modalEl.parentElement !== document.body) {
+            document.body.appendChild(modalEl);
+        }
+
         formId = document.getElementById('applicationFormId')?.value;
         if (!formId) {
             console.warn('formId not found, returning from init()');
@@ -585,10 +772,12 @@
 
         configureSubmitOnlyValidation();
 
-        const modalEl = document.getElementById('notificationModal');
         if (modalEl) {
             // Always reset validation when modal is fully closed
-            modalEl.addEventListener('hidden.bs.modal', () => resetValidationState());
+            modalEl.addEventListener('hidden.bs.modal', () => {
+                resetValidationState();
+                updateTemplateAttachments('');
+            });
             // Also reset when modal starts opening
             modalEl.addEventListener('show.bs.modal', () => resetValidationState());
             // Refresh select2 when modal is shown
@@ -610,6 +799,9 @@
 
         fetchTemplates().then(populateTemplates);
         initNotificationsTable();
+        bindTabVisibilityResize();
+        // In case the widget is already visible on load (not inside a hidden tab pane)
+        resizeNotificationsScrollBody();
 
         // Attach save button listener (remove old one first to prevent duplicates)
         const saveBtn = document.getElementById('btn-save-notification');
@@ -628,7 +820,17 @@
             e.target.classList.remove('is-invalid');
             updatePreview();
         });
-        ['dateType', 'statusSelect'].forEach(id => {
+        document.getElementById('templateConfigurationLink')?.addEventListener('click', () => {
+            localStorage.setItem('ConfigurationManagement_ActiveMenu', 'notifications-menu-item');
+            localStorage.setItem('notifications-active-tab', 'nav-template-tab');
+            const templateId = document.getElementById('templateSelect')?.value;
+            if (templateId) {
+                localStorage.setItem('notifications-template-to-select', templateId);
+            } else {
+                localStorage.removeItem('notifications-template-to-select');
+            }
+        });
+        ['dateType', 'moduleSelect', 'statusSelect'].forEach(id => {
             document.getElementById(id)?.addEventListener('change', (e) => {
                 e.target.classList.remove('is-invalid');
             });
@@ -651,6 +853,13 @@
                 dateOptionsEl?.classList.add('hidden-section');
                 eventOptionsEl?.classList.remove('hidden-section');
                 recipientOptionsEl?.classList.remove('hidden-section');
+                const moduleSelect = document.getElementById('moduleSelect');
+                const statusSelect = document.getElementById('statusSelect');
+                if (moduleSelect?.value) {
+                    loadStatusesForModule(moduleSelect.value);
+                } else if (statusSelect) {
+                    statusSelect.disabled = true;
+                }
             } else {
                 dateOptionsEl?.classList.add('hidden-section');
                 eventOptionsEl?.classList.add('hidden-section');
@@ -658,6 +867,14 @@
             }
             
             e.target.classList.remove('is-invalid');
+        });
+
+        document.getElementById('moduleSelect')?.addEventListener('change', (e) => {
+            e.target.classList.remove('is-invalid');
+            loadStatusesForModule(e.target.value).catch(err => {
+                console.error('Failed to load module statuses', err);
+                abp.notify.error('Failed to load status triggers');
+            });
         });
 
         document.getElementById('recipientCategory')?.addEventListener('change', (e) => {
@@ -693,19 +910,22 @@
 
         const templateId = (document.getElementById('templateSelect').value || '').trim();
         const dateType = document.getElementById('dateType').value;
-        const applicationStatusId = document.getElementById('statusSelect')?.value;
+        const module = document.getElementById('moduleSelect')?.value;
+        const statusValue = document.getElementById('statusSelect')?.value;
         const recipientCategory = document.getElementById('recipientCategory')?.value;
         
         // Collect multiple selected recipients as comma-separated string
         const recipientIdentifier = getSelectedRecipients().join(',');
 
-        const resolvedStatusId = triggerType === 'Event' ? (applicationStatusId || null) : null;
+        const resolvedStatusId = triggerType === 'Event' && module === 'Application' ? (statusValue || null) : null;
 
         const bodyObj = {
             templateId: templateId,
             triggerType: triggerType,
+            module: triggerType === 'Event' ? module : null,
             dateType: triggerType === 'Date' ? dateType : null,
             applicationStatusId: resolvedStatusId,
+            eventStatus: triggerType === 'Event' && module === 'Payment' ? (statusValue || null) : null,
             recipientCategory: recipientCategory,
             recipientIdentifier: recipientIdentifier
         };

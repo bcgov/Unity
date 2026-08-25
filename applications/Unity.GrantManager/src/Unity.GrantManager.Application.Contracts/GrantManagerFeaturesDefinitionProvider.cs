@@ -2,6 +2,7 @@
 using Unity.GrantManager.Localization;
 using Unity.Modules.Shared.Specializations;
 using Unity.Notifications.Localization;
+using Unity.Notifications.Features;
 using Unity.Payments.Localization;
 using Volo.Abp.Features;
 using Volo.Abp.Localization;
@@ -13,7 +14,7 @@ namespace Unity.GrantManager
     {
         public override void Define(IFeatureDefinitionContext context)
         {
-            var myGroup = context.AddGroup("GrantManager");
+            var myGroup = context.AddGroup("GrantManager", displayName: LocalizableString.Create<GrantManagerResource>("Grant Manager"));
             var defaultValue = "false";
 
             myGroup.AddFeature("Unity.Payments",
@@ -26,6 +27,12 @@ namespace Unity.GrantManager
                 defaultValue: defaultValue,
                 displayName: LocalizableString
                                 .Create<NotificationsResource>("Allow Notifications"),
+                valueType: new ToggleStringValueType());
+
+            myGroup.AddFeature(NotificationsFeatureConsts.DirectMessaging,
+                defaultValue: defaultValue,
+                displayName: LocalizableString
+                                .Create<NotificationsResource>("Allow Direct Messaging"),
                 valueType: new ToggleStringValueType());
 
             myGroup.AddFeature("Unity.Flex",

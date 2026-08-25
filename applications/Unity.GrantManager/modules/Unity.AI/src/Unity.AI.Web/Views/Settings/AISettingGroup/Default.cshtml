@@ -1,8 +1,11 @@
+@using Microsoft.Extensions.Localization
+@using Unity.AI.Localization
 @model Unity.AI.Web.Views.Settings.AISettingGroup.AISettingViewModel
+@inject IStringLocalizer<AIResource> L
 
 <div class="container-fluid px-0">
     <div class="unity-page-titlebar">
-        <h4 class="m-0">AI Configuration</h4>
+        <h4 class="m-0">@L["AISettingGroup:Title"]</h4>
     </div>
 
     <div class="row">
@@ -18,14 +21,14 @@
                                    value="true"
                                    @(Model.AutomaticGenerationEnabled ? "checked" : "") />
                             <label class="form-check-label fw-bold" for="AutomaticGenerationEnabled">
-                                Automatically Generate AI Analysis
+                                @L["Setting:AI.AutomaticGenerationEnabled"]
                             </label>
                             <div class="text-muted small">
-                                When enabled, AI analysis runs automatically on new application intake (subject to form-level AI configuration).
+                                @L["Setting:AI.AutomaticGenerationEnabled:Description"]
                             </div>
                         </div>
 
-                        <div class="form-check form-switch">
+                        <div class="form-check form-switch mb-3">
                             <input class="form-check-input"
                                    type="checkbox"
                                    id="ManualGenerationEnabled"
@@ -33,10 +36,25 @@
                                    value="true"
                                    @(Model.ManualGenerationEnabled ? "checked" : "") />
                             <label class="form-check-label fw-bold" for="ManualGenerationEnabled">
-                                Manually Initiate AI Analysis
+                                @L["Setting:AI.ManualGenerationEnabled"]
                             </label>
                             <div class="text-muted small">
-                                When enabled, users with appropriate permissions can manually generate or regenerate AI analysis.
+                                @L["Setting:AI.ManualGenerationEnabled:Description"]
+                            </div>
+                        </div>
+
+                        <div class="form-check form-switch">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   id="ReportingEnabled"
+                                   name="ReportingEnabled"
+                                   value="true"
+                                   @(Model.ReportingEnabled ? "checked" : "") />
+                            <label class="form-check-label fw-bold" for="ReportingEnabled">
+                                @L["Setting:AI.ReportingEnabled"]
+                            </label>
+                            <div class="text-muted small">
+                                @L["Setting:AI.ReportingEnabled:Description"]
                             </div>
                         </div>
                     </abp-column>
@@ -46,13 +64,13 @@
                     <hr class="my-4" />
                     <div class="d-flex p-2">
                         <abp-button id="AISettingsSaveButton"
-                                    text="Save Changes"
+                                    text="@L["AISettingGroup:SaveChanges"].Value"
                                     button-type="Primary"
                                     class="me-2"
                                     type="submit" />
 
                         <abp-button id="AISettingsDiscardButton"
-                                    text="Discard Changes"
+                                    text="@L["AISettingGroup:DiscardChanges"].Value"
                                     button-type="Light"
                                     class="me-2"
                                     disabled="true" />

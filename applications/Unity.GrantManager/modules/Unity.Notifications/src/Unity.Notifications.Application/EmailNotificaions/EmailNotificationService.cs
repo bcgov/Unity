@@ -1,15 +1,15 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Unity.AspNetCore.Mvc.UI.Theme.UX2.Renderers;
 using Unity.GrantManager.Notifications;
 using Unity.Notifications.Emails;
 using Unity.Notifications.Permissions;
@@ -32,7 +32,7 @@ public class EmailNotificationService(
         ISettingManager settingManager,
         IFeatureChecker featureChecker,
         IConfiguration configuration,
-        IWebHostEnvironment webHostEnvironment) : ApplicationService, IEmailNotificationService
+        IMarkdownRenderer markdownRenderer) : ApplicationService, IEmailNotificationService
 {
 
     public async Task<Guid> InitializeDraftAsync(Guid applicationId)
@@ -108,9 +108,17 @@ public class EmailNotificationService(
                 string commentLink = input.CommentType switch
                 {
                     Comments.CommentType.ApplicationComment or Comments.CommentType.AssessmentComment =>
-                        QueryHelpers.AddQueryString($"{baseUrl}/GrantApplications/Details", "ApplicationId", input.OwnerId),
+                        QueryHelpers.AddQueryString($"{baseUrl}/GrantApplications/Details", new Dictionary<string, string?>
+                        {
+                            ["ApplicationId"] = input.OwnerId,
+                            ["TenantId"] = CurrentTenant.Id?.ToString()
+                        }),
                     Comments.CommentType.ApplicantComment =>
-                        QueryHelpers.AddQueryString($"{baseUrl}/GrantApplicants/Details", "ApplicantId", input.OwnerId),
+                        QueryHelpers.AddQueryString($"{baseUrl}/GrantApplicants/Details", new Dictionary<string, string?>
+                        {
+                            ["ApplicantId"] = input.OwnerId,
+                            ["TenantId"] = CurrentTenant.Id?.ToString()
+                        }),
                     _ => throw new InvalidOperationException("Invalid comment type.")
                 };
 
@@ -251,7 +259,7 @@ public class EmailNotificationService(
     /// Renders the comment notification email template with the provided parameters.
     /// </summary>
     /// <param name="currentUserText">Display name of the user who mentioned</param>
-    /// <param name="commentBody">The comment body text (may contain HTML)</param>
+    /// <param name="commentBody">The comment body text</param>
     /// <param name="commentLink">The URL link to view the comment</param>
     /// <returns>Rendered HTML email body</returns>
     private async Task<string> RenderCommentNotificationTemplateAsync(string currentUserText, string commentBody, string commentLink)
@@ -259,17 +267,23 @@ public class EmailNotificationService(
         // Load template from embedded resources or file system
         string templateContent = await LoadEmailTemplateAsync("CommentNotification");
 
+        var encodedCurrentUserText = WebUtility.HtmlEncode(currentUserText);
+        var encodedCommentBody = markdownRenderer.Render(commentBody);
+        var encodedCommentLink = WebUtility.HtmlEncode(commentLink);
+
         // Replace placeholders with actual values
         var renderedTemplate = templateContent
-            .Replace("@Model.CurrentUserText", currentUserText)
-            .Replace("@Html.Raw(Model.CommentBody)", commentBody)
-            .Replace("@Model.CommentLink", commentLink);
+            .Replace("@Model.CurrentUserText", encodedCurrentUserText)
+            .Replace("@Html.Raw(Model.CommentBody)", encodedCommentBody)
+            .Replace("@Model.CommentLink", encodedCommentLink)
+            .Replace("@model dynamic", string.Empty);
 
         return renderedTemplate;
     }
 
     /// <summary>
-    /// Loads an email template from the Views/EmailTemplates directory.
+    /// Loads an email template from the Application assembly's embedded resources.
+    /// The resource name follows the format Unity.Notifications.EmailTemplates.{templateName}.cshtml.
     /// </summary>
     /// <param name="templateName">Template name without extension (e.g., "CommentNotification")</param>
     /// <returns>Template content as a string</returns>
@@ -277,32 +291,17 @@ public class EmailNotificationService(
     {
         try
         {
-            // Content root is at: .../Unity.GrantManager/src/Unity.GrantManager.Web
-            // We need to go up 2 levels to reach Unity.GrantManager, then into modules
-            var contentRoot = webHostEnvironment.ContentRootPath;
-            
-            var templatePath = Path.Combine(
-                contentRoot,
-                "..",
-                "..",
-                "modules",
-                "Unity.Notifications",
-                "src",
-                "Unity.Notifications.Web",
-                "Views",
-                "EmailTemplates",
-                $"{templateName}.cshtml");
+            var assembly = typeof(EmailNotificationService).Assembly;
+            var resourceName = $"Unity.Notifications.EmailTemplates.{templateName}.cshtml";
+            await using var templateStream = assembly.GetManifestResourceStream(resourceName);
 
-            // Normalize the path to remove .. references
-            templatePath = Path.GetFullPath(templatePath);
-
-            if (!File.Exists(templatePath))
+            if (templateStream == null)
             {
-                throw new FileNotFoundException($"Email template not found at: {templatePath}");
+                throw new FileNotFoundException($"Embedded email template not found: {resourceName}");
             }
 
-            var content = await File.ReadAllTextAsync(templatePath);
-            return content;
+            using var reader = new StreamReader(templateStream);
+            return await reader.ReadToEndAsync();
         }
         catch (Exception ex)
         {

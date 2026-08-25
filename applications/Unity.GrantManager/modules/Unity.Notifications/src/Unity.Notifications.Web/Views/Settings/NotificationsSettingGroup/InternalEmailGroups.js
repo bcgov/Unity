@@ -37,7 +37,7 @@ const emailGroupsManager = {
                         const buttonClass = row.isNew ? 'remove-selected-user' : 'remove-user-btn';
                         const dataAttr = row.isNew ? `data-user-id="${row.userId}"` : `data-group-user-id="${row.id}"`;
                         return `<button class="btn btn-sm btn-link text-primary p-0 ${buttonClass}" style="text-decoration: none;" ${dataAttr} title="${title}">
-                            <i class="fa fa-times"></i>
+                            <i class="fa-solid fa-xmark"></i>
                         </button>`;
                     }
                 }
@@ -63,21 +63,33 @@ const emailGroupsManager = {
             };
         },
 
+        // Escape untrusted values for safe insertion into HTML text and attribute contexts
+        escapeHtml: function(value) {
+            return String(value ?? '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll("\"", '&quot;')
+                .replaceAll('\'', '&#39;');
+        },
+
         // Generate dropdown item HTML for users
         generateUserDropdownItem: function(user) {
             const firstName = user.name ? user.name.split(' ')[0] : '';
             const lastName = user.surname || '';
+            const displayName = this.escapeHtml(user.userName || user.name || 'Unknown');
+            const email = this.escapeHtml(user.email || '');
             return `
                 <li>
                     <a class="dropdown-item dropdown-user-item" href="#" 
-                        data-user-id="${user.id}" 
-                        data-user-name="${user.userName || user.name || 'Unknown'}"
-                        data-user-email="${user.email || ''}"
-                        data-first-name="${firstName}"
-                        data-last-name="${lastName}">
+                        data-user-id="${this.escapeHtml(user.id)}" 
+                        data-user-name="${displayName}"
+                        data-user-email="${email}"
+                        data-first-name="${this.escapeHtml(firstName)}"
+                        data-last-name="${this.escapeHtml(lastName)}">
                         <div>
-                            <strong>${user.userName || user.name || 'Unknown'}</strong>
-                            <small class="text-muted d-block">${user.email || ''}</small>
+                            <strong>${displayName}</strong>
+                            <small class="text-muted d-block">${email}</small>
                         </div>
                     </a>
                 </li>
@@ -372,7 +384,7 @@ const emailGroupsManager = {
                                         </ul>
                                     </div>
                                     <button type="button" class="btn btn-add-user mt-2 float-end mx-5" id="createAddUserBtn" disabled>
-                                        <i class="fa fa-check me-1"></i>ADD USER
+                                        <i class="fa-solid fa-check me-1"></i>ADD USER
                                     </button>
                                 </div>
                                 <hr style="margin-top: 60px;">
@@ -432,7 +444,7 @@ const emailGroupsManager = {
             'createAddUserBtn',
             function(selectedUser) {
                 // Add to selected users if not already there
-                if (!selectedUsers.find(u => u.userId === selectedUser.userId)) {
+                if (!selectedUsers.some(u => u.userId === selectedUser.userId)) {
                     const newUser = {
                         userId: selectedUser.userId,
                         userName: selectedUser.userName,
@@ -559,6 +571,9 @@ const emailGroupsManager = {
         let pendingUserAdditions = [];
         let pendingUserRemovals = [];
 
+        const escapedGroupName = emailGroupsManager.utils.escapeHtml(group.name);
+        const escapedGroupDescription = emailGroupsManager.utils.escapeHtml(group.description || '');
+
         const modalHtml = `
             <div class="modal fade" id="manageUsersModal" tabindex="-1">
                 <div class="modal-dialog modal-xl">
@@ -570,11 +585,11 @@ const emailGroupsManager = {
                         <div class="modal-body">
                             <div class="mb-3 mx-5">
                                 <label for="editGroupName" class="form-label">Group Name</label>
-                                <input type="text" class="form-control" id="editGroupName" value="${group.name}" ${!isDynamic ? 'disabled' : ''} required>
+                                <input type="text" class="form-control" id="editGroupName" value="${escapedGroupName}" ${!isDynamic ? 'disabled' : ''} required>
                             </div>
                             <div class="mb-3 mx-5">
                                 <label for="editGroupDescription" class="form-label">Description</label>
-                                <textarea class="form-control" id="editGroupDescription" rows="3">${group.description || ''}</textarea>
+                                <textarea class="form-control" id="editGroupDescription" rows="3">${escapedGroupDescription}</textarea>
                             </div>
                             <hr>
                             <div class="mb-3">
@@ -589,7 +604,7 @@ const emailGroupsManager = {
                                     </ul>
                                 </div>
                                 <button type="button" class="btn btn-add-user mt-2 float-end mx-5" id="manageAddUserBtn" disabled>
-                                    <i class="fa fa-check me-1"></i>ADD USER
+                                    <i class="fa-solid fa-check me-1"></i>ADD USER
                                 </button>
                             </div>
                             <hr style="margin-top: 60px;">

@@ -1,80 +1,37 @@
-# Unity.AI Index
+# Unity.AI
 
-## Domain.Shared
-AI constants:
-- feature flags
-- permission names
-- localization keys
-- prompt type names
+`Unity.AI` owns provider-neutral AI contracts, prompt/model/operation configuration,
+runtime execution, and the generation API. Grant Manager owns the application data,
+queue implementation, operation executors, and persistence of generated results.
 
-## Application.Contracts
-Public AI surface:
-- app service interfaces
-- queue interfaces
-- DTOs
-- permission definitions
+## Boundaries
 
-## Application
-AI implementation:
-- runtime
-- prompt seeding
-- generation app services
-- validators
-- prompt logging
+| Area | Responsibility |
+| --- | --- |
+| `Domain.Shared` | Features, permissions, localization, and prompt family names |
+| `Application.Contracts` | Runtime, generation, queue, and DTO contracts |
+| `Application` | Prompt/model/operation seeds, provider runtime, API, and status reads |
+| `Runtime/Execution` | Prompt rendering, provider calls, response parsing, and prompt logging |
+| Grant Manager | Request locking, background jobs, operation executors, and result persistence |
+| `Web` | Menus, generate actions, and status polling |
 
-## Web
-UI-facing AI bits:
-- menus
-- generation buttons
-- status polling
+## Operation catalog
 
-## Files
-### Application
-- `AI/Operations` - validators and helpers
-- `AI/Runtime` - rendering, parsing, logging, provider calls
-- `AI/Prompts` - prompt types and template plumbing
-- `DataSeed` - seeded prompt and operation data
-- `Generation/AIGenerationAppService.cs` - generation API
+`AIGenerationOperations` is the single catalog for operation type, prompt family,
+feature, permissions, and form-version requirement.
 
-### Application.Contracts
-- `AI/IAIService.cs` - runtime contract
-- `Generation/IAIGenerationAppService.cs` - generation app service contract
-- `Generation/*ResultDto.cs` - queued result DTOs
-- `AI/Operations/IAIGenerationPrerequisiteValidator.cs` - queue prerequisites
-- `Automation/IApplicationAIGenerationQueue.cs` - queue contract
-- `Permissions/*` - permissions
-
-### Domain.Shared
-- `Features/AIFeatures.cs` - feature flags
-- `Localization/AILocalizationKeys.cs` - messages
-- `PromptTypes/AIPromptTypes.cs` - prompt family names
-
-### Web
-- `Menus/AIMenuContributor.cs` - menu entries
-- `Menus/AIMenus.cs` - menu item names
-
-## Access
-| Operation | View | Generate |
+| Operation | Type | Requires form version |
 | --- | --- | --- |
-| Application Analysis | `ViewApplicationAnalysis` | `GenerateApplicationAnalysis` |
-| Attachment Summary | `ViewAttachmentSummary` | `GenerateAttachmentSummaries` |
-| Application Scoring | `ViewScoringResult` | `GenerateScoring` |
-| Form Mapping | `ViewFormMapping` | `GenerateFormMapping` |
-| Form Worksheet | `ViewFormWorksheet` | `GenerateFormWorksheet` |
+| Application Analysis | `application-analysis` | No |
+| Attachment Summary | `attachment-summary` | No |
+| Application Scoring | `application-scoring` | No |
+| Form Mapping | `form-mapping` | Yes |
+| Form Worksheet | `form-worksheet` | Yes |
+| Form Scoresheet | `form-scoresheet` | Yes |
 
-- Features:
-  - `Unity.AI.ApplicationAnalysis`
-  - `Unity.AI.AttachmentSummaries`
-  - `Unity.AI.Scoring`
-  - `Unity.AI.FormMapping`
-  - `Unity.AI.FormWorksheet`
+User-triggered generation requires both the catalogued feature and generate permission.
+Automatic intake enforces its tenant, form, feature, and generation prerequisites without
+user permission authorization. Status reads require the corresponding view permission.
 
-- Rule:
-  - Both permission and feature gate must allow generation.
-
-## AI Notes
-- Prompt logging: logs rendered system/user prompts and provider output.
-- Response parsing: parses provider output into stable app-facing results.
-- Feature gating: disabled features fail early at the API boundary.
-- Background jobs: mark failures, then re-throw.
-- New operation playbook: see `implementation-playbook.md`.
+See [configuration](./configuration.md), [pipeline](./operation-pipeline.md), and the
+[implementation playbook](./implementation-playbook.md).

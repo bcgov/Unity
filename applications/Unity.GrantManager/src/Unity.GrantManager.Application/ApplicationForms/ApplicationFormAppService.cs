@@ -4,13 +4,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.GrantManager.ApplicantProfile;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Integrations.Chefs;
 using Unity.GrantManager.Permissions;
-using Unity.Payments.Permissions;
 using Unity.Payments.Enums;
+using Unity.Payments.Permissions;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -52,6 +53,8 @@ public class ApplicationFormAppService
         _applicationService = applicationService;
         _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
         _formsApiService = formsApiService;
+
+        DeletePolicyName = GrantManagerPermissions.ApplicationForms.Default;
     }
 
     [Authorize(GrantManagerPermissions.ApplicationForms.Default)]
@@ -123,6 +126,11 @@ public class ApplicationFormAppService
         var dto = await base.GetAsync(id);
         dto.ApiKey = _stringEncryptionService.Decrypt(dto.ApiKey);
         dto.ApiToken = _stringEncryptionService.Decrypt(dto.ApiToken);
+
+        var form = await Repository.GetAsync(id);
+        dto.ExternalLinks = form.ExternalLinksConfig.Links.Select(MapToExternalLinkConfigDto).ToList();
+        dto.ApplicantMessage = form.ExternalLinksConfig.ApplicantMessage;
+
         return dto;
     }
 
@@ -185,6 +193,41 @@ public class ApplicationFormAppService
         await Repository.UpdateAsync(form);
     }
 
+    [Authorize(GrantManagerPermissions.ApplicationForms.Default)]
+    public async Task PatchExternalLinksConfigAsync(Guid id, ExternalLinksConfigDto config)
+    {
+        ArgumentNullException.ThrowIfNull(config);
+
+        var form = await Repository.GetAsync(id);
+
+        var renewalLink = config.RenewalLink is null ? null : MapToExternalLink(config.RenewalLink);
+        var relatedLinks = (config.RelatedLinks ?? []).Select(MapToExternalLink).ToList();
+
+        form.SetExternalLinks(renewalLink, relatedLinks, config.ApplicantMessage);
+
+        await Repository.UpdateAsync(form);
+    }
+
+    private static ExternalLink MapToExternalLink(ExternalLinkConfigDto dto) => new()
+    {
+        Uri = dto.Uri,
+        Title = dto.Title,
+        Description = dto.Description,
+        Published = dto.Published,
+        ExternalLinkType = dto.ExternalLinkType,
+        Order = dto.Order
+    };
+
+    private static ExternalLinkConfigDto MapToExternalLinkConfigDto(ExternalLink link) => new()
+    {
+        Uri = link.Uri,
+        Title = link.Title,
+        Description = link.Description,
+        Published = link.Published,
+        ExternalLinkType = link.ExternalLinkType,
+        Order = link.Order
+    };
+
     [Authorize(PaymentsPermissions.Payments.EditFormPaymentConfiguration)]
     public async Task<bool> GetFormPreventPaymentStatusByApplicationId(Guid applicationId)
     {
@@ -220,7 +263,7 @@ public class ApplicationFormAppService
                     throw new BusinessException(GrantManagerDomainErrorCodes.ChildFormCannotReferenceSelf);
                 }
 
-                var parentForm = await Repository.FindAsync(dto.ParentFormId.Value) ?? throw new BusinessException(GrantManagerDomainErrorCodes.ChildFormRequiresParentForm);
+                _ = await Repository.FindAsync(dto.ParentFormId.Value) ?? throw new BusinessException(GrantManagerDomainErrorCodes.ChildFormRequiresParentForm);
             }
         }
 
@@ -307,4 +350,8 @@ public class ApplicationFormAppService
             ApplicationFormVersion = formDetails.ApplicationFormVersion
         };
     }
+
+    [RemoteService(false)]
+    public override Task DeleteAsync(Guid id)
+        => base.DeleteAsync(id);
 }

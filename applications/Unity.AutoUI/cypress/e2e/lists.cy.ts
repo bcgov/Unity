@@ -10,31 +10,34 @@ describe('Grant Manager Login and List Navigation', () => {
     const appsPage = ApplicationsPageInstance()
 
     function setDashboardIntakeToTestIfAvailable() {
-        const btnSel = 'button[data-id="dashboardIntakeId"]'
-        const listboxSel = '#bs-select-1[role="listbox"]'
-        const searchSel = 'input[type="search"][aria-controls="bs-select-1"]'
+        // The INTAKES filter is a Select2 (bootstrap-5 theme) multi-select, not
+        // bootstrap-select — the toggle is the [role="combobox"] wrapping the
+        // rendered-choices <ul id="select2-dashboardIntakeId-container">.
+        const renderedSel = '#select2-dashboardIntakeId-container'
+        const dropdownSel = '.select2-dropdown'
+        const optionSel = `${dropdownSel} li.select2-results__option`
 
-        cy.get(btnSel, { timeout: 30000 })
+        cy.get(renderedSel, { timeout: 30000 })
             .should('be.visible')
-            .first()
+            .closest('[role="combobox"]')
+            .as('intakeCombobox')
             .click({ force: true })
 
-        cy.get(listboxSel, { timeout: 30000 }).should('be.visible')
+        cy.get(dropdownSel, { timeout: 30000 }).should('be.visible')
 
-        cy.get(searchSel, { timeout: 30000 })
+        cy.get(renderedSel)
+            .parent()
+            .find('textarea.select2-search__field', { timeout: 30000 })
             .should('be.visible')
             .clear()
             .type('Test')
 
-        cy.contains(`${listboxSel} a.dropdown-item[role="option"] span.text`, /^Test$/, { timeout: 30000 })
-            .closest('a.dropdown-item')
+        cy.contains(optionSel, /^Test$/, { timeout: 30000 })
             .then(($opt) => {
-                const selected =
-                    $opt.attr('aria-selected') === 'true' ||
-                    $opt.hasClass('selected')
+                const selected = $opt.attr('aria-selected') === 'true'
 
                 if (!selected) {
-                    cy.wrap($opt).scrollIntoView().click({ force: true })
+                    cy.wrap($opt).click({ force: true })
                 }
             })
 
@@ -43,8 +46,8 @@ describe('Grant Manager Login and List Navigation', () => {
             expect(texts).to.include('Test')
         })
 
-        cy.get(btnSel).first().click({ force: true })
-        cy.get(btnSel).first().should('have.attr', 'aria-expanded', 'false')
+        cy.get('@intakeCombobox').click({ force: true })
+        cy.get('@intakeCombobox').should('have.attr', 'aria-expanded', 'false')
     }
 
     it('Verify Login', () => {

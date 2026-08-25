@@ -367,11 +367,6 @@ thead input {
     background-color: var(--bc-colors-blue-background, #38598A);
 }
 
-.abp-widget-wrapper {
-    top: 0;
-    z-index: 2;
-}
-
 td.dt-editable {
     cursor: pointer;
 }
@@ -680,9 +675,12 @@ div.dt-container div.dt-search {
 
 #app-version-id {
     position: absolute;
+    top: 0;
     right: 0;
+    z-index: 1;
     font-size: 0.7rem;
     opacity: 0.5;
+    white-space: nowrap;
 }
 
 .worksheet_section_label {
@@ -914,4 +912,11 @@ div.dt-container div.dt-search {
 
 .filter-search-action-bar_search-wrapper {
     flex: 1;
+}
+
+table.dataTable th.dt-type-numeric div.dt-column-header, 
+table.dataTable th.dt-type-date div.dt-column-header, 
+table.dataTable td.dt-type-numeric div.dt-column-header, 
+table.dataTable td.dt-type-date div.dt-column-header {
+    flex-direction: row !important;
 }

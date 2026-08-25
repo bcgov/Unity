@@ -13,7 +13,7 @@ Generate scored answers for a submitted application against an assigned scoreshe
 - `GET /api/app/ai/generation/status`
 
 ## Contract
-- Structured scoring output. Returns an immediate queued result via API app service, queue, background job, and AI runtime.
+- Structured scoring output. The POST request enqueues generation and returns without the generated payload; clients use the shared status endpoint while the background executor persists the result.
 
 ## Notes
 - The prompt asks for answers only for the configured section or scoresheet context.

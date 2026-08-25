@@ -578,6 +578,8 @@ $(function () {
             getAssigneesColumn(columnIndex++),
             getStatusColumn(columnIndex++),
             getExternalStatusVisibilityColumn(columnIndex++),
+            getExternalStatusColumn(columnIndex++),
+            getPublishedStatusColumn(columnIndex++),
             getRequestedAmountColumn(columnIndex++),
             getApprovedAmountColumn(columnIndex++),
             getEconomicRegionColumn(columnIndex++),
@@ -808,6 +810,34 @@ $(function () {
                 return data ? 'Published' : 'Unpublished';
             },
             index: columnIndex
+        }
+    }
+
+    function getExternalStatusColumn(columnIndex) {
+        return {
+            title: l('ExternalStatus'),
+            data: 'externalStatus',
+            name: 'externalStatus',
+            className: 'data-table-header',
+            index: columnIndex,
+            render: function (data, type) {
+                const value = data ?? '';
+                return type === 'display' ? dtTextRenderer.display(value) : value;
+            }
+        }
+    }
+
+    function getPublishedStatusColumn(columnIndex) {
+        return {
+            title: l('PublishedStatus'),
+            data: 'publishedStatus',
+            name: 'publishedStatus',
+            className: 'data-table-header',
+            index: columnIndex,
+            render: function (data, type) {
+                const value = data ?? '';
+                return type === 'display' ? dtTextRenderer.display(value) : value;
+            }
         }
     }
 

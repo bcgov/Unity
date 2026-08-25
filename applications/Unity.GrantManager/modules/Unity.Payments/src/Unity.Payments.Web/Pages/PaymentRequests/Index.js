@@ -753,7 +753,7 @@ $(function () {
             index: columnIndex,
             render: function (data, _, row) {
                 if (row.errorSummary != null && row.errorSummary !== '') {
-                    return `${data} <i class="fa fa-flag error-icon" data-toggle="tooltip" title="${row.errorSummary}"></i>`;
+                    return `${data} <i class="fa-solid fa-flag error-icon" data-toggle="tooltip" title="${row.errorSummary}"></i>`;
                 } else {
                     return data;
                 }
@@ -1042,7 +1042,7 @@ $(function () {
     }
 
     function formatName(userData) {
-        return typeof userData !== 'undefined' && userData !== null ? `${userData?.name} ${userData?.surname}` : "";
+        return userData !== undefined && userData !== null ? `${userData?.name} ${userData?.surname}` : "";
     }
 
     function getApprovalDateColumn(columnIndex, level) {

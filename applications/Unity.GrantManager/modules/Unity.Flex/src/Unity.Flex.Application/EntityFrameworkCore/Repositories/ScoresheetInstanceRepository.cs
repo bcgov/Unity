@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore;
@@ -15,6 +15,12 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
             return await dbContext.ScoresheetInstances
                     .Include(s => s.Answers)
                     .FirstOrDefaultAsync(s => s.CorrelationId == correlationId);
+        }
+
+        public async Task<bool> AnyByScoresheetAsync(Guid scoresheetId)
+        {
+            var dbContext = await GetDbContextAsync();
+            return await dbContext.ScoresheetInstances.AnyAsync(instance => instance.ScoresheetId == scoresheetId);
         }
 
         public async Task<ScoresheetInstance?> GetWithAnswersAsync(Guid scoresheetInstanceId)

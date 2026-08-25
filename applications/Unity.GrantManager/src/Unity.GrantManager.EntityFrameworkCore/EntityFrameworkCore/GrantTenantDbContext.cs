@@ -1,22 +1,27 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using System.Linq;
+using System.Text.Json;
+using Unity.Flex.EntityFrameworkCore;
+using Unity.GrantManager.ApplicantProfile;
+using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Comments;
+using Unity.GrantManager.Contacts;
+using Unity.GrantManager.GlobalTag;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Identity;
+using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Notifications;
+using Unity.Notifications.EntityFrameworkCore;
+using Unity.Payments.EntityFrameworkCore;
+using Unity.Reporting.EntityFrameworkCore;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
 using Volo.Abp.EntityFrameworkCore.Modeling;
-using Unity.GrantManager.Identity;
-using Unity.Payments.EntityFrameworkCore;
-using Unity.Flex.EntityFrameworkCore;
-using Unity.Notifications.EntityFrameworkCore;
-using Unity.Reporting.EntityFrameworkCore;
-using Unity.GrantManager.GlobalTag;
-using Unity.GrantManager.Contacts;
 
 namespace Unity.GrantManager.EntityFrameworkCore
 {
@@ -27,8 +32,10 @@ namespace Unity.GrantManager.EntityFrameworkCore
         public DbSet<Intake> Intakes { get; set; }
         public DbSet<ApplicationForm> ApplicationForms { get; set; }
         public DbSet<ApplicationFormVersion> ApplicationFormVersions { get; set; }
+        public DbSet<GenerationReview> GenerationReviews { get; set; }
         public DbSet<Applicant> Applicants { get; set; }
         public DbSet<Application> Applications { get; set; }
+        public DbSet<ApplicationScoresheetAnswers> ApplicationScoresheetAnswers { get; set; }
         public DbSet<ApplicationStatus> ApplicationStatuses { get; set; }
         public DbSet<ApplicationAssignment> ApplicationUserAssignments { get; set; }
         public DbSet<ApplicationChefsFileAttachment> ApplicationChefsFileAttachments { get; set; }
@@ -65,6 +72,12 @@ namespace Unity.GrantManager.EntityFrameworkCore
         {
             base.OnModelCreating(modelBuilder);
 
+            // ExternalLinksConfig is mapped as a JSON-serialized scalar via HasConversion below,
+            // not as an owned/entity type, so exclude it (and its nested ExternalLink type) from
+            // convention-based entity discovery.
+            modelBuilder.Ignore<ExternalLinksConfig>();
+            modelBuilder.Ignore<ExternalLink>();
+
             modelBuilder.Entity<Person>(b =>
             {
                 b.ToTable(GrantManagerConsts.TenantTablePrefix + "Persons",
@@ -96,6 +109,12 @@ namespace Unity.GrantManager.EntityFrameworkCore
                     .WithOne(s => s.Applicant)
                     .HasForeignKey(x => x.ApplicantId)
                     .OnDelete(DeleteBehavior.NoAction);
+
+                // FYE is updated through the compute_applicants_fiscal_year_end() trigger
+                var fyeProp = b.Property(x => x.FiscalYearEnd)
+                    .HasColumnType("date")
+                    .ValueGeneratedOnAddOrUpdate();
+                fyeProp.Metadata.SetBeforeSaveBehavior(PropertySaveBehavior.Ignore);
             });
 
             modelBuilder.Entity<Intake>(b =>
@@ -114,6 +133,20 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
                 b.ConfigureByConvention(); //auto configure for the base class props
                 b.Property(x => x.ApplicationFormName).IsRequired().HasMaxLength(255);
+                // Mapped as a JSON-serialized scalar (rather than EF's native JSON complex-type
+                // support) because that feature is relational-only and breaks under the
+                // EFCore.InMemory provider used by Unity.GrantManager.Web.Tests.
+                b.Property(x => x.ExternalLinksConfig)
+                    .HasColumnName("ExternalLinks")
+                    .HasColumnType("jsonb")
+                    .IsRequired()
+                    .HasConversion(
+                        config => JsonSerializer.Serialize(config, (JsonSerializerOptions?)null),
+                        json => JsonSerializer.Deserialize<ExternalLinksConfig>(json, (JsonSerializerOptions?)null)!,
+                        new ValueComparer<ExternalLinksConfig>(
+                            (left, right) => JsonSerializer.Serialize(left, (JsonSerializerOptions?)null) == JsonSerializer.Serialize(right, (JsonSerializerOptions?)null),
+                            config => JsonSerializer.Serialize(config, (JsonSerializerOptions?)null).GetHashCode(),
+                            config => JsonSerializer.Deserialize<ExternalLinksConfig>(JsonSerializer.Serialize(config, (JsonSerializerOptions?)null), (JsonSerializerOptions?)null)!));
 
                 b.HasOne<Intake>().WithMany().HasForeignKey(x => x.IntakeId).IsRequired();
 
@@ -134,6 +167,24 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.ConfigureByConvention(); //auto configure for the base class props
                 b.HasOne<ApplicationForm>().WithMany().HasForeignKey(x => x.ApplicationFormId).IsRequired();
                 b.Property(x => x.FormSchema).HasColumnType("jsonb");
+            });
+
+            modelBuilder.Entity<GenerationReview>(b =>
+            {
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "GenerationReviews", "AI");
+                b.ConfigureByConvention();
+                b.Property(x => x.Operation).IsRequired();
+                b.Property(x => x.Status).HasConversion<string>().IsRequired();
+                b.Property(x => x.ReviewData).HasColumnType("jsonb").IsRequired();
+                b.HasIndex(x => new { x.Operation, x.ContextId, x.Sequence }).IsUnique();
+            });
+
+            modelBuilder.Entity<ApplicationScoresheetAnswers>(b =>
+            {
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationScoresheetAnswers", "AI");
+                b.ConfigureByConvention();
+                b.Property(x => x.Answers).HasColumnType("jsonb").IsRequired();
+                b.HasIndex(x => x.ApplicationId).IsUnique();
             });
 
             modelBuilder.Entity<ApplicationStatus>(b =>
@@ -426,6 +477,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.Property(x => x.FormId).IsRequired();
                 b.Property(x => x.EmailTemplateId).IsRequired();
                 b.Property(x => x.TriggerType).IsRequired().HasMaxLength(64);
+                b.Property(x => x.Module).HasMaxLength(64);
                 b.Property(x => x.TriggerDetail).HasMaxLength(1000);
                 b.Property(x => x.EventType).HasMaxLength(128);
                 b.Property(x => x.ApplicationStatus).HasMaxLength(128);

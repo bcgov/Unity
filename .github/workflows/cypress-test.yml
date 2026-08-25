@@ -21,4 +21,5 @@ jobs:
     with:
       env_name: test
       cypress_config_key: CYPRESS_CONFIG_TEST
+      git_ref: ${{ github.event.workflow_run.head_sha || github.sha }}
     secrets: inherit

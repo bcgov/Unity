@@ -198,7 +198,7 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
         formLink.Attributes.Add("target", "_blank");
         formLink.Attributes.Add("rel", "noopener noreferrer");
         formLink.InnerHtml.AppendHtml($"{TagHelper.FormId}");
-        formLink.InnerHtml.AppendHtml("<i class=\"fa fa-external-link small\" aria-hidden=\"true\"></i>");
+        formLink.InnerHtml.AppendHtml("<i class=\"fa-solid fa-up-right-from-square small\" aria-hidden=\"true\"></i>");
         AddDefinitionItem(dl, "Form ID", formLink);
     }
 
