@@ -97,7 +97,7 @@ public class MetabaseTenantRegistrationStepTests
 
         await step.ExecuteAsync(tenant.Id);
 
-        await metabaseApiClient.DidNotReceiveWithAnyArgs().CreateDatabaseAsync(default!, default!, default, default!, default!, default!, default);
+        await metabaseApiClient.DidNotReceiveWithAnyArgs().FindOrCreateDatabaseAsync(default!, default!, default, default!, default!, default!, default);
     }
 
     [Fact]
@@ -108,13 +108,13 @@ public class MetabaseTenantRegistrationStepTests
             .Returns((string?)null);
         settingManager.GetOrNullGlobalAsync(MetabaseSettings.UserEmails).Returns("user1@gov.bc.ca,user2@gov.bc.ca");
 
-        metabaseApiClient.CreateDatabaseAsync(
+        metabaseApiClient.FindOrCreateDatabaseAsync(
                 tenant.Name, "dev-crunchy-postgres-primary.ce395f-dev.svc", 5432, "T_ABC123", "t_abc123_readonly", "s3cr3t", true)
             .Returns(11);
-        metabaseApiClient.CreateGroupAsync(tenant.Name).Returns(22);
+        metabaseApiClient.FindOrCreateGroupAsync(tenant.Name).Returns(22);
         metabaseApiClient.FindUserIdByEmailAsync("user1@gov.bc.ca").Returns(101);
         metabaseApiClient.FindUserIdByEmailAsync("user2@gov.bc.ca").Returns((int?)null);
-        metabaseApiClient.CreateCollectionAsync(tenant.Name).Returns(33);
+        metabaseApiClient.FindOrCreateCollectionAsync(tenant.Name).Returns(33);
 
         await step.ExecuteAsync(tenant.Id);
 
@@ -133,12 +133,12 @@ public class MetabaseTenantRegistrationStepTests
         settingManager.GetOrNullAsync(MetabaseSettings.UserEmails, TenantSettingValueProvider.ProviderName, tenant.Id.ToString())
             .Returns((string?)null);
         settingManager.GetOrNullGlobalAsync(MetabaseSettings.UserEmails).Returns((string?)null);
-        metabaseApiClient.CreateGroupAsync(tenant.Name).Returns(22);
-        metabaseApiClient.CreateCollectionAsync(tenant.Name).Returns(33);
+        metabaseApiClient.FindOrCreateGroupAsync(tenant.Name).Returns(22);
+        metabaseApiClient.FindOrCreateCollectionAsync(tenant.Name).Returns(33);
 
         await step.ExecuteAsync(tenant.Id);
 
-        await metabaseApiClient.Received(1).CreateDatabaseAsync(
+        await metabaseApiClient.Received(1).FindOrCreateDatabaseAsync(
             tenant.Name, "host.docker.internal", 5432, "T_ABC123", "t_abc123_readonly", "s3cr3t", true);
     }
 
@@ -149,12 +149,12 @@ public class MetabaseTenantRegistrationStepTests
         settingManager.GetOrNullAsync(MetabaseSettings.UserEmails, TenantSettingValueProvider.ProviderName, tenant.Id.ToString())
             .Returns((string?)null);
         settingManager.GetOrNullGlobalAsync(MetabaseSettings.UserEmails).Returns((string?)null);
-        metabaseApiClient.CreateGroupAsync(tenant.Name).Returns(22);
-        metabaseApiClient.CreateCollectionAsync(tenant.Name).Returns(33);
+        metabaseApiClient.FindOrCreateGroupAsync(tenant.Name).Returns(22);
+        metabaseApiClient.FindOrCreateCollectionAsync(tenant.Name).Returns(33);
 
         await step.ExecuteAsync(tenant.Id);
 
-        await metabaseApiClient.Received(1).CreateDatabaseAsync(
+        await metabaseApiClient.Received(1).FindOrCreateDatabaseAsync(
             tenant.Name, "dev-crunchy-postgres-primary.ce395f-dev.svc", 5432, "T_ABC123", "t_abc123_readonly", "s3cr3t", false);
     }
 
@@ -164,7 +164,7 @@ public class MetabaseTenantRegistrationStepTests
         var (step, metabaseApiClient, settingManager, tenant) = CreateStep();
         settingManager.GetOrNullAsync(MetabaseSettings.UserEmails, TenantSettingValueProvider.ProviderName, tenant.Id.ToString())
             .Returns("tenant-scoped@gov.bc.ca");
-        metabaseApiClient.CreateGroupAsync(tenant.Name).Returns(22);
+        metabaseApiClient.FindOrCreateGroupAsync(tenant.Name).Returns(22);
         metabaseApiClient.FindUserIdByEmailAsync(Arg.Any<string>()).Returns((int?)null);
 
         await step.ExecuteAsync(tenant.Id);

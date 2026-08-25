@@ -76,16 +76,24 @@ namespace Unity.GrantManager.Handlers
         // Global default changes in the meantime.
         private async Task SaveMetabaseUserEmailsAsync(TenantCreatedEto eto, Guid tenantId)
         {
-            // An empty string is a deliberate "no Metabase users for this tenant" choice - it must
-            // still be persisted (not skipped), otherwise MetabaseTenantRegistrationStep's
-            // GetUserEmailsAsync falls back to the Global default list and grants users the
-            // tenant creator explicitly unchecked.
-            if (!eto.Properties.TryGetValue("MetabaseUserEmails", out var emailsRaw))
-                return;
+            var emails = await ResolveMetabaseUserEmailsAsync(
+                eto.Properties, () => _settingManager.GetOrNullGlobalAsync(MetabaseSettings.UserEmails));
 
             await _settingManager.SetAsync(
-                MetabaseSettings.UserEmails, emailsRaw ?? string.Empty, TenantSettingValueProvider.ProviderName, tenantId.ToString());
+                MetabaseSettings.UserEmails, emails, TenantSettingValueProvider.ProviderName, tenantId.ToString());
         }
+
+        // TenantAppService.CreateAsync only adds "MetabaseUserEmails" to eto.Properties when the
+        // caller explicitly set it (even to an empty string - a deliberate "no Metabase users for
+        // this tenant" choice, which must still be persisted as-is). When the property is absent -
+        // an older/API caller that never set it - snapshot the *current* Global default here
+        // rather than leaving the tenant setting unset, so the step reads a stable list even if the
+        // Global default changes before it (async, queued) actually runs.
+        internal static async Task<string> ResolveMetabaseUserEmailsAsync(
+            IReadOnlyDictionary<string, string> etoProperties, Func<Task<string?>> getGlobalDefaultAsync) =>
+            etoProperties.TryGetValue("MetabaseUserEmails", out var emailsRaw)
+                ? emailsRaw
+                : await getGlobalDefaultAsync() ?? string.Empty;
 
         private async Task EnableRequestedFeaturesAsync(TenantCreatedEto eto, Guid tenantId)
         {

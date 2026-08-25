@@ -126,6 +126,41 @@ public class TenantAppService_Tests : AbpTenantManagementApplicationTestBase
     }
 
     [Fact]
+    public void StripPrivilegedFieldsUnlessAuthorized_CallerNotAuthorized_ClearsFeatureKeysAndMetabaseUserEmails()
+    {
+        // A caller with only the plain Tenants.Create permission (not IT Admin/Operations) must
+        // not be able to enable arbitrary features or grant arbitrary email addresses Metabase
+        // access to a tenant's database via the post-creation registration step.
+        var input = new TenantCreateDto
+        {
+            Name = "acme2",
+            FeatureKeys = "Unity.Payments",
+            MetabaseUserEmails = "someone@gov.bc.ca"
+        };
+
+        TenantAppService.StripPrivilegedFieldsUnlessAuthorized(input, callerIsAuthorized: false);
+
+        input.FeatureKeys.ShouldBeNull();
+        input.MetabaseUserEmails.ShouldBeNull();
+    }
+
+    [Fact]
+    public void StripPrivilegedFieldsUnlessAuthorized_CallerAuthorized_PreservesFeatureKeysAndMetabaseUserEmails()
+    {
+        var input = new TenantCreateDto
+        {
+            Name = "acme2",
+            FeatureKeys = "Unity.Payments",
+            MetabaseUserEmails = "someone@gov.bc.ca"
+        };
+
+        TenantAppService.StripPrivilegedFieldsUnlessAuthorized(input, callerIsAuthorized: true);
+
+        input.FeatureKeys.ShouldBe("Unity.Payments");
+        input.MetabaseUserEmails.ShouldBe("someone@gov.bc.ca");
+    }
+
+    [Fact]
     public async Task UpdateAsync()
     {
         var acme = UsingDbContext(dbContext => dbContext.Tenants.Single(t => t.Name == "acme"));

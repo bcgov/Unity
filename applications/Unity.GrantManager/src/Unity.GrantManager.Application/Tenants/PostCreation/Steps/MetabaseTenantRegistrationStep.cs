@@ -26,14 +26,15 @@ namespace Unity.GrantManager.Tenants.PostCreation.Steps;
 /// EntityFrameworkCoreGrantManagerDbSchemaMigrator provisions them automatically at tenant creation):
 ///
 /// 1. Connects the tenant's data as a read-only source - decrypts the tenant's stored
-///    Tenant_Readonly connection string and calls the Metabase API to create a database
+///    Tenant_Readonly connection string and calls the Metabase API to find or create a database
 ///    connection named after the tenant, then triggers a schema sync + value rescan.
-/// 2. Creates a Metabase permissions group named after the tenant and adds the configured member
-///    emails to it (see <see cref="GetUserEmailsAsync"/>). A user who isn't already a Metabase
-///    user (via LDAP login or Admin &gt; People) is skipped with a warning, not a hard failure.
+/// 2. Finds or creates a Metabase permissions group named after the tenant and adds the
+///    configured member emails to it (see <see cref="GetUserEmailsAsync"/>). A user who isn't
+///    already a Metabase user (via LDAP login or Admin &gt; People) is skipped with a warning, not
+///    a hard failure.
 /// 3. Grants that group unrestricted view/query access to the new database connection, scoped to
 ///    just this tenant's data.
-/// 4. Creates a Metabase collection for the tenant and grants the group write access to it.
+/// 4. Finds or creates a Metabase collection for the tenant and grants the group write access to it.
 ///
 /// The member email list comes from ABP Settings: a Global "default" list (editable via the New
 /// Tenant modal's Metabase tab) plus any ad-hoc emails added just for this tenant. The resolved
@@ -42,7 +43,10 @@ namespace Unity.GrantManager.Tenants.PostCreation.Steps;
 /// changes before this (async, queued) step actually runs.
 ///
 /// <see cref="ContinueOnError"/> is true - a Metabase outage is logged but doesn't block tenant
-/// creation or later post-creation steps.
+/// creation or later post-creation steps. Recovery from a partial failure is a manual re-enqueue
+/// of this step (see <c>PostTenantCreationSequenceJob</c>) - every Metabase call this step makes
+/// (via <see cref="IMetabaseApiClient"/>) is idempotent by design (find-or-create by tenant name,
+/// membership/permission checks before writing) so a rerun is always safe.
 /// </summary>
 [RemoteService(false)]
 [ExposeServices(typeof(IPostTenantCreationStep))]
@@ -104,11 +108,11 @@ public class MetabaseTenantRegistrationStep(
 
         var ssl = metabaseOptions.Value.DbSslOverride ?? true;
 
-        var databaseId = await metabaseApiClient.CreateDatabaseAsync(tenant.Name, host, port, dbName, username, password, ssl);
+        var databaseId = await metabaseApiClient.FindOrCreateDatabaseAsync(tenant.Name, host, port, dbName, username, password, ssl);
         await metabaseApiClient.SyncDatabaseSchemaAsync(databaseId);
         await metabaseApiClient.RescanDatabaseValuesAsync(databaseId);
 
-        var groupId = await metabaseApiClient.CreateGroupAsync(tenant.Name);
+        var groupId = await metabaseApiClient.FindOrCreateGroupAsync(tenant.Name);
 
         foreach (var email in await GetUserEmailsAsync(tenantId))
         {
@@ -125,7 +129,7 @@ public class MetabaseTenantRegistrationStep(
 
         await metabaseApiClient.GrantGroupDatabaseAccessAsync(groupId, databaseId);
 
-        var collectionId = await metabaseApiClient.CreateCollectionAsync(tenant.Name);
+        var collectionId = await metabaseApiClient.FindOrCreateCollectionAsync(tenant.Name);
         await metabaseApiClient.GrantGroupCollectionAccessAsync(groupId, collectionId);
 
         logger.LogInformation(

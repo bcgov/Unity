@@ -1,3 +1,4 @@
+using System;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -121,5 +122,108 @@ public class MetabaseApiClientTests
             JsonResponse(HttpStatusCode.OK, "{}"));
 
         await Should.NotThrowAsync(() => client.GrantGroupCollectionAccessAsync(groupId: 5, collectionId: 22));
+    }
+
+    // /api/database wraps its list in {"data": [...]}.
+    [Fact]
+    public async Task FindOrCreateDatabaseAsync_DatabaseWithSameNameAlreadyExists_ReturnsExistingIdWithoutCreating()
+    {
+        var (client, http) = CreateClient();
+        SetupHttpSequence(http,
+            JsonResponse(HttpStatusCode.OK, "{\"data\":[{\"id\":11,\"name\":\"AG-MARB\"}]}"));
+
+        var databaseId = await client.FindOrCreateDatabaseAsync(
+            "AG-MARB", "host", 5432, "db", "user", "pass", ssl: true);
+
+        databaseId.ShouldBe(11);
+        await http.Received(1).HttpAsync(
+            Arg.Any<HttpMethod>(), Arg.Any<string>(), Arg.Any<object?>(), Arg.Any<string?>(),
+            Arg.Any<(string username, string password)?>(), Arg.Any<HttpCompletionOption>(),
+            Arg.Any<System.Collections.Generic.IReadOnlyDictionary<string, string>?>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task FindOrCreateDatabaseAsync_NoDatabaseWithThatName_CreatesNewDatabase()
+    {
+        var (client, http) = CreateClient();
+        SetupHttpSequence(http,
+            JsonResponse(HttpStatusCode.OK, "{\"data\":[]}"),
+            JsonResponse(HttpStatusCode.OK, "{\"id\":12}"));
+
+        var databaseId = await client.FindOrCreateDatabaseAsync(
+            "AG-MARB", "host", 5432, "db", "user", "pass", ssl: true);
+
+        databaseId.ShouldBe(12);
+        await http.Received(1).HttpAsync(
+            HttpMethod.Post, Arg.Is<string>(url => url != null && url.EndsWith("/api/database", StringComparison.Ordinal)),
+            Arg.Any<object?>(), Arg.Any<string?>(), Arg.Any<(string username, string password)?>(),
+            Arg.Any<HttpCompletionOption>(), Arg.Any<System.Collections.Generic.IReadOnlyDictionary<string, string>?>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    // /api/permissions/group returns a raw JSON array, unlike /api/database.
+    [Fact]
+    public async Task FindOrCreateGroupAsync_GroupWithSameNameAlreadyExists_ReturnsExistingIdWithoutCreating()
+    {
+        var (client, http) = CreateClient();
+        SetupHttpSequence(http,
+            JsonResponse(HttpStatusCode.OK, "[{\"id\":7,\"name\":\"AG-MARB\"}]"));
+
+        var groupId = await client.FindOrCreateGroupAsync("AG-MARB");
+
+        groupId.ShouldBe(7);
+        await http.Received(1).HttpAsync(
+            Arg.Any<HttpMethod>(), Arg.Any<string>(), Arg.Any<object?>(), Arg.Any<string?>(),
+            Arg.Any<(string username, string password)?>(), Arg.Any<HttpCompletionOption>(),
+            Arg.Any<System.Collections.Generic.IReadOnlyDictionary<string, string>?>(), Arg.Any<CancellationToken>());
+    }
+
+    // /api/collection also returns a raw JSON array.
+    [Fact]
+    public async Task FindOrCreateCollectionAsync_CollectionWithSameNameAlreadyExists_ReturnsExistingIdWithoutCreating()
+    {
+        var (client, http) = CreateClient();
+        SetupHttpSequence(http,
+            JsonResponse(HttpStatusCode.OK, "[{\"id\":33,\"name\":\"AG-MARB\"}]"));
+
+        var collectionId = await client.FindOrCreateCollectionAsync("AG-MARB");
+
+        collectionId.ShouldBe(33);
+        await http.Received(1).HttpAsync(
+            Arg.Any<HttpMethod>(), Arg.Any<string>(), Arg.Any<object?>(), Arg.Any<string?>(),
+            Arg.Any<(string username, string password)?>(), Arg.Any<HttpCompletionOption>(),
+            Arg.Any<System.Collections.Generic.IReadOnlyDictionary<string, string>?>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task AddGroupMemberAsync_UserAlreadyAMember_DoesNotPostMembershipAgain()
+    {
+        var (client, http) = CreateClient();
+        SetupHttpSequence(http,
+            JsonResponse(HttpStatusCode.OK, "{\"5\":[{\"user_id\":101,\"membership_id\":1}]}"));
+
+        await client.AddGroupMemberAsync(groupId: 5, userId: 101);
+
+        await http.Received(1).HttpAsync(
+            Arg.Any<HttpMethod>(), Arg.Any<string>(), Arg.Any<object?>(), Arg.Any<string?>(),
+            Arg.Any<(string username, string password)?>(), Arg.Any<HttpCompletionOption>(),
+            Arg.Any<System.Collections.Generic.IReadOnlyDictionary<string, string>?>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task AddGroupMemberAsync_UserNotYetAMember_PostsMembership()
+    {
+        var (client, http) = CreateClient();
+        SetupHttpSequence(http,
+            JsonResponse(HttpStatusCode.OK, "{\"5\":[{\"user_id\":101,\"membership_id\":1}]}"),
+            JsonResponse(HttpStatusCode.OK, "{}"));
+
+        await client.AddGroupMemberAsync(groupId: 5, userId: 202);
+
+        await http.Received(1).HttpAsync(
+            HttpMethod.Post, Arg.Is<string>(url => url != null && url.EndsWith("/api/permissions/membership", StringComparison.Ordinal)),
+            Arg.Any<object?>(), Arg.Any<string?>(), Arg.Any<(string username, string password)?>(),
+            Arg.Any<HttpCompletionOption>(), Arg.Any<System.Collections.Generic.IReadOnlyDictionary<string, string>?>(),
+            Arg.Any<CancellationToken>());
     }
 }
