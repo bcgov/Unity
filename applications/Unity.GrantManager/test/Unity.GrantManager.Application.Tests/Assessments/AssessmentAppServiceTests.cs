@@ -60,8 +60,6 @@ namespace Unity.GrantManager.Assessments
 
             using var uow = _unitOfWorkManager.Begin();
             var application = (await _applicationsRepository.GetListAsync())[0];
-            var assessments = (await _assessmentRepository.GetQueryableAsync()).Where(s => s.ApplicationId == application.Id).ToList();
-            var count = assessments.Count;
 
             // Act
 
@@ -83,7 +81,7 @@ namespace Unity.GrantManager.Assessments
             using var uow = _unitOfWorkManager.Begin();
             var application = (await _applicationsRepository.GetListAsync())[0];
             var assessment = (await _assessmentRepository.GetQueryableAsync())
-                .Where(s => s.ApplicationId == application.Id && s.AssessorId == GrantManagerTestData.User1_UserId).First();
+                .First(s => s.ApplicationId == application.Id && s.AssessorId == GrantManagerTestData.User1_UserId);
 
             // Act
             var assessmentId = await _assessmentAppService.GetCurrentUserAssessmentId(application.Id);
@@ -126,7 +124,7 @@ namespace Unity.GrantManager.Assessments
 
             using var uow = _unitOfWorkManager.Begin();
             var assessment = (await _assessmentRepository.GetQueryableAsync())
-                .Where(s => s.AssessorId == GrantManagerTestData.User1_UserId).First();
+                .First(s => s.AssessorId == GrantManagerTestData.User1_UserId);
 
             // Act
             var assessmentActions = await _assessmentAppService.GetPermittedActions(assessment.Id);
@@ -144,7 +142,7 @@ namespace Unity.GrantManager.Assessments
 
             using var uow = _unitOfWorkManager.Begin();
             var assessment = (await _assessmentRepository.GetQueryableAsync())
-                .Where(s => s.AssessorId == GrantManagerTestData.User1_UserId).First();
+                .First(s => s.AssessorId == GrantManagerTestData.User1_UserId);
             assessment.ApprovalRecommended = true;
 
             // Act
@@ -164,7 +162,7 @@ namespace Unity.GrantManager.Assessments
 
             using var uow = _unitOfWorkManager.Begin();
             var assessment = (await _assessmentRepository.GetQueryableAsync())
-                .Where(s => s.AssessorId == GrantManagerTestData.User1_UserId).First();
+                .First(s => s.AssessorId == GrantManagerTestData.User1_UserId);
 
             // Assert
             await Assert.ThrowsAsync<BusinessException>(async () =>

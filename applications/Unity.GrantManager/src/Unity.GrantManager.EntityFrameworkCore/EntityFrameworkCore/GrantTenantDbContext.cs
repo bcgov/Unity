@@ -35,6 +35,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
         public DbSet<GenerationReview> GenerationReviews { get; set; }
         public DbSet<Applicant> Applicants { get; set; }
         public DbSet<Application> Applications { get; set; }
+        public DbSet<ApplicationScoresheetAnswers> ApplicationScoresheetAnswers { get; set; }
         public DbSet<ApplicationStatus> ApplicationStatuses { get; set; }
         public DbSet<ApplicationAssignment> ApplicationUserAssignments { get; set; }
         public DbSet<ApplicationChefsFileAttachment> ApplicationChefsFileAttachments { get; set; }
@@ -176,6 +177,14 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.Property(x => x.Status).HasConversion<string>().IsRequired();
                 b.Property(x => x.ReviewData).HasColumnType("jsonb").IsRequired();
                 b.HasIndex(x => new { x.Operation, x.ContextId, x.Sequence }).IsUnique();
+            });
+
+            modelBuilder.Entity<ApplicationScoresheetAnswers>(b =>
+            {
+                b.ToTable(GrantManagerConsts.TenantTablePrefix + "ApplicationScoresheetAnswers", "AI");
+                b.ConfigureByConvention();
+                b.Property(x => x.Answers).HasColumnType("jsonb").IsRequired();
+                b.HasIndex(x => x.ApplicationId).IsUnique();
             });
 
             modelBuilder.Entity<ApplicationStatus>(b =>

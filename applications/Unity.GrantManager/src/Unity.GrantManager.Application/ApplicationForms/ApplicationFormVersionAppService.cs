@@ -81,7 +81,6 @@ namespace Unity.GrantManager.ApplicationForms
         public override async Task<ApplicationFormVersionDto> CreateAsync(CreateUpdateApplicationFormVersionDto input) =>
             await base.CreateAsync(input);
 
-        [RemoteService(false)]
         [Authorize]
         public override async Task<ApplicationFormVersionDto> UpdateAsync(Guid id, CreateUpdateApplicationFormVersionDto input) =>
             await base.UpdateAsync(id, input);
