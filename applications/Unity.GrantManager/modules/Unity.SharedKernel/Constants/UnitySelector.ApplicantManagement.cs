@@ -45,12 +45,6 @@ public static partial class UnitySelector
             public const string Delete  = "Unity.GrantManager.ApplicantManagement.Addresses.Delete";
         }
 
-        public static partial class Submissions
-        {
-            public const string Default         = "Unity.GrantManager.ApplicantManagement.Submissions";
-            public const string AssignApplicant = "Unity.GrantManager.ApplicantManagement.Submissions.AssignApplicant";
-        }
-
         public static partial class Payments
         {
             public const string Default          = "Unity.GrantManager.ApplicantManagement.Payments";

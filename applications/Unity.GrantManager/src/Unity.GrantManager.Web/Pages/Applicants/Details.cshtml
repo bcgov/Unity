@@ -19,7 +19,6 @@
     var hasApplicantInfo    = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.Default);
     var hasContacts         = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Contacts.Default);
     var hasAddresses        = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Addresses.Default);
-    var hasSubmissions      = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Submissions.Default);
     var hasHistory          = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.History.Default);
     var hasPayments         = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Payments.Default);
 }
@@ -140,14 +139,11 @@ else
                 @*-------- Addresses Section END ---------*@
 
                 @*-------- Submissions Section ---------*@
-                @if (true || await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Submissions.Default))
-                {
                 <abp-tab name="nav-submissions" title="Submissions">
                     <div class="w-100 px-2" id="SubmissionsWidget">
                         @await Component.InvokeAsync("ApplicantSubmissions", new { applicantId = Model.ApplicantId })
                     </div>
                 </abp-tab>
-                }
                 @*-------- Submissions Section END ---------*@
 
                 @*-------- History Section ---------*@

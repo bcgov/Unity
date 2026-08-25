@@ -289,9 +289,6 @@
     "Unity.GrantManager.ApplicantManagement.Addresses": "Addresses",
     "Unity.GrantManager.ApplicantManagement.Addresses.Update": "Edit Addresses",
 
-    "Unity.GrantManager.ApplicantManagement.Submissions": "Submissions",
-    "Unity.GrantManager.ApplicantManagement.Submissions.AssignApplicant": "Assign Applicant",
-
     "Unity.GrantManager.ApplicantManagement.Payments": "Payments",
     "Unity.GrantManager.ApplicantManagement.Payments.EditSupplierInfo": "Edit Supplier Info",
 
