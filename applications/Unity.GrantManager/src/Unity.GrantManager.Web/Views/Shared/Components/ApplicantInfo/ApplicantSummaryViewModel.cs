@@ -30,8 +30,8 @@ public class ApplicantSummaryViewModel
     [Display(Name = "ApplicantInfoView:ApplicantInfo.NonRegOrgName")]
     public string? NonRegOrgName { get; set; }
 
-    [Display(Name = "ApplicantInfoView:ApplicantInfo.OrganizationSize")]
-    public string? OrganizationSize { get; set; }
+    [Display(Name = "ApplicantInfoView:ApplicantInfo.ApproxNumberOfEmployees")]
+    public string? ApproxNumberOfEmployees { get; set; }
 
     [Display(Name = "ApplicantInfoView:ApplicantInfo.IndigenousOrgInd")]
     public bool IndigenousOrgInd { get; set; } = false;
@@ -45,6 +45,9 @@ public class ApplicantSummaryViewModel
     [Display(Name = "ApplicantInfoView:ApplicantInfo.FiscalDay")]
     [SelectItems(nameof(ApplicantInfoViewModel.FiscalDayList))]
     public string? FiscalDay { get; set; }
+
+    [Display(Name = "ApplicantInfoView:ApplicantInfo.FiscalYearEnd")]
+    public DateOnly? FiscalYearEnd { get; set; }
 
 
     [Display(Name = "ApplicantInfoView:ApplicantInfo.Sector")]

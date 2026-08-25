@@ -13,7 +13,7 @@ namespace Unity.GrantManager.GrantApplications
         public string? OrgStatus { get; set; }
         public string? BusinessNumber { get; set; }
         public string? OrganizationType { get; set; }
-        public string? OrganizationSize { get; set; }
+        public string? ApproxNumberOfEmployees { get; set; }
 
         public string? Sector { get; set; }
         public string? SubSector { get; set; }
@@ -67,7 +67,7 @@ namespace Unity.GrantManager.GrantApplications
         public string? OrgNumber { get; set; }
         public string? OrgStatus { get; set; }
         public string? OrganizationType { get; set; }
-        public string? OrganizationSize { get; set; }
+        public string? ApproxNumberOfEmployees { get; set; }
 
         public string? Sector { get; set; }
         public string? SubSector { get; set; }

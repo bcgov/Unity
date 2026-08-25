@@ -1,28 +1,31 @@
 ﻿using System.Threading.Tasks;
+using Unity.Modules.Shared.Navigation;
+using Unity.Modules.Shared.Permissions;
 using Volo.Abp.TenantManagement.Localization;
 using Volo.Abp.UI.Navigation;
-using Volo.Abp.Authorization.Permissions;
 
 namespace Unity.TenantManagement.Web.Navigation;
 
 public class AbpTenantManagementWebMainMenuContributor : IMenuContributor
 {
-    public virtual Task ConfigureMenuAsync(MenuConfigurationContext context)
+    public virtual async Task ConfigureMenuAsync(MenuConfigurationContext context)
     {
         if (context.Menu.Name != StandardMenus.Main)
         {
-            return Task.CompletedTask;
+            return;
         }
 
         var administrationMenu = context.Menu.GetAdministration();
 
         var l = context.GetLocalizer<AbpTenantManagementResource>();
 
-        var tenantManagementMenuItem = new ApplicationMenuItem(TenantManagementMenuNames.GroupName, l["Menu:TenantManagement"], icon: "fa fa-users");
+        var tenantManagementMenuItem = new ApplicationMenuItem(TenantManagementMenuNames.GroupName, l["Menu:TenantManagement"], icon: "fa-solid fa-users");
         administrationMenu.AddItem(tenantManagementMenuItem);
 
-        tenantManagementMenuItem.AddItem(new ApplicationMenuItem(TenantManagementMenuNames.Tenants, l["Tenants"], url: "~/TenantManagement/Tenants").RequirePermissions(TenantManagementPermissions.Tenants.Default));
-
-        return Task.CompletedTask;
+        await tenantManagementMenuItem.AddItemAsync(
+            context.ServiceProvider,
+            new ApplicationMenuItem(TenantManagementMenuNames.Tenants, l["Tenants"], url: "~/TenantManagement/Tenants")
+                .OnlyWhenInRole(IdentityConsts.ITAdminRoleName, IdentityConsts.ITOperationsRoleName)
+        );
     }
 }

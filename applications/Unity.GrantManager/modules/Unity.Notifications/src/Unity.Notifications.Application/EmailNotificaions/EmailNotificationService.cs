@@ -1,13 +1,15 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using Unity.AspNetCore.Mvc.UI.Theme.UX2.Renderers;
 using Unity.GrantManager.Notifications;
 using Unity.Notifications.Emails;
 using Unity.Notifications.Permissions;
@@ -29,7 +31,8 @@ public class EmailNotificationService(
         IExternalUserLookupServiceProvider externalUserLookupServiceProvider,
         ISettingManager settingManager,
         IFeatureChecker featureChecker,
-        IHttpContextAccessor httpContextAccessor) : ApplicationService, IEmailNotificationService
+        IConfiguration configuration,
+        IMarkdownRenderer markdownRenderer) : ApplicationService, IEmailNotificationService
 {
 
     public async Task<Guid> InitializeDraftAsync(Guid applicationId)
@@ -43,25 +46,31 @@ public class EmailNotificationService(
         await emailNotificationManager.DeleteEmailLogAsync(id);
     }
 
+    [Authorize(NotificationsPermissions.Email.Send)]
+    public async Task CancelEmail(Guid id)
+    {
+        await emailNotificationManager.CancelEmailLogAsync(id);
+    }
+
     public async Task<int> GetEmailsChesWithNoResponseCountAsync()
     {
         return await emailNotificationManager.GetPendingEmailsCountAsync();
     }
 
-    public async Task<EmailLog?> UpdateEmailLog(Guid emailId, string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? status, string? emailTemplateName, string? emailCC = null, string? emailBCC = null)
+    public async Task<EmailLog?> UpdateEmailLog(Guid emailId, EmailMessageParams email, Guid applicationId, string? status)
     {
-        return await emailNotificationManager.UpdateEmailLogAsync(emailId, emailTo, body, subject, applicationId, emailFrom, status, emailTemplateName, emailCC, emailBCC);
+        return await emailNotificationManager.UpdateEmailLogAsync(emailId, email, applicationId, status);
     }
 
-    public async Task<EmailLog?> InitializeEmailLog(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? emailTemplateName, string? emailCC = null, string? emailBCC = null)
+    public async Task<EmailLog?> InitializeEmailLog(EmailMessageParams email, Guid applicationId)
     {
-        return await emailNotificationManager.CreateEmailLogAsync(emailTo, body, subject, applicationId, emailFrom, emailTemplateName, emailCC, emailBCC);
+        return await emailNotificationManager.CreateEmailLogAsync(email, applicationId);
     }
 
     [RemoteService(false)]
-    public async Task<EmailLog?> InitializeEmailLog(string emailTo, string body, string subject, Guid applicationId, string? emailFrom, string? status, string? emailTemplateName, string? emailCC = null, string? emailBCC = null)
+    public async Task<EmailLog?> InitializeEmailLog(EmailMessageParams email, Guid applicationId, string? status)
     {
-        return await emailNotificationManager.CreateEmailLogAsync(emailTo, body, subject, applicationId, emailFrom, status, emailTemplateName, emailCC, emailBCC);
+        return await emailNotificationManager.CreateEmailLogAsync(email, applicationId, status);
     }
 
     protected virtual async Task NotifyTeamsChannel(string chesEmailError)
@@ -69,27 +78,21 @@ public class EmailNotificationService(
         string? envInfo = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
         string activityTitle = "CHES Email error: " + chesEmailError;
         string activitySubtitle = "Environment: " + envInfo;
-        await notificationAppService.PostToTeamsAsync(activityTitle, activitySubtitle);
+        await notificationAppService.PostToNotificationsAsync(activityTitle, activitySubtitle);
     }
 
     public Task<string> GetBaseUrlAsync()
     {
-        var httpContext = httpContextAccessor.HttpContext
-            ?? throw new InvalidOperationException("No active HTTP context available to resolve base URL.");
-
-        var request = httpContext.Request;
-
-        var host = request.Headers["X-Forwarded-Host"].FirstOrDefault()
-                   ?? request.Host.Value;
-
-        var scheme = request.Headers["X-Forwarded-Proto"].FirstOrDefault()
-                     ?? request.Scheme;
-
-        var pathBase = request.Headers["X-Forwarded-Prefix"].FirstOrDefault()
-                       ?? request.PathBase.Value
-                       ?? string.Empty;
-
-        return Task.FromResult($"{scheme}://{host}{pathBase}".TrimEnd('/'));
+        var selfUrl = configuration["App:SelfUrl"];
+        
+        if (string.IsNullOrWhiteSpace(selfUrl))
+        {
+            throw new InvalidOperationException(
+                "App:SelfUrl configuration is not set. Cannot resolve base URL for email notifications. " +
+                "Ensure the configuration is properly set in appsettings or environment variables.");
+        }
+        
+        return Task.FromResult(selfUrl.TrimEnd('/'));
     }
 
     public async Task<HttpResponseMessage> SendCommentNotification(EmailCommentDto input)
@@ -105,9 +108,17 @@ public class EmailNotificationService(
                 string commentLink = input.CommentType switch
                 {
                     Comments.CommentType.ApplicationComment or Comments.CommentType.AssessmentComment =>
-                        QueryHelpers.AddQueryString($"{baseUrl}/GrantApplications/Details", "ApplicationId", input.OwnerId),
+                        QueryHelpers.AddQueryString($"{baseUrl}/GrantApplications/Details", new Dictionary<string, string?>
+                        {
+                            ["ApplicationId"] = input.OwnerId,
+                            ["TenantId"] = CurrentTenant.Id?.ToString()
+                        }),
                     Comments.CommentType.ApplicantComment =>
-                        QueryHelpers.AddQueryString($"{baseUrl}/GrantApplicants/Details", "ApplicantId", input.OwnerId),
+                        QueryHelpers.AddQueryString($"{baseUrl}/GrantApplicants/Details", new Dictionary<string, string?>
+                        {
+                            ["ApplicantId"] = input.OwnerId,
+                            ["TenantId"] = CurrentTenant.Id?.ToString()
+                        }),
                     _ => throw new InvalidOperationException("Invalid comment type.")
                 };
 
@@ -123,37 +134,13 @@ public class EmailNotificationService(
                     _ => CurrentUser.UserName ?? "Unknown User"
                 };
 
-                string htmlBody = $@"
-                <html lang='en' xmlns='http://www.w3.org/1999/xhtml' xmlns:v='urn:schemas-microsoft-com:vml' xmlns:o='urn:schemas-microsoft-com:office:office'>
-                <body style='font-family: Arial, sans-serif;'>
-                    <h3 style='color: #0a58ca;'>{currentUserText} mentioned you in a comment.</h3>
-                    <table style='width: 100%; background-color: #f9f9f9; border-left: 3px solid #ccc;'>
-                        <tr>
-                            <td style='padding: 15px;'>
-                                <p>{input.Body}</p>
-                            </td>
-                        </tr>
-                    </table>
-                    <br />
-                    <table style='background-color: #255a90;'>
-                        <tr>
-                            <td style='padding: 5px 10px; color: #fff; border: 1px solid #2d63c8'>
-                                <a href='{commentLink}' target='_blank'
-                                    style='display: inline-block;
-                                    font-size: 14px;
-                                    color: #fff;
-                                    text-decoration: none;'>View Comment</a>
-                            </td>
-                        </tr>
-                    </table>
-                    <p style='font-size: 12px; color: #999;'>*Note - Please do not reply to this email as it is an automated notification.</p>
-                </body>
-                </html>";
+                string htmlBody = await RenderCommentNotificationTemplateAsync(currentUserText, input.Body, commentLink);
 
                 foreach (var email in input.MentionNamesEmail)
                 {
                     var toEmail = email;
-                    res = await emailNotificationManager.SendEmailAsync(toEmail, htmlBody, subject, fromEmail, "html", input.EmailTemplateName);
+                    res = await emailNotificationManager.SendEmailAsync(
+                        new EmailMessageParams(toEmail, htmlBody, subject, fromEmail, input.EmailTemplateName), "html");
                 }
             }
             else
@@ -188,9 +175,9 @@ public class EmailNotificationService(
     /// <param name="emailCC">CC email addresses</param>
     /// <param name="emailBCC">BCC email addresses</param>
     /// <returns>HttpResponseMessage indicating the result of the operation</returns>
-    public async Task<HttpResponseMessage> SendEmailNotification(string emailTo, string body, string subject, string? emailFrom, string? emailBodyType, string? emailTemplateName, string? emailCC = null, string? emailBCC = null)
+    public async Task<HttpResponseMessage> SendEmailNotification(EmailMessageParams email, string? emailBodyType = null)
     {
-        return await emailNotificationManager.SendEmailAsync(emailTo, body, subject, emailFrom, emailBodyType, emailTemplateName, emailCC, emailBCC);
+        return await emailNotificationManager.SendEmailAsync(email, emailBodyType);
     }
 
     /// <summary>
@@ -257,6 +244,7 @@ public class EmailNotificationService(
     {
         await UpdateTenantSettings(NotificationsSettings.Mailing.DefaultFromAddress, settingsDto.DefaultFromAddress);
         await UpdateTenantSettings(NotificationsSettings.Mailing.EmailMaxRetryAttempts, settingsDto.MaximumRetryAttempts);
+        await settingManager.SetForCurrentTenantAsync(NotificationsSettings.Mailing.EnableEmailDelay, settingsDto.EnableEmailDelay ? "true" : "false");
     }
 
     private async Task UpdateTenantSettings(string settingKey, string valueString)
@@ -264,6 +252,61 @@ public class EmailNotificationService(
         if (!valueString.IsNullOrWhiteSpace())
         {
             await settingManager.SetForCurrentTenantAsync(settingKey, valueString);
+        }
+    }
+
+    /// <summary>
+    /// Renders the comment notification email template with the provided parameters.
+    /// </summary>
+    /// <param name="currentUserText">Display name of the user who mentioned</param>
+    /// <param name="commentBody">The comment body text</param>
+    /// <param name="commentLink">The URL link to view the comment</param>
+    /// <returns>Rendered HTML email body</returns>
+    private async Task<string> RenderCommentNotificationTemplateAsync(string currentUserText, string commentBody, string commentLink)
+    {
+        // Load template from embedded resources or file system
+        string templateContent = await LoadEmailTemplateAsync("CommentNotification");
+
+        var encodedCurrentUserText = WebUtility.HtmlEncode(currentUserText);
+        var encodedCommentBody = markdownRenderer.Render(commentBody);
+        var encodedCommentLink = WebUtility.HtmlEncode(commentLink);
+
+        // Replace placeholders with actual values
+        var renderedTemplate = templateContent
+            .Replace("@Model.CurrentUserText", encodedCurrentUserText)
+            .Replace("@Html.Raw(Model.CommentBody)", encodedCommentBody)
+            .Replace("@Model.CommentLink", encodedCommentLink)
+            .Replace("@model dynamic", string.Empty);
+
+        return renderedTemplate;
+    }
+
+    /// <summary>
+    /// Loads an email template from the Application assembly's embedded resources.
+    /// The resource name follows the format Unity.Notifications.EmailTemplates.{templateName}.cshtml.
+    /// </summary>
+    /// <param name="templateName">Template name without extension (e.g., "CommentNotification")</param>
+    /// <returns>Template content as a string</returns>
+    private async Task<string> LoadEmailTemplateAsync(string templateName)
+    {
+        try
+        {
+            var assembly = typeof(EmailNotificationService).Assembly;
+            var resourceName = $"Unity.Notifications.EmailTemplates.{templateName}.cshtml";
+            await using var templateStream = assembly.GetManifestResourceStream(resourceName);
+
+            if (templateStream == null)
+            {
+                throw new FileNotFoundException($"Embedded email template not found: {resourceName}");
+            }
+
+            using var reader = new StreamReader(templateStream);
+            return await reader.ReadToEndAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, $"Failed to load email template '{templateName}'");
+            throw;
         }
     }
 }

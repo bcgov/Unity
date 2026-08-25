@@ -1,9 +1,9 @@
-﻿using System.Threading.Tasks;
-using Volo.Abp.Domain.Services;
-using Unity.GrantManager.Intakes;
+﻿using Newtonsoft.Json.Linq;
+using System.Threading.Tasks;
 using Unity.GrantManager.Events;
+using Unity.GrantManager.Intakes;
 using Volo.Abp.Domain.Repositories;
-using Newtonsoft.Json.Linq;
+using Volo.Abp.Domain.Services;
 
 namespace Unity.GrantManager.Applications
 {
@@ -58,9 +58,14 @@ namespace Unity.GrantManager.Applications
                     JObject formObject = JObject.Parse(form.ToString());
                     var formName = formObject.SelectToken("name");
                     var formDescription = formObject.SelectToken("description");
-                    if(formName != null && formDescription != null)
+                    
+                    if (formName != null)
                     {
                         applicationForm.ApplicationFormName = formName.ToString();
+                    }
+
+                    if (formDescription != null && string.IsNullOrWhiteSpace(applicationForm.ApplicationFormDescription))
+                    {
                         applicationForm.ApplicationFormDescription = formDescription.ToString();
                     }
 

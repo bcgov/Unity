@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
@@ -8,12 +7,14 @@ using Unity.GrantManager.Applicants;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Intakes.Events;
+using Unity.GrantManager.Integrations.Chefs;
 using Unity.GrantManager.Intakes.Mapping;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Uow;
+using Unity.GrantManager.Events;
 
 namespace Unity.GrantManager.Intakes
 {
@@ -25,8 +26,10 @@ namespace Unity.GrantManager.Intakes
                                              IApplicationFormSubmissionRepository _applicationFormSubmissionRepository,
                                              IIntakeFormSubmissionMapper _intakeFormSubmissionMapper,
                                              IApplicationFormVersionRepository _applicationFormVersionRepository,
+                                             IApplicationFormRepository _applicationFormRepository,
                                              CustomFieldsIntakeSubmissionMapper _customFieldsIntakeSubmissionMapper,
                                              ILocalEventBus localEventBus,
+                                             IFormsApiService _formsApiService,
                                              ISequenceRepository _sequenceRepository) : DomainService, IIntakeFormSubmissionManager
     {
         public async Task<string?> GetApplicationFormVersionMapping(string chefsFormVersionId)
@@ -91,9 +94,9 @@ namespace Unity.GrantManager.Intakes
                 ApplicationFormSubmission = newSubmission,
                 RawSubmission = formSubmission
             });
-
+            
+            await localEventBus.PublishAsync(new ApplicationChangedEvent { Action = GrantApplicationAction.Submit, ApplicationId = application.Id });
             await uow.SaveChangesAsync();
-
             return application.Id;
         }
 
@@ -251,13 +254,43 @@ namespace Unity.GrantManager.Intakes
 
         public async Task ResyncSubmissionAttachments(Guid applicationId)
         {
-            var query = from applicationFormSubmission in await _applicationFormSubmissionRepository.GetQueryableAsync()
-                        where applicationFormSubmission.ApplicationId == applicationId
-                        select applicationFormSubmission;
-            ApplicationFormSubmission? applicationFormSubmissionData = await AsyncExecuter.FirstOrDefaultAsync(query);
-            if (applicationFormSubmissionData == null) return;
-            var formSubmission = JsonConvert.DeserializeObject<dynamic>(applicationFormSubmissionData.Submission)!;
+            var query = from s in await _applicationFormSubmissionRepository.GetQueryableAsync()
+                        where s.ApplicationId == applicationId
+                        select s;
+            var submissionRecord = await AsyncExecuter.FirstOrDefaultAsync(query);
+            if (submissionRecord == null) return;
+
+            var applicationForm = await _applicationFormRepository.GetAsync(submissionRecord.ApplicationFormId);
+
+            if (!Guid.TryParse(applicationForm.ChefsApplicationFormGuid, out var chefsFormId))
+            {
+                Logger.LogWarning("ResyncSubmissionAttachments: invalid ChefsApplicationFormGuid on form {FormId}", submissionRecord.ApplicationFormId);
+                throw new BusinessException(message: $"Application form {submissionRecord.ApplicationFormId} has an invalid CHEFS form GUID.");
+            }
+
+            if (!Guid.TryParse(submissionRecord.ChefsSubmissionGuid, out var chefsSubmissionId))
+            {
+                Logger.LogWarning("ResyncSubmissionAttachments: invalid ChefsSubmissionGuid on submission record {RecordId}", submissionRecord.Id);
+                throw new BusinessException(message: $"Submission record {submissionRecord.Id} has an invalid CHEFS submission GUID.");
+            }
+
+            var formSubmission = await _formsApiService.GetSubmissionDataAsync(chefsFormId, chefsSubmissionId);
+
+            if (formSubmission == null)
+            {
+                Logger.LogWarning("ResyncSubmissionAttachments: CHEFS returned no data for submission {SubmissionId}", chefsSubmissionId);
+                throw new BusinessException(message: $"CHEFS returned no data for submission {chefsSubmissionId}. Resync aborted — existing attachments are unchanged.");
+            }
+
+            if (formSubmission["submission"]?["submission"]?["data"] == null || formSubmission["version"] == null)
+            {
+                Logger.LogWarning("ResyncSubmissionAttachments: CHEFS response for submission {SubmissionId} has unexpected shape", chefsSubmissionId);
+                throw new BusinessException(message: $"CHEFS response for submission {chefsSubmissionId} has unexpected shape. Resync aborted — existing attachments are unchanged.");
+            }
+
+            using var uow = _unitOfWorkManager.Begin(isTransactional: true);
             await _intakeFormSubmissionMapper.ResyncSubmissionAttachments(applicationId, formSubmission);
+            await uow.SaveChangesAsync();
         }
     }
 }

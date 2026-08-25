@@ -24,5 +24,6 @@ public enum PaymentApprovalAction
     L2Decline,
     L3Approve,
     L3Decline,
-    Submit
+    Submit,
+    Cancel
 }

@@ -10,12 +10,14 @@ using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Domain.Services;
 using Unity.Payments.Domain.Shared;
 using Unity.Payments.Enums;
+using Unity.Payments.Events;
 using Unity.Payments.PaymentRequests.Notifications;
 using Unity.Payments.Permissions;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Data;
+using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
 using Volo.Abp.Users;
 
@@ -31,7 +33,8 @@ namespace Unity.Payments.PaymentRequests
                 FsbPaymentNotifier fsbPaymentNotifier,
                 IPaymentRequestQueryManager paymentRequestQueryManager,
                 IPaymentRequestConfigurationManager paymentRequestConfigurationManager,
-                Lazy<IApplicationLinksService> applicationLinksService) : PaymentsAppService, IPaymentRequestAppService
+                Lazy<IApplicationLinksService> applicationLinksService,
+                ILocalEventBus localEventBus) : PaymentsAppService, IPaymentRequestAppService
 
     {
         public async Task<Guid?> GetDefaultAccountCodingId()
@@ -60,6 +63,7 @@ namespace Unity.Payments.PaymentRequests
 
                     var payment = new PaymentRequest(Guid.NewGuid(), paymentRequestDto);
                     var result = await paymentRequestQueryManager.InsertPaymentRequestAsync(payment);
+                    await PublishPaymentStatusChangedEventAsync(result);
                     createdPayments.Add(MapToPaymentRequestDto(result));
                 }
                 catch (Exception ex)
@@ -91,6 +95,7 @@ namespace Unity.Payments.PaymentRequests
 
                     var payment = new PaymentRequest(Guid.NewGuid(), paymentRequestDto);
                     var result = await paymentRequestQueryManager.InsertPaymentRequestAsync(payment);
+                    await PublishPaymentStatusChangedEventAsync(result);
                     createdPayments.Add(MapToPaymentRequestDto(result));
                 }
                 catch (Exception ex)
@@ -143,8 +148,22 @@ namespace Unity.Payments.PaymentRequests
                 CreationTime = result.CreationTime,
                 Status = result.Status,
                 ReferenceNumber = result.ReferenceNumber,
-                SubmissionConfirmationCode = result.SubmissionConfirmationCode
+                SubmissionConfirmationCode = result.SubmissionConfirmationCode,
+                CancelledOn = result.CancelledOn,
+                CancelledById = result.CancelledById,
+                CancelledBy = result.CancelledBy
             };
+        }
+
+        private async Task PublishPaymentStatusChangedEventAsync(PaymentRequest payment)
+        {
+            await localEventBus.PublishAsync(new PaymentStatusChangedEvent
+            {
+                PaymentRequestId = payment.Id,
+                ApplicationId = payment.CorrelationId,
+                Status = payment.Status,
+                TenantId = CurrentTenant.Id
+            });
         }
 
         public async Task<string> GetNextBatchInfoAsync()
@@ -207,6 +226,17 @@ namespace Unity.Payments.PaymentRequests
                             previousStatus != PaymentRequestStatus.FSB)
                         {
                             fsbPaymentIds.Add(dto.PaymentRequestId);
+                        }
+
+                        if (updatedPayment != null && previousStatus != updatedPayment.Status)
+                        {
+                            await localEventBus.PublishAsync(new PaymentStatusChangedEvent
+                            {
+                                PaymentRequestId = updatedPayment.Id,
+                                ApplicationId = updatedPayment.CorrelationId,
+                                Status = updatedPayment.Status,
+                                TenantId = CurrentTenant.Id
+                            });
                         }
 
                         updatedPayments.Add(await paymentRequestQueryManager.CreatePaymentRequestDtoAsync(dto.PaymentRequestId));
@@ -325,18 +355,30 @@ namespace Unity.Payments.PaymentRequests
             return await paymentRequestQueryManager.GetListByApplicationIdsAsync(applicationIds);
         }
 
-        public async Task<PagedResultDto<PaymentRequestDto>> GetListAsync(PagedAndSortedResultRequestDto input)
-        {
-            var totalCount = await paymentRequestQueryManager.GetPaymentRequestCountAsync();
+        public async Task<PagedResultDto<PaymentRequestDto>> GetListAsync(PaymentRequestListInputDto input)
+        {   
             using (dataFilter.Disable<ISoftDelete>())
             {
-                var paymentWithIncludes = await paymentRequestQueryManager.GetPagedPaymentRequestsWithIncludesAsync(input.SkipCount, input.MaxResultCount, input.Sorting ?? string.Empty);
+                var paymentWithIncludes = await paymentRequestQueryManager.GetPagedPaymentRequestsWithIncludesAsync(
+                    input.SkipCount,
+                    input.MaxResultCount,
+                    input.Sorting ?? string.Empty,
+                    input.RequestedFields,
+                    input.RequestedFromDate,
+                    input.RequestedToDate);
 
-                var mappedPayments = await paymentRequestQueryManager.MapToDtoAndLoadDetailsAsync(paymentWithIncludes);
+                var mappedPayments = await paymentRequestQueryManager.MapToDtoAndLoadDetailsAsync(
+                    paymentWithIncludes,
+                    input.RequestedFields);
 
                 paymentRequestQueryManager.ApplyErrorSummary(mappedPayments);
 
-                return new PagedResultDto<PaymentRequestDto>(totalCount, mappedPayments);
+#pragma warning disable S125
+                //While the DataTable is client side, server side count query is not necessary.
+                //var totalCount = await paymentRequestQueryManager.GetPaymentRequestCountAsync();
+#pragma warning restore S125
+                return new PagedResultDto<PaymentRequestDto>(paymentWithIncludes.Count, mappedPayments);
+
             }
         }
 
@@ -414,6 +456,38 @@ namespace Unity.Payments.PaymentRequests
         {
             var childApplicationIdsByParent = await applicationLinksService.Value.GetChildApplicationIdsByParentIdsAsync(applicationIds);
             return await paymentRequestQueryManager.GetApplicationPaymentRollupBatchAsync(applicationIds, childApplicationIdsByParent);
+        }
+
+        [Authorize(PaymentsPermissions.Payments.CancelPayment)]
+        public virtual async Task<PaymentRequestDto> CancelAsync(Guid paymentRequestId)
+        {
+            var payment = await paymentRequestQueryManager.GetPaymentRequestByIdAsync(paymentRequestId)
+                ?? throw new BusinessException("Payments:PaymentRequestNotFound")
+                    .WithData("Id", paymentRequestId);
+
+            PaymentRequestStatus[] eligibleStatuses =
+            [
+                PaymentRequestStatus.HistoricalPayment,
+                PaymentRequestStatus.L1Pending,
+                PaymentRequestStatus.L2Pending,
+                PaymentRequestStatus.L3Pending
+            ];
+
+            if (!eligibleStatuses.Contains(payment.Status))
+                throw new BusinessException("Payments:CancellationNotAllowed")
+                    .WithData("Status", payment.Status.ToString());
+
+            var result = await paymentsManager.CancelPaymentAsync(paymentRequestId);
+
+            await localEventBus.PublishAsync(new PaymentStatusChangedEvent
+            {
+                PaymentRequestId = result.Id,
+                ApplicationId = result.CorrelationId,
+                Status = result.Status,
+                TenantId = CurrentTenant.Id
+            });
+
+            return MapToPaymentRequestDto(result);
         }
     }
 }

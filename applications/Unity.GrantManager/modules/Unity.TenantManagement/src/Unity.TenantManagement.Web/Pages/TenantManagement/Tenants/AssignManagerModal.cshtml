@@ -19,8 +19,8 @@
     <abp-modal>
         <abp-modal-header title="@L["AssignManager"].Value"></abp-modal-header>
         <abp-modal-body>
-            <input asp-for="Tenant.Id" />
-            <input asp-for="Tenant.ConcurrencyStamp" />
+            <input type="hidden" asp-for="Tenant.Id" />
+            <input type="hidden" asp-for="Tenant.ConcurrencyStamp" />
             <abp-input asp-for="Tenant.Name" disabled label="@L["TenantName"].Value" readonly="true" />
 
             @foreach (ObjectExtensionPropertyInfo propertyInfo in ObjectExtensionManager.Instance.GetProperties<AssignManagerModalModel.AssignManagerInfoModel>().Where(p => !p.Name.EndsWith("_Text")))

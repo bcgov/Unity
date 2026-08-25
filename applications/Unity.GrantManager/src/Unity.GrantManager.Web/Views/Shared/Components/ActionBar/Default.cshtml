@@ -4,18 +4,23 @@
 @using Unity.GrantManager.Permissions;
 @using Unity.GrantManager.Payments;
 @using Unity.Modules.Shared;
+@using Unity.Notifications.Permissions;
 @using Unity.Payments.Permissions;
 @using Volo.Abp.Authorization.Permissions;
 @using Volo.Abp.Features;
+@using Volo.Abp.Users;
+@using Microsoft.Extensions.Configuration;
 
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IAuthorizationService AuthorizationService
 @inject IFeatureChecker FeatureChecker
 @inject IPermissionChecker PermissionChecker
+@inject ICurrentUser CurrentUser
+@inject IConfiguration Configuration
 
 <div class="action-bar p-2 search-action-bar">
     <div class="search-action-bar_search-wrapper">
-        <input type="search" id="search" placeholder="Search" class="tbl-search">
+        <input type="search" id="search" placeholder="Search" aria-label="Search" class="tbl-search">
         <div class="mb-3 date-input-filter-div">
             <label class="form-label" for="quickDateRange">Quick Date Range</label>
             <select id="quickDateRange" class="form-control quick-date-input">
@@ -30,7 +35,7 @@
         </div>
         <div class="mb-3 custom-date-range-container-div" id="customDateInputs" style="display: none;">
             <div class="mb-3 date-input-filter-div">
-                <label class="form-label" for="SubmittedFromDate">Submission Date From</label>
+                <label class="form-label" for="submittedFromDate">Submission Date From</label>
                 <input   
                     abp-data-datepicker="false"              
                     type="date"
@@ -42,7 +47,7 @@
                     max="2100-01-01">
             </div>
             <div class="mb-3 date-input-filter-div">
-                <label class="form-label" for="SubmittedToDate">Submission Date To</label>
+                <label class="form-label" for="submittedToDate">Submission Date To</label>
                 <input
                     abp-data-datepicker="false" 
                     type="date"
@@ -79,6 +84,15 @@
             text="@L["ApplicationList:ApproveButton"].Value" />
         }
 
+        @if (await PermissionChecker.IsGrantedAsync(UnitySelector.Application.Status.BulkPublish))
+        {
+        <abp-button id="openBulkPublishModal"
+            text="Publish Status"
+            data-selector="applications-table-actions"
+            class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
+            button-type="Secondary" />
+        }
+
         @if(await PermissionChecker.IsGrantedAsync(UnitySelector.Application.Tags.Create) || await PermissionChecker.IsGrantedAsync(UnitySelector.Application.Tags.Delete))
         {
         <abp-button id="tagApplication"
@@ -86,6 +100,30 @@
             text="@L["ApplicationList:TagButton"].Value"
             class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
             button-type="Secondary" />
+        }
+
+        @* The bulk-send modal's right panel reuses EmailsWidget, whose edit fieldset/Save button/attachment
+           handling all require Notifications.Email.Send (see EmailsWidget/Default.cshtml and
+           EmailLogAttachmentAppService's class-level [Authorize]). SendBulk and Send are sibling permissions,
+           not nested, so a user could otherwise be granted SendBulk alone and open this feature into a
+           read-only, non-functional right panel. Require both. *@
+        @if (await FeatureChecker.IsEnabledAsync("Unity.Notifications")
+            && await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.SendBulk)
+            && await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.Send))
+        {
+        <abp-button id="sendEmailNotification"
+            data-selector="applications-table-actions"
+            text="@L["ApplicationList:SendEmailButton"].Value"
+            class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
+            button-type="Secondary" />
+        @* EmailsWidget (reused inside the bulk-send modal's edit panel) expects these ambient hidden
+           fields to exist on the host page — normally provided by GrantApplications/Details.cshtml.
+           DetailsViewApplicationId's value is updated per row selection by SendEmailNotificationModal.js. *@
+        <input type="hidden" id="DetailsViewApplicationId" value="" />
+        <input type="hidden" id="CurrentUserId" value="@CurrentUser.Id" />
+        <input type="hidden" id="AllowedFileTypes" value="@(Configuration["S3:AllowedFileTypes"] ?? "")" />
+        <input type="hidden" id="EmailAttachmentMaxFileSize" value="@(Configuration["S3:EmailAttachmentMaxFileSize"] ?? "20")" />
+        <input type="hidden" id="TotalEmailAttachmentMaxFileSize" value="@(Configuration["S3:EmailAttachmentsTotalMaxFileSize"] ?? "25")" />
         }
 
         @if (await FeatureChecker.IsEnabledAsync(PaymentConsts.UnityPaymentsFeature)
@@ -125,7 +163,7 @@
         <abp-row>
             <abp-column class="spinner-loader">
                 <div class="spinner-grow" role="status">
-                    <span class="sr-only">Loading...</span>
+                    <span class="visually-hidden">Loading...</span>
                 </div>
             </abp-column>
         </abp-row>

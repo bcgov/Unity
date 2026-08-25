@@ -23,6 +23,10 @@
 	  <None Remove="Scripts\generate_consolidated_worksheet_view.sql" />
 	  <None Remove="Scripts\get_consolidated_formversion_data.sql" />
 	  <None Remove="Scripts\generate_consolidated_formversion_view.sql" />
+	  <None Remove="Scripts\generate_scoresheets_view.sql" />
+	  <None Remove="Scripts\generate_submissions_view.sql" />
+	  <None Remove="Scripts\generate_worksheets_view.sql" />
+	  <None Remove="Scripts\get_next_sequence_number.sql" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -65,6 +69,18 @@
 	  <EmbeddedResource Include="Scripts\generate_consolidated_formversion_view.sql">
 		<CopyToOutputDirectory>Never</CopyToOutputDirectory>
 	  </EmbeddedResource>
+	  <EmbeddedResource Include="Scripts\generate_scoresheets_view.sql">
+		<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </EmbeddedResource>
+	  <EmbeddedResource Include="Scripts\generate_submissions_view.sql">
+		<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </EmbeddedResource>
+	  <EmbeddedResource Include="Scripts\generate_worksheets_view.sql">
+		<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </EmbeddedResource>
+	  <EmbeddedResource Include="Scripts\get_next_sequence_number.sql">
+		<CopyToOutputDirectory>Never</CopyToOutputDirectory>
+	  </EmbeddedResource>
 	</ItemGroup>
 
 	<ItemGroup>
@@ -74,27 +90,23 @@
 		<ProjectReference Include="..\..\modules\Unity.AI\src\Unity.AI.Application\Unity.AI.Application.csproj" />
 		<ProjectReference Include="..\Unity.GrantManager.Domain.Shared\Unity.GrantManager.Domain.Shared.csproj" />
 		<ProjectReference Include="..\Unity.GrantManager.Domain\Unity.GrantManager.Domain.csproj" />
-		<PackageReference Include="AppAny.Quartz.EntityFrameworkCore.Migrations.PostgreSQL" Version="0.5.1" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.3">
+		<PackageReference Include="AppAny.Quartz.EntityFrameworkCore.Migrations.PostgreSQL" Version="0.6.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.3" />
-		<PackageReference Include="Npgsql" Version="10.0.2" />
-		<PackageReference Include="Volo.Abp.EntityFrameworkCore.PostgreSql" Version="10.3.0" />
-		<PackageReference Include="Volo.Abp.PermissionManagement.EntityFrameworkCore" Version="10.3.0" />
-		<PackageReference Include="Volo.Abp.SettingManagement.EntityFrameworkCore" Version="10.3.0" />
-		<PackageReference Include="Volo.Abp.Identity.EntityFrameworkCore" Version="10.3.0" />
-		<PackageReference Include="Volo.Abp.BackgroundJobs.EntityFrameworkCore" Version="10.3.0" />
-		<PackageReference Include="Volo.Abp.AuditLogging.EntityFrameworkCore" Version="10.3.0" />
-		<PackageReference Include="Volo.Abp.TenantManagement.EntityFrameworkCore" Version="10.3.0" />
-		<PackageReference Include="Volo.Abp.FeatureManagement.EntityFrameworkCore" Version="10.3.0" />
-		<PackageReference Include="Volo.Abp.OpenIddict.EntityFrameworkCore" Version="10.3.0" />
-		<!-- Explicit reference to fix vulnerable transitive dependency -->
-		<PackageReference Include="System.IO.Packaging" Version="10.0.7" />
+		<PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.10" />
+		<PackageReference Include="Npgsql" Version="10.0.3" />
+		<PackageReference Include="Volo.Abp.EntityFrameworkCore.PostgreSql" Version="10.5.0" />
+		<PackageReference Include="Volo.Abp.PermissionManagement.EntityFrameworkCore" Version="10.5.0" />
+		<PackageReference Include="Volo.Abp.SettingManagement.EntityFrameworkCore" Version="10.5.0" />
+		<PackageReference Include="Volo.Abp.Identity.EntityFrameworkCore" Version="10.5.0" />
+		<PackageReference Include="Volo.Abp.BackgroundJobs.EntityFrameworkCore" Version="10.5.0" />
+		<PackageReference Include="Volo.Abp.AuditLogging.EntityFrameworkCore" Version="10.5.0" />
+		<PackageReference Include="Volo.Abp.TenantManagement.EntityFrameworkCore" Version="10.5.0" />
+		<PackageReference Include="Volo.Abp.FeatureManagement.EntityFrameworkCore" Version="10.5.0" />
+		<PackageReference Include="Volo.Abp.OpenIddict.EntityFrameworkCore" Version="10.5.0" />
 		<ProjectReference Include="..\..\modules\Unity.Notifications\src\Unity.Notifications.EntityFrameworkCore\Unity.Notifications.EntityFrameworkCore.csproj" /></ItemGroup>
 
-	<ItemGroup>
-		<Folder Include="Migrations\HostMigrations\" />
-	</ItemGroup>
+
 </Project>

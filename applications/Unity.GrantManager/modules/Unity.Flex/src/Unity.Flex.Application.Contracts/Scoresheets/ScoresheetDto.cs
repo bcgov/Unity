@@ -10,6 +10,7 @@ namespace Unity.Flex.Scoresheets
         public string Name { get; set; } = string.Empty;
         public uint Version { get; set; }
         public bool Published { get; set; }
+        public bool IsArchived { get; set; }
         public Collection<ScoresheetSectionDto> Sections { get; private set; } = [];
 
     }

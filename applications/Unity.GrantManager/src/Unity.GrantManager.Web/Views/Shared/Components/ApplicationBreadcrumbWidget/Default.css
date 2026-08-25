@@ -41,3 +41,13 @@
     margin-top: 2px;
 }
 
+.application-details-breadcrumb .published-status {
+    font-weight: 700;
+    color: #2f6f3e;
+    border: 3px solid #2f6f3e;
+    border-radius: 1rem;
+    font-size: 0.8rem;
+    padding: 0.125rem 0.5rem;
+    margin-top: 2px;
+}
+

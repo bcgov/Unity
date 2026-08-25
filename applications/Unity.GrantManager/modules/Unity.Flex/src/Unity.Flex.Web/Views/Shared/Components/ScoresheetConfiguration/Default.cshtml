@@ -14,7 +14,7 @@
             <abp-column id="scoresheet-left-col" class="p-0 d-flex flex-column">
                 <div class="scoresheet-left-header">
                     <form id="scoresheet-import-form" name="scoresheet-import-form" action="/uploader" enctype="multipart/form-data" method="post" class="d-none">
-                        <input id="scoresheet_import_upload" name="scoresheet_import_upload" type="file" size="1" onchange="importScoresheetFile('scoresheet_import_upload');" />
+                        <input id="scoresheet_import_upload" name="scoresheet_import_upload" type="file" size="1" onchange="importScoresheetFile('scoresheet_import_upload');" aria-label="Import Scoresheet" />
                     </form>
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h4 class="mb-0"><b>Scoresheets</b></h4>
@@ -34,12 +34,13 @@
                         </div>
                     </div>
                     <div class="scoresheet-filters d-flex gap-2 mb-2 align-items-center px-1">
-                        <input type="text" id="scoresheet-name-filter" class="form-control form-control-sm" placeholder="Filter by title or name..." />
+                        <input type="text" id="scoresheet-name-filter" class="form-control form-control-sm" placeholder="Filter by title or name..." aria-label="Filter by title or name" />
                         <fieldset class="btn-group btn-group-sm flex-shrink-0" id="scoresheet-published-toggle">
-                            <legend class="visually-hidden">Published filter</legend>
+                            <legend class="visually-hidden">Scoresheet filter</legend>
                             <button type="button" class="btn btn-outline-secondary active" data-filter="all">All</button>
                             <button type="button" class="btn btn-outline-secondary" data-filter="published">Published</button>
                             <button type="button" class="btn btn-outline-secondary" data-filter="unpublished">Unpublished</button>
+                            <button type="button" class="btn btn-outline-secondary" data-filter="archived">Archived</button>
                         </fieldset>
                     </div>
                 </div>

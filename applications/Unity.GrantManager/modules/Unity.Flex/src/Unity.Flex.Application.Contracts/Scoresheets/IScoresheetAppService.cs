@@ -22,6 +22,7 @@ namespace Unity.Flex.Scoresheets
         Task<List<QuestionDto>> GetSelectListQuestionsAsync(List<Guid> questionIdsToCheck);
         Task ValidateChangeableScoresheet(Guid scoresheetId);
         Task PublishScoresheetAsync(Guid id);
+        Task<bool> ArchiveAsync(Guid id, bool archive);
         Task<ExportScoresheetDto> ExportScoresheet(Guid scoresheetId);
         Task ImportScoresheetAsync(ScoresheetImportDto scoresheetImportDto);
         Task SaveScoresheetOrder(List<Guid> scoresheetIds);

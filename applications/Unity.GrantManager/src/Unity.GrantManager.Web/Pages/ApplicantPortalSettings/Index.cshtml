@@ -33,18 +33,19 @@
         </ul>
     </aside>
     <main class="col-12 col-md d-flex justify-content-center">
-        <div id="portal-status-div" class="input-area card mb-3 p-5 pt-3 portal-settings-config">
+        <div id="portal-status-div" class="input-area card mb-3 portal-settings-config">
             <div class="container-fluid px-0">
-                <div class="px-5 pt-4 pb-2">
+                <div class="px-3 pt-1 pb-2">
                     <h5 class="fw-bold">@L["ApplicantPortalSettings:PortalStatusHeading"]</h5>
                 </div>
                 <form id="PortalStatusForm">
-                    <div class="px-5 py-0">
+                    <div class="px-3 py-0">
                         <table id="PortalStatusTable" class="table table-striped portal-status-table">
                             <thead>
                                 <tr>
                                     <th>@L["ApplicantPortalSettings:InternalStatus"]</th>
                                     <th>@L["ApplicantPortalSettings:PortalStatusLabel"]</th>
+                                    <th>@L["ApplicantPortalSettings:PortalPublishedStatusLabel"]</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -65,14 +66,23 @@
                                                    name="Statuses[@i].ExternalStatus"
                                                    value="@status.ExternalStatus"
                                                    required
-                                                   maxlength="@ApplicationStatusConsts.MaxNameLength" />
+                                                   maxlength="250" />
+                                        </td>
+                                        <td>
+                                            <input type="text"
+                                                   class="form-control"
+                                                   id="Statuses[@i].NotifiedStatus"
+                                                   name="Statuses[@i].NotifiedStatus"
+                                                   value="@status.NotifiedStatus"
+                                                   maxlength="250"
+                                                   placeholder="-" />
                                         </td>
                                     </tr>
                                 }
                             </tbody>
                         </table>
                     </div>
-                    <div class="d-flex gap-2 px-5 pt-3 portal-settings-actions">
+                    <div class="d-flex gap-2 px-3 pt-3 portal-settings-actions">
                         <abp-button id="SaveButton"
                                     button-type="Primary"
                                     type="submit"

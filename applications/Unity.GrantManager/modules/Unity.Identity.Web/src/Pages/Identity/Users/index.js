@@ -65,7 +65,7 @@ $(function () {
 
         $('#ImportUserSearchButton').click(function (e) {
             e.preventDefault();
-            _filterDataTable.ajax.reloadEx();
+            _filterDataTable.ajax.reload();
             $('#import-user-btn').attr('disabled', true);
         });
 
@@ -87,7 +87,7 @@ $(function () {
         });
 
         _importModal.onResult(function () {
-            dataTable.ajax.reloadEx();
+            dataTable.ajax.reload();
         });
     }
 
@@ -194,7 +194,7 @@ $(function () {
                             if (!row.isActive) {
                                 return '<i data-toggle="tooltip" data-placement="top" title="' +
                                     l('ThisUserIsNotActiveMessage') +
-                                    '" class="fa fa-ban text-danger"></i> ' +
+                                    '" class="fa-solid fa-ban text-danger"></i> ' +
                                     '<span class="opc-65">' + row.userName + '</span>';
                             }
 
@@ -224,6 +224,14 @@ $(function () {
 
     $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn flex-none';
     let actionButtons = [
+        {
+            text: '<i class="fl fl-multi-select align-middle"></i> <span>View User Matrix</span>',
+            className: 'btn-light rounded-1',
+            available: () => abp.auth.isGranted('AbpIdentity.Users'),
+            action: function (e, dt, button, config) {
+                globalThis.location = '/Identity/Users/PermissionUserMatrix';
+            }
+        },
         {
             text: '<i class="fl fl-add-to align-middle"></i> <span>' + lg('Common:Command:Create') + '</span>',
             titleAttr: lg('Common:Command:Create'),

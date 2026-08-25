@@ -35,7 +35,7 @@ namespace Unity.GrantManager.Integrations.Css
             return await SearchSsoAsync(directory, parameters);
         }
 
-        public async Task<UserSearchResult> SearchUsersAsync(string directory, string? firstName = null, string? lastName = null)
+        public async Task<UserSearchResult> SearchUsersAsync(string directory, string? firstName = null, string? lastName = null, string? email = null)
         {
             var parameters = new Dictionary<string, string>();
 
@@ -44,6 +44,9 @@ namespace Unity.GrantManager.Integrations.Css
 
             if (!string.IsNullOrWhiteSpace(lastName) && lastName.Length >= 2)
                 parameters.Add(nameof(lastName), lastName);
+
+            if (!string.IsNullOrWhiteSpace(email) && email.Length >= 2)
+                parameters.Add(nameof(email), email);
 
             return await SearchSsoAsync(directory, parameters);
         }

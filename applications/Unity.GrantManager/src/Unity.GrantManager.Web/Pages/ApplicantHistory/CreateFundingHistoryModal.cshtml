@@ -25,7 +25,7 @@
             </div>
 
             <div class="mb-3">
-                <label class="form-label d-block">Renewed Funding</label>
+                <label class="form-label d-block" for="FundingHistoryForm_RenewedFunding">Renewed Funding</label>
                 <div class="switch-container">
                     <div class="form-check unt-form-switch form-switch">
                         <input class="form-check-input" type="checkbox" id="FundingHistoryForm_RenewedFunding"
@@ -74,6 +74,13 @@
                            class="form-control unity-currency-input"
                            value="@Model.FundingHistoryForm?.TotalGrantAmount" />
                 </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" for="FundingHistoryForm_PaidDate">Paid Date</label>
+                <input type="date" id="FundingHistoryForm_PaidDate" name="FundingHistoryForm.PaidDate"
+                       class="form-control" data-datepicker="false"
+                       value="@(Model.FundingHistoryForm?.PaidDate?.ToString("yyyy-MM-dd"))" />
             </div>
 
             <div class="mb-3">

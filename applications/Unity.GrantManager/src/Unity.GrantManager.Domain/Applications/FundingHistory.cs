@@ -14,6 +14,7 @@ public class FundingHistory : AuditedAggregateRoot<Guid>, IMultiTenant
     public decimal? OneTimeConsideration { get; set; }    
     public decimal? ReconsiderationAmount { get; set; }
     public decimal? TotalGrantAmount { get; set; }
+    public DateTime? PaidDate { get; set; }
     public string? FundingNotes { get; set; }
     public Guid? TenantId { get; set; }
 }

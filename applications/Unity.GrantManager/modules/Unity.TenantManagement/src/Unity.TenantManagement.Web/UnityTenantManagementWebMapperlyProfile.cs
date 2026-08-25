@@ -1,6 +1,7 @@
 using Unity.TenantManagement.Web.Pages.TenantManagement.Tenants;
 using Volo.Abp.Mapperly;
 using static Unity.TenantManagement.Web.Pages.TenantManagement.Tenants.AssignManagerModalModel;
+using static Unity.TenantManagement.Web.Pages.TenantManagement.Tenants.ConfigurationModalModel;
 
 namespace Unity.TenantManagement.Web;
 
@@ -75,6 +76,66 @@ public class EditTenantInfoToTenantUpdateDtoMapper : MapperBase<EditModalModel.T
         destination.Description = source.Description;
         destination.CasClientCode = source.CasClientCode;
         destination.ConcurrencyStamp = source.ConcurrencyStamp;
+        TenantExtraPropertiesCopier.Copy(source, destination);
+    }
+}
+
+public class TenantDtoToConfigurationTenantInfoMapper : MapperBase<TenantDto, TenantInfoModel>
+{
+    public override TenantInfoModel Map(TenantDto source)
+    {
+        var destination = new TenantInfoModel();
+        Map(source, destination);
+        return destination;
+    }
+
+    public override void Map(TenantDto source, TenantInfoModel destination)
+    {
+        destination.Id = source.Id;
+        destination.Name = source.Name;
+        destination.Division = source.Division;
+        destination.Branch = source.Branch;
+        destination.Description = source.Description;
+        destination.CasClientCode = source.CasClientCode;
+        destination.ConcurrencyStamp = source.ConcurrencyStamp;
+        TenantExtraPropertiesCopier.Copy(source, destination);
+    }
+}
+
+public class ConfigurationTenantInfoToTenantUpdateDtoMapper : MapperBase<TenantInfoModel, TenantUpdateDto>
+{
+    public override TenantUpdateDto Map(TenantInfoModel source)
+    {
+        var destination = new TenantUpdateDto();
+        Map(source, destination);
+        return destination;
+    }
+
+    public override void Map(TenantInfoModel source, TenantUpdateDto destination)
+    {
+        destination.Name = source.Name;
+        destination.Division = source.Division;
+        destination.Branch = source.Branch;
+        destination.Description = source.Description;
+        destination.CasClientCode = source.CasClientCode ?? string.Empty;
+        destination.ConcurrencyStamp = source.ConcurrencyStamp;
+        TenantExtraPropertiesCopier.Copy(source, destination);
+    }
+}
+
+public class TenantDtoToConfigurationManagerInfoMapper : MapperBase<TenantDto, ManagerInfoModel>
+{
+    public override ManagerInfoModel Map(TenantDto source)
+    {
+        var destination = new ManagerInfoModel();
+        Map(source, destination);
+        return destination;
+    }
+
+    public override void Map(TenantDto source, ManagerInfoModel destination)
+    {
+        destination.Id = source.Id;
+        destination.Name = source.Name;
         TenantExtraPropertiesCopier.Copy(source, destination);
     }
 }

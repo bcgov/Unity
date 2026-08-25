@@ -1,5 +1,5 @@
 ﻿using System.IO;
-namespace Unity.Notifications.TeamsNotifications;
+namespace Unity.Notifications.Teams;
 
 public static class MessageCard
 {

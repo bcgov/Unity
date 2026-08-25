@@ -44,10 +44,11 @@
                                                value="@tenantRole.ViewRole" 
                                                data-tenant-id="@tenantRole.TenantId"
                                                data-is-default="@tenantRole.IsDefaultInferred"
-                                               placeholder="@($"{tenantRole.TenantName.ToLowerInvariant()}_readonly")" />
+                                               placeholder="@($"{tenantRole.TenantName.ToLowerInvariant()}_readonly")"
+                                               aria-label="@($"View role for {tenantRole.TenantName}")" />
                                         @if (tenantRole.IsDefaultInferred)
                                         {
-                                            <i class="fa fa-exclamation-triangle text-warning ms-2 default-role-indicator" 
+                                            <i class="fa-solid fa-triangle-exclamation text-warning ms-2 default-role-indicator" 
                                                title="This is an inferred default role name. Save to persist this setting in the database."
                                                data-bs-toggle="tooltip"
                                                data-bs-placement="top"></i>
@@ -60,21 +61,21 @@
                                                 class="btn btn-sm btn-outline-primary save-role-btn"
                                                 data-tenant-id="@tenantRole.TenantId"
                                                 title="Save Role">
-                                            <i class="fa fa-save"></i> Save
+                                            <i class="fa-regular fa-floppy-disk"></i> Save
                                         </button>
                                         <button type="button" 
                                                 class="btn btn-sm btn-outline-secondary assign-role-btn"
                                                 data-tenant-id="@tenantRole.TenantId"
                                                 data-tenant-name="@tenantRole.TenantName"
                                                 title="Assign Role to All Views">
-                                            <i class="fa fa-cogs"></i> Assign to Views
+                                            <i class="fa-solid fa-gears"></i> Assign to Views
                                         </button>
                                         <button type="button" 
                                                 class="btn btn-sm btn-outline-info view-database-info-btn"
                                                 data-tenant-id="@tenantRole.TenantId"
                                                 data-tenant-name="@tenantRole.TenantName"
                                                 title="View Database Info">
-                                            <i class="fa fa-database"></i> View DB Info
+                                            <i class="fa-solid fa-database"></i> View DB Info
                                         </button>
                                     </div>
                                 </td>

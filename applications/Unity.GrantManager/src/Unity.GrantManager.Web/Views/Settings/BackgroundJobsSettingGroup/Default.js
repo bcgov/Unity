@@ -1,1 +1,0 @@
-﻿abp.log.debug('BackgroundJobs initialized!');

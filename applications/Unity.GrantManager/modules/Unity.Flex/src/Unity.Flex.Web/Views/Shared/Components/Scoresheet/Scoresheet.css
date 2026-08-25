@@ -22,6 +22,53 @@
     color: #ffffff;
 }
 
+#previewScoresheetActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    position: sticky;
+    top: 0;
+    padding: 8px 24px 8px 0;
+    z-index: 999;
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+#previewScoresheetActions .floating-save-btn {
+    position: static;
+}
+
+#previewSaveAllBtn:disabled {
+    --bs-btn-disabled-bg: #255A90;
+    --bs-btn-disabled-color: #ffffff;
+}
+
+#previewDiscardAllBtn:disabled {
+    --bs-btn-disabled-color: #6c757d;
+}
+
+#preview .accordion-button.section-unsaved,
+#scoresheet-preview .accordion-button.section-unsaved {
+    color: #FF0909;
+}
+
+#preview .preview-btn.section-unsaved:not(.collapsed),
+#scoresheet-preview .preview-btn.section-unsaved:not(.collapsed) {
+    color: #FF0909;
+    background-color: #FEEAEA;
+}
+
+#preview .accordion-button.question-unsaved,
+#scoresheet-preview .accordion-button.question-unsaved {
+    color: #FF0909;
+}
+
+#preview .accordion-button.question-unsaved:not(.collapsed),
+#scoresheet-preview .accordion-button.question-unsaved:not(.collapsed) {
+    color: #FF0909;
+    background-color: #FEEAEA;
+}
+
 #preview .preview-btn.collapsed::after {
     -webkit-filter: grayscale(1) invert(0); 
     filter: grayscale(1) invert(0); 
@@ -56,6 +103,7 @@
 }
 
 .question-item {
+    padding-left: 5rem;
     cursor: grab;
 }
 

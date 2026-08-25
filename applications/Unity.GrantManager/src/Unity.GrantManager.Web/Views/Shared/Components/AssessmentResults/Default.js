@@ -20,7 +20,7 @@
                 let inputElement = $('[name="' + input.name + '"]');
                 // This will not work if the culture is different and uses a different decimal separator
                 if (inputElement.hasClass('unity-currency-input')) {
-                    assessmentResultObj[input.name.split(".")[1]] = input.value.replace(/,/g, '');
+                    assessmentResultObj[input.name.split(".")[1]] = input.value.replaceAll(',', '');
                 }
                 else {
                     assessmentResultObj[input.name.split(".")[1]] = input.value;
@@ -38,7 +38,8 @@
 
         // Update checkboxes which are serialized if unchecked
         $(`#assessmentResultForm input:checkbox`).each(function () {
-            assessmentResultObj[this.name] = (this.checked).toString();
+            let propertyName = this.name.includes('.') ? this.name.split('.').pop() : this.name;
+            assessmentResultObj[propertyName] = this.checked;
         });
 
 

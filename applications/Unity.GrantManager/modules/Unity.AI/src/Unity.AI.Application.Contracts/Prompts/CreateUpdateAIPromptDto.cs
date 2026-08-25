@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
@@ -5,17 +6,21 @@ namespace Unity.AI.Prompts;
 
 public class CreateUpdateAIPromptDto
 {
+    public Guid PromptId { get; set; }
+
+    [DisplayName("VersionNumber")]
+    public int VersionNumber { get; set; }
+
     [Required]
-    [MaxLength(200)]
-    [DisplayName("PromptName")]
-    public string Name { get; set; } = string.Empty;
+    [DisplayName("SystemPrompt")]
+    public string SystemPrompt { get; set; } = string.Empty;
 
-    [MaxLength(2000)]
-    [DisplayName("PromptDescription")]
-    public string? Description { get; set; }
+    [Required]
+    [DisplayName("UserPrompt")]
+    public string UserPrompt { get; set; } = string.Empty;
 
-    [DisplayName("PromptType")]
-    public PromptType Type { get; set; }
+    [DisplayName("MetadataJson")]
+    public string? MetadataJson { get; set; }
 
     [DisplayName("PromptIsActive")]
     public bool IsActive { get; set; } = true;

@@ -67,7 +67,9 @@ public class GrantManagerSettingDefinitionProvider : SettingDefinitionProvider
             // Run hourly
             { SettingsConstants.BackgroundJobs.DataHealthCheckMonitor_Expression, "0 0 * 1/1 * ? *" },
             // 2 AM PST = 10 AM UTC
-            { SettingsConstants.BackgroundJobs.ApplicantTenantMapReconciliation_Expression, "0 0 10 1/1 * ? *" }
+            { SettingsConstants.BackgroundJobs.ApplicantTenantMapReconciliation_Expression, "0 0 10 1/1 * ? *" },
+            // 2 AM PST = 10 AM UTC
+            { SettingsConstants.BackgroundJobs.DateBasedNotificationSchedule_Expression, "0 0 10 1/1 * ? *" }
         };
 
         foreach (var setting in backGroundSchedules)
@@ -90,7 +92,7 @@ public class GrantManagerSettingDefinitionProvider : SettingDefinitionProvider
                 description,
                 isVisibleToClients: true,
                 isInherited: false,
-                isEncrypted: false).WithProviders(TenantSettingValueProvider.ProviderName)
+                isEncrypted: false).WithProviders(TenantSettingValueProvider.ProviderName, DefaultValueSettingValueProvider.ProviderName)
         );
     }
 

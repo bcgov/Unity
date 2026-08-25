@@ -8,8 +8,33 @@
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IAuthorizationService AuthorizationService
 
-<div class="other-config-scrollable-content">
+<div class="other-config-scrollable-content container-fluid">
 <form id="otherConfigForm" autocomplete="off">
+    <div class="configuration-action-bar row">
+        <div class="col-12 col-md-8">
+            <h5>Other Configuration</h5>
+        </div>
+        <div class="col-12 col-md-4 d-flex align-items-center justify-content-end gap-2">
+            <abp-button id="btn-save-other-config"
+                        text="Save"
+                        icon-type="Other" icon="fl fl-save"
+                        class="btn unt-btn-primary btn-primary"
+                        abp-tooltip="Save Other Configuration"
+                        button-type="Primary" />
+            <button type="button"
+                    id="btn-cancel-other-config"
+                    class="btn unt-btn-outline-primary btn-outline-primary"
+                    abp-tooltip="Cancel changes">
+                <i class="fl fl-undo"></i> Cancel
+            </button>
+            <button type="reset"
+                    id="btn-back-other-config"
+                    class="btn unt-btn-outline-primary btn-outline-primary"
+                    abp-tooltip="Navigate back to the Forms">
+                Back
+            </button>
+        </div>
+    </div>
     <div class="row">
         <div class="col-12 p-3">
             <h6 class="mb-3"><b>Workflow Settings</b></h6>
@@ -24,15 +49,16 @@
                     <label class="form-check-label direct-approval" for="directApproval">Direct Approval</label>
                 </div>
             </div>
-            <label class="form-label note mt-1">
+            <span class="form-label note mt-1">
                 <b>NOTE:</b> @L["ApplicationForms.Configuration.Notes:BypassAssessmentWorkflow"].Value
-            </label>
+            </span>
         </div>
     </div>
     <hr />
     <div class="row">
         <div class="col-12 p-3">
             <h6 class="mb-3"><b>Electoral District Configuration</b></h6>
+            <label class="form-label" for="electoralDistrictAddressType">Electoral District Address Type</label>
             <select class="form-select form-control"
                     id="electoralDistrictAddressType"
                     name="electoralDistrictAddressType">
@@ -42,12 +68,12 @@
                     <option value="@option.Value" selected="@(selected ? "selected" : null)">@option.Text</option>
                 }
             </select>
-            <label class="form-label note mt-1" style="display:block"><b>NOTE:</b>
+            <span class="form-label note mt-1" style="display:block"><b>NOTE:</b>
                 @L["ApplicationForms.Configuration.Notes:SelectedApplicantElectoralAddress"].Value
-            </label>
-            <label class="note mt-1 configuration-warning" style="display:none" id="change-electoral-address-warning"><b>WARNING:</b> 
+            </span>
+            <span class="note mt-1 configuration-warning" style="display:none" id="change-electoral-address-warning"><b>WARNING:</b>
                 @L["ApplicationForms.Configuration.Warnings:ApplicantElectoralAddressTypeChange"].Value
-            </label>
+            </span>
         </div>
     </div>
     <hr />
@@ -89,43 +115,141 @@
                         </div>
                     </div>
                 </div>
-            <label class="form-label note mt-1" style="display:block">
+            <span class="form-label note mt-1" style="display:block">
                 <b>NOTE:</b>
-                The system will automatically generate a unique ID for each new submission by combining your chosen prefix with either a sequential number 
+                The system will automatically generate a unique ID for each new submission by combining your chosen prefix with either a sequential number
                 or a submission number, depending on the suffix type.
-                <br /> 
-                <br /> 
+                <br />
+                <br />
                 <b>NOTE:</b>
                 If multiple forms are assigned the same prefix, they will share a single, continuous sequence of numbers.
                 @* @L["ApplicationForms.Configuration.Notes:SelectedApplicantElectoralAddress"].Value *@
-            </label>
+            </span>
         </div>
     </div>
-
-
+    <hr />
     <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-start">
-                <abp-button id="btn-save-other-config"
-                            text="Save"
-                            icon-type="Other"
-                            icon="fl fl-save"
-                            class="btn unt-btn-primary btn-primary mx-1"
-                            abp-tooltip="Save Other Configuration"
-                            button-type="Primary" />
-                <button type="reset"
-                        id="btn-cancel-other-config"
-                        class="btn unt-btn-outline-primary btn-outline-primary mx-1"
-                        abp-tooltip="Cancel changes">
-                    <i class="fl fl-undo"></i> Cancel
-                </button>
-                <button type="reset"
-                        id="btn-back-other-config"
-                        class="btn unt-btn-outline-primary btn-outline-primary mx-1"
-                        abp-tooltip="Navigate back to the Forms">
-                    Back
-                </button>
+        <div class="col-12 p-3">
+            <h6 class="mb-3"><b>@L["ApplicationForms.Configuration:ApplicantPortalLinks"].Value</b></h6>
+            <div class="row">
+                <div class="col-12 col-md-5">
+                    <label class="form-label" for="renewalLinkUri">@L["ApplicationForms.Configuration:RenewalLink"].Value</label>
+                    <input type="url"
+                           class="form-control"
+                           id="renewalLinkUri"
+                           name="renewalLinkUri"
+                           value="@Model?.RenewalLinkUri"
+                           maxlength="2048"
+                           placeholder="https://" />
+                    <span class="field-error text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label" for="renewalLinkTitle">@L["ApplicationForms.Configuration:RenewalLinkDisplayName"].Value</label>
+                    <input type="text"
+                           class="form-control"
+                           id="renewalLinkTitle"
+                           name="renewalLinkTitle"
+                           value="@Model?.RenewalLinkTitle"
+                           maxlength="255" />
+                    <span class="field-error text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-3 d-flex align-items-end align-items-center">
+                    <div class="switch-container pt-md-2">
+                        <div class="form-check unt-form-switch form-switch">
+                            <input class="form-check-input"
+                                   checked="@Model?.RenewalLinkPublished"
+                                   type="checkbox"
+                                   id="renewalLinkPublished"
+                                   name="renewalLinkPublished"
+                                   style="cursor:pointer">
+                            <label class="form-check-label" for="renewalLinkPublished">@L["ApplicationForms.Configuration:ShowRenewalLinksInPortal"].Value</label>
+                        </div>
+                    </div>
+                </div>
             </div>
+            <div class="row mt-2">
+                <div class="col-9">
+                    <label class="form-label" for="applicantMessage">@L["ApplicationForms.Configuration:ApplicantMessage"].Value</label>
+                    <textarea class="form-control"
+                              id="applicantMessage"
+                              name="applicantMessage"
+                              maxlength="512"
+                              rows="2">@Model?.ApplicantMessage</textarea>
+                    <span class="field-error text-danger small"></span>
+                </div>
+            </div>
+            <span class="form-label note mt-1" style="display:block"><b>NOTE:</b> @L["ApplicationForms.Configuration.Notes:LinkVisibilityRequiresUrl"].Value</span>
+            <hr class="my-3" />
+
+            <fieldset disabled class="visually-hidden">
+                <legend class="visually-hidden">@L["ApplicationForms.Configuration:OtherLinks"].Value</legend>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="form-label mb-0" aria-hidden="true">@L["ApplicationForms.Configuration:OtherLinks"].Value</span>
+                    <button type="button"
+                            id="btn-add-related-link"
+                            class="btn btn-sm unt-btn-outline-primary btn-outline-primary"
+                            abp-tooltip="@L["ApplicationForms.Configuration:AddLink"].Value">
+                        <i class="fl fl-plus"></i> @L["ApplicationForms.Configuration:AddLink"].Value
+                    </button>
+                </div>
+                <div id="relatedLinksContainer">
+                @{
+                    var relatedLinks = Model?.RelatedLinks ?? [];
+                }
+                @for (var i = 0; i < relatedLinks.Count; i++)
+                {
+                    var link = relatedLinks[i];
+                    <div class="related-link-row row mt-2">
+                        <div class="col-12 col-md-4">
+                            <label class="visually-hidden" for="relatedLinkUri_@i">@L["ApplicationForms.Configuration:LinkUrl"].Value</label>
+                            <input type="url"
+                                   id="relatedLinkUri_@i"
+                                   class="form-control related-link-uri"
+                                   value="@link.Uri"
+                                   maxlength="2048"
+                                   placeholder="https://..." />
+                            <span class="field-error text-danger small"></span>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label class="visually-hidden" for="relatedLinkTitle_@i">@L["ApplicationForms.Configuration:LinkDisplayName"].Value</label>
+                            <input type="text"
+                                   id="relatedLinkTitle_@i"
+                                   class="form-control related-link-title"
+                                   value="@link.Title"
+                                   maxlength="255"
+                                   placeholder="@L["ApplicationForms.Configuration:LinkDisplayName"].Value" />
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label class="visually-hidden" for="relatedLinkDescription_@i">@L["ApplicationForms.Configuration:LinkDescription"].Value</label>
+                            <input type="text"
+                                   id="relatedLinkDescription_@i"
+                                   class="form-control related-link-description"
+                                   value="@link.Description"
+                                   maxlength="512"
+                                   placeholder="@L["ApplicationForms.Configuration:LinkDescription"].Value" />
+                        </div>
+                        <div class="col-6 col-md-1 d-flex align-items-center">
+                            <div class="form-check unt-form-switch form-switch">
+                                <label class="visually-hidden" for="relatedLinkPublished_@i">@L["ApplicationForms.Configuration:ShowOtherLinksInPortal"].Value</label>
+                                <input id="relatedLinkPublished_@i"
+                                       class="form-check-input related-link-published"
+                                       checked="@link.Published"
+                                       type="checkbox"
+                                       style="cursor:pointer">
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-1 d-flex align-items-center">
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-danger btn-remove-related-link"
+                                    abp-tooltip="@L["ApplicationForms.Configuration:RemoveLink"].Value">
+                                <i class="fl fl-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                }
+                </div>
+            </fieldset>
+            <span class="form-label note mt-1 visually-hidden" style="display:block"><b>NOTE:</b> @L["ApplicationForms.Configuration.Notes:MaxRelatedLinks"].Value</span>
         </div>
     </div>
 </form>

@@ -13,7 +13,6 @@ public class Applicant : AuditedAggregateRoot<Guid>, IMultiTenant
     public string? OrgNumber { get; set; }
     public string? OrgStatus { get; set; }
     public string? OrganizationType { get; set; }
-    public string? OrganizationSize { get; set; }
     public string? Sector { get; set; }
     public string? SubSector { get; set; }
     public string? Status { get; set; }
@@ -25,6 +24,7 @@ public class Applicant : AuditedAggregateRoot<Guid>, IMultiTenant
     public string? FiscalMonth { get; set; }
     public string? BusinessNumber { get; set; }
     public int? FiscalDay { get; set; }
+    public DateOnly? FiscalYearEnd { get; set; }
     public DateOnly? StartedOperatingDate { get; set; }
     public Guid? TenantId { get; set; }
     public Guid? SupplierId { get; set; }
@@ -36,4 +36,13 @@ public class Applicant : AuditedAggregateRoot<Guid>, IMultiTenant
     public string? IssueTrackingComments { get; set; }
     public string? AuditComments { get; set; }
     public string? ReportsComments { get; set; }
+    // Soft-delete fields are declared manually instead of implementing ABP's ISoftDelete.
+    // ISoftDelete would register a global EF Core query filter that applies to Include() joins —
+    // Application.Applicant is a required navigation (OnDelete NoAction), so the filter would
+    // silently drop Application rows whose Applicant is soft-deleted, breaking the application
+    // and payment list pages. Filtering is applied explicitly only where needed (applicant list,
+    // lookup, autocomplete) via .Where(a => !a.IsDeleted).
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletionTime { get; set; }
+    public Guid? DeleterId { get; set; }
 }

@@ -19,6 +19,7 @@
 
 <input type="hidden" id="PaymentInfoViewApplicationId" value="@Model.ApplicationId" />
 <input type="hidden" id="PaymentInfo_ApplicantId" value="@Model.ApplicantId" />
+<input type="hidden" id="PaymentInfoApplicationCategory" value="@Model.Category" />
 
 <abp-row class="px-1 pb-2 mb-4 payment-info-container">
     <div class="save-button-container">
@@ -39,28 +40,30 @@
                     <h6 class="ps-1 fw-bold">@L["PaymentInfoView:PaymentInfoTitle"].Value</h6>
                 </div>
             </abp-column>
-            <abp-column size="_6" class="px-1">
+            <abp-column size="_4" class="px-1">
                 <div class="unity-input-group">
                     <span class="unity-input-prepend">$</span>
                     <abp-input class="unity-currency-input" asp-for="@Model.RequestedAmount" disabled />
                 </div>
                 <div class="unity-input-group">
                     <span class="unity-input-prepend">$</span>
+                    <abp-input class="unity-currency-input" asp-for="@Model.RecommendedAmount" disabled />
+                </div>
+            </abp-column>
+            <abp-column size="_4" class="px-1">
+                <div class="unity-input-group">
+                    <span class="unity-input-prepend">$</span>
                     <abp-input class="unity-currency-input" asp-for="@Model.ApprovedAmount" disabled />
                 </div>
                 <div class="unity-input-group">
                     <span class="unity-input-prepend">$</span>
-                    <abp-input class="unity-currency-input" asp-for="@Model.TotalPendingAmounts" disabled />
+                    <abp-input class="unity-currency-input" asp-for="@Model.TotalPaid" disabled />
                 </div>
             </abp-column>
-            <abp-column size="_6" class="px-1">
+            <abp-column size="_4" class="px-1">
                 <div class="unity-input-group">
                     <span class="unity-input-prepend">$</span>
-                    <abp-input class="unity-currency-input" asp-for="@Model.RecommendedAmount" disabled />
-                </div>
-                <div class="unity-input-group">
-                    <span class="unity-input-prepend">$</span>
-                    <abp-input class="unity-currency-input" asp-for="@Model.TotalPaid" disabled />
+                    <abp-input class="unity-currency-input" asp-for="@Model.TotalPendingAmounts" disabled />
                 </div>
                 <div class="unity-input-group">
                     <span class="unity-input-prepend">$</span>

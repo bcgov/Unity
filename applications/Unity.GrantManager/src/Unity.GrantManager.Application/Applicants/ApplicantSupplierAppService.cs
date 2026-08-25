@@ -184,10 +184,17 @@ public class ApplicantSupplierAppService(ISiteRepository siteRepository,
         await EnsureNoPendingPaymentsForApplicantAsync(dto.NonPrincipalId);
 
         var principal = await applicantRepository.GetAsync(dto.PrincipalId);
+        var nonPrincipal = await applicantRepository.GetAsync(dto.NonPrincipalId);
+
+        if ((principal != null && principal.IsDeleted) || (nonPrincipal != null && nonPrincipal.IsDeleted))
+        {
+            throw new UserFriendlyException(
+                "One or more selected applicants have been deleted. Please refresh the applicant list to update the view.");
+        }
+
         principal.SupplierId = dto.SelectedSupplierId;
         await applicantRepository.UpdateAsync(principal);
 
-        var nonPrincipal = await applicantRepository.GetAsync(dto.NonPrincipalId);
         nonPrincipal.SupplierId = dto.SelectedSupplierId;
         await applicantRepository.UpdateAsync(nonPrincipal);
 

@@ -56,7 +56,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationIn
                     BusinessNumber = applicant.BusinessNumber ?? string.Empty,
                     OrgStatus = applicant.OrgStatus ?? string.Empty,
                     OrganizationType = applicant.OrganizationType ?? string.Empty,
-                    OrganizationSize = applicant.OrganizationSize ?? string.Empty,                    
+                    ApproxNumberOfEmployees = applicant.ApproxNumberOfEmployees ?? string.Empty,
                     NonRegOrgName = applicant.NonRegOrgName ?? string.Empty,
                     
                     // Sector Information
@@ -68,6 +68,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationIn
                     // Financial Information
                     FiscalMonth = applicant.FiscalMonth ?? string.Empty,
                     FiscalDay = applicant.FiscalDay?.ToString() ?? string.Empty,
+                    FiscalYearEnd = applicant.FiscalYearEnd,
                     StartedOperatingDate = applicant.StartedOperatingDate?.ToDateTime(TimeOnly.MinValue),
                     RedStop = applicant.RedStop == true
                 };

@@ -48,7 +48,7 @@ function closePaymentModal() {
 }
 
 function checkMaxValue(applicationId, input, amountRemaining) {
-    let enteredValue = parseFloat(input.value.replace(/,/g, ""));
+    let enteredValue = Number.parseFloat(input.value.replaceAll(',', ""));
     let remainingErrorId = "#column_" + applicationId + "_remaining_error";
     if (amountRemaining < enteredValue) {
         $(remainingErrorId).css("display", "block");
@@ -113,8 +113,8 @@ function calculateUpdateTotalAmount() {
     let total = 0;
     $('.amount').each(function () {
         // Remove commas and $ symbols before parsing
-        let rawValue = $(this).val().replace(/[$,]/g, '');
-        let value = parseFloat(rawValue) || 0;
+        let rawValue = $(this).val().replaceAll(/[$,]/g, '');
+        let value = Number.parseFloat(rawValue) || 0;
         total += value;
         this.value = upatePaymentNumberFormatter.format(value);
     });

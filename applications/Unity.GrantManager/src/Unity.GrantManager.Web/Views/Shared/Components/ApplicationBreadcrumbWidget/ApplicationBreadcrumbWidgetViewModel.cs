@@ -8,6 +8,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationBreadcrumbWi
         public Guid ApplicantId { get; set; } = Guid.Empty;
         public string ApplicantName { get; set; } = string.Empty;
         public string ApplicationStatus { get; set; } = string.Empty;
+        public bool ExternalStatusVisibility { get; set; } = false;
 
         public Guid ApplicationFormId { get; set; } = Guid.Empty;
         public string ApplicationFormName { get; set; } = string.Empty;

@@ -25,4 +25,6 @@ public interface IApplicantAppService : IApplicationService
     Task<Applicant> PartialUpdateApplicantSummaryAsync(Guid applicantId, PartialUpdateDto<UpdateApplicantSummaryDto> input);
     Task UpdateApplicantContactAddressesAsync(Guid applicantId, UpdateApplicantContactAddressesDto input);
     Task UpdateApplicantStatusAsync(Guid applicantId, string status);
+    Task DeleteApplicantAsync(Guid id);
+    Task<bool> HasSubmissionsAsync(Guid id);
 }

@@ -7,6 +7,6 @@ public class BackgroundJobsScriptBundleContributor : BundleContributor
 {
     public override void ConfigureBundle(BundleConfigurationContext context)
     {
-        context.Files.AddIfNotContains("/Views/Settings/BackgroundJobsGroup/Default.js");
+
     }
 }

@@ -1,0 +1,12 @@
+{
+    "webapp.url": "https://test-unity.apps.gold.devops.gov.bc.ca/",
+    "environment": "TEST",
+    "test1username": "",
+    "test1password": "",
+    "test2username": "",
+    "test2password": "",
+    "TEST_EMAIL_TO": "",
+    "TEST_EMAIL_CC": "",
+    "TEST_EMAIL_BCC": "",
+    "chefsApiKey": ""
+}

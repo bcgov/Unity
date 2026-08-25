@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Unity.Flex;
-using Unity.GrantManager;
 using Volo.Abp.Application;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.Mapperly;
@@ -16,8 +15,7 @@ namespace Unity.AI;
     typeof(AbpDddApplicationModule),
     typeof(AbpMapperlyModule),
     typeof(AbpTenantManagementDomainModule),
-    typeof(FlexApplicationModule),
-    typeof(GrantManagerDomainModule)
+    typeof(FlexApplicationModule)
     )]
 public class AIApplicationModule : AbpModule
 {
@@ -31,6 +29,8 @@ public class AIApplicationModule : AbpModule
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        context.Services.AddMemoryCache();
+
         Configure<AbpMultiTenancyOptions>(options =>
         {
             options.IsEnabled = true;

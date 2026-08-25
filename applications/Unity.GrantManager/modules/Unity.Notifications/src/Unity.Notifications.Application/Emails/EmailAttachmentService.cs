@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.Notifications.Emails;
+using Volo.Abp.Authorization;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Users;
 
@@ -38,13 +39,15 @@ public class EmailAttachmentService : ITransientDependency
     }
 
     public async Task<EmailLogAttachment> UploadAttachmentAsync(
-        Guid emailLogId,
+        Guid? emailLogId,
+        Guid? templateId,
         Guid? tenantId,
         string fileName,
         byte[] fileContent,
         string contentType)
     {
-        var s3Key = BuildS3Key(tenantId, emailLogId, fileName);
+        var guid = emailLogId ?? templateId ?? throw new ArgumentException("Either emailLogId or templateId must be provided.");
+        var s3Key = BuildS3Key(tenantId, guid, fileName);
         var bucket = _configuration[S3BucketConfigKey];
 
         // Upload to S3
@@ -68,19 +71,26 @@ public class EmailAttachmentService : ITransientDependency
         var attachment = new EmailLogAttachment
         {
             EmailLogId = emailLogId,
+            TemplateId = templateId,
             S3ObjectKey = s3Key,
             FileName = fileName,
             DisplayName = fileName,
             ContentType = contentType,
             FileSize = fileContent.Length,
             Time = DateTime.UtcNow,
+            // Unlike UploadUserAttachmentAsync below, this path is reached from
+            // EmailNotificationHandler - a local event handler that can run for
+            // system/schedule-triggered emails with no interactive user in context, so a missing
+            // ICurrentUser.Id here isn't necessarily an error condition. The caller already wraps
+            // this in a try/catch that logs and sends the email without the attachment on any
+            // failure, so Guid.Empty (rather than throwing) is the intentional "no user" marker.
             UserId = _currentUser.Id ?? Guid.Empty,
             TenantId = tenantId
         };
 
         await _emailLogAttachmentRepository.InsertAsync(attachment);
         return attachment;
-    }    
+    }
 
     public async Task<byte[]?> DownloadFromS3Async(string s3ObjectKey)
     {
@@ -102,14 +112,16 @@ public class EmailAttachmentService : ITransientDependency
     }
 
     public async Task<EmailLogAttachment> UploadUserAttachmentAsync(
-        Guid emailLogId,
+        Guid? emailLogId,
+        Guid? templateId,
         Guid? tenantId,
         string fileName,
         byte[] fileContent,
         string contentType)
     {
         var uniqueKey = Guid.NewGuid();
-        var s3Key = BuildUserAttachmentS3Key(tenantId, emailLogId, uniqueKey, fileName);
+        Guid generateGuid = emailLogId ?? templateId ?? throw new ArgumentException("Either emailLogId or templateId must be provided.");
+        var s3Key = BuildUserAttachmentS3Key(tenantId, generateGuid, uniqueKey, fileName);
         var bucket = _configuration[S3BucketConfigKey];
 
         using var uploadStream = new MemoryStream(fileContent);
@@ -131,13 +143,17 @@ public class EmailAttachmentService : ITransientDependency
         var attachment = new EmailLogAttachment
         {
             EmailLogId = emailLogId,
+            TemplateId = templateId,
             S3ObjectKey = s3Key,
             FileName = fileName,
             DisplayName = fileName,
             ContentType = contentType,
             FileSize = fileContent.Length,
             Time = DateTime.UtcNow,
-            UserId = _currentUser.Id ?? Guid.Empty,
+            // A missing ICurrentUser.Id means this was reached without an authenticated user -
+            // fail loudly rather than silently attributing the attachment to Guid.Empty, which
+            // would look like a valid, specific user rather than an error state.
+            UserId = _currentUser.Id ?? throw new AbpAuthorizationException("Cannot save an email attachment without an authenticated user."),
             TenantId = tenantId
         };
 
@@ -162,10 +178,79 @@ public class EmailAttachmentService : ITransientDependency
         return await _emailLogAttachmentRepository.GetByEmailLogIdAsync(emailLogId);
     }
 
-    public async Task<long> GetTotalFileSizeAsync(Guid emailLogId)
+    public async Task<int> CopyTemplateAttachmentsAsync(Guid templateId, Guid emailLogId, Guid? tenantId)
     {
-        var attachments = await _emailLogAttachmentRepository.GetByEmailLogIdAsync(emailLogId);
-        return attachments.Sum(a => a.FileSize);
+        var templateAttachments = await _emailLogAttachmentRepository.GetByTemplateIdAsync(templateId);
+        var existingAttachments = await _emailLogAttachmentRepository.GetByEmailLogIdAsync(emailLogId);
+        // Dedup by (FileName, FileSize, ContentType) rather than S3ObjectKey: each copy gets its own
+        // S3 object (see below), so a re-run of this method for the same emailLogId/templateId would
+        // never see a matching key even though the attachment was already copied.
+        var alreadyCopied = existingAttachments
+            .Where(a => a.OriginTemplateId == templateId)
+            .Select(a => (a.FileName, a.FileSize, a.ContentType))
+            .ToHashSet();
+
+        var bucket = _configuration[S3BucketConfigKey];
+        var copiedAttachmentCount = 0;
+        foreach (var templateAttachment in templateAttachments)
+        {
+            var identity = (templateAttachment.FileName, templateAttachment.FileSize, templateAttachment.ContentType);
+            if (!alreadyCopied.Add(identity))
+            {
+                continue;
+            }
+
+            // Physically duplicate the S3 object under a new key instead of pointing at the
+            // template attachment's own key. EmailLogAttachmentAppService.DeleteAsync deletes the
+            // underlying S3 object whenever a template attachment (TemplateId.HasValue) is removed;
+            // sharing the key would silently break the attachment on every scheduled email that had
+            // already copied it.
+            var copiedS3Key = BuildUserAttachmentS3Key(
+                tenantId, emailLogId, Guid.NewGuid(), templateAttachment.FileName ?? templateAttachment.DisplayName ?? "attachment");
+            await _amazonS3Client.CopyObjectAsync(new CopyObjectRequest
+            {
+                SourceBucket = bucket,
+                SourceKey = templateAttachment.S3ObjectKey,
+                DestinationBucket = bucket,
+                DestinationKey = copiedS3Key
+            });
+
+            await _emailLogAttachmentRepository.InsertAsync(new EmailLogAttachment
+            {
+                EmailLogId = emailLogId,
+                TemplateId = null,
+                OriginTemplateId = templateId,
+                S3ObjectKey = copiedS3Key,
+                FileName = templateAttachment.FileName,
+                DisplayName = templateAttachment.DisplayName,
+                ContentType = templateAttachment.ContentType,
+                FileSize = templateAttachment.FileSize,
+                Time = DateTime.UtcNow,
+                UserId = Guid.Empty,
+                TenantId = tenantId
+            });
+            copiedAttachmentCount++;
+        }
+
+        return copiedAttachmentCount;
+    }
+
+    public async Task<long> GetTotalFileSizeAsync(Guid? emailLogId, Guid? templateId)
+    {
+        if(emailLogId != null)
+        {
+            var attachments = await _emailLogAttachmentRepository.GetByEmailLogIdAsync(emailLogId.Value);
+            return attachments.Sum(a => a.FileSize);
+        }
+        else if(templateId != null)
+        {
+            var attachments = await _emailLogAttachmentRepository.GetByTemplateIdAsync(templateId.Value);
+            return attachments.Sum(a => a.FileSize);
+        }
+        else
+        {
+            throw new ArgumentException("Either emailLogId or templateId must be provided.");
+        }
     }
 
     private static string BuildUserAttachmentS3Key(Guid? tenantId, Guid emailLogId, Guid attachmentId, string fileName)

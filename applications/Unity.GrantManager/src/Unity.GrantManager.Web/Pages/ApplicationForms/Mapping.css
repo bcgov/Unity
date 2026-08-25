@@ -6,11 +6,61 @@
     background-color: white;
 }
 
-.column {
-    float: left;
-    width: 40%;
-  }
-  
+.unt-tab-content .form-select {
+    width: auto;
+}
+
+#nav-tabContent.unt-tab-content {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 230px);
+    min-height: 0;
+}
+
+#nav-tabContent.unt-tab-content > .tab-pane.show.active {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.configuration-action-bar {
+    align-items: center;
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.configuration-action-bar[data-ai-workflow-loading="true"] .ai-workflow-action {
+    visibility: hidden;
+}
+
+    .configuration-action-bar h5 {
+        font-weight: 700;
+    }
+
+    .configuration-action-bar .btn, .configuration-action-bar .btn-group {
+        flex: none;
+        min-width: 100px;
+        padding: 0.375rem 0.75rem;
+        font-weight: 500;
+        transition: all 0.15s ease-in-out;
+        justify-content: center !important;
+    }
+
+    .configuration-action-bar .btn-wrapper {
+        gap: 0.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end !important;
+        padding-right: 0;
+    }
+
+    .column {
+        float: left;
+        width: 40%;
+    }
+
   /* Clear floats after the columns */
   .row:after {
     content: "";
@@ -69,7 +119,7 @@ caption {
 }
 
 table.dataTable thead th {
-    background-color: #859ab9 !important;
+    background-color: #55698A !important;
     color: white;
     font-weight: 500;
     font-size: 18px;
@@ -78,7 +128,7 @@ table.dataTable thead th {
 table.dataTable td {
     word-wrap: break-word;
     max-width: 250px;
-    font-size: 15px;
+    font-size: 15px !important;
 }
 
 .odd {
@@ -122,11 +172,7 @@ tr:nth-child(even) {background-color: #f2f2f2;}
     color: var(--bc-colors-blue-background, #38598A);
 }
 
-.form-select {
-    width: 400px !important;
-}
-
-.toast-top-center { 
+.toast-top-center {
     top: 220px;
     margin: 0 auto;
     left: 50%;
@@ -268,7 +314,7 @@ textarea {
 .input-button-wrapper {
     display: flex;
     flex-direction: row;
-    flex-wrap: nowrap;    
+    flex-wrap: nowrap;
     justify-content: flex-start;
     align-items: center;
     gap: 5px;
@@ -286,8 +332,14 @@ textarea {
 .unt-mapping-container {
     height: calc(97vh - 400px);
     overflow: scroll;
-    overflow-x:hidden;
+    overflow-x: hidden;
     border: 1px solid black;
+}
+
+.custom-fields-container {
+    height: calc(97vh - 400px);
+    overflow: scroll;
+    overflow-x: hidden;
 }
 
 .nav-tabs .nav-link.active {
@@ -312,11 +364,11 @@ textarea {
     background: #fff;
 }
 
-.application-forms-table-content .table.dataTable { 
+.application-forms-table-content .table.dataTable {
     margin-top:0px !important;
 }
 .note{
-     font-size: 0.75rem; 
+     font-size: 0.75rem;
 }
 .direct-approval {
     font-size: 0.9rem;

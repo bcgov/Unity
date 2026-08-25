@@ -22,6 +22,9 @@ public class ApplicationManager : DomainService, IApplicationManager
     private readonly IPersonRepository _personRepository;
     private readonly IPermissionChecker _permissionChecker;
 
+    private const string DirectApprovalDescription = "Direct Approval Bypass";
+    private const string DirectDenialDescription = "Direct Denial Bypass";
+
     public ApplicationManager(
         IApplicationRepository applicationRepository,
         IApplicationStatusRepository applicationStatus,
@@ -40,52 +43,48 @@ public class ApplicationManager : DomainService, IApplicationManager
 
     public  void ConfigureWorkflow(StateMachine<GrantApplicationState, GrantApplicationAction> stateMachine, bool isDirectApproval = false)
     {
-        // NOTE: ENSURE APPLICATION STATE MACHINE MATCHES WORKFLOW IN AB#8375
+        #region OPEN STATES
         stateMachine.Configure(GrantApplicationState.OPEN)
             .InitialTransition(GrantApplicationState.SUBMITTED)
-            .Permit(GrantApplicationAction.Withdraw, GrantApplicationState.WITHDRAWN)                             // 2.2 - Withdraw;          Role: Reviewer
-            .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED)                                   // 2.4 - Close Application; Role: Reviewer
+            .Permit(GrantApplicationAction.Withdraw, GrantApplicationState.WITHDRAWN)
+            .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED)
             .Permit(GrantApplicationAction.Internal_Unasign, GrantApplicationState.SUBMITTED)
-            .PermitIf(GrantApplicationAction.Approve,GrantApplicationState.GRANT_APPROVED,() => isDirectApproval);
+            .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => AllowDirectDecision(isDirectApproval, stateMachine, GrantApplicationState.GRANT_APPROVED), DirectApprovalDescription)
+            .PermitIf(GrantApplicationAction.Deny, GrantApplicationState.GRANT_NOT_APPROVED, () => AllowDirectDecision(isDirectApproval, stateMachine, GrantApplicationState.GRANT_NOT_APPROVED), DirectDenialDescription);
 
         stateMachine.Configure(GrantApplicationState.SUBMITTED)
             .SubstateOf(GrantApplicationState.OPEN)
             .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
             .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
-            .Permit(GrantApplicationAction.Internal_Assign, GrantApplicationState.ASSIGNED)                      // 2.1 - Internal_Assign;            Role: Team Lead
-            .Permit(GrantApplicationAction.Internal_StartAssessment, GrantApplicationState.UNDER_ASSESSMENT)
-            .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => isDirectApproval);
+            .Permit(GrantApplicationAction.Internal_Assign, GrantApplicationState.ASSIGNED)
+            .Permit(GrantApplicationAction.Internal_StartAssessment, GrantApplicationState.UNDER_ASSESSMENT);
 
         stateMachine.Configure(GrantApplicationState.ASSIGNED)
             .SubstateOf(GrantApplicationState.OPEN)
             .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
             .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
-            .Permit(GrantApplicationAction.StartReview, GrantApplicationState.UNDER_INITIAL_REVIEW)              // 2.3 - Start Review;      Role: Reviewer
-            .Permit(GrantApplicationAction.Internal_StartAssessment, GrantApplicationState.UNDER_ASSESSMENT)
-            .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => isDirectApproval);
+            .Permit(GrantApplicationAction.StartReview, GrantApplicationState.UNDER_INITIAL_REVIEW)
+            .Permit(GrantApplicationAction.Internal_StartAssessment, GrantApplicationState.UNDER_ASSESSMENT);
 
         stateMachine.Configure(GrantApplicationState.UNDER_INITIAL_REVIEW)
             .SubstateOf(GrantApplicationState.OPEN)
             .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
             .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
             .Permit(GrantApplicationAction.CompleteReview, GrantApplicationState.INITITAL_REVIEW_COMPLETED)
-            .Permit(GrantApplicationAction.Internal_StartAssessment, GrantApplicationState.UNDER_ASSESSMENT)
-            .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => isDirectApproval);
+            .Permit(GrantApplicationAction.Internal_StartAssessment, GrantApplicationState.UNDER_ASSESSMENT);
 
         stateMachine.Configure(GrantApplicationState.INITITAL_REVIEW_COMPLETED)
             .SubstateOf(GrantApplicationState.OPEN)
             .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
             .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
             .Permit(GrantApplicationAction.StartAssessment, GrantApplicationState.UNDER_ASSESSMENT)
-            .Permit(GrantApplicationAction.Internal_StartAssessment, GrantApplicationState.UNDER_ASSESSMENT)
-            .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => isDirectApproval);
+            .Permit(GrantApplicationAction.Internal_StartAssessment, GrantApplicationState.UNDER_ASSESSMENT);
 
         stateMachine.Configure(GrantApplicationState.UNDER_ASSESSMENT)
             .SubstateOf(GrantApplicationState.OPEN)
             .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
             .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
-            .Permit(GrantApplicationAction.CompleteAssessment, GrantApplicationState.ASSESSMENT_COMPLETED)
-            .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => isDirectApproval);
+            .Permit(GrantApplicationAction.CompleteAssessment, GrantApplicationState.ASSESSMENT_COMPLETED);
 
         stateMachine.Configure(GrantApplicationState.ASSESSMENT_COMPLETED)
             .SubstateOf(GrantApplicationState.OPEN)
@@ -101,8 +100,7 @@ public class ApplicationManager : DomainService, IApplicationManager
             .Permit(GrantApplicationAction.CompleteReview, GrantApplicationState.INITITAL_REVIEW_COMPLETED)
             .Permit(GrantApplicationAction.StartAssessment, GrantApplicationState.UNDER_ASSESSMENT)
             .Permit(GrantApplicationAction.CompleteAssessment, GrantApplicationState.ASSESSMENT_COMPLETED)
-            .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
-            .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => isDirectApproval);
+            .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD);
 
         stateMachine.Configure(GrantApplicationState.ON_HOLD)
             .SubstateOf(GrantApplicationState.OPEN)
@@ -111,38 +109,60 @@ public class ApplicationManager : DomainService, IApplicationManager
             .Permit(GrantApplicationAction.CompleteReview, GrantApplicationState.INITITAL_REVIEW_COMPLETED)
             .Permit(GrantApplicationAction.StartAssessment, GrantApplicationState.UNDER_ASSESSMENT)
             .Permit(GrantApplicationAction.CompleteAssessment, GrantApplicationState.ASSESSMENT_COMPLETED)
-            .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
-            .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => isDirectApproval);
+            .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER);
+        #endregion OPEN STATES
 
-        // CLOSED STATES
+        #region CLOSED STATES
+        stateMachine.Configure(GrantApplicationState.RESOLVED);
 
         stateMachine.Configure(GrantApplicationState.CLOSED)
+            .SubstateOf(GrantApplicationState.RESOLVED)
             .Permit(GrantApplicationAction.Withdraw, GrantApplicationState.WITHDRAWN)
             .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
             .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
-            .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => isDirectApproval);
-
+            .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => isDirectApproval, DirectApprovalDescription)
+            .PermitIf(GrantApplicationAction.Deny, GrantApplicationState.GRANT_NOT_APPROVED, () => isDirectApproval, DirectDenialDescription);
 
         stateMachine.Configure(GrantApplicationState.WITHDRAWN)
+            .SubstateOf(GrantApplicationState.RESOLVED)
             .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED)
             .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER)
             .Permit(GrantApplicationAction.OnHold, GrantApplicationState.ON_HOLD)
-            .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => isDirectApproval);
+            .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => isDirectApproval, DirectApprovalDescription)
+            .PermitIf(GrantApplicationAction.Deny, GrantApplicationState.GRANT_NOT_APPROVED, () => isDirectApproval, DirectDenialDescription);
 
         stateMachine.Configure(GrantApplicationState.GRANT_APPROVED)
+            .SubstateOf(GrantApplicationState.RESOLVED)
             .Permit(GrantApplicationAction.Withdraw, GrantApplicationState.WITHDRAWN)
             .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED)
-            .PermitIf(GrantApplicationAction.Defer, GrantApplicationState.DEFER, () => HasPermission(GrantApplicationPermissions.Approvals.DeferAfterApproval));
-
-
+            .PermitIfAsync(GrantApplicationAction.Defer, GrantApplicationState.DEFER, () => HasPermissionAsync(GrantApplicationPermissions.Approvals.DeferAfterApproval))
+            .PermitIf(GrantApplicationAction.Deny, GrantApplicationState.GRANT_NOT_APPROVED, () => isDirectApproval, DirectDenialDescription);
 
         stateMachine.Configure(GrantApplicationState.GRANT_NOT_APPROVED)
+            .SubstateOf(GrantApplicationState.RESOLVED)
             .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED)
-            .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => isDirectApproval);
+            .PermitIf(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED, () => isDirectApproval, DirectApprovalDescription);
+        #endregion CLOSED STATES
     }
-    private bool HasPermission(string permission)
+
+    /// <summary>
+    /// Determines if a direct decision (Approve/Deny) can be made based on the current state and the isDirectApproval flag.
+    /// </summary>
+    /// <param name="isDirectApproval">Indicates if direct approval is allowed.</param>
+    /// <param name="stateMachine">The state machine instance.</param>
+    /// <param name="targetState">The target state for the direct decision to prevent reentrant transitions.</param>
+    /// <returns>True if a direct decision can be made; otherwise, false.</returns>
+    private static bool AllowDirectDecision(
+        bool isDirectApproval,
+        StateMachine<GrantApplicationState, GrantApplicationAction> stateMachine,
+        GrantApplicationState targetState)
     {
-        return _permissionChecker.IsGrantedAsync(permission).Result;
+        return isDirectApproval && stateMachine.State != targetState;
+    }
+
+    private async Task<bool> HasPermissionAsync(string permission)
+    {
+        return await _permissionChecker.IsGrantedAsync(permission);
     }
 
     public async Task<List<ApplicationActionResultItem>> GetActions(Guid applicationId)
@@ -158,7 +178,7 @@ public class ApplicationManager : DomainService, IApplicationManager
             });
 
         var allActions = Workflow.GetAllActions().Distinct().ToList();
-        var permittedActions = Workflow.GetPermittedActions().ToList();
+        var permittedActions = (await Workflow.GetPermittedActionsAsync()).ToList();
 
         var actionsList = allActions
             .Select(trigger =>
@@ -174,7 +194,7 @@ public class ApplicationManager : DomainService, IApplicationManager
         return actionsList;
     }
 
-    public bool IsActionAllowed(Application application, GrantApplicationAction triggerAction)
+    public async Task<bool> IsActionAllowed(Application application, GrantApplicationAction triggerAction)
     {
         var Workflow = new UnityWorkflow<GrantApplicationState, GrantApplicationAction>(
             () => application.ApplicationStatus.StatusCode,
@@ -183,7 +203,23 @@ public class ApplicationManager : DomainService, IApplicationManager
                 ConfigureWorkflow(sm, application.ApplicationForm.IsDirectApproval);
             });
 
-        return Workflow.GetPermittedActions().Contains(triggerAction);
+        return (await Workflow.GetPermittedActionsAsync()).Contains(triggerAction);
+    }
+
+    /// <summary>
+    /// Generate a Mermaid graph from the Asssessment workflow.
+    /// </summary>
+    public string? GetWorkflowDiagram(bool isDirectApproval)
+    {
+        var applicationStatus = GrantApplicationState.SUBMITTED;
+        var Workflow = new UnityWorkflow<GrantApplicationState, GrantApplicationAction>(
+            () => GrantApplicationState.SUBMITTED,
+            s => applicationStatus = s, sm =>
+            {
+                ConfigureWorkflow(sm, isDirectApproval);
+            });
+
+        return Workflow.GetWorkflowDiagram();
     }
 
     public async Task<Application> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction)
@@ -290,7 +326,7 @@ public class ApplicationManager : DomainService, IApplicationManager
         using var uow = _unitOfWorkManager.Begin();
         var person = await _personRepository.FindAsync(assigneeId) ?? throw new BusinessException("Tenant User Missing!");
         var application = await _applicationRepository.GetAsync(applicationId, true);
-        IQueryable<ApplicationAssignment> queryableAssignment = _applicationAssignmentRepository.GetQueryableAsync().Result;
+        IQueryable<ApplicationAssignment> queryableAssignment = await _applicationAssignmentRepository.GetQueryableAsync();
         List<ApplicationAssignment> assignments = queryableAssignment
             .Where(a => a.ApplicationId.Equals(applicationId))
             .Where(b => b.AssigneeId.Equals(person.Id)).ToList();

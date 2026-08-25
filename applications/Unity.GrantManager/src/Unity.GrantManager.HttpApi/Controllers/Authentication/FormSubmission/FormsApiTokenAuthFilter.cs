@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc.Filters;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Hosting;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.TenantManagement;
 using Unity.GrantManager.ApplicationForms;
@@ -15,23 +17,41 @@ namespace Unity.GrantManager.Controllers.Auth.FormSubmission
         private readonly ITenantRepository _tenantRepository;
         private readonly ICurrentTenant _currentTenant;
         private readonly IApplicationFormTokenAppService _formTokenAppService;
-        private readonly IEnumerable<IFormIdResolver> _formIdResolvers;        
+        private readonly IEnumerable<IFormIdResolver> _formIdResolvers;
+        private readonly IHostEnvironment _hostEnvironment;
 
         public FormsApiTokenAuthFilter(ITenantRepository tenantRepository,
             ICurrentTenant currentTenant,
             IApplicationFormTokenAppService formTokenAppService,
-            IEnumerable<IFormIdResolver> formIdResolvers)
+            IEnumerable<IFormIdResolver> formIdResolvers,
+            IHostEnvironment hostEnvironment)
         {
             _currentTenant = currentTenant;
             _tenantRepository = tenantRepository;
             _formTokenAppService = formTokenAppService;
             _formIdResolvers = formIdResolvers;
+            _hostEnvironment = hostEnvironment;
         }
 
         public async Task OnAuthorizationAsync(AuthorizationFilterContext context)
         {
             var apiToken = await GetTenantApiTokenAsync();
-            if (apiToken == null) { return; } // No API auth tokens setup for the tenant
+            if (string.IsNullOrWhiteSpace(apiToken))
+            {
+                if (_hostEnvironment.IsDevelopment())
+                {
+                    return; // Dev-only convenience: unconfigured tenants pass through locally
+                }
+
+                context.Result = new UnauthorizedObjectResult(new ProblemDetails
+                {
+                    Status = StatusCodes.Status401Unauthorized,
+                    Title = "Unauthorized",
+                    Detail = "API authentication not configured for this tenant",
+                    Type = "https://tools.ietf.org/html/rfc7235#section-3.1"
+                });
+                return;
+            }
 
             if (!context.HttpContext.Request.Headers.TryGetValue(AuthConstants.ApiKeyHeader, out var extractedApiToken))
             {

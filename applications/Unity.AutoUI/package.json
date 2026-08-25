@@ -1,16 +1,20 @@
 {
   "scripts": {
-    "test": "cypress run --spec \"cypress/e2e/**/*.cy.ts\" --browser chrome",
-    "test:e2e": "cypress run --spec \"cypress/e2e/**/*.cy.ts\" --browser chrome",
-    "test:regression-headed": "cypress run --spec \"cypress/regression/**/*.cy.ts\" --headed --browser chrome",
-    "test:regression-headless": "cypress run --spec \"cypress/regression/**/*.cy.ts\" --headless --browser chrome",
-    "test:open": "cypress open --browser chrome",
-    "test:seed": "cypress run --spec \"cypress/scripts/chefs-api-submission.cy.ts\" --browser chrome",
-    "test:seed:bulk": "cypress run --spec \"cypress/scripts/chefs-bulk-submission-seeder.cy.ts\" --browser chrome",
-    "test:bulk-approval-flow": "npm run test:seed:bulk && cypress run --spec \"cypress/regression/BulkPaymentApproval.cy.ts\" --headed --browser chrome",
-    "test:bulk-approval-flow-headless": "npm run test:seed:bulk && cypress run --spec \"cypress/regression/BulkPaymentApproval.cy.ts\" --browser chrome",
-    "test:approval-flow": "npm run test:seed && cypress run --spec \"cypress/regression/ApprovalFlow.cy.ts\" --headed --browser chrome",
-    "test:approval-flow-headless": "npm run test:seed && cypress run --spec \"cypress/regression/ApprovalFlow.cy.ts\" --browser chrome"
+    "selectors:report": "node scripts/selector-contract.mjs",
+    "selectors:diff": "node scripts/selector-diff-report.mjs",
+    "selectors:fix": "node scripts/selector-diff-report.mjs --fix",
+    "selectors:apply": "node scripts/selector-diff-report.mjs --apply",
+    "test": "node ./scripts/run-cypress.js run --spec \"cypress/e2e/**/*.cy.ts\" --browser chrome",
+    "test:e2e": "node ./scripts/run-cypress.js run --spec \"cypress/e2e/**/*.cy.ts\" --browser chrome",
+    "test:regression-headed": "node ./scripts/run-cypress.js run --spec \"cypress/regression/**/*.cy.ts\" --headed --browser chrome",
+    "test:regression-headless": "node ./scripts/run-cypress.js run --spec \"cypress/regression/**/*.cy.ts\" --headless --browser chrome",
+    "test:open": "node ./scripts/run-cypress.js open --browser chrome",
+    "test:seed": "node ./scripts/run-cypress.js run --spec \"cypress/scripts/chefs-api-submission.cy.ts\" --browser chrome",
+    "test:seed:bulk": "node ./scripts/run-cypress.js run --spec \"cypress/scripts/chefs-bulk-submission-seeder.cy.ts\" --browser chrome",
+    "test:bulk-approval-flow": "npm run test:seed:bulk && node ./scripts/run-cypress.js run --spec \"cypress/regression/BulkPaymentApproval.cy.ts\" --headed --browser chrome",
+    "test:bulk-approval-flow-headless": "npm run test:seed:bulk && node ./scripts/run-cypress.js run --spec \"cypress/regression/BulkPaymentApproval.cy.ts\" --browser chrome",
+    "test:approval-flow": "npm run test:seed && node ./scripts/run-cypress.js run --spec \"cypress/regression/ApprovalFlow.cy.ts\" --headed --browser chrome",
+    "test:approval-flow-headless": "npm run test:seed && node ./scripts/run-cypress.js run --spec \"cypress/regression/ApprovalFlow.cy.ts\" --browser chrome"
   },
   "dependencies": {
     "form-data": "^4.0.5",
@@ -18,6 +22,6 @@
   },
   "devDependencies": {
     "@types/node": "^25.4.0",
-    "cypress": "15.12.0"
+    "cypress": "^15.17.0"
   }
 }

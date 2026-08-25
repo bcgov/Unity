@@ -1,5 +1,9 @@
+using Microsoft.AspNetCore.Authorization;
+using Unity.Notifications.Permissions;
+
 namespace Unity.Notifications.Web.Pages.Notifications;
 
+[Authorize(NotificationsPermissions.NotificationList.View)]
 public class IndexModel : NotificationsPageModel
 {
     public void OnGet()

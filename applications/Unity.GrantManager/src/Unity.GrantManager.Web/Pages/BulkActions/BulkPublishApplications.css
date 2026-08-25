@@ -1,0 +1,110 @@
+﻿.batch-action-card {
+    max-height: 65vh;
+    overflow: auto;
+}
+
+.batch-action-container {
+    border: var(--bs-border-width) solid;
+    border-color: var(--bs-border-color);
+}
+
+.bulk-action-row-header {
+    padding-bottom: 0 !important;
+}
+
+.bulk-action-remove-row {
+    min-width: 55px
+}
+
+
+/* This is for the summary modal*/
+
+.table-container {
+    max-height: 65vh;
+    overflow-y: auto;
+}
+
+.batch-action-container input.form-control:disabled {
+    color: var(--bs-body-color);
+}
+
+.custom-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.centered-icon {
+    text-align: center;
+    padding-bottom: 0.85rem;
+}
+
+.custom-table thead th {
+    position: sticky;
+    top: 0;
+    background-color: white;
+    z-index: 1;
+    font-size: 1rem;
+    padding-bottom: 1rem;
+}
+
+.custom-table .col-5 {
+    width: 5%;
+}
+
+.custom-table .col-20 {
+    width: 20%;
+}
+
+.custom-table .col-75 {
+    width: 75%;
+}
+
+.action-details-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75em;
+}
+
+    .action-details-header
+    .header-data {
+        color: var(--bs-body-color);
+        -webkit-font-smoothing: antialiased;
+    }
+
+    .action-details-header
+    .reference-no {
+        font-weight: 700;
+    }
+
+    .action-details-header
+    .application-status {
+        font-weight: 700;
+        color: var(--bc-colors-blue-text-links);
+        text-transform: uppercase;
+        border: 3px solid var(--bc-colors-blue-text-links);
+        border-radius: 1rem;
+        font-size: 0.8rem;
+        padding: 0.125rem 0.5rem;
+        margin-top: 2px;
+    }
+
+
+.action-note-prefix {
+    font-weight: 700;
+    color: var(--bc-colors-blue-text-links);
+    text-transform: uppercase;
+    border: 3px solid var(--bc-colors-blue-text-links);
+    border-radius: 1rem;
+    font-size: 0.8rem;
+    padding: 0.025rem 0.5rem;
+    line-height: 1.75rem;
+}
+
+.action-note-error {
+    color: var(--lpx-danger);
+    border-color: var(--lpx-danger);
+}
+
+.batch-direct-action-indicator {
+    padding-left: 1rem;
+}

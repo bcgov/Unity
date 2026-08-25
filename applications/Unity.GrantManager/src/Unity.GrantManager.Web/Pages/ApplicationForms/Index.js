@@ -128,7 +128,9 @@
         dynamicButtonContainerId: 'dynamicButtonContainerId',
         useNullPlaceholder: true,
         externalSearchId: 'search-forms',
-        fixedHeaders: true
+        fixedHeaders: true,
+        enableContextMenu: true,
+        contextMenuActionsSelector: '[data-selector="forms-table-actions"]'
     });
 
     createModal.onResult(function () {

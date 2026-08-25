@@ -23,11 +23,17 @@ public static class GrantManagerPermissions
     {
         public const string Default = GroupName + ".ApplicationForms";
     }
-    
+
     public static class Endpoints
     {
         public const string Default = GroupName + ".Endpoints";
         public const string ManageEndpoints = Default + ".ManageEndpoints";
+    }
+
+    public static class NotificationScheduler
+    {
+        public const string Default = GroupName + ".NotificationScheduler";
+        public const string ManageSchedules = Default + ".ManageSchedules";
     }
 
     /// <summary>

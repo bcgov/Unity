@@ -7,4 +7,5 @@ public static class TenantManagementMenuNames
     public const string Tenants = GroupName + ".Tenants";
     public const string Endpoints = GroupName + ".Endpoints";
     public const string Reconciliation = GroupName + ".Reconciliation";
+    public const string Onboarding = GroupName + ".Onboarding";
 }

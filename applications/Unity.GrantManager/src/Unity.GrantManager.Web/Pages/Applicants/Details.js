@@ -27,7 +27,8 @@ $(document).ready(function () {
     // Handle tab switching animations
     $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
         let targetTab = $(e.target).attr('data-bs-target');
-        $(targetTab).addClass('fade-in-load visible');
+        const targetEl = targetTab ? document.querySelector(targetTab) : null;
+        if (targetEl) $(targetEl).addClass('fade-in-load visible');
         if ($(e.target).closest('#detailsTab').length) {
             syncLeftTabScrollPosition(targetTab);
             scheduleLeftTabScrollReset(targetTab);
@@ -371,7 +372,7 @@ function updateCommentsCounters() {
     setTimeout(() => {
         $('.comments-container')
             .map(function () {
-                $('#' + $(this).data('counttag')).html($(this).data('count'));
+                $('#' + $(this).data('counttag')).text($(this).data('count'));
             })
             .get();
     }, 500);
@@ -395,9 +396,17 @@ function uploadFiles(inputId, urlStr, channel) {
     let input = document.getElementById(inputId);
     let files = input.files;
     let formData = new FormData();
-    const disallowedTypes = JSON.parse(
-        decodeURIComponent($('#Extensions').val())
-    );
+    let allowedTypes;
+    try {
+        allowedTypes = JSON.parse(decodeURIComponent($('#AllowedFileTypes').val()));
+        if (!Array.isArray(allowedTypes)) {
+            throw new TypeError('AllowedFileTypes did not parse to an array');
+        }
+    } catch (e) {
+        console.warn('Unable to parse allowed file types configuration:', e);
+        abp.notify.error('Unable to determine allowed file types. Please contact support.');
+        return;
+    }
     const maxFileSize = decodeURIComponent($('#MaxFileSize').val());
 
     let isAllowedTypeError = false;
@@ -408,7 +417,7 @@ function uploadFiles(inputId, urlStr, channel) {
 
     for (let file of files) {
         if (
-            disallowedTypes.includes(
+            !allowedTypes.includes(
                 file.name
                     .slice(file.name.lastIndexOf('.') + 1, file.name.length)
                     .toLowerCase()

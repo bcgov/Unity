@@ -1,6 +1,6 @@
 ﻿.control-render-error {
     display: block;
-    background-color: red;
+    background-color: #cc0000;
     text-align: center;
     padding: 5px;
     color: #fff;

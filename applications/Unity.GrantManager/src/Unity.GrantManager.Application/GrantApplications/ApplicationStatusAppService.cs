@@ -14,6 +14,7 @@ namespace Unity.GrantManager.GrantApplications;
 public class ApplicationStatusAppService : ApplicationService, IApplicationStatusService
 {
     private readonly IApplicationStatusRepository _applicationStatusRepository;
+
     public ApplicationStatusAppService(IApplicationStatusRepository repository)
     {
         _applicationStatusRepository = repository;
@@ -24,6 +25,13 @@ public class ApplicationStatusAppService : ApplicationService, IApplicationStatu
         var statuses = await _applicationStatusRepository.GetListAsync();
 
         return ObjectMapper.Map<List<ApplicationStatus>, List<ApplicationStatusDto>>(statuses.OrderBy(s => s.StatusCode).ToList());
+    }
+
+    public virtual async Task<IList<ApplicantPortalStatusDto>> GetApplicantPortalStatusListAsync()
+    {
+        var statuses = await _applicationStatusRepository.GetListAsync();
+
+        return ObjectMapper.Map<List<ApplicationStatus>, List<ApplicantPortalStatusDto>>(statuses.OrderBy(s => s.StatusCode).ToList());
     }
 
     public virtual async Task UpdateExternalStatusLabelsAsync(UpdateApplicationStatusExternalLabelsDto input)
@@ -38,6 +46,7 @@ public class ApplicationStatusAppService : ApplicationService, IApplicationStatu
             if (statusMap.TryGetValue(statusDto.Id, out var status))
             {
                 status.ExternalStatus = statusDto.ExternalStatus;
+                status.NotifiedStatus = string.IsNullOrWhiteSpace(statusDto.NotifiedStatus) ? null : statusDto.NotifiedStatus;
                 await _applicationStatusRepository.UpdateAsync(status);
             }
         }

@@ -23,7 +23,9 @@ public class ApplicantPaymentsAppService(
     public async Task<ApplicantPaymentSummaryDto> GetPaymentSummaryByApplicantIdAsync(Guid applicantId)
     {
         var applications = await applicationRepository.GetByApplicantIdAsync(applicantId);
-        var totalApproved = applications.Sum(a => a.ApprovedAmount);
+        var totalApproved = applications
+            .Where(a => a.ApplicationLinks == null || !a.ApplicationLinks.Any(l => l.LinkType == ApplicationLinkType.Parent))
+            .Sum(a => a.ApprovedAmount);
 
         if (applications.Count == 0)
             return new ApplicantPaymentSummaryDto { TotalApprovedAmount = totalApproved };
@@ -51,6 +53,7 @@ public class ApplicantPaymentsAppService(
         if (applications.Count == 0) return [];
 
         var referenceMap = applications.ToDictionary(a => a.Id, a => a.ReferenceNo);
+        var categoryMap = applications.ToDictionary(a => a.Id, a => a.ApplicationForm?.Category ?? string.Empty);
         var applicationIds = applications.Select(a => a.Id).ToList();
         var payments = await paymentRequestAppService.GetListByApplicationIdsAsync(applicationIds);
 
@@ -64,6 +67,9 @@ public class ApplicantPaymentsAppService(
             Status = p.Status,
             Amount = p.Amount,
             PaymentStatus = p.PaymentStatus,
+            InvoiceStatus = p.InvoiceStatus,
+            CasResponse = p.CasResponse,
+            Category = categoryMap.TryGetValue(p.CorrelationId, out var cat) ? cat : string.Empty,
             SupplierNumber = p.SupplierNumber,
             SupplierName = p.SupplierName,
             Site = p.Site

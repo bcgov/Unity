@@ -92,11 +92,12 @@ namespace Unity.GrantManager.Intakes.BackgroundWorkers
                 </html>";
 
                 await _emailNotificationService.SendEmailNotification(
-                    "grantmanagementsupport@gov.bc.ca",
-                    htmlBody,
-                    "Unity Failed Submissions Notification",
-                    "NoReply@gov.bc.ca", "html",
-                    ""); 
+                    new EmailMessageParams(
+                        "grantmanagementsupport@gov.bc.ca",
+                        htmlBody,
+                        "Unity Failed Submissions Notification",
+                        "NoReply@gov.bc.ca",
+                        ""), "html"); 
 
                 Logger.LogInformation("Missing Submissions Email Sent...");
             }

@@ -12,23 +12,24 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Unity.Flex.WorksheetInstances;
-using Unity.Flex.Worksheets;
+using Unity.AI.Generation;
 using Unity.AI.Models;
 using Unity.AI.Responses;
+using Unity.AI.Settings;
+using Unity.Flex.WorksheetInstances;
+using Unity.Flex.Worksheets;
 using Unity.GrantManager.Applicants;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Flex;
-using Unity.GrantManager.Identity;
 using Unity.GrantManager.GlobalTag;
+using Unity.GrantManager.Identity;
 using Unity.GrantManager.Payments;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
+using Unity.Modules.Shared.Specializations;
 using Unity.Payments.PaymentRequests;
-using Unity.AI.Automation;
-using Unity.AI.Permissions;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Authorization;
@@ -47,7 +48,6 @@ namespace Unity.GrantManager.GrantApplications;
 public class GrantApplicationAppService(
     IApplicationManager applicationManager,
     IApplicationRepository applicationRepository,
-    IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
     IApplicationStatusRepository applicationStatusRepository,
     IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
     IApplicantRepository applicantRepository,
@@ -56,9 +56,8 @@ public class GrantApplicationAppService(
     IApplicantAddressRepository applicantAddressRepository,
     IApplicantSupplierAppService applicantSupplierService,
     IPaymentRequestAppService paymentRequestService,
-    IApplicationAIGenerationQueue aiGenerationQueue,
-    IAIGenerationStatusAppService aiGenerationStatusAppService,
-    IFeatureChecker featureChecker)
+    IFeatureChecker featureChecker,
+    AIFeatureGuard aiFeatureGuard)
     : GrantManagerAppService, IGrantApplicationAppService
 #pragma warning restore S107 // Methods should not have too many parameters
 {
@@ -71,6 +70,25 @@ public class GrantApplicationAppService(
     {
         WriteIndented = true
     };
+
+    private async Task EnsureAiOperationAccessAsync(string operationType, bool requiresGeneratePermission)
+    {
+        var operation = AIGenerationOperations.Get(operationType);
+        await aiFeatureGuard.EnsureEnabledAsync(operation.FeatureName, operation.DisabledLocalizationKey);
+        await CheckPolicyAsync(requiresGeneratePermission ? operation.GeneratePermission : operation.ViewPermission);
+    }
+
+    private async Task<bool> CanAccessAiOperationAsync(string operationType, bool requiresGeneratePermission)
+    {
+        var operation = AIGenerationOperations.Get(operationType);
+        if (!await featureChecker.IsEnabledAsync(operation.FeatureName))
+        {
+            return false;
+        }
+
+        var permission = requiresGeneratePermission ? operation.GeneratePermission : operation.ViewPermission;
+        return await AuthorizationService.IsGrantedAsync(permission);
+    }
 
     public async Task<PagedResultDto<GrantApplicationDto>> GetListAsync(GrantApplicationListInputDto input)
     {
@@ -159,9 +177,12 @@ public class GrantApplicationAppService(
                 ContractExecutionDate = rec.ContractExecutionDate,
                 RiskRanking = rec.RiskRanking,
                 UnityApplicationId = rec.UnityApplicationId,
-
+                ExternalStatusVisibility = rec.ExternalStatusVisibility,
+                
                 // From ApplicationStatus
                 Status = rec.Status,
+                ExternalStatus = rec.ExternalStatus,
+                PublishedStatus = rec.PublishedStatus,
 
                 // From ApplicationForm
                 Category = rec.Category,
@@ -179,7 +200,7 @@ public class GrantApplicationAppService(
                     OrgStatus = rec.ApplicantOrgStatus ?? string.Empty,
                     BusinessNumber = rec.ApplicantBusinessNumber ?? string.Empty,
                     OrganizationType = rec.ApplicantOrganizationType ?? string.Empty,
-                    OrganizationSize = rec.ApplicantOrganizationSize ?? string.Empty,
+                    ApproxNumberOfEmployees = rec.ApplicantApproxNumberOfEmployees ?? string.Empty,
                     SectorSubSectorIndustryDesc = rec.ApplicantSectorSubSectorIndustryDesc ?? string.Empty,
                     RedStop = rec.ApplicantRedStop ?? false,
                     IndigenousOrgInd = rec.ApplicantIndigenousOrgInd ?? string.Empty,
@@ -193,7 +214,7 @@ public class GrantApplicationAppService(
                 OrgStatus = rec.ApplicantOrgStatus,
                 BusinessNumber = rec.ApplicantBusinessNumber,
                 OrgNumber = rec.ApplicantOrgNumber,
-                OrganizationSize = rec.ApplicantOrganizationSize,
+                ApproxNumberOfEmployees = rec.ApplicantApproxNumberOfEmployees,
                 SectorSubSectorIndustryDesc = rec.ApplicantSectorSubSectorIndustryDesc,
                 Sector = rec.ApplicantSector,
                 SubSector = rec.ApplicantSubSector,
@@ -256,7 +277,7 @@ public class GrantApplicationAppService(
         //Code is temporarily commented out as this will be the way to get the accurate count
         //once the core GrantApplications data table is moved server side from client side.
         //Until then, since it is client side and always requests all records at once to be
-        //loaded, an extra round-trip to the database for a query is unnecessary. 
+        //loaded, an extra round-trip to the database for a query is unnecessary.
 
         //var totalCount = await applicationRepository.GetCountAsync(input.SubmittedFromDate,input.SubmittedToDate);
 #pragma warning restore S125
@@ -342,7 +363,7 @@ public class GrantApplicationAppService(
         {
             appDto.OrganizationName = application.Applicant.OrgName;
             appDto.OrgNumber = application.Applicant.OrgNumber;
-            appDto.OrganizationSize = application.Applicant.OrganizationSize;
+            appDto.ApproxNumberOfEmployees = application.Applicant.ApproxNumberOfEmployees;
             appDto.OrgStatus = application.Applicant.OrgStatus;
             appDto.BusinessNumber = application.Applicant.BusinessNumber;
             appDto.NonRegOrgName = application.Applicant.NonRegOrgName;
@@ -352,7 +373,15 @@ public class GrantApplicationAppService(
             appDto.SectorSubSectorIndustryDesc = application.Applicant.SectorSubSectorIndustryDesc;
         }
 
-        appDto.AIAnalysisData = ParseAiAnalysisData(appDto.AIAnalysis);
+        if (await CanAccessAiOperationAsync(AIGenerationOperations.ApplicationAnalysis, requiresGeneratePermission: false))
+        {
+            appDto.AIAnalysisData = ParseAiAnalysisData(appDto.AIAnalysis);
+        }
+        else
+        {
+            appDto.AIAnalysis = null;
+            appDto.AIAnalysisData = null;
+        }
 
         return appDto;
     }
@@ -415,6 +444,15 @@ public class GrantApplicationAppService(
             await PublishCustomFieldsAsync(application.Id, input);
         }
 
+        await applicationRepository.UpdateAsync(application);
+        return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+    }
+
+    [Authorize(UnitySelector.Review.AssessmentResults.Update.Default)]
+    public async Task<GrantApplicationDto> UpdateExternalStatusVisibilityAsync(Guid id, bool externalStatusVisibility)
+    {
+        var application = await applicationRepository.GetAsync(id);
+        application.ExternalStatusVisibility = externalStatusVisibility;
         await applicationRepository.UpdateAsync(application);
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
     }
@@ -827,7 +865,7 @@ public class GrantApplicationAppService(
         applicant.OrgName = input.OrgName ?? "";
         applicant.OrgNumber = input.OrgNumber ?? "";
         applicant.OrgStatus = input.OrgStatus ?? "";
-        applicant.OrganizationSize = input.OrganizationSize ?? "";
+        applicant.ApproxNumberOfEmployees = input.ApproxNumberOfEmployees ?? "";
         applicant.Sector = input.Sector ?? "";
         applicant.SubSector = input.SubSector ?? "";
         applicant.SectorSubSectorIndustryDesc = input.SectorSubSectorIndustryDesc ?? "";
@@ -1104,6 +1142,16 @@ public class GrantApplicationAppService(
     /// <returns>A list of application actions with their state machine permitted and authorization status.</returns>
     public async Task<ListResultDto<ApplicationActionDto>> GetActions(Guid applicationId, bool includeInternal = false)
     {
+        if (await featureChecker.IsEnabledAsync(SpecializationConsts.Onboarding))
+        {
+            var onboardingManager = LazyServiceProvider.LazyGetRequiredService<OnboardingApplicationManager>();
+            var onboardingActionList = await onboardingManager.GetActions(applicationId);
+            var onboardingDtos = ObjectMapper.Map<List<ApplicationActionResultItem>, List<ApplicationActionDto>>(onboardingActionList);
+            foreach (var item in onboardingDtos)
+                item.IsAuthorized = true;
+            return new ListResultDto<ApplicationActionDto>(onboardingDtos);
+        }
+
         var actionList = await applicationManager.GetActions(applicationId);
         var application = await applicationRepository.GetAsync(applicationId, true);
 
@@ -1137,6 +1185,14 @@ public class GrantApplicationAppService(
     /// <param name="triggerAction">The action to be invoked on an Application</param>
     public async Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction)
     {
+        if (await featureChecker.IsEnabledAsync(SpecializationConsts.Onboarding))
+        {
+            var onboardingManager = LazyServiceProvider.LazyGetRequiredService<OnboardingApplicationManager>();
+            var onboardingApplication = await onboardingManager.TriggerAction(applicationId, triggerAction);
+            await LocalEventBus.PublishAsync(new ApplicationChangedEvent { Action = triggerAction, ApplicationId = applicationId });
+            return ObjectMapper.Map<Application, GrantApplicationDto>(onboardingApplication);
+        }
+
         // AUTHORIZATION HANDLING
         var application = await applicationRepository.GetAsync(applicationId, true);
         if (!await AuthorizationService.IsGrantedAsync(application, GetActionAuthorizationRequirement(triggerAction)))
@@ -1152,172 +1208,27 @@ public class GrantApplicationAppService(
 
         application = await applicationManager.TriggerAction(applicationId, triggerAction);
 
+        // After the workflow state change, publish to the local event bus
         await LocalEventBus.PublishAsync(
             new ApplicationChangedEvent
             {
-                Action = triggerAction,
-                ApplicationId = applicationId
+                ApplicationId = applicationId,
+                Action = triggerAction,  // e.g. GrantApplicationAction.Approve / Deny
+                TenantId = CurrentTenant.Id
             }
         );
 
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
     }
 
-    public async Task<AIGenerationRequestDto> QueueAIGenerationAsync(Guid applicationId, string? promptVersion = null)
+    /// <summary>
+    /// Generate a Mermaid graph from the Asssessment workflow.
+    /// </summary>
+    public string? GetWorkflowDiagram(bool isDirectApproval)
     {
-        await EnsureAIAnalysisEnabledAsync();
-        return await QueueApplicationAnalysisAsync(applicationId, promptVersion);
+        return applicationManager.GetWorkflowDiagram(isDirectApproval);
     }
 
-    [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]
-    public async Task<AIGenerationRequestDto> QueueApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null)
-    {
-        await EnsureAIAnalysisEnabledAsync();
-        await aiGenerationQueue.QueueApplicationAnalysisAsync(applicationId, CurrentTenant.Id, promptVersion);
-
-        var request = await aiGenerationStatusAppService.GetLatestAsync(
-            applicationId,
-            AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType,
-            CurrentTenant.Id);
-
-        return request ?? throw new UserFriendlyException("Unable to queue AI analysis request.");
-    }
-
-    [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
-    public async Task<AIGenerationRequestDto> QueueAttachmentSummaryAsync(QueueAttachmentSummaryRequestDto input, string? promptVersion = null)
-    {
-        await EnsureAttachmentSummariesEnabledAsync();
-        var attachmentIds = await ResolveAttachmentSummaryIdsAsync(input);
-        await aiGenerationQueue.QueueAttachmentSummaryAsync(input.ApplicationId, CurrentTenant.Id, promptVersion, attachmentIds);
-
-        var request = await aiGenerationStatusAppService.GetLatestAsync(
-            input.ApplicationId,
-            AIGenerationRequestKeyHelper.AttachmentSummaryOperationType,
-            CurrentTenant.Id);
-
-        return request ?? throw new UserFriendlyException("Unable to queue AI attachment summary request.");
-    }
-
-    [Authorize(AIPermissions.Analysis.GenerateScoring)]
-    public async Task<AIGenerationRequestDto> QueueApplicationScoringAsync(Guid applicationId, string? promptVersion = null)
-    {
-        await EnsureScoringEnabledAsync();
-        await aiGenerationQueue.QueueApplicationScoringAsync(applicationId, CurrentTenant.Id, promptVersion);
-
-        var request = await aiGenerationStatusAppService.GetLatestAsync(
-            applicationId,
-            AIGenerationRequestKeyHelper.ApplicationScoringOperationType,
-            CurrentTenant.Id);
-
-        return request ?? throw new UserFriendlyException("Unable to queue AI scoring request.");
-    }
-
-    public async Task<AIGenerationRequestDto?> GetAIGenerationStatusAsync(Guid applicationId, string operationType, string? promptVersion = null)
-    {
-        await EnsureAIGenerationStatusAccessAsync(operationType);
-        return await aiGenerationStatusAppService.GetLatestAsync(applicationId, operationType, CurrentTenant.Id);
-    }
-
-    [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]
-    [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
-    [Authorize(AIPermissions.Analysis.GenerateScoring)]
-    public async Task<AIGenerationRequestDto> QueueAllAIStagesAsync(Guid applicationId, string? promptVersion = null)
-    {
-        await EnsureAttachmentSummariesEnabledAsync();
-        await EnsureAIAnalysisEnabledAsync();
-        await EnsureScoringEnabledAsync();
-        await aiGenerationQueue.QueueAllAIStagesAsync(applicationId, CurrentTenant.Id, promptVersion);
-
-        var request = await aiGenerationStatusAppService.GetLatestAsync(
-            applicationId,
-            AIGenerationRequestKeyHelper.PipelineOperationType,
-            CurrentTenant.Id);
-
-        return request ?? throw new UserFriendlyException("Unable to queue AI generation request.");
-    }
-
-    private async Task EnsureAIGenerationStatusAccessAsync(string operationType)
-    {
-        switch (operationType)
-        {
-            case AIGenerationRequestKeyHelper.ApplicationAnalysisOperationType:
-                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewApplicationAnalysis);
-                return;
-            case AIGenerationRequestKeyHelper.AttachmentSummaryOperationType:
-                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewAttachmentSummary);
-                return;
-            case AIGenerationRequestKeyHelper.ApplicationScoringOperationType:
-                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewScoringResult);
-                return;
-            case AIGenerationRequestKeyHelper.PipelineOperationType:
-                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewApplicationAnalysis);
-                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewAttachmentSummary);
-                await AuthorizationService.CheckAsync(AIPermissions.Analysis.ViewScoringResult);
-                return;
-            default:
-                throw new UserFriendlyException("Unknown AI generation operation type.");
-        }
-    }
-
-    private async Task EnsureAttachmentSummariesEnabledAsync()
-    {
-        if (!await featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries"))
-        {
-            throw new UserFriendlyException("AI attachment summaries are not enabled.");
-        }
-    }
-
-    private async Task<List<Guid>> ResolveAttachmentSummaryIdsAsync(QueueAttachmentSummaryRequestDto input)
-    {
-        if (input == null)
-        {
-            throw new UserFriendlyException("Attachment summary request is required.");
-        }
-
-        if (input.ApplicationId == Guid.Empty)
-        {
-            throw new UserFriendlyException("Application id is required.");
-        }
-
-        var applicationAttachmentIds = (await applicationChefsFileAttachmentRepository.GetListAsync(a => a.ApplicationId == input.ApplicationId))
-            .Select(a => a.Id)
-            .ToList();
-
-        if (applicationAttachmentIds.Count == 0)
-        {
-            throw new UserFriendlyException("No attachments were found to generate summaries.");
-        }
-
-        if (input.AttachmentIds is not { Count: > 0 })
-        {
-            return applicationAttachmentIds;
-        }
-
-        var applicationAttachmentIdSet = applicationAttachmentIds.ToHashSet();
-        var selectedAttachmentIds = input.AttachmentIds.Distinct().ToList();
-        if (selectedAttachmentIds.Any(id => !applicationAttachmentIdSet.Contains(id)))
-        {
-            throw new UserFriendlyException("One or more selected attachments do not belong to the application.");
-        }
-
-        return selectedAttachmentIds;
-    }
-
-    private async Task EnsureAIAnalysisEnabledAsync()
-    {
-        if (!await featureChecker.IsEnabledAsync("Unity.AI.ApplicationAnalysis"))
-        {
-            throw new UserFriendlyException("AI application analysis is not enabled.");
-        }
-    }
-
-    private async Task EnsureScoringEnabledAsync()
-    {
-        if (!await featureChecker.IsEnabledAsync("Unity.AI.Scoring"))
-        {
-            throw new UserFriendlyException("AI scoring is not enabled.");
-        }
-    }
     #endregion APPLICATION WORKFLOW
 
     public async Task<List<GrantApplicationLiteDto>> GetAllApplicationsAsync()
@@ -1337,10 +1248,35 @@ public class GrantApplicationAppService(
                         UnityApplicationId = applications.UnityApplicationId ?? string.Empty,
                         ApplicantName = applicant != null ? (applicant.ApplicantName ?? GrantManagerConsts.UnknownValue) : GrantManagerConsts.UnknownValue,
                         OrganizationName = applicant != null ? (applicant.OrgName ?? string.Empty) : string.Empty,
-                        UnityApplicantId = applicant != null ? (applicant.UnityApplicantId ?? string.Empty) : string.Empty
+                        UnityApplicantId = applicant != null ? (applicant.UnityApplicantId ?? string.Empty) : string.Empty,
+                        ExternalStatusVisibility = applications.ExternalStatusVisibility
                     };
 
         return await query.ToListAsync();
+    }
+
+    public async Task<GrantApplicationLiteDto> GetBasicAsync(Guid id)
+    {
+        var applicationsQuery = await applicationRepository.GetQueryableAsync();
+        var applicantsQuery = await applicantRepository.GetQueryableAsync();
+
+        var query = from applications in applicationsQuery
+                    join applicant in applicantsQuery on applications.ApplicantId equals applicant.Id into applicantGroup
+                    from applicant in applicantGroup.DefaultIfEmpty()
+                    where applications.Id == id
+                    select new GrantApplicationLiteDto
+                    {
+                        Id = applications.Id,
+                        ProjectName = applications.ProjectName,
+                        ReferenceNo = applications.ReferenceNo,
+                        UnityApplicationId = applications.UnityApplicationId ?? string.Empty,
+                        ApplicantName = applicant != null ? (applicant.ApplicantName ?? GrantManagerConsts.UnknownValue) : GrantManagerConsts.UnknownValue,
+                        OrganizationName = applicant != null ? (applicant.OrgName ?? string.Empty) : string.Empty,
+                        UnityApplicantId = applicant != null ? (applicant.UnityApplicantId ?? string.Empty) : string.Empty,
+                        ExternalStatusVisibility = applications.ExternalStatusVisibility
+                    };
+
+        return await query.FirstOrDefaultAsync() ?? throw new EntityNotFoundException();
     }
 
     private static Dictionary<string, object> ExtractCustomFieldsForWorksheet(dynamic customFields, Guid worksheetId)
@@ -1363,11 +1299,13 @@ public class GrantApplicationAppService(
 
     public async Task<string> DismissAIAnalysisItemAsync(Guid applicationId, string itemId)
     {
+        await EnsureAiOperationAccessAsync(AIGenerationOperations.ApplicationAnalysis, requiresGeneratePermission: true);
         return await UpdateAIAnalysisItemDismissedStateAsync(applicationId, itemId, isDismissed: true);
     }
 
     public async Task<string> RestoreAIAnalysisItemAsync(Guid applicationId, string itemId)
     {
+        await EnsureAiOperationAccessAsync(AIGenerationOperations.ApplicationAnalysis, requiresGeneratePermission: true);
         return await UpdateAIAnalysisItemDismissedStateAsync(applicationId, itemId, isDismissed: false);
     }
 

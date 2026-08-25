@@ -20,6 +20,7 @@ namespace Unity.GrantManager.Identity
         private readonly ICurrentTenant _currentTenant;
         private readonly IdentityUserManager _userManager;
         private readonly IPersonRepository _personRepository;
+        private readonly IUserAccountsRepository _userAccountsRepository;
         private readonly IIdentityUserRepository _identityUserRepository;
         private readonly IDataFilter _dataFilter;
 
@@ -27,6 +28,7 @@ namespace Unity.GrantManager.Identity
             ICurrentTenant currentTenant,
             IdentityUserManager userManager,
             IPersonRepository personRepository,
+            IUserAccountsRepository userAccountsRepository,
             IIdentityUserRepository identityUserRepository,
             IDataFilter dataFilter)
         {
@@ -34,6 +36,7 @@ namespace Unity.GrantManager.Identity
             _currentTenant = currentTenant;
             _userManager = userManager;
             _personRepository = personRepository;
+            _userAccountsRepository = userAccountsRepository;
             _identityUserRepository = identityUserRepository;
             _dataFilter = dataFilter;
         }
@@ -47,15 +50,17 @@ namespace Unity.GrantManager.Identity
         /// <exception cref="UserFriendlyException"></exception>
         public async Task ImportUserAsync(ImportUserDto importUserDto)
         {
-            var newUserId = Guid.NewGuid();
-
             var result = await _cssUsersApiService.FindUserAsync(importUserDto.Directory, importUserDto.Guid);
 
             if (result.Data == null || result.Data.Length == 0) throw new AbpValidationException();
 
             var cssUser = result.Data[0];
+            var oidcSub = (cssUser.Attributes?.IdirUserGuid?[0] ?? Guid.NewGuid().ToString()).ToSubjectWithoutIdp();
+            var existingPerson = await _personRepository.FindByOidcSub(oidcSub);
+            var newUserId = existingPerson?.Id ?? Guid.NewGuid();
 
-            IdentityUser? identityUser = await ReactivateAndGetDeletedUserAsync(cssUser.Attributes?.IdirUsername?[0] ?? throw new AbpValidationException());
+            IdentityUser? identityUser = await ReactivateAndGetDeletedUserAsync(
+                cssUser.Attributes?.IdirUsername?[0] ?? throw new AbpValidationException(), oidcSub, cssUser.FirstName, cssUser.LastName);
             identityUser ??= await CreateNewIdentityUserAsync(newUserId, cssUser.Attributes?.IdirUsername?[0], cssUser.FirstName, cssUser.LastName, cssUser.Email);
 
             if (identityUser == null) throw new UserFriendlyException("Error creating user account");
@@ -67,11 +72,10 @@ namespace Unity.GrantManager.Identity
                 await _userManager.AddToRolesAsync(identityUser, importUserDto.Roles);
             }
 
-            var oidcSub = (cssUser.Attributes?.IdirUserGuid?[0] ?? newUserId.ToString()).ToSubjectWithoutIdp();
             var displayName = cssUser.Attributes?.DisplayName?[0] ?? identityUser.NormalizedUserName.ToString();
 
             await UpdateAdditionalUserPropertiesAsync(identityUser, oidcSub, displayName);
-            await SyncUserToCurrentTenantAsync(newUserId, identityUser, oidcSub, displayName);
+            await SyncUserToCurrentTenantAsync(identityUser, oidcSub, displayName);
         }
 
         /// <summary>
@@ -89,9 +93,11 @@ namespace Unity.GrantManager.Identity
             string oidcSub, 
             string displayName)
         {
-            var newUserId = Guid.NewGuid();                        
+            var normalizedOidcSub = oidcSub.ToSubjectWithoutIdp();
+            var existingPerson = await _personRepository.FindByOidcSub(normalizedOidcSub);
+            var newUserId = existingPerson?.Id ?? Guid.NewGuid();
 
-            IdentityUser? identityUser = await ReactivateAndGetDeletedUserAsync(username);
+            IdentityUser? identityUser = await ReactivateAndGetDeletedUserAsync(username, normalizedOidcSub, firstName, lastName);
             identityUser ??= await CreateNewIdentityUserAsync(newUserId, username, firstName, lastName, emailAddress);
 
             if (identityUser == null) throw new UserFriendlyException("Error creating user account");
@@ -103,8 +109,8 @@ namespace Unity.GrantManager.Identity
                 await _userManager.AddToRolesAsync(identityUser, importUserDto.Roles);
             }
             
-            await UpdateAdditionalUserPropertiesAsync(identityUser, oidcSub, displayName);
-            await SyncUserToCurrentTenantAsync(newUserId, identityUser, oidcSub, displayName);
+            await UpdateAdditionalUserPropertiesAsync(identityUser, normalizedOidcSub, displayName);
+            await SyncUserToCurrentTenantAsync(identityUser, normalizedOidcSub, displayName);
         }
 
         /// <summary>
@@ -125,7 +131,9 @@ namespace Unity.GrantManager.Identity
                     new ValidationResult("Only idir search is supported")
                 }); // for now
 
-            if (string.IsNullOrEmpty(importUserSearchDto.FirstName) && string.IsNullOrEmpty(importUserSearchDto.LastName))
+            if (string.IsNullOrEmpty(importUserSearchDto.FirstName) &&
+                string.IsNullOrEmpty(importUserSearchDto.LastName) &&
+                string.IsNullOrEmpty(importUserSearchDto.Email))
                 return users;
 
             if (!string.IsNullOrEmpty(importUserSearchDto.FirstName) && importUserSearchDto.FirstName.Length < 2)
@@ -146,7 +154,16 @@ namespace Unity.GrantManager.Identity
                     });
             }
 
-            var result = await _cssUsersApiService.SearchUsersAsync(importUserSearchDto.Directory, importUserSearchDto.FirstName, importUserSearchDto.LastName);
+            if (!string.IsNullOrEmpty(importUserSearchDto.Email) && importUserSearchDto.Email.Length < 2)
+            {
+                throw new AbpValidationException("Validation Error",
+                    new List<ValidationResult>()
+                    {
+                        new ValidationResult("Email length must be greater than 2")
+                    });
+            }
+
+            var result = await _cssUsersApiService.SearchUsersAsync(importUserSearchDto.Directory, importUserSearchDto.FirstName, importUserSearchDto.LastName, importUserSearchDto.Email);
 
             if (!result.Success) throw new UserFriendlyException("Error searching directory users");
 
@@ -206,7 +223,7 @@ namespace Unity.GrantManager.Identity
             return identityUser;
         }
 
-        private async Task<IdentityUser?> ReactivateAndGetDeletedUserAsync(string username)
+        private async Task<IdentityUser?> ReactivateAndGetDeletedUserAsync(string username, string oidcSub, string? firstName, string? lastName)
         {
             //Temporary disable the ISoftDelete filter - find delete user account and reactivate for import
             using (_dataFilter.Disable<ISoftDelete>())
@@ -214,8 +231,21 @@ namespace Unity.GrantManager.Identity
                 var identityUser = await _identityUserRepository
                     .FindByTenantIdAndUserNameAsync(username, _currentTenant.Id);
 
+                identityUser ??= (await _userAccountsRepository.GetListByOidcSub(oidcSub))
+                    .FirstOrDefault();
+
                 if (identityUser != null)
                 {
+                    // Directory details (e.g. surname) can change between imports - keep the
+                    // reactivated account's name/username current rather than leaving it stale.
+                    if (!string.IsNullOrWhiteSpace(username) &&
+                        !string.Equals(identityUser.UserName, username, StringComparison.OrdinalIgnoreCase))
+                    {
+                        await _userManager.SetUserNameAsync(identityUser, username);
+                    }
+
+                    identityUser.Name = firstName ?? identityUser.Name;
+                    identityUser.Surname = lastName ?? identityUser.Surname;
                     identityUser.IsDeleted = false;
                     identityUser.DeleterId = null;
                     identityUser.DeletionTime = null;
@@ -225,22 +255,28 @@ namespace Unity.GrantManager.Identity
             }
 
             return null;
-        }       
+        }
 
-        private async Task SyncUserToCurrentTenantAsync(Guid userId, IdentityUser user, string oidcSub, string displayName)
+        private async Task SyncUserToCurrentTenantAsync(IdentityUser user, string oidcSub, string displayName)
         {
-            var existingUser = await _personRepository.FindByOidcSub(oidcSub);            
-            if (existingUser == null)
+            var existingPerson = await _personRepository.FindByOidcSub(oidcSub);
+            if (existingPerson == null)
             {
                 await _personRepository.InsertAsync(new Person()
                 {
-                    Id = userId,
+                    Id = user.Id,
                     OidcSub = oidcSub.ToSubjectWithoutIdp(),
                     OidcDisplayName = displayName,
                     FullName = $"{user.Name} {user.Surname}",
                     Badge = Utils.CreateUserBadge(user)
                 });
+                return;
             }
+
+            existingPerson.OidcDisplayName = displayName;
+            existingPerson.FullName = $"{user.Name} {user.Surname}";
+            existingPerson.Badge = Utils.CreateUserBadge(user);
+            await _personRepository.UpdateAsync(existingPerson);
         }
 
         private async Task<IdentityUser> UpdateAdditionalUserPropertiesAsync(IdentityUser user, string oidcSub, string displayName)

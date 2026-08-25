@@ -24,10 +24,15 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+!applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Application/Logs/
+!applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Application.Contracts/Logs/
+!applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Domain/Logs/
+!applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Domain.Shared/Logs/
 
 # Visual Studio cache/options directory
 .vs/
 .vscode/
+*.lscache
 # Uncomment if you have tasks that create the project's static files in wwwroot
 **/wwwroot/lib/
 
@@ -118,3 +123,8 @@ appsettings.json
 /applications/Orchestrator
 *.env
 /applications/Unity.GrantManager/src/Unity.GrantManager.Web/package-lock.json
+/applications/Unity.AutoUI/cypress/config/dev.json
+/applications/Unity.AutoUI/cypress/config/dev2.json
+/applications/Unity.AutoUI/cypress/config/test.json
+/applications/Unity.AutoUI/cypress/config/uat.json
+/applications/Unity.AutoUI/cypress/config/prod.json

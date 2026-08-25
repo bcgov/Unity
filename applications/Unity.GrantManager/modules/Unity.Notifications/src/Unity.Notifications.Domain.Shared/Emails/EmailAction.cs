@@ -11,6 +11,8 @@ public enum EmailAction
     SendApproval,
     SendDecline,
     SendCustom,
+    SendEventDriven,
+    SendDateDriven,
     SaveDraft,
     SendFsbNotification
 }

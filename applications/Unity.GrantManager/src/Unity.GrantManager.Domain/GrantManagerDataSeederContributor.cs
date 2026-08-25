@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Assessments;
@@ -10,6 +12,7 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Identity;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Uow;
 
 namespace Unity.GrantManager;
 
@@ -17,7 +20,8 @@ public class GrantManagerDataSeederContributor(
     IApplicationStatusRepository applicationStatusRepository,
     IPersonRepository personRepository,
     IIdentityUserRepository userRepository,
-    ICurrentTenant currentTenant) : IDataSeedContributor, ITransientDependency
+    ICurrentTenant currentTenant,
+    IUnitOfWorkManager unitOfWorkManager) : IDataSeedContributor, ITransientDependency
 {
     public static class GrantApplicationStates
     {
@@ -42,8 +46,9 @@ public class GrantManagerDataSeederContributor(
         if (context.TenantId == null) // only seed into a tenant database
         {
            await SeedMainBackgroundJobUserAsync(null);
+           await SeedUnityAlertUserAsync(null);
            return;
-        }   
+        }
 
         await SeedApplicationStatusAsync();
         await SeedAiScoringPersonAsync(context.TenantId);
@@ -62,20 +67,36 @@ public class GrantManagerDataSeederContributor(
             new() { StatusCode = GrantApplicationState.INITITAL_REVIEW_COMPLETED, ExternalStatus = GrantApplicationStates.UNDER_REVIEW, InternalStatus = GrantApplicationStates.INITITAL_REVIEW_COMPLETED },
             new() { StatusCode = GrantApplicationState.UNDER_ASSESSMENT, ExternalStatus = GrantApplicationStates.UNDER_REVIEW, InternalStatus = GrantApplicationStates.UNDER_ASSESSMENT },
             new() { StatusCode = GrantApplicationState.ASSESSMENT_COMPLETED, ExternalStatus = GrantApplicationStates.UNDER_REVIEW, InternalStatus = GrantApplicationStates.ASSESSMENT_COMPLETED },
-            new() { StatusCode = GrantApplicationState.GRANT_APPROVED, ExternalStatus = GrantApplicationStates.GRANT_APPROVED, InternalStatus = GrantApplicationStates.GRANT_APPROVED },
-            new() { StatusCode = GrantApplicationState.GRANT_NOT_APPROVED, ExternalStatus = GrantApplicationStates.DECLINED, InternalStatus = GrantApplicationStates.DECLINED },
+            new() { StatusCode = GrantApplicationState.GRANT_APPROVED, ExternalStatus = GrantApplicationStates.GRANT_APPROVED, InternalStatus = GrantApplicationStates.GRANT_APPROVED, NotifiedStatus = GrantApplicationStates.GRANT_APPROVED },
+            new() { StatusCode = GrantApplicationState.GRANT_NOT_APPROVED, ExternalStatus = GrantApplicationStates.DECLINED, InternalStatus = GrantApplicationStates.DECLINED, NotifiedStatus = GrantApplicationStates.DECLINED },
             new() { StatusCode = GrantApplicationState.DEFER, ExternalStatus = GrantApplicationStates.DEFER, InternalStatus = GrantApplicationStates.DEFER },
             new() { StatusCode = GrantApplicationState.ON_HOLD, ExternalStatus = GrantApplicationStates.ON_HOLD, InternalStatus = GrantApplicationStates.ON_HOLD },
         };
 
-        foreach (var status in statuses)
+        var existingCodes = (await applicationStatusRepository.GetListAsync())
+            .Select(s => s.StatusCode)
+            .ToHashSet();
+
+        foreach (var status in statuses.Where(s => !existingCodes.Contains(s.StatusCode)))
         {
-            var existing = await applicationStatusRepository.FirstOrDefaultAsync(s => s.StatusCode == status.StatusCode);
-            if (existing == null)
+            try
             {
-                await applicationStatusRepository.InsertAsync(status);
+                using var unitOfWork = unitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
+                await applicationStatusRepository.InsertAsync(status, autoSave: true);
+                await unitOfWork.CompleteAsync();
+            }
+            catch (Exception ex) when (IsDuplicateStatusCodeException(ex))
+            {
+                // Another concurrent seeder instance inserted this status first; safe to ignore.
             }
         }
+    }
+
+    private static bool IsDuplicateStatusCodeException(Exception ex)
+    {
+        var full = ex.ToString();
+        return full.Contains("IX_ApplicationStatuses_StatusCode")
+            || (full.Contains("23505") && full.Contains("ApplicationStatuses"));
     }
 
     private async Task SeedAiScoringPersonAsync(System.Guid? tenantId)
@@ -83,15 +104,24 @@ public class GrantManagerDataSeederContributor(
         var existing = await personRepository.FirstOrDefaultAsync(p => p.Id == AIScoringConstants.AiPersonId);
         if (existing == null)
         {
-            await personRepository.InsertAsync(new Person
+            try
             {
-                Id = AIScoringConstants.AiPersonId,
-                OidcSub = AIScoringConstants.AiOidcSub,
-                OidcDisplayName = AIScoringConstants.AiDisplayName,
-                FullName = AIScoringConstants.AiDisplayName,
-                Badge = AIScoringConstants.AiBadge,
-                TenantId = tenantId
-            });
+                using var unitOfWork = unitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
+                await personRepository.InsertAsync(new Person
+                {
+                    Id = AIScoringConstants.AiPersonId,
+                    OidcSub = AIScoringConstants.AiOidcSub,
+                    OidcDisplayName = AIScoringConstants.AiDisplayName,
+                    FullName = AIScoringConstants.AiDisplayName,
+                    Badge = AIScoringConstants.AiBadge,
+                    TenantId = tenantId
+                }, autoSave: true);
+                await unitOfWork.CompleteAsync();
+            }
+            catch (Exception ex) when (ex.ToString().Contains("PK_Persons"))
+            {
+                // Another concurrent seeder instance inserted the person first; safe to ignore.
+            }
         }
     }
 
@@ -113,6 +143,29 @@ public class GrantManagerDataSeederContributor(
                         null)
                     {
                         Name = BackgroundJobConstants.BackgroundJobName
+                    },
+                    autoSave: true);
+            }
+        }
+    }
+
+    private async Task SeedUnityAlertUserAsync(Guid? tenantId)
+    {
+        using (currentTenant.Change(tenantId)) // Null For Main Unity Grant Manager Context
+        {
+            // Check if the IdentityUser already exists
+            var existingUser = await userRepository.FindAsync(UnityAlertConstants.UnityAlertPersonId);
+            if (existingUser == null)
+            {
+                // Create the IdentityUser in the tenant context
+                await userRepository.InsertAsync(
+                    new IdentityUser(
+                        UnityAlertConstants.UnityAlertPersonId,
+                        UnityAlertConstants.UnityAlertUserName,
+                        UnityAlertConstants.UnityAlertEmail,
+                        null)
+                    {
+                        Name = UnityAlertConstants.UnityAlertName
                     },
                     autoSave: true);
             }

@@ -1,4 +1,5 @@
-﻿@using Unity.Flex.Web.Views.Shared.Components.QuestionNumberWidget
+﻿@using Unity.GrantManager.Web.Utilities
+@using Unity.Flex.Web.Views.Shared.Components.QuestionNumberWidget
 @using Unity.Flex.Web.Views.Shared.Components.QuestionTextAreaWidget
 @using Unity.Flex.Web.Views.Shared.Components.QuestionTextWidget
 @using Unity.Flex.Web.Views.Shared.Components.QuestionYesNoWidget
@@ -19,6 +20,10 @@
     <abp-input type="hidden" id="AssessmentId" asp-for="@Model.AssessmentId" />
     <input type="hidden" id="AssessmentScoresheetSchemaJson" value='@JsonSerializer.Serialize(Model.Scoresheet)' />
     <div class="container-fluid px-3" id="assessment-scoresheet">
+        <div class="save-button-container">
+            <button type="button" class="btn unt-btn-link btn-link floating-save-btn" id="scoresheetDiscardAllBtn" disabled><i class="fl fl-undo"></i> Discard Changes</button>
+            <button type="button" class="btn unt-btn-primary btn-primary floating-save-btn" id="scoresheetSaveAllBtn" disabled><i class="fl fl-save"></i> Save Changes</button>
+        </div>
         @if (Model.Scoresheet.Sections.Any())
         {
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 pt-4 pb-2">
@@ -26,20 +31,20 @@
                 <div class="d-flex justify-content-end flex-wrap gap-2 scoresheet-top-btn-group">
                     @if (Model.IsAIScoringEnabled && Model.IsAiAssessment)
                     {
-                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn" id="regenerateAiScoresheetBtn" onclick="queueApplicationScoring()" data-ai-cooldown-checking="1" data-ai-rate-limit-disabled="1" disabled>
+                        <button type="button" class="btn unt-btn-outline-primary btn-outline-primary ai-generate-btn" id="regenerateAiScoresheetBtn" onclick="queueApplicationScoring(this)" data-ai-cooldown-checking="1" data-ai-rate-limit-disabled="1" disabled>
                             <span class="ai-button-content">
-                                <i class="unt-icon-sm fa-solid fa-wand-sparkles"></i>
+                                <i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i>
                                 <span>Generate</span>
                             </span>
                         </button>
                     }
-                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" onclick="expandAllAccordions('assessment-scoresheet')">
+                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" id="btn-expand-all">
                         <span class="ai-button-content">
                             <i class="unt-icon-sm fa-solid fa-angles-down"></i>
                             <span>Expand All</span>
                         </span>
                     </button>
-                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" onclick="collapseAllAccordions('assessment-scoresheet')">
+                    <button type="button" class="btn unt-btn-outline-primary btn-outline-primary" id="btn-collapse-all">
                         <span class="ai-button-content">
                             <i class="unt-icon-sm fa-solid fa-angles-up"></i>
                             <span>Collapse All</span>
@@ -75,8 +80,8 @@
 
                                                         <div class="accordion-item">
                                                             <h2 class="accordion-header" id="question-heading-@question.Id">
-                                                                <button class="accordion-button collapsed unt-accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#question-collapse-@question.Id" aria-expanded="true" aria-controls="question-collapse-@question.Id">
-                                                                    @sectionNumber.@questionNumber @question.Label
+                                                                <button class="accordion-button collapsed unt-accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#question-collapse-@question.Id" aria-expanded="true" aria-controls="question-collapse-@question.Id" data-question-id="@question.Id">
+                                                                    @sectionNumber.@questionNumber @Html.SanitizeRaw(question.Label)
                                                                     @if (question.Definition?.ConvertDefinition(question.Type)?.GetIsRequired() == true)
                                                                     {
                                                                         <span> *</span>
@@ -84,14 +89,14 @@
                                                                     @if (question.AIConfidence.HasValue && question.AIConfidence.Value < 85)
                                                                     {
                                                                         <span class="low-confidence-badge ms-2" title="AI confidence is @question.AIConfidence.Value.ToString("F0")%.">
-                                                                           <i class="fa-solid fa-wand-sparkles"></i> <i class="fas fa-exclamation-triangle"></i> @question.AIConfidence.Value.ToString("F0")%
+                                                                           <i class="fa-solid fa-wand-magic-sparkles"></i> <i class="fa-solid fa-triangle-exclamation"></i> @question.AIConfidence.Value.ToString("F0")%
                                                                         </span>
                                                                     }
                                                                 </button>
                                                             </h2>
                                                             <div id="question-collapse-@question.Id" class="accordion-collapse collapse" aria-labelledby="question-heading-@question.Id">
                                                                 <div class="accordion-body">
-                                                                    <p>@question.Description</p>
+                                                                    <p>@Html.SanitizeRaw(question.Description)</p>
 
                                                                     @switch (question.Type)
                                                                     {
@@ -189,10 +194,6 @@
                                                 }
                                             </div>
                                         </div>
-                                        <div class="btn-group mx-3 py-2">
-                                            <button type="button" class="btn unt-btn-primary btn-primary mx-1 mb-2" disabled form="section-form-@sec.Id" id="scoresheet-section-save-@sec.Id" onclick="saveScoresSection('section-form-@sec.Id', '@sec.Id')">Save Changes</button>
-                                            <button type="button" class="btn unt-btn-link btn-link mx-2 mb-2" disabled form="section-form-@sec.Id" id="scoresheet-section-discard-@sec.Id" onclick="discardChangesScoresSection('section-form-@sec.Id', '@sec.Id')">Discard Changes</button>
-                                        </div>
                                     </div>
                                 </form>
                             </div>
@@ -237,7 +238,7 @@ else
                         </div>
 
                         <div class="scores-block-score">
-                            <label class="form-label" for="CleanGrowth">Clean Growth</label>
+                            <label class="form-label" for="cleanGrowth">Clean Growth</label>
                             <input type="number" class="form-control" disabled="@Model.IsDisabled()" name="CleanGrowth" id="cleanGrowth" onkeyup="enableSaveButton(this)" onchange="enableSaveButton(this)" min="0" max="99" onkeydown="return positiveIntegersOnly(event);" value="@Model.CleanGrowth" />
                         </div>
                     </div>
@@ -247,7 +248,7 @@ else
                     <input type="number" size="18" class="form-control" disabled="disabled" name="SubTotal" id="subTotal" value="@Model.ScoreTotal()" min="0" max="2147483647" />
                 </div>
                 <div class="scores-block-save">
-                    <abp-button text="Save" type="button" id="saveAssessmentScoresBtn" disabled="true" onclick="saveAssessmentScores()" icon-type="Other" icon="fl fl-save" button-type="Light" />
+                    <abp-button text="Save" type="button" id="saveAssessmentScoresBtn" disabled="true" icon-type="Other" icon="fl fl-save" button-type="Light" />
                 </div>
             </div>
         </div>

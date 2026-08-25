@@ -10,18 +10,26 @@ using Volo.Abp.EntityFrameworkCore;
 
 namespace Unity.Notifications.Repositories
 {
-    public class EmailLogAttachmentRepository : EfCoreRepository<NotificationsDbContext, EmailLogAttachment, Guid>,
+    public class EmailLogAttachmentRepository(IDbContextProvider<NotificationsDbContext> dbContextProvider) : 
+        EfCoreRepository<NotificationsDbContext, EmailLogAttachment, Guid>(dbContextProvider),
         IEmailLogAttachmentRepository
     {
-        public EmailLogAttachmentRepository(IDbContextProvider<NotificationsDbContext> dbContextProvider)
-            : base(dbContextProvider)
-        {
-        }
-
         public async Task<List<EmailLogAttachment>> GetByEmailLogIdAsync(Guid emailLogId)
         {
             var dbSet = await GetDbSetAsync();
             return await dbSet.Where(x => x.EmailLogId == emailLogId).ToListAsync();
+        }
+
+        public async Task<List<EmailLogAttachment>> GetByTemplateIdAsync(Guid templateId)
+        {
+            var dbSet = await GetDbSetAsync();
+            return await dbSet.Where(x => x.TemplateId == templateId).ToListAsync();
+        }
+
+        public async Task<List<EmailLogAttachment>> GetOriginAttachmentsByEmailLogIdAsync(Guid emailLogId)
+        {
+            var dbSet = await GetDbSetAsync();
+            return await dbSet.Where(x => x.EmailLogId == emailLogId && x.OriginTemplateId != null).ToListAsync();
         }
     }
 }

@@ -35,6 +35,10 @@ public class FundingHistoryModalViewModel
     [DataType(DataType.Currency)]
     public decimal? TotalGrantAmount { get; set; }
 
+    [DisplayName("Paid Date")]
+    [DataType(DataType.Date)]
+    public DateTime? PaidDate { get; set; }
+
     [DisplayName("Funding Notes")]
     public string? FundingNotes { get; set; }
 }

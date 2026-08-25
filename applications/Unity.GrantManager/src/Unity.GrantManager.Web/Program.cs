@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 using Serilog;
 using System;
 using System.Threading.Tasks;
+using Unity.GrantManager.Web.Middleware;
 
 namespace Unity.GrantManager.Web;
 
@@ -23,7 +24,9 @@ public static class Program
             builder.Host.AddAppSettingsSecretsJson()
                 .UseAutofac()
                 .UseSerilog((hostingContext, loggerConfiguration) =>
-                loggerConfiguration.ReadFrom.Configuration(hostingContext.Configuration));
+                loggerConfiguration
+                    .ReadFrom.Configuration(hostingContext.Configuration)
+                    .WriteTo.Sink(new ErrorCountingLoggerSink()));
             await builder.AddApplicationAsync<GrantManagerWebModule>();            
             var app = builder.Build();
 

@@ -31,9 +31,9 @@ namespace Unity.Reporting.Configuration.FieldsProviders
         /// Fields with the same (Label, Path) but different Type produce per-version conflict entries.
         /// Fields unique to one version are included with a VersionLabel marker.
         /// </summary>
-        public async Task<FieldPathMetaMapDto> GetFieldsMetadataAsync(Guid formId)
+        public async Task<FieldPathMetaMapDto> GetFieldsMetadataAsync(Guid correlationId)
         {
-            var versions = await applicationFormAppService.GetVersionsAsync(formId);
+            var versions = await applicationFormAppService.GetVersionsAsync(correlationId);
             var versionsWithFields = new List<(Guid VersionId, string VersionLabel, FieldPathTypeDto[] Fields)>();
             var metadataInfo = new Dictionary<string, string>();
 
@@ -61,16 +61,33 @@ namespace Unity.Reporting.Configuration.FieldsProviders
                     metadataInfo[$"ws_{version.Id}_{link.WorksheetId}"] = $"{worksheetTitle} ({worksheetName})";
                 }
 
+                // Default sort order within a version: Worksheet Name (A-Z), then section order, then field
+                // layout order within each section. Each worksheet's components are already emitted in
+                // section/field order by WorksheetFieldSchemaParser.ParseWorksheet, so a stable sort on
+                // WorksheetName alone preserves that ordering as the tie-breaker.
+                var orderedComponents = allComponents
+                    .OrderBy(f => f.WorksheetName, StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+
                 // Stamp within-version duplicate DataPaths with (DK1), (DK2), … before merging,
                 // so MergeFields() treats them as distinct paths and preserves both rather than
                 // silently dropping the second occurrence.
-                var versionComponents = allComponents.ToArray();
+                var versionComponents = orderedComponents;
                 WorksheetFieldsUtils.UniqueifyDataPaths(versionComponents);
                 versionsWithFields.Add((version.Id, versionLabel, versionComponents));
                 metadataInfo[$"formversion_{version.Id}"] = versionLabel;
             }
 
-            var mergedFields = MergeFields(versionsWithFields);
+            // Re-apply the Worksheet Name ordering across the merged result (stable sort preserves the
+            // section/field tie-break order already established per-version above).
+            var mergedFields = MergeFields(versionsWithFields)
+                .OrderBy(f => f.WorksheetName, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            // Stamp each field with its 1-based position in the final order as SourceOrder, which drives
+            // the report-config-table's default sort.
+            FieldOrderingUtils.AssignSourceOrder(mergedFields);
+
             var mapMetadata = new MapMetadataDto { Info = metadataInfo };
 
             return new FieldPathMetaMapDto { Fields = [.. mergedFields], Metadata = mapMetadata };
@@ -122,7 +139,8 @@ namespace Unity.Reporting.Configuration.FieldsProviders
                 Key = item.Key,
                 Label = item.Label,
                 TypePath = item.TypePath,
-                DataPath = item.DataPath
+                DataPath = item.DataPath,
+                WorksheetName = item.WorksheetName
             };
         }
 
@@ -164,7 +182,7 @@ namespace Unity.Reporting.Configuration.FieldsProviders
             var result = new List<FieldPathTypeDto>();
             var processedExactKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            foreach (var (_, versionLabel, fields) in versionsWithFields)
+            foreach (var (_, _, fields) in versionsWithFields)
             {
                 foreach (var field in fields)
                 {
@@ -193,11 +211,12 @@ namespace Unity.Reporting.Configuration.FieldsProviders
                             Id = field.Id,
                             Key = field.Key,
                             Label = field.Label,
-                            Path = field.Path,
-                            Type = field.Type,
+                            Path = field.Path ?? string.Empty,
+                            Type = field.Type ?? string.Empty,
                             TypePath = field.TypePath,
                             DataPath = field.DataPath,
-                            VersionLabel = string.Join(", ", exactGroup.Select(e => e.VersionLabel))
+                            VersionLabel = string.Join(", ", exactGroup.Select(e => e.VersionLabel)),
+                            WorksheetName = field.WorksheetName
                         });
                     }
                     else if (versionsWithFields.Count > 1 && versionsHavingThisExact.Count == versionsWithFields.Count)
@@ -208,11 +227,12 @@ namespace Unity.Reporting.Configuration.FieldsProviders
                             Id = field.Id,
                             Key = field.Key,
                             Label = field.Label,
-                            Path = field.Path,
-                            Type = field.Type,
+                            Path = field.Path ?? string.Empty,
+                            Type = field.Type ?? string.Empty,
                             TypePath = field.TypePath,
                             DataPath = field.DataPath,
-                            VersionLabel = null
+                            VersionLabel = null,
+                            WorksheetName = field.WorksheetName
                         });
                     }
                     else
@@ -223,11 +243,12 @@ namespace Unity.Reporting.Configuration.FieldsProviders
                             Id = field.Id,
                             Key = field.Key,
                             Label = field.Label,
-                            Path = field.Path,
-                            Type = field.Type,
+                            Path = field.Path ?? string.Empty,
+                            Type = field.Type ?? string.Empty,
                             TypePath = field.TypePath,
                             DataPath = field.DataPath,
-                            VersionLabel = string.Join(", ", exactGroup.Select(e => e.VersionLabel))
+                            VersionLabel = string.Join(", ", exactGroup.Select(e => e.VersionLabel)),
+                            WorksheetName = field.WorksheetName
                         });
                     }
                 }

@@ -1,6 +1,7 @@
 $(function () {
     let hasUnsavedChanges = false;
     let dataTable = null;
+    let _suppressColvisSave = false;
 
     // Initialize provider from the hidden input
     let currentProvider = $('#reportingProvider').val() || 'formversion';
@@ -247,12 +248,45 @@ $(function () {
         }
     }
 
-    function refreshConfigurationState(correlationId) {
-        checkConfigurationExists(correlationId, function (exists) {
-            updateGenerateViewButtonVisibility(exists);
-            updateDeleteButtonVisibility(exists);
-        });
-        refreshViewStatusWidget(correlationId, getCorrelationProvider());
+    // Persist column visibility state per provider in localStorage
+    function saveColvisState(provider) {
+        if (!dataTable) return;
+        try {
+            const state = {};
+            dataTable.columns().every(function (colIdx) {
+                const colName = dataTable.settings()[0].aoColumns[colIdx].name;
+                if (colName) state[colName] = this.visible();
+            });
+            localStorage.setItem('reportingColvis_' + provider, JSON.stringify(state));
+        } catch (e) { 
+            /* storage unavailable */ 
+            console.error(e);
+        }
+    }
+
+    function restoreColvisState(provider) {
+        if (!dataTable) return;
+        try {
+            const stored = localStorage.getItem('reportingColvis_' + provider);
+            if (!stored) return;
+            const state = JSON.parse(stored);
+            dataTable.columns().every(function (colIdx) {
+                const colName = dataTable.settings()[0].aoColumns[colIdx].name;
+                if (colName && colName in state) this.visible(state[colName]);
+            });
+        } catch (e) { 
+            /* ignore invalid stored state */ 
+            console.error(e);
+        }
+    }
+
+    // Destroy and reinitialize the DataTable for the current provider
+    function reinitTable() {
+        if (dataTable) {
+            dataTable.destroy();
+            dataTable = null;
+        }
+        initializeReportConfigTable();
     }
 
     // Function to handle provider change
@@ -269,48 +303,7 @@ $(function () {
         updateVersionSelectorVisibility();
         resetChangesState();
         $('#reportingViewStatus').val('');
-        updateDataTableColumnHeaders();
-
-        const correlationId = getCurrentCorrelationId();
-        if (correlationId) {
-            refreshConfigurationState(correlationId);
-        } else {
-            updateGenerateViewButtonVisibility(false);
-            updateDeleteButtonVisibility(false);
-        }
-
-        if (dataTable) {
-            dataTable.ajax.reload();
-        }
-    }
-
-    // Function to update DataTable column headers
-    function updateDataTableColumnHeaders() {
-        if (!dataTable) return;
-
-        const providerConfig = getCurrentProviderConfig();
-        const columns = providerConfig.columns;
-
-        // Update column headers
-        const columnIndices = [
-            { index: 0, title: columns.label },
-            { index: 1, title: columns.key },
-            { index: 2, title: columns.type },
-            { index: 3, title: columns.path },
-            { index: 4, title: columns.columnName },
-            { index: 5, title: columns.typePath }
-        ];
-
-        columnIndices.forEach(col => {
-            const header = $(dataTable.column(col.index).header());
-            header.text(col.title);
-        });
-
-        // Show the Version(s) column only for consolidated providers
-        dataTable.column('versionLabel:name').visible(currentProvider === 'worksheet_consolidated' || currentProvider === 'formversion_consolidated');
-
-        // Force redraw to update headers
-        dataTable.draw(false);
+        reinitTable();
     }
 
     // Handle provider toggle change event
@@ -566,7 +559,9 @@ $(function () {
             dataPath: row.dataPath,
             columnName: row.columnName || '',
             typePath: row.typePath,
-            versionLabel: row.versionLabel || null
+            versionLabel: row.versionLabel || null,
+            worksheetName: row.worksheetName || null,
+            sourceOrder: row.sourceOrder || 0
         }));
 
         return {
@@ -600,7 +595,9 @@ $(function () {
             dataPath: field.dataPath,
             columnName: getDefaultColumnNameSource(field),
             typePath: field.typePath,
-            versionLabel: field.versionLabel || null
+            versionLabel: field.versionLabel || null,
+            worksheetName: field.worksheetName || null,
+            sourceOrder: field.sourceOrder || 0
         }));
 
         return {
@@ -664,11 +661,27 @@ $(function () {
 
         const listColumns = [
             {
+                title: 'Worksheet Name',
+                data: 'worksheetName',
+                name: 'worksheetName',
+                className: 'data-table-header',
+                width: '220px',
+                index: 0,
+                orderable: true,
+                visible: currentProvider === 'worksheet' || currentProvider === 'worksheet_consolidated',
+                render: function (data, type, _) {
+                    if (type === 'display') {
+                        return data || '';
+                    }
+                    return data || '';
+                }
+            },
+            {
                 title: providerConfig.columns.label,
                 data: 'label',
                 name: 'label',
                 className: 'data-table-header',
-                index: 0,
+                index: 1,
                 orderable: true
             },
             {
@@ -676,7 +689,7 @@ $(function () {
                 data: 'key',
                 name: 'key',
                 className: 'data-table-header',
-                index: 1,
+                index: 2,
                 orderable: true
             },
             {
@@ -684,7 +697,7 @@ $(function () {
                 data: 'type',
                 name: 'type',
                 className: 'data-table-header',
-                index: 2,
+                index: 3,
                 orderable: true
             },
             {
@@ -692,7 +705,7 @@ $(function () {
                 data: 'dataPath', // We use the dataPath explicitly here
                 name: 'path',
                 className: 'data-table-header',
-                index: 3,
+                index: 4,
                 orderable: true,
                 render: function (data, type, row) {
                     if (type === 'display') {
@@ -706,7 +719,7 @@ $(function () {
                 data: 'columnName',
                 name: 'columnName',
                 className: 'data-table-header',
-                index: 4,
+                index: 5,
                 orderable: false,
                 render: function (data, type, row) {
                     if (type === 'display') {
@@ -721,7 +734,7 @@ $(function () {
                 data: 'typePath',
                 name: 'typePath',
                 className: 'data-table-header',
-                index: 5,
+                index: 6,
                 orderable: false,
                 render: function (data, type, _) {
                     if (type === 'display') {
@@ -736,7 +749,7 @@ $(function () {
                 name: 'versionLabel',
                 className: 'data-table-header',
                 width: '90px',
-                index: 6,
+                index: 7,
                 orderable: true,
                 visible: currentProvider === 'worksheet_consolidated' || currentProvider === 'formversion_consolidated',
                 render: function (data, type, _) {
@@ -744,6 +757,24 @@ $(function () {
                         return data || 'All';
                     }
                     return data || '';
+                }
+            },
+            {
+                title: 'Source Order',
+                data: 'sourceOrder',
+                name: 'sourceOrder',
+                className: 'data-table-header',
+                width: '90px',
+                index: 8,
+                orderable: true,
+                // Hidden by default (not part of defaultVisibleColumns below) — it exists so users can
+                // opt in via the column picker and re-sort back to the calculated natural order after
+                // sorting by another column.
+                render: function (data, type, _) {
+                    if (type === 'display') {
+                        return data || '';
+                    }
+                    return data;
                 }
             }
         ];
@@ -797,12 +828,26 @@ $(function () {
         if (currentProvider === 'worksheet_consolidated' || currentProvider === 'formversion_consolidated') {
             defaultVisibleColumns.push('versionLabel');
         }
+        if (currentProvider === 'worksheet' || currentProvider === 'worksheet_consolidated') {
+            defaultVisibleColumns.push('worksheetName');
+        }
+
+        // Default sort: for worksheet-based providers, sort by the hidden Source Order column (1 -> n),
+        // the server's calculated overall field order (Worksheet Name A-Z, then section order, then field
+        // layout order, then checkbox group option / data grid column order). Other providers default-sort
+        // by Label, unchanged. Resolved here to the column's actual numeric index — DataTables' initial
+        // `order` option only accepts column indices, not names, so passing a name straight through would
+        // silently fail to apply any sort.
+        const defaultSortColumnName = (currentProvider === 'worksheet' || currentProvider === 'worksheet_consolidated')
+            ? 'sourceOrder'
+            : 'label';
+        const defaultSortColumn = listColumns.find(c => c.name === defaultSortColumnName)?.index ?? 1;
 
         dataTable = initializeDataTable({
             dt,
             defaultVisibleColumns,
             listColumns,
-            defaultSortColumn: 0,
+            defaultSortColumn,
             dataEndpoint: dataEndpoint,
             data: {},
             responseCallback: responseCallback,
@@ -818,6 +863,26 @@ $(function () {
             fixedHeaders: true
         });
 
+        // table-utils' getVisibleColumnIndexes() always forces the column at position 0 to be
+        // visible (so the table never renders with an empty leftmost column), regardless of
+        // defaultVisibleColumns. Worksheet Name now occupies position 0 so it can be the leftmost
+        // column, which means that force-visible rule would otherwise show it even for providers
+        // where it should stay hidden. Re-apply the correct provider-based visibility here so it's
+        // not stuck "on" before any saved preference (below) has a chance to override it.
+        _suppressColvisSave = true;
+        dataTable.column('worksheetName:name').visible(currentProvider === 'worksheet' || currentProvider === 'worksheet_consolidated');
+        _suppressColvisSave = false;
+
+        // Persist column visibility per provider
+        dataTable.on('column-visibility.dt', function () {
+            if (!_suppressColvisSave) saveColvisState(currentProvider);
+        });
+
+        // Restore saved visibility for the initial provider
+        _suppressColvisSave = true;
+        restoreColvisState(currentProvider);
+        _suppressColvisSave = false;
+
         // Add event handler for when DataTable completes drawing
         dataTable.on('draw.dt', function () {
             // Ensure inputs are always enabled (edit mode is always on)
@@ -830,31 +895,6 @@ $(function () {
             // Check for dynamic columns placeholder and update warning
             const hasDynamicColumns = checkForDynamicColumnsInTable();
             updateDynamicColumnsWarning(hasDynamicColumns);
-        });
-
-        // Track changes on column name inputs with validation
-        $('#ReportConfigurationTable').on('input', '.column-name-input', function () {
-            const $input = $(this);
-            const value = $input.val();
-            const path = $input.data('path');
-
-            // Validate and provide feedback
-            validateColumnNameInput($input, value, path);
-            markAsChanged();
-        });
-
-        // Handle blur event to sanitize input
-        $('#ReportConfigurationTable').on('blur', '.column-name-input', function () {
-            const $input = $(this);
-            const value = $input.val().trim();
-
-            if (value) {
-                const sanitized = sanitizeColumnName(value);
-                if (sanitized !== value) {
-                    $input.val(sanitized);
-                    validateColumnNameInput($input, sanitized, $input.data('path'));
-                }
-            }
         });
 
         // Initial check for button visibility on page load
@@ -904,7 +944,7 @@ $(function () {
 
         // Show loading state
         const originalHtml = $button.html();
-        $button.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Generating...');
+        $button.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Generating...');
 
         // Call the GenerateColumnNames endpoint
         abp.ajax({
@@ -1212,7 +1252,7 @@ $(function () {
             const $renameAlert = $(`
                 <div class="alert alert-warning mb-3" role="alert">
                     <div class="d-flex align-items-start">
-                        <i class="fa fa-exclamation-triangle me-2 mt-1"></i>
+                        <i class="fa-solid fa-triangle-exclamation me-2 mt-1"></i>
                         <div>
                             <strong>View Rename Detected:</strong>
                             <p class="mb-1">You are changing the view name from "<strong>${originalViewName}</strong>" to "<strong>${rawValue.trim()}</strong>".</p>
@@ -1613,7 +1653,7 @@ $(function () {
             const $renameAlert = $(`
                 <div class="alert alert-warning mb-3" role="alert">
                     <div class="d-flex align-items-start">
-                        <i class="fa fa-exclamation-triangle me-2 mt-1"></i>
+                        <i class="fa-solid fa-triangle-exclamation me-2 mt-1"></i>
                         <div>
                             <strong>View Rename Detected:</strong>
                             <p class="mb-1">You are changing the view name from "<strong>${originalViewName}</strong>" to "<strong>${rawValue.trim()}</strong>".</p>
@@ -2153,6 +2193,25 @@ $(function () {
 
     // Initialize on page load
     initializeReportConfigTable();
+
+    // Delegated handlers registered once — survive DataTable destroy/reinit
+    $('#ReportConfigurationTable').on('input', '.column-name-input', function () {
+        const $input = $(this);
+        validateColumnNameInput($input, $input.val(), $input.data('path'));
+        markAsChanged();
+    });
+
+    $('#ReportConfigurationTable').on('blur', '.column-name-input', function () {
+        const $input = $(this);
+        const value = $input.val().trim();
+        if (value) {
+            const sanitized = sanitizeColumnName(value);
+            if (sanitized !== value) {
+                $input.val(sanitized);
+                validateColumnNameInput($input, sanitized, $input.data('path'));
+            }
+        }
+    });
 
     // Set initial undo button state
     updateUndoButtonVisibility();

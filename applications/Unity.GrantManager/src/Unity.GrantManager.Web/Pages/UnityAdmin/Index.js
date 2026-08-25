@@ -8,6 +8,8 @@ $(function () {
     const UIElements = {
         reconciliationReportMenu: $('#reconciliation-report-menu-item'),
         reconciliationReportDiv: $('#reconciliation-report-div'),
+        backgroundJobsMenu: $('#background-jobs-menu-item'),
+        backgroundJobsDiv: $('#background-jobs-div'),
         reconciliationTable: $('#ReconciliationTable'),
         tenantFilter: $('#ReconciliationTenantFilter'),
         quickDateRange: $('#quickDateRange'),
@@ -26,6 +28,7 @@ $(function () {
 
     function bindUIElements() {
         UIElements.reconciliationReportMenu.on('click', menuItemClick);
+        UIElements.backgroundJobsMenu.on('click', menuItemClick);
         UIElements.tenantFilter.on('change', handleTenantChange);
         UIElements.quickDateRange.on('change', handleQuickDateRangeChange);
         UIElements.submittedFromDate.on('change', handleCustomDateChange);
@@ -35,17 +38,26 @@ $(function () {
     // ── Side menu ──
     function removeActiveClassFromMenuItems() {
         UIElements.reconciliationReportMenu.removeClass('active');
+        UIElements.backgroundJobsMenu.removeClass('active');
+    }
+
+    function hideAllContentSections() {
+        UIElements.reconciliationReportDiv.addClass('hide');
+        UIElements.backgroundJobsDiv.addClass('hide');
     }
 
     function menuItemClick(e) {
         removeActiveClassFromMenuItems();
+        hideAllContentSections();
         $(e.currentTarget).addClass('active');
 
-        UIElements.reconciliationReportDiv.addClass('hide');
-        UIElements.reconciliationReportDiv.removeClass('hide');
-
-        if (recDt) {
-            recDt.columns.adjust().draw();
+        if ($(e.currentTarget).attr('id') === 'reconciliation-report-menu-item') {
+            UIElements.reconciliationReportDiv.removeClass('hide');
+            if (recDt) {
+                recDt.columns.adjust().draw();
+            }
+        } else if ($(e.currentTarget).attr('id') === 'background-jobs-menu-item') {
+            UIElements.backgroundJobsDiv.removeClass('hide');
         }
     }
 

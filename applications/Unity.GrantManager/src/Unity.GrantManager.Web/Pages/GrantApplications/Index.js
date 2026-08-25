@@ -462,7 +462,9 @@ $(function () {
                     dtApi.ajax.reload(null, false);
                 }
                 initialLoad = false; // Reset flag after use
-            }
+            },
+            enableContextMenu: true,
+            contextMenuActionsSelector: '[data-selector="applications-table-actions"]'
         });
 
         dataTable.on('select', function (e, dt, type, indexes) {
@@ -518,8 +520,16 @@ $(function () {
     });
 
     //For savedStates
-    $('.grp-savedStates').text('Save View');
+    // Initialize button styling
     $('.grp-savedStates').closest('.btn-group').addClass('cstm-save-view');
+
+    // Update button text based to Save Views
+    function updateSavedStatesButtonText() {
+        $('.grp-savedStates').text('Save View');
+    }
+
+    dataTable.on('stateRestore-change', updateSavedStatesButtonText);
+    updateSavedStatesButtonText();
 
     // Helper function to restore custom filters when loading table views.
     function restoreCustomFilters(filters) {
@@ -567,6 +577,9 @@ $(function () {
             getTotalProjectBudgetColumn(columnIndex++),
             getAssigneesColumn(columnIndex++),
             getStatusColumn(columnIndex++),
+            getExternalStatusVisibilityColumn(columnIndex++),
+            getExternalStatusColumn(columnIndex++),
+            getPublishedStatusColumn(columnIndex++),
             getRequestedAmountColumn(columnIndex++),
             getApprovedAmountColumn(columnIndex++),
             getEconomicRegionColumn(columnIndex++),
@@ -599,6 +612,7 @@ $(function () {
             getOrganizationTypeColumn(columnIndex++),
             getOrganizationNameColumn(columnIndex++),
             getBusinessNumberColumn(columnIndex++),
+            getApproxNumberOfEmployeesColumn(columnIndex++),
             getDueDiligenceStatusColumn(columnIndex++),
             getDeclineRationaleColumn(columnIndex++),
             getContactFullNameColumn(columnIndex++),
@@ -786,6 +800,47 @@ $(function () {
         }
     }
 
+    function getExternalStatusVisibilityColumn(columnIndex) {
+        return {
+            title: l('ExternalStatusVisibility'),
+            data: 'externalStatusVisibility',
+            name: 'externalStatusVisibility',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ? 'Published' : 'Unpublished';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getExternalStatusColumn(columnIndex) {
+        return {
+            title: l('ExternalStatus'),
+            data: 'externalStatus',
+            name: 'externalStatus',
+            className: 'data-table-header',
+            index: columnIndex,
+            render: function (data, type) {
+                const value = data ?? '';
+                return type === 'display' ? dtTextRenderer.display(value) : value;
+            }
+        }
+    }
+
+    function getPublishedStatusColumn(columnIndex) {
+        return {
+            title: l('PublishedStatus'),
+            data: 'publishedStatus',
+            name: 'publishedStatus',
+            className: 'data-table-header',
+            index: columnIndex,
+            render: function (data, type) {
+                const value = data ?? '';
+                return type === 'display' ? dtTextRenderer.display(value) : value;
+            }
+        }
+    }
+
     function getRequestedAmountColumn(columnIndex) {
         return {
             title: l('RequestedAmount'),
@@ -891,7 +946,7 @@ $(function () {
             data: 'projectStartDate',
             className: 'data-table-header',
             render: function (data, type) {
-                return DateUtils.formatUtcDateToLocal(data, type);
+                return DateUtils.formatDate(data, type);
             },
             index: columnIndex
         }
@@ -904,7 +959,7 @@ $(function () {
             data: 'projectEndDate',
             className: 'data-table-header',
             render: function (data, type) {
-                return DateUtils.formatUtcDateToLocal(data, type);
+                return DateUtils.formatDate(data, type);
             },
             index: columnIndex
         }
@@ -1169,7 +1224,7 @@ $(function () {
             data: 'dueDate',
             className: 'data-table-header',
             render: function (data, type) {
-                return DateUtils.formatUtcDateToLocal(data, type);
+                return DateUtils.formatDate(data, type);
             },
             index: columnIndex
         }
@@ -1196,7 +1251,7 @@ $(function () {
             data: 'finalDecisionDate',
             className: 'data-table-header',
             render: function (data, type) {
-                return DateUtils.formatUtcDateToLocal(data, type);
+                return DateUtils.formatDate(data, type);
             },
             index: columnIndex
         }
@@ -1246,6 +1301,19 @@ $(function () {
             title: l('Summary:Application.BusinessNumber'),
             name: 'businessNumber',
             data: 'applicant.businessNumber',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getApproxNumberOfEmployeesColumn(columnIndex) {
+        return {
+            title: l('Summary:Application.ApproxNumberOfEmployees'),
+            name: 'approxNumberOfEmployees',
+            data: 'applicant.approxNumberOfEmployees',
             className: 'data-table-header',
             render: function (data) {
                 return data ?? '';

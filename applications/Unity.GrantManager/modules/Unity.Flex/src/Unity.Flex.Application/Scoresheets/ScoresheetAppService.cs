@@ -195,6 +195,18 @@ namespace Unity.Flex.Scoresheets
             {
                 throw new UserFriendlyException("Cannot change scoresheet.  Scoresheet is already published.");
             }
+            if (scoresheet.IsArchived)
+            {
+                throw new UserFriendlyException("Cannot change scoresheet.  Scoresheet is archived.");
+            }
+        }
+
+        public virtual async Task<bool> ArchiveAsync(Guid id, bool archive)
+        {
+            var scoresheet = await scoresheetRepository.GetAsync(id);
+            scoresheet.SetArchived(archive);
+            await scoresheetRepository.UpdateAsync(scoresheet);
+            return true;
         }
 
         public async Task PublishScoresheetAsync(Guid id)

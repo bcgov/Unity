@@ -1,4 +1,5 @@
 $(function () {
+    const l = abp.localization.getResource('GrantManager');
     let selectedApplicationIds = decodeURIComponent($("#DetailsViewApplicationId").val());    
     
     let approveApplicationsModal = new abp.ModalManager({
@@ -107,7 +108,7 @@ $(function () {
         let groupedValues = Object.values(groupedTags);
         if (groupedValues.length === 0) return [];
         
-        return groupedValues.reduce(filterCommonTags);
+        return groupedValues.reduce((prev, next) => filterCommonTags(prev, next), groupedValues[0]);
     }
 
     // Helper function to check if tag is common
@@ -258,4 +259,64 @@ $(function () {
                 console.error('Error storing application IDs:', error);
             });
     });
+
+    $('#togglePublishStatusBtn').on('click', function () {
+        let $publishButton = $(this);
+        let isPublished = $publishButton.attr('data-is-published') === 'true';
+        let confirmationDetails = getPublishConfirmationDetails(isPublished);
+
+        Swal.fire({
+            title: confirmationDetails.title,
+            text: confirmationDetails.text,
+            showCancelButton: true,
+            confirmButtonText: confirmationDetails.confirmButtonText,
+            cancelButtonText: l('DetailsActionBar:CancelButton'),
+            customClass: {
+                confirmButton: 'btn btn-primary',
+                cancelButton: 'btn btn-secondary'
+            }
+        }).then((result) => {
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            let nextPublishedState = !isPublished;
+
+            unity.grantManager.grantApplications.grantApplication
+                .updateExternalStatusVisibility(selectedApplicationIds, nextPublishedState)
+                .then(function () {
+                    $publishButton.attr('data-is-published', nextPublishedState.toString());
+                    $publishButton.text(nextPublishedState
+                        ? l('DetailsActionBar:UnpublishButton')
+                        : l('DetailsActionBar:PublishButton'));
+
+                    abp.notify.success(nextPublishedState 
+                        ? l('DetailsActionBar:PublishStatusUpdatedToast')
+                        : l('DetailsActionBar:UnpublishStatusUpdatedToast'));
+
+                    let canPublishStatus = abp.auth.isGranted("Unity.GrantManager.ApplicationManagement.Application.Status.Publish");
+                    let canUnpublishStatus = abp.auth.isGranted("Unity.GrantManager.ApplicationManagement.Application.Status.Unpublish");
+                    let canUpdateExternalStatusVisibility = (!nextPublishedState && canPublishStatus) || (nextPublishedState && canUnpublishStatus);
+                    $('#togglePublishStatusBtn').prop('disabled', !canUpdateExternalStatusVisibility);
+
+                    PubSub.publish('application_status_changed', nextPublishedState ? 'Publish' : 'Unpublish');
+                    PubSub.publish('refresh_detail_panel_summary');
+                    PubSub.publish('ApplicationHistory_refresh');
+                })
+                .catch(function (error) {
+                    abp.notify.error(l('DetailsActionBar:PublishStatusUpdateFailed'));
+                    console.error('Error updating publish status:', error);
+                });
+        });
+    });
+
+    function getPublishConfirmationDetails(isPublished) {
+        return {
+            title: l('DetailsActionBar:ConfirmActionTitle'),
+            text: isPublished
+                ? l('DetailsActionBar:UnpublishConfirmationText')
+                : l('DetailsActionBar:PublishConfirmationText'),
+            confirmButtonText: l('DetailsActionBar:ConfirmButton')
+        };
+    }
 });

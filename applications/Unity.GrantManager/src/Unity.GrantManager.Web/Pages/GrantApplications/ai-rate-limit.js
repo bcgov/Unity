@@ -3,11 +3,12 @@
  * across every .ai-generate-btn so all AI surfaces behave consistently.
  */
 (function () {
-    const BUTTON_SELECTOR = '.ai-generate-btn';
+    const BUTTON_SELECTOR = '.ai-generate-btn:not([data-ai-review-action="true"])';
     const ATTR_LABEL = 'data-original-label';
     const ATTR_COOLDOWN = 'data-ai-cooldown-active';
     const ATTR_CHECKING = 'data-ai-cooldown-checking';
     const ATTR_OWNED_DISABLED = 'data-ai-rate-limit-disabled';
+    const ATTR_LOCAL_DISABLED = 'data-ai-local-disabled';
     const ATTR_SHARED_GENERATING = 'data-ai-shared-generating';
 
     let countdownTimer = null;
@@ -45,7 +46,7 @@
         btn.setAttribute(ATTR_COOLDOWN, '1');
         btn.setAttribute('disabled', 'disabled');
         btn.classList.add('disabled');
-        setLabel(btn, `Wait ${seconds}s`);
+        setLabel(btn, `Waiting... ${seconds}s`);
     }
 
     function restore(btn) {
@@ -60,7 +61,9 @@
         btn.removeAttribute(ATTR_SHARED_GENERATING);
         if (btn.getAttribute(ATTR_OWNED_DISABLED) === '1') {
             btn.removeAttribute(ATTR_OWNED_DISABLED);
-            btn.removeAttribute('disabled');
+            if (btn.getAttribute(ATTR_LOCAL_DISABLED) !== '1') {
+                btn.removeAttribute('disabled');
+            }
         }
         btn.classList.remove('disabled');
         const original = btn.getAttribute(ATTR_LABEL);
@@ -72,6 +75,7 @@
             return;
         }
 
+        rememberLabel(btn);
         btn.setAttribute(ATTR_CHECKING, '1');
         if (!btn.disabled || btn.getAttribute(ATTR_OWNED_DISABLED) === '1') {
             btn.setAttribute(ATTR_OWNED_DISABLED, '1');
@@ -87,7 +91,9 @@
         btn.removeAttribute(ATTR_CHECKING);
         if (btn.getAttribute(ATTR_OWNED_DISABLED) === '1') {
             btn.removeAttribute(ATTR_OWNED_DISABLED);
-            btn.removeAttribute('disabled');
+            if (btn.getAttribute(ATTR_LOCAL_DISABLED) !== '1') {
+                btn.removeAttribute('disabled');
+            }
         }
     }
 
@@ -121,12 +127,14 @@
         }
     }
 
-    function applyGenerating() {
+    function applyGenerating(options = {}) {
         currentState = { mode: 'generating' };
         renderState();
 
         clearStatePollTimer();
-        statePollTimer = setTimeout(() => fetchState(true), 2000);
+        if (options.poll !== false) {
+            statePollTimer = setTimeout(() => fetchState(true), 2000);
+        }
     }
 
     function renderGenerating() {
@@ -223,29 +231,37 @@
                 return;
             }
             const data = await res.json();
-            if (data.isGenerating === true) {
-                applyGenerating();
-                return;
-            }
-
-            applyCooldown(Number(data.retryAfterSeconds) || 0);
+            applyRateLimitState(data);
         } catch (_) {
             // Best-effort; the server is the source of truth.
             handleStateFetchFailure();
         }
     }
 
-    globalThis.syncAIRateLimitButtons = () => {
-        renderState();
+    function applyRateLimitState(data, options = {}) {
+        if (data?.isGenerating === true) {
+            applyGenerating({ poll: options.pollWhenGenerating !== false });
+            return;
+        }
+
+        applyCooldown(Number(data?.retryAfterSeconds) || 0);
+    }
+
+    globalThis.syncAICooldownButtons = () => {
+        disableUntilChecked();
         fetchState(true);
     };
+    globalThis.syncAIRateLimitButtons = globalThis.syncAICooldownButtons;
     globalThis.setAIGenerationButtonsGenerating = applyGenerating;
-    globalThis.refreshAIRateLimitState = globalThis.syncAIRateLimitButtons;
+    globalThis.setAIGenerationButtonsCooldown = applyCooldown;
+    globalThis.applyAIRateLimitState = applyRateLimitState;
+    globalThis.refreshAICooldownState = globalThis.syncAICooldownButtons;
+    globalThis.refreshAIRateLimitState = globalThis.syncAICooldownButtons;
 
     document.addEventListener('click', (e) => {
         const btn = e.target.closest(BUTTON_SELECTOR);
         if (!btn) return;
-        applyGenerating();
+        applyGenerating({ poll: false });
     });
 
     document.addEventListener('DOMContentLoaded', () => {

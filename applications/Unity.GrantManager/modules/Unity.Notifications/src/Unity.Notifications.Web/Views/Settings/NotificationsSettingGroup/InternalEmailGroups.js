@@ -37,7 +37,7 @@ const emailGroupsManager = {
                         const buttonClass = row.isNew ? 'remove-selected-user' : 'remove-user-btn';
                         const dataAttr = row.isNew ? `data-user-id="${row.userId}"` : `data-group-user-id="${row.id}"`;
                         return `<button class="btn btn-sm btn-link text-primary p-0 ${buttonClass}" style="text-decoration: none;" ${dataAttr} title="${title}">
-                            <i class="fa fa-times"></i>
+                            <i class="fa-solid fa-xmark"></i>
                         </button>`;
                     }
                 }
@@ -63,21 +63,33 @@ const emailGroupsManager = {
             };
         },
 
+        // Escape untrusted values for safe insertion into HTML text and attribute contexts
+        escapeHtml: function(value) {
+            return String(value ?? '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll("\"", '&quot;')
+                .replaceAll('\'', '&#39;');
+        },
+
         // Generate dropdown item HTML for users
         generateUserDropdownItem: function(user) {
             const firstName = user.name ? user.name.split(' ')[0] : '';
             const lastName = user.surname || '';
+            const displayName = this.escapeHtml(user.userName || user.name || 'Unknown');
+            const email = this.escapeHtml(user.email || '');
             return `
                 <li>
                     <a class="dropdown-item dropdown-user-item" href="#" 
-                        data-user-id="${user.id}" 
-                        data-user-name="${user.userName || user.name || 'Unknown'}"
-                        data-user-email="${user.email || ''}"
-                        data-first-name="${firstName}"
-                        data-last-name="${lastName}">
+                        data-user-id="${this.escapeHtml(user.id)}" 
+                        data-user-name="${displayName}"
+                        data-user-email="${email}"
+                        data-first-name="${this.escapeHtml(firstName)}"
+                        data-last-name="${this.escapeHtml(lastName)}">
                         <div>
-                            <strong>${user.userName || user.name || 'Unknown'}</strong>
-                            <small class="text-muted d-block">${user.email || ''}</small>
+                            <strong>${displayName}</strong>
+                            <small class="text-muted d-block">${email}</small>
                         </div>
                     </a>
                 </li>
@@ -95,7 +107,6 @@ const emailGroupsManager = {
 
         // Setup user search dropdown functionality
         setupUserSearchDropdown: function(searchInputId, dropdownId, addButtonId, onUserSelected) {
-            const self = this;
             let searchTimeout;
             let allUsers = [];
             let selectedUser = null;
@@ -118,8 +129,8 @@ const emailGroupsManager = {
 
                 searchTimeout = setTimeout(() => {
                     if (searchTerm.length > 0) {
-                        const filteredUsers = self.filterUsersBySearchTerm(allUsers, searchTerm);
-                        self.displayFilteredUsers(dropdownId, filteredUsers);
+                        const filteredUsers = emailGroupsManager.utils.filterUsersBySearchTerm(allUsers, searchTerm);
+                        emailGroupsManager.utils.displayFilteredUsers(dropdownId, filteredUsers);
                     } else {
                         $(`#${dropdownId}`).html('<li class="px-3 py-2 text-muted">Start typing to search users...</li>');
                     }
@@ -217,8 +228,6 @@ const emailGroupsManager = {
     },
 
     initializeDataTable: function () {
-        const self = this;
-
         emailGroupsTable = $('#EmailGroupsTable').DataTable(abp.libs.datatables.normalizeConfiguration({
             processing: true,
             serverSide: false,
@@ -228,16 +237,16 @@ const emailGroupsManager = {
             scrollX: true,
             ordering: true,
             ajax: function (requestData, callback, settings) {
-                self.loadGroupsForDataTable(callback);
+                emailGroupsManager.loadGroupsForDataTable(callback);
             },
-            columnDefs: self.defineColumnDefs()
+            columnDefs: emailGroupsManager.defineColumnDefs()
         }));
 
         // Bind events to the DataTable
         emailGroupsTable.on('click', 'td button.manage-users-btn', function (event) {
             event.stopPropagation();
             const rowData = emailGroupsTable.row(event.target.closest('tr')).data();
-            self.showManageUsersModal(rowData);
+            emailGroupsManager.showManageUsersModal(rowData);
         });
 
         emailGroupsTable.on('click', 'td button.delete-group-btn', function (event) {
@@ -246,7 +255,7 @@ const emailGroupsManager = {
             // Check for both lowercase and uppercase
             const isDynamic = rowData.type === 'dynamic' || rowData.type === 'Dynamic';
             if (isDynamic) {
-                self.deleteGroup(rowData.id);
+                emailGroupsManager.deleteGroup(rowData.id);
             }
         });
     },
@@ -315,13 +324,11 @@ const emailGroupsManager = {
     },
 
     bindEvents: function () {
-        const self = this;
-
         // Remove any existing handlers first
         $('#CreateNewEmailGroup').off('click');
 
         $('#CreateNewEmailGroup').on('click', function () {
-            self.showCreateGroupModal();
+            emailGroupsManager.showCreateGroupModal();
         });
     },
 
@@ -344,7 +351,6 @@ const emailGroupsManager = {
 
 
     showCreateGroupModal: function () {
-        const self = this;
         const selectedUsers = []; // Cache for selected users
 
         const modalHtml = `
@@ -378,7 +384,7 @@ const emailGroupsManager = {
                                         </ul>
                                     </div>
                                     <button type="button" class="btn btn-add-user mt-2 float-end mx-5" id="createAddUserBtn" disabled>
-                                        <i class="fa fa-check me-1"></i>ADD USER
+                                        <i class="fa-solid fa-check me-1"></i>ADD USER
                                     </button>
                                 </div>
                                 <hr style="margin-top: 60px;">
@@ -422,7 +428,7 @@ const emailGroupsManager = {
         // Wait for modal to be fully shown before initializing DataTable
         $('#createGroupModal').on('shown.bs.modal', function () {
             createGroupUsersTable = $('#createGroupUsersTable').DataTable(abp.libs.datatables.normalizeConfiguration(
-                self.utils.getStandardDataTableConfig([])
+                emailGroupsManager.utils.getStandardDataTableConfig([])
             ));
 
             // Force columns to adjust
@@ -432,13 +438,13 @@ const emailGroupsManager = {
         modal.show();
 
         // Initialize user search with shared utility
-        self.utils.setupUserSearchDropdown(
+        emailGroupsManager.utils.setupUserSearchDropdown(
             'createGroupUserSearch',
             'createGroupUserDropdown',
             'createAddUserBtn',
             function(selectedUser) {
                 // Add to selected users if not already there
-                if (!selectedUsers.find(u => u.userId === selectedUser.userId)) {
+                if (!selectedUsers.some(u => u.userId === selectedUser.userId)) {
                     const newUser = {
                         userId: selectedUser.userId,
                         userName: selectedUser.userName,
@@ -458,8 +464,8 @@ const emailGroupsManager = {
         );
 
         // Override the default displayFilteredUsers for create modal to exclude selected users
-        const originalDisplayFilteredUsers = self.utils.displayFilteredUsers.bind(self.utils);
-        self.utils.displayFilteredUsers = function(dropdownId, filteredUsers, excludeUserIds = []) {
+        const originalDisplayFilteredUsers = emailGroupsManager.utils.displayFilteredUsers.bind(emailGroupsManager.utils);
+        emailGroupsManager.utils.displayFilteredUsers = function(dropdownId, filteredUsers, excludeUserIds = []) {
             if (dropdownId === 'createGroupUserDropdown') {
                 const selectedUserIds = selectedUsers.map(u => u.userId);
                 excludeUserIds = [...excludeUserIds, ...selectedUserIds];
@@ -525,7 +531,7 @@ const emailGroupsManager = {
 
         $('#createGroupModal').on('hidden.bs.modal', function () {
             // Restore original displayFilteredUsers function
-            self.utils.displayFilteredUsers = originalDisplayFilteredUsers;
+            emailGroupsManager.utils.displayFilteredUsers = originalDisplayFilteredUsers;
             
             // Clean up DataTable
             if (createGroupUsersTable) {
@@ -559,12 +565,14 @@ const emailGroupsManager = {
     },
 
     showManageUsersModal: function (group) {
-        const self = this;
         const isDynamic = group.type === 'dynamic' || group.type === 'Dynamic';
 
         // Track changes locally
         let pendingUserAdditions = [];
         let pendingUserRemovals = [];
+
+        const escapedGroupName = emailGroupsManager.utils.escapeHtml(group.name);
+        const escapedGroupDescription = emailGroupsManager.utils.escapeHtml(group.description || '');
 
         const modalHtml = `
             <div class="modal fade" id="manageUsersModal" tabindex="-1">
@@ -577,11 +585,11 @@ const emailGroupsManager = {
                         <div class="modal-body">
                             <div class="mb-3 mx-5">
                                 <label for="editGroupName" class="form-label">Group Name</label>
-                                <input type="text" class="form-control" id="editGroupName" value="${group.name}" ${!isDynamic ? 'disabled' : ''} required>
+                                <input type="text" class="form-control" id="editGroupName" value="${escapedGroupName}" ${!isDynamic ? 'disabled' : ''} required>
                             </div>
                             <div class="mb-3 mx-5">
                                 <label for="editGroupDescription" class="form-label">Description</label>
-                                <textarea class="form-control" id="editGroupDescription" rows="3">${group.description || ''}</textarea>
+                                <textarea class="form-control" id="editGroupDescription" rows="3">${escapedGroupDescription}</textarea>
                             </div>
                             <hr>
                             <div class="mb-3">
@@ -596,7 +604,7 @@ const emailGroupsManager = {
                                     </ul>
                                 </div>
                                 <button type="button" class="btn btn-add-user mt-2 float-end mx-5" id="manageAddUserBtn" disabled>
-                                    <i class="fa fa-check me-1"></i>ADD USER
+                                    <i class="fa-solid fa-check me-1"></i>ADD USER
                                 </button>
                             </div>
                             <hr style="margin-top: 60px;">
@@ -688,13 +696,13 @@ const emailGroupsManager = {
 
         $('#manageUsersModal').one('shown.bs.modal', () => {
             groupUsersTable = $('#groupUsersTable').DataTable(
-                abp.libs.datatables.normalizeConfiguration(self.utils.getStandardDataTableConfig([]))
+                abp.libs.datatables.normalizeConfiguration(emailGroupsManager.utils.getStandardDataTableConfig([]))
             );
-            self.loadGroupUsersForTable(group.id, groupUsersTable);
+            emailGroupsManager.loadGroupUsersForTable(group.id, groupUsersTable);
         });
 
         // Initialize user search with shared utility and custom filtering for existing group users
-        self.utils.setupUserSearchDropdown(
+        emailGroupsManager.utils.setupUserSearchDropdown(
             'userSearchInput',
             'userDropdownMenu',
             'manageAddUserBtn',
@@ -704,8 +712,8 @@ const emailGroupsManager = {
         );
 
         // Override the default displayFilteredUsers for manage modal to exclude current group users
-        const originalDisplayFilteredUsers = self.utils.displayFilteredUsers.bind(self.utils);
-        self.utils.displayFilteredUsers = function(dropdownId, filteredUsers, excludeUserIds = []) {
+        const originalDisplayFilteredUsers = emailGroupsManager.utils.displayFilteredUsers.bind(emailGroupsManager.utils);
+        emailGroupsManager.utils.displayFilteredUsers = function(dropdownId, filteredUsers, excludeUserIds = []) {
             if (dropdownId === 'userDropdownMenu') {
                 // Get current group users from DataTable and exclude them
                 const currentUsers = groupUsersTable ? groupUsersTable.rows().data().toArray() : [];
@@ -827,7 +835,7 @@ const emailGroupsManager = {
         $('#manageUsersModal').on('hidden.bs.modal', function () {
 
             // Restore original displayFilteredUsers function
-            self.utils.displayFilteredUsers = originalDisplayFilteredUsers;
+            emailGroupsManager.utils.displayFilteredUsers = originalDisplayFilteredUsers;
 
             if (groupUsersTable) {
                 groupUsersTable.destroy();

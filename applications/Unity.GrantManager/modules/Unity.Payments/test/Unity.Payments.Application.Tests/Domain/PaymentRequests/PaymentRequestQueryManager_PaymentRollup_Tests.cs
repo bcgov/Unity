@@ -404,7 +404,8 @@ public class PaymentRequestQueryManager_PaymentRollup_Tests
             Substitute.For<ISiteRepository>(),
             Substitute.For<IExternalUserLookupServiceProvider>(),
             null!, // CasPaymentRequestCoordinator - not used by Rollup methods
-            null!  // IObjectMapper - not used by Rollup methods
+            null!, // IObjectMapper - not used by Rollup methods
+            null!  // IApplicationRepository - not used by Rollup methods
         );
     }
 

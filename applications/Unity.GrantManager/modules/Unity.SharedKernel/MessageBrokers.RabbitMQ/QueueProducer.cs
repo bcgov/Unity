@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.Text;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
@@ -28,7 +29,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
             _exchangeName = $"{_queueName}.exchange";
         }
 
-        public void PublishMessage(TQueueMessage message)
+        public async Task PublishMessageAsync(TQueueMessage message)
         {
             if (EqualityComparer<TQueueMessage>.Default.Equals(message, default))
                 throw new ArgumentNullException(nameof(message));
@@ -36,7 +37,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
             if (message.TimeToLive.Ticks <= 0)
                 throw new QueueingException($"{nameof(message.TimeToLive)} cannot be zero or negative");
 
-            var channel = _channelProvider.GetChannel();
+            var channel = await _channelProvider.GetChannelAsync();
 
             try
             {
@@ -44,27 +45,23 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
 
                 var serializedMessage = SerializeMessage(message);
 
-                var properties = channel.CreateBasicProperties();
-                properties.Persistent = true; // quorum queues persist
-                properties.Type = _queueName;
-                properties.MessageId = message.MessageId.ToString();
-                properties.Expiration = message.TimeToLive.TotalMilliseconds.ToString(CultureInfo.InvariantCulture);
+                var properties = new BasicProperties
+                {
+                    Persistent = true, // quorum queues persist
+                    Type = _queueName,
+                    MessageId = message.MessageId.ToString(),
+                    Expiration = message.TimeToLive.TotalMilliseconds.ToString(CultureInfo.InvariantCulture)
+                };
 
-                // Enable publisher confirms once per channel
-                channel.ConfirmSelect();
-
-                channel.BasicPublish(
+                // Publisher confirmations are enabled on pooled channels, so BasicPublishAsync
+                // awaits the broker confirmation and throws if the message is not confirmed.
+                await channel.BasicPublishAsync(
                     exchange: _exchangeName,
                     routingKey: _queueName,
+                    mandatory: false,
                     basicProperties: properties,
                     body: serializedMessage
                 );
-
-                // Wait for confirmation
-                if (!channel.WaitForConfirms(TimeSpan.FromSeconds(5)))
-                {
-                    throw new QueueingException($"Publish failed: broker did not confirm message {message.MessageId}");
-                }
 
                 _logger.LogInformation("Published message {MessageId} to {Queue}", message.MessageId, _queueName);
             }
@@ -72,6 +69,12 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
             {
                 _logger.LogError(ex, "PublishMessage Exception: {Message}", ex.Message);
                 throw new QueueingException($"Publish failed: {ex.Message}", ex);
+            }
+            finally
+            {
+                // Return the channel so it is pooled (if still open) or disposed, and its
+                // throttling permit is released. Without this the channel and permit leak.
+                _channelProvider.ReturnChannel(channel);
             }
         }
 

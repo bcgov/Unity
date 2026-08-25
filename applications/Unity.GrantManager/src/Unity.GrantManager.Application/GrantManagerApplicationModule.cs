@@ -3,13 +3,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using RestSharp;
-using RestSharp.Serializers.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Attachments;
-using Unity.GrantManager.Intake;
+using Unity.GrantManager.Events;
 using Unity.GrantManager.Integrations.Css;
 using Unity.TenantManagement;
 using Volo.Abp.Mapperly;
@@ -33,6 +31,8 @@ using Quartz;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ;
 using Volo.Abp.BackgroundJobs;
 using Unity.AI;
+using Unity.AI.Attachments;
+using Unity.AI.Operations;
 using Unity.Reporting;
 using Volo.Abp.DistributedLocking;
 using Unity.GrantManager.Zones;
@@ -49,6 +49,15 @@ using Unity.GrantManager.GrantsPortal.Handlers;
 using Unity.GrantManager.Messaging;
 using Unity.GrantManager.Analytics;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
+using Unity.GrantManager.GrantApplications.Automation.Operations.ApplicationAnalysis;
+using Unity.GrantManager.GrantApplications.Automation.Operations.ApplicationScoring;
+using Unity.GrantManager.GrantApplications.Automation.Operations.AttachmentSummary;
+using Unity.GrantManager.GrantApplications.Automation.Operations.FormMapping;
+using Unity.GrantManager.GrantApplications.Automation.Operations.FormScoresheet;
+using Unity.GrantManager.GrantApplications.Automation.Operations.FormWorksheet;
+using Unity.GrantManager.GrantApplications.Automation;
+using Unity.GrantManager.Intakes;
 
 namespace Unity.GrantManager;
 
@@ -145,10 +154,19 @@ public class GrantManagerApplicationModule : AbpModule
         context.Services.AddSingleton<IAuthorizationHandler, AssessmentAuthorizationHandler>();
         context.Services.AddTransient<IResilientHttpRequest, ResilientHttpRequest>();
         context.Services.AddTransient<IFormsApiService, FormsApiService>();
+        context.Services.AddTransient<IAIGenerationOperationExecutor, ApplicationAnalysisOperationExecutor>();
+        context.Services.AddTransient<IAIGenerationOperationExecutor, ApplicationScoringOperationExecutor>();
+        context.Services.AddTransient<IAIGenerationOperationExecutor, AttachmentSummaryOperationExecutor>();
+        context.Services.AddTransient<IAIGenerationOperationExecutor, FormMappingOperationExecutor>();
+        context.Services.AddTransient<IAIGenerationOperationExecutor, FormScoresheetOperationExecutor>();
+        context.Services.AddTransient<IAIGenerationOperationExecutor, FormWorksheetOperationExecutor>();
+        context.Services.AddTransient<IAttachmentContentProvider, ChefsFileAttachmentStreamProvider>();
+        context.Services.AddTransient<IAttachmentSummaryDataProvider, AttachmentSummaryDataProvider>();
 
         context.Services.AddScoped<IGeocoderApiService, GeocoderApiService>();    
         context.Services.AddScoped<IAnalyticsUrlProvider, MatomoUrlProvider>();
         context.Services.AddScoped<GeocoderApiService>();
+        context.Services.AddScoped<ScheduledNotificationHelper>();
 
         context.Services.Configure<CasClientOptions>(configuration.GetSection("Payments"));
         context.Services.Configure<CssApiOptions>(configuration.GetSection("CssApi"));
@@ -195,34 +213,6 @@ public class GrantManagerApplicationModule : AbpModule
         context.Services.AddHostedService<GrantsPortalCommandConsumerService>();  // RabbitMQ → inbox table
 
         context.Services.AddScoped<IZoneChecker, ZoneChecker>();
-
-        context.Services.AddSingleton(provider =>
-        {
-            var options = (provider.GetService<IOptions<IntakeClientOptions>>()?.Value) ?? throw new InvalidOperationException("IntakeClientOptions not configured.");
-            if (options.BaseUri == string.Empty)
-            {
-                options.BaseUri = "https://submit.digital.gov.bc.ca/app/api/v1";
-            }
-
-            var restOptions = options != null
-                ? new RestClientOptions(options.BaseUri)
-                {
-                    FailOnDeserializationError = true,
-                    ThrowOnDeserializationError = true
-                }
-                : new RestClientOptions();
-
-            return new RestClient(
-                restOptions,
-                configureSerialization: s => s.UseSystemTextJson(new JsonSerializerOptions
-                {
-                    WriteIndented = true,
-                    PropertyNameCaseInsensitive = true,
-                    ReadCommentHandling = JsonCommentHandling.Skip,
-                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                })
-            );
-        });
 
         // Max paging limits
         ExtensibleLimitedResultRequestDto.DefaultMaxResultCount = int.MaxValue;

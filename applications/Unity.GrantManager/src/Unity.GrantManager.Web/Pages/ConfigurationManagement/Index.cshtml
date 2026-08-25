@@ -16,41 +16,45 @@
 }
 
 @section styles {
-    <abp-style-bundle name="@typeof(IndexModel).FullName">
-        <abp-style src="/Pages/ConfigurationManagement/Index.css" />
-        @if (Model.ShowPayments)
-        {
-            <abp-style src="/Pages/ConfigurationManagement/PaymentConfigurations.css" />
-        }
-        @if (Model.ShowNotifications)
-        {
-            <abp-style src="/Views/Settings/NotificationsSettingGroup/Default.css" />
-        }
-    </abp-style-bundle>
+    <abp-style src="/Pages/ConfigurationManagement/Index.css" />
+    @if (Model.ShowPayments)
+    {
+        <abp-style src="/Pages/ConfigurationManagement/PaymentConfigurations.css" />
+    }
+    @if (Model.ShowNotifications)
+    {
+        <abp-style src="/Views/Settings/NotificationsSettingGroup/Default.css" />
+    }
+    @if (Model.ShowProgramDetails)
+    {
+        <abp-style src="/Views/Settings/ProgramDetails/ProgramDetails.css" />
+    }
 }
 
 @section scripts {
-    <abp-script-bundle name="@typeof(IndexModel).FullName">
-        <abp-script src="/Pages/ConfigurationManagement/Index.js" />
-        @if (Model.ShowPayments)
-        {
-            <abp-script src="/Pages/ConfigurationManagement/PaymentConfigurations.js" />
-        }
-        <abp-script src="/libs/sortablejs/Sortable.js" />
-        @if (Model.ShowNotifications)
-        {
-            <abp-script src="/Views/Settings/NotificationsSettingGroup/Default.js" />
-            <abp-script src="/Views/Settings/NotificationsSettingGroup/InternalEmailGroups.js" />
-        }
-        @if (Model.ShowTags)
-        {
-            <abp-script src="/Views/Settings/TagManagement/TagManagement.js" />
-        }
-        @if (Model.ShowAI)
-        {
-            <abp-script src="/Views/Settings/AISettingGroup/Default.js" />
-        }
-    </abp-script-bundle>
+    <abp-script src="/Pages/ConfigurationManagement/Index.js" />
+    @if (Model.ShowPayments)
+    {
+        <abp-script src="/Pages/ConfigurationManagement/PaymentConfigurations.js" />
+    }
+    @if (Model.ShowNotifications)
+    {
+        <abp-script src="/Views/Settings/NotificationsSettingGroup/Default.js" />
+        <abp-script src="/Views/Settings/NotificationsSettingGroup/InternalEmailGroups.js" />
+    }
+    @if (Model.ShowTags)
+    {
+        <abp-script src="/Views/Settings/TagManagement/TagManagement.js" />
+    }
+    @if (Model.ShowAI)
+    {
+        <abp-script src="/Views/Settings/AISettingGroup/Default.js" />
+    }
+    @if (Model.ShowProgramDetails)
+    {
+        <abp-script src="/Views/Settings/ProgramDetails/CharacterCounter.js" />
+        <abp-script src="/Views/Settings/ProgramDetails/ProgramDetails.js" />
+    }
 }
 
 <div class="config-page-layout">
@@ -91,6 +95,12 @@
             {
                 <li id="ai-menu-item" class="nav-item btn btn-nav" data-target="ai-div">
                     AI
+                </li>
+            }
+            @if (Model.ShowProgramDetails)
+            {
+                <li id="program-details-menu-item" class="nav-item btn btn-nav" data-target="program-details-div">
+                    Program Details
                 </li>
             }
         </ul>
@@ -144,7 +154,7 @@
                                         <h4>Account Codes</h4>
                                     </div>
                                     <div class="filter-search-action-bar_search-wrapper">
-                                        <input type="search" id="search-data-table" placeholder="Search" class="tbl-search">
+                                        <input type="search" id="search-data-table" placeholder="Search" aria-label="Search" class="tbl-search">
                                     </div>
                                     <div class="btn-group" id="app_custom_buttons"></div>
                                     <div id="dynamicButtonContainerId" class="dynamic-buttons-div button-gap-1"></div>
@@ -166,7 +176,7 @@
                                 </abp-row>
                                 <abp-row>
                                     <abp-column size="_12" class="p-3">
-                                        <span class="form-label">Payment ID Prefix</span>
+                                        <label for="payment-id-prefix" class="form-label">Payment ID Prefix</label>
                                         <input id="payment-id-prefix-original" type="hidden" value="@Model.PaymentIdPrefix">
                                         <input id="payment-id-prefix" maxlength="5" type="text" value="@Model.PaymentIdPrefix" class="valid form-control">
                                     </abp-column>
@@ -233,6 +243,14 @@
         {
             <div id="ai-div" class="config-section input-area card mb-3 config-management hide">
                 @await Component.InvokeAsync(typeof(Unity.AI.Web.Views.Settings.AISettingGroup.AISettingViewComponent))
+            </div>
+        }
+
+        <!-- Program Details -->
+        @if (Model.ShowProgramDetails)
+        {
+            <div id="program-details-div" class="config-section input-area card mb-3 config-management hide">
+                @await Component.InvokeAsync(typeof(Unity.GrantManager.Web.Views.Settings.ProgramDetails.ProgramDetailsViewComponent))
             </div>
         }
     </div>

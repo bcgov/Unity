@@ -11,6 +11,15 @@
     flex: none;
 }
 
+#background-jobs-div {
+    width:70%;
+    min-width:700px;
+}
+
+.background-jobs {
+    flex: none;
+}
+
 .card {
     padding: 1rem;
     max-height: 80vh;

@@ -10,6 +10,7 @@ using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Identity;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.EventBus.Local;
 
 namespace Unity.GrantManager.Assignments;
 
@@ -18,13 +19,13 @@ namespace Unity.GrantManager.Assignments;
 [ExposeServices(typeof(ApplicationAssignmentsAppService), typeof(IApplicationAssignmentsService))]
 public class ApplicationAssignmentsAppService(IApplicationManager applicationManager,
     IPersonRepository personRepository,
+    ILocalEventBus localEventBus,
     IApplicationAssignmentRepository applicationAssignmentRepository)
     : ApplicationService, IApplicationAssignmentsService
 {
     public async Task<List<GrantApplicationAssigneeDto>> GetListWithApplicationIdsAsync(List<Guid> ids)
     {
         var assignments = await applicationAssignmentRepository.GetListAsync(e => ids.Contains(e.ApplicationId));
-
         return ObjectMapper.Map<List<ApplicationAssignment>, List<GrantApplicationAssigneeDto>>(assignments.OrderBy(t => t.Id).ToList());
     }
 
@@ -41,6 +42,7 @@ public class ApplicationAssignmentsAppService(IApplicationManager applicationMan
             {
                 await applicationManager.UpdateAssigneeAsync(applicationId, assigneeId, duty);
             }
+            await localEventBus.PublishAsync(new Events.ApplicationChangedEvent { Action = GrantApplicationAction.Internal_Assign, ApplicationId = applicationId });
         }
         catch (Exception ex)
         {

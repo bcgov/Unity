@@ -8,10 +8,10 @@ namespace Unity.GrantManager.Web.Pages.ApplicantPortalSettings;
 [Authorize]
 public class IndexModel(IApplicationStatusService applicationStatusService) : GrantManagerPageModel
 {
-    public IList<ApplicationStatusDto> Statuses { get; set; } = [];
+    public IList<ApplicantPortalStatusDto> Statuses { get; set; } = [];
 
     public async Task OnGetAsync()
     {
-        Statuses = await applicationStatusService.GetListAsync();
+        Statuses = await applicationStatusService.GetApplicantPortalStatusListAsync();
     }
 }

@@ -5,8 +5,10 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using Unity.AI.Permissions;
 using Unity.Modules.Shared.Permissions;
 using Volo.Abp;
+using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Users;
 
@@ -18,20 +20,28 @@ namespace Unity.GrantManager.Identity
         private readonly ICurrentTenant _currentTenant;
         private readonly ICurrentUser _currentUser;
         private readonly IConfiguration _configuration;
+        private readonly IPermissionChecker _permissionChecker;
 
-        public JwtTokenAppService(ICurrentTenant currentTenant, ICurrentUser currentUser, IConfiguration configuration)
+        public JwtTokenAppService(
+            ICurrentTenant currentTenant,
+            ICurrentUser currentUser,
+            IConfiguration configuration,
+            IPermissionChecker permissionChecker)
         {
             _currentTenant = currentTenant;
             _currentUser = currentUser;
             _configuration = configuration;
+            _permissionChecker = permissionChecker;
         }
 
-        public Task<string> GenerateJWTTokenAsync()
+        public async Task<string> GenerateJWTTokenAsync()
         {
             // Get user & tenant info
             var userId = _currentUser.GetId().ToString();
             var tenant = _currentTenant.Name ?? "UnknownTenant";
             var isITAdmin = _currentUser.IsInRole(IdentityConsts.ITAdminRoleName);
+            var canEditDataModel = await _permissionChecker.IsGrantedAsync(
+                AIPermissions.Reporting.CreateEditDataModel);
 
             // Build claims
             var claims = new[]
@@ -39,6 +49,7 @@ namespace Unity.GrantManager.Identity
                 new Claim("user_id", userId),
                 new Claim("tenant", tenant),
                 new Claim("is_it_admin", isITAdmin.ToString().ToLower()),
+                new Claim("can_edit_data_model", canEditDataModel.ToString().ToLower()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
@@ -63,7 +74,7 @@ namespace Unity.GrantManager.Identity
 
             // Return encoded JWT
             var jwt = new JwtSecurityTokenHandler().WriteToken(token);
-            return Task.FromResult(jwt);
+            return jwt;
         }
     }
 }

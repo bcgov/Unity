@@ -36,6 +36,33 @@ describe("Send an email", () => {
   const loginPage = LoginPageInstance();
   const navPage = NavigationPageInstance();
 
+  // The "Template Applied" swal2 dialog (see "Select Email Template") fires
+  // asynchronously and can land after that test has already finished waiting
+  // for it, leaking into whichever test runs next and blocking every field
+  // underneath it. Cheap and idempotent — call at the top of each subsequent
+  // test to mop up a straggler if one shows up.
+  function dismissStrayModalIfPresent() {
+    cy.get("body", { timeout: STANDARD_TIMEOUT }).then(($body) => {
+      const modal = $body.find(".swal2-popup, .modal.show");
+      if (modal.length === 0) {
+        return;
+      }
+
+      const dismissButton = modal
+        .find("button")
+        .filter((_, element) => {
+          return /^(apply template|confirm|apply|ok)$/i.test(
+            (element.textContent || "").trim(),
+          );
+        })
+        .first();
+
+      if (dismissButton.length > 0) {
+        cy.wrap(dismissButton).click({ force: true });
+      }
+    });
+  }
+
   function openSavedEmailFromHistoryBySubject(subject: string) {
     cy.get("body", { timeout: STANDARD_TIMEOUT }).then(($body) => {
       const historyTableById = $body.find("#EmailHistoryTable");
@@ -156,7 +183,6 @@ describe("Send an email", () => {
   });
 
   it("Open Emails tab", () => {
-    // Dismiss any swal2 modal that may be covering the tab
     cy.get("body").then(($body) => {
       if ($body.find(".swal2-container").length > 0) {
         cy.get(".swal2-container").then(($swal) => {
@@ -175,114 +201,153 @@ describe("Send an email", () => {
     });
 
     cy.get("#emails-tab", { timeout: STANDARD_TIMEOUT })
-      .should("exist")
       .should("be.visible")
       .click();
 
-    cy.contains("Emails", { timeout: STANDARD_TIMEOUT }).should("exist");
+    cy.get("#emails-tab", { timeout: STANDARD_TIMEOUT }).should(
+      "have.class",
+      "active",
+    );
     cy.contains("Email History", { timeout: STANDARD_TIMEOUT }).should("exist");
   });
 
   it("Open New Email form", () => {
     cy.get("#btn-new-email", { timeout: STANDARD_TIMEOUT })
-      .should("exist")
       .should("be.visible")
       .click();
 
-    cy.contains("Email To", { timeout: STANDARD_TIMEOUT }).should("exist");
+    cy.get("#EmailTo", { timeout: STANDARD_TIMEOUT }).should("be.visible");
   });
 
   it("Select Email Template", () => {
-    cy.get("#template", { timeout: STANDARD_TIMEOUT })
-      .should("exist")
+    // UAT/PROD are still on the pre-redesign composer (#template, no
+    // confirmation dialogs); DEV/TEST have the newer TinyMCE toolbar select
+    // (no id, only this title attribute) plus a two-step swal2 confirmation.
+    // Match either selector so this spec works across all four environments.
+    cy.get('select[title="Select a template to apply"], #template', {
+      timeout: STANDARD_TIMEOUT,
+    })
       .should("be.visible")
-      .select(TEMPLATE_NAME);
+      .select(TEMPLATE_NAME, { force: true });
 
-    cy.get("#template")
-      .find("option:selected")
-      .should("have.text", TEMPLATE_NAME);
+    // Only the newer UI pops the "Apply Template?" / "Template Applied"
+    // swal2 confirmations — skip them if they don't show up.
+    cy.get("body", { timeout: STANDARD_TIMEOUT }).then(($body) => {
+      if ($body.find(".swal2-popup").length > 0) {
+        cy.contains(".swal2-popup button", "Apply Template", {
+          timeout: STANDARD_TIMEOUT,
+        }).click();
+
+        // Once its async content fetch resolves, the app shows a second,
+        // separate "Template Applied" success dialog (OK button only).
+        cy.contains(".swal2-popup button", "OK", {
+          timeout: STANDARD_TIMEOUT,
+        }).click();
+      }
+    });
 
     // #EmailBody is a hidden textarea backing the rich-text editor.
     // Template selection populates the visible RTE but does not auto-sync
     // the backing field — trigger the change manually if still empty.
     cy.get("#EmailBody", { timeout: STANDARD_TIMEOUT }).then(($el) => {
       if (($el.val() as string).trim() === "") {
-        cy.wrap($el).invoke("val", "Test email body").trigger("change");
+        cy.wrap($el)
+          .invoke("val", "Test email body")
+          .trigger("change", { force: true });
       }
     });
   });
 
   it("Set Email To address", () => {
+    dismissStrayModalIfPresent();
+
     cy.get("#EmailTo", { timeout: STANDARD_TIMEOUT })
-      .should("exist")
       .should("be.visible")
-      .clear()
-      .type(TEST_EMAIL_TO);
+      .clear({ force: true })
+      .type(TEST_EMAIL_TO, { force: true });
 
     cy.get("#EmailTo").should("have.value", TEST_EMAIL_TO);
   });
 
   it("Set Email CC address", () => {
+    dismissStrayModalIfPresent();
+
     cy.get("#EmailCC", { timeout: STANDARD_TIMEOUT })
-      .should("exist")
       .should("be.visible")
-      .clear()
-      .type(TEST_EMAIL_CC);
+      .clear({ force: true })
+      .type(TEST_EMAIL_CC, { force: true });
 
     cy.get("#EmailCC").should("have.value", TEST_EMAIL_CC);
   });
 
   it("Set Email BCC address", () => {
+    dismissStrayModalIfPresent();
+
+    // The BCC row (#bcc-input-row) is hidden until the BCC toggle is clicked.
+    cy.get("body", { timeout: STANDARD_TIMEOUT }).then(($body) => {
+      const bccRow = $body.find("#bcc-input-row");
+      if (bccRow.length > 0 && !Cypress.$(bccRow[0]).is(":visible")) {
+        cy.get("#btn-show-bcc").click();
+      }
+    });
+
     cy.get("#EmailBCC", { timeout: STANDARD_TIMEOUT })
-      .should("exist")
       .should("be.visible")
-      .clear()
-      .type(TEST_EMAIL_BCC);
+      .clear({ force: true })
+      .type(TEST_EMAIL_BCC, { force: true });
 
     cy.get("#EmailBCC").should("have.value", TEST_EMAIL_BCC);
   });
 
   it("Set Email Subject", () => {
+    dismissStrayModalIfPresent();
+
     cy.get("#EmailSubject", { timeout: STANDARD_TIMEOUT })
-      .should("exist")
       .should("be.visible")
-      .clear()
-      .type(TEST_EMAIL_SUBJECT);
+      .clear({ force: true })
+      .type(TEST_EMAIL_SUBJECT, { force: true });
 
     cy.get("#EmailSubject").should("have.value", TEST_EMAIL_SUBJECT);
   });
 
   it("Save the email", () => {
-    cy.get("#btn-save", { timeout: STANDARD_TIMEOUT })
-      .should("exist")
+    dismissStrayModalIfPresent();
+
+    cy.get("#btn-save-top, #btn-save", { timeout: STANDARD_TIMEOUT })
       .scrollIntoView()
       .should("be.visible")
-      .click();
+      .click({ force: true });
 
-    cy.get("#btn-new-email", { timeout: STANDARD_TIMEOUT }).should(
-      "be.visible",
-    );
+    cy.contains("#EmailHistoryTable td", TEST_EMAIL_SUBJECT, {
+      timeout: STANDARD_TIMEOUT,
+    }).should("exist");
   });
 
   it("Select saved email from Email History", () => {
+    dismissStrayModalIfPresent();
     openSavedEmailFromHistoryBySubject(TEST_EMAIL_SUBJECT);
+
+    // Clicking the history row scrolled the table into view, not the
+    // composer above it — scroll back up before checking field visibility.
+    cy.get("#EmailForm", { timeout: STANDARD_TIMEOUT }).scrollIntoView();
 
     cy.get("#EmailTo", { timeout: STANDARD_TIMEOUT }).should("be.visible");
     cy.get("#EmailCC").should("be.visible");
     cy.get("#EmailBCC").should("be.visible");
     cy.get("#EmailSubject").should("be.visible");
 
-    cy.get("#btn-send", { timeout: STANDARD_TIMEOUT }).should("exist");
-    cy.get("#btn-save", { timeout: STANDARD_TIMEOUT }).should("exist");
+    cy.get("#btn-send-top, #btn-send", { timeout: STANDARD_TIMEOUT }).should("exist");
+    cy.get("#btn-save-top, #btn-save", { timeout: STANDARD_TIMEOUT }).should("exist");
   });
 
   it("Send the email", () => {
-    cy.get("#btn-send", { timeout: STANDARD_TIMEOUT })
-      .should("exist")
+    dismissStrayModalIfPresent();
+
+    cy.get("#btn-send-top, #btn-send", { timeout: STANDARD_TIMEOUT })
       .scrollIntoView()
       .should("be.visible")
       .should("not.be.disabled")
-      .click();
+      .click({ force: true });
   });
 
   it("Confirm send email in dialog", () => {

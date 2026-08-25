@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Unity.GrantManager.GrantApplications;
 using Volo.Abp.Application.Dtos;
 
@@ -32,5 +33,7 @@ namespace Unity.GrantManager.ApplicationForms
         public string? Prefix { get; set; }
         public SuffixConfigType? SuffixType { get; set; }
         public int? DefaultPaymentGroup { get; set; }
+        public List<ExternalLinkConfigDto> ExternalLinks { get; set; } = [];
+        public string ApplicantMessage { get; set; } = string.Empty;
     }
 }

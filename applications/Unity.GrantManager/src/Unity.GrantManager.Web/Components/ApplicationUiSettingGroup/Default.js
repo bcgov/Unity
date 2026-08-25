@@ -2,6 +2,20 @@
     $(function () {
         $('.form-check').addClass('form-switch');
 
+        const syncSwitchAriaChecked = (el) => {
+            $(el).attr('aria-checked', el.checked ? 'true' : 'false');
+        };
+
+        const $switchInputs = $('input[role="switch"]');
+        $switchInputs.each(function () { syncSwitchAriaChecked(this); });
+        $switchInputs.on('change', function () { syncSwitchAriaChecked(this); });
+
+        $(document).on('reset', '#ApplicationTabsSettingsForm', function () {
+            window.setTimeout(function () {
+                $(this).find('input[role="switch"]').each(function () { syncSwitchAriaChecked(this); });
+            }.bind(this), 0);
+        });
+
         const TabsUiElements = {
             settingForm: $("#ApplicationTabsSettingsForm"),
             saveButton: $("#ApplicationTabsSaveButton"),
@@ -25,11 +39,11 @@
         TabsUiElements.settingForm.on('submit', function (event) {
             event.preventDefault();
 
-            if (!$(this).valid()) {
+            if (!TabsUiElements.settingForm.valid()) {
                 return;
             }
 
-            let form = $(this).serializeFormToObject();
+            let form = TabsUiElements.settingForm.serializeFormToObject();
             unity.grantManager.settingManagement.applicationUiSettings.update(form).then(function (result) {
                 $(document).trigger("AbpSettingSaved");
                 initialFormState = TabsUiElements.settingForm.serialize();

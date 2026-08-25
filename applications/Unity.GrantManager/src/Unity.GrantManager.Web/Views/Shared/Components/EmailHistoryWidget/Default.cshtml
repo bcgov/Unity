@@ -1,3 +1,5 @@
-﻿<div class="px-0">
-    <abp-table id="EmailHistoryTable" hoverable-rows="true" data-resize-aware="true" class="attachments-table"></abp-table>
+﻿@model Unity.GrantManager.Web.Views.Shared.Components.EmailHistoryWidget.EmailHistoryWidgetViewModel
+<div class="px-0">
+    <abp-table id="EmailHistoryTable" hoverable-rows="true" data-resize-aware="true" class="attachments-table"
+               data-enable-email-delay="@Model.EnableEmailDelay.ToString().ToLower()"></abp-table>
 </div>

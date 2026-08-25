@@ -30,6 +30,9 @@
         <li id="reconciliation-report-menu-item" class="nav-item btn btn-nav active">
             Reconciliation Report
         </li>
+        <li id="background-jobs-menu-item" class="nav-item btn btn-nav">
+            Background Jobs
+        </li>
     </ul>
 </div>
 
@@ -41,8 +44,8 @@
         <div class="reconciliation-filter-row">
             <div class="reconciliation-filter-inputs gap-3 px-1">
                 <div>
-                    <label class="form-label" for="search"></label>
-                    <input type="search" id="search" placeholder="Search" class="tbl-search">
+                    <label class="form-label visually-hidden" for="search">Search</label>
+                    <input type="search" id="search" placeholder="Search" aria-label="Search" class="tbl-search">
                 </div>
                 <div>
                     <label class="form-label" for="ReconciliationTenantFilter">Tenant: <span class="text-danger">*</span></label>
@@ -84,4 +87,8 @@
             <abp-table id="ReconciliationTable"></abp-table>
         </div>
     </div>
+</div>
+
+<div id="background-jobs-div" class="input-area card mb-3 background-jobs hide">
+    @await Component.InvokeAsync("BackgroundJobs")
 </div>

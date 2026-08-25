@@ -4,32 +4,17 @@ using Microsoft.Extensions.Hosting;
 using OpenIddict.Abstractions;
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Unity.GrantManager.Identity;
-using Unity.GrantManager.Permissions;
 using Unity.GrantManager.Web.Exceptions;
-using Unity.Modules.Shared.Permissions;
-using Volo.Abp.Identity;
-using Volo.Abp.PermissionManagement;
 using Volo.Abp.Security.Claims;
 
 namespace Unity.GrantManager.Web.Identity.LoginHandlers
 {
     internal class IdentityProfileLoginUserHandler : IdentityProfileLoginBase
     {
-        internal readonly ImmutableArray<string> _userPermissions = [
-            GrantManagerPermissions.Default,
-            IdentityPermissions.UserLookup.Default
-        ];
-
-        internal readonly ImmutableArray<string> _itOperationsPermissions = [
-            GrantManagerPermissions.Endpoints.ManageEndpoints,
-            IdentityConsts.ITOperationsPermissionName
-        ];
-
         internal async Task<UserTenantAccountDto> Handle(TokenValidatedContext validatedTokenContext,
           IList<UserTenantAccountDto>? userTenantAccounts,
           string? idp)
@@ -57,11 +42,6 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
                 }
             }
             
-            if (validatedTokenContext.Principal != null && validatedTokenContext.Principal.IsInRole(IdentityConsts.ITOperationsRoleName))
-            { 
-                AssignITOperationsPermissions(validatedTokenContext.Principal);
-            }
-
             UserTenantAccountDto? userTenantAccount = null;
             var setTenant = validatedTokenContext.Request.Cookies["set_tenant"];
             if (setTenant != null && setTenant != Guid.Empty.ToString())
@@ -72,42 +52,17 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
             }
 
             userTenantAccount ??= userTenantAccounts[0];
-            var principal = validatedTokenContext.Principal!;
 
-            using (CurrentTenant.Change(userTenantAccount.TenantId))
-            {
-                var userRoles = await IdentityUserRepository.GetRolesAsync(userTenantAccount.Id);
-
-                if (userRoles != null)
-                {
-                    foreach (var role in userRoles)
-                    {
-                        var dbRole = await IdentityRoleManager.GetByIdAsync(role.Id);
-                        principal.AddClaim(UnityClaimsTypes.Role, dbRole.Name);
-                    }
-                }
-
-                var userPermissions = (await PermissionManager.GetAllForUserAsync(userTenantAccount.Id)).Where(s => s.IsGranted);
-
-                foreach (var permissionName in userPermissions
-                    .Select(s => s.Name)
-                    .Where(permissionName => !principal.HasClaim(UnityClaimsTypes.Permission, permissionName)))
-                {
-                    principal.AddClaim(UnityClaimsTypes.Permission, permissionName);
-                }
-            }
-
-            AssignDefaultPermissions(validatedTokenContext.Principal!);
+            // DB-managed roles (approver, assessor, program_manager, etc.) are no longer stamped
+            // onto the principal here - ABP's dynamic claims refresh recomputes AbpClaimTypes.Role
+            // from the DB on every request, so the cookie doesn't need to carry them. The
+            // UnityClaimsTypes.Role ("client_roles") claim now only ever holds what Keycloak sends
+            // natively (ITAdministrator/ITOperations), which ABP can't recompute.
             AssignDefaultClaims(validatedTokenContext.Principal!, userTenantAccount.DisplayName ?? string.Empty, userTenantAccount.Id);
 
             validatedTokenContext.Principal!.AddClaim(AbpClaimTypes.TenantId, userTenantAccount.TenantId?.ToString() ?? Guid.Empty.ToString());
 
             return userTenantAccount;
-        }
-
-        private void AssignITOperationsPermissions(ClaimsPrincipal claimsPrincipal)
-        {
-            claimsPrincipal.AddPermissions(_itOperationsPermissions);
         }
 
         private async Task<IList<UserTenantAccountDto>> AutoRegisterUserWithDefaultAsync(string userIdentifier,
@@ -150,11 +105,6 @@ namespace Unity.GrantManager.Web.Identity.LoginHandlers
         private bool IsAutoRegisterFlagSet()
         {
             return Configuration.GetValue<bool>("IdentityProfileLogin:AutoCreateUser");
-        }
-
-        private void AssignDefaultPermissions(ClaimsPrincipal claimsPrincipal)
-        {
-            claimsPrincipal.AddPermissions(_userPermissions);
         }
     }
 }

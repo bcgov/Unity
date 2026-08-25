@@ -13,5 +13,6 @@ public class FundingHistoryDto : AuditedEntityDto<Guid>
     public decimal? OneTimeConsideration { get; set; }    
     public decimal? ReconsiderationAmount { get; set; }
     public decimal? TotalGrantAmount { get; set; }
+    public DateTime? PaidDate { get; set; }
     public string? FundingNotes { get; set; }
 }

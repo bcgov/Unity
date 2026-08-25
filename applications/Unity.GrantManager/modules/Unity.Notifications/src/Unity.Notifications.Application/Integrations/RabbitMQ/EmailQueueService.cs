@@ -30,12 +30,13 @@ public class EmailQueueService : ApplicationService
             var message = new EmailMessages
             {
                 TimeToLive = TimeSpan.FromMinutes(TwentyMintues),
+                TenantId = emailNotificationEvent.TenantId ?? Guid.Empty,
                 EmailNotificationEvent = emailNotificationEvent
             };
 
             await Task.Delay(TimeSpan.FromMilliseconds(FiveMinutesInMilliSeconds * (emailNotificationEvent.RetryAttempts + 1)));
 
-            _queueProducer.PublishMessage(message);
+            await _queueProducer.PublishMessageAsync(message);
         }
         catch (Exception ex) {
             var ExceptionMessage = ex.Message;
@@ -44,22 +45,21 @@ public class EmailQueueService : ApplicationService
         return Task.CompletedTask;
     }
 
-    public Task SendToEmailEventQueueAsync(EmailNotificationEvent emailNotificationEvent)
+    public async Task SendToEmailEventQueueAsync(EmailNotificationEvent emailNotificationEvent)
     {
         try
         {
             var message = new EmailMessages
             {
                 TimeToLive = TimeSpan.FromMinutes(TenMintues),
+                TenantId = emailNotificationEvent.TenantId ?? Guid.Empty,
                 EmailNotificationEvent = emailNotificationEvent
             };
-            _queueProducer.PublishMessage(message);
+            await _queueProducer.PublishMessageAsync(message);
         }
         catch (Exception ex) {
             var ExceptionMessage = ex.Message;
             _logger.LogError(ex, "SendToEmailEventQueueAsync Exception: {ExceptionMessage}", ExceptionMessage);
         }
-
-        return Task.CompletedTask;
     }
 }

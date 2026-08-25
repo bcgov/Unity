@@ -1,6 +1,7 @@
 ﻿using Stateless.Graph;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Unity.GrantManager.Workflow;
 public static class UnityWorkflowExtensions
@@ -8,9 +9,9 @@ public static class UnityWorkflowExtensions
     /// <summary>
     /// The currently permitted actions allowed by the workflow state machine.
     /// </summary>
-    public static IEnumerable<TTriggers> GetPermittedActions<TStates, TTriggers>(this UnityWorkflow<TStates, TTriggers> workflow)
+    public static async Task<IEnumerable<TTriggers>> GetPermittedActionsAsync<TStates, TTriggers>(this UnityWorkflow<TStates, TTriggers> workflow)
     {
-        return workflow._stateMachine.GetPermittedTriggers();
+        return await workflow._stateMachine.GetPermittedTriggersAsync();
     }
 
     /// <summary>
@@ -25,10 +26,10 @@ public static class UnityWorkflowExtensions
     }
 
     /// <summary>
-    /// Generates a DOT graph from the workflow state machine configuration.
+    /// Generates a Mermaid graph from the workflow state machine configuration.
     /// </summary>
     public static string? GetWorkflowDiagram<TStates, TTriggers>(this UnityWorkflow<TStates, TTriggers> workflow)
     {
-        return UmlDotGraph.Format(workflow._stateMachine.GetInfo());
+        return MermaidGraph.Format(workflow._stateMachine.GetInfo());
     }
 }

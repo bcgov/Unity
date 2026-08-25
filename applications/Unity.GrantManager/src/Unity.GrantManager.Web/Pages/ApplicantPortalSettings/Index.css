@@ -28,9 +28,9 @@
 
 .portal-settings-config {
     overflow: auto;
-    max-width: 750px;
     max-height: calc(100vh - 180px);
-    width: 100%;
+    width: 95%;
+    padding: 1rem;
 }
 
 .portal-settings-actions {
@@ -49,10 +49,6 @@
 .portal-status-table label {
     margin-bottom: 0;
     font-weight: 400;
-}
-
-.portal-status-table .form-control {
-    max-width: 300px;
 }
 
 #PortalStatusForm .dt-container {

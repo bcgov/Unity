@@ -13,4 +13,5 @@ public interface IApplicantRepository : IRepository<Applicant, Guid>
     Task<Applicant?> GetByUnityApplicantNameAsync(string unityApplicantName);
     Task<List<Applicant>> GetApplicantsWithUnityApplicantIdAsync();
     Task<JsonDocument> GetApplicantAutocompleteQueryAsync(string? applicantLookUpQuery);
+    Task<List<ApplicantListRecord>> GetApplicantListRecordsAsync(IReadOnlyList<string>? requestedFields = null);
 }

@@ -6,4 +6,7 @@ public static class AIFeatures
     public const string AttachmentSummaries = "Unity.AI.AttachmentSummaries";
     public const string ApplicationAnalysis = "Unity.AI.ApplicationAnalysis";
     public const string Scoring = "Unity.AI.Scoring";
+    public const string FormMapping = "Unity.AI.FormMapping";
+    public const string FormWorksheet = "Unity.AI.FormWorksheet";
+    public const string FormScoresheet = "Unity.AI.FormScoresheet";
 }

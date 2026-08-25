@@ -8,4 +8,6 @@ namespace Unity.Notifications.Emails;
 public interface IEmailLogAttachmentRepository : IBasicRepository<EmailLogAttachment, Guid>
 {
     Task<List<EmailLogAttachment>> GetByEmailLogIdAsync(Guid emailLogId);
+    Task<List<EmailLogAttachment>> GetByTemplateIdAsync(Guid templateId);
+    Task<List<EmailLogAttachment>> GetOriginAttachmentsByEmailLogIdAsync(Guid emailLogId);
 }

@@ -1,4 +1,8 @@
-﻿.configuration-warning {
+﻿#otherConfigForm .form-select {
+    width: 400px !important;
+}
+
+.configuration-warning {
     color: var(--lpx-danger);
     border-color: var(--lpx-danger);
 }
@@ -33,3 +37,24 @@
     border-radius: 0.25rem;
     border: 1px solid #e9ecef;
 }
+
+.field-error {
+    display: block;
+    min-height: 1.1rem;
+    font-size: 0.8rem;
+}
+
+.related-link-row {
+    align-items: flex-start;
+    padding-bottom: 0.25rem;
+}
+
+.related-link-row .form-control.is-invalid,
+#renewalLinkUri.is-invalid {
+    border-color: var(--lpx-danger);
+}
+
+#btn-add-related-link:disabled {
+    opacity: 0.6;
+}
+

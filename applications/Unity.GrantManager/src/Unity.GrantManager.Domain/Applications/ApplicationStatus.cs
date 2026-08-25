@@ -13,6 +13,8 @@ public class ApplicationStatus : AuditedAggregateRoot<Guid>, IMultiTenant
 
     public string InternalStatus { get; set; } = string.Empty;
 
+    public string? NotifiedStatus { get; set; }
+
     public GrantApplicationState StatusCode { get; set; }
 
     // Navigation Property

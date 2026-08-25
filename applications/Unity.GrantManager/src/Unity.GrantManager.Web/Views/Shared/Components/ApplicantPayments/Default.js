@@ -60,7 +60,7 @@ function getSupplierNumberColumn() {
         name: 'supplierNumber',
         data: 'supplierNumber',
         className: 'data-table-header',
-        index: 6,
+        index: 9,
     };
 }
 
@@ -70,7 +70,7 @@ function getSupplierNameColumn() {
         name: 'supplierName',
         data: 'supplierName',
         className: 'data-table-header',
-        index: 7,
+        index: 10,
     };
 }
 
@@ -81,8 +81,16 @@ function getSiteNumberColumn() {
         data: 'site.number',
         className: 'data-table-header',
         defaultContent: '',
-        index: 8,
+        index: 11,
     };
+}
+
+let applicantCasPaymentResponseModal = new abp.ModalManager({
+    viewUrl: '../PaymentRequests/CasPaymentRequestResponse',
+});
+
+function openApplicantCasResponseModal(casResponse) {
+    applicantCasPaymentResponseModal.open({ casResponse: casResponse });
 }
 
 function getPaymentStatusTextColor(status) {
@@ -106,6 +114,44 @@ function getPaymentStatusTextColor(status) {
     }
 }
 
+function getInvoiceStatusColumn() {
+    return {
+        title: 'Invoice Status',
+        name: 'invoiceStatus',
+        data: 'invoiceStatus',
+        className: 'data-table-header',
+        defaultContent: '',
+        index: 6,
+    };
+}
+
+function getCasResponseColumn() {
+    return {
+        title: 'CAS Response',
+        name: 'casResponse',
+        data: 'casResponse',
+        className: 'data-table-header notexport',
+        index: 7,
+        render: function (data) {
+            if (data + '' !== 'undefined' && data?.length > 0) {
+                return '<button class="btn btn-light info-btn" type="button" onclick="openApplicantCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
+            }
+            return null;
+        },
+    };
+}
+
+function getCategoryColumn() {
+    return {
+        title: 'Category',
+        name: 'category',
+        data: 'category',
+        className: 'data-table-header',
+        defaultContent: '',
+        index: 8,
+    };
+}
+
 $(function () {
     const l = abp.localization.getResource('Payments');
     $('.unity-currency-input').maskMoney({});
@@ -124,6 +170,9 @@ $(function () {
         'status',
         'amount',
         'paymentStatus',
+        'invoiceStatus',
+        'casResponse',
+        'category',
         'supplierNumber',
         'supplierName',
         'siteNumber',
@@ -190,6 +239,41 @@ $(function () {
 
         dataTable.externalSearch('#applicant-payments-search', { delay: 300 });
 
+        dataTable.on('draw', function () {
+            dataTable.rows().every(function () {
+                let data = this.data();
+                let $row = $(this.node());
+                $row.removeClass('error-row');
+                if (data.casResponse && data.casResponse !== '' &&
+                    data.casResponse.toUpperCase() !== 'SUCCEEDED') {
+                    $row.addClass('error-row');
+                }
+            });
+        });
+
+        // Reposition the COLUMNS dropdown to open upward when there is not enough space below. Opens upward if there is no ample space in either direction.
+        $('#applicantPaymentsDynamicButtonContainerId').on('click', '.buttons-collection', function () {
+            const $btn = $(this);
+            setTimeout(function () {
+                const $collection = $('.dt-button-collection').filter(':visible').first();
+                if (!$collection.length) return;
+                const btnRect = $btn[0].getBoundingClientRect();
+                const collHeight = $collection.outerHeight();
+                const rightOffset = window.innerWidth - btnRect.right;
+                if (btnRect.bottom + collHeight > window.innerHeight) {
+                    $collection[0].style.setProperty('position', 'fixed', 'important');
+                    $collection[0].style.setProperty('bottom', (window.innerHeight - btnRect.top) + 'px', 'important');
+                    $collection[0].style.setProperty('top', '', 'important');
+                } else {
+                    $collection[0].style.setProperty('position', 'fixed', 'important');
+                    $collection[0].style.setProperty('top', btnRect.bottom + 'px', 'important');
+                    $collection[0].style.setProperty('bottom', '', 'important');
+                }
+                $collection[0].style.setProperty('left', 'auto', 'important');
+                $collection[0].style.setProperty('right', rightOffset + 'px', 'important');
+            }, 0);
+        });
+
         $('#nav-payments-tab').one('click', function () {
             dataTable.columns.adjust();
         });
@@ -203,6 +287,9 @@ $(function () {
             getStatusColumn(),
             getAmountColumn(),
             getCasPaymentStatusColumn(),
+            getInvoiceStatusColumn(),
+            getCasResponseColumn(),
+            getCategoryColumn(),
             getSupplierNumberColumn(),
             getSupplierNameColumn(),
             getSiteNumberColumn(),

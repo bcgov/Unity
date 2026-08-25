@@ -66,6 +66,7 @@ namespace Unity.Notifications.EmailGroups
             }
         }
 
+        [AllowAnonymous]
         public async Task<List<EmailGroupDto>> GetListAsync()
         {
             var groups =  await _emailGroupsRepository.GetListAsync();

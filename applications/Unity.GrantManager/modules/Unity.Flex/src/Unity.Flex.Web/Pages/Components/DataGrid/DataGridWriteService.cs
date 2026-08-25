@@ -279,6 +279,22 @@ namespace Unity.Flex.Web.Pages.Flex
             };
         }
 
+        internal async Task DeleteRowAsync(Guid valueId, uint row, Guid worksheetInstanceId)
+        {
+            var currentValue = await customFieldValueAppService.GetAsync(valueId);
+            var dataGridValue = DataGridServiceUtils.DeserializeDataGridValue(currentValue.CurrentValue);
+            if (dataGridValue == null) return;
+
+            var dataGridRowsValue = DataGridServiceUtils.DeserializeDataGridRowsValue(dataGridValue.Value?.ToString());
+            if (dataGridRowsValue == null || row >= (uint)dataGridRowsValue.Rows.Count) return;
+
+            dataGridRowsValue.Rows.RemoveAt((int)row);
+            dataGridValue.Value = dataGridRowsValue;
+
+            await customFieldValueAppService.ExplicitSetAsync(valueId, JsonSerializer.Serialize(dataGridValue));
+            await customFieldValueAppService.SyncWorksheetInstanceValueAsync(worksheetInstanceId);
+        }
+
         internal async Task<List<Tuple<string, string, CustomFieldType>>> GenerateKeyValueTypesAsync(Guid customFieldId, Dictionary<string, string>? keyValuePairs)
         {
             var result = new List<Tuple<string, string, CustomFieldType>>();

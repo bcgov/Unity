@@ -49,4 +49,15 @@ public static partial class UnitySelector
             }
         }
     }
+
+    public static partial class Application
+    {
+        public static partial class Status
+        {
+            public const string Default = "Unity.GrantManager.ApplicationManagement.Application.Status";
+            public const string Publish = "Unity.GrantManager.ApplicationManagement.Application.Status.Publish";
+            public const string Unpublish = "Unity.GrantManager.ApplicationManagement.Application.Status.Unpublish";
+            public const string BulkPublish = "Unity.GrantManager.ApplicationManagement.Application.Status.BulkPublish";
+        }
+    }
 }

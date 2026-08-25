@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using Unity.Notifications.TeamsNotifications;
+using Unity.GrantManager.Notifications.Logs;
 
 namespace Unity.GrantManager.Notifications
 {
@@ -8,7 +8,7 @@ namespace Unity.GrantManager.Notifications
     {
         Task NotifyChefsEventToTeamsAsync(string factName, string factValue, bool alert = false);
         Task PostChefsEventToTeamsAsync(string subscriptionEvent, dynamic form, dynamic chefsFormVersion);
-        Task PostToTeamsAsync(string activityTitle, string activitySubtitle);
-        Task PostToTeamsAsync(string activityTitle, string activitySubtitle, List<Fact> facts);
+        Task PostToNotificationsAsync(string activityTitle, string activitySubtitle);
+        Task PostToNotificationsAsync(string activityTitle, string activitySubtitle, List<Fact> facts);
     }
 }

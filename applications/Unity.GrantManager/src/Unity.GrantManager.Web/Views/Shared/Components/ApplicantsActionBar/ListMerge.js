@@ -14,7 +14,7 @@
         { label: 'Registered Organization Number',        key: 'orgNumber',                   radioName: 'merge_OrgNumber' },
         { label: 'Non-Registered Organization Name',      key: 'nonRegOrgName',               radioName: 'merge_NonRegOrgName' },
         { label: 'Organization Type',                     key: 'organizationType',            radioName: 'merge_OrganizationType' },
-        { label: 'Organization Size',                     key: 'organizationSize',            radioName: 'merge_OrganizationSize' },
+        { label: 'Organization Size (Approximate Number of Employees)', key: 'approxNumberOfEmployees', radioName: 'merge_ApproxNumberOfEmployees' },
         { label: 'Org book status',                       key: 'orgStatus',                   radioName: 'merge_OrgStatus' },
         { label: 'Indigenous',                            key: 'indigenousOrgInd',            radioName: 'merge_IndigenousOrgInd' },
         { label: 'Sector',                                key: 'sector',                      radioName: 'merge_Sector' },
@@ -153,7 +153,7 @@
                 orgNumber:                   merged['orgNumber'] ?? null,
                 nonRegOrgName:               merged['nonRegOrgName'] ?? null,
                 organizationType:            merged['organizationType'] ?? null,
-                organizationSize:            merged['organizationSize'] ?? null,
+                approxNumberOfEmployees:     merged['approxNumberOfEmployees'] ?? null,
                 orgStatus:                   merged['orgStatus'] ?? null,
                 indigenousOrgInd:            indigenousOrgIndBool,
                 sector:                      merged['sector'] ?? null,
@@ -216,7 +216,8 @@
                 abp.notify.success('Applicants merged successfully.');
             }).catch(err => {
                 console.warn('Merge failed:', err);
-                abp.notify.error('Merge failed. Please try again.');
+                const msg = err?.responseJSON?.error?.message || 'Merge failed. Please try again.';
+                abp.message.error(msg, 'Merge Failed');
             }).always(() => {
                 $('#listMergeSpinner').addClass('d-none');
                 $('#listMergeMergeBtn').prop('disabled', false);
