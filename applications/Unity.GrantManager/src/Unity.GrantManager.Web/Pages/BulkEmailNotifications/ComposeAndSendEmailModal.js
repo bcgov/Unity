@@ -122,25 +122,27 @@
         applicationStates.set(selectedApplicationId, { ...existing, ...readVisibleEditor() });
     }
 
-    function stripHtmlComments(value) {
+    function stripHtmlMarkup(value) {
         const parts = [];
         let cursor = 0;
 
         while (cursor < value.length) {
-            const commentStart = value.indexOf('<!--', cursor);
-            if (commentStart < 0) {
+            const tagStart = value.indexOf('<', cursor);
+            if (tagStart < 0) {
                 parts.push(value.slice(cursor));
                 break;
             }
 
-            parts.push(value.slice(cursor, commentStart));
-            const commentEnd = value.indexOf('-->', commentStart + 4);
-            if (commentEnd < 0) {
-                parts.push(value.slice(commentStart));
+            parts.push(value.slice(cursor, tagStart));
+            const isComment = value.startsWith('<!--', tagStart);
+            const terminator = isComment ? '-->' : '>';
+            const tagEnd = value.indexOf(terminator, tagStart + (isComment ? 4 : 1));
+            if (tagEnd < 0) {
+                parts.push(value.slice(tagStart));
                 break;
             }
 
-            cursor = commentEnd + 3;
+            cursor = tagEnd + terminator.length;
         }
 
         return parts.join('');
@@ -156,8 +158,7 @@
         }
 
         // This only checks for visible content; it must not interpret editor input as DOM HTML.
-        const text = stripHtmlComments(body)
-            .replace(/<[^>]*>/g, '')
+        const text = stripHtmlMarkup(body)
             .replace(/&(?:nbsp|#0*160|#x0*a0);/gi, ' ')
             .replace(/[\u200B-\u200D\uFEFF]/g, '')
             .trim();
