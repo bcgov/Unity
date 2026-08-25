@@ -8,8 +8,9 @@ name: Dev - Selector Registry Check
 # Two checks:
 #   1. cypress/selectors/registry.json must already reflect the current source
 #      (catches "changed a selector, forgot to regenerate/commit the registry").
-#   2. npm run selectors:diff must report no regressions against origin/main
-#      (catches "this branch broke a selector that worked on main").
+#   2. npm run selectors:diff must report no regressions against the baseline
+#      (catches "this branch broke a selector that worked on main"). Baseline
+#      defaults to main; override via workflow_dispatch's base_ref input.
 #
 # Never runs --fix/--apply here — auto-mutating a contributor's branch in CI is
 # out of scope; selectors:fix/selectors:apply remain a local/dev-workstation step.
@@ -18,6 +19,12 @@ on:
   pull_request:
     branches:
       - dev
+  workflow_dispatch:
+    inputs:
+      base_ref:
+        description: "Branch to diff selectors against (default: main)"
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -28,14 +35,16 @@ jobs:
     defaults:
       run:
         working-directory: applications/Unity.AutoUI
+    env:
+      DIFF_BASE_REF: ${{ inputs.base_ref || 'main' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - name: Ensure origin/main is fetchable (selectors:diff baseline)
-        run: git fetch origin main --depth=1
+      - name: Ensure baseline ref is fetchable (selectors:diff baseline)
+        run: git fetch origin "$DIFF_BASE_REF" --depth=1
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -66,5 +75,5 @@ jobs:
           fi
           echo "Registry is up to date."
 
-      - name: Check for selector regressions against main
-        run: npm run selectors:diff
+      - name: Check for selector regressions against baseline
+        run: npm run selectors:diff -- --base "origin/$DIFF_BASE_REF"
