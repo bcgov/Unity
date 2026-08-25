@@ -8,13 +8,10 @@
 
 @{
     Layout = null;
-    bool canEditRedStop = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.EditRedStop);
-    var permissionCheck = await PermissionChecker.IsGrantedAsync([
-        UnitySelector.ApplicantManagement.ApplicantInfo.Update,
-        UnitySelector.ApplicantManagement.ApplicantInfo.OrganizationInfo.Update,
-    ]);
-
-    var hasSavePermission = permissionCheck.Result.Values.Any(x => x == PermissionGrantResult.Granted);
+    bool canEditRedStop = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.Update_RedStop);
+    var canEditApplicantInfo = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.Update);
+    var canEditOrganizationInfo = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.OrganizationInfo.Update);
+    var hasSavePermission = canEditApplicantInfo || canEditOrganizationInfo;
 }
 
 <div id="ApplicantOrganizationInfo_SectorData" style="display:none;">
@@ -99,6 +96,8 @@
                             </div>
                         </abp-column>
                     </abp-row>
+                    @if (canEditOrganizationInfo)
+                    {
                     <abp-row class="m-0 p-0">
                         <abp-column size="_12" class="px-1 mb-4">
                             <label class="form-label" for="ApplicantOrganizationInfo_OrgBookSelect">Search in BC Registries</label>
@@ -130,7 +129,12 @@
                                 </abp-column>
                             </abp-row>
                         </abp-column>
-                    </abp-row>                    
+                    </abp-row>
+                    }
+                    else
+                    {
+                        <input type="hidden" asp-for="SelectedOrgBookId" id="ApplicantOrganizationInfo_SelectedOrgBookIdHidden" />
+                    }                    
                     <abp-row class="m-0 p-0">
                         <abp-column size="_12" class="px-1">
                             <abp-row class="m-0 p-0">

@@ -1,7 +1,6 @@
 @page "/GrantApplicants/Details"
 @using Microsoft.Extensions.Localization
 @using Unity.GrantManager.Localization
-@using Unity.GrantManager.Permissions
 @using Unity.GrantManager.Web.Pages.Applicants
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
 @using Volo.Abp.Authorization.Permissions
@@ -16,6 +15,13 @@
 
 @{
     PageLayout.Content.Title = L["Applicants"].Value;
+
+    var hasApplicantInfo    = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.Default);
+    var hasContacts         = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Contacts.Default);
+    var hasAddresses        = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Addresses.Default);
+    var hasSubmissions      = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Submissions.Default);
+    var hasHistory          = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.History.Default);
+    var hasPayments         = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Payments.Default);
 }
 
 @section styles {
@@ -97,8 +103,8 @@ else
         <abp-card>
             <abp-tabs name="detailsTab" id="detailsTab" class="nav-justified">
                 
-                @*-------- Organization Info Section ---------*@
-                @if (await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.Default))
+                @*-------- Applicant Organization Info Section ---------*@
+                @if (hasApplicantInfo)
                 {
                 <abp-tab name="nav-organization-info" active="true" title="Applicant Info">
                     <div class="w-100 px-2" id="OrganizationInfoWidget">
@@ -106,21 +112,24 @@ else
                     </div>
                 </abp-tab>
                 }
-                @*-------- Organization Info Section END ---------*@
+                @*-------- Applicant Organization Info Section END ---------*@
 
                 @*-------- Contacts Section ---------*@
-                @if (await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Contacts.Default))
+                @if (hasContacts)
                 {
                 <abp-tab name="nav-contacts" title="Contacts">
+                    <zone id="@UnitySelector.ApplicantManagement.Contacts.Default" zone-type="PermissionOnly"
+                            permission-requirement="@UnitySelector.ApplicantManagement.Contacts.Default">
                     <div class="w-100 px-2" id="ContactsWidget">
                         @await Component.InvokeAsync("ApplicantContacts", new { applicantId = Model.ApplicantId })
                     </div>
+                    </zone>
                 </abp-tab>
                 }
                 @*-------- Contacts Section END ---------*@
 
                 @*-------- Addresses Section ---------*@
-                @if (await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Addresses.Default))
+                @if (hasAddresses)
                 {
                 <abp-tab name="nav-addresses" title="Addresses">
                     <div class="w-100 px-2" id="AddressesWidget">
@@ -142,25 +151,30 @@ else
                 @*-------- Submissions Section END ---------*@
 
                 @*-------- History Section ---------*@
-                @if (true || await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.History.Default))
+                @if (hasHistory)
                 {
                 <abp-tab name="nav-history" title="History">
+                    <zone id="@UnitySelector.ApplicantManagement.History.Default" zone-type="PermissionOnly">
                     <div class="w-100 px-2" id="HistoryWidget">
                         @await Component.InvokeAsync("ApplicantHistory", new { applicantId = Model.ApplicantId })
                     </div>
+                    </zone>
                 </abp-tab>
                 }
                 @*-------- History Section END ---------*@
 
                 @*-------- Payments Section ---------*@
-                @if (await FeatureChecker.IsEnabledAsync("Unity.Payments") &&
+                @if (await FeatureChecker.IsEnabledAsync("Unity.Payments") && hasPayments &&
                      (await PermissionChecker.IsGrantedAsync(UnitySelector.Payment.Summary.Default) ||
                       await PermissionChecker.IsGrantedAsync(UnitySelector.Payment.PaymentList.Default)))
                 {
                 <abp-tab name="nav-payments" title="Payments">
+                    <zone id="@UnitySelector.ApplicantManagement.Payments.Default"
+                        feature-requirement="Unity.Payments" zone-type="PermissionOnly">
                     <div class="w-100 px-2" id="PaymentsWidget">
                         @await Component.InvokeAsync("ApplicantPayments", new { applicantId = Model.ApplicantId })
                     </div>
+                    </zone>
                 </abp-tab>
                 }
                 @*-------- Payments Section END ---------*@
@@ -221,11 +235,7 @@ else
                 @*-------- Emails Tab Section END ---------*@
 
                 @*-------- Comments Tab Section ---------*@
-                @if (await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Comments.Default))
-                {
                 <div class="tab-pane fade" id="comments" role="tabpanel" aria-labelledby="comments-tab">
-                    <zone id="@UnitySelector.ApplicantManagement.Comments.Default" zone-type="PermissionOnly"
-                        permission-requirement="@UnitySelector.ApplicantManagement.Comments.Default">
                     <h6 class="fw-bold px-3 pt-4 pb-2 m-0">Comments</h6>
                     <div class="px-3 pb-2" id="applicantCommentsWidget">
                         @await Component.InvokeAsync("CommentsWidget", new {
@@ -233,9 +243,7 @@ else
                                 commentType = Unity.GrantManager.Comments.CommentType.ApplicantComment,
                                 currentUserId = Model.CurrentUserId })
                     </div>
-                    </zone>
                 </div>
-                }
                 @*-------- Comments Tab Section END ---------*@
 
                 @*-------- Links Tab Section ---------*@
@@ -250,27 +258,18 @@ else
                 @*-------- Links Tab Section END ---------*@
 
                 @*-------- Attachments Tab Section ---------*@
-                @if (await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Attachments.Default))
-                {
                 <div class="tab-pane fade" id="attachments" role="tabpanel" aria-labelledby="attachments-tab">
-                    <zone id="@UnitySelector.ApplicantManagement.Attachments.Default" zone-type="PermissionOnly"
-                        permission-requirement="@UnitySelector.ApplicantManagement.Attachments.Default">
                     @await Component.InvokeAsync("ApplicantAttachments")
-                    </zone>
                 </div> 
-                }
                 @*-------- Attachments Tab Section END ---------*@
 
                 @*-------- History Tab Section ---------*@
-                @if (await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.History.Default))
-                {
                 <div class="tab-pane fade" id="history" role="tabpanel" aria-labelledby="history-tab">
                     <div class="px-3 pb-2" id="applicantHistoryWidget">
                         <h6 class="fw-bold">History</h6>
                         <h6>Under Construction</h6>
                     </div>
                 </div>
-                }
                 @*-------- History Tab Section END ---------*@
                 
             </div>

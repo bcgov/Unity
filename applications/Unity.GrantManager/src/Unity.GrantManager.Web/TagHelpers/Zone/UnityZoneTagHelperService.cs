@@ -11,7 +11,6 @@ using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.Microsoft.AspNetCore.Razor.TagHelpers
 using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Features;
-
 namespace Unity.GrantManager.Web.TagHelpers;
 
 public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
@@ -162,7 +161,10 @@ public class UnityZoneTagHelperService : AbpTagHelperService<UnityZoneTagHelper>
 
         // Basic information
         AddDefinitionItem(dl, "Zone Element ID", TagHelper.ElementId);
-        AddFormIdWithLink(dl);
+        if (TagHelper.ZoneType != ZoneRequirementType.PermissionOnly)
+        {
+            AddFormIdWithLink(dl);
+        }
 
         // Feature and Zone requirements
         AddRequirementItem(dl, 
