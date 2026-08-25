@@ -1,11 +1,11 @@
 {
   "schemaVersion": 2,
   "mode": "report-only",
-  "generatedAt": "2026-08-19T20:53:21.994Z",
+  "generatedAt": "2026-08-25T14:42:42.571Z",
   "summary": {
     "total": 360,
-    "matched": 146,
-    "missing": 42,
+    "matched": 147,
+    "missing": 41,
     "unverified": 81,
     "exempt": 91,
     "syntax": {
@@ -1776,7 +1776,9 @@
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260806202244_AB33799_FixCheckboxGroupEmptyValues.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260807224046_AB33996_AddApplicantFiscalYearEndRestricted.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260813164219_AB33234_ApplicantPortalExternalLinks.Designer.cs",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260817212058_AddNotificationReadStateAndSender.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260818211028_AB33234_ExternalLinksApplicantMessage.Designer.cs",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260820184916_AB33327_MoveAIScoresheetAnswersToAISchema.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/GrantTenantDbContextModelSnapshot.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/GrantApplications/Details.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/GrantApplications/Details.js",
@@ -1835,7 +1837,9 @@
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260806202244_AB33799_FixCheckboxGroupEmptyValues.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260807224046_AB33996_AddApplicantFiscalYearEndRestricted.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260813164219_AB33234_ApplicantPortalExternalLinks.Designer.cs",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260817212058_AddNotificationReadStateAndSender.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260818211028_AB33234_ExternalLinksApplicantMessage.Designer.cs",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260820184916_AB33327_MoveAIScoresheetAnswersToAISchema.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/GrantTenantDbContextModelSnapshot.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/AssigneeSelection/AssigneeSelectionModal.cshtml"
       ]
@@ -2003,6 +2007,7 @@
         "applications/Unity.GrantManager/modules/Unity.Reporting/src/Unity.Reporting.Web/Views/Shared/Components/ReportingConfiguration/Default.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/ApplicationForms/Mapping.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/ApplicationForms/Mapping.js",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/BulkEmailNotifications/SendEmailNotificationModal.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/FormConfiguration/Notifications.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/Template/Template.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/CustomFields/Default.js",
@@ -2029,6 +2034,7 @@
         "applications/Unity.GrantManager/modules/Unity.Reporting/src/Unity.Reporting.Web/Views/Shared/Components/ReportingConfiguration/Default.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/ApplicationForms/Mapping.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/ApplicationForms/Mapping.js",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/BulkEmailNotifications/SendEmailNotificationModal.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/FormConfiguration/Notifications.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/Template/Template.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/CustomFields/Default.js",
@@ -2320,14 +2326,14 @@
       "kind": "id",
       "syntaxKind": "css",
       "ownership": "application",
-      "status": "missing",
-      "missingTokens": [
-        "id:ContactInfo_Phone"
-      ],
+      "status": "matched",
+      "missingTokens": [],
       "usedBy": [
         "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:136"
       ],
-      "applicationMatches": []
+      "applicationMatches": [
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantInfo/Default.cshtml"
+      ]
     },
     {
       "selector": "#ContactInfo_Phone2",
@@ -2445,6 +2451,8 @@
         "applications/Unity.GrantManager/modules/Unity.Identity.Web/src/Pages/Identity/Users/PermissionUserMatrix.cshtml",
         "applications/Unity.GrantManager/modules/Unity.Identity.Web/src/Pages/Identity/Users/PermissionUserMatrix.js",
         "applications/Unity.GrantManager/modules/Unity.Identity.Web/src/Pages/Identity/Users/index.js",
+        "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/NotificationLogs/Index.cshtml",
+        "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/NotificationLogs/Index.js",
         "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/Notifications/Index.cshtml",
         "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/Notifications/Index.js",
         "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Views/Settings/NotificationsSettingGroup/Default.js",
@@ -2452,9 +2460,7 @@
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Pages/PaymentConfigurations/Index.js",
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Pages/PaymentRequests/Index.js",
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Views/Shared/Components/PaymentActionBar/Default.cshtml",
-        "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Views/Shared/Components/PaymentInfo/Default.js",
-        "applications/Unity.GrantManager/modules/Unity.TenantManagement/src/Unity.TenantManagement.Web/Pages/EndpointManagement/Endpoints/Index.cshtml",
-        "applications/Unity.GrantManager/modules/Unity.TenantManagement/src/Unity.TenantManagement.Web/Pages/EndpointManagement/Endpoints/Index.js"
+        "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Views/Shared/Components/PaymentInfo/Default.js"
       ]
     },
     {
@@ -2480,6 +2486,8 @@
         "applications/Unity.GrantManager/modules/Unity.Identity.Web/src/Pages/Identity/Users/PermissionUserMatrix.cshtml",
         "applications/Unity.GrantManager/modules/Unity.Identity.Web/src/Pages/Identity/Users/PermissionUserMatrix.js",
         "applications/Unity.GrantManager/modules/Unity.Identity.Web/src/Pages/Identity/Users/index.js",
+        "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/NotificationLogs/Index.cshtml",
+        "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/NotificationLogs/Index.js",
         "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/Notifications/Index.cshtml",
         "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/Notifications/Index.js",
         "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Views/Settings/NotificationsSettingGroup/Default.js",
@@ -2487,9 +2495,7 @@
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Pages/PaymentConfigurations/Index.js",
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Pages/PaymentRequests/Index.js",
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Views/Shared/Components/PaymentActionBar/Default.cshtml",
-        "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Views/Shared/Components/PaymentInfo/Default.js",
-        "applications/Unity.GrantManager/modules/Unity.TenantManagement/src/Unity.TenantManagement.Web/Pages/EndpointManagement/Endpoints/Index.cshtml",
-        "applications/Unity.GrantManager/modules/Unity.TenantManagement/src/Unity.TenantManagement.Web/Pages/EndpointManagement/Endpoints/Index.js"
+        "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Views/Shared/Components/PaymentInfo/Default.js"
       ]
     },
     {
@@ -2513,6 +2519,8 @@
         "applications/Unity.GrantManager/modules/Unity.Identity.Web/src/Pages/Identity/Users/PermissionUserMatrix.cshtml",
         "applications/Unity.GrantManager/modules/Unity.Identity.Web/src/Pages/Identity/Users/PermissionUserMatrix.js",
         "applications/Unity.GrantManager/modules/Unity.Identity.Web/src/Pages/Identity/Users/index.js",
+        "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/NotificationLogs/Index.cshtml",
+        "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/NotificationLogs/Index.js",
         "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/Notifications/Index.cshtml",
         "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/Notifications/Index.js",
         "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Views/Settings/NotificationsSettingGroup/Default.js",
@@ -2520,9 +2528,7 @@
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Pages/PaymentConfigurations/Index.js",
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Pages/PaymentRequests/Index.js",
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Views/Shared/Components/PaymentActionBar/Default.cshtml",
-        "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Views/Shared/Components/PaymentInfo/Default.js",
-        "applications/Unity.GrantManager/modules/Unity.TenantManagement/src/Unity.TenantManagement.Web/Pages/EndpointManagement/Endpoints/Index.cshtml",
-        "applications/Unity.GrantManager/modules/Unity.TenantManagement/src/Unity.TenantManagement.Web/Pages/EndpointManagement/Endpoints/Index.js"
+        "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Views/Shared/Components/PaymentInfo/Default.js"
       ]
     },
     {
@@ -2639,6 +2645,8 @@
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsRightTabPage.ts:68"
       ],
       "applicationMatches": [
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/BulkEmailNotifications/SendEmailNotificationModal.cshtml",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/BulkEmailNotifications/SendEmailNotificationModal.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/EmailsWidget/Default.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/EmailsWidget/Default.js"
       ]
@@ -3163,7 +3171,9 @@
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260806202244_AB33799_FixCheckboxGroupEmptyValues.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260807224046_AB33996_AddApplicantFiscalYearEndRestricted.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260813164219_AB33234_ApplicantPortalExternalLinks.Designer.cs",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260817212058_AddNotificationReadStateAndSender.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260818211028_AB33234_ExternalLinksApplicantMessage.Designer.cs",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260820184916_AB33327_MoveAIScoresheetAnswersToAISchema.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/GrantTenantDbContextModelSnapshot.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/ApplicantHistory/ReportsHistoryModalViewModel.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantHistory/Default.js",
@@ -3439,7 +3449,9 @@
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260806202244_AB33799_FixCheckboxGroupEmptyValues.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260807224046_AB33996_AddApplicantFiscalYearEndRestricted.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260813164219_AB33234_ApplicantPortalExternalLinks.Designer.cs",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260817212058_AddNotificationReadStateAndSender.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260818211028_AB33234_ExternalLinksApplicantMessage.Designer.cs",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260820184916_AB33327_MoveAIScoresheetAnswersToAISchema.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/GrantTenantDbContextModelSnapshot.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/GrantApplications/Index.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantSubmissions/Default.js",
@@ -3550,17 +3562,17 @@
         "applications/Unity.GrantManager/modules/Unity.Identity.Web/src/Pages/Identity/Users/Index.cshtml",
         "applications/Unity.GrantManager/modules/Unity.Identity.Web/src/Pages/Identity/Users/PermissionUserMatrix.cshtml",
         "applications/Unity.GrantManager/modules/Unity.Identity.Web/src/Pages/Identity/Users/PermissionUserMatrix.js",
+        "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/NotificationLogs/Index.cshtml",
+        "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/NotificationLogs/Index.js",
         "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/Notifications/Index.cshtml",
+        "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/UnityMessaging/Index.cshtml",
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Pages/PaymentConfigurations/Index.cshtml",
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Pages/PaymentConfigurations/Index.js",
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Pages/PaymentRequests/Index.js",
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Views/Shared/Components/PaymentActionBar/Default.cshtml",
         "applications/Unity.GrantManager/modules/Unity.Reporting/src/Unity.Reporting.Web/Views/Shared/Components/ReportingConfiguration/Default.cshtml",
         "applications/Unity.GrantManager/modules/Unity.TenantManagement/src/Unity.TenantManagement.Web/Pages/EndpointManagement/Endpoints/Index.cshtml",
-        "applications/Unity.GrantManager/modules/Unity.TenantManagement/src/Unity.TenantManagement.Web/Pages/TenantManagement/Onboarding/Index.cshtml",
-        "applications/Unity.GrantManager/modules/Unity.TenantManagement/src/Unity.TenantManagement.Web/Pages/TenantManagement/Onboarding/Index.js",
-        "applications/Unity.GrantManager/modules/Unity.TenantManagement/src/Unity.TenantManagement.Web/Pages/TenantManagement/Reconciliation/Index.js",
-        "applications/Unity.GrantManager/modules/Unity.TenantManagement/src/Unity.TenantManagement.Web/Pages/TenantManagement/Tenants/Index.cshtml"
+        "applications/Unity.GrantManager/modules/Unity.TenantManagement/src/Unity.TenantManagement.Web/Pages/TenantManagement/Onboarding/Index.cshtml"
       ]
     },
     {
@@ -3765,7 +3777,9 @@
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260806202244_AB33799_FixCheckboxGroupEmptyValues.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260807224046_AB33996_AddApplicantFiscalYearEndRestricted.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260813164219_AB33234_ApplicantPortalExternalLinks.Designer.cs",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260817212058_AddNotificationReadStateAndSender.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260818211028_AB33234_ExternalLinksApplicantMessage.Designer.cs",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260820184916_AB33327_MoveAIScoresheetAnswersToAISchema.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/GrantTenantDbContextModelSnapshot.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantInfo/Default.js"
       ]
@@ -3868,7 +3882,12 @@
         "applications/Unity.AutoUI/cypress/support/commands.ts:23"
       ],
       "applicationMatches": [
+        "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Controllers/UnityMessagingController.cs",
+        "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/NotificationLogs/Index.js",
+        "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/UnityMessaging/Index.js",
+        "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Realtime/NotificationHub.cs",
         "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Views/Settings/NotificationsSettingGroup/InternalEmailGroups.js",
+        "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/wwwroot/js/notifications-realtime-client.js",
         "applications/Unity.GrantManager/modules/Unity.Reporting/src/Unity.Reporting.Application/Configuration/ReportMappingUtils.cs",
         "applications/Unity.GrantManager/modules/Unity.Reporting/src/Unity.Reporting.Web/Views/Shared/Components/ReportingConfiguration/Default.js",
         "applications/Unity.GrantManager/modules/Unity.Reporting/test/Unity.Reporting.Application.Tests/Configuration/ColumnsMappingServiceTests.cs"
@@ -3934,7 +3953,12 @@
         "applications/Unity.AutoUI/cypress/support/auth.ts:44"
       ],
       "applicationMatches": [
+        "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Controllers/UnityMessagingController.cs",
+        "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/NotificationLogs/Index.js",
+        "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/UnityMessaging/Index.js",
+        "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Realtime/NotificationHub.cs",
         "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Views/Settings/NotificationsSettingGroup/InternalEmailGroups.js",
+        "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/wwwroot/js/notifications-realtime-client.js",
         "applications/Unity.GrantManager/modules/Unity.Reporting/src/Unity.Reporting.Application/Configuration/ReportMappingUtils.cs",
         "applications/Unity.GrantManager/modules/Unity.Reporting/src/Unity.Reporting.Web/Views/Shared/Components/ReportingConfiguration/Default.js",
         "applications/Unity.GrantManager/modules/Unity.Reporting/test/Unity.Reporting.Application.Tests/Configuration/ColumnsMappingServiceTests.cs"
@@ -5160,6 +5184,8 @@
         "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:19"
       ],
       "applicationMatches": [
+        "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/NotificationLogs/Index.cshtml",
+        "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/NotificationLogs/Index.js",
         "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/Notifications/Index.cshtml",
         "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/Notifications/Index.js",
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Pages/PaymentRequests/Index.js",
