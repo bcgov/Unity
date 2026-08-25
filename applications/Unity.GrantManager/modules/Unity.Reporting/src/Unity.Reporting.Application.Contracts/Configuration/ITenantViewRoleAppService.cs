@@ -17,7 +17,7 @@ namespace Unity.Reporting.Configuration
         /// <param name="tenantId">The unique identifier of the tenant to retrieve the view role configuration for.</param>
         /// <returns>
         /// A <see cref="TenantViewRoleDto"/> containing the tenant information and its associated view role.
-        /// Defaults to the {tenantname}_readonly pattern when not explicitly configured.
+        /// Defaults to {LicencePlate}_readonly when a licence plate exists, falling back to {tenantname}_readonly for legacy tenants.
         /// </returns>
         /// <exception cref="InvalidOperationException">Thrown when the specified tenant is not found.</exception>
         Task<TenantViewRoleDto> GetAsync(Guid tenantId);
