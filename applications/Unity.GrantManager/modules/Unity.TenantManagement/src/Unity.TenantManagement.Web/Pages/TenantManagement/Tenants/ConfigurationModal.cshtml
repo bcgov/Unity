@@ -59,6 +59,16 @@
                         </button>
                     </li>
                 }
+                @if (Model.CanManageReporting)
+                {
+                    <li class="nav-item">
+                        <button class="nav-link" id="tab-reporting" data-bs-toggle="tab"
+                                data-bs-target="#pane-reporting" type="button"
+                                aria-controls="pane-reporting">
+                            Reporting
+                        </button>
+                    </li>
+                }
             </ul>
 
             <div class="tab-content" id="configurationTabContent">
@@ -182,6 +192,89 @@
                         </div>
                         <div id="config-features-content"></div>
                         <input type="hidden" id="config-features-json" asp-for="FeaturesJson" />
+                    </div>
+                }
+
+                @if (Model.CanManageReporting)
+                {
+                    <div class="tab-pane fade" id="pane-reporting" aria-labelledby="tab-reporting">
+                        <p class="text-muted small">
+                            Configure the database role granted SELECT access to this tenant's reporting views.
+                        </p>
+
+                        @if (!string.IsNullOrEmpty(Model.ViewRole?.LicencePlate))
+                        {
+                            <div class="alert alert-light border small mb-3">
+                                <div class="mb-1">License Plate: <code>@Model.ViewRole.LicencePlate</code></div>
+                                <div>
+                                    Main role <code>@Model.ViewRole.LicencePlate</code>:
+                                    @if (Model.ViewRole.MainRoleExists)
+                                    {
+                                        <span class="text-success"><i class="fa-solid fa-circle-check"></i> Found</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-danger"><i class="fa-solid fa-circle-xmark"></i> Not found</span>
+                                    }
+                                </div>
+                                <div>
+                                    Readonly role <code>@Model.ViewRole.ExpectedReadOnlyRole</code>:
+                                    @if (Model.ViewRole.ReadOnlyRoleExists)
+                                    {
+                                        <span class="text-success"><i class="fa-solid fa-circle-check"></i> Found</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-danger"><i class="fa-solid fa-circle-xmark"></i> Not found</span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted small">
+                                No license plate on record for this tenant (a legacy tenant, created before
+                                automatic role provisioning) - defaulting to
+                                <code>@($"{Model.Tenant.Name.ToLowerInvariant()}_readonly")</code> unless a role
+                                has been explicitly saved below.
+                            </p>
+                        }
+
+                        <div class="form-group mb-3">
+                            <label for="config-view-role-input">View Role</label>
+                            <div class="d-flex align-items-center">
+                                <input type="text" id="config-view-role-input"
+                                       class="form-control view-role-input"
+                                       value="@Model.ViewRole?.ViewRole"
+                                       data-is-default="@(Model.ViewRole?.IsDefaultInferred == true ? "true" : "false")"
+                                       placeholder="@(Model.ViewRole?.ExpectedReadOnlyRole ?? $"{Model.Tenant.Name.ToLowerInvariant()}_readonly")"
+                                       aria-label="View role for this tenant" />
+                                @if (Model.ViewRole?.IsDefaultInferred == true)
+                                {
+                                    <i class="fa-solid fa-triangle-exclamation text-warning ms-2 default-role-indicator"
+                                       title="This is an inferred default role name. Save to persist this setting in the database."
+                                       data-bs-toggle="tooltip"
+                                       data-bs-placement="top"></i>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="button" id="config-save-role-btn" class="btn btn-sm btn-outline-primary"
+                                    data-tenant-id="@Model.Tenant.Id" title="Save Role">
+                                <i class="fa-regular fa-floppy-disk"></i> Save
+                            </button>
+                            <button type="button" id="config-assign-role-btn" class="btn btn-sm btn-outline-secondary"
+                                    data-tenant-id="@Model.Tenant.Id" data-tenant-name="@Model.Tenant.Name"
+                                    title="Assign Role to All Views">
+                                <i class="fa-solid fa-gears"></i> Assign to Views
+                            </button>
+                            <button type="button" id="config-view-database-info-btn" class="btn btn-sm btn-outline-info"
+                                    data-tenant-id="@Model.Tenant.Id" data-tenant-name="@Model.Tenant.Name"
+                                    title="View Database Info">
+                                <i class="fa-solid fa-database"></i> View DB Info
+                            </button>
+                        </div>
                     </div>
                 }
 

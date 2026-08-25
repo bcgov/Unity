@@ -15,6 +15,7 @@ using Volo.Abp.UI.Navigation;
 using Volo.Abp.VirtualFileSystem;
 using Volo.Abp.Threading;
 using Unity.Modules.Shared.Permissions;
+using Unity.Reporting;
 using Unity.TenantManagement.Web.Navigation;
 
 namespace Unity.TenantManagement.Web;
@@ -23,6 +24,7 @@ namespace Unity.TenantManagement.Web;
 [DependsOn(typeof(AbpAspNetCoreMvcUiBootstrapModule))]
 [DependsOn(typeof(AbpFeatureManagementWebModule))]
 [DependsOn(typeof(AbpMapperlyModule))]
+[DependsOn(typeof(ReportingApplicationContractsModule))]
 public class UnityTenantManagementWebModule : AbpModule
 {
     private static readonly OneTimeRunner OneTimeRunner = new();

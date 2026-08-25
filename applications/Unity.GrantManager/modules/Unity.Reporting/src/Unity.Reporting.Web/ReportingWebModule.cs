@@ -1,12 +1,10 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Unity.Reporting.Localization;
-using Unity.Reporting.Web.Menus;
 using Volo.Abp.AspNetCore.Mvc.Localization;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
 using Volo.Abp.Mapperly;
 using Volo.Abp.Modularity;
 using Volo.Abp.SettingManagement.Web;
-using Volo.Abp.UI.Navigation;
 using Volo.Abp.VirtualFileSystem;
 
 namespace Unity.Reporting.Web;
@@ -45,18 +43,13 @@ public class ReportingWebModule : AbpModule
     }
 
     /// <summary>
-    /// Configures main services for the Unity.Reporting Web module including navigation, virtual file system, and AutoMapper.
-    /// Registers the ReportingMenuContributor for navigation menu setup, configures embedded virtual file system resources
-    /// for CSS/JS assets and views, and sets up AutoMapper object mapping with validation for web-layer data transformations.
+    /// Configures main services for the Unity.Reporting Web module including virtual file system and AutoMapper.
+    /// Configures embedded virtual file system resources for CSS/JS assets and views, and sets up AutoMapper
+    /// object mapping with validation for web-layer data transformations.
     /// </summary>
     /// <param name="context">The service configuration context for dependency injection and module configuration.</param>
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
-        Configure<AbpNavigationOptions>(options =>
-        {
-            options.MenuContributors.Add(new ReportingMenuContributor());
-        });
-
         Configure<AbpVirtualFileSystemOptions>(options =>
         {
             options.FileSets.AddEmbedded<ReportingWebModule>();

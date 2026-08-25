@@ -17,6 +17,10 @@
         }
     );
 
+    let _reportingDatabaseInfoModal = new abp.ModalManager({
+        viewUrl: abp.appPath + 'ReportingAdmin/Configuration/DatabaseInfoModal'
+    });
+
     let _dataTable = null;
 
     // ─── Actions column renderer ──────────────────────────────────────────────
@@ -461,10 +465,104 @@
         $('#create-features-json').val(featureKeys.join(','));
     }
 
+    // ─── Configuration modal: Reporting tab (view role) ───────────────────────
+
+    let _tenantViewRoleAppService = unity.reporting.configuration.tenantViewRole;
+
+    function _saveReportingViewRole(tenantId, onSaved) {
+        let $btn = $('#config-save-role-btn');
+        let viewRole = $('#config-view-role-input').val().trim();
+
+        if (!viewRole) {
+            abp.notify.warn('Please enter a view role name.');
+            return;
+        }
+
+        $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Saving...');
+
+        _tenantViewRoleAppService.update(tenantId, { viewRole: viewRole })
+            .done(function () {
+                let $indicator = $('#pane-reporting .default-role-indicator');
+                if ($indicator.length) {
+                    $indicator.tooltip('dispose');
+                    $indicator.remove();
+                }
+                $('#config-view-role-input').attr('data-is-default', 'false');
+
+                abp.notify.success('View role saved successfully.');
+                if (onSaved) onSaved(viewRole);
+            })
+            .fail(function () {
+                abp.notify.error('Failed to save view role.');
+            })
+            .always(function () {
+                $btn.prop('disabled', false).html('<i class="fa-regular fa-floppy-disk"></i> Save');
+            });
+    }
+
+    function _assignReportingRoleToViews(tenantId, tenantName, viewRole) {
+        let $btn = $('#config-assign-role-btn');
+        $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Assigning...');
+
+        _tenantViewRoleAppService.assignRoleToViews(tenantId)
+            .done(function () {
+                abp.notify.success('Role assignment jobs have been queued for tenant "' + tenantName + '". The process will complete in the background.');
+            })
+            .fail(function () {
+                abp.notify.error('Failed to queue role assignment jobs.');
+            })
+            .always(function () {
+                $btn.prop('disabled', false).html('<i class="fa-solid fa-gears"></i> Assign to Views');
+            });
+    }
+
+    function _wireReportingTabHandlers(tenantId) {
+        $('#config-save-role-btn').off('click').on('click', function () {
+            _saveReportingViewRole(tenantId);
+        });
+
+        $('#config-assign-role-btn').off('click').on('click', function () {
+            let $btn = $(this);
+            let tenantName = $btn.data('tenant-name');
+            let viewRole = $('#config-view-role-input').val().trim();
+            let isDefault = $('#config-view-role-input').attr('data-is-default') === 'true';
+
+            if (!viewRole) {
+                abp.notify.warn('Please enter a view role name before assigning it to views.');
+                return;
+            }
+
+            if (isDefault) {
+                abp.message.confirm(
+                    'The role "' + viewRole + '" is using the default pattern and hasn\'t been saved yet. Would you like to save it first and then assign it to views?',
+                    'Save and Assign Role',
+                    function (isConfirmed) {
+                        if (isConfirmed) {
+                            _saveReportingViewRole(tenantId, function (savedViewRole) {
+                                _assignReportingRoleToViews(tenantId, tenantName, savedViewRole);
+                            });
+                        }
+                    }
+                );
+            } else {
+                _assignReportingRoleToViews(tenantId, tenantName, viewRole);
+            }
+        });
+
+        $('#config-view-database-info-btn').off('click').on('click', function () {
+            let $btn = $(this);
+            _reportingDatabaseInfoModal.open({
+                tenantId: tenantId,
+                tenantName: $btn.data('tenant-name')
+            });
+        });
+    }
+
     function _configurationModalInitModal(publicApi, args) {
         _configTenantId = args.id;
 
         _loadManagersTab(_configTenantId);
+        _wireReportingTabHandlers(_configTenantId);
 
         _configFilterDataTable = $('#ConfigUserSearchTable').DataTable(
             abp.libs.datatables.normalizeConfiguration({
