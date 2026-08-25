@@ -1540,16 +1540,10 @@ $(function () {
                 success: function (data) {
                     $('#existingMapping').val(data.submissionHeaderMapping);
                     existingMappingString = data.submissionHeaderMapping;
-                    abp.notify.success(
-                        data.responseText,
-                        'Mapping Saved Successfully'
-                    );
+                    abp.notify.success('Mapping Saved Successfully');
                 },
-                error: function (data) {
-                    abp.notify.error(
-                        data.responseText,
-                        'Mapping Not Saved Successful'
-                    );
+                error: function () {
+                    abp.notify.error('Mapping Not Saved Successful');
                 },
                 complete: function () {
                     UIElements.btnSave.prop('disabled', false);
