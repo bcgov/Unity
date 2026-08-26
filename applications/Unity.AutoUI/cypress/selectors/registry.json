@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "mode": "report-only",
-  "generatedAt": "2026-08-25T14:42:42.571Z",
+  "generatedAt": "2026-08-25T21:10:46.644Z",
   "summary": {
     "total": 360,
     "matched": 147,
@@ -2007,6 +2007,7 @@
         "applications/Unity.GrantManager/modules/Unity.Reporting/src/Unity.Reporting.Web/Views/Shared/Components/ReportingConfiguration/Default.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/ApplicationForms/Mapping.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/ApplicationForms/Mapping.js",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/BulkEmailNotifications/ComposeAndSendEmailModal.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/BulkEmailNotifications/SendEmailNotificationModal.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/FormConfiguration/Notifications.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/Template/Template.js",
@@ -2034,6 +2035,7 @@
         "applications/Unity.GrantManager/modules/Unity.Reporting/src/Unity.Reporting.Web/Views/Shared/Components/ReportingConfiguration/Default.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/ApplicationForms/Mapping.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/ApplicationForms/Mapping.js",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/BulkEmailNotifications/ComposeAndSendEmailModal.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/BulkEmailNotifications/SendEmailNotificationModal.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/FormConfiguration/Notifications.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/Template/Template.js",
@@ -2593,6 +2595,7 @@
         "applications/Unity.AutoUI/cypress_manyEmails/manyEmails.cy.ts:151"
       ],
       "applicationMatches": [
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/BulkEmailNotifications/ComposeAndSendEmailModal.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/EmailsWidget/Default.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/EmailsWidget/Default.js"
       ]
@@ -2609,6 +2612,7 @@
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsRightTabPage.ts:75"
       ],
       "applicationMatches": [
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/BulkEmailNotifications/ComposeAndSendEmailModal.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/EmailsWidget/Default.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/EmailsWidget/Default.js"
       ]
@@ -2629,6 +2633,7 @@
         "applications/Unity.AutoUI/cypress_manyEmails/manyEmails.cy.ts:150"
       ],
       "applicationMatches": [
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/BulkEmailNotifications/ComposeAndSendEmailModal.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/EmailsWidget/Default.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/EmailsWidget/Default.js"
       ]
@@ -2645,6 +2650,7 @@
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsRightTabPage.ts:68"
       ],
       "applicationMatches": [
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/BulkEmailNotifications/ComposeAndSendEmailModal.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/BulkEmailNotifications/SendEmailNotificationModal.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/BulkEmailNotifications/SendEmailNotificationModal.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/EmailsWidget/Default.cshtml",
@@ -2662,6 +2668,7 @@
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsRightTabPage.ts:73"
       ],
       "applicationMatches": [
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/BulkEmailNotifications/ComposeAndSendEmailModal.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/EmailsWidget/Default.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/EmailsWidget/Default.js"
       ]
@@ -2749,6 +2756,7 @@
         "applications/Unity.AutoUI/cypress_manyEmails/manyEmails.cy.ts:152"
       ],
       "applicationMatches": [
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/BulkEmailNotifications/ComposeAndSendEmailModal.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/EmailsWidget/Default.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/EmailsWidget/Default.js"
       ]
@@ -2770,6 +2778,7 @@
         "applications/Unity.AutoUI/cypress_manyEmails/manyEmails.cy.ts:149"
       ],
       "applicationMatches": [
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/BulkEmailNotifications/ComposeAndSendEmailModal.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/EmailsWidget/Default.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/EmailsWidget/Default.js"
       ]

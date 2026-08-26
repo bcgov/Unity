@@ -152,6 +152,7 @@ public class ApplicationRepository
             .AsNoTracking()
             .Include(a => a.ApplicationStatus)
             .Include(a => a.Applicant)
+            .Include(a => a.ApplicantAgent)
             .Include(a => a.ApplicationForm)
             .Where(a => ids.Contains(a.Id))
             .ToListAsync();
