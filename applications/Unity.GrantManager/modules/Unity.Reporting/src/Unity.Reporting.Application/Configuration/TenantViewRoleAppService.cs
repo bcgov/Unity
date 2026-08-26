@@ -7,6 +7,7 @@ using Unity.Modules.Shared.Permissions;
 using Unity.Reporting.BackgroundJobs;
 using Unity.Reporting.Domain.Configuration;
 using Unity.Reporting.Settings;
+using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.MultiTenancy;
@@ -31,37 +32,68 @@ public class TenantViewRoleAppService(
     IReportColumnsMapRepository reportColumnsMapRepository,
     ICurrentTenant currentTenant) : ApplicationService, ITenantViewRoleAppService
 {
+    private const string LicencePlateExtraPropertyKey = "LicencePlate";
+
     /// <summary>
-    /// Retrieves all tenant view role configurations.
-    /// Returns a list of all tenants with their current view role assignments, defaulting to {tenantname}_readonly if not configured.
+    /// Retrieves the view role configuration for a specific tenant, along with the live existence
+    /// state of the two roles automatically provisioned for the tenant's license plate (its
+    /// read-write role and {LicencePlate}_readonly).
     /// </summary>
-    public async Task<List<TenantViewRoleDto>> GetAllAsync()
+    public async Task<TenantViewRoleDto> GetAsync(Guid tenantId)
     {
-        var tenants = await tenantRepository.GetListAsync();
-        var tenantViewRoles = new List<TenantViewRoleDto>();
+        var tenant = await tenantRepository.GetAsync(tenantId);
 
-        foreach (var tenant in tenants)
+        var licencePlate = tenant.ExtraProperties.TryGetValue(LicencePlateExtraPropertyKey, out var lp)
+            ? lp?.ToString()
+            : null;
+        var expectedReadOnlyRole = string.IsNullOrWhiteSpace(licencePlate) ? null : $"{licencePlate}_readonly";
+
+        // An explicitly saved role always wins (covers legacy tenants whose role doesn't follow
+        // either naming convention). Otherwise prefer the license-plate readonly role - the one
+        // actually provisioned for new tenants - falling back to the legacy {tenantname}_readonly
+        // pattern only when there's no license plate on record at all.
+        var savedViewRole = await settingManager.GetOrNullAsync(ReportingSettings.TenantViewRole, "T", tenant.Id.ToString());
+
+        string viewRole;
+        bool isDefaultInferred;
+        if (!string.IsNullOrEmpty(savedViewRole))
         {
-            // Get tenant-specific setting first, fallback to default pattern
-            var viewRole = await settingManager.GetOrNullAsync(ReportingSettings.TenantViewRole, "T", tenant.Id.ToString());
-
-            bool isDefaultInferred = false;
-            if (string.IsNullOrEmpty(viewRole))
-            {
-                viewRole = $"{tenant.Name.ToLowerInvariant()}_readonly";
-                isDefaultInferred = true;
-            }
-
-            tenantViewRoles.Add(new TenantViewRoleDto
-            {
-                TenantId = tenant.Id,
-                TenantName = tenant.Name,
-                ViewRole = viewRole,
-                IsDefaultInferred = isDefaultInferred
-            });
+            viewRole = savedViewRole;
+            isDefaultInferred = false;
+        }
+        else if (expectedReadOnlyRole != null)
+        {
+            viewRole = expectedReadOnlyRole;
+            isDefaultInferred = true;
+        }
+        else
+        {
+            viewRole = $"{tenant.Name.ToLowerInvariant()}_readonly";
+            isDefaultInferred = true;
         }
 
-        return tenantViewRoles;
+        bool readOnlyRoleExists = false;
+        bool mainRoleExists = false;
+        if (!string.IsNullOrWhiteSpace(licencePlate))
+        {
+            using (currentTenant.Change(tenantId))
+            {
+                readOnlyRoleExists = await reportColumnsMapRepository.RoleExistsAsync(expectedReadOnlyRole!);
+                mainRoleExists = await reportColumnsMapRepository.RoleExistsAsync(licencePlate);
+            }
+        }
+
+        return new TenantViewRoleDto
+        {
+            TenantId = tenant.Id,
+            TenantName = tenant.Name,
+            ViewRole = viewRole,
+            IsDefaultInferred = isDefaultInferred,
+            LicencePlate = licencePlate,
+            ExpectedReadOnlyRole = expectedReadOnlyRole,
+            ReadOnlyRoleExists = readOnlyRoleExists,
+            MainRoleExists = mainRoleExists
+        };
     }
 
     /// <summary>
@@ -71,6 +103,8 @@ public class TenantViewRoleAppService(
     public async Task<TenantViewRoleDto> UpdateAsync(Guid tenantId, UpdateTenantViewRoleDto input)
     {
         var tenant = await tenantRepository.GetAsync(tenantId);
+
+        await EnsureRoleExistsAsync(tenantId, input.ViewRole);
 
         await settingManager.SetAsync(ReportingSettings.TenantViewRole, input.ViewRole, "T", tenantId.ToString());
 
@@ -91,6 +125,17 @@ public class TenantViewRoleAppService(
     {
         Logger.LogInformation("Starting role assignment for tenant: {TenantId}", tenantId);
 
+        var role = await settingManager.GetOrNullAsync(ReportingSettings.TenantViewRole, "T", tenantId.ToString());
+        if (string.IsNullOrWhiteSpace(role))
+        {
+            throw new UserFriendlyException("No view role is configured for this tenant yet. Save a role first.");
+        }
+
+        // Fail fast here rather than relying solely on AssignViewRoleBackgroundJob's own check -
+        // that check only logs a warning and silently no-ops, so without this the queue call
+        // always reports success even for a role that doesn't exist in the tenant's database.
+        await EnsureRoleExistsAsync(tenantId, role);
+
         var jobArgs = new AssignViewRoleBackgroundJobArgs
         {
             TenantId = tenantId
@@ -98,6 +143,22 @@ public class TenantViewRoleAppService(
 
         await backgroundJobManager.EnqueueAsync(jobArgs);
         Logger.LogInformation("Queued role assignment job for tenant: {TenantId}", tenantId);
+    }
+
+    /// <summary>
+    /// Throws a <see cref="UserFriendlyException"/> if the given role does not exist as a real
+    /// PostgreSQL role in the tenant's own database.
+    /// </summary>
+    private async Task EnsureRoleExistsAsync(Guid tenantId, string role)
+    {
+        using (currentTenant.Change(tenantId))
+        {
+            if (!await reportColumnsMapRepository.RoleExistsAsync(role))
+            {
+                throw new UserFriendlyException(
+                    $"Role '{role}' does not exist in this tenant's database. Create the role first, or choose an existing one from View DB Info.");
+            }
+        }
     }
 
     /// <summary>

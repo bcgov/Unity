@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Unity.Modules.Shared.Permissions;
 using Unity.TenantManagement.Abstractions;
 using Unity.TenantManagement.Application;
 using Unity.TenantManagement.Application.Contracts;
@@ -34,6 +35,7 @@ public class TenantAppService(
 {
     private IIdentityUserRepository IdentityUserRepository => LazyServiceProvider.LazyGetRequiredService<IIdentityUserRepository>();
 
+    private const string ExtraPropDisplayName = "DisplayName";
     private const string ExtraPropDivision = "Division";
     private const string ExtraPropBranch = "Branch";
     private const string ExtraPropDescription = "Description";
@@ -59,7 +61,7 @@ public class TenantAppService(
 
         var extraPropertySortFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            ExtraPropDivision, ExtraPropBranch, ExtraPropDescription, ExtraPropCasClientCode
+            ExtraPropDisplayName, ExtraPropDivision, ExtraPropBranch, ExtraPropDescription, ExtraPropCasClientCode
         };
 
         var dbSortFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -90,10 +92,13 @@ public class TenantAppService(
             );
         }
 
-        // In-memory path: needed when filtering on ExtraProperties or sorting on ExtraProperties
-        // Keep native name filtering in SQL and only layer ExtraProperties matching on top.
+        // In-memory path: needed when filtering on ExtraProperties or sorting on ExtraProperties.
+        // Fetch unfiltered here - the underlying repository's filter only matches against Name, so
+        // passing it through would exclude an ExtraProperty-only match (e.g. filtering by Division
+        // text that isn't also in the tenant's Name) before the OR-based filter below ever runs.
+        // Name + ExtraProperties matching is applied together, in memory, further down.
         var dbSorting = dbSortFields.Contains(sortField) ? input.Sorting : nameof(Tenant.Name);
-        var filteredTenants = await tenantRepository.GetListAsync(dbSorting, int.MaxValue, 0, input.Filter);
+        var filteredTenants = await tenantRepository.GetListAsync(dbSorting, int.MaxValue, 0, filter: null);
 
         IEnumerable<Tenant> result = filteredTenants;
 
@@ -103,6 +108,7 @@ public class TenantAppService(
             var filter = input.Filter.Trim();
             result = result.Where(t =>
                 (t.Name != null && t.Name.Contains(filter, StringComparison.OrdinalIgnoreCase)) ||
+                MatchesExtraProperty(t, ExtraPropDisplayName, filter) ||
                 MatchesExtraProperty(t, ExtraPropDivision, filter) ||
                 MatchesExtraProperty(t, ExtraPropBranch, filter) ||
                 MatchesExtraProperty(t, ExtraPropDescription, filter) ||
@@ -142,6 +148,16 @@ public class TenantAppService(
     [Authorize(TenantManagementPermissions.Policies.TenantsCreateOrITOps)]
     public virtual async Task<TenantDto> CreateAsync(TenantCreateDto input)
     {
+        // TenantsCreateOrITOps also grants access to any caller holding the plain Tenants.Create
+        // permission, not just IT Admin/Operations. CreateModalModel.OnPostAsync already strips
+        // FeatureKeys/MetabaseUserEmails for non-admin callers, but that only guards the OOTB
+        // Razor Page - a caller can still invoke this application service directly (its own
+        // dynamic API controller) and set them. Re-check the stricter policy here so a forged call
+        // can't enable arbitrary features or - more importantly - grant arbitrary email addresses
+        // Metabase access to the new tenant's database via the post-creation registration step.
+        StripPrivilegedFieldsUnlessAuthorized(
+            input, await AuthorizationService.IsGrantedAsync(IdentityConsts.ITAdminOrITOperationsPolicyName));
+
         Tenant? tenant = null;
 
         using (var uow = unitOfWorkManager.Begin(true, false))
@@ -169,6 +185,7 @@ public class TenantAppService(
 
             // Set ExtraProperties from input
             tenant.ExtraProperties[UnityTenantManagementConsts.TenantLicencePlateExtraPropertyKey] = credentials.DbName;
+            tenant.ExtraProperties[ExtraPropDisplayName] = input.DisplayName ?? string.Empty;
             tenant.ExtraProperties[ExtraPropDivision] = input.Division ?? string.Empty;
             tenant.ExtraProperties[ExtraPropBranch] = input.Branch ?? string.Empty;
             tenant.ExtraProperties[ExtraPropDescription] = input.Description ?? string.Empty;
@@ -180,20 +197,40 @@ public class TenantAppService(
             await uow.CompleteAsync();
         }
 
-        await localEventBus.PublishAsync(
-                new TenantCreatedEto
-                {
-                    Id = tenant.Id,
-                    Name = tenant.Name,
-                    Properties =
-                    {
-                        { "UserIdentifier", input.UserIdentifier },
-                        { "FeatureKeys", input.FeatureKeys ?? string.Empty }
-                    }
-                }
-            );
+        var tenantCreatedEto = new TenantCreatedEto
+        {
+            Id = tenant.Id,
+            Name = tenant.Name,
+            Properties =
+            {
+                { "UserIdentifier", input.UserIdentifier },
+                { "FeatureKeys", input.FeatureKeys ?? string.Empty }
+            }
+        };
+
+        // Distinguish "field omitted" (input.MetabaseUserEmails is null - an older/API caller
+        // that never set it) from "explicitly cleared" (empty string - a deliberate "no Metabase
+        // users for this tenant" choice) - only the latter should be persisted as an override.
+        // TenantCreatedEventHandler falls back to the Global default when the property is absent.
+        if (input.MetabaseUserEmails != null)
+        {
+            tenantCreatedEto.Properties["MetabaseUserEmails"] = input.MetabaseUserEmails;
+        }
+
+        await localEventBus.PublishAsync(tenantCreatedEto);
 
         return ObjectMapper.Map<Tenant, TenantDto>(tenant);
+    }
+
+    // Extracted so the stripping decision itself is unit-testable without driving ABP's
+    // authorization pipeline through an integration test host.
+    internal static void StripPrivilegedFieldsUnlessAuthorized(TenantCreateDto input, bool callerIsAuthorized)
+    {
+        if (!callerIsAuthorized)
+        {
+            input.FeatureKeys = null;
+            input.MetabaseUserEmails = null;
+        }
     }
 
     [Authorize(TenantManagementPermissions.Policies.TenantsUpdateOrITOps)]
@@ -206,6 +243,7 @@ public class TenantAppService(
         tenant.SetConcurrencyStampIfNotNull(input.ConcurrencyStamp);
         
         // Update ExtraProperties from input
+        tenant.ExtraProperties[ExtraPropDisplayName] = input.DisplayName ?? string.Empty;
         tenant.ExtraProperties[ExtraPropDivision] = input.Division ?? string.Empty;
         tenant.ExtraProperties[ExtraPropBranch] = input.Branch ?? string.Empty;
         tenant.ExtraProperties[ExtraPropDescription] = input.Description ?? string.Empty;

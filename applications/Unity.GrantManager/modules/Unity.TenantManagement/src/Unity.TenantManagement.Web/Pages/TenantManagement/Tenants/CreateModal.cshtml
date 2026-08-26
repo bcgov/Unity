@@ -1,4 +1,4 @@
-﻿@page
+@page
 @using Microsoft.AspNetCore.Mvc.Localization
 @using Microsoft.Extensions.Localization
 @using Unity.TenantManagement.Web.Pages.TenantManagement.Tenants
@@ -15,52 +15,162 @@
 @{
     Layout = null;
 }
-<form method="post" asp-page="/TenantManagement/Tenants/CreateModal">
-    <abp-modal>
+<form method="post" asp-page="/TenantManagement/Tenants/CreateModal" autocomplete="off">
+    <abp-modal size="Large">
         <abp-modal-header title="@L["NewTenant"].Value"></abp-modal-header>
         <abp-modal-body>
-            <abp-input asp-for="Tenant.Name" />
 
-            @foreach (ObjectExtensionPropertyInfo propertyInfo in ObjectExtensionManager.Instance.GetProperties<CreateModalModel.TenantInfoModel>().Where(p => !p.Name.EndsWith("_Text")))
-            {
-                if (propertyInfo.Type.IsEnum || !propertyInfo.Lookup.Url.IsNullOrEmpty())
+            <ul class="nav nav-tabs mb-3" id="createTenantTabs">
+                <li class="nav-item">
+                    <button class="nav-link active" id="create-tab-details" data-bs-toggle="tab"
+                            data-bs-target="#create-pane-details" type="button"
+                            aria-controls="create-pane-details">
+                        Details
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="create-tab-managers" data-bs-toggle="tab"
+                            data-bs-target="#create-pane-managers" type="button"
+                            aria-controls="create-pane-managers">
+                        Program Managers
+                    </button>
+                </li>
+                @if (Model.CanManageFeatures)
                 {
-                    if (propertyInfo.Type.IsEnum)
+                    <li class="nav-item">
+                        <button class="nav-link" id="create-tab-features" data-bs-toggle="tab"
+                                data-bs-target="#create-pane-features" type="button"
+                                aria-controls="create-pane-features">
+                            Features
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" id="create-tab-metabase" data-bs-toggle="tab"
+                                data-bs-target="#create-pane-metabase" type="button"
+                                aria-controls="create-pane-metabase">
+                            Metabase
+                        </button>
+                    </li>
+                }
+            </ul>
+
+            <div class="tab-content" id="createTenantTabContent">
+
+                <div class="tab-pane fade show active" id="create-pane-details" aria-labelledby="create-tab-details">
+                    <abp-input asp-for="Tenant.Name" label="@L["TenantName"].Value" />
+                    <abp-input asp-for="Tenant.DisplayName" label="Display Name" />
+                    <abp-input asp-for="Tenant.Division" label="Division" />
+                    <abp-input asp-for="Tenant.Branch" label="Branch" />
+                    <abp-input asp-for="Tenant.Description" label="Description" />
+
+                    <div class="form-group">
+                        <label for="Tenant_CasClientCode">CAS Client Code</label>
+                        <select asp-for="Tenant.CasClientCode" id="Tenant_CasClientCode" class="form-control cas-client-select"
+                                data-ministry-target="#selected-ministry">
+                            <option value="">Select a Client Code</option>
+                            @foreach (var option in Model.CasClientOptions)
+                            {
+                                <option value="@option.Code" data-ministry="@option.Ministry">@option.DisplayName</option>
+                            }
+                        </select>
+                    </div>
+
+                    @foreach (ObjectExtensionPropertyInfo propertyInfo in ObjectExtensionManager.Instance.GetProperties<CreateModalModel.TenantInfoModel>().Where(p => !p.Name.EndsWith("_Text")))
                     {
-                        Model.Tenant.ExtraProperties.ToEnum(propertyInfo.Name, propertyInfo.Type);
+                        if (propertyInfo.Type.IsEnum || !propertyInfo.Lookup.Url.IsNullOrEmpty())
+                        {
+                            if (propertyInfo.Type.IsEnum)
+                            {
+                                Model.Tenant.ExtraProperties.ToEnum(propertyInfo.Name, propertyInfo.Type);
+                            }
+                            <abp-select asp-for="Tenant.ExtraProperties[propertyInfo.Name]"
+                                        label="@propertyInfo.GetLocalizedDisplayName(StringLocalizerFactory)"
+                                        autocomplete-api-url="@propertyInfo.Lookup.Url"
+                                        autocomplete-selected-item-name="@Model.Tenant.GetProperty(propertyInfo.Name+"_Text")"
+                                        autocomplete-selected-item-value="@Model.Tenant.GetProperty(propertyInfo.Name)"
+                                        autocomplete-filter-param-name="@propertyInfo.Lookup.FilterParamName"
+                                        autocomplete-items-property-name="@propertyInfo.Lookup.ResultListPropertyName"
+                                        autocomplete-display-property-name="@propertyInfo.Lookup.DisplayPropertyName"
+                                        autocomplete-value-property-name="@propertyInfo.Lookup.ValuePropertyName"></abp-select>
+                        }
+                        else
+                        {
+                            <abp-input type="@propertyInfo.GetInputType()"
+                                       asp-for="Tenant.ExtraProperties[propertyInfo.Name]"
+                                       label="@propertyInfo.GetLocalizedDisplayName(StringLocalizerFactory)"
+                                       asp-format="@propertyInfo.GetInputFormatOrNull()"
+                                       value="@propertyInfo.GetInputValueOrNull(Model.Tenant.GetProperty(propertyInfo.Name))" />
+                        }
                     }
-                    <abp-select asp-for="Tenant.ExtraProperties[propertyInfo.Name]"
-                                label="@propertyInfo.GetLocalizedDisplayName(StringLocalizerFactory)"
-                                autocomplete-api-url="@propertyInfo.Lookup.Url"
-                                autocomplete-selected-item-name="@Model.Tenant.GetProperty(propertyInfo.Name+"_Text")"
-                                autocomplete-selected-item-value="@Model.Tenant.GetProperty(propertyInfo.Name)"
-                                autocomplete-filter-param-name="@propertyInfo.Lookup.FilterParamName"
-                                autocomplete-items-property-name="@propertyInfo.Lookup.ResultListPropertyName"
-                                autocomplete-display-property-name="@propertyInfo.Lookup.DisplayPropertyName"
-                                autocomplete-value-property-name="@propertyInfo.Lookup.ValuePropertyName"></abp-select>
-                }
-                else
-                {
-                    <abp-input type="@propertyInfo.GetInputType()"
-                               asp-for="Tenant.ExtraProperties[propertyInfo.Name]"
-                               label="@propertyInfo.GetLocalizedDisplayName(StringLocalizerFactory)"
-                               asp-format="@propertyInfo.GetInputFormatOrNull()"
-                               value="@propertyInfo.GetInputValueOrNull(Model.Tenant.GetProperty(propertyInfo.Name))" />
-                }
-            }
+                </div>
 
-            <div class="mt-3">
-                <abp-input id="create-tenant-directory" asp-for="Tenant.Directory" disabled readonly="true" />
-                <abp-input id="create-tenant-firstName" asp-for="Tenant.FirstName" />
-                <abp-input id="create-tenant-lastName" asp-for="Tenant.LastName" />
-                <abp-input type="hidden" id="create-tenant-admin-id" asp-for="Tenant.UserIdentifier" />
+                <div class="tab-pane fade" id="create-pane-managers" aria-labelledby="create-tab-managers">
+                    <h6 class="text-secondary mb-2">Assign Program Manager</h6>
+                    <div class="input-group mb-2">
+                        <select id="create-search-field" class="form-select" style="max-width: 170px;" aria-label="Manager search field">
+                            <option value="firstName">First Name</option>
+                            <option value="lastName">Last Name</option>
+                            <option value="firstAndLast">First &amp; Last Name</option>
+                            <option value="email">Email</option>
+                        </select>
+                        <input type="text" id="create-search-value" class="form-control" placeholder="At least 2 characters..." aria-label="Manager search value" />
+                    </div>
+                    <input type="hidden" id="create-tenant-admin-id" asp-for="Tenant.UserIdentifier" />
+
+                    <abp-button id="TenantAdminSearchButton"
+                                text="@L["Search"].Value"
+                                icon-type="Other"
+                                icon="fl fl-search"
+                                button-type="Light"
+                                class="mb-2" />
+                    <abp-table id="UserSearchTable"></abp-table>
+
+                    <div id="create-selected-user-display" class="text-muted small mt-2" style="display:none">
+                        Selected: <span id="create-selected-user-name" class="fw-semibold text-body"></span>
+                    </div>
+                </div>
+
+                @if (Model.CanManageFeatures)
+                {
+                    <div class="tab-pane fade" id="create-pane-features" aria-labelledby="create-tab-features">
+                        <div id="create-features-loading" class="text-center py-3 text-muted" style="display:none">
+                            <span class="spinner-border spinner-border-sm me-2"></span>Loading features...
+                        </div>
+                        <div id="create-features-content"></div>
+                        <input type="hidden" id="create-features-json" asp-for="Tenant.FeatureKeys" />
+                    </div>
+
+                    <div class="tab-pane fade" id="create-pane-metabase" aria-labelledby="create-tab-metabase">
+                        <p class="text-muted small">Users checked here will be granted access to this tenant's data in Metabase.</p>
+                        <p class="text-muted small">Note: a user must already have a Metabase account (via SSO login, or created under Admin &gt; People) before they can be added to a group. Emails without an existing account are skipped during registration.</p>
+
+                        <div id="metabase-user-list" class="mb-3">
+                            @foreach (var email in Model.DefaultMetabaseUserEmails)
+                            {
+                                <div class="form-check d-flex align-items-center">
+                                    <input class="form-check-input metabase-user-checkbox" type="checkbox" value="@email" id="metabase-user-@email.GetHashCode()" checked>
+                                    <label class="form-check-label flex-grow-1" for="metabase-user-@email.GetHashCode()">@email</label>
+                                    <button type="button" class="btn btn-sm btn-link text-danger p-0 ms-2 metabase-remove-default-btn" data-email="@email" title="Remove from default list" aria-label="Remove @email from default list">&times;</button>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="input-group input-group-sm mb-2" style="max-width: 420px;">
+                            <input type="email" id="metabase-new-user-email" class="form-control" placeholder="name@gov.bc.ca" aria-label="New Metabase user email" />
+                            <button type="button" id="metabase-add-user-btn" class="btn btn-outline-secondary">Add</button>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="metabase-save-as-default">
+                            <label class="form-check-label" for="metabase-save-as-default">Save newly added users as default for future tenants</label>
+                        </div>
+
+                        <input type="hidden" id="metabase-user-emails" asp-for="Tenant.MetabaseUserEmails" />
+                        <input type="hidden" id="metabase-new-default-user-emails" asp-for="Tenant.MetabaseNewDefaultUserEmails" />
+                        <input type="hidden" id="metabase-removed-default-user-emails" asp-for="Tenant.MetabaseRemovedDefaultUserEmails" />
+                    </div>
+                }
+
             </div>
-            <abp-button id="TenantAdminSearchButton"
-                        text="@L["Search"].Value"
-                        icon-type="Other"
-                        icon="fl fl-search"
-                        button-type="Light" />
-            <abp-table id="UserSearchTable"></abp-table>
         </abp-modal-body>
         <abp-modal-footer>
             <abp-button id="create-tenant-btn" text="@L["Create"].Value" type="submit" button-type="Primary" disabled="true"></abp-button>

@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp.Data;
 using Volo.Abp.Domain.Services;
 
 namespace Unity.Notifications.ReadStates;
@@ -31,7 +32,14 @@ public class NotificationReadStateManager(
         else
         {
             state.LastReadAt = Clock.Now;
-            await notificationReadStateRepository.UpdateAsync(state, autoSave: true);
+            try
+            {
+                await notificationReadStateRepository.UpdateAsync(state, autoSave: true);
+            }
+            catch (AbpDbConcurrencyException)
+            {
+                // Another page already advanced this user's read marker.
+            }
         }
     }
 

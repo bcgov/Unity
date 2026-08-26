@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 using Unity.GrantManager.ApplicantProfile.ProfileData;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
-using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
@@ -102,7 +101,7 @@ namespace Unity.GrantManager.ApplicantProfile
                 var addressDtos = deduplicated.Select(r => new AddressInfoItemDto
                 {
                     Id = r.address.Id,
-                    AddressType = GetAddressTypeName(r.address.AddressType),
+                    AddressType = AddressTypeMapper.ToDisplayName(r.address.AddressType),
                     Street = r.address.Street ?? string.Empty,
                     Street2 = r.address.Street2 ?? string.Empty,
                     Unit = r.address.Unit ?? string.Empty,
@@ -110,15 +109,22 @@ namespace Unity.GrantManager.ApplicantProfile
                     Province = r.address.Province ?? string.Empty,
                     PostalCode = r.address.Postal ?? string.Empty,
                     Country = r.address.Country ?? string.Empty,
-                    IsPrimary = r.address.HasProperty(AddressExtraPropertyNames.IsPrimary) && r.address.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary),
+                    IsPrimary = r.address.IsFlaggedPrimary(),
                     IsEditable = r.IsFromApplicantPath && !distinctApplicants,
                     ReferenceNo = r.ReferenceNo
                 }).ToList();
 
-                // If no address is marked as primary, mark the most recent one as primary
-                if (addressDtos.Count > 0 && !addressDtos.Any(a => a.IsPrimary))
+                // Primary is scoped to the address type WITHIN an applicant: this provider can return
+                // addresses for more than one applicant, so grouping by type alone would let one
+                // applicant's flagged primary suppress the fallback for another.
+                foreach (var typeGroup in deduplicated.GroupBy(r => new { r.address.ApplicantId, r.address.AddressType }))
                 {
-                    var mostRecent = deduplicated.OrderByDescending(r => r.CreationTime).First();
+                    if (typeGroup.Any(r => r.address.IsFlaggedPrimary()))
+                    {
+                        continue;
+                    }
+
+                    var mostRecent = typeGroup.OrderByDescending(r => r.CreationTime).First();
                     var mostRecentDto = addressDtos.First(a => a.Id == mostRecent.address.Id);
                     mostRecentDto.IsPrimary = true;
                 }
@@ -127,20 +133,6 @@ namespace Unity.GrantManager.ApplicantProfile
             }
 
             return dto;
-        }
-
-        /// <summary>
-        /// Maps an <see cref="AddressType"/> enum value to a human-readable display name.
-        /// </summary>
-        private static string GetAddressTypeName(AddressType addressType)
-        {
-            return addressType switch
-            {
-                AddressType.PhysicalAddress => "Physical",
-                AddressType.MailingAddress => "Mailing",
-                AddressType.BusinessAddress => "Business",
-                _ => addressType.ToString()
-            };
         }
     }
 }
