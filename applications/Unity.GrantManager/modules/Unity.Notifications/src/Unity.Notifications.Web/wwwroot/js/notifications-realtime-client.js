@@ -365,40 +365,6 @@
             renderConversation();
         }
 
-        function setupTargetSelect2() {
-            if (!window.jQuery || !window.jQuery.fn?.select2) {
-                return;
-            }
-
-            window.jQuery(widget.target).select2({
-                theme: 'bootstrap-5',
-                width: '100%',
-                placeholder: l('RealtimeWidget:To'),
-                allowClear: true,
-                dropdownParent: window.jQuery(widget.targetControl),
-                templateResult: renderTargetSelect2Option,
-                templateSelection: renderTargetSelect2Option,
-                escapeMarkup: function (markup) { return markup; }
-            });
-
-            window.jQuery(widget.target)
-                .on('select2:open', function () {
-                    targetSelect2Open = true;
-                    syncTargetSelect2DropdownSize();
-                })
-                .on('select2:close', function () {
-                    targetSelect2Open = false;
-                    if (targetOptionsRefreshPending) {
-                        targetOptionsRefreshPending = false;
-                        renderTargetOptions();
-                    } else {
-                        refreshTargetSelect2();
-                    }
-                });
-
-            window.addEventListener('resize', syncTargetSelect2DropdownSize);
-        }
-
         function syncTargetSelect2DropdownSize() {
             if (!window.jQuery?.fn?.select2 || !window.jQuery(widget.target).data('select2')) {
                 return;
@@ -1191,7 +1157,7 @@
             storedBanners.forEach(function (banner) {
                 container.appendChild(createBannerElement(banner));
             });
-            navbar.insertAdjacentElement('afterend', container);
+            navbar.after(container);
         }
 
         function showIncomingBanner(sender, message, timestamp) {
@@ -1209,7 +1175,7 @@
             }
 
             const banner = {
-                id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+                id: `${Date.now()}-${globalThis.crypto.randomUUID()}`,
                 sender: String(sender || ''),
                 message: String(message || ''),
                 key: bannerKey,
@@ -1227,7 +1193,7 @@
             if (!container) {
                 container = document.createElement('div');
                 container.className = 'rt-widget-banners';
-                navbar.insertAdjacentElement('afterend', container);
+                navbar.after(container);
             }
             container.appendChild(createBannerElement(banner));
         }
@@ -1257,7 +1223,7 @@
                 removeStoredBanner(banner.id);
                 element.remove();
                 const container = element.parentElement;
-                if (container && container.children.length === 0) {
+                if (container?.children.length === 0) {
                     container.remove();
                 }
             });
@@ -1276,6 +1242,7 @@
                         && isCurrentDay(banner.timestamp || banner.id.split('-')[0]);
                 }) : [];
             } catch (error) {
+                console.warn('Unable to read stored realtime banners.', error);
                 return [];
             }
         }
@@ -1284,7 +1251,7 @@
             try {
                 localStorage.setItem(BANNER_STORAGE_KEY, JSON.stringify(banners));
             } catch (error) {
-                // Storage failures should not prevent realtime messages from displaying.
+                console.warn('Unable to persist realtime banners.', error);
             }
         }
 
