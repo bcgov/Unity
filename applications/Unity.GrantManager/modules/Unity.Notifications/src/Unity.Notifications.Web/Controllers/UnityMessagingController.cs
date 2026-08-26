@@ -177,15 +177,20 @@ public class UnityMessagingController : AbpControllerBase
 
     [RequiresFeature(NotificationsFeatureConsts.DirectMessaging)]
     [HttpPost("message-tenant")]
-    public async Task<IActionResult> MessageTenantAsync([FromBody] TenantMessageRequest request)
+    public async Task<IActionResult> MessageTenantAsync([FromBody] TenantMessageRequest? request)
     {
         return await SendTenantMessageAsync(request);
     }
 
     [AllowAnonymous]
     [HttpPost("message-tenant-api")]
-    public async Task<IActionResult> MessageTenantWithApiKeyAsync([FromBody] TenantMessageRequest request)
+    public async Task<IActionResult> MessageTenantWithApiKeyAsync([FromBody] TenantMessageRequest? request)
     {
+        if (request is null)
+        {
+            return BadRequest("A JSON request body is required.");
+        }
+
         if (!await IsTenantApiKeyValidAsync(request.TargetTenantId))
         {
             return Unauthorized("Invalid API key for the target tenant.");
@@ -204,8 +209,13 @@ public class UnityMessagingController : AbpControllerBase
 
     [AllowAnonymous]
     [HttpPost("message-all-tenants-api")]
-    public async Task<IActionResult> MessageAllTenantsWithApiKeyAsync([FromBody] BroadcastMessageRequest request)
+    public async Task<IActionResult> MessageAllTenantsWithApiKeyAsync([FromBody] BroadcastMessageRequest? request)
     {
+        if (request is null)
+        {
+            return BadRequest("A JSON request body is required.");
+        }
+
         var defaultTenant = await tenantRepository.FindByNameAsync(GrantManagerConsts.NormalizedDefaultTenantName);
         if (defaultTenant is null || !await IsTenantApiKeyValidAsync(defaultTenant.Id))
         {
@@ -280,9 +290,9 @@ public class UnityMessagingController : AbpControllerBase
         });
     }
 
-    private async Task<IActionResult> SendTenantMessageAsync(TenantMessageRequest request)
+    private async Task<IActionResult> SendTenantMessageAsync(TenantMessageRequest? request)
     {
-        if (request.TargetTenantId == Guid.Empty || string.IsNullOrWhiteSpace(request.Message)
+        if (request is null || request.TargetTenantId == Guid.Empty || string.IsNullOrWhiteSpace(request.Message)
             || !IsValidMessageType(request.MessageType))
         {
             return BadRequest("TargetTenantId, Message, and a valid MessageType are required.");

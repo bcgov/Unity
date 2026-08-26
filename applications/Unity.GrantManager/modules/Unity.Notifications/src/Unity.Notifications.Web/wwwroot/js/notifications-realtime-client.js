@@ -80,10 +80,12 @@
         const STATUS_GREEN_MS = 10 * 60 * 1000;
         const STATUS_ORANGE_MS = 30 * 60 * 1000;
         const BUBBLE_POSITION_STORAGE_KEY = 'unity.notifications.realtime.bubble-position';
+        const BUBBLE_VISIBILITY_STORAGE_KEY = 'unity.notifications.realtime.bubble-hidden';
         const PANEL_SIZE_STORAGE_KEY = 'unity.notifications.realtime.panel-size';
         const PANEL_POSITION_STORAGE_KEY = 'unity.notifications.realtime.panel-position';
         const BANNER_STORAGE_KEY = 'unity.notifications.realtime.banners';
         const widget = buildWidget();
+        let bubbleHiddenPreference = restoreBubbleHiddenPreference();
         setupBubbleDragging();
         setupPanelResizing();
         setupPanelDragging();
@@ -1280,7 +1282,7 @@
         function togglePanel() {
             panelOpen = !panelOpen;
             widget.panel.classList.toggle('rt-widget-panel-open', panelOpen);
-            widget.bubble.classList.toggle('rt-widget-hidden', panelOpen);
+            widget.bubble.classList.toggle('rt-widget-hidden', panelOpen || bubbleHiddenPreference);
             updateBubbleMenuItem();
 
             if (panelOpen) {
@@ -1301,7 +1303,9 @@
             menuItem.style.display = '';
             menuItem.addEventListener('click', function (event) {
                 event.preventDefault();
-                widget.bubble.classList.toggle('rt-widget-hidden');
+                bubbleHiddenPreference = !bubbleHiddenPreference;
+                saveBubbleHiddenPreference(bubbleHiddenPreference);
+                widget.bubble.classList.toggle('rt-widget-hidden', panelOpen || bubbleHiddenPreference);
                 updateBubbleMenuItem();
             });
             updateBubbleMenuItem();
@@ -1313,9 +1317,25 @@
                 return;
             }
 
-            const bubbleIsHidden = widget.bubble.classList.contains('rt-widget-hidden');
-            menuItem.textContent = l(bubbleIsHidden ? 'RealtimeWidget:ShowBubble' : 'RealtimeWidget:HideBubble');
+            menuItem.textContent = l(bubbleHiddenPreference ? 'RealtimeWidget:ShowBubble' : 'RealtimeWidget:HideBubble');
             menuItem.setAttribute('aria-label', menuItem.textContent);
+        }
+
+        function restoreBubbleHiddenPreference() {
+            try {
+                return localStorage.getItem(BUBBLE_VISIBILITY_STORAGE_KEY) === 'true';
+            } catch (error) {
+                console.warn('Unable to restore bubble visibility preference.', error);
+                return false;
+            }
+        }
+
+        function saveBubbleHiddenPreference(hidden) {
+            try {
+                localStorage.setItem(BUBBLE_VISIBILITY_STORAGE_KEY, String(hidden));
+            } catch (error) {
+                console.warn('Unable to save bubble visibility preference.', error);
+            }
         }
 
         function escapeHtml(value) {
