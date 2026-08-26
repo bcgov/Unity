@@ -11,9 +11,7 @@
 
 @section scripts {
     <abp-script src="/client-proxies/multi-tenancy-proxy.js" />
-    <abp-script-bundle>
-        <abp-script src="/Pages/UnityMessaging/Index.js" />
-    </abp-script-bundle>
+    <abp-script src="/Pages/UnityMessaging/Index.js" />
 }
 
 <div class="container-fluid messaging-page px-3 py-3">
@@ -34,8 +32,8 @@
                 <thead>
                     <tr>
                         <th>@L["RealtimeOps:Status"]</th>
+                        <th>@L["RealtimeOps:LastActivity"]</th>
                         <th>@L["RealtimeOps:UserName"]</th>
-                        <th>@L["RealtimeOps:UserId"]</th>
                         <th>@L["RealtimeOps:TenantId"]</th>
                         <th>@L["RealtimeOps:Connections"]</th>
                         <th></th>
@@ -68,6 +66,14 @@
                     <option value=""></option>
                 </select>
             </div>
+            <div id="messageTypeContainer" class="mb-2" style="display: none;">
+                <label for="MessageType" class="form-label">@L["RealtimeOps:MessageType"]</label>
+                <select class="form-select" id="MessageType" required>
+                    <option value="">@L["RealtimeOps:SelectMessageType"]</option>
+                    <option value="banner">@L["RealtimeOps:MessageTypeBanner"]</option>
+                    <option value="popup">@L["RealtimeOps:MessageTypePopup"]</option>
+                </select>
+            </div>
             <div class="mb-2">
                 <textarea class="form-control" id="MessageText" rows="3" placeholder="@L["RealtimeOps:Message"]"></textarea>
             </div>
@@ -75,6 +81,8 @@
         </div>
     </div>
     </div>
+
+    <button type="button" id="messagingActivityDivider" class="messaging-activity-divider" aria-label="Resize message activity panel"></button>
 
     <div class="card messaging-activity-card">
         <div class="card-header d-flex justify-content-between align-items-center">

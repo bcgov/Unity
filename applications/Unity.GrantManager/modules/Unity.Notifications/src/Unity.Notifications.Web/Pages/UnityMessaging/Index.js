@@ -4,12 +4,16 @@ $(function () {
     const sendTarget = $('#SendTarget');
     const sendTenantFilterContainer = $('#sendTenantFilterContainer');
     const sendTenantFilter = $('#SendTenantFilter');
+    const messageTypeContainer = $('#messageTypeContainer');
+    const messageType = $('#MessageType');
     const messageInput = $('#MessageText');
     const messageModeTabs = $('.rt-widget-mode-tab[data-message-mode]');
     const messagingSplitLayout = document.getElementById('messagingSplitLayout');
     const messagingUsersPanel = document.getElementById('messagingUsersPanel');
     const messagingComposePanel = document.getElementById('messagingComposePanel');
     const messagingSplitDivider = document.getElementById('messagingSplitDivider');
+    const messagingActivityDivider = document.getElementById('messagingActivityDivider');
+    const messagingActivityCard = document.querySelector('.messaging-activity-card');
     let messageMode = 'individual';
     let availableTenants = [];
     const activityFilters = {
@@ -18,8 +22,14 @@ $(function () {
         searchText: null
     };
     let tenantNamesById = {};
+    const messagingHtmlEncoder = {
+        encode(value) {
+            return $('<div/>').text(value == null ? '' : String(value)).html();
+        }
+    };
 
     initializeMessagingSplit();
+    initializeActivitySplit();
 
     initializeActivityDateRange();
     const activityTable = initializeActivityTable();
@@ -54,6 +64,7 @@ $(function () {
     $('#SendButton').on('click', async function () {
         const target = sendTarget.val();
         const message = (messageInput.val() || '').trim();
+        const selectedMessageType = messageType.val();
 
         if (!target) {
             abp.notify.warn(l('RealtimeOps:SelectTarget'));
@@ -75,10 +86,15 @@ $(function () {
                     contentType: 'application/json'
                 });
             } else if (kind === 'tenant') {
+                if (!selectedMessageType) {
+                    messageType.trigger('focus');
+                    return;
+                }
+
                 await abp.ajax({
                     url: '/api/notifications/unity-messaging/message-tenant',
                     type: 'POST',
-                    data: JSON.stringify({ targetTenantId: id, message }),
+                    data: JSON.stringify({ targetTenantId: id, message, messageType: selectedMessageType }),
                     contentType: 'application/json'
                 });
             } else {
@@ -112,6 +128,10 @@ $(function () {
         });
 
         sendTenantFilterContainer.toggle(messageMode === 'individual');
+        messageTypeContainer.toggle(messageMode === 'tenant');
+        if (messageMode !== 'tenant') {
+            messageType.val('');
+        }
         if (messageMode === 'individual' && tenantId) {
             sendTenantFilter.val(tenantId);
         }
@@ -128,7 +148,8 @@ $(function () {
     }
 
     function initializeMessagingSplit() {
-        if (!messagingSplitLayout || !messagingUsersPanel || !messagingComposePanel || !messagingSplitDivider) {
+        if (!messagingSplitLayout || typeof messagingSplitLayout.getBoundingClientRect !== 'function'
+            || !messagingUsersPanel || !messagingComposePanel || !messagingSplitDivider) {
             return;
         }
 
@@ -148,22 +169,28 @@ $(function () {
         messagingSplitDivider.addEventListener('pointerdown', function (event) {
             event.preventDefault();
             resizing = true;
-            messagingSplitDivider.setPointerCapture(event.pointerId);
         });
 
-        messagingSplitDivider.addEventListener('pointermove', function (event) {
+        document.addEventListener('pointermove', function (event) {
             if (!resizing) {
                 return;
             }
 
             const bounds = messagingSplitLayout.getBoundingClientRect();
+            if (!bounds.width) {
+                return;
+            }
+
             const percentage = (event.clientX - bounds.left) / bounds.width;
             applyWidth(percentage);
         });
 
-        messagingSplitDivider.addEventListener('pointerup', function (event) {
+        document.addEventListener('pointerup', function () {
             resizing = false;
-            messagingSplitDivider.releasePointerCapture(event.pointerId);
+        });
+
+        document.addEventListener('pointercancel', function () {
+            resizing = false;
         });
 
         messagingSplitDivider.addEventListener('keydown', function (event) {
@@ -177,6 +204,85 @@ $(function () {
         });
     }
 
+    function initializeActivitySplit() {
+        const page = document.querySelector('.messaging-page');
+        if (!messagingActivityDivider || !messagingActivityCard || !messagingSplitLayout
+            || !page || typeof page.getBoundingClientRect !== 'function'
+            || typeof messagingActivityCard.getBoundingClientRect !== 'function') {
+            return;
+        }
+
+        const storageKey = 'UnityMessaging_ActivityHeight';
+        const minimumActivityHeight = 220;
+        const minimumMessagingHeight = 180;
+
+        function applyHeight(value, persist) {
+            const pageHeight = page.getBoundingClientRect().height;
+            const maximumActivityHeight = Math.max(
+                minimumActivityHeight,
+                pageHeight - minimumMessagingHeight - messagingActivityDivider.offsetHeight - 32
+            );
+            const height = Math.min(
+                maximumActivityHeight,
+                Math.max(minimumActivityHeight, value)
+            );
+
+            messagingActivityCard.style.flexBasis = `${height}px`;
+            if (persist && pageHeight > 0) {
+                localStorage.setItem(storageKey, String(height / pageHeight));
+            }
+        }
+
+        const savedRatio = Number.parseFloat(localStorage.getItem(storageKey));
+        const pageHeight = page.getBoundingClientRect().height;
+        applyHeight(Number.isFinite(savedRatio) ? savedRatio * pageHeight : pageHeight * 0.35, false);
+
+        const activityResizeState = { active: false };
+        messagingActivityDivider.addEventListener('pointerdown', function (event) {
+            if (event.button !== 0) {
+                return;
+            }
+
+            event.preventDefault();
+            activityResizeState.active = true;
+            messagingActivityDivider.setPointerCapture(event.pointerId);
+        });
+
+        document.addEventListener('pointermove', function (event) {
+            if (!activityResizeState.active) {
+                return;
+            }
+
+            const pageBounds = page.getBoundingClientRect();
+            applyHeight(pageBounds.bottom - event.clientY, true);
+        });
+
+        document.addEventListener('pointerup', finishResize);
+        document.addEventListener('pointercancel', finishResize);
+
+        messagingActivityDivider.addEventListener('keydown', function (event) {
+            if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') {
+                return;
+            }
+
+            event.preventDefault();
+            const currentHeight = messagingActivityCard.getBoundingClientRect().height;
+            applyHeight(currentHeight + (event.key === 'ArrowUp' ? 40 : -40), true);
+        });
+
+        function finishResize(event) {
+            if (!activityResizeState.active) {
+                return;
+            }
+
+            activityResizeState.active = false;
+            if (event.pointerId !== undefined
+                && messagingActivityDivider.hasPointerCapture?.(event.pointerId)) {
+                messagingActivityDivider.releasePointerCapture(event.pointerId);
+            }
+        }
+    }
+
     async function initializeRealtime() {
         if (typeof signalR === 'undefined') {
             return;
@@ -188,7 +294,7 @@ $(function () {
             .build();
 
         connection.on('onlineUsersUpdated', function (users) {
-            renderUsers(users || []);
+            loadOnlineUsers();
         });
 
         connection.on('directMessageReceived', function (eventData) {
@@ -382,7 +488,7 @@ $(function () {
         sendTenantFilter.html(`
             <option value=""></option>
             ${availableTenants
-                .map(t => `<option value="${sanitizeHtml(t.id)}">${sanitizeHtml(t.name || t.id)}</option>`)
+                .map(t => `<option value="${messagingHtmlEncoder.encode(t.id)}">${messagingHtmlEncoder.encode(t.name || t.id)}</option>`)
                 .join('')}
         `);
 
@@ -398,12 +504,12 @@ $(function () {
         let options = '';
         if (messageMode === 'tenant') {
             options = availableTenants
-                .map(t => `<option value="tenant:${sanitizeHtml(t.id)}">${sanitizeHtml(t.name || t.id)}</option>`)
+                .map(t => `<option value="tenant:${messagingHtmlEncoder.encode(t.id)}">${messagingHtmlEncoder.encode(t.name || t.id)}</option>`)
                 .join('')
         } else if (selectedTenantId) {
             options = lastKnownUsers
                 .filter(u => !!u && !!u.userId && u.tenantId === selectedTenantId)
-                .map(u => `<option value="user:${sanitizeHtml(u.userId)}">${sanitizeHtml(u.userName || u.userId)}</option>`)
+                .map(u => `<option value="user:${messagingHtmlEncoder.encode(u.userId)}">${messagingHtmlEncoder.encode(u.userName || u.userId)}</option>`)
                 .join('');
         }
 
@@ -438,24 +544,7 @@ $(function () {
         } else {
             const rows = lastKnownUsers
                 .filter(u => !!u && !!u.userId)
-                .map(function (u) {
-                    const userName = sanitizeHtml(u.userName || '');
-                    const userId = sanitizeHtml(u.userId || '');
-                    const tenantId = u.tenantId || '';
-                    const tenantName = sanitizeHtml(tenantId ? (tenantNamesById[tenantId] || tenantId) : '');
-                    const connectionCount = Number.parseInt(u.connectionCount || 0, 10);
-                    const status = getActivityStatus(u.lastActivityUtc);
-
-                    return `<tr>
-                        <td><span class="rt-status-dot rt-status-${status.className}" title="${sanitizeHtml(status.title)}"></span></td>
-                        <td>${userName}</td>
-                        <td class="text-monospace">${userId}</td>
-                        <td>${tenantName}</td>
-                        <td>${connectionCount}</td>
-                        <td><button type="button" class="btn btn-sm btn-outline-primary js-select-user" data-user-id="${userId}" data-tenant-id="${sanitizeHtml(tenantId)}">${l('RealtimeOps:Message')}</button></td>
-                        <td>${tenantId ? `<button type="button" class="btn btn-sm btn-outline-secondary js-select-tenant" data-tenant-id="${sanitizeHtml(tenantId)}">${l('RealtimeOps:SendToTenant')}</button>` : ''}</td>
-                    </tr>`;
-                })
+                .map(renderUserRow)
                 .join('');
 
             usersTableBody.html(rows);
@@ -464,7 +553,39 @@ $(function () {
         renderSendTargetOptions();
     }
 
-    function getActivityStatus(lastActivityUtc) {
+    function renderUserRow(user) {
+        const userName = messagingHtmlEncoder.encode(user.userName || '');
+        const userId = messagingHtmlEncoder.encode(user.userId || '');
+        const tenantId = user.tenantId || '';
+        const tenantName = messagingHtmlEncoder.encode(tenantId ? (tenantNamesById[tenantId] || tenantId) : '');
+        const connectionCount = Number.parseInt(user.connectionCount || 0, 10);
+        const status = getActivityStatus(user.lastActivityUtc, user.isOnline);
+        const lastActivity = user.lastActivityUtc
+            ? DateUtils.formatUtcDateToLocal(user.lastActivityUtc, 'display', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            })
+            : '';
+
+        return `<tr>
+            <td><span class="rt-status-dot rt-status-${status.className}" title="${messagingHtmlEncoder.encode(status.title)}"></span></td>
+            <td class="text-nowrap">${messagingHtmlEncoder.encode(lastActivity)}</td>
+            <td>${userName}</td>
+            <td>${tenantName}</td>
+            <td>${connectionCount}</td>
+            <td><button type="button" class="btn btn-sm btn-outline-primary js-select-user" data-user-id="${userId}" data-tenant-id="${messagingHtmlEncoder.encode(tenantId)}">${l('RealtimeOps:Message')}</button></td>
+            <td>${tenantId ? `<button type="button" class="btn btn-sm btn-outline-secondary js-select-tenant" data-tenant-id="${messagingHtmlEncoder.encode(tenantId)}">${l('RealtimeOps:SendToTenant')}</button>` : ''}</td>
+        </tr>`;
+    }
+
+    function getActivityStatus(lastActivityUtc, isOnline) {
+        if (isOnline) {
+            return { className: 'green', title: l('RealtimeOps:StatusActive') };
+        }
+
         const lastActivity = lastActivityUtc ? new Date(lastActivityUtc) : null;
         const ageMs = lastActivity && !Number.isNaN(lastActivity.getTime())
             ? Date.now() - lastActivity.getTime()
@@ -484,7 +605,4 @@ $(function () {
         };
     }
 
-    function sanitizeHtml(value) {
-        return $('<div/>').text(value || '').html();
-    }
 });
