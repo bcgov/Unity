@@ -247,9 +247,22 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                 .ToList();
         }
 
-        // Drop fields the caller isn't authorized to change for the relevant zone
+        // Helper function to determine if a field is authorized for update based on the user's permissions
+        // 1. The function checks if the field is "RedStop" and if the user has permission to update it.
+        // 2. If not, it checks if the field belongs to the Organization Info zone and if the user has permission to update it.
+        // 3. Otherwise, it assumes the field belongs to the Applicant Info zone and checks for that permission.
+        bool IsFieldAuthorized(string field)
+        {
+            if (field.Equals(nameof(UpdateApplicantSummaryDto.RedStop), StringComparison.OrdinalIgnoreCase))
+            {
+                return canUpdateApplicantRedStop;
+            }
+
+            return OrganizationInfoFields.Contains(field) ? canUpdateOrganizationInfo : canUpdateApplicantInfo;
+        }
+
         modifiedSummaryFields = modifiedSummaryFields
-            .Where(field => OrganizationInfoFields.Contains(field) ? canUpdateOrganizationInfo : canUpdateApplicantInfo)
+            .Where(IsFieldAuthorized)
             .ToList();
 
         if (modifiedSummaryFields.Count == 0)
@@ -337,6 +350,8 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
 
         if (input.PrimaryContact != null)
         {
+            // NOTE: This updates primary contact information for the applicant
+            // which is typically guarded by ApplicantManagement > Contacts > Update
             await UpdatePrimaryContactAsync(applicantId, input.PrimaryContact);
         }
 
@@ -654,6 +669,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     }
 
     [RemoteService(true)]
+    [Authorize]
     public async Task UpdateApplicantIdAsync(UpdateApplicantIdDto dto)
     {
         // Validate input
