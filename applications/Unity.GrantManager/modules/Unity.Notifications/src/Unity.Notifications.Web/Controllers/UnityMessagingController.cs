@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -12,6 +14,7 @@ using Unity.Notifications.Localization;
 using Unity.Notifications.Logs;
 using Unity.Notifications.Features;
 using Unity.Notifications.Web.Realtime;
+using Unity.GrantManager.ApplicationForms;
 using Volo.Abp;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AuditLogging;
@@ -19,12 +22,13 @@ using Volo.Abp.Identity;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Features;
 using Volo.Abp.TenantManagement;
+using Volo.Abp.Security.Encryption;
+using Unity.GrantManager.Tokens;
 
 namespace Unity.Notifications.Web.Controllers;
 
 [RemoteService(true)]
 [Authorize(IdentityConsts.ITOperationsPermissionName)]
-[RequiresFeature(NotificationsFeatureConsts.DirectMessaging)]
 [Route("api/notifications/unity-messaging")]
 public class UnityMessagingController : AbpControllerBase
 {
@@ -35,6 +39,9 @@ public class UnityMessagingController : AbpControllerBase
     private readonly ITenantRepository tenantRepository;
     private readonly IAuditLogRepository auditLogRepository;
     private readonly ICurrentTenant currentTenant;
+    private readonly ITenantTokenRepository tenantTokenRepository;
+    private readonly IStringEncryptionService stringEncryptionService;
+    private readonly IFeatureChecker featureChecker;
 
     public UnityMessagingController(
         IHubContext<NotificationHub> hubContext,
@@ -43,7 +50,10 @@ public class UnityMessagingController : AbpControllerBase
         IIdentityUserRepository identityUserRepository,
         ITenantRepository tenantRepository,
         IAuditLogRepository auditLogRepository,
-        ICurrentTenant currentTenant)
+        ICurrentTenant currentTenant,
+        ITenantTokenRepository tenantTokenRepository,
+        IStringEncryptionService stringEncryptionService,
+        IFeatureChecker featureChecker)
     {
         this.hubContext = hubContext;
         this.presenceTracker = presenceTracker;
@@ -52,9 +62,13 @@ public class UnityMessagingController : AbpControllerBase
         this.tenantRepository = tenantRepository;
         this.auditLogRepository = auditLogRepository;
         this.currentTenant = currentTenant;
+        this.tenantTokenRepository = tenantTokenRepository;
+        this.stringEncryptionService = stringEncryptionService;
+        this.featureChecker = featureChecker;
         LocalizationResource = typeof(NotificationsResource);
     }
 
+    [RequiresFeature(NotificationsFeatureConsts.DirectMessaging)]
     [HttpGet("online-users")]
     public async Task<ActionResult<IReadOnlyList<OnlineUserInfo>>> GetOnlineUsersAsync()
     {
@@ -110,6 +124,7 @@ public class UnityMessagingController : AbpControllerBase
         return Ok(result);
     }
 
+    [RequiresFeature(NotificationsFeatureConsts.DirectMessaging)]
     [HttpPost("message-user")]
     public async Task<IActionResult> MessageUserAsync([FromBody] DirectMessageRequest request)
     {
@@ -159,8 +174,34 @@ public class UnityMessagingController : AbpControllerBase
         return Ok(new { delivered = true, logId });
     }
 
+    [RequiresFeature(NotificationsFeatureConsts.DirectMessaging)]
     [HttpPost("message-tenant")]
     public async Task<IActionResult> MessageTenantAsync([FromBody] TenantMessageRequest request)
+    {
+        return await SendTenantMessageAsync(request);
+    }
+
+    [AllowAnonymous]
+    [HttpPost("message-tenant-api")]
+    public async Task<IActionResult> MessageTenantWithApiKeyAsync([FromBody] TenantMessageRequest request)
+    {
+        if (!await IsTenantApiKeyValidAsync(request.TargetTenantId))
+        {
+            return Unauthorized("Invalid API key for the target tenant.");
+        }
+
+        using (currentTenant.Change(request.TargetTenantId))
+        {
+            if (!await featureChecker.IsEnabledAsync(NotificationsFeatureConsts.DirectMessaging))
+            {
+                return Forbid();
+            }
+        }
+
+        return await SendTenantMessageAsync(request);
+    }
+
+    private async Task<IActionResult> SendTenantMessageAsync(TenantMessageRequest request)
     {
         if (request.TargetTenantId == Guid.Empty || string.IsNullOrWhiteSpace(request.Message)
             || !IsValidMessageType(request.MessageType))
@@ -221,6 +262,31 @@ public class UnityMessagingController : AbpControllerBase
         });
 
         return Ok(new { delivered = true, logId });
+    }
+
+    private async Task<bool> IsTenantApiKeyValidAsync(Guid tenantId)
+    {
+        if (tenantId == Guid.Empty
+            || !HttpContext.Request.Headers.TryGetValue(AuthConstants.ApiKeyHeader, out var extractedApiKey))
+        {
+            return false;
+        }
+
+        var query = await tenantTokenRepository.GetQueryableAsync();
+        var tenantToken = query.FirstOrDefault(token =>
+            token.TenantId == tenantId && token.Name == TokenConsts.IntakeApiName);
+
+        if (string.IsNullOrWhiteSpace(tenantToken?.Value))
+        {
+            return false;
+        }
+
+        var expectedApiKey = stringEncryptionService.Decrypt(tenantToken.Value) ?? string.Empty;
+        var actualApiKey = extractedApiKey.ToString();
+        var expectedBytes = Encoding.UTF8.GetBytes(expectedApiKey);
+        var actualBytes = Encoding.UTF8.GetBytes(actualApiKey);
+
+        return CryptographicOperations.FixedTimeEquals(expectedBytes, actualBytes);
     }
 
     private static bool IsValidMessageType(string? messageType)

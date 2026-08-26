@@ -111,42 +111,7 @@
         }
 
         connection.on('directMessageReceived', function (eventData) {
-            const scope = eventData?.scope || 'user';
-            const sender = eventData?.senderName || '';
-            const senderId = eventData?.senderId;
-            const message = eventData?.message || '';
-            const targetId = scope === 'tenant'
-                ? eventData?.tenantId || currentTenant?.id
-                : senderId;
-
-            if (!targetId) {
-                return;
-            }
-
-            const mode = scope === 'tenant' ? 'tenant' : 'individual';
-            addMessage(mode, targetId, sender, senderId, message, eventData?.timestamp);
-
-            if (scope === 'user') {
-                ensurePeerOption(senderId, sender);
-            }
-
-            if (senderId !== myUserId) {
-                if (mode === 'individual'
-                    && !(panelOpen && activeMode === 'individual' && widget.target.value === targetId)) {
-                    unreadIndividualCounts[targetId] = (unreadIndividualCounts[targetId] || 0) + 1;
-                }
-                renderIndividualList();
-            }
-
-            if (scope === 'tenant' && senderId && senderId !== myUserId) {
-                if (claimNotification(eventData, scope)) {
-                    if (isBannerMessage(eventData, scope)) {
-                        showIncomingBanner(sender, message, eventData?.timestamp);
-                    } else {
-                        showIncomingToast(sender, message);
-                    }
-                }
-            }
+            handleIncomingMessage(eventData);
 
         });
 
@@ -183,48 +148,14 @@
                 let firstUnreadTarget = null;
 
                 (Array.isArray(messages) ? messages : []).forEach(function (eventData) {
-                    const scope = eventData.scope === 'tenant' ? 'tenant' : 'user';
-                    const senderId = eventData.senderId || null;
-                    const targetId = scope === 'tenant'
-                        ? eventData.targetId
-                        : eventData.targetId || senderId;
-
-                    if (!targetId) {
+                    const unreadMessage = processUnreadMessage(eventData);
+                    if (!unreadMessage) {
                         return;
                     }
 
-                    if (scope === 'user' && senderId && senderId !== myUserId) {
-                        unreadIndividualCounts[targetId] = (unreadIndividualCounts[targetId] || 0) + 1;
-                    }
-
                     if (!firstUnreadTarget) {
-                        firstUnreadMode = scope === 'tenant' ? 'tenant' : 'individual';
-                        firstUnreadTarget = targetId;
-                    }
-
-                    addMessage(
-                        scope === 'tenant' ? 'tenant' : 'individual',
-                        targetId,
-                        eventData.senderName || '',
-                        senderId,
-                        eventData.message || '',
-                        eventData.timestamp
-                    );
-
-                    if (scope === 'user') {
-                        ensurePeerOption(senderId, eventData.senderName || '');
-                    }
-
-                    if (scope === 'tenant' && senderId && senderId !== myUserId) {
-                        const senderName = eventData.senderName || '';
-                        const message = eventData.message || '';
-                        if (claimNotification(eventData, scope)) {
-                            if (isBannerMessage(eventData, scope)) {
-                                showIncomingBanner(senderName, message, eventData?.timestamp);
-                            } else {
-                                showIncomingToast(senderName, message);
-                            }
-                        }
+                        firstUnreadMode = unreadMessage.mode;
+                        firstUnreadTarget = unreadMessage.targetId;
                     }
                 });
 
@@ -243,6 +174,72 @@
             }).catch(function () {
                 // Unread history is a convenience; realtime delivery remains available.
             });
+        }
+
+        function handleIncomingMessage(eventData) {
+            const scope = eventData?.scope || 'user';
+            const senderId = eventData?.senderId;
+            const targetId = scope === 'tenant'
+                ? eventData?.tenantId || currentTenant?.id
+                : senderId;
+
+            if (!targetId) {
+                return;
+            }
+
+            const sender = eventData?.senderName || '';
+            const message = eventData?.message || '';
+            const mode = scope === 'tenant' ? 'tenant' : 'individual';
+            addMessage(mode, targetId, sender, senderId, message, eventData?.timestamp);
+
+            if (scope === 'user') {
+                ensurePeerOption(senderId, sender);
+            }
+
+            updateUnreadIndividualCount(scope, targetId, senderId);
+            displayTenantNotification(eventData, scope, sender, message, senderId);
+        }
+
+        function processUnreadMessage(eventData) {
+            const scope = eventData.scope === 'tenant' ? 'tenant' : 'user';
+            const senderId = eventData.senderId || null;
+            const targetId = scope === 'tenant' ? eventData.targetId : eventData.targetId || senderId;
+
+            if (!targetId) {
+                return null;
+            }
+
+            const sender = eventData.senderName || '';
+            const message = eventData.message || '';
+            updateUnreadIndividualCount(scope, targetId, senderId);
+            addMessage(scope === 'tenant' ? 'tenant' : 'individual', targetId, sender, senderId, message, eventData.timestamp);
+
+            if (scope === 'user') {
+                ensurePeerOption(senderId, sender);
+            }
+
+            displayTenantNotification(eventData, scope, sender, message, senderId);
+            return { mode: scope === 'tenant' ? 'tenant' : 'individual', targetId };
+        }
+
+        function updateUnreadIndividualCount(scope, targetId, senderId) {
+            if (scope === 'user' && senderId && senderId !== myUserId
+                && !(panelOpen && activeMode === 'individual' && widget.target.value === targetId)) {
+                unreadIndividualCounts[targetId] = (unreadIndividualCounts[targetId] || 0) + 1;
+                renderIndividualList();
+            }
+        }
+
+        function displayTenantNotification(eventData, scope, sender, message, senderId) {
+            if (scope !== 'tenant' || senderId === myUserId || !claimNotification(eventData, scope)) {
+                return;
+            }
+
+            if (isBannerMessage(eventData, scope)) {
+                showIncomingBanner(sender, message, eventData?.timestamp);
+            } else {
+                showIncomingToast(sender, message);
+            }
         }
 
         function sendHeartbeat(force) {
