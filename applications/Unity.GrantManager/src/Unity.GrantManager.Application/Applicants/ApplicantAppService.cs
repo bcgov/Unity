@@ -209,12 +209,16 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
 
         ArgumentNullException.ThrowIfNull(input.Data);
 
-        var canUpdateApplicantInfo = await AuthorizationService.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.Update);
-        var canUpdateOrganizationInfo = await AuthorizationService.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.OrganizationInfo.Update);
+        // SECURITY NOTE: If user can merge applicants, they can update any field.
+        // Otherwise, check if they have permission to update either the Applicant Info or Organization Info zones.
+        var canMergeApplicant           = await AuthorizationService.IsGrantedAsync(UnitySelector.ApplicantManagement.Applicant.Merge);
+        var canUpdateApplicantInfo      = canMergeApplicant || await AuthorizationService.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.Update);
+        var canUpdateOrganizationInfo   = canMergeApplicant || await AuthorizationService.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.OrganizationInfo.Update);
+        var canUpdateApplicantRedStop   = canMergeApplicant || await AuthorizationService.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.Update_RedStop);
 
         if (!canUpdateApplicantInfo && !canUpdateOrganizationInfo)
         {
-            throw new UnauthorizedAccessException("You do not have permission to update applicant information.");
+            throw new AbpAuthorizationException("You do not have permission to update applicant information.");
         }
 
         var applicant = await applicantRepository.GetAsync(applicantId);
@@ -258,7 +262,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         ObjectMapper.Map(modifiedSummary, applicant);
 
         if (modifiedSummaryFields.Contains(nameof(UpdateApplicantSummaryDto.RedStop), StringComparer.OrdinalIgnoreCase)
-            && await AuthorizationService.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.Update_RedStop))
+            && canUpdateApplicantRedStop)
         {
             applicant.RedStop = modifiedSummary.RedStop;
         }
@@ -728,6 +732,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     [Authorize]
     public async Task TransferApplicantApplicationsAsync(TransferApplicantApplicationsDto dto)
     {
+        // Used by both Applicant List Merge and Applicant Info Merge
         await AuthorizeApplicantMerge();
 
         var principal = await applicantRepository.GetAsync(dto.PrincipalApplicantId);
@@ -754,6 +759,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     [Authorize]
     public async Task SetDuplicatedAsync(SetApplicantDuplicateDto dto)
     {
+        // Used by both Applicant List Merge and Applicant Info Merge
         await AuthorizeApplicantMerge();
 
         // Set principal as not duplicated
@@ -849,6 +855,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     }
 
     [RemoteService(true)]
+    [Authorize(UnitySelector.ApplicantManagement.Applicant.Default)]
     public async Task<PagedResultDto<ApplicantListDto>> GetListAsync(ApplicantListRequestDto input)
     {
         var listRecords = await applicantRepository.GetApplicantListRecordsAsync(input.RequestedFields);

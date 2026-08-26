@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.Modules.Shared;
+using Volo.Abp.Authorization;
 
 namespace Unity.GrantManager.ApplicantProfile;
 
@@ -165,7 +166,7 @@ public class ApplicantHistoryAppService(
             UnitySelector.ApplicantManagement.History.ReportsHistory.Update
         ))
         {
-            throw new UnauthorizedAccessException("You do not have permission to update any applicant history notes.");
+            throw new AbpAuthorizationException("You do not have permission to update any applicant history notes.");
         }
 
         var modifiedFields = input.ModifiedFields.Count > 0
