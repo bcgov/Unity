@@ -14,5 +14,7 @@ public class OnlineUserInfo
 
     public int ConnectionCount { get; set; }
 
-    public DateTime LastActivityUtc { get; set; }
+    public DateTime? LastActivityUtc { get; set; }
+
+    public bool IsOnline => ConnectionCount > 0;
 }

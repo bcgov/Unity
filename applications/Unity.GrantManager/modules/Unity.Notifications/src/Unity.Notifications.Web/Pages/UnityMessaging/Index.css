@@ -6,18 +6,19 @@
     min-height: 0;
 }
 
-.messaging-page > h3,
-.messaging-page > .messaging-split-layout {
+.messaging-page > h3 {
     flex: 0 0 auto;
 }
 
 .messaging-split-layout {
     display: flex;
     align-items: stretch;
+    flex: 1 1 0;
     gap: 1rem;
     width: 100%;
     margin-bottom: 1rem;
     min-width: 0;
+    min-height: 180px;
 }
 
 .messaging-split-panel {
@@ -41,6 +42,8 @@
     background: #dee2e6;
     cursor: col-resize;
     align-self: stretch;
+    touch-action: none;
+    user-select: none;
 }
 
 .messaging-split-divider:hover,
@@ -49,12 +52,33 @@
     outline: none;
 }
 
+.messaging-activity-divider {
+    width: 100%;
+    height: 8px;
+    flex: 0 0 8px;
+    margin: 0 0 1rem;
+    border-top: 1px solid #ced4da;
+    border-bottom: 1px solid #ced4da;
+    border-left: 0;
+    border-right: 0;
+    background: #dee2e6;
+    cursor: row-resize;
+    touch-action: none;
+    user-select: none;
+}
+
+.messaging-activity-divider:hover,
+.messaging-activity-divider:focus {
+    background: #adb5bd;
+    outline: none;
+}
+
 .messaging-activity-card {
-    flex: 1 1 auto;
+    flex: 0 0 35%;
     display: flex;
     flex-direction: column;
     min-height: 0;
-    height: auto;
+    height: 35%;
     margin-bottom: 0;
     overflow: hidden;
 }
@@ -121,6 +145,7 @@
 @media (max-width: 992px) {
     .messaging-split-layout {
         flex-direction: column;
+        flex: 0 0 auto;
     }
 
     .messaging-split-panel {
