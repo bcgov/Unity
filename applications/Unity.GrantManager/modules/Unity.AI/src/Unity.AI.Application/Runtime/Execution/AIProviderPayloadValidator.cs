@@ -263,16 +263,22 @@ namespace Unity.AI.Runtime.Execution
                 }
             }
 
-            foreach (var propertyName in new[] { "Order", "Type" })
+            var orderResult = ValidateRequiredUIntProperty(field, "Order", $"{responseName} field");
+            if (!orderResult.IsValid)
             {
-                var result = ValidateRequiredUIntProperty(field, propertyName, $"{responseName} field");
-                if (!result.IsValid)
-                {
-                    return result;
-                }
+                return orderResult;
             }
 
-            var definitionResult = ValidateDefinitionProperty(field, responseName);
+            if (!TryGetProperty(field, "Type", out var type)
+                || type.ValueKind != JsonValueKind.Number
+                || !type.TryGetUInt32(out var typeValue)
+                || typeValue is not (1 or 2 or 6 or 12 or 14))
+            {
+                return AIResponseValidationResult.Invalid(
+                    $"{responseName} response field Type is unsupported (expected 1, 2, 6, 12, or 14).");
+            }
+
+            var definitionResult = ValidateDefinitionProperty(field, responseName, typeValue);
             if (!definitionResult.IsValid)
             {
                 return definitionResult;
@@ -281,7 +287,7 @@ namespace Unity.AI.Runtime.Execution
             return AIResponseValidationResult.Success();
         }
 
-        private static AIResponseValidationResult ValidateDefinitionProperty(JsonElement field, string responseName)
+        private static AIResponseValidationResult ValidateDefinitionProperty(JsonElement field, string responseName, uint type)
         {
             if (!TryGetProperty(field, "Definition", out var definition) || definition.ValueKind == JsonValueKind.Null)
             {
@@ -302,17 +308,117 @@ namespace Unity.AI.Runtime.Execution
             try
             {
                 using var definitionDocument = JsonDocument.Parse(definitionText);
-                if (definitionDocument.RootElement.ValueKind != JsonValueKind.Object)
+                var parsedDefinition = definitionDocument.RootElement;
+                if (parsedDefinition.ValueKind != JsonValueKind.Object)
                 {
                     return AIResponseValidationResult.Invalid($"{responseName} response field Definition must contain a JSON object.");
                 }
+
+                return type switch
+                {
+                    1 => ValidateIntegerRangeDefinition(parsedDefinition, responseName, "min", "max"),
+                    2 => ValidateUnsignedRangeDefinition(parsedDefinition, responseName, "minLength", "maxLength"),
+                    6 => ValidateRequiredInt64Properties(parsedDefinition, responseName, "yes_value", "no_value"),
+                    12 => ValidateSelectListDefinition(parsedDefinition, responseName),
+                    14 => ValidateTextAreaDefinition(parsedDefinition, responseName),
+                    _ => AIResponseValidationResult.Success()
+                };
             }
             catch (JsonException)
             {
                 return AIResponseValidationResult.Invalid($"{responseName} response field Definition must contain valid JSON.");
             }
+        }
+
+        private static AIResponseValidationResult ValidateIntegerRangeDefinition(JsonElement definition, string responseName, string minName, string maxName)
+        {
+            if (!TryGetInt64Property(definition, minName, out var min)
+                || !TryGetInt64Property(definition, maxName, out var max)
+                || min > max)
+            {
+                return AIResponseValidationResult.Invalid($"{responseName} response field Definition must contain integer '{minName}' and '{maxName}' values where {minName} is less than or equal to {maxName}.");
+            }
 
             return AIResponseValidationResult.Success();
+        }
+
+        private static AIResponseValidationResult ValidateUnsignedRangeDefinition(JsonElement definition, string responseName, string minName, string maxName)
+        {
+            if (!TryGetUInt32Property(definition, minName, out var min)
+                || !TryGetUInt32Property(definition, maxName, out var max)
+                || min > max)
+            {
+                return AIResponseValidationResult.Invalid($"{responseName} response field Definition must contain non-negative integer '{minName}' and '{maxName}' values where {minName} is less than or equal to {maxName}.");
+            }
+
+            return AIResponseValidationResult.Success();
+        }
+
+        private static AIResponseValidationResult ValidateTextAreaDefinition(JsonElement definition, string responseName)
+        {
+            var rangeResult = ValidateUnsignedRangeDefinition(definition, responseName, "minLength", "maxLength");
+            if (!rangeResult.IsValid)
+            {
+                return rangeResult;
+            }
+
+            return TryGetUInt32Property(definition, "rows", out var rows) && rows > 0
+                ? AIResponseValidationResult.Success()
+                : AIResponseValidationResult.Invalid($"{responseName} response field Definition must contain a positive integer 'rows' value.");
+        }
+
+        private static AIResponseValidationResult ValidateRequiredInt64Properties(JsonElement definition, string responseName, string firstName, string secondName)
+        {
+            return TryGetInt64Property(definition, firstName, out _)
+                && TryGetInt64Property(definition, secondName, out _)
+                ? AIResponseValidationResult.Success()
+                : AIResponseValidationResult.Invalid($"{responseName} response field Definition must contain integer '{firstName}' and '{secondName}' values.");
+        }
+
+        private static AIResponseValidationResult ValidateSelectListDefinition(JsonElement definition, string responseName)
+        {
+            if (!TryGetProperty(definition, "options", out var options)
+                || options.ValueKind != JsonValueKind.Array
+                || options.GetArrayLength() == 0)
+            {
+                return AIResponseValidationResult.Invalid($"{responseName} response field Definition must contain a non-empty 'options' array.");
+            }
+
+            foreach (var option in options.EnumerateArray())
+            {
+                if (option.ValueKind != JsonValueKind.Object
+                    || !HasNonEmptyStringProperty(option, "key")
+                    || !HasNonEmptyStringProperty(option, "value")
+                    || !TryGetInt64Property(option, "numeric_value", out _))
+                {
+                    return AIResponseValidationResult.Invalid($"{responseName} response field Definition contains an invalid select-list option.");
+                }
+            }
+
+            return AIResponseValidationResult.Success();
+        }
+
+        private static bool HasNonEmptyStringProperty(JsonElement element, string propertyName)
+        {
+            return TryGetProperty(element, propertyName, out var property)
+                && property.ValueKind == JsonValueKind.String
+                && !string.IsNullOrWhiteSpace(property.GetString());
+        }
+
+        private static bool TryGetInt64Property(JsonElement element, string propertyName, out long value)
+        {
+            value = default;
+            return TryGetProperty(element, propertyName, out var property)
+                && property.ValueKind == JsonValueKind.Number
+                && property.TryGetInt64(out value);
+        }
+
+        private static bool TryGetUInt32Property(JsonElement element, string propertyName, out uint value)
+        {
+            value = default;
+            return TryGetProperty(element, propertyName, out var property)
+                && property.ValueKind == JsonValueKind.Number
+                && property.TryGetUInt32(out value);
         }
 
         private static AIResponseValidationResult ValidateRequiredStringProperty(JsonElement element, string propertyName, string sourceName, bool allowEmpty = false)

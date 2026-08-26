@@ -129,7 +129,7 @@ public class AIPromptDataSeeder(
 
     private async Task SeedFormScoresheetPromptAsync()
     {
-        await EnsurePromptAsync(AIPromptTypes.FormScoresheet, 2, FormScoresheetSystemV2, FormScoresheetUserV2, FormScoresheetMetadataV2);
+        await EnsurePromptAsync(AIPromptTypes.FormScoresheet, 3, FormScoresheetSystemV3, FormScoresheetUserV3, FormScoresheetMetadataV3);
     }
 
     // ─── HELPERS ──────────────────────────────────────────────────────────────
@@ -832,6 +832,9 @@ public class AIPromptDataSeeder(
         - Preserve every existing non-empty mapping exactly as provided; do not replace or remove it.
         - Only fill blank existing mappings or add new mappings when supported by the available fields.
         - Only include mappings that are clearly semantically equivalent or strongly related by label, name, type, and purpose.
+        - Down-weight CHEFS fields when the CHEFS label contains the substring "Extract"; prefer a comparably suitable alternative instead.
+        - Up-weight CHEFS fields whose type is "hidden", especially when the CHEFS label or API property name contains the substring "hidden".
+        - If a field is both hidden and contains "Extract", prefer the hidden-field signal over the Extract down-weight.
         - Do not force one-to-one coverage. Omit Unity fields when no CHEFS field is a sensible match.
         - Omit CHEFS fields that do not clearly map to a Unity target field.
         - Do not map platform/system identifiers such as SubmissionId, SubmissionDate, or ConfirmationId; they are managed by Unity and should be omitted if present.
@@ -897,8 +900,8 @@ public class AIPromptDataSeeder(
         Return only valid JSON.
         """;
 
-    // ── v2/form-scoresheet.user.txt ──────────────────────────────────────────
-    private const string FormScoresheetUserV2 = """
+    // ── v3/form-scoresheet.user.txt ──────────────────────────────────────────
+    private const string FormScoresheetUserV3 = """
         SCORESHEET CONTEXT:
         {{DATA}}
 
@@ -935,6 +938,12 @@ public class AIPromptDataSeeder(
         - Return one scoresheet definition JSON object only.
         - Title and Name must be non-empty strings; Sections must contain at least one section and every section must contain at least one field.
         - Every field Name and Label must be non-empty, Order and Type must be non-negative integers, and Definition must be a valid JSON object encoded as a string.
+        - Use only these QuestionType values: Number 1, Text 2, YesNo 6, SelectList 12, and TextArea 14.
+        - Number definitions must include integer "min" and "max" values with min less than or equal to max.
+        - Text definitions must include non-negative integer "minLength" and "maxLength" values with minLength less than or equal to maxLength.
+        - TextArea definitions must include the Text definition values and a positive integer "rows" value.
+        - YesNo definitions must include integer "yes_value" and "no_value" values.
+        - SelectList definitions must include a non-empty "options" array. Each option must include non-empty string "key" and "value" values and an integer "numeric_value".
         - The context contains CHEFS form fields, allowed Unity Flex question types, and a scoresheet template.
         - Fill out the scoresheet template to generate the rubric assessors use to score submitted applications.
         - Use CHEFS form fields as evidence for assessment criteria, but do not create one question per form field.
@@ -946,7 +955,9 @@ public class AIPromptDataSeeder(
         - Return valid plain JSON only.
         """;
 
-    private const string FormScoresheetMetadataV2 = """
+    private const string FormScoresheetSystemV3 = FormScoresheetSystemV2;
+
+    private const string FormScoresheetMetadataV3 = """
         {
           "DATA": "Serialized JSON payload containing the form name, form version, CHEFS fields, allowed question types, and the scoresheet template to fill out."
         }
