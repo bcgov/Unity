@@ -14,6 +14,7 @@ using Unity.Notifications.Localization;
 using Unity.Notifications.Logs;
 using Unity.Notifications.Features;
 using Unity.Notifications.Web.Realtime;
+using Unity.GrantManager;
 using Unity.GrantManager.ApplicationForms;
 using Volo.Abp;
 using Volo.Abp.AspNetCore.Mvc;
@@ -201,6 +202,84 @@ public class UnityMessagingController : AbpControllerBase
         return await SendTenantMessageAsync(request);
     }
 
+    [AllowAnonymous]
+    [HttpPost("message-all-tenants-api")]
+    public async Task<IActionResult> MessageAllTenantsWithApiKeyAsync([FromBody] BroadcastMessageRequest request)
+    {
+        var defaultTenant = await tenantRepository.FindByNameAsync(GrantManagerConsts.NormalizedDefaultTenantName);
+        if (defaultTenant is null || !await IsTenantApiKeyValidAsync(defaultTenant.Id))
+        {
+            return Unauthorized("Invalid API key for the default grant program tenant.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Message) || !IsValidMessageType(request.MessageType))
+        {
+            return BadRequest("Message and a valid MessageType are required.");
+        }
+
+        if (request.Message.Length > NotificationHub.MaxDirectMessageLength)
+        {
+            return BadRequest($"Messages cannot exceed {NotificationHub.MaxDirectMessageLength} characters.");
+        }
+
+        var normalizedMessageType = request.MessageType.ToLowerInvariant();
+        var deliveredTenantIds = new List<Guid>();
+
+        foreach (var tenant in await tenantRepository.GetListAsync())
+        {
+            using (currentTenant.Change(tenant.Id))
+            {
+                if (!await featureChecker.IsEnabledAsync(NotificationsFeatureConsts.DirectMessaging))
+                {
+                    continue;
+                }
+
+                var timestamp = DateTime.UtcNow;
+                var deliveryTarget = NotificationHub.BuildTenantGroup(tenant.Id);
+                await hubContext.Clients.Group(deliveryTarget).SendAsync(
+                    "directMessageReceived",
+                    new
+                    {
+                        scope = "tenant",
+                        source = nameof(UnityMessagingController),
+                        tenantId = tenant.Id,
+                        senderId = (string?)null,
+                        senderName = string.Empty,
+                        message = request.Message,
+                        messageType = normalizedMessageType,
+                        timestamp
+                    });
+
+                await notificationLogsAppService.CreateAsync(new CreateNotificationLogDto
+                {
+                    TenantId = tenant.Id,
+                    SenderUserId = CurrentUser.Id,
+                    SenderDisplayName = string.Empty,
+                    NotificationType = NotificationLogType.SignalRDirectMessage,
+                    Channel = NotificationLogChannel.SignalR,
+                    Severity = NotificationLogSeverity.Info,
+                    Title = "Tenant broadcast sent",
+                    Message = request.Message,
+                    PayloadJson = JsonSerializer.Serialize(new { messageType = normalizedMessageType }),
+                    Source = nameof(UnityMessagingController),
+                    CorrelationId = HttpContext.TraceIdentifier,
+                    IsDeliveredRealtime = true,
+                    DeliveryTarget = deliveryTarget,
+                    Environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+                });
+
+                deliveredTenantIds.Add(tenant.Id);
+            }
+        }
+
+        return Ok(new
+        {
+            delivered = true,
+            deliveredTenantCount = deliveredTenantIds.Count,
+            deliveredTenantIds
+        });
+    }
+
     private async Task<IActionResult> SendTenantMessageAsync(TenantMessageRequest request)
     {
         if (request.TargetTenantId == Guid.Empty || string.IsNullOrWhiteSpace(request.Message)
@@ -307,6 +386,13 @@ public class TenantMessageRequest
 {
     public Guid TargetTenantId { get; set; }
 
+    public string Message { get; set; } = string.Empty;
+
+    public string MessageType { get; set; } = string.Empty;
+}
+
+public class BroadcastMessageRequest
+{
     public string Message { get; set; } = string.Empty;
 
     public string MessageType { get; set; } = string.Empty;
