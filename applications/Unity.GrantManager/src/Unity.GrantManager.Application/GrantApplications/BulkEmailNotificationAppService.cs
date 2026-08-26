@@ -10,6 +10,7 @@ using Unity.GrantManager.Notifications.Email;
 using Unity.Modules.Shared.Utils;
 using Unity.Notifications.Emails;
 using Unity.Notifications.Permissions;
+using Unity.Notifications.Templates;
 using Volo.Abp;
 using Volo.Abp.Users;
 
@@ -27,6 +28,7 @@ namespace Unity.GrantManager.GrantApplications
         IEmailLogAttachmentRepository emailLogAttachmentRepository,
         IEmailAppService emailAppService,
         IExternalUserLookupServiceProvider externalUserLookupServiceProvider,
+        ITemplateService templateService,
         IConfiguration configuration) : GrantManagerAppService, IBulkEmailNotificationAppService
     {
         /// <summary>
@@ -64,6 +66,18 @@ namespace Unity.GrantManager.GrantApplications
             var draftAuthorsById = await GetDraftAuthorsAsync(drafts);
 
             return MapBulkEmailNotification(application, drafts, draftAuthorsById);
+        }
+
+        public async Task<List<ComposeEmailApplicationDto>> GetApplicationsForComposeEmail(Guid[] applicationGuids)
+        {
+            var applications = await applicationRepository.GetListByIdsAsync(applicationGuids);
+            var applicationsById = applications.ToDictionary(application => application.Id);
+
+            return applicationGuids
+                .Distinct()
+                .Where(applicationsById.ContainsKey)
+                .Select(applicationId => MapComposeEmailApplication(applicationsById[applicationId]))
+                .ToList();
         }
 
         private async Task<Dictionary<Guid, IUserData>> GetDraftAuthorsAsync(List<EmailLog> drafts)
@@ -196,6 +210,117 @@ namespace Unity.GrantManager.GrantApplications
             return bulkEmailResult;
         }
 
+        public async Task<BulkEmailNotificationResultDto> SendComposedBulkEmails(ComposeBulkEmailRequestDto request)
+        {
+            var result = new BulkEmailNotificationResultDto();
+            var emails = request?.Emails ?? [];
+
+            if (emails.Count == 0)
+            {
+                return result;
+            }
+
+            if (emails.Count > BatchApprovalConsts.MaxBatchCount)
+            {
+                throw new UserFriendlyException($"A maximum of {BatchApprovalConsts.MaxBatchCount} applications can be emailed at once.");
+            }
+
+            var applications = await applicationRepository.GetListByIdsAsync([.. emails.Select(email => email.ApplicationId).Distinct()]);
+            var applicationsById = applications.ToDictionary(application => application.Id);
+            var processedApplicationIds = new HashSet<Guid>();
+            Dictionary<Guid, EmailTemplate>? templatesById = null;
+
+            if (!await FeatureChecker.IsEnabledAsync("Unity.Notifications"))
+            {
+                foreach (var email in emails)
+                {
+                    var referenceNo = applicationsById.TryGetValue(email.ApplicationId, out var application)
+                        ? application.ReferenceNo
+                        : email.ApplicationId.ToString();
+                    result.Failures.Add(new KeyValuePair<string, string>(referenceNo, "Email notifications are currently disabled."));
+                }
+
+                return result;
+            }
+
+            foreach (var email in emails)
+            {
+                var referenceNo = applicationsById.TryGetValue(email.ApplicationId, out var application)
+                    ? application.ReferenceNo
+                    : email.ApplicationId.ToString();
+
+                try
+                {
+                    if (application == null)
+                    {
+                        throw new UserFriendlyException("The selected application could not be found.");
+                    }
+
+                    if (!processedApplicationIds.Add(application.Id))
+                    {
+                        throw new UserFriendlyException("The selected application occurs more than once in this batch.");
+                    }
+
+                    ComposedEmailValidator.ValidateFields(email);
+
+                    var templateName = string.Empty;
+                    if (email.TemplateId.HasValue)
+                    {
+                        templatesById ??= (await templateService.GetTemplatesByTenant())
+                            .ToDictionary(template => template.Id);
+                        if (!templatesById.TryGetValue(email.TemplateId.Value, out var template))
+                        {
+                            throw new UserFriendlyException("The selected email template no longer exists.");
+                        }
+
+                        await ValidateTemplateAttachmentSizeAsync(template.Id);
+                        templateName = template.Name;
+                    }
+
+                    await emailAppService.SendAsync(new CreateEmailDto
+                    {
+                        ApplicationId = application.Id,
+                        EmailTo = email.EmailTo,
+                        EmailCC = email.EmailCC,
+                        EmailBCC = email.EmailBCC,
+                        EmailFrom = email.EmailFrom,
+                        EmailSubject = email.EmailSubject,
+                        EmailBody = email.EmailBody,
+                        TemplateId = email.TemplateId,
+                        EmailTemplateName = templateName
+                    });
+
+                    result.Successes.Add(referenceNo);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex,
+                        "Error sending composed bulk email for application with ID {ApplicationId} and ReferenceNo {ReferenceNo}",
+                        email.ApplicationId,
+                        referenceNo);
+                    result.Failures.Add(new KeyValuePair<string, string>(referenceNo, ex.Message));
+                }
+            }
+
+            return result;
+        }
+
+        private async Task ValidateTemplateAttachmentSizeAsync(Guid templateId)
+        {
+            var attachments = await emailLogAttachmentRepository.GetByTemplateIdAsync(templateId);
+            ComposedEmailValidator.ValidateAttachmentSize(
+                attachments.Sum(attachment => attachment.FileSize),
+                GetMaxAttachmentMb());
+        }
+
+        private double GetMaxAttachmentMb()
+        {
+            return double.TryParse(configuration["S3:EmailAttachmentsTotalMaxFileSize"], out var maxAttachmentMb)
+                && maxAttachmentMb > 0
+                    ? maxAttachmentMb
+                    : 25;
+        }
+
         /// <summary>
         /// Map the application to a BulkEmailNotificationDto with validation messages based on its draft emails
         /// </summary>
@@ -263,6 +388,21 @@ namespace Unity.GrantManager.GrantApplications
                 LastModified = lastModified,
                 ValidationMessages = validationMessages,
                 IsValid = validationMessages.Count == 0
+            };
+        }
+
+        private static ComposeEmailApplicationDto MapComposeEmailApplication(Application application)
+        {
+            return new ComposeEmailApplicationDto
+            {
+                ApplicationId = application.Id,
+                ReferenceNo = application.ReferenceNo,
+                ApplicantName = application.Applicant?.ApplicantName ?? string.Empty,
+                ApplicationStatus = application.ApplicationStatus.InternalStatus,
+                FormName = application.ApplicationForm?.ApplicationFormName ?? string.Empty,
+                ApplicantEmail = application.ApplicantAgent?.Email ?? string.Empty,
+                ApprovedAmount = application.ApprovedAmount,
+                DecisionDate = application.FinalDecisionDate
             };
         }
     }

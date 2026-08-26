@@ -17,6 +17,10 @@
         }
     );
 
+    let _reportingDatabaseInfoModal = new abp.ModalManager({
+        viewUrl: abp.appPath + 'ReportingAdmin/Configuration/DatabaseInfoModal'
+    });
+
     let _dataTable = null;
 
     // ─── Actions column renderer ──────────────────────────────────────────────
@@ -52,15 +56,16 @@
             }
         },
         { title: l('TenantName'),  data: 'name',         name: 'name',         index: 1 },
-        { title: lGm('TenantList:LicencePlate'),  data: 'licencePlate', name: 'licencePlate', index: 2 },
-        { title: l('Division'),    data: 'division',     name: 'division',     index: 3 },
-        { title: l('Branch'),      data: 'branch',       name: 'branch',       index: 4 },
-        { title: l('Description'), data: 'description',  name: 'description',  index: 5 },
+        { title: lGm('TenantList:DisplayName'), data: 'displayName', name: 'displayName', index: 2 },
+        { title: lGm('TenantList:LicencePlate'),  data: 'licencePlate', name: 'licencePlate', index: 3 },
+        { title: l('Division'),    data: 'division',     name: 'division',     index: 4 },
+        { title: l('Branch'),      data: 'branch',       name: 'branch',       index: 5 },
+        { title: l('Description'), data: 'description',  name: 'description',  index: 6 },
         {
             title: lGm('TenantList:CasClientCode'),
             data: 'casClientCode',
             name: 'casClientCode',
-            index: 6,
+            index: 7,
             render: function (data, type, row) {
                 if (type === 'display') {
                     return _casClientCodeHash[row.casClientCode || ''] || '';
@@ -68,10 +73,10 @@
                 return data;
             }
         },
-        { title: l('Id'), data: 'id', name: 'id', index: 7 }
+        { title: l('Id'), data: 'id', name: 'id', index: 8 }
     ];
 
-    let defaultVisibleColumns = ['actions', 'name', 'licencePlate', 'division', 'branch', 'description', 'casClientCode'];
+    let defaultVisibleColumns = ['actions', 'name', 'displayName', 'licencePlate', 'division', 'branch', 'description', 'casClientCode'];
 
     let responseCallback = function (result) {
         return {
@@ -85,6 +90,32 @@
 
     let _filterDataTable = null;
     let _configFilterDataTable = null;
+    let _createFeaturesLoaded = false;
+    let _createFeatureProviderKey = null;
+
+    function _searchFieldInputAction(fieldSelectId, valueInputId) {
+        let field = $('#' + fieldSelectId).val();
+        let value = $('#' + valueInputId).val();
+        if (field === 'firstAndLast') {
+            let parts = value.trim().replaceAll(/\s+/g, ' ').split(' ');
+            return {
+                directory: 'IDIR',
+                firstName: parts[0] || '',
+                lastName: parts[1] || '',
+                email: ''
+            };
+        }
+        return {
+            directory: 'IDIR',
+            firstName: field === 'firstName' ? value : '',
+            lastName: field === 'lastName' ? value : '',
+            email: field === 'email' ? value : ''
+        };
+    }
+
+    function _searchResponseCallback(result) {
+        return { recordsTotal: result.length, recordsFiltered: result.length, data: result };
+    }
 
     let setupCreateTenantModal = function () {
         let _$filterTable = $('#UserSearchTable');
@@ -99,20 +130,8 @@
                     searching: false,
                     ajax: abp.libs.datatables.createAjax(
                         _userImportService.search,
-                        function () {
-                            return {
-                                directory: 'IDIR',
-                                firstName: $('#create-tenant-firstName').val(),
-                                lastName: $('#create-tenant-lastName').val()
-                            };
-                        },
-                        function (result) {
-                            return {
-                                recordsTotal: result.length,
-                                recordsFiltered: result.length,
-                                data: result
-                            };
-                        }
+                        function () { return _searchFieldInputAction('create-search-field', 'create-search-value'); },
+                        _searchResponseCallback
                     ),
                     select: {
                         style: 'single',
@@ -134,13 +153,35 @@
                         name: 'displayName',
                         data: 'displayName',
                         className: 'data-table-header'
+                    },
+                    {
+                        title: 'Email',
+                        name: 'email',
+                        data: 'email',
+                        className: 'data-table-header'
                     }],
                 })
         );
 
+        $('#create-search-field').on('change', function () {
+            let placeholders = {
+                firstName: 'At least 2 characters...',
+                lastName: 'At least 2 characters...',
+                firstAndLast: 'e.g. John Smith',
+                email: 'At least 2 characters...'
+            };
+            $('#create-search-value').val('').attr('placeholder', placeholders[$(this).val()] || 'At least 2 characters...');
+        });
+
         $('#TenantAdminSearchButton').click(function (e) {
             e.preventDefault();
+            if ($('#create-search-value').val().trim().length < 2) {
+                abp.notify.warn(lGm('TenantList:SearchMinChars'));
+                return;
+            }
             _filterDataTable.ajax.reload();
+            $('#create-tenant-admin-id').val('');
+            $('#create-selected-user-display').hide();
             $('#create-tenant-btn').attr('disabled', true);
         });
 
@@ -152,12 +193,16 @@
             if (type === 'row') {
                 let selectedData = _filterDataTable.row(indexes).data();
                 $('#create-tenant-admin-id').val(selectedData.userGuid);
+                let displayName = selectedData.displayName || (selectedData.firstName + ' ' + selectedData.lastName).trim();
+                $('#create-selected-user-name').text(displayName);
+                $('#create-selected-user-display').show();
                 $('#create-tenant-btn').removeAttr('disabled');
             }
         });
 
-        _filterDataTable.on('deselect', function (e, dt, type, indexes) {
-            $('#create-tenant-admin-id').val();
+        _filterDataTable.on('deselect', function () {
+            $('#create-tenant-admin-id').val('');
+            $('#create-selected-user-display').hide();
             $('#create-tenant-btn').attr('disabled', true);
         });
     };
@@ -178,6 +223,94 @@
 
     function _createTenantInitModal(publicApi, args) {
         setupCreateTenantModal();
+
+        _createFeaturesLoaded = false;
+        _createFeatureProviderKey = _generateGuid();
+        $('#create-tab-features').on('shown.bs.tab', function () {
+            if (!_createFeaturesLoaded) {
+                _createFeaturesLoaded = true;
+                _loadCreateFeaturesTab();
+            }
+        });
+        $('#create-features-content').on('change', '[data-feature-group="Specializations"] input[type="checkbox"]', _specializationCheckboxChange);
+        $('#create-features-content').on('change', 'input[type="checkbox"]', _captureCreateFeaturesToForm);
+
+        _metabaseNewlyAddedEmails = [];
+        _metabaseRemovedDefaultEmails = [];
+        _captureMetabaseUsersToForm();
+        $('#metabase-user-list').on('change', '.metabase-user-checkbox', _captureMetabaseUsersToForm);
+        $('#metabase-save-as-default').on('change', _captureMetabaseUsersToForm);
+        $('#metabase-add-user-btn').on('click', function (e) {
+            e.preventDefault();
+            _addMetabaseUser($('#metabase-new-user-email').val());
+            $('#metabase-new-user-email').val('');
+        });
+        $('#metabase-new-user-email').on('keypress', function (e) {
+            if (e.which === 13) {
+                e.preventDefault();
+                $('#metabase-add-user-btn').click();
+            }
+        });
+        $('#metabase-user-list').on('click', '.metabase-remove-default-btn', function (e) {
+            e.preventDefault();
+            _metabaseRemovedDefaultEmails.push($(this).data('email'));
+            $(this).closest('.form-check').remove();
+            _captureMetabaseUsersToForm();
+        });
+
+        $('#create-pane-features').closest('form').on('invalid-form.validate', function (e, validator) {
+            if (validator.errorList.length > 0) {
+                let $firstErrorPane = $(validator.errorList[0].element).closest('.tab-pane');
+                if ($firstErrorPane.length) {
+                    $('[data-bs-target="#' + $firstErrorPane.attr('id') + '"]').tab('show');
+                }
+            }
+        });
+    }
+
+    // ─── Metabase tab: user list ───────────────────────────────────────────────
+
+    let _metabaseNewlyAddedEmails = [];
+    let _metabaseRemovedDefaultEmails = [];
+
+    function _captureMetabaseUsersToForm() {
+        let checked = [];
+        $('#metabase-user-list .metabase-user-checkbox:checked').each(function () {
+            checked.push($(this).val());
+        });
+        $('#metabase-user-emails').val(checked.join(','));
+        $('#metabase-removed-default-user-emails').val(_metabaseRemovedDefaultEmails.join(','));
+
+        if ($('#metabase-save-as-default').prop('checked')) {
+            let newDefaults = _metabaseNewlyAddedEmails.filter(function (email) {
+                return checked.includes(email);
+            });
+            $('#metabase-new-default-user-emails').val(newDefaults.join(','));
+        } else {
+            $('#metabase-new-default-user-emails').val('');
+        }
+    }
+
+    function _addMetabaseUser(email) {
+        email = (email || '').trim();
+        if (!email) return;
+
+        let exists = $('#metabase-user-list .metabase-user-checkbox').toArray().some(function (el) {
+            return $(el).val().toLowerCase() === email.toLowerCase();
+        });
+        if (exists) {
+            abp.notify.warn('That user is already in the list.');
+            return;
+        }
+
+        let id = 'metabase-user-' + $('#metabase-user-list .metabase-user-checkbox').length + '-' + Date.now();
+        let $checkbox = $('<input class="form-check-input metabase-user-checkbox" type="checkbox" checked>')
+            .attr('id', id).val(email);
+        let $label = $('<label class="form-check-label"></label>').attr('for', id).text(email);
+        $('<div class="form-check"></div>').append($checkbox).append($label).appendTo('#metabase-user-list');
+
+        _metabaseNewlyAddedEmails.push(email);
+        _captureMetabaseUsersToForm();
     }
 
     abp.modals.createTenant = function () {
@@ -188,6 +321,21 @@
 
     let _configTenantId = null;
     let _featuresLoaded = false;
+
+    function _generateGuid() {
+        if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+
+        // Fallback for environments without crypto.randomUUID - still CSPRNG-backed via
+        // crypto.getRandomValues, not Math.random(), since this key is used as a cache-busting
+        // provider key sent to the server, not truly security-sensitive, but there's no reason
+        // to reach for a weaker PRNG when getRandomValues is universally available.
+        const bytes = new Uint8Array(16);
+        globalThis.crypto.getRandomValues(bytes);
+        bytes[6] = (bytes[6] & 0x0f) | 0x40;
+        bytes[8] = (bytes[8] & 0x3f) | 0x80;
+        const hex = Array.from(bytes, function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+        return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16) + '-' + hex.slice(16, 20) + '-' + hex.slice(20);
+    }
 
     function _renderFeatureItem(feature) {
         let id = 'ft-' + feature.name.replaceAll('.', '-');
@@ -283,33 +431,138 @@
     }
 
     function _configSearchInputAction() {
-        let field = $('#config-search-field').val();
-        let value = $('#config-search-value').val();
-        if (field === 'firstAndLast') {
-            let parts = value.trim().replaceAll(/\s+/g, ' ').split(' ');
-            return {
-                directory: 'IDIR',
-                firstName: parts[0] || '',
-                lastName: parts[1] || '',
-                email: ''
-            };
-        }
-        return {
-            directory: 'IDIR',
-            firstName: field === 'firstName' ? value : '',
-            lastName: field === 'lastName' ? value : '',
-            email: field === 'email' ? value : ''
-        };
+        return _searchFieldInputAction('config-search-field', 'config-search-value');
     }
 
     function _configSearchResponseCallback(result) {
-        return { recordsTotal: result.length, recordsFiltered: result.length, data: result };
+        return _searchResponseCallback(result);
+    }
+
+    function _loadCreateFeaturesTab() {
+        $('#create-features-loading').show();
+        $('#create-features-content').html('');
+
+        abp.ajax({
+            url: abp.appPath + 'api/feature-management/features',
+            type: 'GET',
+            data: { providerName: 'T', providerKey: _createFeatureProviderKey }
+        }).done(function (result) {
+            $('#create-features-loading').hide();
+            $('#create-features-content').html(_renderFeatureGroups(result.groups));
+            _captureCreateFeaturesToForm();
+        }).fail(function () {
+            $('#create-features-loading').hide();
+            $('#create-features-content').html('<div class="alert alert-danger">Failed to load features. Please try again.</div>');
+        });
+    }
+
+    function _captureCreateFeaturesToForm() {
+        if (!_createFeaturesLoaded) return;
+        let featureKeys = [];
+        $('#create-features-content input[type="checkbox"]:checked').each(function () {
+            featureKeys.push($(this).data('feature-name'));
+        });
+        $('#create-features-json').val(featureKeys.join(','));
+    }
+
+    // ─── Configuration modal: Reporting tab (view role) ───────────────────────
+
+    let _tenantViewRoleAppService = unity.reporting.configuration.tenantViewRole;
+
+    function _saveReportingViewRole(tenantId, onSaved) {
+        let $btn = $('#config-save-role-btn');
+        let viewRole = $('#config-view-role-input').val().trim();
+
+        if (!viewRole) {
+            abp.notify.warn('Please enter a view role name.');
+            return;
+        }
+
+        $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Saving...');
+
+        _tenantViewRoleAppService.update(tenantId, { viewRole: viewRole })
+            .done(function () {
+                let $indicator = $('#pane-reporting .default-role-indicator');
+                if ($indicator.length) {
+                    $indicator.tooltip('dispose');
+                    $indicator.remove();
+                }
+                $('#config-view-role-input').attr('data-is-default', 'false');
+
+                abp.notify.success('View role saved successfully.');
+                if (onSaved) onSaved(viewRole);
+            })
+            .fail(function () {
+                abp.notify.error('Failed to save view role.');
+            })
+            .always(function () {
+                $btn.prop('disabled', false).html('<i class="fa-regular fa-floppy-disk"></i> Save');
+            });
+    }
+
+    function _assignReportingRoleToViews(tenantId, tenantName, viewRole) {
+        let $btn = $('#config-assign-role-btn');
+        $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Assigning...');
+
+        _tenantViewRoleAppService.assignRoleToViews(tenantId)
+            .done(function () {
+                abp.notify.success('Role assignment jobs have been queued for tenant "' + tenantName + '". The process will complete in the background.');
+            })
+            .fail(function () {
+                abp.notify.error('Failed to queue role assignment jobs.');
+            })
+            .always(function () {
+                $btn.prop('disabled', false).html('<i class="fa-solid fa-gears"></i> Assign to Views');
+            });
+    }
+
+    function _wireReportingTabHandlers(tenantId) {
+        $('#config-save-role-btn').off('click').on('click', function () {
+            _saveReportingViewRole(tenantId);
+        });
+
+        $('#config-assign-role-btn').off('click').on('click', function () {
+            let $btn = $(this);
+            let tenantName = $btn.data('tenant-name');
+            let viewRole = $('#config-view-role-input').val().trim();
+            let isDefault = $('#config-view-role-input').attr('data-is-default') === 'true';
+
+            if (!viewRole) {
+                abp.notify.warn('Please enter a view role name before assigning it to views.');
+                return;
+            }
+
+            if (isDefault) {
+                abp.message.confirm(
+                    'The role "' + viewRole + '" is using the default pattern and hasn\'t been saved yet. Would you like to save it first and then assign it to views?',
+                    'Save and Assign Role',
+                    function (isConfirmed) {
+                        if (isConfirmed) {
+                            _saveReportingViewRole(tenantId, function (savedViewRole) {
+                                _assignReportingRoleToViews(tenantId, tenantName, savedViewRole);
+                            });
+                        }
+                    }
+                );
+            } else {
+                _assignReportingRoleToViews(tenantId, tenantName, viewRole);
+            }
+        });
+
+        $('#config-view-database-info-btn').off('click').on('click', function () {
+            let $btn = $(this);
+            _reportingDatabaseInfoModal.open({
+                tenantId: tenantId,
+                tenantName: $btn.data('tenant-name')
+            });
+        });
     }
 
     function _configurationModalInitModal(publicApi, args) {
         _configTenantId = args.id;
 
         _loadManagersTab(_configTenantId);
+        _wireReportingTabHandlers(_configTenantId);
 
         _configFilterDataTable = $('#ConfigUserSearchTable').DataTable(
             abp.libs.datatables.normalizeConfiguration({

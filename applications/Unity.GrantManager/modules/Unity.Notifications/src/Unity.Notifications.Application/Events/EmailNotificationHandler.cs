@@ -230,23 +230,31 @@ namespace Unity.GrantManager.Events
                 await emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
             }
 
-            if (eventData.ScheduledNotificationId.HasValue && eventData.TemplateId != Guid.Empty)
+            if (eventData.TemplateId != Guid.Empty)
             {
                 try
                 {
                     var copiedAttachmentCount = await emailAttachmentService.CopyTemplateAttachmentsAsync(
                         eventData.TemplateId, emailLog.Id, emailLog.TenantId);
                     _logger.LogInformation(
-                        "Copied {AttachmentCount} template attachments for scheduled notification {ScheduledNotificationId}.",
-                        copiedAttachmentCount, eventData.ScheduledNotificationId.Value);
+                        "Copied {AttachmentCount} template attachments for email {EmailId} from template {TemplateId}.",
+                        copiedAttachmentCount, emailLog.Id, eventData.TemplateId);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex,
-                        "Failed to copy template attachments for scheduled notification {ScheduledNotificationId}. Email will be sent WITHOUT attachments.",
-                        eventData.ScheduledNotificationId.Value);
-                    // DO NOT THROW - matches InitializeEmailAndUploadAttachments: an attachment
-                    // failure should not block the email from being created/sent.
+                        "Failed to copy template attachments for email {EmailId} from template {TemplateId}.",
+                        emailLog.Id, eventData.TemplateId);
+
+                    // Compose & Send has no pre-existing draft attachment records to fall back to. Keep its
+                    // log/attachment creation atomic and do not queue a partially assembled message.
+                    if (eventData.Action == EmailAction.SendCustom && !eventData.ScheduledNotificationId.HasValue)
+                    {
+                        throw new UserFriendlyException("The template attachments could not be prepared. The email was not sent.");
+                    }
+
+                    // Preserve the existing scheduled-notification behavior: attachment failures are logged,
+                    // but do not block the scheduled email itself.
                 }
             }
             
@@ -349,4 +357,3 @@ namespace Unity.GrantManager.Events
         }
     }
 }
-

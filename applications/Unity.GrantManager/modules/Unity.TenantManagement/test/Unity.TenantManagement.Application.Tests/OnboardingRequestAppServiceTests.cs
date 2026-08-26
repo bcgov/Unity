@@ -8,6 +8,7 @@ using Shouldly;
 using Unity.Flex.Worksheets;
 using Unity.Flex.Worksheets.Values;
 using Unity.Flex.WorksheetInstances;
+using Unity.TenantManagement.Metabase;
 using Unity.TenantManagement.Onboarding;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -468,5 +469,88 @@ public class OnboardingRequestAppServiceTests : AbpTenantManagementApplicationTe
         await _tenantAppService.Received(1).AssignManagerAsync(Arg.Is<TenantAssignManagerDto>(d =>
             d.TenantId == newTenantId && d.UserIdentifier == "guid-2"));
         await _applicationProvider.Received(1).CloseApplicationAsync(id);
+    }
+
+    [Fact]
+    public async Task CreateTenantAsync_MetabaseUserEmailsProvided_PassedToTenantCreateDto()
+    {
+        var id = Guid.NewGuid();
+        var newTenantId = Guid.NewGuid();
+
+        _applicationProvider.GetByIdAsync(id).Returns(new OnboardingApplicationRecord { Id = id, Category = "Onboarding" });
+        _worksheetInstanceAppService.GetListByCorrelationIdsAsync(Arg.Any<List<Guid>>(), ApplicationCorrelationProvider).Returns(new List<WorksheetInstanceDataDto>
+        {
+            WorksheetInstanceFor(id, ("tn", "Metabase Co"), ("su", "first@example.com"))
+        });
+        _userLookup.FindUserGuidByEmailAsync("first@example.com").Returns("guid-1");
+        _tenantAppService.CreateAsync(Arg.Any<TenantCreateDto>())
+            .Returns(new TenantDto { Id = newTenantId, Name = "Metabase Co" });
+
+        await _appService.CreateTenantAsync(id, new CreateTenantInputDto
+        {
+            TenantNameFieldKey = "tn",
+            SuperUsersFieldKey = "su",
+            MetabaseUserEmails = "a@gov.bc.ca,b@gov.bc.ca"
+        });
+
+        await _tenantAppService.Received(1).CreateAsync(Arg.Is<TenantCreateDto>(d =>
+            d.MetabaseUserEmails == "a@gov.bc.ca,b@gov.bc.ca"));
+    }
+
+    [Fact]
+    public async Task CreateTenantAsync_MetabaseNewDefaultUserEmailsProvided_MergesIntoGlobalSetting()
+    {
+        var id = Guid.NewGuid();
+        var newTenantId = Guid.NewGuid();
+
+        _applicationProvider.GetByIdAsync(id).Returns(new OnboardingApplicationRecord { Id = id, Category = "Onboarding" });
+        _worksheetInstanceAppService.GetListByCorrelationIdsAsync(Arg.Any<List<Guid>>(), ApplicationCorrelationProvider).Returns(new List<WorksheetInstanceDataDto>
+        {
+            WorksheetInstanceFor(id, ("tn", "Metabase Defaults Co"), ("su", "first@example.com"))
+        });
+        _userLookup.FindUserGuidByEmailAsync("first@example.com").Returns("guid-1");
+        _tenantAppService.CreateAsync(Arg.Any<TenantCreateDto>())
+            .Returns(new TenantDto { Id = newTenantId, Name = "Metabase Defaults Co" });
+        _settingManager.GetOrNullGlobalAsync(MetabaseSettings.UserEmails)
+            .Returns("existing@gov.bc.ca");
+
+        await _appService.CreateTenantAsync(id, new CreateTenantInputDto
+        {
+            TenantNameFieldKey = "tn",
+            SuperUsersFieldKey = "su",
+            MetabaseUserEmails = "existing@gov.bc.ca,new@gov.bc.ca",
+            MetabaseNewDefaultUserEmails = "new@gov.bc.ca"
+        });
+
+        await _settingManager.Received(1).SetGlobalAsync(
+            MetabaseSettings.UserEmails, "existing@gov.bc.ca,new@gov.bc.ca");
+    }
+
+    [Fact]
+    public async Task CreateTenantAsync_MetabaseRemovedDefaultUserEmailsProvided_RemovesFromGlobalSetting()
+    {
+        var id = Guid.NewGuid();
+        var newTenantId = Guid.NewGuid();
+
+        _applicationProvider.GetByIdAsync(id).Returns(new OnboardingApplicationRecord { Id = id, Category = "Onboarding" });
+        _worksheetInstanceAppService.GetListByCorrelationIdsAsync(Arg.Any<List<Guid>>(), ApplicationCorrelationProvider).Returns(new List<WorksheetInstanceDataDto>
+        {
+            WorksheetInstanceFor(id, ("tn", "Metabase Removal Co"), ("su", "first@example.com"))
+        });
+        _userLookup.FindUserGuidByEmailAsync("first@example.com").Returns("guid-1");
+        _tenantAppService.CreateAsync(Arg.Any<TenantCreateDto>())
+            .Returns(new TenantDto { Id = newTenantId, Name = "Metabase Removal Co" });
+        _settingManager.GetOrNullGlobalAsync(MetabaseSettings.UserEmails)
+            .Returns("keep@gov.bc.ca,stale@gov.bc.ca");
+
+        await _appService.CreateTenantAsync(id, new CreateTenantInputDto
+        {
+            TenantNameFieldKey = "tn",
+            SuperUsersFieldKey = "su",
+            MetabaseUserEmails = "keep@gov.bc.ca",
+            MetabaseRemovedDefaultUserEmails = "stale@gov.bc.ca"
+        });
+
+        await _settingManager.Received(1).SetGlobalAsync(MetabaseSettings.UserEmails, "keep@gov.bc.ca");
     }
 }

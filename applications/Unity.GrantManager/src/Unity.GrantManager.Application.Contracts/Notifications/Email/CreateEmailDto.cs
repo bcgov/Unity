@@ -26,6 +26,7 @@ namespace Unity.GrantManager.Notifications.Email
         public Guid OwnerId { get; set; }
         public Guid EmailId { get; set; } = Guid.Empty;
         public Guid CurrentUserId { get; set; }
+        public Guid? TemplateId { get; set; }
         public string EmailTemplateName { get; set; } = string.Empty;
 
         /// <summary>
