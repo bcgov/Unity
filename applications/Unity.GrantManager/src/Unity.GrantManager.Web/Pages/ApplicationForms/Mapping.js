@@ -72,7 +72,6 @@ $(function () {
         btnPublishAssignWorksheets: $('#btn-publish-assign-worksheets'),
         btnGenerateFinalMapping: $('#btn-generate-final-mapping'),
         btnReviewFinalMapping: $('#btn-review-final-mapping'),
-        btnRestartAiFlow: $('#btn-restart-ai-flow'),
         worksheetReviewModal: $('#aiWorksheetReviewModal'),
         mappingReviewModal: $('#aiMappingReviewModal'),
         mappingReviewFields: $('#aiMappingReviewFields'),
@@ -277,7 +276,6 @@ $(function () {
         });
         UIElements.btnGenerateWorksheet.on('click', queueFormWorksheet);
         UIElements.btnGenerateFinalMapping.on('click', finalizeMappingReview);
-        UIElements.btnRestartAiFlow.on('click', restartAiFlow);
         UIElements.btnGenerateScoresheet.on('click', function () {
             queueFormScoresheet(this);
         });
@@ -1092,7 +1090,6 @@ $(function () {
         UIElements.btnPublishAssignWorksheets.toggleClass('d-none', !isPublishAssign);
         UIElements.btnGenerateFinalMapping.toggleClass('d-none', !isFinalMapping);
         UIElements.btnReviewFinalMapping.toggleClass('d-none', !isFinalReview);
-        UIElements.btnRestartAiFlow.toggleClass('d-none', !isCompleted);
         UIElements.btnGenerate.prop('disabled', !review?.actionEnabled && isInitial);
         UIElements.btnGenerateFinalMapping.prop('disabled', !review?.actionEnabled);
 
@@ -1284,31 +1281,6 @@ $(function () {
                     .fail(function () {
                         abp.notify.error('', 'Unable to discard the mapping suggestions.');
                     });
-            });
-    }
-
-    function restartAiFlow() {
-        const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
-        if (!validateGuid(formVersion)) {
-            return;
-        }
-
-        abp.message.confirm(
-            'This permanently deletes AI workflow progress, AI-created worksheets and assignments, and all saved mappings for this form version.',
-            'Restart AI Flow?')
-            .then(function (confirmed) {
-                if (!confirmed) {
-                    return;
-                }
-
-                UIElements.btnRestartAiFlow.prop('disabled', true);
-                return globalThis.AIFormWorkflowApi.resetAiFlow(formVersion).done(function () {
-                    globalThis.location.reload();
-                }).fail(function (error) {
-                    abp.notify.error('', error?.responseJSON?.error?.message || 'Unable to restart the AI flow.');
-                }).always(function () {
-                    UIElements.btnRestartAiFlow.prop('disabled', false);
-                });
             });
     }
 
