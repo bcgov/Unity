@@ -194,8 +194,8 @@ public class ApplicantSupplierAppService(ISiteRepository siteRepository,
         await EnsureNoPendingPaymentsForApplicantAsync(dto.PrincipalId);
         await EnsureNoPendingPaymentsForApplicantAsync(dto.NonPrincipalId);
 
-        var principal = await applicantRepository.GetAsync(dto.PrincipalId);
-        var nonPrincipal = await applicantRepository.GetAsync(dto.NonPrincipalId);
+        var principal = await applicantRepository.FindAsync(dto.PrincipalId);
+        var nonPrincipal = await applicantRepository.FindAsync(dto.NonPrincipalId);
 
         if (principal == null || nonPrincipal == null)
         {
