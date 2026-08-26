@@ -1,11 +1,17 @@
 @using Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
+@using Unity.Modules.Shared
+@using Volo.Abp.Authorization.Permissions
+
+@inject IPermissionChecker PermissionChecker
 
 @model ApplicantAddressesViewModel
 
 @{
     Layout = null;
-    var canEditPrimaryPhysical = Model.PrimaryPhysicalAddress.IsEditable && Model.CanEditAddress;
-    var canEditPrimaryMailing = Model.PrimaryMailingAddress.IsEditable && Model.CanEditAddress;
+    var canEditPrimaryPhysical = Model.PrimaryPhysicalAddress.IsEditable && Model.CanEditAddresses;
+    var canEditPrimaryMailing = Model.PrimaryMailingAddress.IsEditable && Model.CanEditAddresses;
+
+    var canEditAddresses = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Addresses.Default);
 }
 
 <div class="applicant-addresses-widget applicant-info-container px-1 pb-2 mb-4">
@@ -31,10 +37,13 @@
                                 icon-type="Other"
                                 icon="fl fl-save"
                                 button-type="Primary"
-                                disabled="true" />
+                                disabled="true"
+                                abp-if="@canEditAddresses" />
                 </div>
             }
 
+            <zone id="@UnitySelector.ApplicantManagement.Addresses.Default" zone-type="PermissionOnly"
+                  update-permission-requirement="@UnitySelector.ApplicantManagement.Addresses.Update">
             <div class="d-flex">
                 <div class="row m-0 physical-address-form pe-2" style="border-bottom:none;">
                     <div class="row m-0 p-0">
@@ -103,6 +112,7 @@
                     }
                 </div>
             </div>
+            </zone>
 
             <div class="table-card mt-3">
                 <div class="table-card__header">

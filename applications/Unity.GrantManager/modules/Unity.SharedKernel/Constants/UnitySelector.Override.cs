@@ -3,6 +3,14 @@
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Critical Code Smell", "S3218:Inner class members should not shadow outer class \"static\" or type members", Justification = "Constants File")]
 public static partial class UnitySelector
 {
+    public static partial class Applicant
+    {
+        public static partial class Summary // ApplicantInfo
+        {
+            public const string Update_AssignApplicant = "Unity.GrantManager.ApplicationManagement.Applicant.Summary.Update.AssignApplicant";
+        }
+    }
+
     public static partial class Review
     {
         public static partial class Approval
