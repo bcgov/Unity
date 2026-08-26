@@ -7,9 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
-using Unity.Modules.Shared.Constants;
 using Unity.Modules.Shared.Permissions;
-using Unity.Modules.Shared.Utils;
 using Unity.Notifications.Localization;
 using Unity.Notifications.Logs;
 using Unity.Notifications.Features;
@@ -17,10 +15,8 @@ using Unity.Notifications.Web.Realtime;
 using Volo.Abp;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AuditLogging;
-using Volo.Abp.Auditing;
 using Volo.Abp.Identity;
 using Volo.Abp.MultiTenancy;
-using Volo.Abp.Security.Claims;
 using Volo.Abp.Features;
 using Volo.Abp.TenantManagement;
 
@@ -39,8 +35,6 @@ public class UnityMessagingController : AbpControllerBase
     private readonly ITenantRepository tenantRepository;
     private readonly IAuditLogRepository auditLogRepository;
     private readonly ICurrentTenant currentTenant;
-    private readonly IAuditingManager auditingManager;
-    private readonly ICurrentPrincipalAccessor principalAccessor;
 
     public UnityMessagingController(
         IHubContext<NotificationHub> hubContext,
@@ -49,9 +43,7 @@ public class UnityMessagingController : AbpControllerBase
         IIdentityUserRepository identityUserRepository,
         ITenantRepository tenantRepository,
         IAuditLogRepository auditLogRepository,
-        ICurrentTenant currentTenant,
-        IAuditingManager auditingManager,
-        ICurrentPrincipalAccessor principalAccessor)
+        ICurrentTenant currentTenant)
     {
         this.hubContext = hubContext;
         this.presenceTracker = presenceTracker;
@@ -60,8 +52,6 @@ public class UnityMessagingController : AbpControllerBase
         this.tenantRepository = tenantRepository;
         this.auditLogRepository = auditLogRepository;
         this.currentTenant = currentTenant;
-        this.auditingManager = auditingManager;
-        this.principalAccessor = principalAccessor;
         LocalizationResource = typeof(NotificationsResource);
     }
 
@@ -133,8 +123,8 @@ public class UnityMessagingController : AbpControllerBase
             return BadRequest($"Messages cannot exceed {NotificationHub.MaxDirectMessageLength} characters.");
         }
 
-        var senderUserId = CurrentUser.Id?.ToString() ?? "unknown";
-        var senderName = DisplayNameHelper.Resolve(CurrentUser);
+        var senderUserId = CurrentUser.Id?.ToString();
+        var senderName = CurrentUser.Id.HasValue ? DisplayNameHelper.Resolve(CurrentUser) : string.Empty;
 
         await hubContext.Clients.Group(NotificationHub.BuildUserGroup(request.TargetUserId)).SendAsync(
             "directMessageReceived",
@@ -193,52 +183,44 @@ public class UnityMessagingController : AbpControllerBase
             return NotFound("Target tenant was not found.");
         }
 
-        using (BackgroundJobExecutionContext.Use())
-        using (BackgroundJobContext.Set(
-                   auditingManager,
-                   principalAccessor,
-                   currentTenant,
-                   request.TargetTenantId))
-        {
-            var senderUserId = CurrentUser.Id?.ToString() ?? BackgroundJobConstants.BackgroundJobPersonId.ToString();
-            var senderName = DisplayNameHelper.Resolve(CurrentUser);
-            var normalizedMessageType = request.MessageType.ToLowerInvariant();
-            var timestamp = DateTime.UtcNow;
+        var senderUserId = CurrentUser.Id?.ToString();
+        var senderName = CurrentUser.Id.HasValue ? DisplayNameHelper.Resolve(CurrentUser) : string.Empty;
+        var normalizedMessageType = request.MessageType.ToLowerInvariant();
+        var timestamp = DateTime.UtcNow;
 
-            await hubContext.Clients.Group(NotificationHub.BuildTenantGroup(request.TargetTenantId)).SendAsync(
-                "directMessageReceived",
-                new
-                {
-                    scope = "tenant",
-                    source = nameof(UnityMessagingController),
-                    tenantId = request.TargetTenantId,
-                    senderId = senderUserId,
-                    senderName,
-                    message = request.Message,
-                    messageType = normalizedMessageType,
-                    timestamp
-                });
-
-            var logId = await notificationLogsAppService.CreateAsync(new CreateNotificationLogDto
+        await hubContext.Clients.Group(NotificationHub.BuildTenantGroup(request.TargetTenantId)).SendAsync(
+            "directMessageReceived",
+            new
             {
-                TenantId = request.TargetTenantId,
-                SenderUserId = CurrentUser.Id,
-                SenderDisplayName = senderName,
-                NotificationType = NotificationLogType.SignalRDirectMessage,
-                Channel = NotificationLogChannel.SignalR,
-                Severity = NotificationLogSeverity.Info,
-                Title = "Tenant broadcast sent",
-                Message = request.Message,
-                PayloadJson = JsonSerializer.Serialize(new { messageType = normalizedMessageType }),
-                Source = nameof(UnityMessagingController),
-                CorrelationId = HttpContext.TraceIdentifier,
-                IsDeliveredRealtime = true,
-                DeliveryTarget = NotificationHub.BuildTenantGroup(request.TargetTenantId),
-                Environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+                scope = "tenant",
+                source = nameof(UnityMessagingController),
+                tenantId = request.TargetTenantId,
+                senderId = senderUserId,
+                senderName,
+                message = request.Message,
+                messageType = normalizedMessageType,
+                timestamp
             });
 
-            return Ok(new { delivered = true, logId });
-        }
+        var logId = await notificationLogsAppService.CreateAsync(new CreateNotificationLogDto
+        {
+            TenantId = request.TargetTenantId,
+            SenderUserId = CurrentUser.Id,
+            SenderDisplayName = senderName,
+            NotificationType = NotificationLogType.SignalRDirectMessage,
+            Channel = NotificationLogChannel.SignalR,
+            Severity = NotificationLogSeverity.Info,
+            Title = "Tenant broadcast sent",
+            Message = request.Message,
+            PayloadJson = JsonSerializer.Serialize(new { messageType = normalizedMessageType }),
+            Source = nameof(UnityMessagingController),
+            CorrelationId = HttpContext.TraceIdentifier,
+            IsDeliveredRealtime = true,
+            DeliveryTarget = NotificationHub.BuildTenantGroup(request.TargetTenantId),
+            Environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+        });
+
+        return Ok(new { delivered = true, logId });
     }
 
     private static bool IsValidMessageType(string? messageType)

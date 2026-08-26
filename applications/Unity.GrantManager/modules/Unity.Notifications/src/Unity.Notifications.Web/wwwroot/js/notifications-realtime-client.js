@@ -74,7 +74,6 @@
         const selectedTargets = { individual: '', tenant: '' };
         const unreadIndividualCounts = {};
         let targetSelect2Open = false;
-        let targetOptionsRefreshPending = false;
         const histories = {};
         const loadedConversationHistories = new Set();
         const MAX_HISTORY_ITEMS = 100;
@@ -85,7 +84,6 @@
         const PANEL_POSITION_STORAGE_KEY = 'unity.notifications.realtime.panel-position';
         const BANNER_STORAGE_KEY = 'unity.notifications.realtime.banners';
         const widget = buildWidget();
-        renderStoredBanners();
         setupBubbleDragging();
         setupPanelResizing();
         setupPanelDragging();
@@ -114,7 +112,7 @@
 
         connection.on('directMessageReceived', function (eventData) {
             const scope = eventData?.scope || 'user';
-            const sender = eventData?.senderName || eventData?.senderId || 'unknown';
+            const sender = eventData?.senderName || '';
             const senderId = eventData?.senderId;
             const message = eventData?.message || '';
             const targetId = scope === 'tenant'
@@ -140,11 +138,13 @@
                 renderIndividualList();
             }
 
-            if (senderId && senderId !== myUserId) {
-                if (isBannerMessage(eventData, scope)) {
-                    showIncomingBanner(sender, message, eventData?.timestamp);
-                } else {
-                    showIncomingToast(sender, message);
+            if (scope === 'tenant' && senderId && senderId !== myUserId) {
+                if (claimNotification(eventData, scope)) {
+                    if (isBannerMessage(eventData, scope)) {
+                        showIncomingBanner(sender, message, eventData?.timestamp);
+                    } else {
+                        showIncomingToast(sender, message);
+                    }
                 }
             }
 
@@ -205,23 +205,25 @@
                     addMessage(
                         scope === 'tenant' ? 'tenant' : 'individual',
                         targetId,
-                        eventData.senderName || senderId || 'unknown',
+                        eventData.senderName || '',
                         senderId,
                         eventData.message || '',
                         eventData.timestamp
                     );
 
                     if (scope === 'user') {
-                        ensurePeerOption(senderId, eventData.senderName || senderId);
+                        ensurePeerOption(senderId, eventData.senderName || '');
                     }
 
-                    if (senderId && senderId !== myUserId) {
-                        const senderName = eventData.senderName || senderId;
+                    if (scope === 'tenant' && senderId && senderId !== myUserId) {
+                        const senderName = eventData.senderName || '';
                         const message = eventData.message || '';
-                        if (isBannerMessage(eventData, scope)) {
-                            showIncomingBanner(senderName, message, eventData?.timestamp);
-                        } else {
-                            showIncomingToast(senderName, message);
+                        if (claimNotification(eventData, scope)) {
+                            if (isBannerMessage(eventData, scope)) {
+                                showIncomingBanner(senderName, message, eventData?.timestamp);
+                            } else {
+                                showIncomingToast(senderName, message);
+                            }
                         }
                     }
                 });
@@ -277,7 +279,6 @@
             });
 
             if (targetSelect2Open) {
-                targetOptionsRefreshPending = true;
                 return;
             }
 
@@ -300,7 +301,6 @@
                 currentTenant = result || null;
 
                 if (targetSelect2Open) {
-                    targetOptionsRefreshPending = true;
                     return;
                 }
 
@@ -312,7 +312,6 @@
 
         function renderTargetOptions() {
             if (targetSelect2Open || (window.jQuery?.('.select2-container--open').length > 0)) {
-                targetOptionsRefreshPending = true;
                 return;
             }
 
@@ -388,20 +387,6 @@
             }
         }
 
-        function renderTargetSelect2Option(data) {
-            if (!data.id) {
-                return data.text;
-            }
-
-            const peer = peers.find(function (item) { return item.userId === data.id; });
-            const status = activeMode === 'tenant' ? null : getPeerStatus(peer);
-            const statusMarkup = status
-                ? `<span class="rt-status-dot rt-status-${status.className}" title="${escapeAttribute(status.label)}"></span>`
-                : '';
-
-            return `<span class="rt-widget-target-option-content">${statusMarkup}<span>${escapeHtml(data.text)}</span></span>`;
-        }
-
         function loadConversationHistory(mode, targetId, renderActiveConversation) {
             if (!targetId || connection.state !== signalR.HubConnectionState.Connected) {
                 return;
@@ -411,7 +396,7 @@
                 const key = `${mode}:${targetId}`;
                 histories[key] = (Array.isArray(messages) ? messages : []).map(function (eventData) {
                     return {
-                        sender: eventData.senderName || eventData.senderId || 'unknown',
+                        sender: eventData.senderName || '',
                         senderId: eventData.senderId || null,
                         message: eventData.message || '',
                         timestamp: eventData.timestamp,
@@ -1119,9 +1104,7 @@
                     titleText: String(sender || ''),
                     text: message,
                     showConfirmButton: false,
-                    showCloseButton: true,
-                    allowOutsideClick: false,
-                    allowEscapeKey: false
+                    showCloseButton: true
                 });
                 return;
             }
@@ -1139,25 +1122,6 @@
         function isBannerMessage(eventData, scope) {
             return scope === 'tenant'
                 && String(eventData?.messageType || '').toLowerCase() === 'banner';
-        }
-
-        function renderStoredBanners() {
-            const storedBanners = readStoredBanners();
-            if (storedBanners.length === 0) {
-                return;
-            }
-
-            const navbar = document.getElementById('main-navbar');
-            if (!navbar) {
-                return;
-            }
-
-            const container = document.createElement('div');
-            container.className = 'rt-widget-banners';
-            storedBanners.forEach(function (banner) {
-                container.appendChild(createBannerElement(banner));
-            });
-            navbar.after(container);
         }
 
         function showIncomingBanner(sender, message, timestamp) {
@@ -1205,13 +1169,15 @@
 
             const content = document.createElement('div');
             content.className = 'rt-widget-banner-content';
-            const senderElement = document.createElement('strong');
-            senderElement.className = 'rt-widget-banner-sender';
-            senderElement.textContent = banner.sender;
+            if (banner.sender) {
+                const senderElement = document.createElement('strong');
+                senderElement.className = 'rt-widget-banner-sender';
+                senderElement.textContent = banner.sender;
+                content.appendChild(senderElement);
+            }
             const messageElement = document.createElement('span');
             messageElement.className = 'rt-widget-banner-message';
             messageElement.textContent = banner.message;
-            content.appendChild(senderElement);
             content.appendChild(messageElement);
 
             const closeButton = document.createElement('button');
@@ -1259,6 +1225,43 @@
             saveStoredBanners(readStoredBanners().filter(function (banner) {
                 return banner.id !== bannerId;
             }));
+        }
+
+        function claimNotification(eventData, scope) {
+            const timestamp = eventData?.timestamp || '';
+            const notificationKey = [
+                scope,
+                eventData?.tenantId || eventData?.targetId || '',
+                eventData?.senderId || '',
+                eventData?.message || '',
+                timestamp
+            ].join('|');
+            const storageKey = 'unity.notifications.realtime.shown';
+            let shownNotifications = {};
+
+            try {
+                shownNotifications = JSON.parse(localStorage.getItem(storageKey) || '{}');
+            } catch (error) {
+                console.warn('Unable to read shown realtime notifications.', error);
+            }
+
+            Object.keys(shownNotifications).forEach(function (key) {
+                if (!isCurrentDay(shownNotifications[key])) {
+                    delete shownNotifications[key];
+                }
+            });
+
+            if (shownNotifications[notificationKey]) {
+                return false;
+            }
+
+            shownNotifications[notificationKey] = new Date().toISOString();
+            try {
+                localStorage.setItem(storageKey, JSON.stringify(shownNotifications));
+            } catch (error) {
+                console.warn('Unable to persist shown realtime notifications.', error);
+            }
+            return true;
         }
 
         function buildBannerKey(sender, message, timestamp) {
