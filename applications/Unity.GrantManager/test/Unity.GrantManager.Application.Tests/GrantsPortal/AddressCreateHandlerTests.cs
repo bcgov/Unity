@@ -35,6 +35,7 @@ public class AddressCreateHandlerTests
 
         _handler = new AddressCreateHandler(
             _addressRepository,
+            new ApplicantAddressManager(_addressRepository),
             NullLogger<AddressCreateHandler>.Instance);
     }
 
@@ -220,13 +221,10 @@ public class AddressCreateHandlerTests
     #region Address type mapping
 
     [Theory]
+    // The full mapping table (casing, every member, unrecognised and numeric values) is covered
+    // by AddressTypeMapperTests. These two only prove the handler routes the payload value
+    // through the mapper at all, and that an absent value still reaches the fallback.
     [InlineData("MAILING", AddressType.MailingAddress)]
-    [InlineData("mailing", AddressType.MailingAddress)]
-    [InlineData("PHYSICAL", AddressType.PhysicalAddress)]
-    [InlineData("physical", AddressType.PhysicalAddress)]
-    [InlineData("BUSINESS", AddressType.BusinessAddress)]
-    [InlineData("business", AddressType.BusinessAddress)]
-    [InlineData("UNKNOWN", AddressType.PhysicalAddress)]
     [InlineData(null, AddressType.PhysicalAddress)]
     public async Task HandleAsync_ShouldMapAddressTypeCorrectly(string? addressType, AddressType expected)
     {
@@ -323,20 +321,32 @@ public class AddressCreateHandlerTests
     #region Primary demotion
 
     [Fact]
-    public async Task HandleAsync_WhenIsPrimaryTrue_ShouldDemoteSiblingAddresses()
+    public async Task HandleAsync_WhenIsPrimaryTrue_ShouldFlagNewAddressAndDemoteOnlySameTypeSiblings()
     {
         // Arrange
         var addressId = Guid.NewGuid();
         var siblingId = Guid.NewGuid();
+        var otherTypeSiblingId = Guid.NewGuid();
         var applicantId = Guid.NewGuid();
 
-        var sibling = WithId(new ApplicantAddress { ApplicantId = applicantId }, siblingId);
+        // The default payload creates a MAILING address, so the sibling shares that type.
+        var sibling = WithId(
+            new ApplicantAddress { ApplicantId = applicantId, AddressType = AddressType.MailingAddress },
+            siblingId);
         sibling.SetProperty(AddressExtraPropertyNames.IsPrimary, true);
+
+        // A primary of a different type must survive: exclusivity is scoped to the type group.
+        var otherTypeSibling = WithId(
+            new ApplicantAddress { ApplicantId = applicantId, AddressType = AddressType.BusinessAddress },
+            otherTypeSiblingId);
+        otherTypeSibling.SetProperty(AddressExtraPropertyNames.IsPrimary, true);
 
         _addressRepository.GetAsync(siblingId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(sibling);
+        _addressRepository.GetAsync(otherTypeSiblingId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(otherTypeSibling);
         _addressRepository.FindByApplicantIdAsync(applicantId)
-            .Returns(new List<ApplicantAddress> { sibling });
+            .Returns([sibling, otherTypeSibling]);
 
         ApplicantAddress? savedAddress = null;
         _addressRepository.InsertAsync(Arg.Any<ApplicantAddress>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
@@ -351,8 +361,10 @@ public class AddressCreateHandlerTests
         // Act
         await _handler.HandleAsync(payload);
 
-        // Assert — sibling should have isPrimary cleared
+        // Assert — the same-type sibling is demoted, the other type keeps its own primary,
+        // and the newly created address is the one now flagged.
         sibling.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary).ShouldBeFalse();
+        otherTypeSibling.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary).ShouldBeTrue();
         savedAddress.ShouldNotBeNull();
         savedAddress.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary).ShouldBeTrue();
     }

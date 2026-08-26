@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantsPortal.Handlers;
 using Unity.GrantManager.GrantsPortal.Messages;
 using Volo.Abp.Data;
@@ -28,6 +29,7 @@ public class AddressSetPrimaryHandlerTests
 
         _handler = new AddressSetPrimaryHandler(
             _addressRepository,
+            new ApplicantAddressManager(_addressRepository),
             NullLogger<AddressSetPrimaryHandler>.Instance);
     }
 
@@ -75,37 +77,8 @@ public class AddressSetPrimaryHandlerTests
 
         // Assert
         result.ShouldBe("Address set as primary");
-        address.GetProperty<bool>("isPrimary").ShouldBeTrue();
+        address.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary).ShouldBeTrue();
         await _addressRepository.Received(1).UpdateAsync(address, Arg.Any<bool>(), Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task HandleAsync_ShouldClearPrimaryOnSiblingAddresses()
-    {
-        // Arrange
-        var addressId = Guid.NewGuid();
-        var siblingId = Guid.NewGuid();
-        var applicantId = Guid.NewGuid();
-
-        var address = WithId(new ApplicantAddress { ApplicantId = applicantId }, addressId);
-
-        var sibling = WithId(new ApplicantAddress { ApplicantId = applicantId }, siblingId);
-        sibling.SetProperty("isPrimary", true);
-
-        _addressRepository.GetAsync(addressId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
-            .Returns(address);
-        _addressRepository.GetAsync(siblingId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
-            .Returns(sibling);
-        _addressRepository.FindByApplicantIdAsync(applicantId)
-            .Returns(new List<ApplicantAddress> { address, sibling });
-
-        var payload = CreatePayload(addressId: addressId);
-
-        // Act
-        await _handler.HandleAsync(payload);
-
-        // Assert — sibling should have isPrimary cleared
-        sibling.GetProperty<bool>("isPrimary").ShouldBeFalse();
     }
 
     [Fact]
@@ -184,7 +157,7 @@ public class AddressSetPrimaryHandlerTests
 
         var address = WithId(new ApplicantAddress { ApplicantId = applicantId }, addressId);
         var sibling = WithId(new ApplicantAddress { ApplicantId = applicantId }, siblingId);
-        sibling.SetProperty("isPrimary", false);
+        sibling.SetProperty(AddressExtraPropertyNames.IsPrimary, false);
 
         _addressRepository.GetAsync(addressId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(address);
@@ -198,6 +171,95 @@ public class AddressSetPrimaryHandlerTests
 
         // Assert — sibling should not have been fetched for update since it's already not primary
         await _addressRepository.DidNotReceive().GetAsync(siblingId, Arg.Any<bool>(), Arg.Any<CancellationToken>());
+    }
+
+    #endregion
+
+    #region Primary scoped per address type
+
+    [Fact]
+    public async Task HandleAsync_ShouldDemoteOnlySiblingsOfTheSameAddressType()
+    {
+        var addressId = Guid.NewGuid();
+        var sameTypeSiblingId = Guid.NewGuid();
+        var otherTypeSiblingId = Guid.NewGuid();
+        var applicantId = Guid.NewGuid();
+
+        var address = WithId(
+            new ApplicantAddress { ApplicantId = applicantId, AddressType = AddressType.BusinessAddress },
+            addressId);
+
+        var sameTypeSibling = WithId(
+            new ApplicantAddress { ApplicantId = applicantId, AddressType = AddressType.BusinessAddress },
+            sameTypeSiblingId);
+        sameTypeSibling.SetProperty(AddressExtraPropertyNames.IsPrimary, true);
+
+        var otherTypeSibling = WithId(
+            new ApplicantAddress { ApplicantId = applicantId, AddressType = AddressType.MailingAddress },
+            otherTypeSiblingId);
+        otherTypeSibling.SetProperty(AddressExtraPropertyNames.IsPrimary, true);
+
+        _addressRepository.GetAsync(addressId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(address);
+        _addressRepository.GetAsync(sameTypeSiblingId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(sameTypeSibling);
+        _addressRepository.GetAsync(otherTypeSiblingId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(otherTypeSibling);
+        _addressRepository.FindByApplicantIdAsync(applicantId)
+            .Returns([address, sameTypeSibling, otherTypeSibling]);
+
+        var payload = CreatePayload(addressId: addressId);
+
+        await _handler.HandleAsync(payload);
+
+        sameTypeSibling.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary).ShouldBeFalse();
+        otherTypeSibling.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary).ShouldBeTrue();
+    }
+
+    [Theory]
+    [InlineData(AddressType.PhysicalAddress)]
+    [InlineData(AddressType.MailingAddress)]
+    [InlineData(AddressType.BusinessAddress)]
+    public async Task HandleAsync_ShouldAllowOnePrimaryPerAddressType(AddressType addressType)
+    {
+        var addressId = Guid.NewGuid();
+        var applicantId = Guid.NewGuid();
+
+        var address = WithId(
+            new ApplicantAddress { ApplicantId = applicantId, AddressType = addressType },
+            addressId);
+
+        var otherTypePrimaries = new List<ApplicantAddress> { address };
+
+        foreach (var otherType in Enum.GetValues<AddressType>())
+        {
+            if (otherType == addressType)
+            {
+                continue;
+            }
+
+            var otherTypeSiblingId = Guid.NewGuid();
+            var otherTypeSibling = WithId(
+                new ApplicantAddress { ApplicantId = applicantId, AddressType = otherType },
+                otherTypeSiblingId);
+            otherTypeSibling.SetProperty(AddressExtraPropertyNames.IsPrimary, true);
+
+            _addressRepository.GetAsync(otherTypeSiblingId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
+                .Returns(otherTypeSibling);
+
+            otherTypePrimaries.Add(otherTypeSibling);
+        }
+
+        _addressRepository.GetAsync(addressId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(address);
+        _addressRepository.FindByApplicantIdAsync(applicantId)
+            .Returns(otherTypePrimaries);
+
+        var payload = CreatePayload(addressId: addressId);
+
+        await _handler.HandleAsync(payload);
+
+        otherTypePrimaries.ShouldAllBe(a => a.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary));
     }
 
     #endregion
