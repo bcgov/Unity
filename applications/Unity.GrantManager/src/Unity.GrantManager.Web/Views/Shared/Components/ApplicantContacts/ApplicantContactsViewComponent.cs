@@ -16,7 +16,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantContacts
         RefreshUrl = "Widget/ApplicantContacts/Refresh",
         ScriptTypes = new[] { typeof(ApplicantContactsScriptBundleContributor) },
         StyleTypes = new[] { typeof(ApplicantContactsStyleBundleContributor) },
-        AutoInitialize = true)]
+        AutoInitialize = true,
+        RequiredPolicies = new [] { UnitySelector.ApplicantManagement.Contacts.Default })]
     public class ApplicantContactsViewComponent(
         IApplicantContactQueryService applicantContactQueryService,
         IPermissionChecker permissionChecker) : AbpViewComponent

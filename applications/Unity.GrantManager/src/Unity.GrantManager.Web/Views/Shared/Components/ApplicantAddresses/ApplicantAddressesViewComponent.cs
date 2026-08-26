@@ -18,7 +18,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
         RefreshUrl = "Widget/ApplicantAddresses/Refresh",
         ScriptTypes = new[] { typeof(ApplicantAddressesScriptBundleContributor) },
         StyleTypes = new[] { typeof(ApplicantAddressesStyleBundleContributor) },
-        AutoInitialize = true)]
+        AutoInitialize = true,
+        RequiredPolicies = new [] { UnitySelector.ApplicantManagement.Addresses.Default })]
     public class ApplicantAddressesViewComponent : AbpViewComponent
     {
         private readonly IApplicantAddressRepository _applicantAddressRepository;
