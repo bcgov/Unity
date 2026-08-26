@@ -21,6 +21,12 @@
     var hasAddresses        = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Addresses.Default);
     var hasHistory          = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.History.Default);
     var hasPayments         = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Payments.Default);
+
+    // Set the first tab to display based on permissions
+    string firstTab = "nav-submissions";
+    if (hasApplicantInfo)  firstTab = "nav-organization-info";
+    else if (hasContacts)  firstTab = "nav-contacts";
+    else if (hasAddresses) firstTab = "nav-addresses";
 }
 
 @section styles {
@@ -105,7 +111,7 @@ else
                 @*-------- Applicant Organization Info Section ---------*@
                 @if (hasApplicantInfo)
                 {
-                <abp-tab name="nav-organization-info" active="true" title="Applicant Info">
+                <abp-tab name="nav-organization-info" active="@(firstTab == "nav-organization-info")" title="Applicant Info">
                     <div class="w-100 px-2" id="OrganizationInfoWidget">
                         @await Component.InvokeAsync("ApplicantOrganizationInfo", new { applicantId = Model.ApplicantId })
                     </div>
@@ -116,7 +122,7 @@ else
                 @*-------- Contacts Section ---------*@
                 @if (hasContacts)
                 {
-                <abp-tab name="nav-contacts" title="Contacts">
+                <abp-tab name="nav-contacts" active="@(firstTab == "nav-contacts")" title="Contacts">
                     <zone id="@UnitySelector.ApplicantManagement.Contacts.Default" zone-type="PermissionOnly"
                             permission-requirement="@UnitySelector.ApplicantManagement.Contacts.Default">
                     <div class="w-100 px-2" id="ContactsWidget">
@@ -130,7 +136,7 @@ else
                 @*-------- Addresses Section ---------*@
                 @if (hasAddresses)
                 {
-                <abp-tab name="nav-addresses" title="Addresses">
+                <abp-tab name="nav-addresses" active="@(firstTab == "nav-addresses")" title="Addresses">
                     <div class="w-100 px-2" id="AddressesWidget">
                         @await Component.InvokeAsync("ApplicantAddresses", new { applicantId = Model.ApplicantId })
                     </div>
@@ -139,7 +145,7 @@ else
                 @*-------- Addresses Section END ---------*@
 
                 @*-------- Submissions Section ---------*@
-                <abp-tab name="nav-submissions" title="Submissions">
+                <abp-tab name="nav-submissions" active="@(firstTab == "nav-submissions")" title="Submissions">
                     <div class="w-100 px-2" id="SubmissionsWidget">
                         @await Component.InvokeAsync("ApplicantSubmissions", new { applicantId = Model.ApplicantId })
                     </div>

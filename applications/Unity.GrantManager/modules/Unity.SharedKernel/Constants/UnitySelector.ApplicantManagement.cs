@@ -29,7 +29,7 @@ public static partial class UnitySelector
             }
         }
 
-            public static partial class Contacts
+        public static partial class Contacts
         {
             public const string Default = "Unity.GrantManager.ApplicantManagement.Contacts";
             public const string Create  = "Unity.GrantManager.ApplicantManagement.Contacts.Create";

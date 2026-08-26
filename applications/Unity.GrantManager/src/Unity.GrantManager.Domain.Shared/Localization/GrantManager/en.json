@@ -239,7 +239,7 @@
     "Unity.GrantManager.ApplicationManagement.Applicant": "Applicant Info",
     "Unity.GrantManager.ApplicationManagement.Applicant.Summary": "Applicant Info",
     "Unity.GrantManager.ApplicationManagement.Applicant.Summary.Update": "Edit Applicant Info",
-    "Unity.GrantManager.ApplicationManagement.Applicant.Summary.Update.RedStop": "Assign Applicant to an Application",
+    "Unity.GrantManager.ApplicationManagement.Applicant.Summary.Update.AssignApplicant": "Assign Applicant to an Application",
     "Unity.GrantManager.ApplicationManagement.Applicant.Contact": "Contact Info",
     "Unity.GrantManager.ApplicationManagement.Applicant.Contact.Create": "Create Contact Info",
     "Unity.GrantManager.ApplicationManagement.Applicant.Contact.Update": "Edit Contact Info",

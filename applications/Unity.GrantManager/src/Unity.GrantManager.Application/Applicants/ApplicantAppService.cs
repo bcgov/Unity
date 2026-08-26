@@ -331,20 +331,17 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             return;
         }
 
-        if (input.PrimaryContact != null &&
-            await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Contact.Update))
+        if (input.PrimaryContact != null)
         {
             await UpdatePrimaryContactAsync(applicantId, input.PrimaryContact);
         }
 
-        if (input.PrimaryPhysicalAddress != null &&
-            await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Location.Update))
+        if (input.PrimaryPhysicalAddress != null)
         {
             await UpdatePrimaryAddressAsync(applicantId, input.PrimaryPhysicalAddress, GrantApplications.AddressType.PhysicalAddress);
         }
 
-        if (input.PrimaryMailingAddress != null &&
-            await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Location.Update))
+        if (input.PrimaryMailingAddress != null)
         {
             await UpdatePrimaryAddressAsync(applicantId, input.PrimaryMailingAddress, GrantApplications.AddressType.MailingAddress);
         }
