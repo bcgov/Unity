@@ -86,6 +86,7 @@
         const BANNER_STORAGE_KEY = 'unity.notifications.realtime.banners';
         const widget = buildWidget();
         let bubbleHiddenPreference = restoreBubbleHiddenPreference();
+        applyBubbleVisibility();
         setupBubbleDragging();
         setupPanelResizing();
         setupPanelDragging();
@@ -1282,7 +1283,7 @@
         function togglePanel() {
             panelOpen = !panelOpen;
             widget.panel.classList.toggle('rt-widget-panel-open', panelOpen);
-            widget.bubble.classList.toggle('rt-widget-hidden', panelOpen || bubbleHiddenPreference);
+            applyBubbleVisibility();
             updateBubbleMenuItem();
 
             if (panelOpen) {
@@ -1295,19 +1296,33 @@
         }
 
         function setupBubbleMenuItem() {
-            const menuItem = document.getElementById('realtimeWidgetBubbleMenuItem');
-            if (!menuItem) {
-                return;
-            }
+            document.addEventListener('click', function (event) {
+                const menuItem = event.target.closest('#realtimeWidgetBubbleMenuItem');
+                if (!menuItem) {
+                    return;
+                }
 
-            menuItem.style.display = '';
-            menuItem.addEventListener('click', function (event) {
                 event.preventDefault();
                 bubbleHiddenPreference = !bubbleHiddenPreference;
                 saveBubbleHiddenPreference(bubbleHiddenPreference);
-                widget.bubble.classList.toggle('rt-widget-hidden', panelOpen || bubbleHiddenPreference);
+                applyBubbleVisibility();
                 updateBubbleMenuItem();
             });
+
+            const menuObserver = new MutationObserver(function (mutations) {
+                const menuWasAdded = mutations.some(function (mutation) {
+                    return Array.from(mutation.addedNodes).some(function (node) {
+                        return node.nodeType === Node.ELEMENT_NODE
+                            && (node.matches('#realtimeWidgetBubbleMenuItem')
+                                || node.querySelector('#realtimeWidgetBubbleMenuItem'));
+                    });
+                });
+
+                if (menuWasAdded) {
+                    updateBubbleMenuItem();
+                }
+            });
+            menuObserver.observe(document.body, { childList: true, subtree: true });
             updateBubbleMenuItem();
         }
 
@@ -1317,8 +1332,19 @@
                 return;
             }
 
+            menuItem.style.display = '';
             menuItem.textContent = l(bubbleHiddenPreference ? 'RealtimeWidget:ShowBubble' : 'RealtimeWidget:HideBubble');
             menuItem.setAttribute('aria-label', menuItem.textContent);
+        }
+
+        function applyBubbleVisibility() {
+            const bubbleIsHidden = panelOpen || bubbleHiddenPreference;
+            widget.bubble.classList.toggle('rt-widget-hidden', bubbleIsHidden);
+            widget.bubble.hidden = bubbleIsHidden;
+            widget.bubble.style.display = bubbleIsHidden ? 'none' : 'flex';
+            widget.container.classList.toggle('rt-widget-hidden', bubbleIsHidden && !panelOpen);
+            widget.container.hidden = bubbleIsHidden && !panelOpen;
+            widget.container.style.display = bubbleIsHidden && !panelOpen ? 'none' : '';
         }
 
         function restoreBubbleHiddenPreference() {
