@@ -228,11 +228,28 @@ public class PromptResponseValidatorTests
     }
 
     [Theory]
-    [InlineData("{\"min\":0}")]
-    [InlineData("{\"min\":10,\"max\":1}")]
-    [InlineData("{\"minLength\":0,\"maxLength\":-1}")]
-    [InlineData("{\"minLength\":0,\"maxLength\":10,\"rows\":0}")]
-    public void ValidateFormScoresheetJson_Should_Return_InvalidOutput_For_Invalid_Number_Definition(string definition)
+    [InlineData(1, "{\"min\":0}")]
+    [InlineData(1, "{\"min\":10,\"max\":1}")]
+    [InlineData(2, "{\"minLength\":0,\"maxLength\":-1}")]
+    [InlineData(14, "{\"minLength\":0,\"maxLength\":10,\"rows\":0}")]
+    [InlineData(6, "{\"yes_value\":1}")]
+    [InlineData(12, "{\"options\":[]}")]
+    public void ValidateFormScoresheetJson_Should_Return_InvalidOutput_For_Invalid_Field_Definition(int type, string definition)
+    {
+        var response = ValidFormScoresheetJson
+            .Replace("\"Type\": 1", $"\"Type\": {type}", StringComparison.Ordinal)
+            .Replace("\"Definition\": \"{\\\"min\\\": 0, \\\"max\\\": 10}\"", $"\"Definition\": \"{definition.Replace("\"", "\\\"", StringComparison.Ordinal)}\"", StringComparison.Ordinal);
+
+        var result = AIProviderPayloadValidator.ValidateFormScoresheetJson(response);
+
+        result.IsValid.ShouldBeFalse();
+        result.FailureCategory.ShouldBe(AIFailureCategory.InvalidOutput);
+    }
+
+    [Theory]
+    [InlineData("{\"Min\":0,\"Max\":10}")]
+    [InlineData("{\"min\":0,\"Max\":10}")]
+    public void ValidateFormScoresheetJson_Should_Reject_Incorrectly_Cased_Definition_Properties(string definition)
     {
         var response = ValidFormScoresheetJson
             .Replace("\"Definition\": \"{\\\"min\\\": 0, \\\"max\\\": 10}\"", $"\"Definition\": \"{definition.Replace("\"", "\\\"", StringComparison.Ordinal)}\"", StringComparison.Ordinal);

@@ -1081,7 +1081,6 @@ $(function () {
         const isPublishAssign = action === 'PublishAndAssignWorksheets';
         const isFinalMapping = action === 'GenerateFinalMapping';
         const isFinalReview = action === 'ReviewFinalMapping';
-        const isCompleted = state === 'Completed';
 
         UIElements.btnGenerate.toggleClass('d-none', !isInitial);
         UIElements.btnReviewMapping.toggleClass('d-none', !isInitialReview);

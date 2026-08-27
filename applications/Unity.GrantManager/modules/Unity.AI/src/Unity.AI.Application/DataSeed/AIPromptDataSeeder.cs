@@ -129,7 +129,7 @@ public class AIPromptDataSeeder(
 
     private async Task SeedFormScoresheetPromptAsync()
     {
-        await EnsurePromptAsync(AIPromptTypes.FormScoresheet, 3, FormScoresheetSystemV3, FormScoresheetUserV3, FormScoresheetMetadataV3);
+        await EnsurePromptAsync(AIPromptTypes.FormScoresheet, 2, FormScoresheetSystemV2, FormScoresheetUserV2, FormScoresheetMetadataV2);
     }
 
     // ─── HELPERS ──────────────────────────────────────────────────────────────
@@ -900,8 +900,8 @@ public class AIPromptDataSeeder(
         Return only valid JSON.
         """;
 
-    // ── v3/form-scoresheet.user.txt ──────────────────────────────────────────
-    private const string FormScoresheetUserV3 = """
+    // ── v2/form-scoresheet.user.txt ──────────────────────────────────────────
+    private const string FormScoresheetUserV2 = """
         SCORESHEET CONTEXT:
         {{DATA}}
 
@@ -955,9 +955,7 @@ public class AIPromptDataSeeder(
         - Return valid plain JSON only.
         """;
 
-    private const string FormScoresheetSystemV3 = FormScoresheetSystemV2;
-
-    private const string FormScoresheetMetadataV3 = """
+    private const string FormScoresheetMetadataV2 = """
         {
           "DATA": "Serialized JSON payload containing the form name, form version, CHEFS fields, allowed question types, and the scoresheet template to fill out."
         }

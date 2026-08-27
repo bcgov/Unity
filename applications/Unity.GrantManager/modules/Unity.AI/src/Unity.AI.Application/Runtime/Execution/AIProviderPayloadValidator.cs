@@ -377,7 +377,7 @@ namespace Unity.AI.Runtime.Execution
 
         private static AIResponseValidationResult ValidateSelectListDefinition(JsonElement definition, string responseName)
         {
-            if (!TryGetProperty(definition, "options", out var options)
+            if (!TryGetDefinitionProperty(definition, "options", out var options)
                 || options.ValueKind != JsonValueKind.Array
                 || options.GetArrayLength() == 0)
             {
@@ -400,7 +400,7 @@ namespace Unity.AI.Runtime.Execution
 
         private static bool HasNonEmptyStringProperty(JsonElement element, string propertyName)
         {
-            return TryGetProperty(element, propertyName, out var property)
+            return TryGetDefinitionProperty(element, propertyName, out var property)
                 && property.ValueKind == JsonValueKind.String
                 && !string.IsNullOrWhiteSpace(property.GetString());
         }
@@ -408,7 +408,7 @@ namespace Unity.AI.Runtime.Execution
         private static bool TryGetInt64Property(JsonElement element, string propertyName, out long value)
         {
             value = default;
-            return TryGetProperty(element, propertyName, out var property)
+            return TryGetDefinitionProperty(element, propertyName, out var property)
                 && property.ValueKind == JsonValueKind.Number
                 && property.TryGetInt64(out value);
         }
@@ -416,7 +416,7 @@ namespace Unity.AI.Runtime.Execution
         private static bool TryGetUInt32Property(JsonElement element, string propertyName, out uint value)
         {
             value = default;
-            return TryGetProperty(element, propertyName, out var property)
+            return TryGetDefinitionProperty(element, propertyName, out var property)
                 && property.ValueKind == JsonValueKind.Number
                 && property.TryGetUInt32(out value);
         }
@@ -477,6 +477,13 @@ namespace Unity.AI.Runtime.Execution
 
             property = default;
             return false;
+        }
+
+        private static bool TryGetDefinitionProperty(JsonElement element, string propertyName, out JsonElement property)
+        {
+            property = default;
+            return element.ValueKind == JsonValueKind.Object
+                && element.TryGetProperty(propertyName, out property);
         }
         private static HashSet<string> ExtractQuestionIds(string sectionJson)
         {

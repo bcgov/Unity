@@ -196,6 +196,8 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
 
         var formVersionRepository = Substitute.For<IApplicationFormVersionRepository>();
         formVersionRepository.GetAsync(formVersionId).Returns(formVersion);
+        var repository = Substitute.For<IRepository<ApplicationFormVersion, Guid>>();
+        repository.GetAsync(formVersionId).Returns(formVersion);
         var worksheetRepository = Substitute.For<IWorksheetRepository>();
         worksheetRepository.GetByNameAsync(Arg.Any<string>(), true).Returns(worksheet);
         worksheetRepository.FindAsync(worksheet.Id).Returns(worksheet);
@@ -213,7 +215,7 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
             .Returns([worksheetReview]);
 
         var service = CreateService(
-            Substitute.For<IRepository<ApplicationFormVersion, Guid>>(),
+            repository,
             Substitute.For<IAIGenerationAppService>(),
             formVersionRepository,
             worksheetRepository,

@@ -47,7 +47,7 @@ public class AIPromptDataSeederTests
         AssertVersions(insertedPrompts, AIPromptTypes.ApplicationScoring, 0, 1, 2);
         AssertVersions(insertedPrompts, AIPromptTypes.FormMapping, 2);
         AssertVersions(insertedPrompts, AIPromptTypes.FormWorksheet, 2);
-        AssertVersions(insertedPrompts, AIPromptTypes.FormScoresheet, 3);
+        AssertVersions(insertedPrompts, AIPromptTypes.FormScoresheet, 2);
         insertedPrompts.All(prompt =>
             prompt.TenantId is null &&
             prompt.IsActive &&
