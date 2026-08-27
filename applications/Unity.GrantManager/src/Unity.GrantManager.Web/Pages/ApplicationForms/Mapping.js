@@ -1073,7 +1073,6 @@ $(function () {
 
     function updateWorkflowActions(review) {
         const action = getWorkflowAction(review);
-        const state = getWorkflowState(review);
         const isInitial = action === 'GenerateInitialMapping';
         const isInitialReview = action === 'ReviewInitialMapping';
         const isGenerateWorksheets = action === 'GenerateWorksheets';
