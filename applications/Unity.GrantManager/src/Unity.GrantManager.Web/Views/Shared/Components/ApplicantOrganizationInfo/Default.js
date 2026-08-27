@@ -319,10 +319,12 @@
             });
         });
 
-        clearOrgBookButton.on('click', function () {
-            orgBookSelect.val(null).trigger('change');
-            populateRegisteredFields('', '', '', '', '');
-        });
+        if (clearOrgBookButton.length) {
+            clearOrgBookButton.on('click', function () {
+                orgBookSelect.val(null).trigger('change');
+                populateRegisteredFields('', '', '', '', '');
+            });
+        }
     }
 
     function calculateApplicantFiscalYearEnd($container) {

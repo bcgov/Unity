@@ -179,6 +179,154 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
     }
 
     [Fact]
+    public async Task ResetAiFlowAsync_Should_UnlinkAndDelete_PublishedWorksheetForTheCurrentForm()
+    {
+        var formVersionId = Guid.NewGuid();
+        var formId = Guid.NewGuid();
+        var formVersion = new ApplicationFormVersion { ApplicationFormId = formId };
+        var worksheet = BuildAiWorksheet(formId, formVersionId, published: true);
+        var worksheetReview = new GenerationReview(
+            Guid.NewGuid(),
+            AIGenerationOperations.FormWorksheet,
+            formVersionId);
+        worksheetReview.SetReviewData(JsonSerializer.Serialize(new FormWorksheetReviewPayload
+        {
+            DraftWorksheetIds = [worksheet.Id]
+        }));
+
+        var formVersionRepository = Substitute.For<IApplicationFormVersionRepository>();
+        formVersionRepository.GetAsync(formVersionId).Returns(formVersion);
+        var repository = Substitute.For<IRepository<ApplicationFormVersion, Guid>>();
+        repository.GetAsync(formVersionId).Returns(formVersion);
+        var worksheetRepository = Substitute.For<IWorksheetRepository>();
+        worksheetRepository.GetByNameAsync(Arg.Any<string>(), true).Returns(worksheet);
+        worksheetRepository.FindAsync(worksheet.Id).Returns(worksheet);
+        var worksheetLinkRepository = Substitute.For<Unity.Flex.Domain.WorksheetLinks.IWorksheetLinkRepository>();
+        var link = new Unity.Flex.Domain.WorksheetLinks.WorksheetLink(
+            Guid.NewGuid(), worksheet.Id, formVersionId, Unity.Modules.Shared.Correlation.CorrelationConsts.FormVersion, string.Empty);
+        worksheetLinkRepository.GetListByWorksheetAsync(worksheet.Id, Unity.Modules.Shared.Correlation.CorrelationConsts.FormVersion)
+            .Returns([link]);
+        var worksheetInstanceRepository = Substitute.For<Unity.Flex.Domain.WorksheetInstances.IWorksheetInstanceRepository>();
+        worksheetInstanceRepository.AnyByWorksheetAndFormVersionAsync(worksheet.Id, formVersionId).Returns(false);
+        var reviewRepository = Substitute.For<IGenerationReviewRepository>();
+        reviewRepository.GetListByOperationAndFormVersionAsync(AIGenerationOperations.FormMapping, formVersionId)
+            .Returns([]);
+        reviewRepository.GetListByOperationAndFormVersionAsync(AIGenerationOperations.FormWorksheet, formVersionId)
+            .Returns([worksheetReview]);
+
+        var service = CreateService(
+            repository,
+            Substitute.For<IAIGenerationAppService>(),
+            formVersionRepository,
+            worksheetRepository,
+            generationReviewRepository: reviewRepository,
+            worksheetLinkRepository: worksheetLinkRepository,
+            worksheetInstanceRepository: worksheetInstanceRepository);
+        service.LazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
+
+        await service.ResetAiFlowAsync(formVersionId);
+
+        await worksheetLinkRepository.Received(1).DeleteAsync(link, true);
+        await worksheetRepository.Received(1).DeleteAsync(worksheet, true);
+        formVersion.SubmissionHeaderMapping.ShouldBe("{}");
+    }
+
+    [Fact]
+    public async Task ResetAiFlowAsync_Should_Delete_Draft_From_Discarded_Worksheet_Review()
+    {
+        var formVersionId = Guid.NewGuid();
+        var formId = Guid.NewGuid();
+        var formVersion = new ApplicationFormVersion { ApplicationFormId = formId };
+        var worksheet = BuildAiWorksheet(formId, formVersionId, published: false);
+        var worksheetReview = new GenerationReview(Guid.NewGuid(), AIGenerationOperations.FormWorksheet, formVersionId);
+        worksheetReview.SetReviewData(JsonSerializer.Serialize(new FormWorksheetReviewPayload
+        {
+            DraftWorksheetIds = [worksheet.Id]
+        }));
+        worksheetReview.Discard();
+
+        var repository = Substitute.For<IRepository<ApplicationFormVersion, Guid>>();
+        repository.GetAsync(formVersionId).Returns(formVersion);
+        var formVersionRepository = Substitute.For<IApplicationFormVersionRepository>();
+        formVersionRepository.GetAsync(formVersionId).Returns(formVersion);
+        var worksheetRepository = Substitute.For<IWorksheetRepository>();
+        worksheetRepository.GetByNameAsync(Arg.Any<string>(), true).Returns((Worksheet?)null);
+        worksheetRepository.FindAsync(worksheet.Id).Returns(worksheet);
+        var reviewRepository = Substitute.For<IGenerationReviewRepository>();
+        reviewRepository.GetListByOperationAndFormVersionAsync(AIGenerationOperations.FormMapping, formVersionId).Returns([]);
+        reviewRepository.GetListByOperationAndFormVersionAsync(AIGenerationOperations.FormWorksheet, formVersionId).Returns([worksheetReview]);
+
+        var service = CreateService(repository, Substitute.For<IAIGenerationAppService>(), formVersionRepository, worksheetRepository,
+            generationReviewRepository: reviewRepository);
+        service.LazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
+
+        await service.ResetAiFlowAsync(formVersionId);
+
+        await worksheetRepository.Received(1).DeleteAsync(worksheet, true);
+        await reviewRepository.Received(1).DeleteManyAsync(
+            Arg.Is<IEnumerable<GenerationReview>>(reviews => reviews.Single() == worksheetReview), true);
+        formVersion.SubmissionHeaderMapping.ShouldBe("{}");
+    }
+
+    [Fact]
+    public async Task GetMappingReviewAsync_Should_Show_Publish_And_Assign_For_Draft_From_Discarded_Worksheet_Review()
+    {
+        var formVersionId = Guid.NewGuid();
+        var formId = Guid.NewGuid();
+        var worksheet = BuildAiWorksheet(formId, formVersionId, published: false);
+        var mappingReview = new GenerationReview(Guid.NewGuid(), AIGenerationOperations.FormMapping, formVersionId);
+        mappingReview.Complete();
+        var worksheetReview = new GenerationReview(Guid.NewGuid(), AIGenerationOperations.FormWorksheet, formVersionId);
+        worksheetReview.SetReviewData(JsonSerializer.Serialize(new FormWorksheetReviewPayload
+        {
+            DraftWorksheetIds = [worksheet.Id]
+        }));
+        worksheetReview.Discard();
+
+        var worksheetRepository = Substitute.For<IWorksheetRepository>();
+        worksheetRepository.FindAsync(worksheet.Id).Returns(worksheet);
+        var worksheetLinkRepository = Substitute.For<Unity.Flex.Domain.WorksheetLinks.IWorksheetLinkRepository>();
+        worksheetLinkRepository.GetListByCorrelationAsync(formVersionId, Unity.Modules.Shared.Correlation.CorrelationConsts.FormVersion).Returns([]);
+        var reviewRepository = Substitute.For<IGenerationReviewRepository>();
+        reviewRepository.FindLatestByOperationAndFormVersionAsync(AIGenerationOperations.FormMapping, formVersionId).Returns(mappingReview);
+        reviewRepository.FindLatestByOperationAndFormVersionAsync(AIGenerationOperations.FormWorksheet, formVersionId).Returns(worksheetReview);
+
+        var service = CreateService(Substitute.For<IRepository<ApplicationFormVersion, Guid>>(), Substitute.For<IAIGenerationAppService>(),
+            worksheetRepository: worksheetRepository, generationReviewRepository: reviewRepository, worksheetLinkRepository: worksheetLinkRepository);
+        service.LazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
+
+        var result = await service.GetMappingReviewAsync(formVersionId);
+
+        result.WorkflowState.ShouldBe(FormGenerationWorkflowState.PublishAndAssignWorksheets);
+        result.WorkflowAction.ShouldBe(FormGenerationWorkflowAction.PublishAndAssignWorksheets);
+        result.ActionEnabled.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task GetMappingReviewAsync_Should_Skip_Final_Mapping_When_No_Draft_Was_Created()
+    {
+        var formVersionId = Guid.NewGuid();
+        var mappingReview = new GenerationReview(Guid.NewGuid(), AIGenerationOperations.FormMapping, formVersionId);
+        mappingReview.Complete();
+        var worksheetReview = new GenerationReview(Guid.NewGuid(), AIGenerationOperations.FormWorksheet, formVersionId);
+        worksheetReview.SetReviewData(JsonSerializer.Serialize(new FormWorksheetReviewPayload()));
+        worksheetReview.Discard();
+
+        var reviewRepository = Substitute.For<IGenerationReviewRepository>();
+        reviewRepository.FindLatestByOperationAndFormVersionAsync(AIGenerationOperations.FormMapping, formVersionId).Returns(mappingReview);
+        reviewRepository.FindLatestByOperationAndFormVersionAsync(AIGenerationOperations.FormWorksheet, formVersionId).Returns(worksheetReview);
+
+        var service = CreateService(Substitute.For<IRepository<ApplicationFormVersion, Guid>>(), Substitute.For<IAIGenerationAppService>(),
+            generationReviewRepository: reviewRepository);
+        service.LazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
+
+        var result = await service.GetMappingReviewAsync(formVersionId);
+
+        result.WorkflowState.ShouldBe(FormGenerationWorkflowState.Completed);
+        result.CanGenerateFinalMapping.ShouldBeFalse();
+    }
+
+    [Fact]
     public async Task CreateAiWorksheetDraftAsync_Should_Create_Unlinked_Unpublished_Draft_And_Keep_Remaining_Suggestions()
     {
         var formVersionId = Guid.NewGuid();
@@ -425,7 +573,9 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
         IRepository<CustomField, Guid>? customFieldRepository = null,
         IGenerationReviewRepository? generationReviewRepository = null,
         IScoresheetRepository? scoresheetRepository = null,
-        Unity.Flex.Domain.ScoresheetInstances.IScoresheetInstanceRepository? scoresheetInstanceRepository = null)
+        Unity.Flex.Domain.ScoresheetInstances.IScoresheetInstanceRepository? scoresheetInstanceRepository = null,
+        Unity.Flex.Domain.WorksheetLinks.IWorksheetLinkRepository? worksheetLinkRepository = null,
+        Unity.Flex.Domain.WorksheetInstances.IWorksheetInstanceRepository? worksheetInstanceRepository = null)
     {
         var featureChecker = Substitute.For<IFeatureChecker>();
         featureChecker.IsEnabledAsync(Arg.Any<string>()).Returns(true);
@@ -445,9 +595,9 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
             worksheetRepository ?? Substitute.For<IWorksheetRepository>(),
             customFieldRepository ?? Substitute.For<IRepository<CustomField, Guid>>(),
             generationReviewRepository ?? Substitute.For<IGenerationReviewRepository>(),
-            Substitute.For<Unity.Flex.Domain.WorksheetLinks.IWorksheetLinkRepository>(),
+            worksheetLinkRepository ?? Substitute.For<Unity.Flex.Domain.WorksheetLinks.IWorksheetLinkRepository>(),
             scoresheetRepository ?? Substitute.For<IScoresheetRepository>(),
-            Substitute.For<Unity.Flex.Domain.WorksheetInstances.IWorksheetInstanceRepository>(),
+            worksheetInstanceRepository ?? Substitute.For<Unity.Flex.Domain.WorksheetInstances.IWorksheetInstanceRepository>(),
             scoresheetInstanceRepository ?? Substitute.For<Unity.Flex.Domain.ScoresheetInstances.IScoresheetInstanceRepository>());
         return service;
     }

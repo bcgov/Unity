@@ -565,7 +565,7 @@ namespace Unity.GrantManager.ApplicationForms
                 worksheetReview == null ||
                 worksheetReview.Status == GenerationReviewStatus.Active ||
                 GetWorksheetReviewPayload(worksheetReview).NoSuggestionsGenerated ||
-                !await HasNoRemainingDraftsOrAssignedDraftAsync(worksheetReview))
+                !await HasPublishedAndAssignedDraftAsync(worksheetReview))
             {
                 throw new UserFriendlyException(localizer[AILocalizationKeys.WorksheetDraftsMustBePublished]);
             }
@@ -868,8 +868,7 @@ namespace Unity.GrantManager.ApplicationForms
         private async Task DeleteAiWorksheetSuggestionAsync(Worksheet worksheet, Guid formVersionId)
         {
             var links = await worksheetLinkRepository.GetListByWorksheetAsync(worksheet.Id, CorrelationConsts.FormVersion) ?? [];
-            if (worksheet.Published ||
-                links.Any(link => link.CorrelationId != formVersionId) ||
+            if (links.Any(link => link.CorrelationId != formVersionId) ||
                 await worksheetInstanceRepository.AnyByWorksheetAndFormVersionAsync(worksheet.Id, formVersionId))
             {
                 throw new UserFriendlyException(localizer[AILocalizationKeys.FormWorksheetDeleteProtected]);
@@ -1048,31 +1047,35 @@ namespace Unity.GrantManager.ApplicationForms
                     true);
             }
 
-            if (worksheetReview.Status == GenerationReviewStatus.Discarded)
+            var worksheetDraftState = await GetWorksheetDraftStateAsync(worksheetReview);
+            if (worksheetDraftState.HasPublishedAndAssignedDraft)
             {
                 return FormWorkflowResult.Single(
-                    FormGenerationWorkflowState.Completed,
-                    FormGenerationWorkflowAction.GenerateMapping,
+                    FormGenerationWorkflowState.GenerateFinalMapping,
+                    FormGenerationWorkflowAction.GenerateFinalMapping,
                     true);
             }
 
-            return await HasNoRemainingDraftsOrAssignedDraftAsync(worksheetReview)
+            return worksheetDraftState.HasDraft
                 ? FormWorkflowResult.Single(
-                    FormGenerationWorkflowState.GenerateFinalMapping,
-                    FormGenerationWorkflowAction.GenerateFinalMapping,
-                    true)
-                : FormWorkflowResult.Single(
                     FormGenerationWorkflowState.PublishAndAssignWorksheets,
                     FormGenerationWorkflowAction.PublishAndAssignWorksheets,
-                    false);
+                    false)
+                : FormWorkflowResult.Single(
+                    FormGenerationWorkflowState.Completed,
+                    FormGenerationWorkflowAction.GenerateMapping,
+                    true);
         }
 
-        private async Task<bool> HasNoRemainingDraftsOrAssignedDraftAsync(GenerationReview review)
+        private async Task<bool> HasPublishedAndAssignedDraftAsync(GenerationReview review) =>
+            (await GetWorksheetDraftStateAsync(review)).HasPublishedAndAssignedDraft;
+
+        private async Task<WorksheetDraftState> GetWorksheetDraftStateAsync(GenerationReview review)
         {
             var draftWorksheetIds = GetWorksheetReviewPayload(review).DraftWorksheetIds;
             if (draftWorksheetIds.Count == 0)
             {
-                return true;
+                return new WorksheetDraftState(false, false);
             }
 
             var linkedWorksheetIds = (await worksheetLinkRepository.GetListByCorrelationAsync(
@@ -1081,7 +1084,7 @@ namespace Unity.GrantManager.ApplicationForms
                 .Select(link => link.WorksheetId)
                 .ToHashSet();
 
-            var hasRemainingDraft = false;
+            var hasDraft = false;
 
             foreach (var worksheetId in draftWorksheetIds)
             {
@@ -1091,14 +1094,14 @@ namespace Unity.GrantManager.ApplicationForms
                     continue;
                 }
 
-                hasRemainingDraft = true;
+                hasDraft = true;
                 if (worksheet.Published && linkedWorksheetIds.Contains(worksheetId))
                 {
-                    return true;
+                    return new WorksheetDraftState(true, true);
                 }
             }
 
-            return !hasRemainingDraft;
+            return new WorksheetDraftState(hasDraft, false);
         }
 
         private static FormMappingReviewPhase GetLegacyPhase(FormGenerationWorkflowState state) =>
@@ -1153,6 +1156,8 @@ namespace Unity.GrantManager.ApplicationForms
                 bool enabled) =>
                 new(state, action, enabled, [action]);
         }
+
+        private sealed record WorksheetDraftState(bool HasDraft, bool HasPublishedAndAssignedDraft);
 
         private static FormMappingReviewPayload GetMappingReviewPayload(GenerationReview review) =>
             string.IsNullOrWhiteSpace(review.ReviewData)

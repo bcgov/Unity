@@ -1,6 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
 using Unity.GrantManager.ApplicantProfile.ProfileData;
 using Unity.GrantManager.Contacts;
 using Unity.Modules.Shared;
@@ -21,14 +21,14 @@ public class ApplicantContactAppService(
     private const string ApplicantEntityType = "Applicant";
 
     /// <inheritdoc />
-    [Authorize(UnitySelector.Applicant.Contact.Default)]
+    [Authorize(UnitySelector.ApplicantManagement.Contacts.Default)]
     public virtual Task<ApplicantContactInfoDto> GetByApplicantIdAsync(Guid applicantId)
     {
         return applicantContactQueryService.GetByApplicantIdAsync(applicantId);
     }
 
     /// <inheritdoc />
-    [Authorize(UnitySelector.Applicant.Contact.Update)]
+    [Authorize(UnitySelector.ApplicantManagement.Contacts.Update)]
     public virtual async Task<ContactDto> UpdateAsync(Guid applicantId, Guid contactId, UpdateApplicantContactDto input)
     {
         ArgumentNullException.ThrowIfNull(input);
@@ -64,7 +64,7 @@ public class ApplicantContactAppService(
     }
 
     /// <inheritdoc />
-    [Authorize(UnitySelector.Applicant.Contact.Update)]
+    [Authorize(UnitySelector.ApplicantManagement.Contacts.Update)]
     public virtual async Task<bool> SetPrimaryAsync(Guid applicantId, Guid contactId)
     {
         await contactManager.SetPrimaryAsync(ApplicantEntityType, applicantId, contactId);
