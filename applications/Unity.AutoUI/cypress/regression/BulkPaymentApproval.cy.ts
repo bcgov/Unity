@@ -36,7 +36,7 @@ import { loginIfNeeded } from "../support/auth";
 
 // MAX_BULK controls how many it() blocks are generated at describe-time.
 // Must be >= SUBMISSION_COUNT used in the seeder. Extras are skipped automatically.
-const MAX_BULK = Number(Cypress.env("SUBMISSION_COUNT") || 5);
+const MAX_BULK = Number(Cypress.env("SUBMISSION_COUNT") || 10);
 
 const BULK_CONFIG = {
   grantProgram: "Default Grants Program",
