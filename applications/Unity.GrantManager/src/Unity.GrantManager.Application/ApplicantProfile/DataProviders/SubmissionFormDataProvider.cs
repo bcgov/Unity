@@ -41,6 +41,8 @@ namespace Unity.GrantManager.ApplicantProfile
                 throw new EntityNotFoundException("Submission not found.");
             }
 
+            var sanitizedSubmissionId = SanitizeForLog(request.SubmissionId.Value);
+
             using (currentTenant.Change(request.TenantId))
             {
                 var submissionsQuery = await applicationFormSubmissionRepository.GetQueryableAsync();
@@ -50,21 +52,21 @@ namespace Unity.GrantManager.ApplicantProfile
 
                 if (submission == null)
                 {
-                    logger.LogWarning("Submission {SubmissionId} was not found or is not owned by the requesting applicant.", request.SubmissionId);
+                    logger.LogWarning("Submission {SubmissionId} was not found or is not owned by the requesting applicant.", sanitizedSubmissionId);
                     throw new EntityNotFoundException("Submission not found.");
                 }
 
                 var formVersion = await ResolveFormVersionAsync(submission);
                 if (string.IsNullOrWhiteSpace(formVersion?.FormSchema))
                 {
-                    logger.LogWarning("No form schema is available for submission {SubmissionId}.", request.SubmissionId);
+                    logger.LogWarning("No form schema is available for submission {SubmissionId}.", sanitizedSubmissionId);
                     throw new EntityNotFoundException("Submission form schema not available.");
                 }
 
                 var submissionData = ExtractSubmissionData(submission.Submission);
                 if (submissionData is null)
                 {
-                    logger.LogWarning("No submission data is available for submission {SubmissionId}.", request.SubmissionId);
+                    logger.LogWarning("No submission data is available for submission {SubmissionId}.", sanitizedSubmissionId);
                     throw new EntityNotFoundException("Submission data not available.");
                 }
 
@@ -77,6 +79,18 @@ namespace Unity.GrantManager.ApplicantProfile
                 };
             }
         }
+
+        /// <summary>
+        /// Strips CR/LF from a value derived from request input before it is written to the log,
+        /// preventing forged/injected log entries (a validated <see cref="Guid"/> can never actually
+        /// contain these characters, but static analysis tools flag any request-derived log argument
+        /// regardless — this makes the mitigation explicit and unambiguous).
+        /// </summary>
+        private static string SanitizeForLog(Guid value) =>
+            value.ToString()
+                .Replace(Environment.NewLine, string.Empty, StringComparison.Ordinal)
+                .Replace("\n", string.Empty, StringComparison.Ordinal)
+                .Replace("\r", string.Empty, StringComparison.Ordinal);
 
         private async Task<ApplicationFormVersion?> ResolveFormVersionAsync(ApplicationFormSubmission submission)
         {
@@ -95,8 +109,11 @@ namespace Unity.GrantManager.ApplicantProfile
         }
 
         /// <summary>
-        /// Extracts the form.io submission object (<c>{ "data": {...}, "state": ..., "metadata": ... }</c>)
-        /// nested under the <c>submission</c> property of the stored CHEFS submission resource JSON.
+        /// Validates and returns the stored CHEFS submission resource JSON as-is: it already has
+        /// <c>data</c> (and <c>state</c>) as top-level siblings of the CHEFS metadata (<c>id</c>,
+        /// <c>formVersionId</c>, <c>createdAt</c>, ...) — see <c>IntakeFormSubmissionManager</c>,
+        /// which persists <c>formSubmission.submission</c> verbatim — so it already satisfies form.io's
+        /// <c>{ "data": {...} }</c> submission shape without any further unwrapping.
         /// </summary>
         private static JsonElement? ExtractSubmissionData(string submissionJson)
         {
@@ -108,8 +125,8 @@ namespace Unity.GrantManager.ApplicantProfile
             try
             {
                 using var doc = JsonDocument.Parse(submissionJson);
-                return doc.RootElement.TryGetProperty("submission", out var submissionElement)
-                    ? submissionElement.Clone()
+                return doc.RootElement.TryGetProperty("data", out _)
+                    ? doc.RootElement.Clone()
                     : null;
             }
             catch (JsonException)

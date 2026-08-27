@@ -25,7 +25,7 @@ namespace Unity.GrantManager.Applicants
         private readonly SubmissionFormDataProvider _provider;
 
         private const string SchemaJson = """{"type":"form","display":"form","components":[]}""";
-        private const string SubmissionJson = """{"createdAt":"2025-01-14T21:37:52.000Z","submission":{"data":{"_ApplicantName":"Test"},"state":"submitted"}}""";
+        private const string SubmissionJson = """{"createdAt":"2025-01-14T21:37:52.000Z","data":{"_ApplicantName":"Test"},"state":"submitted"}""";
 
         public SubmissionFormDataProviderTests()
         {
@@ -148,7 +148,7 @@ namespace Unity.GrantManager.Applicants
         }
 
         [Fact]
-        public async Task GetDataAsync_ShouldThrowEntityNotFound_WhenSubmissionHasNoNestedSubmissionData()
+        public async Task GetDataAsync_ShouldThrowEntityNotFound_WhenSubmissionHasNoDataProperty()
         {
             var submissionId = Guid.NewGuid();
             var formVersionId = Guid.NewGuid();
