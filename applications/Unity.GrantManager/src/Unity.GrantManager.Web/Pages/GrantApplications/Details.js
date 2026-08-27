@@ -25,6 +25,7 @@ $(function () {
         setStoredDividerWidth();
         initCommentsWidget();
         initEmailsWidget();
+        initHistoryWidget();
         updateLinksCounters();
         renderSubmission();
         loadAIAnalysis();
@@ -397,7 +398,7 @@ $(function () {
 
         const bootstrapCSS = doc.createElement('link');
         bootstrapCSS.rel = 'stylesheet';
-        bootstrapCSS.href = '/libs/bootstrap-4/dist/css/bootstrap.min.css';
+        bootstrapCSS.href = '/libs/bootstrap/css/bootstrap.min.css';
 
         const formioCSS = doc.createElement('link');
         formioCSS.rel = 'stylesheet';
@@ -414,6 +415,19 @@ $(function () {
             }
             button {
                 display: none !important;
+            }
+            /* Print only. Bootstrap 5 sizes headings with calc(... + vw), so
+               printed output would otherwise vary with the width of the window
+               it was opened from. Pin them to the fixed sizes Bootstrap 4 used
+               so the printed result is the same whatever the screen, while the
+               on-screen preview keeps Bootstrap 5's responsive sizing. */
+            @media print {
+                h1, .h1 { font-size: 2.5rem !important; }
+                h2, .h2 { font-size: 2rem !important; }
+                h3, .h3 { font-size: 1.75rem !important; }
+                h4, .h4 { font-size: 1.5rem !important; }
+                h5, .h5 { font-size: 1.25rem !important; }
+                h6, .h6 { font-size: 1rem !important; }
             }
         `;
 
@@ -461,7 +475,7 @@ $(function () {
 
         // Create and append stylesheets
         const stylesheets = [
-            { href: '/libs/bootstrap-4/dist/css/bootstrap.min.css' },
+            { href: '/libs/bootstrap/css/bootstrap.min.css' },
             { href: '/Pages/GrantApplications/ScoresheetPrint.css' }
         ];
 
@@ -976,9 +990,17 @@ function uploadFiles(inputId, urlStr, channel) {
     let input = document.getElementById(inputId);
     let files = input.files;
     let formData = new FormData();
-    const disallowedTypes = JSON.parse(
-        decodeURIComponent($('#Extensions').val())
-    );
+    let allowedTypes;
+    try {
+        allowedTypes = JSON.parse(decodeURIComponent($('#AllowedFileTypes').val()));
+        if (!Array.isArray(allowedTypes)) {
+            throw new TypeError('AllowedFileTypes did not parse to an array');
+        }
+    } catch (e) {
+        console.warn('Unable to parse allowed file types configuration:', e);
+        abp.notify.error('Unable to determine allowed file types. Please contact support.');
+        return;
+    }
     const maxFileSize = decodeURIComponent($('#MaxFileSize').val());
 
     let isAllowedTypeError = false;
@@ -989,7 +1011,7 @@ function uploadFiles(inputId, urlStr, channel) {
 
     for (let file of files) {
         if (
-            disallowedTypes.includes(
+            !allowedTypes.includes(
                 file.name
                     .slice(file.name.lastIndexOf('.') + 1, file.name.length)
                     .toLowerCase()
@@ -1176,6 +1198,23 @@ function initCommentsWidget() {
 
     PubSub.subscribe('ApplicationTags_refresh', () => {
         tagsWidgetManager.refresh();
+    });
+}
+
+function initHistoryWidget() {
+    let applicationHistoryWidgetManager = new abp.WidgetManager({
+        wrapper: '#applicationHistoryWidget',
+        filterCallback: function () {
+            return {
+                applicationId:
+                    $('#DetailsViewApplicationId').val() ??
+                    '00000000-0000-0000-0000-000000000000',
+            };
+        },
+    })
+
+    PubSub.subscribe('ApplicationHistory_refresh', () => {
+        applicationHistoryWidgetManager.refresh();
     });
 }
 

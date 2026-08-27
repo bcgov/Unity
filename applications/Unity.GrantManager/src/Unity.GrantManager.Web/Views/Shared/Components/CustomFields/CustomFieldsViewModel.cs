@@ -37,6 +37,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CustomFields
         public List<WorksheetLinkDto>? FundingAgreementInfoLinks { get; set; }
         public List<WorksheetLinkDto>? CustomTabLinks { get; set; }
 
+        public bool HasPendingAiWorksheet { get; set; }
+        public bool CanViewScoresheet { get; set; }
+        public bool CanGenerateScoresheet { get; set; }
+
         [Display(Name = "")]
         public Guid? ScoresheetId { get; set; }
     }

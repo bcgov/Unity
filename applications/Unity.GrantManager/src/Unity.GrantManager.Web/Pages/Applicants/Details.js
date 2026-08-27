@@ -396,9 +396,17 @@ function uploadFiles(inputId, urlStr, channel) {
     let input = document.getElementById(inputId);
     let files = input.files;
     let formData = new FormData();
-    const disallowedTypes = JSON.parse(
-        decodeURIComponent($('#Extensions').val())
-    );
+    let allowedTypes;
+    try {
+        allowedTypes = JSON.parse(decodeURIComponent($('#AllowedFileTypes').val()));
+        if (!Array.isArray(allowedTypes)) {
+            throw new TypeError('AllowedFileTypes did not parse to an array');
+        }
+    } catch (e) {
+        console.warn('Unable to parse allowed file types configuration:', e);
+        abp.notify.error('Unable to determine allowed file types. Please contact support.');
+        return;
+    }
     const maxFileSize = decodeURIComponent($('#MaxFileSize').val());
 
     let isAllowedTypeError = false;
@@ -409,7 +417,7 @@ function uploadFiles(inputId, urlStr, channel) {
 
     for (let file of files) {
         if (
-            disallowedTypes.includes(
+            !allowedTypes.includes(
                 file.name
                     .slice(file.name.lastIndexOf('.') + 1, file.name.length)
                     .toLowerCase()

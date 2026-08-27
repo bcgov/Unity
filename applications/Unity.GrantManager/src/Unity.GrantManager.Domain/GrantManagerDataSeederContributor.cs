@@ -12,6 +12,7 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Identity;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Uow;
 
 namespace Unity.GrantManager;
 
@@ -19,7 +20,8 @@ public class GrantManagerDataSeederContributor(
     IApplicationStatusRepository applicationStatusRepository,
     IPersonRepository personRepository,
     IIdentityUserRepository userRepository,
-    ICurrentTenant currentTenant) : IDataSeedContributor, ITransientDependency
+    ICurrentTenant currentTenant,
+    IUnitOfWorkManager unitOfWorkManager) : IDataSeedContributor, ITransientDependency
 {
     public static class GrantApplicationStates
     {
@@ -44,8 +46,9 @@ public class GrantManagerDataSeederContributor(
         if (context.TenantId == null) // only seed into a tenant database
         {
            await SeedMainBackgroundJobUserAsync(null);
+           await SeedUnityAlertUserAsync(null);
            return;
-        }   
+        }
 
         await SeedApplicationStatusAsync();
         await SeedAiScoringPersonAsync(context.TenantId);
@@ -78,7 +81,9 @@ public class GrantManagerDataSeederContributor(
         {
             try
             {
+                using var unitOfWork = unitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
                 await applicationStatusRepository.InsertAsync(status, autoSave: true);
+                await unitOfWork.CompleteAsync();
             }
             catch (Exception ex) when (IsDuplicateStatusCodeException(ex))
             {
@@ -99,15 +104,24 @@ public class GrantManagerDataSeederContributor(
         var existing = await personRepository.FirstOrDefaultAsync(p => p.Id == AIScoringConstants.AiPersonId);
         if (existing == null)
         {
-            await personRepository.InsertAsync(new Person
+            try
             {
-                Id = AIScoringConstants.AiPersonId,
-                OidcSub = AIScoringConstants.AiOidcSub,
-                OidcDisplayName = AIScoringConstants.AiDisplayName,
-                FullName = AIScoringConstants.AiDisplayName,
-                Badge = AIScoringConstants.AiBadge,
-                TenantId = tenantId
-            });
+                using var unitOfWork = unitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
+                await personRepository.InsertAsync(new Person
+                {
+                    Id = AIScoringConstants.AiPersonId,
+                    OidcSub = AIScoringConstants.AiOidcSub,
+                    OidcDisplayName = AIScoringConstants.AiDisplayName,
+                    FullName = AIScoringConstants.AiDisplayName,
+                    Badge = AIScoringConstants.AiBadge,
+                    TenantId = tenantId
+                }, autoSave: true);
+                await unitOfWork.CompleteAsync();
+            }
+            catch (Exception ex) when (ex.ToString().Contains("PK_Persons"))
+            {
+                // Another concurrent seeder instance inserted the person first; safe to ignore.
+            }
         }
     }
 
@@ -129,6 +143,29 @@ public class GrantManagerDataSeederContributor(
                         null)
                     {
                         Name = BackgroundJobConstants.BackgroundJobName
+                    },
+                    autoSave: true);
+            }
+        }
+    }
+
+    private async Task SeedUnityAlertUserAsync(Guid? tenantId)
+    {
+        using (currentTenant.Change(tenantId)) // Null For Main Unity Grant Manager Context
+        {
+            // Check if the IdentityUser already exists
+            var existingUser = await userRepository.FindAsync(UnityAlertConstants.UnityAlertPersonId);
+            if (existingUser == null)
+            {
+                // Create the IdentityUser in the tenant context
+                await userRepository.InsertAsync(
+                    new IdentityUser(
+                        UnityAlertConstants.UnityAlertPersonId,
+                        UnityAlertConstants.UnityAlertUserName,
+                        UnityAlertConstants.UnityAlertEmail,
+                        null)
+                    {
+                        Name = UnityAlertConstants.UnityAlertName
                     },
                     autoSave: true);
             }

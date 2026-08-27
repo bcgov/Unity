@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Notifications;
-using Unity.GrantManager.Notifications.Teams;
+using Unity.GrantManager.Notifications.Logs;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
@@ -79,7 +79,7 @@ namespace Unity.GrantManager.Reporting
                 using (currentTenant.Change(viewGenerationEvent.TenantId))
                 {
                     using var notifyUow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
-                    await notificationsAppService.PostToTeamsAsync(activityTitle, activitySubtitle, facts);
+                    await notificationsAppService.PostToNotificationsAsync(activityTitle, activitySubtitle, facts);
                     await notifyUow.CompleteAsync();
                 }
             }

@@ -21,7 +21,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
     public class EmailsWidgetViewComponent(ISettingProvider settingProvider, IApplicationRepository applicationRepository, ITemplateService templateService) : AbpViewComponent
     {
        
-        public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Guid currentUserId)
+        public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Guid currentUserId, bool noDraftPreviewMode = false)
         {
             // Lookup the applicant contact
             Application application = await applicationRepository.WithBasicDetailsAsync(applicationId);
@@ -37,7 +37,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
                 CurrentUserId = currentUserId,
                 EmailTo = application?.ApplicantAgent?.Email ?? string.Empty,
                 EmailFrom = defaultFromAddress ?? "NoReply@gov.bc.ca",
-                EnableEmailDelay = enableEmailDelay
+                EnableEmailDelay = enableEmailDelay,
+                NoDraftPreviewMode = noDraftPreviewMode
             };
             await PopulateTemplates(model);
 
@@ -45,7 +46,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
         }
         private async Task PopulateTemplates(EmailsWidgetViewModel model)
         {
-            var templates = await templateService.GetTemplatesByTenent();
+            var templates = await templateService.GetTemplatesByTenant();
 
             templates.ForEach(t =>
            {

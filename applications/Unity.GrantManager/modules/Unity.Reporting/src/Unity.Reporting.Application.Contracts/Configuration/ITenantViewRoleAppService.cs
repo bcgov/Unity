@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Unity.Reporting.Configuration
@@ -12,14 +11,16 @@ namespace Unity.Reporting.Configuration
     public interface ITenantViewRoleAppService
     {
         /// <summary>
-        /// Retrieves the view role configuration for all tenants in the system.
-        /// Returns both explicitly configured roles and default inferred roles based on tenant naming patterns.
+        /// Retrieves the view role configuration for a specific tenant.
+        /// Returns either the explicitly configured role or a default inferred role based on the tenant's name.
         /// </summary>
+        /// <param name="tenantId">The unique identifier of the tenant to retrieve the view role configuration for.</param>
         /// <returns>
-        /// A list of <see cref="TenantViewRoleDto"/> objects containing the tenant information and their associated view roles.
-        /// Default roles follow the pattern {tenantname}_readonly when not explicitly configured.
+        /// A <see cref="TenantViewRoleDto"/> containing the tenant information and its associated view role.
+        /// Defaults to {LicencePlate}_readonly when a licence plate exists, falling back to {tenantname}_readonly for legacy tenants.
         /// </returns>
-        Task<List<TenantViewRoleDto>> GetAllAsync();
+        /// <exception cref="InvalidOperationException">Thrown when the specified tenant is not found.</exception>
+        Task<TenantViewRoleDto> GetAsync(Guid tenantId);
 
         /// <summary>
         /// Updates the view role configuration for a specific tenant.

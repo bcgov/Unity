@@ -11,4 +11,5 @@ public class GrantApplicationLiteDto : AuditedEntityDto<Guid>
     public string OrganizationName { get; set; } = string.Empty;
     public string UnityApplicantId { get; set; } = string.Empty;
     public string UnityApplicationId { get; set; } = string.Empty;
+    public bool ExternalStatusVisibility { get; set; } = false;
 }

@@ -1,0 +1,57 @@
+CHEFS One-Click Form Tester
+Version: 0.4.0
+Build: 2026.07.23.14
+
+Validation results
+
+- PASS: Evaluation criteria version 9 defines DASH-01 through DASH-05 before evaluation.
+- PASS: Round-009 evidence was inventoried and all eight new troubleshooting bundles were parsed before the v0.4.0 cut.
+- PASS: Round-009 index 001 exposed an empty Form.io shell with no initialized instance, mounted fields or submit control.
+- PASS: Readiness now requires mounted Form.io components and interactive controls across two samples 300 ms apart.
+- PASS: An empty shell remains observable as waiting_for_form and does not create a misleading run.
+- PASS: The existing 45-second never-ready bound and queue advancement remain green.
+- PASS: Singleton completion opens the dashboard once only when the setting is enabled.
+- PASS: Batch completion opens the dashboard once after the final queued run, not between runs.
+- PASS: Duplicate finalization does not reopen the dashboard.
+- PASS: An existing dashboard tab is refreshed and focused instead of duplicated.
+- PASS: Dashboard automatic opening and aggregate history retention are disabled by default.
+- PASS: A PID-canary fixture is reduced to the strict dashboard whitelist without retaining its run ID, title, field value, label, email/phone canary, filename, URL parameters, confirmation ID, failure text, raw events or stack.
+- PASS: Run and suite references are hashed; the form reference contains only a UUID prefix.
+- PASS: Unexpected keys make a stored dashboard summary ineligible.
+- PASS: The dashboard HTML, CSS and JavaScript use no network data source or remote page resource.
+- PASS: The default layout contract fixes document overflow and provides the header, four summary cards, chart workspace and findings panel at 1440×900.
+- PASS: Simple, Analyst, Statistical and Experimental chart groups expose 15 chart choices.
+- PASS: Advanced charts state their data thresholds and are disabled with an explicit reason when unavailable.
+- PASS: Each available chart is paired with plain-language interpretation.
+- PASS: Optional aggregate history is bounded at 200 schema-valid records and 90 days.
+- PASS: Disabled retention supplies an empty history and completed-run processing clears the retained-history store.
+- PASS: History can be cleared from Settings and from the dashboard.
+- PASS: Existing EXPORT-01 through EXPORT-04 regressions remain green.
+- PASS: Existing BATCH-01 through BATCH-06 and UX-02 regressions remain green.
+- PASS: The project-owned DATA-02 generated-email regression remains green.
+- PASS: All shipped JavaScript and evaluation scripts passed node --check.
+- PASS: All packaged JSON files parsed.
+- PASS: Manifest V3 identity matches v0.4.0 build 2026.07.23.14.
+- PASS: Release package sizes and SHA-256 values were regenerated and verified.
+
+Workplace Tok
+
+1. Reload v0.4.0 in the Chrome profile already configured for the batch launcher.
+2. Open Settings and enable Open results dashboard after completion.
+3. Leave Retain PID-free aggregate history disabled for the first replay.
+4. Run the project-root run-regression-suite.cmd.
+5. Confirm index 001 waits beyond the empty shell, reaches CGG - Human and Social Services (TEST), and submits.
+6. Confirm only one run is active throughout the suite and all eight runs execute in index order.
+7. Confirm no dashboard opens between batch items.
+8. Confirm one dashboard opens or refreshes after index 008 finalizes.
+9. At a 1440×900 or larger browser viewport, confirm the header, four cards, chart and findings panel are visible without document scrolling.
+10. Confirm Simple is the default view and unavailable advanced charts show clear history requirements.
+11. Inspect the page for PID; it must show only opaque form/run references and aggregate metrics.
+12. Open the popup and confirm Results Dashboard, Settings and Stop Batch use full-width actions where displayed.
+13. Supply all eight ZIP exports plus dashboard and popup screenshots for round 010 Tok.
+
+Limitations
+
+- Live Form.io mount timing, submission paths, Chrome focus, workplace download policy and rendered dashboard fit require the Workplace Tok above.
+- Statistical and experimental chart accuracy with genuine history requires future retained comparable runs; this build verifies their calculations and minimum-data gates with deterministic regression inputs.
+- The local browser-preview runtime remained permission-blocked, so the 1440×900 layout contract is static/automated and awaits managed-Chrome screenshot confirmation.

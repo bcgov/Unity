@@ -1,5 +1,5 @@
-@using Unity.GrantManager.Permissions
 @using Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationInfo
+@using Unity.Modules.Shared
 @using Volo.Abp.Authorization.Permissions
 
 @inject IPermissionChecker PermissionChecker
@@ -8,7 +8,10 @@
 
 @{
     Layout = null;
-    bool canEditRedStop = await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Applicants.EditRedStop);
+    bool canEditRedStop = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.Update_RedStop);
+    var canEditApplicantInfo = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.Update);
+    var canEditOrganizationInfo = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.OrganizationInfo.Update);
+    var hasSavePermission = canEditApplicantInfo || canEditOrganizationInfo;
 }
 
 <div id="ApplicantOrganizationInfo_SectorData" style="display:none;">
@@ -25,17 +28,22 @@
                         icon-type="Other"
                         icon="fl fl-save"
                         button-type="Primary"
-                        disabled="true" />
+                        disabled="true"
+                        abp-if="@hasSavePermission"/>
         </div>
 
         <form id="ApplicantOrganizationInfoForm" autocomplete="off" class="applicant-organization-info">
             <input type="hidden" id="ApplicantOrganizationInfo_ApplicantId" value="@Model.ApplicantId" />
 
-            @* Applicant Info *@
+            
             <abp-row id="organization-info-widget" class="m-0 p-0 applicant-organization-info__section">
                 <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 px-0">
-                    <abp-row class="m-0 org-info-summary">
-                        <abp-row class="m-0 p-0">
+                <abp-row class="m-0 org-info-summary">
+                    @* Applicant Info *@
+                    <zone-fieldset id="@UnitySelector.ApplicantManagement.ApplicantInfo.Default" zone-type="PermissionOnly"
+                                   permission-requirement="@UnitySelector.ApplicantManagement.ApplicantInfo.Default"
+                                   update-permission-requirement="@UnitySelector.ApplicantManagement.ApplicantInfo.Update">
+                    <abp-row class="m-0 p-0">
                         <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
                             <div id="OrganizationInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
                                 <h6 class="fw-bold">Applicant Information</h6>
@@ -75,6 +83,12 @@
                             </abp-row>
                         </abp-column>
                     </abp-row>
+                    </zone-fieldset>
+
+                    @* Organization Info *@
+                    <zone-fieldset id="@UnitySelector.ApplicantManagement.ApplicantInfo.OrganizationInfo.Default" zone-type="PermissionOnly"
+                                    permission-requirement="@UnitySelector.ApplicantManagement.ApplicantInfo.Default"
+                                    update-permission-requirement="@UnitySelector.ApplicantManagement.ApplicantInfo.OrganizationInfo.Update">
                     <abp-row class="m-0 p-0 mt-3">
                         <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
                             <div id="OrganizationInfoTitleRegion" class="d-flex align-items-stretch justify-content-start">
@@ -82,6 +96,8 @@
                             </div>
                         </abp-column>
                     </abp-row>
+                    @if (canEditOrganizationInfo)
+                    {
                     <abp-row class="m-0 p-0">
                         <abp-column size="_12" class="px-1 mb-4">
                             <label class="form-label" for="ApplicantOrganizationInfo_OrgBookSelect">Search in BC Registries</label>
@@ -106,14 +122,19 @@
                                                 title="Remove registered organization"
                                                 style="margin: -3px; margin-left: -5px;"
                                                 type="button"
-                                                icon="xmark"
+                                                icon-type="Other"
+                                                icon="fa-solid fa-xmark"
                                                 class="p-0">
-                                        <i class="fa fa-xmark"></i>
                                     </abp-button>
                                 </abp-column>
                             </abp-row>
                         </abp-column>
-                    </abp-row>                    
+                    </abp-row>
+                    }
+                    else
+                    {
+                        <input type="hidden" asp-for="SelectedOrgBookId" id="ApplicantOrganizationInfo_SelectedOrgBookIdHidden" />
+                    }                    
                     <abp-row class="m-0 p-0">
                         <abp-column size="_12" class="px-1">
                             <abp-row class="m-0 p-0">
@@ -161,6 +182,15 @@
                                     <abp-select asp-for="FiscalDay" asp-items="Model.FiscalDayList" id="ApplicantOrganizationInfo_FiscalDay" />
                                 </abp-column>
                                 <abp-column size="_4" class="px-1">
+                                    <div class="mb-3">
+                                        <label class="form-label" for="ApplicantOrganizationInfo_FiscalYearEnd">Fiscal Year End</label>
+                                        <input type="text" id="ApplicantOrganizationInfo_FiscalYearEnd" class="form-control" readonly
+                                               value="@(Model.FiscalYearEnd.HasValue ? Model.FiscalYearEnd.Value.ToString("yyyy-MM-dd") : string.Empty)" />
+                                    </div>
+                                </abp-column>
+                            </abp-row>
+                            <abp-row class="m-0 p-0">
+                                <abp-column size="_4" class="px-1">
                                     <abp-input type="date" asp-for="StartedOperatingDate" id="ApplicantOrganizationInfo_StartedOperatingDate" abp-data-datepicker="false" />
                                 </abp-column>
                             </abp-row>
@@ -175,9 +205,10 @@
                                         <abp-input asp-for="SectorSubSectorIndustryDesc" />
                                 </abp-column>
                             </abp-row>
-                            
+
                         </abp-column>
                     </abp-row>
+                    </zone-fieldset>
                 </abp-row>
             </abp-column>
         </abp-row>

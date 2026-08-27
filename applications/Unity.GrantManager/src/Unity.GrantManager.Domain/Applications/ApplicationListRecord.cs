@@ -57,9 +57,12 @@ public class ApplicationListRecord
     public DateTime? ContractExecutionDate { get; init; }
     public string? RiskRanking { get; init; }
     public string? UnityApplicationId { get; init; }
+    public bool ExternalStatusVisibility { get; init; }
 
     // ApplicationStatus (always joined)
     public string Status { get; init; } = string.Empty;
+    public string ExternalStatus { get; init; } = string.Empty;
+    public string? PublishedStatus { get; init; }
 
     // ApplicationForm (always joined)
     public string Category { get; init; } = string.Empty;

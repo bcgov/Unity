@@ -53,28 +53,4 @@ public partial class TenantClientProxy : ClientProxyBase<ITenantAppService>, ITe
         });
     }
 
-    public virtual async Task<string> GetDefaultConnectionStringAsync(Guid id)
-    {
-        return await RequestAsync<string>(nameof(GetDefaultConnectionStringAsync), new ClientProxyRequestTypeValue
-        {
-            { typeof(Guid), id }
-        });
-    }
-
-    public virtual async Task UpdateDefaultConnectionStringAsync(Guid id, string defaultConnectionString)
-    {
-        await RequestAsync(nameof(UpdateDefaultConnectionStringAsync), new ClientProxyRequestTypeValue
-        {
-            { typeof(Guid), id },
-            { typeof(string), defaultConnectionString }
-        });
-    }
-
-    public virtual async Task DeleteDefaultConnectionStringAsync(Guid id)
-    {
-        await RequestAsync(nameof(DeleteDefaultConnectionStringAsync), new ClientProxyRequestTypeValue
-        {
-            { typeof(Guid), id }
-        });
-    }
 }

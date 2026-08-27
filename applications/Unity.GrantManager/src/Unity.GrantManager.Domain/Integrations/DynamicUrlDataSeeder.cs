@@ -35,18 +35,32 @@ namespace Unity.GrantManager.Integrations
             public const string MATOMO_DEV_URL = $"{PROTOCOL}//dev-analytics-matomo.apps.silver.devops.gov.bc.ca";
             public const string MATOMO_TEST_URL = $"{PROTOCOL}//test-analytics-matomo.apps.silver.devops.gov.bc.ca";
             public const string MATOMO_PROD_URL = $"{PROTOCOL}//prod-analytics-matomo.apps.silver.devops.gov.bc.ca";
+            public const string GITHUB_REPO = $"{PROTOCOL}//github.com/bcgov/Unity";
+            public const string GITHUB_GRAPHQL = $"{PROTOCOL}//api.github.com/graphql";
+            // No separate dev2 hostname - dev2 shares the dev Metabase route.
+            public const string METABASE_DEV_URL = $"{PROTOCOL}//dev-unity-reporting.apps.gold.devops.gov.bc.ca";
+            public const string METABASE_TEST_URL = $"{PROTOCOL}//test-unity-reporting.apps.gold.devops.gov.bc.ca";
+            public const string METABASE_PROD_URL = $"{PROTOCOL}//prod-unity-reporting.apps.gold.devops.gov.bc.ca";
         }
 
-        private static string GetMatomoUrl()
+        internal static string GetEnvironmentUrl(string? aspNetCoreEnvironment, string devUrl, string testUrl, string prodUrl)
         {
-            var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? string.Empty;
+            var env = aspNetCoreEnvironment ?? string.Empty;
             if (string.IsNullOrEmpty(env) || env.StartsWith("dev", StringComparison.OrdinalIgnoreCase))
-                return DynamicUrls.MATOMO_DEV_URL;
+                return devUrl;
             if (env.StartsWith("test", StringComparison.OrdinalIgnoreCase) ||
                 env.Equals("uat", StringComparison.OrdinalIgnoreCase))
-                return DynamicUrls.MATOMO_TEST_URL;
-            return DynamicUrls.MATOMO_PROD_URL;
+                return testUrl;
+            return prodUrl;
         }
+
+        private static string GetMatomoUrl() =>
+            GetEnvironmentUrl(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
+                DynamicUrls.MATOMO_DEV_URL, DynamicUrls.MATOMO_TEST_URL, DynamicUrls.MATOMO_PROD_URL);
+
+        private static string GetMetabaseUrl() =>
+            GetEnvironmentUrl(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
+                DynamicUrls.METABASE_DEV_URL, DynamicUrls.METABASE_TEST_URL, DynamicUrls.METABASE_PROD_URL);
 
         private async Task SeedDynamicUrlAsync()
         {
@@ -67,12 +81,16 @@ namespace Unity.GrantManager.Integrations
                     new() { KeyName = DynamicUrlKeyNames.REPORTING_AI, Url = DynamicUrls.REPORTING_AI, Description = "Reporting AI iFrame Source" },
                     new() { KeyName = DynamicUrlKeyNames.NOTIFICATION_AUTH, Url = DynamicUrls.CHES_PROD_AUTH, Description = "Common Hosted Email Service OAUTH" },
                     new() { KeyName = DynamicUrlKeyNames.ANALYTICS_MATOMO_BASE, Url = GetMatomoUrl(), Description = "Matomo Analytics" },
+                    new() { KeyName = DynamicUrlKeyNames.GITHUB_REPO, Url = DynamicUrls.GITHUB_REPO, Description = "GitHub Repository" },
+                    new() { KeyName = DynamicUrlKeyNames.GITHUB_GRAPHQL, Url = DynamicUrls.GITHUB_GRAPHQL, Description = "GitHub GraphQL Endpoint" },
+                    new() { KeyName = DynamicUrlKeyNames.METABASE_API_BASE, Url = GetMetabaseUrl(), Description = "Metabase Reporting API" },
                     new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
                     new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
                     new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
                     new() { KeyName = $"{DynamicUrlKeyNames.WEBHOOK_KEY_PREFIX}{webhookIndex++}", Url = "", Description = $"Webhook {webhookIndex}" },
                     new() { KeyName = $"{DynamicUrlKeyNames.WEBHOOK_KEY_PREFIX}{webhookIndex++}", Url = "", Description = $"Webhook {webhookIndex}" },
                     new() { KeyName = $"{DynamicUrlKeyNames.WEBHOOK_KEY_PREFIX}{webhookIndex++}", Url = "", Description = $"Webhook {webhookIndex}" },
+                    
                 };
 
                 foreach (var dynamicUrl in dynamicUrls)
@@ -84,6 +102,19 @@ namespace Unity.GrantManager.Integrations
                     }
                     else if (existing.KeyName == DynamicUrlKeyNames.ANALYTICS_MATOMO_BASE &&
                              existing.Url != dynamicUrl.Url)
+                    {
+                        existing.Url = dynamicUrl.Url;
+                        await DynamicUrlRepository.UpdateAsync(existing);
+                    }
+                    // Unlike Matomo, Metabase is never kept in sync with the environment default
+                    // once a row exists - ops may point it at a different route via the Endpoint
+                    // Management admin page, and that choice must stick. Only fill in the
+                    // env-default value when the existing (host-level) row is still blank, so a
+                    // pre-existing row from before test/prod URLs were known here gets backfilled
+                    // exactly once, and a deliberately-set value is never overwritten.
+                    else if (existing.KeyName == DynamicUrlKeyNames.METABASE_API_BASE &&
+                             string.IsNullOrWhiteSpace(existing.Url) &&
+                             !string.IsNullOrWhiteSpace(dynamicUrl.Url))
                     {
                         existing.Url = dynamicUrl.Url;
                         await DynamicUrlRepository.UpdateAsync(existing);

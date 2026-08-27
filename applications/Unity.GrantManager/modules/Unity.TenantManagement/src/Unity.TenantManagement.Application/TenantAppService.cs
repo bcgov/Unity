@@ -1,8 +1,11 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Unity.Modules.Shared.Permissions;
 using Unity.TenantManagement.Abstractions;
 using Unity.TenantManagement.Application;
 using Unity.TenantManagement.Application.Contracts;
@@ -11,13 +14,15 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Data;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Security.Encryption;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.Uow;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Identity;
 
 namespace Unity.TenantManagement;
 
-[Authorize(TenantManagementPermissions.Tenants.Default)]
+[Authorize(TenantManagementPermissions.Policies.TenantsOrITOps)]
 [ExposeServices(typeof(ITenantAppService), typeof(TenantAppService))]
 public class TenantAppService(
      ICurrentTenant currentTenant,
@@ -25,8 +30,12 @@ public class TenantAppService(
     ITenantManager tenantManager,
     ILocalEventBus localEventBus,
     IUnitOfWorkManager unitOfWorkManager,
-    ITenantConnectionStringBuilder tenantConnectionStringBuilder) : TenantManagementAppServiceBase, ITenantAppService
+    ITenantConnectionStringBuilder tenantConnectionStringBuilder,
+    IStringEncryptionService stringEncryptionService) : TenantManagementAppServiceBase, ITenantAppService
 {
+    private IIdentityUserRepository IdentityUserRepository => LazyServiceProvider.LazyGetRequiredService<IIdentityUserRepository>();
+
+    private const string ExtraPropDisplayName = "DisplayName";
     private const string ExtraPropDivision = "Division";
     private const string ExtraPropBranch = "Branch";
     private const string ExtraPropDescription = "Description";
@@ -52,7 +61,7 @@ public class TenantAppService(
 
         var extraPropertySortFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
-            ExtraPropDivision, ExtraPropBranch, ExtraPropDescription, ExtraPropCasClientCode
+            ExtraPropDisplayName, ExtraPropDivision, ExtraPropBranch, ExtraPropDescription, ExtraPropCasClientCode
         };
 
         var dbSortFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -83,11 +92,15 @@ public class TenantAppService(
             );
         }
 
-        // In-memory path: needed when filtering on ExtraProperties or sorting on ExtraProperties
+        // In-memory path: needed when filtering on ExtraProperties or sorting on ExtraProperties.
+        // Fetch unfiltered here - the underlying repository's filter only matches against Name, so
+        // passing it through would exclude an ExtraProperty-only match (e.g. filtering by Division
+        // text that isn't also in the tenant's Name) before the OR-based filter below ever runs.
+        // Name + ExtraProperties matching is applied together, in memory, further down.
         var dbSorting = dbSortFields.Contains(sortField) ? input.Sorting : nameof(Tenant.Name);
-        var allTenants = await tenantRepository.GetListAsync(dbSorting, int.MaxValue, 0, null);
+        var filteredTenants = await tenantRepository.GetListAsync(dbSorting, int.MaxValue, 0, filter: null);
 
-        IEnumerable<Tenant> result = allTenants;
+        IEnumerable<Tenant> result = filteredTenants;
 
         // Apply ExtraProperties filter
         if (hasFilter)
@@ -95,6 +108,7 @@ public class TenantAppService(
             var filter = input.Filter.Trim();
             result = result.Where(t =>
                 (t.Name != null && t.Name.Contains(filter, StringComparison.OrdinalIgnoreCase)) ||
+                MatchesExtraProperty(t, ExtraPropDisplayName, filter) ||
                 MatchesExtraProperty(t, ExtraPropDivision, filter) ||
                 MatchesExtraProperty(t, ExtraPropBranch, filter) ||
                 MatchesExtraProperty(t, ExtraPropDescription, filter) ||
@@ -131,21 +145,47 @@ public class TenantAppService(
         return entry.Value?.ToString() ?? string.Empty;
     }
 
-    [Authorize(TenantManagementPermissions.Tenants.Create)]
+    [Authorize(TenantManagementPermissions.Policies.TenantsCreateOrITOps)]
     public virtual async Task<TenantDto> CreateAsync(TenantCreateDto input)
     {
-        Tenant tenant = null;
+        // TenantsCreateOrITOps also grants access to any caller holding the plain Tenants.Create
+        // permission, not just IT Admin/Operations. CreateModalModel.OnPostAsync already strips
+        // FeatureKeys/MetabaseUserEmails for non-admin callers, but that only guards the OOTB
+        // Razor Page - a caller can still invoke this application service directly (its own
+        // dynamic API controller) and set them. Re-check the stricter policy here so a forged call
+        // can't enable arbitrary features or - more importantly - grant arbitrary email addresses
+        // Metabase access to the new tenant's database via the post-creation registration step.
+        StripPrivilegedFieldsUnlessAuthorized(
+            input, await AuthorizationService.IsGrantedAsync(IdentityConsts.ITAdminOrITOperationsPolicyName));
+
+        Tenant? tenant = null;
 
         using (var uow = unitOfWorkManager.Begin(true, false))
-        {            
+        {
             tenant = await tenantManager.CreateAsync(input.Name);
+
+            var credentials = await tenantConnectionStringBuilder.GenerateCredentialsAsync();
+
+            var plainConnectionString = tenantConnectionStringBuilder.Build(tenant.Name, credentials);
+            var encryptedConnectionString = stringEncryptionService.Encrypt(plainConnectionString);
 
             tenant.ConnectionStrings
                 .Add(new TenantConnectionString(tenant.Id,
                     UnityTenantManagementConsts.TenantConnectionStringName,
-                    tenantConnectionStringBuilder.Build(tenant.Name)));
+                    encryptedConnectionString));
+
+            var readOnlyCredentials = tenantConnectionStringBuilder.GenerateReadOnlyCredentials(credentials);
+            var plainReadOnlyConnectionString = tenantConnectionStringBuilder.Build(tenant.Name, readOnlyCredentials);
+            var encryptedReadOnlyConnectionString = stringEncryptionService.Encrypt(plainReadOnlyConnectionString);
+
+            tenant.ConnectionStrings
+                .Add(new TenantConnectionString(tenant.Id,
+                    UnityTenantManagementConsts.TenantReadOnlyConnectionStringName,
+                    encryptedReadOnlyConnectionString));
 
             // Set ExtraProperties from input
+            tenant.ExtraProperties[UnityTenantManagementConsts.TenantLicencePlateExtraPropertyKey] = credentials.DbName;
+            tenant.ExtraProperties[ExtraPropDisplayName] = input.DisplayName ?? string.Empty;
             tenant.ExtraProperties[ExtraPropDivision] = input.Division ?? string.Empty;
             tenant.ExtraProperties[ExtraPropBranch] = input.Branch ?? string.Empty;
             tenant.ExtraProperties[ExtraPropDescription] = input.Description ?? string.Empty;
@@ -157,22 +197,43 @@ public class TenantAppService(
             await uow.CompleteAsync();
         }
 
-        await localEventBus.PublishAsync(
-                new TenantCreatedEto
-                {
-                    Id = tenant.Id,
-                    Name = tenant.Name,
-                    Properties =
-                    {
-                        { "UserIdentifier",  input.UserIdentifier }
-                    }
-                }
-            );
+        var tenantCreatedEto = new TenantCreatedEto
+        {
+            Id = tenant.Id,
+            Name = tenant.Name,
+            Properties =
+            {
+                { "UserIdentifier", input.UserIdentifier },
+                { "FeatureKeys", input.FeatureKeys ?? string.Empty }
+            }
+        };
+
+        // Distinguish "field omitted" (input.MetabaseUserEmails is null - an older/API caller
+        // that never set it) from "explicitly cleared" (empty string - a deliberate "no Metabase
+        // users for this tenant" choice) - only the latter should be persisted as an override.
+        // TenantCreatedEventHandler falls back to the Global default when the property is absent.
+        if (input.MetabaseUserEmails != null)
+        {
+            tenantCreatedEto.Properties["MetabaseUserEmails"] = input.MetabaseUserEmails;
+        }
+
+        await localEventBus.PublishAsync(tenantCreatedEto);
 
         return ObjectMapper.Map<Tenant, TenantDto>(tenant);
     }
 
-    [Authorize(TenantManagementPermissions.Tenants.Update)]
+    // Extracted so the stripping decision itself is unit-testable without driving ABP's
+    // authorization pipeline through an integration test host.
+    internal static void StripPrivilegedFieldsUnlessAuthorized(TenantCreateDto input, bool callerIsAuthorized)
+    {
+        if (!callerIsAuthorized)
+        {
+            input.FeatureKeys = null;
+            input.MetabaseUserEmails = null;
+        }
+    }
+
+    [Authorize(TenantManagementPermissions.Policies.TenantsUpdateOrITOps)]
     public virtual async Task<TenantDto> UpdateAsync(Guid id, TenantUpdateDto input)
     {
         var tenant = await tenantRepository.GetAsync(id);
@@ -182,6 +243,7 @@ public class TenantAppService(
         tenant.SetConcurrencyStampIfNotNull(input.ConcurrencyStamp);
         
         // Update ExtraProperties from input
+        tenant.ExtraProperties[ExtraPropDisplayName] = input.DisplayName ?? string.Empty;
         tenant.ExtraProperties[ExtraPropDivision] = input.Division ?? string.Empty;
         tenant.ExtraProperties[ExtraPropBranch] = input.Branch ?? string.Empty;
         tenant.ExtraProperties[ExtraPropDescription] = input.Description ?? string.Empty;
@@ -204,35 +266,12 @@ public class TenantAppService(
         await tenantRepository.DeleteAsync(tenant);
     }
 
-    [Authorize(TenantManagementPermissions.Tenants.ManageConnectionStrings)]
-    public virtual async Task<string> GetDefaultConnectionStringAsync(Guid id)
-    {
-        var tenant = await tenantRepository.GetAsync(id);
-        return tenant?.FindDefaultConnectionString();
-    }
-
-    [Authorize(TenantManagementPermissions.Tenants.ManageConnectionStrings)]
-    public virtual async Task UpdateDefaultConnectionStringAsync(Guid id, string defaultConnectionString)
-    {
-        var tenant = await tenantRepository.GetAsync(id);
-        tenant.SetDefaultConnectionString(defaultConnectionString);
-        await tenantRepository.UpdateAsync(tenant);
-    }
-
-    [Authorize(TenantManagementPermissions.Tenants.ManageConnectionStrings)]
-    public virtual async Task DeleteDefaultConnectionStringAsync(Guid id)
-    {
-        var tenant = await tenantRepository.GetAsync(id);
-        tenant.RemoveDefaultConnectionString();
-        await tenantRepository.UpdateAsync(tenant);
-    }
-
-    [RemoteService(false)]    
+    [RemoteService(false)]
     [AllowAnonymous]
     public async Task<string> GetCurrentTenantCasClientCodeAsync(Guid tenantId)
     {
         var tenant = tenantId != Guid.Empty ? await tenantRepository.GetAsync(tenantId) : null;
-        return tenant?.ExtraProperties.TryGetValue("CasClientCode", out var value) == true ? value?.ToString() : null;
+        return (tenant?.ExtraProperties.TryGetValue("CasClientCode", out var value) == true ? value?.ToString() : null)!;
     }
 
     public async Task<string> GetCurrentTenantName()
@@ -242,6 +281,7 @@ public class TenantAppService(
         return tenant?.Name ?? string.Empty;
     }
 
+    [Authorize(TenantManagementPermissions.Policies.TenantsUpdateOrITOps)]
     public async Task AssignManagerAsync(TenantAssignManagerDto managerAssignment)
     {
         await localEventBus.PublishAsync(
@@ -251,5 +291,78 @@ public class TenantAppService(
                  UserIdentifier = managerAssignment.UserIdentifier
              }
          );
+    }
+
+    [Authorize(TenantManagementPermissions.Tenants.ManageConnectionStrings)]
+    public async Task<TenantConnectionStringsDto> GetConnectionStringsAsync(Guid id)
+    {
+        var tenant = await tenantRepository.GetAsync(id, includeDetails: true);
+        return new TenantConnectionStringsDto
+        {
+            TenantConnectionString = TryDecryptConnectionString(
+                tenant.FindConnectionString(UnityTenantManagementConsts.TenantConnectionStringName)),
+            ReadOnlyConnectionString = TryDecryptConnectionString(
+                tenant.FindConnectionString(UnityTenantManagementConsts.TenantReadOnlyConnectionStringName))
+        };
+    }
+
+    [Authorize(TenantManagementPermissions.Tenants.ManageConnectionStrings)]
+    public async Task UpdateConnectionStringsAsync(Guid id, TenantConnectionStringsDto input)
+    {
+        var tenant = await tenantRepository.GetAsync(id, includeDetails: true);
+
+        if (!string.IsNullOrWhiteSpace(input.TenantConnectionString))
+        {
+            tenant.SetConnectionString(UnityTenantManagementConsts.TenantConnectionStringName,
+                stringEncryptionService.Encrypt(input.TenantConnectionString));
+        }
+
+        if (!string.IsNullOrWhiteSpace(input.ReadOnlyConnectionString))
+        {
+            tenant.SetConnectionString(UnityTenantManagementConsts.TenantReadOnlyConnectionStringName,
+                stringEncryptionService.Encrypt(input.ReadOnlyConnectionString));
+        }
+
+        await tenantRepository.UpdateAsync(tenant);
+    }
+
+    [Authorize(TenantManagementPermissions.Policies.TenantsUpdateOrITOps)]
+    public async Task<List<TenantManagerDto>> GetManagersAsync(Guid id)
+    {
+        using (currentTenant.Change(id))
+        {
+            var users = await IdentityUserRepository.GetListByNormalizedRoleNameAsync("PROGRAM_MANAGER");
+            return users.Select(u =>
+            {
+                var displayName = $"{u.Name} {u.Surname}".Trim();
+                return new TenantManagerDto
+                {
+                    DisplayName = string.IsNullOrEmpty(displayName) ? u.UserName : displayName,
+                    Email = u.Email ?? string.Empty
+                };
+            }).ToList();
+        }
+    }
+
+    private string? TryDecryptConnectionString(string? rawValue)
+    {
+        if (rawValue == null) return null;
+        if (PlainConnectionStringDetector.LooksLikePlainConnectionString(rawValue)) return rawValue;
+
+        try
+        {
+            return stringEncryptionService.Decrypt(rawValue);
+        }
+        catch (FormatException)
+        {
+            // Not valid base64, so it can't be ciphertext - it's plain text.
+            return rawValue;
+        }
+        catch (CryptographicException)
+        {
+            // Valid base64 but failed to decrypt (wrong passphrase/corrupted ciphertext) -
+            // fall back to the raw value rather than breaking the admin UI.
+            return rawValue;
+        }
     }
 }

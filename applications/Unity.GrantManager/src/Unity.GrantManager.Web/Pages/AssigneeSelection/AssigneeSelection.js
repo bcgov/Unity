@@ -57,8 +57,6 @@ $(function () {
         // Push the tag and duty to this.arr
         this.arr.push({ Id: Id, Duty: dutyText });
 
-        let tagInput = this;
-
         let tag = document.createElement('dev');
         tag.className = this.options.tagClass + ' ' + tagClass;
 
@@ -72,11 +70,11 @@ $(function () {
         dutyInput.placeholder = 'Add their duties';
         dutyInput.value = dutyText;
         dutyInput.classList.add('user-tags-duty-input');
-        dutyInput.addEventListener('blur', function () {
+        dutyInput.addEventListener('blur', () => {
             // Update duty value in this.arr when input field loses focus
-            let index = Array.from(tagInput.wrapper.childNodes).indexOf(tag);
-            tagInput.arr[index].Duty = dutyInput.value.trim();
-            tagInput.orignal_input.value = JSON.stringify(tagInput.arr);
+            let index = Array.from(this.wrapper.childNodes).indexOf(tag);
+            this.arr[index].Duty = dutyInput.value.trim();
+            this.orignal_input.value = JSON.stringify(this.arr);
         });
         let lineBreak = document.createElement('br');
         innerDiv.appendChild(label);
@@ -91,13 +89,13 @@ $(function () {
         closeIcon.classList.add('user-tags-close');
 
         // delete the tag when icon is clicked
-        closeIcon.addEventListener('click', function (e) {
+        closeIcon.addEventListener('click', (e) => {
             e.preventDefault();
-            let tag = this.parentNode.parentNode;
+            let tagNode = closeIcon.parentNode.parentNode;
 
-            for (let i = 0; i < tagInput.wrapper.childNodes.length; i++) {
-                if (tagInput.wrapper.childNodes[i] == tag)
-                    tagInput.deleteTag(tag, i);
+            for (let i = 0; i < this.wrapper.childNodes.length; i++) {
+                if (this.wrapper.childNodes[i] == tagNode)
+                    this.deleteTag(tagNode, i);
             }
         })
 
@@ -113,15 +111,14 @@ $(function () {
 
     // Delete Tags
     UserTagsInput.prototype.deleteTag = function (tag, i) {
-        let self = this;
         if (this.arr[i] == 'Uncommon Tags') {
             abp.message.confirm('Are you sure to delete all the uncommon tags?')
-                .then(function (confirmed) {
+                .then((confirmed) => {
                     if (confirmed) {
                         tag.remove();
-                        self.arr.splice(i, 1);
-                        self.orignal_input.value = JSON.stringify(self.arr);
-                        return self;
+                        this.arr.splice(i, 1);
+                        this.orignal_input.value = JSON.stringify(this.arr);
+                        return this;
                     }
 
                 });
@@ -152,10 +149,8 @@ $(function () {
 
     // Add tags programmatically 
     UserTagsInput.prototype.addData = function (array) {
-        let plugin = this;
-
-        array.forEach(function (string) {
-            plugin.addTag(string);
+        array.forEach((string) => {
+            this.addTag(string);
         })
         return this;
     }
@@ -174,14 +169,13 @@ $(function () {
         this.orignal_input.removeAttribute('hidden');
 
         delete this.orignal_input;
-        let self = this;
 
-        Object.keys(this).forEach(function (key) {
-            if (self[key] instanceof HTMLElement)
-                self[key].remove();
+        Object.keys(this).forEach((key) => {
+            if (this[key] instanceof HTMLElement)
+                this[key].remove();
 
             if (key != 'options')
-                delete self[key];
+                delete this[key];
         });
 
         this.initialized = false;

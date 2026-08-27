@@ -108,6 +108,15 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
             // Normalize view name to lowercase for consistency
             var normalizedViewName = viewName.Trim().ToLowerInvariant();
 
+            // SECURITY: Validate the identifier before it is interpolated into SQL below.
+            // ViewExistsAsync alone is not sufficient - it only proves a matching row exists in
+            // pg_views, not that the name is free of characters that would break out of the
+            // quoted identifier it gets embedded in.
+            if (!IsValidPostgreSqlIdentifier(normalizedViewName))
+            {
+                throw new ArgumentException($"Invalid view name format: {viewName}", nameof(viewName));
+            }
+
             var dbContext = await GetDbContextAsync();
             var connection = dbContext.Database.GetDbConnection();
             await dbContext.Database.OpenConnectionAsync();
@@ -131,18 +140,6 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
                         ORDER BY a.""CreationTime"" DESC
                         LIMIT 1
                     )";
-
-                // Add filtering if provided
-                if (!string.IsNullOrWhiteSpace(request.Filter))
-                {
-                    previewQuery += $" AND ({request.Filter})";
-                }
-
-                // Add ordering if provided
-                if (!string.IsNullOrWhiteSpace(request.OrderBy))
-                {
-                    previewQuery += $" ORDER BY {request.OrderBy}";
-                }
 
                 // Execute the preview query
                 using var dataCommand = connection.CreateCommand();
@@ -180,6 +177,15 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
             // Normalize view name to lowercase for consistency
             var normalizedViewName = viewName.Trim().ToLowerInvariant();
 
+            // SECURITY: Validate the identifier before it is interpolated into SQL below.
+            // ViewExistsAsync alone is not sufficient - it only proves a matching row exists in
+            // pg_views, not that the name is free of characters that would break out of the
+            // quoted identifier it gets embedded in.
+            if (!IsValidPostgreSqlIdentifier(normalizedViewName))
+            {
+                throw new ArgumentException($"Invalid view name format: {viewName}", nameof(viewName));
+            }
+
             var dbContext = await GetDbContextAsync();
             var connection = dbContext.Database.GetDbConnection();
             await dbContext.Database.OpenConnectionAsync();
@@ -196,26 +202,12 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
                 var baseQuery = $@"SELECT * FROM ""Reporting"".""{normalizedViewName}""";
                 var countQuery = $@"SELECT COUNT(*) FROM ""Reporting"".""{normalizedViewName}""";
 
-                // Add filtering if provided
-                if (!string.IsNullOrWhiteSpace(request.Filter))
-                {
-                    var whereClause = $" WHERE {request.Filter}";
-                    baseQuery += whereClause;
-                    countQuery += whereClause;
-                }
-
                 // Get total count
                 using (var countCommand = connection.CreateCommand())
                 {
                     countCommand.CommandText = countQuery;
                     var countResult = await countCommand.ExecuteScalarAsync();
                     result.TotalCount = Convert.ToInt32(countResult);
-                }
-
-                // Add ordering if provided
-                if (!string.IsNullOrWhiteSpace(request.OrderBy))
-                {
-                    baseQuery += $" ORDER BY {request.OrderBy}";
                 }
 
                 // Add pagination
@@ -316,7 +308,7 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
                 // SECURITY: Use pre-validated identifier in quoted format
                 // The identifier has been validated above, and we use quoted format to prevent injection
                 var sql = $"DROP VIEW IF EXISTS \"Reporting\".\"{normalizedViewName}\"";
-                await dbContext.Database.ExecuteSqlRawAsync(SafeguardSql(sql));
+                await dbContext.Database.ExecuteSqlRawAsync(sql);
             }
             finally
             {
@@ -352,7 +344,7 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
             {
                 // Use ExecuteSqlRaw with properly quoted identifiers - safer than string concatenation
                 var sql = $"GRANT SELECT ON \"Reporting\".\"{normalizedViewName}\" TO \"{role}\"";
-                await dbContext.Database.ExecuteSqlRawAsync(SafeguardSql(sql));
+                await dbContext.Database.ExecuteSqlRawAsync(sql);
             }
             finally
             {
@@ -399,8 +391,16 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
                 // Grant SELECT permission on each view to the role
                 foreach (var viewName in viewNames)
                 {
+                    // SECURITY: Validate each identifier read back from pg_views before it is
+                    // interpolated into SQL - quoted PostgreSQL identifiers can contain characters
+                    // (embedded quotes, semicolons) that would otherwise break out of the quotes below.
+                    if (!IsValidPostgreSqlIdentifier(viewName))
+                    {
+                        throw new ArgumentException($"Invalid view name format: {viewName}", nameof(viewName));
+                    }
+
                     var sql = $"GRANT SELECT ON \"Reporting\".\"{viewName}\" TO \"{role}\"";
-                    await dbContext.Database.ExecuteSqlRawAsync(SafeguardSql(sql));
+                    await dbContext.Database.ExecuteSqlRawAsync(sql);
                 }
             }
             finally
@@ -547,56 +547,11 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
         }
 
         /// <summary>
-        /// Safeguards SQL strings by validating they only contain safe, pre-validated identifiers
-        /// and preventing SQL injection through strict identifier validation.
-        /// </summary>
-        /// <param name="sql">The SQL string to validate - should only contain pre-validated PostgreSQL identifiers</param>
-        /// <returns>The validated SQL string if safe</returns>
-        /// <exception cref="ArgumentException">Thrown if the SQL contains potentially unsafe content</exception>
-        private static string SafeguardSql(string sql)
-        {
-            if (string.IsNullOrWhiteSpace(sql))
-            {
-                throw new ArgumentException("SQL cannot be null or empty", nameof(sql));
-            }
-
-            // This method is specifically for our controlled scenarios where:
-            // 1. All identifiers have been pre-validated using IsValidPostgreSqlIdentifier()
-            // 2. The SQL structure is fixed and known (DROP VIEW, GRANT SELECT)
-            // 3. Only the identifier names are dynamic (view name, role name)
-            
-            // Additional safety check: ensure the SQL only contains expected patterns
-            // for our specific use cases (DROP VIEW and GRANT SELECT statements)
-            if (!IsKnownSafeSqlPattern(sql))
-            {
-                throw new ArgumentException("SQL does not match expected safe patterns", nameof(sql));
-            }
-
-            return sql;
-        }
-
-        /// <summary>
-        /// Validates that the SQL string matches one of our known safe patterns
-        /// </summary>
-        /// <param name="sql">The SQL string to validate</param>
-        /// <returns>True if the SQL matches a known safe pattern</returns>
-        private static bool IsKnownSafeSqlPattern(string sql)
-        {
-            if (string.IsNullOrWhiteSpace(sql))
-                return false;
-
-            // For our specific use cases, we expect either a DROP VIEW or GRANT SELECT statement
-            // The view name and roles have been pre-validated, so we just check the overall structure here
-
-            return true;
-        }
-
-        /// <summary>
         /// Validates that a string is a valid PostgreSQL identifier to prevent SQL injection
         /// </summary>
         /// <param name="identifier">The identifier to validate</param>
         /// <returns>True if the identifier is valid, false otherwise</returns>
-        private static bool IsValidPostgreSqlIdentifier(string identifier)
+        internal static bool IsValidPostgreSqlIdentifier(string identifier)
         {
             if (string.IsNullOrWhiteSpace(identifier))
                 return false;

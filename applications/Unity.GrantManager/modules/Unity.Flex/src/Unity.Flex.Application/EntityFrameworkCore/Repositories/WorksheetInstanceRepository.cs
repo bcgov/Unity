@@ -76,5 +76,52 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
                 && s.WorksheetCorrelationId == formVersionId
                 && s.WorksheetCorrelationProvider == CorrelationConsts.FormVersion);
         }
+
+        public async Task<List<WorksheetInstance>> GetByCorrelationIdsAsync(IEnumerable<Guid> correlationIds, string correlationProvider)
+        {
+            var dbSet = await GetDbSetAsync();
+            var ids = correlationIds.ToList();
+            return await dbSet
+                .Where(wi => ids.Contains(wi.CorrelationId) && wi.CorrelationProvider == correlationProvider)
+                .ToListAsync();
+        }
+
+        public async Task<List<Guid>> GetDistinctWorksheetIdsByCorrelationProviderAsync(string correlationProvider)
+        {
+            var dbSet = await GetDbSetAsync();
+            return await dbSet
+                .Where(wi => wi.CorrelationProvider == correlationProvider)
+                .Select(wi => wi.WorksheetId)
+                .Distinct()
+                .ToListAsync();
+        }
+
+        public async Task<List<Guid>> GetDistinctWorksheetIdsByCorrelationIdsAsync(IEnumerable<Guid> correlationIds, string correlationProvider)
+        {
+            var dbSet = await GetDbSetAsync();
+            var ids = correlationIds.ToList();
+            return await dbSet
+                .Where(wi => ids.Contains(wi.CorrelationId) && wi.CorrelationProvider == correlationProvider)
+                .Select(wi => wi.WorksheetId)
+                .Distinct()
+                .ToListAsync();
+        }
+
+        public async Task<List<WorksheetInstance>> GetPagedListByCorrelationProviderAsync(string correlationProvider, int skipCount, int maxResultCount)
+        {
+            var dbSet = await GetDbSetAsync();
+            return await dbSet
+                .Where(wi => wi.CorrelationProvider == correlationProvider)
+                .OrderByDescending(wi => wi.CreationTime)
+                .Skip(skipCount)
+                .Take(maxResultCount)
+                .ToListAsync();
+        }
+
+        public async Task<int> GetCountByCorrelationProviderAsync(string correlationProvider)
+        {
+            var dbSet = await GetDbSetAsync();
+            return await dbSet.CountAsync(wi => wi.CorrelationProvider == correlationProvider);
+        }
     }
 }

@@ -20,6 +20,7 @@ using Unity.GrantManager.Applications;
 using System.Text.Json;
 using Unity.AI.Permissions;
 using Volo.Abp.Authorization.Permissions;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
 using Volo.Abp.Settings;
 
@@ -35,6 +36,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
         IScoresheetInstanceRepository scoresheetInstanceRepository,
         IApplicationRepository applicationRepository,
         IApplicationFormRepository applicationFormRepository,
+        IRepository<ApplicationScoresheetAnswers, Guid> scoresheetAnswersRepository,
         IFeatureChecker featureChecker,
         IPermissionChecker permissionChecker) : AbpViewComponent
     {
@@ -53,12 +55,15 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
             var tenantManualEnabled = await settingProvider.GetAsync<bool>(AISettings.ManualGenerationEnabled, defaultValue: false);
 
             // Parse AI scoresheet answers if available
+            var storedAiAnswers = await scoresheetAnswersRepository
+                .FindAsync(x => x.ApplicationId == assessment.ApplicationId);
+
             Dictionary<string, JsonElement>? aiAnswers = null;
-            if (!string.IsNullOrEmpty(application.AIScoresheetAnswers))
+            if (!string.IsNullOrEmpty(storedAiAnswers?.Answers))
             {
                 try
                 {
-                    var aiAnswersJson = JsonDocument.Parse(application.AIScoresheetAnswers);
+                    var aiAnswersJson = JsonDocument.Parse(storedAiAnswers.Answers);
                     aiAnswers = [];
                     foreach (var property in aiAnswersJson.RootElement.EnumerateObject())
                     {
@@ -108,7 +113,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget
                 IsAIScoringEnabled = await featureChecker.IsEnabledAsync("Unity.AI.Scoring") &&
                     tenantManualEnabled &&
                     applicationForm.ManuallyInitiateAIAnalysis &&
-                    await permissionChecker.IsGrantedAsync(AIPermissions.Analysis.GenerateScoring),
+                    await permissionChecker.IsGrantedAsync(AIPermissions.ApplicationScoring.Generate),
                 IsAiAssessment = assessment.IsAiAssessment,
             };
 

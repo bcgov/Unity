@@ -12,5 +12,7 @@ namespace Unity.GrantManager.Identity
         public string LastName { get; set; } = string.Empty;
 
         public string UserGuid { get; set; } = string.Empty;
+
+        public string Email { get; set; } = string.Empty;
     }
 }

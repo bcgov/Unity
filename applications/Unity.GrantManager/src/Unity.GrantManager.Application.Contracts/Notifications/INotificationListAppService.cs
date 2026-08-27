@@ -6,5 +6,5 @@ namespace Unity.GrantManager.Notifications;
 
 public interface INotificationListAppService : IApplicationService
 {
-    Task<PagedResultDto<NotificationSummaryDto>> GetListAsync(PagedAndSortedResultRequestDto input);
+    Task<PagedResultDto<NotificationSummaryDto>> GetListAsync(NotificationListInputDto input);
 }

@@ -1,0 +1,149 @@
+name: Cypress E2E (runner)
+
+# Shared job called by cypress-dev/test/uat/prod.yml.
+#
+# Unity Grant Manager Route is IP-allowlisted to the BC Gov network, which
+# GitHub-hosted runners can't reach. This GitHub job launches an OpenShift Job
+# (from the unity-cypress-job Template in ce395f-tools) that runs the existing
+# Unity.AutoUI Cypress suite from inside the cluster, waits for it to finish,
+# and pulls the logs/screenshots back into this Actions run.
+#
+# The Job pulls credentials from the unity-cypress-config Secret in ce395f-tools, 
+# synced from Vault (GH_UGM_CYPRESS_CONFIG) via External Secrets.
+#
+# OpenShift auth reuses the pipeline ServiceAccount (ce395f-tools), which already 
+# holds ClusterRole/edit this covers everything the job needs (templates, 
+# processedtemplates, jobs, pods/log, pods/exec), no additional RBAC required. 
+# 
+# Token is CYPRESS_OPENSHIFT_TOKEN and its cluster is CYPRESS_OPENSHIFT_CLUSTER.
+
+on:
+  workflow_call:
+    inputs:
+      env_name:
+        description: "Cypress environment name: dev | test | uat | prod"
+        required: true
+        type: string
+      cypress_config_key:
+        description: "Key in the unity-cypress-config Secret for this env (e.g. CYPRESS_CONFIG_DEV)"
+        required: true
+        type: string
+      base_url:
+        description: "Optional baseUrl override — use to target a feature branch deployment instead of the default env URL"
+        required: false
+        type: string
+        default: ""
+      git_ref:
+        description: "Branch/tag/SHA of bcgov/Unity to check out — must be the triggering commit, not github.sha (workflow_run events set github.sha to the default branch, not the triggering branch)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  TOOLS_NAMESPACE: ce395f-tools
+  JOB_TIMEOUT_SECONDS: 1200
+
+jobs:
+  cypress:
+    name: Cypress E2E — ${{ inputs.env_name }}
+    runs-on: ubuntu-latest
+    env:
+      OC_CLUSTER: ${{ vars.CYPRESS_OPENSHIFT_CLUSTER }}
+      OC_AUTH_TOKEN: ${{ secrets.CYPRESS_OPENSHIFT_TOKEN }}
+      GH_TOKEN: ${{ secrets.GH_API_TOKEN }}
+
+    steps:
+      - name: Install OpenShift CLI
+        run: |
+          curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/oc/latest/linux/oc.tar.gz
+          tar -xvf oc.tar.gz
+          sudo mv oc /usr/local/bin
+
+      - name: Connect to OpenShift API
+        run: oc login --token=$OC_AUTH_TOKEN --server=$OC_CLUSTER
+
+      - name: Launch Cypress Job
+        id: launch
+        run: |
+          # The unity-cypress-job Template lives in the tenant-gitops-ce395f repo
+          # and is synced into the cluster by ArgoCD — process it by name directly
+          # from ce395f-tools rather than checking out that repo here.
+          JOB_REF=$(oc process unity-cypress-job \
+            -p ENV=${{ inputs.env_name }} \
+            -p CYPRESS_CONFIG_KEY=${{ inputs.cypress_config_key }} \
+            -p GIT_REF="${{ inputs.git_ref }}" \
+            -p GIT_TOKEN=$GH_TOKEN \
+            -p BASE_URL="${{ inputs.base_url }}" \
+            -n $TOOLS_NAMESPACE \
+            | oc create -f - -o name -n $TOOLS_NAMESPACE)
+          echo "Created $JOB_REF"
+          echo "job_ref=$JOB_REF" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for Cypress Job to finish
+        id: wait
+        run: |
+          # Wait for the Job to finish by polling the logs for a sentinel line
+          # the cypress container (see cypress-job-template.yaml in
+          # tenant-gitops-ce395f) prints a "CYPRESS_DONE exit_code=N"
+          # sentinel line when the test run finishes and, on failure,
+          # sleeps for 600s before actually exiting.
+          JOB_REF="${{ steps.launch.outputs.job_ref }}"
+          JOB_NAME="${JOB_REF#job.batch/}"
+          DEADLINE=$(( $(date +%s) + JOB_TIMEOUT_SECONDS ))
+          POD=""
+          EXIT_CODE=""
+
+          while true; do
+            POD=$(oc get pods -n $TOOLS_NAMESPACE -l job-name="$JOB_NAME" -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || true)
+            if [ -n "$POD" ]; then
+              EXIT_CODE=$(oc logs "$POD" -n $TOOLS_NAMESPACE -c cypress 2>/dev/null | grep -o 'CYPRESS_DONE exit_code=[0-9]*' | tail -1 | cut -d= -f2 || true)
+              if [ -n "$EXIT_CODE" ]; then
+                break
+              fi
+            fi
+            if [ "$(date +%s)" -ge "$DEADLINE" ]; then
+              echo "Timed out after ${JOB_TIMEOUT_SECONDS}s waiting for $JOB_REF"
+              break
+            fi
+            sleep 10
+          done
+
+          echo "pod=${POD:-}" >> "$GITHUB_OUTPUT"
+          if [ "${EXIT_CODE:-1}" = "0" ]; then
+            echo "succeeded=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "succeeded=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Show Cypress logs
+        if: always()
+        run: |
+          JOB_REF="${{ steps.launch.outputs.job_ref }}"
+          oc logs "$JOB_REF" -n $TOOLS_NAMESPACE -c cypress --tail=-1 || true
+
+      - name: Collect screenshots on failure
+        if: steps.wait.outputs.succeeded != '1'
+        run: |
+          POD="${{ steps.wait.outputs.pod }}"
+          mkdir -p cypress-screenshots
+          oc cp "$TOOLS_NAMESPACE/$POD:/workspace/applications/Unity.AutoUI/cypress/screenshots" ./cypress-screenshots -c cypress || true
+
+      - name: Upload screenshots on failure
+        if: steps.wait.outputs.succeeded != '1'
+        uses: actions/upload-artifact@v6
+        with:
+          name: cypress-screenshots-${{ inputs.env_name }}-${{ github.run_number }}
+          path: cypress-screenshots
+          if-no-files-found: ignore
+
+      - name: Clean up Cypress Job
+        if: always()
+        run: |
+          JOB_REF="${{ steps.launch.outputs.job_ref }}"
+          oc delete "$JOB_REF" -n $TOOLS_NAMESPACE --ignore-not-found
+
+      - name: Fail workflow if Cypress did not succeed
+        if: steps.wait.outputs.succeeded != '1'
+        run: exit 1

@@ -47,8 +47,8 @@
                         <div class="edit_row_field unity-input-group">
                             @if (!isEditable)
                             {
-                                <label class="form-label">@df.Name</label>
-                                <input type="text" class="form-control" value="@df.Value" disabled />
+                                <label class="form-label" for="@df.Key">@df.Name</label>
+                                <input type="text" id="@df.Key" class="form-control" value="@df.Value" aria-label="@df.Name" disabled />
                             }
                             else if (fieldType == CustomFieldType.Checkbox)
                             {
@@ -97,7 +97,11 @@
                                        class="@fieldType.ApplyCssClass()"
                                        id="@df.Key"
                                        name="@df.Key"
-                                       value="@df.InputValue" />
+                                       value="@df.InputValue"
+                                       min="@(fieldType == CustomFieldType.Numeric ? "-999999999999" : null)"
+                                       max="@(fieldType == CustomFieldType.Numeric ? "999999999999" : null)"
+                                       step="@(fieldType == CustomFieldType.Numeric ? "0.000001" : null)" />
+                                <span class="text-danger field-validation-valid" data-valmsg-for="@df.Key" data-valmsg-replace="true"></span>
                             }
                         </div>
                     }
@@ -142,14 +146,24 @@
                                         }
                                     default:
                                         {
+                                            var isNumericField = field.Type == CustomFieldType.Numeric;
+                                            var rawMinValue = field.Definition?.ConvertDefinition(field.Type)?.GetMinValueOrNull();
+                                            var rawMaxValue = field.Definition?.ConvertDefinition(field.Type)?.GetMaxValueOrNull();
+                                            var numericMin = isNumericField
+                                                ? (long.TryParse(rawMinValue, out var minVal) ? Math.Max(minVal, -999999999999L) : -999999999999L).ToString()
+                                                : rawMinValue;
+                                            var numericMax = isNumericField
+                                                ? (long.TryParse(rawMaxValue, out var maxVal) ? Math.Min(maxVal, 999999999999L) : 999999999999L).ToString()
+                                                : rawMaxValue;
                                             <input type="@field.Type.ConvertInputType()"
                                                    label="@field.Label"
                                                    value="@field.CurrentValue?.ConvertInputValueOrNull(field.Type)"
                                                    class="@field.Type.ApplyCssClass()"
                                                    id="@($"{field.Name}.{field.Name}.{field.Id}")"
                                                    name="@($"{field.Name}.{field.Name}.{field.Id}")"
-                                                   min="@field.Definition?.ConvertDefinition(field.Type)?.GetMinValueOrNull()"
-                                                   max="@field.Definition?.ConvertDefinition(field.Type)?.GetMaxValueOrNull()"
+                                                   min="@numericMin"
+                                                   max="@numericMax"
+                                                   step="@(isNumericField ? "0.000001" : null)"
                                                    minlength="@field.Definition?.ConvertDefinition(field.Type)?.GetMinLengthValueOrNull()"
                                                    maxlength="@field.Definition?.ConvertDefinition(field.Type)?.GetMaxLengthValueOrNull()" />
                                             break;

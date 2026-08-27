@@ -1,11 +1,13 @@
-﻿namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces
+using System.Threading.Tasks;
+
+namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces
 {
 #pragma warning disable S2326
     public interface IQueueConsumerHandler<TMessageConsumer, TQueueMessage> where TMessageConsumer : IQueueConsumer<TQueueMessage> where TQueueMessage : class, IQueueMessage
     {
-        void RegisterQueueConsumer();
+        Task RegisterQueueConsumerAsync();
 
-        void CancelQueueConsumer();
+        Task CancelQueueConsumerAsync();
     }
 #pragma warning restore S2326
 }

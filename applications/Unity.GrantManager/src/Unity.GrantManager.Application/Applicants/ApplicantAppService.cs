@@ -5,23 +5,23 @@ using Microsoft.Extensions.Logging.Abstractions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Text.Json;
+using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Intakes.Mapping;
-using Unity.Payments.Events;
-using Volo.Abp;
 using Unity.GrantManager.Integrations.Orgbook;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Utils;
 using Unity.Payments.Domain.Suppliers;
-using Unity.GrantManager.Permissions;
+using Unity.Payments.Events;
 using Unity.Payments.Integrations.Cas;
 using Unity.Payments.Suppliers;
-using Volo.Abp.DependencyInjection;
+using Volo.Abp;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Authorization;
+using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 
 namespace Unity.GrantManager.Applicants;
@@ -179,7 +179,25 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         }
     }
 
-    [Authorize(UnitySelector.Applicant.Summary.Update)]
+    // Fields owned by the Organization Info zone; everything else belongs to the Applicant Info zone.
+    private static readonly HashSet<string> OrganizationInfoFields = new(StringComparer.OrdinalIgnoreCase)
+    {
+        nameof(UpdateApplicantSummaryDto.Sector),
+        nameof(UpdateApplicantSummaryDto.SubSector),
+        nameof(UpdateApplicantSummaryDto.OrgNumber),
+        nameof(UpdateApplicantSummaryDto.OrgName),
+        nameof(UpdateApplicantSummaryDto.NonRegOrgName),
+        nameof(UpdateApplicantSummaryDto.OrgStatus),
+        nameof(UpdateApplicantSummaryDto.BusinessNumber),
+        nameof(UpdateApplicantSummaryDto.OrganizationType),
+        nameof(UpdateApplicantSummaryDto.ApproxNumberOfEmployees),
+        nameof(UpdateApplicantSummaryDto.SectorSubSectorIndustryDesc),
+        nameof(UpdateApplicantSummaryDto.IndigenousOrgInd),
+        nameof(UpdateApplicantSummaryDto.FiscalDay),
+        nameof(UpdateApplicantSummaryDto.FiscalMonth),
+        nameof(UpdateApplicantSummaryDto.StartedOperatingDate)
+    };
+
     public async Task<Applicant> PartialUpdateApplicantSummaryAsync(Guid applicantId, PartialUpdateDto<UpdateApplicantSummaryDto> input)
     {
         if (applicantId == Guid.Empty)
@@ -191,9 +209,19 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
 
         ArgumentNullException.ThrowIfNull(input.Data);
 
-        var applicant = await applicantRepository.GetAsync(applicantId);
+        // SECURITY NOTE: If user can merge applicants, they can update any field.
+        // Otherwise, check if they have permission to update either the Applicant Info or Organization Info zones.
+        var canMergeApplicant           = await AuthorizationService.IsGrantedAsync(UnitySelector.ApplicantManagement.Applicant.Merge);
+        var canUpdateApplicantInfo      = canMergeApplicant || await AuthorizationService.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.Update);
+        var canUpdateOrganizationInfo   = canMergeApplicant || await AuthorizationService.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.OrganizationInfo.Update);
+        var canUpdateApplicantRedStop   = canMergeApplicant || await AuthorizationService.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.Update_RedStop);
 
-        ObjectMapper.Map(input.Data, applicant);
+        if (!canUpdateApplicantInfo && !canUpdateOrganizationInfo)
+        {
+            throw new AbpAuthorizationException("You do not have permission to update applicant information.");
+        }
+
+        var applicant = await applicantRepository.GetAsync(applicantId);
 
         List<string> modifiedSummaryFields = input.ModifiedFields?
             .Where(field => !string.IsNullOrWhiteSpace(field))
@@ -208,17 +236,54 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                 return segments[^1];
             })
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList() ?? [];
+            .ToList()
+            ?? [];
 
-        if (modifiedSummaryFields.Contains(nameof(UpdateApplicantSummaryDto.RedStop), StringComparer.OrdinalIgnoreCase)
-            && await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.Applicants.EditRedStop))
+        if (modifiedSummaryFields.Count == 0)
         {
-            applicant.RedStop = input.Data.RedStop;
+            modifiedSummaryFields = typeof(UpdateApplicantSummaryDto)
+                .GetProperties()
+                .Select(property => property.Name)
+                .ToList();
         }
 
-        if (modifiedSummaryFields.Contains(nameof(UpdateApplicantSummaryDto.IndigenousOrgInd), StringComparer.OrdinalIgnoreCase))
+        // Helper function to determine if a field is authorized for update based on the user's permissions
+        // 1. The function checks if the field is "RedStop" and if the user has permission to update it.
+        // 2. If not, it checks if the field belongs to the Organization Info zone and if the user has permission to update it.
+        // 3. Otherwise, it assumes the field belongs to the Applicant Info zone and checks for that permission.
+        bool IsFieldAuthorized(string field)
         {
-            applicant.IndigenousOrgInd = input.Data.IndigenousOrgInd switch
+            if (field.Equals(nameof(UpdateApplicantSummaryDto.RedStop), StringComparison.OrdinalIgnoreCase))
+            {
+                return canUpdateApplicantRedStop;
+            }
+
+            return OrganizationInfoFields.Contains(field) ? canUpdateOrganizationInfo : canUpdateApplicantInfo;
+        }
+
+        modifiedSummaryFields = modifiedSummaryFields
+            .Where(IsFieldAuthorized)
+            .ToList();
+
+        if (modifiedSummaryFields.Count == 0)
+        {
+            return applicant;
+        }
+
+        var modifiedSummary = CreateSparseDto(input.Data, modifiedSummaryFields);
+
+        ObjectMapper.Map(modifiedSummary, applicant);
+
+        if (modifiedSummaryFields.Contains(nameof(UpdateApplicantSummaryDto.RedStop), StringComparer.OrdinalIgnoreCase)
+            && canUpdateApplicantRedStop)
+        {
+            applicant.RedStop = modifiedSummary.RedStop;
+        }
+
+        if (modifiedSummaryFields.Contains(nameof(UpdateApplicantSummaryDto.IndigenousOrgInd), StringComparer.OrdinalIgnoreCase)
+            && canUpdateOrganizationInfo)
+        {
+            applicant.IndigenousOrgInd = modifiedSummary.IndigenousOrgInd switch
             {
                 true => "Yes",
                 false => "No",
@@ -226,15 +291,34 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             };
         }
 
-        if (modifiedSummaryFields.Count > 0)
-        {
-            PropertyHelper.ApplyNullValuesFromDto(input.Data, applicant, modifiedSummaryFields);
-        }
+        PropertyHelper.ApplyNullValuesFromDto(modifiedSummary, applicant, modifiedSummaryFields);
 
         return await applicantRepository.UpdateAsync(applicant);
     }
 
-    [Authorize(GrantApplicationPermissions.Applicants.Edit)]
+    private static TDto CreateSparseDto<TDto>(TDto source, IEnumerable<string> modifiedFields)
+        where TDto : class, new()
+    {
+        var sparseDto = new TDto();
+        var properties = typeof(TDto)
+            .GetProperties()
+            .Where(property => property.CanRead && property.CanWrite)
+            .ToDictionary(property => property.Name, property => property, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var fieldName in modifiedFields.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            if (!properties.TryGetValue(fieldName, out var property))
+            {
+                continue;
+            }
+
+            property.SetValue(sparseDto, property.GetValue(source));
+        }
+
+        return sparseDto;
+    }
+
+    [Authorize(UnitySelector.ApplicantManagement.Applicant.Update)]
     public async Task UpdateApplicantStatusAsync(Guid applicantId, string status)
     {
         if (status != "Active" && status != "Inactive")
@@ -247,6 +331,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         await applicantRepository.UpdateAsync(applicant);
     }
 
+    [Authorize(UnitySelector.ApplicantManagement.Addresses.Update)]
     public async Task UpdateApplicantContactAddressesAsync(Guid applicantId, UpdateApplicantContactAddressesDto input)
     {
         if (applicantId == Guid.Empty)
@@ -263,20 +348,19 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             return;
         }
 
-        if (input.PrimaryContact != null &&
-            await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Contact.Update))
+        if (input.PrimaryContact != null)
         {
+            // NOTE: This updates primary contact information for the applicant
+            // which is typically guarded by ApplicantManagement > Contacts > Update
             await UpdatePrimaryContactAsync(applicantId, input.PrimaryContact);
         }
 
-        if (input.PrimaryPhysicalAddress != null &&
-            await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Location.Update))
+        if (input.PrimaryPhysicalAddress != null)
         {
             await UpdatePrimaryAddressAsync(applicantId, input.PrimaryPhysicalAddress, GrantApplications.AddressType.PhysicalAddress);
         }
 
-        if (input.PrimaryMailingAddress != null &&
-            await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Location.Update))
+        if (input.PrimaryMailingAddress != null)
         {
             await UpdatePrimaryAddressAsync(applicantId, input.PrimaryMailingAddress, GrantApplications.AddressType.MailingAddress);
         }
@@ -585,6 +669,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     }
 
     [RemoteService(true)]
+    [Authorize]
     public async Task UpdateApplicantIdAsync(UpdateApplicantIdDto dto)
     {
         // Validate input
@@ -648,10 +733,24 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         }
     }
 
+    private async Task AuthorizeApplicantMerge()
+    {
+        if (!await AuthorizationService.IsGrantedAnyAsync(
+            UnitySelector.ApplicantManagement.Applicant.Merge,
+            UnitySelector.Application.Summary.Update))
+        {
+            throw new AbpAuthorizationException(code: AbpAuthorizationErrorCodes.GivenPolicyHasNotGranted);
+        }  
+    }
+
 
     [RemoteService(true)]
+    [Authorize]
     public async Task TransferApplicantApplicationsAsync(TransferApplicantApplicationsDto dto)
     {
+        // Used by both Applicant List Merge and Applicant Info Merge
+        await AuthorizeApplicantMerge();
+
         var principal = await applicantRepository.GetAsync(dto.PrincipalApplicantId);
         var nonPrincipal = await applicantRepository.GetAsync(dto.NonPrincipalApplicantId);
 
@@ -673,8 +772,12 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     }
 
     [RemoteService(true)]
+    [Authorize]
     public async Task SetDuplicatedAsync(SetApplicantDuplicateDto dto)
     {
+        // Used by both Applicant List Merge and Applicant Info Merge
+        await AuthorizeApplicantMerge();
+
         // Set principal as not duplicated
         var principal = await applicantRepository.GetAsync(dto.PrincipalApplicantId);
         var nonPrincipal = await applicantRepository.GetAsync(dto.NonPrincipalApplicantId);
@@ -700,14 +803,14 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     }
 
     [RemoteService(true)]
-    [Authorize(GrantApplicationPermissions.Applicants.Delete)]
+    [Authorize(UnitySelector.ApplicantManagement.Applicant.Default)]
     public async Task<bool> HasSubmissionsAsync(Guid id)
     {
         return await applicationRepository.HasApplicationsByApplicantIdAsync(id);
     }
 
     [RemoteService(true)]
-    [Authorize(GrantApplicationPermissions.Applicants.Delete)]
+    [Authorize(UnitySelector.ApplicantManagement.Applicant.Delete)]
     public async Task DeleteApplicantAsync(Guid id)
     {
         if (await applicationRepository.HasApplicationsByApplicantIdAsync(id))
@@ -768,6 +871,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     }
 
     [RemoteService(true)]
+    [Authorize(UnitySelector.ApplicantManagement.Applicant.Default)]
     public async Task<PagedResultDto<ApplicantListDto>> GetListAsync(ApplicantListRequestDto input)
     {
         var listRecords = await applicantRepository.GetApplicantListRecordsAsync(input.RequestedFields);
@@ -798,8 +902,9 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                     : null,
                 IsDuplicated = applicant.IsDuplicated,
                 CreationTime = applicant.CreationTime,
-                LastModificationTime = applicant.LastModificationTime
-            }).ToList();
+                LastModificationTime = applicant.LastModificationTime,
+                FiscalYearEnd = applicant.FiscalYearEnd,
+        }).ToList();
         // Use items.Count while client side datatables are used. When going to server
         // side actually query the correct amount with paging enabled.
         return new PagedResultDto<ApplicantListDto>(items.Count, items);

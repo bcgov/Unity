@@ -1,10 +1,14 @@
+using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.Modules.Shared;
+using Volo.Abp.Authorization;
 
 namespace Unity.GrantManager.ApplicantProfile;
 
+[Authorize(UnitySelector.ApplicantManagement.History.Default)]
 public class ApplicantHistoryAppService(
     IFundingHistoryRepository fundingHistoryRepository,
     IIssueTrackingRepository issueTrackingRepository,
@@ -24,6 +28,7 @@ public class ApplicantHistoryAppService(
         return ObjectMapper.Map<FundingHistory, FundingHistoryDto>(entity);
     }
 
+    [Authorize(UnitySelector.ApplicantManagement.History.FundingHistory.Update)]
     public async Task<FundingHistoryDto> CreateFundingHistoryAsync(CreateUpdateFundingHistoryDto input)
     {
         var entity = ObjectMapper.Map<CreateUpdateFundingHistoryDto, FundingHistory>(input);
@@ -31,6 +36,7 @@ public class ApplicantHistoryAppService(
         return ObjectMapper.Map<FundingHistory, FundingHistoryDto>(entity);
     }
 
+    [Authorize(UnitySelector.ApplicantManagement.History.FundingHistory.Update)]
     public async Task<FundingHistoryDto> UpdateFundingHistoryAsync(Guid id, CreateUpdateFundingHistoryDto input)
     {
         var entity = await fundingHistoryRepository.GetAsync(id);
@@ -39,6 +45,7 @@ public class ApplicantHistoryAppService(
         return ObjectMapper.Map<FundingHistory, FundingHistoryDto>(entity);
     }
 
+    [Authorize(UnitySelector.ApplicantManagement.History.FundingHistory.Update)]
     public async Task DeleteFundingHistoryAsync(Guid id)
     {
         await fundingHistoryRepository.DeleteAsync(id, autoSave: true);
@@ -56,6 +63,7 @@ public class ApplicantHistoryAppService(
         return ObjectMapper.Map<IssueTracking, IssueTrackingDto>(entity);
     }
 
+    [Authorize(UnitySelector.ApplicantManagement.History.IssueHistory.Update)]
     public async Task<IssueTrackingDto> CreateIssueTrackingAsync(CreateUpdateIssueTrackingDto input)
     {
         var entity = ObjectMapper.Map<CreateUpdateIssueTrackingDto, IssueTracking>(input);
@@ -63,6 +71,7 @@ public class ApplicantHistoryAppService(
         return ObjectMapper.Map<IssueTracking, IssueTrackingDto>(entity);
     }
 
+    [Authorize(UnitySelector.ApplicantManagement.History.IssueHistory.Update)]
     public async Task<IssueTrackingDto> UpdateIssueTrackingAsync(Guid id, CreateUpdateIssueTrackingDto input)
     {
         var entity = await issueTrackingRepository.GetAsync(id);
@@ -71,6 +80,7 @@ public class ApplicantHistoryAppService(
         return ObjectMapper.Map<IssueTracking, IssueTrackingDto>(entity);
     }
 
+    [Authorize(UnitySelector.ApplicantManagement.History.IssueHistory.Update)]
     public async Task DeleteIssueTrackingAsync(Guid id)
     {
         await issueTrackingRepository.DeleteAsync(id, autoSave: true);
@@ -88,6 +98,7 @@ public class ApplicantHistoryAppService(
         return ObjectMapper.Map<AuditHistory, AuditHistoryDto>(entity);
     }
 
+    [Authorize(UnitySelector.ApplicantManagement.History.AuditHistory.Update)]
     public async Task<AuditHistoryDto> CreateAuditHistoryAsync(CreateUpdateAuditHistoryDto input)
     {
         var entity = ObjectMapper.Map<CreateUpdateAuditHistoryDto, AuditHistory>(input);
@@ -95,6 +106,7 @@ public class ApplicantHistoryAppService(
         return ObjectMapper.Map<AuditHistory, AuditHistoryDto>(entity);
     }
 
+    [Authorize(UnitySelector.ApplicantManagement.History.AuditHistory.Update)]
     public async Task<AuditHistoryDto> UpdateAuditHistoryAsync(Guid id, CreateUpdateAuditHistoryDto input)
     {
         var entity = await auditHistoryRepository.GetAsync(id);
@@ -103,6 +115,7 @@ public class ApplicantHistoryAppService(
         return ObjectMapper.Map<AuditHistory, AuditHistoryDto>(entity);
     }
 
+    [Authorize(UnitySelector.ApplicantManagement.History.AuditHistory.Update)]
     public async Task DeleteAuditHistoryAsync(Guid id)
     {
         await auditHistoryRepository.DeleteAsync(id, autoSave: true);
@@ -120,6 +133,7 @@ public class ApplicantHistoryAppService(
         return ObjectMapper.Map<ReportsHistory, ReportsHistoryDto>(entity);
     }
 
+    [Authorize(UnitySelector.ApplicantManagement.History.ReportsHistory.Update)]
     public async Task<ReportsHistoryDto> CreateReportsHistoryAsync(CreateUpdateReportsHistoryDto input)
     {
         var entity = ObjectMapper.Map<CreateUpdateReportsHistoryDto, ReportsHistory>(input);
@@ -127,6 +141,7 @@ public class ApplicantHistoryAppService(
         return ObjectMapper.Map<ReportsHistory, ReportsHistoryDto>(entity);
     }
 
+    [Authorize(UnitySelector.ApplicantManagement.History.ReportsHistory.Update)]
     public async Task<ReportsHistoryDto> UpdateReportsHistoryAsync(Guid id, CreateUpdateReportsHistoryDto input)
     {
         var entity = await reportsHistoryRepository.GetAsync(id);
@@ -135,6 +150,7 @@ public class ApplicantHistoryAppService(
         return ObjectMapper.Map<ReportsHistory, ReportsHistoryDto>(entity);
     }
 
+    [Authorize(UnitySelector.ApplicantManagement.History.ReportsHistory.Update)]
     public async Task DeleteReportsHistoryAsync(Guid id)
     {
         await reportsHistoryRepository.DeleteAsync(id, autoSave: true);
@@ -142,11 +158,52 @@ public class ApplicantHistoryAppService(
 
     public async Task SaveNotesAsync(Guid applicantId, SaveApplicantHistoryNotesDto input)
     {
+        // Check if the user has permission to update any of the applicant history notes
+        if (!await AuthorizationService.IsGrantedAnyAsync(
+            UnitySelector.ApplicantManagement.History.FundingHistory.Update,
+            UnitySelector.ApplicantManagement.History.AuditHistory.Update,
+            UnitySelector.ApplicantManagement.History.IssueHistory.Update,
+            UnitySelector.ApplicantManagement.History.ReportsHistory.Update
+        ))
+        {
+            throw new AbpAuthorizationException("You do not have permission to update any applicant history notes.");
+        }
+
+        var modifiedFields = input.ModifiedFields.Count > 0
+            ? new HashSet<string>(input.ModifiedFields, StringComparer.OrdinalIgnoreCase)
+            : new HashSet<string>([
+                nameof(SaveApplicantHistoryNotesDto.FundingHistoryComments),
+                nameof(SaveApplicantHistoryNotesDto.IssueTrackingComments),
+                nameof(SaveApplicantHistoryNotesDto.AuditComments),
+                nameof(SaveApplicantHistoryNotesDto.ReportsComments)
+            ], StringComparer.OrdinalIgnoreCase);
+
         var applicant = await applicantRepository.GetAsync(applicantId);
-        applicant.FundingHistoryComments = input.FundingHistoryComments;
-        applicant.IssueTrackingComments = input.IssueTrackingComments;
-        applicant.AuditComments = input.AuditComments;
-        applicant.ReportsComments = input.ReportsComments;
+
+        if (modifiedFields.Contains(nameof(SaveApplicantHistoryNotesDto.FundingHistoryComments))
+            && await AuthorizationService.IsGrantedAsync(UnitySelector.ApplicantManagement.History.FundingHistory.Update))
+        {
+            applicant.FundingHistoryComments = input.FundingHistoryComments;
+        }
+
+        if (modifiedFields.Contains(nameof(SaveApplicantHistoryNotesDto.IssueTrackingComments))
+            && await AuthorizationService.IsGrantedAsync(UnitySelector.ApplicantManagement.History.IssueHistory.Update))
+        {
+            applicant.IssueTrackingComments = input.IssueTrackingComments;
+        }
+
+        if (modifiedFields.Contains(nameof(SaveApplicantHistoryNotesDto.AuditComments))
+            && await AuthorizationService.IsGrantedAsync(UnitySelector.ApplicantManagement.History.AuditHistory.Update))
+        {
+            applicant.AuditComments = input.AuditComments;
+        }
+
+        if (modifiedFields.Contains(nameof(SaveApplicantHistoryNotesDto.ReportsComments))
+            && await AuthorizationService.IsGrantedAsync(UnitySelector.ApplicantManagement.History.ReportsHistory.Update))
+        {
+            applicant.ReportsComments = input.ReportsComments;
+        }
+
         await applicantRepository.UpdateAsync(applicant, autoSave: true);
     }
 }

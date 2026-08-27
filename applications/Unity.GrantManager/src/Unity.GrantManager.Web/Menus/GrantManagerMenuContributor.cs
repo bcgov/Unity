@@ -2,8 +2,10 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Localization;
 using Unity.GrantManager.Permissions;
 using Unity.Identity.Web.Navigation;
+using Unity.Modules.Shared;
+using Unity.Modules.Shared.Navigation;
 using Unity.Modules.Shared.Permissions;
-using Unity.TenantManagement;
+using Unity.Modules.Shared.Specializations;
 using Unity.TenantManagement.Web.Navigation;
 using Volo.Abp.Identity;
 using Volo.Abp.UI.Navigation;
@@ -27,7 +29,18 @@ public class GrantManagerMenuContributor : IMenuContributor
     {
         var l = context.GetLocalizer<GrantManagerResource>();
 
-        context.Menu.AddItem(
+        await context.AddItemAsync(
+            new ApplicationMenuItem(
+                TenantManagementMenuNames.Onboarding,
+                l["Menu:Onboarding"],
+                "~/TenantManagement/Onboarding",
+                icon: "fl fl-other-user",
+                order: 1
+            ).OnlyWhenSpecializations(SpecializationConsts.Onboarding)
+            .OnlyWhenInRole(IdentityConsts.ITOperationsRoleName)
+        );
+
+        await context.AddItemAsync(
             new ApplicationMenuItem(
                 GrantManagerMenus.Applications,
                 l["Menu:Applications"],
@@ -35,32 +48,32 @@ public class GrantManagerMenuContributor : IMenuContributor
                 icon: "fl fl-other-user",
                 order: 1,
                 requiredPermissionName: GrantManagerPermissions.Default
-            )
+            ).ExcludeWhenSpecializations(SpecializationConsts.Onboarding)
         );
 
-        context.Menu.AddItem(
+        await context.AddItemAsync(
             new ApplicationMenuItem(
                 GrantManagerMenus.Applicants,
                 l["Menu:Applicants"],
                 "~/GrantApplicants",
                 icon: "fl fl-other-user",
                 order: 2,
-                requiredPermissionName: GrantApplicationPermissions.Applicants.ViewList
+                requiredPermissionName: UnitySelector.ApplicantManagement.Applicant.Default
+            ).ExcludeWhenSpecializations(SpecializationConsts.Onboarding)
+        );
+
+        await context.AddItemAsync(
+            new ApplicationMenuItem(
+                UnityIdentityMenuNames.Roles,
+                l["Menu:Roles"],
+                "~/Identity/Roles",
+                icon: "fl fl-settings",
+                order: 3,
+                requiredPermissionName: IdentityPermissions.Roles.Default
             )
         );
 
-        context.Menu.AddItem(
-               new ApplicationMenuItem(
-                   UnityIdentityMenuNames.Roles,
-                   l["Menu:Roles"],
-                   "~/Identity/Roles",
-                   icon: "fl fl-settings",
-                   order: 3,
-                   requiredPermissionName: IdentityPermissions.Roles.Default
-               )
-           );
-
-        context.Menu.AddItem(
+        await context.AddItemAsync(
             new ApplicationMenuItem(
                 UnityIdentityMenuNames.Users,
                 l["Menu:Users"],
@@ -71,7 +84,7 @@ public class GrantManagerMenuContributor : IMenuContributor
             )
         );
 
-        context.Menu.AddItem(
+        await context.AddItemAsync(
             new ApplicationMenuItem(
                 GrantManagerMenus.Intakes,
                 l["Menu:Intakes"],
@@ -82,7 +95,7 @@ public class GrantManagerMenuContributor : IMenuContributor
             )
         );
 
-        context.Menu.AddItem(
+        await context.AddItemAsync(
             new ApplicationMenuItem(
                 GrantManagerMenus.ApplicationForms,
                 l["Menu:ApplicationForms"],
@@ -93,7 +106,7 @@ public class GrantManagerMenuContributor : IMenuContributor
             )
         );
 
-        context.Menu.AddItem(
+        await context.AddItemAsync(
             new ApplicationMenuItem(
                 GrantManagerMenus.Dashboard,
                 l["Menu:Dashboard"],
@@ -101,41 +114,44 @@ public class GrantManagerMenuContributor : IMenuContributor
                 icon: "fl fl-view-dashboard",
                 order: 7,
                 requiredPermissionName: GrantApplicationPermissions.Dashboard.Default
-            )
+            ).ExcludeWhenSpecializations(SpecializationConsts.Onboarding)
         );
-        // Displayed in the Grant Manager - Used at Tenant Level if the user in the IT Operations role
-        context.Menu.AddItem(
+
+        // Displayed in the Grant Manager - Used at Tenant Level for ITAdmin/ITOperations users
+        await context.AddItemAsync(
             new ApplicationMenuItem(
                 GrantManagerMenus.EndpointManagement,
                 displayName: "Endpoints",
-                "~/EndpointManagement/Endpoints",
-                requiredPermissionName: IdentityConsts.ITOperationsPermissionName
-            )
+                "~/EndpointManagement/Endpoints"
+            ).ExcludeWhenSpecializations(SpecializationConsts.Onboarding)
+            .OnlyWhenInRole(IdentityConsts.ITAdminRoleName, IdentityConsts.ITOperationsRoleName)
         );
 
         // ********************
-        // Admin - Tenant Management 
-        context.Menu.AddItem(
-          new ApplicationMenuItem(
-              TenantManagementMenuNames.Tenants,
-              l["Menu:TenantManagement"],
-              "~/TenantManagement/Tenants",
-              icon: "fl fl-view-dashboard",
-              order: 8,
-              requiredPermissionName: TenantManagementPermissions.Tenants.Default
-          )
+        // Admin - Tenant Management
+        await context.AddItemAsync(
+            new ApplicationMenuItem(
+                TenantManagementMenuNames.Tenants,
+                l["Menu:TenantManagement"],
+                "~/TenantManagement/Tenants",
+                icon: "fl fl-view-dashboard",
+                order: 8
+            ).ExcludeWhenSpecializations(SpecializationConsts.Onboarding)
+            .OnlyWhenInRole(IdentityConsts.ITAdminRoleName, IdentityConsts.ITOperationsRoleName)
         );
 
-        // Displayed on the Tenant Managment area if the user has the ITAdministrator Role
-        context.Menu.AddItem(
+        // Tenants list for ITOperations users on the Onboarding tenant
+        await context.AddItemAsync(
             new ApplicationMenuItem(
-                GrantManagerMenus.EndpointManagement,
-                displayName: "Endpoints",
-                "~/EndpointManagement/Endpoints",
-                requiredPermissionName: TenantManagementPermissions.Tenants.Default
-            )
+                TenantManagementMenuNames.Tenants,
+                l["Menu:TenantManagement"],
+                "~/TenantManagement/Tenants",
+                icon: "fl fl-view-dashboard",
+                order: 8
+            ).OnlyWhenSpecializations(SpecializationConsts.Onboarding)
+            .OnlyWhenInRole(IdentityConsts.ITOperationsRoleName)
         );
-    
+
         // End Admin ********************
 #pragma warning disable S125 // Sections of code should not be commented out
         /* - will complete later after fixing ui sub menu issue */

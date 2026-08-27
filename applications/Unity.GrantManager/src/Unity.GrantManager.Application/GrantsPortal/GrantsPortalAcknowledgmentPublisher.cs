@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -21,7 +22,7 @@ public class GrantsPortalAcknowledgmentPublisher(
         NullValueHandling = NullValueHandling.Ignore
     };
 
-    public void Publish(IModel channel, string originalMessageId, string correlationId, string status, string details)
+    public async Task PublishAsync(IChannel channel, string originalMessageId, string correlationId, string status, string details)
     {
         var ack = new MessageAcknowledgment
         {
@@ -37,18 +38,21 @@ public class GrantsPortalAcknowledgmentPublisher(
         var json = JsonConvert.SerializeObject(ack, s_jsonSettings);
         var body = Encoding.UTF8.GetBytes(json);
 
-        var properties = channel.CreateBasicProperties();
-        properties.Type = "MessageAcknowledgment";
-        properties.ContentType = "application/json";
-        properties.ContentEncoding = "utf-8";
-        properties.Persistent = true;
-        properties.MessageId = ack.MessageId;
-        properties.CorrelationId = correlationId;
-        properties.Timestamp = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+        var properties = new BasicProperties
+        {
+            Type = "MessageAcknowledgment",
+            ContentType = "application/json",
+            ContentEncoding = "utf-8",
+            Persistent = true,
+            MessageId = ack.MessageId,
+            CorrelationId = correlationId,
+            Timestamp = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+        };
 
-        channel.BasicPublish(
+        await channel.BasicPublishAsync(
             exchange: _options.Exchange,
             routingKey: _options.AckRoutingKey,
+            mandatory: false,
             basicProperties: properties,
             body: body);
 

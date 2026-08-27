@@ -84,6 +84,8 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public string? SubStatus { get; set; }
 
+    public bool ExternalStatusVisibility { get; set; } = false;
+
     public string? DeclineRational { get; set; }
 
     public string? Notes { get; set; }
@@ -142,8 +144,7 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public string? AIAnalysis { get; set; }
 
-    [Column(TypeName = "jsonb")]
-    public string? AIScoresheetAnswers { get; set; }
+    public bool EligibleForRenewal { get; set; }
 
     public bool IsInFinalDecisionState()
     {

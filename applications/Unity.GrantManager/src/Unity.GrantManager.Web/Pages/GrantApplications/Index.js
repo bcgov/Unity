@@ -9,7 +9,7 @@ $(function () {
     const l = abp.localization.getResource('GrantManager');
     const defaultQuickDateRange = 'last6months';
     const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    const canViewApplicants = abp.auth.isGranted('GrantApplicationManagement.Applicants.ViewList');
+    const canViewApplicants = abp.auth.isGranted('Unity.GrantManager.ApplicantManagement.Applicant');
     const dtTextRenderer = $.fn.dataTable.render.text();
 
     let dt = $('#GrantApplicationsTable');
@@ -462,7 +462,9 @@ $(function () {
                     dtApi.ajax.reload(null, false);
                 }
                 initialLoad = false; // Reset flag after use
-            }
+            },
+            enableContextMenu: true,
+            contextMenuActionsSelector: '[data-selector="applications-table-actions"]'
         });
 
         dataTable.on('select', function (e, dt, type, indexes) {
@@ -518,8 +520,16 @@ $(function () {
     });
 
     //For savedStates
-    $('.grp-savedStates').text('Save View');
+    // Initialize button styling
     $('.grp-savedStates').closest('.btn-group').addClass('cstm-save-view');
+
+    // Update button text based to Save Views
+    function updateSavedStatesButtonText() {
+        $('.grp-savedStates').text('Save View');
+    }
+
+    dataTable.on('stateRestore-change', updateSavedStatesButtonText);
+    updateSavedStatesButtonText();
 
     // Helper function to restore custom filters when loading table views.
     function restoreCustomFilters(filters) {
@@ -567,6 +577,9 @@ $(function () {
             getTotalProjectBudgetColumn(columnIndex++),
             getAssigneesColumn(columnIndex++),
             getStatusColumn(columnIndex++),
+            getExternalStatusVisibilityColumn(columnIndex++),
+            getExternalStatusColumn(columnIndex++),
+            getPublishedStatusColumn(columnIndex++),
             getRequestedAmountColumn(columnIndex++),
             getApprovedAmountColumn(columnIndex++),
             getEconomicRegionColumn(columnIndex++),
@@ -599,6 +612,7 @@ $(function () {
             getOrganizationTypeColumn(columnIndex++),
             getOrganizationNameColumn(columnIndex++),
             getBusinessNumberColumn(columnIndex++),
+            getApproxNumberOfEmployeesColumn(columnIndex++),
             getDueDiligenceStatusColumn(columnIndex++),
             getDeclineRationaleColumn(columnIndex++),
             getContactFullNameColumn(columnIndex++),
@@ -783,6 +797,47 @@ $(function () {
             name: 'status',
             className: 'data-table-header',
             index: columnIndex
+        }
+    }
+
+    function getExternalStatusVisibilityColumn(columnIndex) {
+        return {
+            title: l('ExternalStatusVisibility'),
+            data: 'externalStatusVisibility',
+            name: 'externalStatusVisibility',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ? 'Published' : 'Unpublished';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getExternalStatusColumn(columnIndex) {
+        return {
+            title: l('ExternalStatus'),
+            data: 'externalStatus',
+            name: 'externalStatus',
+            className: 'data-table-header',
+            index: columnIndex,
+            render: function (data, type) {
+                const value = data ?? '';
+                return type === 'display' ? dtTextRenderer.display(value) : value;
+            }
+        }
+    }
+
+    function getPublishedStatusColumn(columnIndex) {
+        return {
+            title: l('PublishedStatus'),
+            data: 'publishedStatus',
+            name: 'publishedStatus',
+            className: 'data-table-header',
+            index: columnIndex,
+            render: function (data, type) {
+                const value = data ?? '';
+                return type === 'display' ? dtTextRenderer.display(value) : value;
+            }
         }
     }
 
@@ -1246,6 +1301,19 @@ $(function () {
             title: l('Summary:Application.BusinessNumber'),
             name: 'businessNumber',
             data: 'applicant.businessNumber',
+            className: 'data-table-header',
+            render: function (data) {
+                return data ?? '';
+            },
+            index: columnIndex
+        }
+    }
+
+    function getApproxNumberOfEmployeesColumn(columnIndex) {
+        return {
+            title: l('Summary:Application.ApproxNumberOfEmployees'),
+            name: 'approxNumberOfEmployees',
+            data: 'applicant.approxNumberOfEmployees',
             className: 'data-table-header',
             render: function (data) {
                 return data ?? '';

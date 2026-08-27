@@ -331,9 +331,11 @@ Cypress.Commands.add(
       }
 
       if (applications.length === 0) {
-        throw new Error(
-          "No applications found matching the specified criteria",
-        );
+        Cypress.log({
+          name: "fetch",
+          message: "⚠️ No applications found matching the specified criteria",
+        });
+        return "";
       }
 
       // Sort applications (default: by submissionDate descending for latest first)
@@ -385,4 +387,133 @@ Cypress.Commands.add(
  */
 Cypress.Commands.add("fetchAllSubmissions", () => {
   return fetchGrantApplications();
+});
+
+// ============ CHEFS Submission Seeding ============
+
+interface ChefsSeedEnvironment {
+  baseURL: string;
+  formId: string;
+  versionId: string;
+}
+
+interface ChefsSeedApiConfig {
+  environments: Record<string, ChefsSeedEnvironment>;
+  headers: Record<string, string>;
+}
+
+interface ChefsSeedSubmissionPayload {
+  draft?: boolean;
+  submission: {
+    state: string;
+    metadata: {
+      origin: string;
+      referrer: string;
+    };
+    data: Record<string, unknown>;
+  };
+}
+
+/**
+ * Seeds exactly one submission in CHEFS via its form-level Basic Auth API
+ * key (formId:apiKey) — a single direct POST, no browser/IDIR login
+ * required — and writes the confirmation ID to
+ * cypress/scripts/last-submission-id.json.
+ *
+ * This is the same auth approach used by cypress- seeder/support/apiCalls.ts,
+ * applied here so ApprovalFlow.cy.ts (or any other spec) can call it
+ * directly as a fallback when no existing submission matches its search
+ * criteria, without needing a separate seed step — and without the
+ * IDIR/MFA-picker flakiness a UI-driven login carries.
+ *
+ * Requires a `chefsApiKey` value for the current environment, set in
+ * cypress/config/{env}.json (gitignored) — the form's API key from CHEFS
+ * form management settings.
+ *
+ * @returns Chainable containing the confirmation ID of the created submission
+ */
+Cypress.Commands.add("seedApprovalFlowSubmission", () => {
+  const envKey = (
+    Cypress.env("CHEFS_ENV") ||
+    Cypress.env("environment") ||
+    "test"
+  ).toLowerCase();
+
+  if (envKey === "prod") {
+    throw new Error(
+      "seedApprovalFlowSubmission() is disabled for PROD — seeding real submissions in production is not supported.",
+    );
+  }
+
+  const apiKey = Cypress.env("chefsApiKey") as string | undefined;
+
+  expect(
+    apiKey,
+    `Missing chefsApiKey for '${envKey}' — set it in cypress/config/${envKey}.json`,
+  ).to.exist;
+
+  return cy
+    .readFile<ChefsSeedApiConfig>("cypress/scripts/chefs-api-config.json")
+    .then((apiConfig) => {
+      const environment = apiConfig.environments[envKey];
+
+      expect(
+        environment,
+        `Missing CHEFS environment configuration for '${envKey}'`,
+      ).to.exist;
+
+      cy.log(`🌱 Seeding submission via CHEFS API key — environment: ${envKey}`);
+
+      return cy
+        .readFile<ChefsSeedSubmissionPayload>(
+          "cypress/scripts/chefs-submission-payload.json",
+        )
+        .then((submissionPayload) => {
+          submissionPayload.submission.metadata.origin = environment.baseURL;
+          submissionPayload.submission.metadata.referrer = `${environment.baseURL}/app/form/submit?f=${environment.formId}`;
+
+          const basicCredentials = btoa(`${environment.formId}:${apiKey}`);
+          const submissionUrl = `${environment.baseURL}/app/api/v1/forms/${environment.formId}/versions/${environment.versionId}/submissions`;
+
+          return cy
+            .request({
+              method: "POST",
+              url: submissionUrl,
+              headers: {
+                ...apiConfig.headers,
+                Authorization: `Basic ${basicCredentials}`,
+              },
+              body: {
+                ...submissionPayload,
+                createdBy: `${Cypress.env("test1username")}@idir`,
+                updatedBy: `${Cypress.env("test1username")}@idir`,
+              },
+              failOnStatusCode: false,
+            })
+            .then((response) => {
+              if (response.status === 401) {
+                throw new Error(
+                  "Authentication failed (401) while seeding a submission via cy.seedApprovalFlowSubmission(). Check that chefsApiKey is valid for this environment's form.",
+                );
+              }
+
+              expect(response.status).to.be.oneOf([200, 201]);
+              expect(response.body).to.have.property("id");
+
+              const confirmationId =
+                response.body.confirmationId || response.body.id;
+              Cypress.log({
+                name: "seed",
+                message: `✅ Seeded submission with confirmation ID: ${confirmationId}`,
+              });
+
+              return cy
+                .writeFile("cypress/scripts/last-submission-id.json", {
+                  submissionId: confirmationId,
+                  createdAt: new Date().toISOString(),
+                })
+                .then(() => confirmationId as string);
+            });
+        });
+    });
 });

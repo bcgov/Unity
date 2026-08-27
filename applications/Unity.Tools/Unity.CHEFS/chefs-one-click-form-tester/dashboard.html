@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CHEFS Tester Results Dashboard</title>
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <main>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">CHEFS One-Click Form Tester</p>
+        <h1>Results Dashboard</h1>
+        <p id="contextText" class="context">No completed run is available yet.</p>
+      </div>
+      <div class="header-controls">
+        <label for="runSelect">Result</label>
+        <select id="runSelect" aria-label="Select run result"></select>
+        <label for="viewSelect">View</label>
+        <select id="viewSelect">
+          <option value="simple">Simple</option>
+          <option value="analyst">Analyst</option>
+          <option value="statistical">Statistical</option>
+          <option value="experimental">Experimental</option>
+        </select>
+        <button id="refreshButton" type="button">Refresh</button>
+      </div>
+    </header>
+
+    <section class="summary-grid" aria-label="Run summary">
+      <article class="summary-card result-card">
+        <span>Result</span>
+        <strong id="resultValue">—</strong>
+        <small id="resultDetail">No run selected</small>
+      </article>
+      <article class="summary-card">
+        <span>Duration</span>
+        <strong id="durationValue">—</strong>
+        <small id="durationDetail">Total execution time</small>
+      </article>
+      <article class="summary-card">
+        <span>Fields</span>
+        <strong id="fieldsValue">—</strong>
+        <small id="fieldsDetail">Filled / discovered</small>
+      </article>
+      <article class="summary-card">
+        <span>Issues</span>
+        <strong id="issuesValue">—</strong>
+        <small id="issuesDetail">Failures, validation, unsupported</small>
+      </article>
+    </section>
+
+    <section class="workspace">
+      <article class="chart-card">
+        <div class="chart-toolbar">
+          <div>
+            <p class="eyebrow" id="chartGroupLabel">Simple</p>
+            <h2 id="chartTitle">Outcome overview</h2>
+          </div>
+          <label for="chartSelect">Chart</label>
+          <select id="chartSelect"></select>
+        </div>
+        <div id="chartUnavailable" class="chart-unavailable hidden" role="status"></div>
+        <svg id="chart" viewBox="0 0 900 430" role="img" aria-labelledby="chartTitle chartDescription"></svg>
+        <p id="chartDescription" class="chart-description">Select a completed run to see results.</p>
+      </article>
+
+      <aside class="findings-card">
+        <div>
+          <p class="eyebrow">Plain-language reading</p>
+          <h2>What this means</h2>
+        </div>
+        <p id="interpretation" class="interpretation">The dashboard will summarize the latest PID-free run metrics here.</p>
+        <dl class="facts">
+          <div><dt>Form reference</dt><dd id="formRefValue">—</dd></div>
+          <div><dt>Passes</dt><dd id="passesValue">—</dd></div>
+          <div><dt>Attachments</dt><dd id="attachmentsValue">—</dd></div>
+          <div><dt>Rows added</dt><dd id="rowsValue">—</dd></div>
+          <div><dt>Confirmation</dt><dd id="confirmationValue">—</dd></div>
+          <div><dt>Build</dt><dd id="buildValue">—</dd></div>
+        </dl>
+        <div class="privacy-note">
+          <strong>PID-free view</strong>
+          <p>No field values, labels, names, emails, files, screenshots, confirmation IDs, URLs or raw logs are available to this page.</p>
+        </div>
+        <button id="clearHistoryButton" type="button" class="secondary">Clear aggregate history</button>
+      </aside>
+    </section>
+  </main>
+  <script src="dashboard.js"></script>
+</body>
+</html>

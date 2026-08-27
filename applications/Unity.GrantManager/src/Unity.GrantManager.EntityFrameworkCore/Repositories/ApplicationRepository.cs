@@ -152,6 +152,7 @@ public class ApplicationRepository
             .AsNoTracking()
             .Include(a => a.ApplicationStatus)
             .Include(a => a.Applicant)
+            .Include(a => a.ApplicantAgent)
             .Include(a => a.ApplicationForm)
             .Where(a => ids.Contains(a.Id))
             .ToListAsync();
@@ -322,6 +323,9 @@ public class ApplicationRepository
                 a.RiskRanking,
                 a.UnityApplicationId,
                 Status = a.ApplicationStatus.InternalStatus, // ApplicationStatus (always joined)
+                a.ExternalStatusVisibility,
+                a.ApplicationStatus.ExternalStatus,
+                a.ApplicationStatus.NotifiedStatus,
                 Category = a.ApplicationForm.Category ?? string.Empty, // ApplicationForm (always joined)          
                 a.ApplicantId,
                 ApplicantName = a.Applicant.ApplicantName, // Applicant (always joined)
@@ -506,6 +510,11 @@ public class ApplicationRepository
                     RiskRanking = a.RiskRanking,
                     UnityApplicationId = a.UnityApplicationId,
                     Status = a.Status,
+                    ExternalStatusVisibility = a.ExternalStatusVisibility,
+                    ExternalStatus = a.ExternalStatus,
+                    PublishedStatus = a.ExternalStatusVisibility
+                        ? a.NotifiedStatus ?? a.ExternalStatus
+                        : a.ExternalStatus,
                     Category = a.Category,
                     ApplicantId = a.ApplicantId,
                     ApplicantName = a.ApplicantName,

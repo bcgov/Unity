@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<Import Project="..\..\common.props" />
 
@@ -11,16 +11,18 @@
 	<ItemGroup>
 		<ProjectReference Include="..\..\src\Unity.GrantManager.EntityFrameworkCore\Unity.GrantManager.EntityFrameworkCore.csproj" />
 		<ProjectReference Include="..\Unity.GrantManager.TestBase\Unity.GrantManager.TestBase.csproj" />
-		<PackageReference Include="Npgsql" Version="10.0.2" />
-		<PackageReference Include="Volo.Abp.EntityFrameworkCore.Sqlite" Version="10.3.0" />		
-		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.3" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.3" />
-		<!-- Explicit reference to fix vulnerable transitive dependency -->
-		<PackageReference Include="System.IO.Packaging" Version="10.0.7" />
+		<PackageReference Include="Npgsql" Version="10.0.3" />
+		<PackageReference Include="Volo.Abp.EntityFrameworkCore.Sqlite" Version="10.5.0" />		
+		<!-- Explicit references to fix vulnerable transitive dependency. -->
+		<!-- Remove the SQLitePCLRaw pin once EF Core's Sqlite provider moves to SQLitePCLRaw.bundle_e_sqlite3 >= 3.x. -->
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.10" />
+		<PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.4" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.10" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.10" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.0" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
 	</ItemGroup>
 
 </Project>

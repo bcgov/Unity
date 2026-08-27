@@ -1,4 +1,5 @@
-﻿
+
+using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 
@@ -12,7 +13,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
         {
             _rabbitMQOptions = rabbitMQOptions;
         }
-        public IConnection GetConnection()
+        public async Task<IConnection> GetConnectionAsync()
         {
             var factory = new ConnectionFactory
             {
@@ -22,7 +23,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                 Password = _rabbitMQOptions.Value.Password,
                 VirtualHost = _rabbitMQOptions.Value.VirtualHost
             };
-            return factory.CreateConnection();
+            return await factory.CreateConnectionAsync();
         }
     }
 }

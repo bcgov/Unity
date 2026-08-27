@@ -4,8 +4,10 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Shouldly;
+using Unity.TenantManagement.Application;
 using Unity.TenantManagement.Application.Contracts;
 using Volo.Abp;
+using Volo.Abp.TenantManagement;
 using Xunit;
 
 namespace Unity.TenantManagement;
@@ -19,7 +21,12 @@ public class TenantAppService_Tests : AbpTenantManagementApplicationTestBase
         // Create a Substitute and replace original one in Service Collection
         var tenantConnectionStringBuilder = Substitute.For<ITenantConnectionStringBuilder>();
 
-        tenantConnectionStringBuilder.Build(Arg.Any<string>()).Returns("acme test connection");
+        tenantConnectionStringBuilder.GenerateCredentialsAsync()
+            .Returns(Task.FromResult(new TenantDbCredentials("T_ABC123", "T_ABC123", "XYZ789")));
+        tenantConnectionStringBuilder.GenerateReadOnlyCredentials(Arg.Any<TenantDbCredentials>())
+            .Returns(new TenantDbCredentials("T_ABC123", "T_ABC123_readonly", "RO12345"));
+        tenantConnectionStringBuilder.Build(Arg.Any<string>(), Arg.Any<TenantDbCredentials>())
+            .Returns("acme test connection");
 
         services.AddSingleton(tenantConnectionStringBuilder);
     }
@@ -69,12 +76,44 @@ public class TenantAppService_Tests : AbpTenantManagementApplicationTestBase
     }
 
     [Fact]
+    public async Task GetListAsync_Sorted_By_DisplayName()
+    {
+        var acme = UsingDbContext(dbContext => dbContext.Tenants.Single(t => t.Name == "acme"));
+        var volo = UsingDbContext(dbContext => dbContext.Tenants.Single(t => t.Name == "volosoft"));
+
+        await _tenantAppService.UpdateAsync(acme.Id, new TenantUpdateDto { Name = "acme", DisplayName = "Zeta Corp" });
+        await _tenantAppService.UpdateAsync(volo.Id, new TenantUpdateDto { Name = "volosoft", DisplayName = "Alpha Corp" });
+
+        var result = await _tenantAppService.GetListAsync(new GetTenantsInput { Sorting = "DisplayName ASC" });
+        var tenants = result.Items.ToList();
+
+        tenants.FindIndex(t => t.Name == "volosoft").ShouldBeLessThan(tenants.FindIndex(t => t.Name == "acme"));
+    }
+
+    [Fact]
+    public async Task GetListAsync_Filtered_By_DisplayName()
+    {
+        var acme = UsingDbContext(dbContext => dbContext.Tenants.Single(t => t.Name == "acme"));
+        await _tenantAppService.UpdateAsync(acme.Id, new TenantUpdateDto { Name = "acme", DisplayName = "UniqueDisplayNameXyz" });
+
+        var result = await _tenantAppService.GetListAsync(new GetTenantsInput { Filter = "UniqueDisplayNameXyz" });
+
+        result.Items.ShouldContain(t => t.Name == "acme");
+        result.Items.ShouldNotContain(t => t.Name == "volosoft");
+    }
+
+    [Fact]
     public async Task CreateAsync()
     {
         var tenancyName = Guid.NewGuid().ToString("N").ToLowerInvariant();
         var tenant = await _tenantAppService.CreateAsync(new TenantCreateDto { Name = tenancyName });
         tenant.Name.ShouldBe(tenancyName);
         tenant.Id.ShouldNotBe(Guid.Empty);
+
+        var tenantRepository = GetRequiredService<ITenantRepository>();
+        var tenantInDb = await tenantRepository.GetAsync(tenant.Id, includeDetails: true);
+        tenantInDb.ConnectionStrings.ShouldContain(cs => cs.Name == UnityTenantManagementConsts.TenantConnectionStringName);
+        tenantInDb.ConnectionStrings.ShouldContain(cs => cs.Name == UnityTenantManagementConsts.TenantReadOnlyConnectionStringName);
     }
 
     [Fact]
@@ -84,6 +123,41 @@ public class TenantAppService_Tests : AbpTenantManagementApplicationTestBase
         {
             await _tenantAppService.CreateAsync(new TenantCreateDto { Name = "acme" });
         });
+    }
+
+    [Fact]
+    public void StripPrivilegedFieldsUnlessAuthorized_CallerNotAuthorized_ClearsFeatureKeysAndMetabaseUserEmails()
+    {
+        // A caller with only the plain Tenants.Create permission (not IT Admin/Operations) must
+        // not be able to enable arbitrary features or grant arbitrary email addresses Metabase
+        // access to a tenant's database via the post-creation registration step.
+        var input = new TenantCreateDto
+        {
+            Name = "acme2",
+            FeatureKeys = "Unity.Payments",
+            MetabaseUserEmails = "someone@gov.bc.ca"
+        };
+
+        TenantAppService.StripPrivilegedFieldsUnlessAuthorized(input, callerIsAuthorized: false);
+
+        input.FeatureKeys.ShouldBeNull();
+        input.MetabaseUserEmails.ShouldBeNull();
+    }
+
+    [Fact]
+    public void StripPrivilegedFieldsUnlessAuthorized_CallerAuthorized_PreservesFeatureKeysAndMetabaseUserEmails()
+    {
+        var input = new TenantCreateDto
+        {
+            Name = "acme2",
+            FeatureKeys = "Unity.Payments",
+            MetabaseUserEmails = "someone@gov.bc.ca"
+        };
+
+        TenantAppService.StripPrivilegedFieldsUnlessAuthorized(input, callerIsAuthorized: true);
+
+        input.FeatureKeys.ShouldBe("Unity.Payments");
+        input.MetabaseUserEmails.ShouldBe("someone@gov.bc.ca");
     }
 
     [Fact]

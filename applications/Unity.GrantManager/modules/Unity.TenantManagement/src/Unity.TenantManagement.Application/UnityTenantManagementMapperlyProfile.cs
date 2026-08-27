@@ -19,7 +19,9 @@ public class TenantToTenantDtoMapper : MapperBase<Tenant, TenantDto>
         destination.Id = source.Id;
         destination.Name = source.Name;
         destination.ConcurrencyStamp = source.ConcurrencyStamp;
+        destination.DisplayName = GetExtraProperty(source, "DisplayName") ?? string.Empty;
         destination.CasClientCode = GetExtraProperty(source, "CasClientCode") ?? string.Empty;
+        destination.LicencePlate = GetExtraProperty(source, "LicencePlate") ?? string.Empty;
         destination.Division = GetExtraProperty(source, "Division") ?? string.Empty;
         destination.Branch = GetExtraProperty(source, "Branch") ?? string.Empty;
         destination.Description = GetExtraProperty(source, "Description") ?? string.Empty;

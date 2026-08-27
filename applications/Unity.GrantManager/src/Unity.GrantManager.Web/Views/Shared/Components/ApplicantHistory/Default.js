@@ -13,6 +13,13 @@ $(function () {
         zoneForm.init();
     }
 
+    const persistableFields = new Set([
+        'FundingHistoryComments',
+        'IssueTrackingComments',
+        'AuditComments',
+        'ReportsComments'
+    ]);
+
     saveBtn.on('click', function (e) {
         e.preventDefault();
         if (!zoneForm || zoneForm.modifiedFields.size === 0) return;
@@ -23,14 +30,14 @@ $(function () {
             return;
         }
 
+        const payload = buildPartialNotesPayload();
+        if (!payload) {
+            return;
+        }
+
         zoneForm.setSaving(true);
         unity.grantManager.applicantProfile.applicantHistory
-            .saveNotes(applicantId, {
-                fundingHistoryComments: $('#FundingHistoryComments').val(),
-                issueTrackingComments: $('#IssueTrackingComments').val(),
-                auditComments: $('#AuditComments').val(),
-                reportsComments: $('#ReportsComments').val()
-            })
+            .saveNotes(applicantId, payload)
             .done(function () {
                 abp.notify.success('History notes saved.');
                 zoneForm.resetTracking();
@@ -40,6 +47,41 @@ $(function () {
                 zoneForm.setSaving(false);
             });
     });
+
+    function buildPartialNotesPayload() {
+        if (!zoneForm) {
+            return null;
+        }
+
+        const modifiedFields = Array
+            .from(zoneForm.modifiedFields ?? [])
+            .map(field => field.split('.').pop() ?? field)
+            .filter(field => persistableFields.has(field));
+
+        if (modifiedFields.length === 0) {
+            return null;
+        }
+
+        const data = { modifiedFields };
+
+        modifiedFields.forEach(fieldName => {
+            const $input = form.find(`[name="${fieldName}"]`).first();
+            if ($input.length === 0) {
+                return;
+            }
+
+            const rawValue = $input.val();
+            let fieldValue;
+            if (typeof rawValue === 'string') {
+                fieldValue = rawValue.trim() === '' ? null : rawValue;
+            } else {
+                fieldValue = rawValue;
+            }
+            data[fieldName.charAt(0).toLowerCase() + fieldName.slice(1)] = fieldValue;
+        });
+
+        return data;
+    }
 
     // ── Column definitions ────────────────────────────────────────────────────
 
@@ -76,14 +118,14 @@ $(function () {
 
                     let $editBtn = $('<button>')
                         .addClass('btn btn-sm edit-button px-0 funding-edit-btn')
-                        .attr({ 'aria-label': 'Edit', 'title': 'Edit' })
+                        .attr({ 'type': 'button', 'aria-label': 'Edit', 'title': 'Edit' })
                         .append($('<i>').addClass('fl fl-edit'));
 
                     let $deleteBtn = $('<button>')
                         .addClass('btn btn-link p-0 funding-delete-btn')
-                        .attr({ 'title': 'Delete Funding History', 'data-id': row.id })
+                        .attr({ 'type': 'button', 'title': 'Delete Funding History', 'data-id': row.id })
                         .css({ 'color': '#0066cc', 'text-decoration': 'none' })
-                        .append($('<i>').addClass('fa fa-times'));
+                        .append($('<i>').addClass('fa-solid fa-xmark'));
 
                     $wrapper.append($editBtn).append($deleteBtn);
                     return $wrapper.prop('outerHTML');
@@ -110,14 +152,14 @@ $(function () {
 
                     let $editBtn = $('<button>')
                         .addClass('btn btn-sm edit-button px-0 issue-edit-btn')
-                        .attr({ 'aria-label': 'Edit', 'title': 'Edit' })
+                        .attr({ 'type': 'button', 'aria-label': 'Edit', 'title': 'Edit' })
                         .append($('<i>').addClass('fl fl-edit'));
 
                     let $deleteBtn = $('<button>')
                         .addClass('btn btn-link p-0 issue-delete-btn')
-                        .attr({ 'title': 'Delete Issue Tracking', 'data-id': row.id })
+                        .attr({ 'type': 'button', 'title': 'Delete Issue Tracking', 'data-id': row.id })
                         .css({ 'color': '#0066cc', 'text-decoration': 'none' })
-                        .append($('<i>').addClass('fa fa-times'));
+                        .append($('<i>').addClass('fa-solid fa-xmark'));
 
                     $wrapper.append($editBtn).append($deleteBtn);
                     return $wrapper.prop('outerHTML');
@@ -156,14 +198,14 @@ $(function () {
 
                     let $editBtn = $('<button>')
                         .addClass('btn btn-sm edit-button px-0 audit-edit-btn')
-                        .attr({ 'aria-label': 'Edit', 'title': 'Edit' })
+                        .attr({ 'type': 'button', 'aria-label': 'Edit', 'title': 'Edit' })
                         .append($('<i>').addClass('fl fl-edit'));
 
                     let $deleteBtn = $('<button>')
                         .addClass('btn btn-link p-0 audit-delete-btn')
-                        .attr({ 'title': 'Delete Audit History', 'data-id': row.id })
+                        .attr({ 'type': 'button', 'title': 'Delete Audit History', 'data-id': row.id })
                         .css({ 'color': '#0066cc', 'text-decoration': 'none' })
-                        .append($('<i>').addClass('fa fa-times'));
+                        .append($('<i>').addClass('fa-solid fa-xmark'));
 
                     $wrapper.append($editBtn).append($deleteBtn);
                     return $wrapper.prop('outerHTML');
@@ -187,6 +229,7 @@ $(function () {
                 }
             },
             { title: 'Outstanding', data: 'outstanding', name: 'outstanding', className: 'data-table-header', width: '100px', render: (d) => d === true ? 'Yes' : 'No' },
+            { title: 'Signed-Off', data: 'signedOff', name: 'signedOff', className: 'data-table-header', width: '100px', render: (d) => d === true ? 'Yes' : 'No' },
             { title: 'Incomplete Report', data: 'incompleteReport', name: 'incompleteReport', className: 'data-table-header', width: '130px', render: (d) => d === true ? 'Yes' : 'No' },
             {
                 title: 'Note', data: 'note', name: 'note', className: 'data-table-header', width: '200px',
@@ -200,14 +243,14 @@ $(function () {
 
                     let $editBtn = $('<button>')
                         .addClass('btn btn-sm edit-button px-0 reports-edit-btn')
-                        .attr({ 'aria-label': 'Edit', 'title': 'Edit' })
+                        .attr({ 'type': 'button', 'aria-label': 'Edit', 'title': 'Edit' })
                         .append($('<i>').addClass('fl fl-edit'));
 
                     let $deleteBtn = $('<button>')
                         .addClass('btn btn-link p-0 reports-delete-btn')
-                        .attr({ 'title': 'Delete Reports History', 'data-id': row.id })
+                        .attr({ 'type': 'button', 'title': 'Delete Reports History', 'data-id': row.id })
                         .css({ 'color': '#0066cc', 'text-decoration': 'none' })
-                        .append($('<i>').addClass('fa fa-times'));
+                        .append($('<i>').addClass('fa-solid fa-xmark'));
 
                     $wrapper.append($editBtn).append($deleteBtn);
                     return $wrapper.prop('outerHTML');
@@ -326,7 +369,7 @@ $(function () {
 
     const reportsHistoryTable = initializeDataTable({
         dt: $('#ReportsHistoryTable'),
-        defaultVisibleColumns: ['fiscalYear', 'reportDate', 'outstanding', 'incompleteReport', 'note', 'actions'],
+        defaultVisibleColumns: ['fiscalYear', 'reportDate', 'outstanding', 'signedOff', 'incompleteReport', 'note', 'actions'],
         listColumns: getReportsHistoryColumns(),
         dataEndpoint: () => unity.grantManager.applicantProfile.applicantHistory.getReportsHistoryList(getApplicantId()),
         data: () => ({}),

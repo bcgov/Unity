@@ -18,8 +18,11 @@ using Unity.GrantManager.Flex;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Zones;
 using Unity.Modules.Shared.Correlation;
+using Unity.Modules.Shared.Specializations;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Features;
+using Volo.Abp.TenantManagement;
 using Volo.Abp.Users;
 
 namespace Unity.GrantManager.Web.Pages.GrantApplications
@@ -32,6 +35,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
         private readonly IApplicationFormVersionAppService _applicationFormVersionAppService;
         private readonly IScoresheetRepository _scoresheetRepository;
         private readonly IFeatureChecker _featureChecker;
+        private readonly ITenantRepository _tenantRepository;
         protected readonly IZoneManagementAppService _zoneManagementAppService;
 
         [BindProperty(SupportsGet = true)]
@@ -46,6 +50,9 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 
         [BindProperty(SupportsGet = true)]
         public Guid ApplicationId { get; set; }
+
+        [BindProperty(SupportsGet = true)]
+        public Guid? TenantId { get; set; }
 
         [BindProperty(SupportsGet = true)]
         public Guid ApplicationFormVersionId { get; set; }
@@ -73,7 +80,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
 
         [BindProperty(SupportsGet = true)]
         public string? CurrentUserName { get; set; }
-        public string Extensions { get; set; }
+        public string AllowedFileTypes { get; set; }
         public string MaxFileSize { get; set; }
         public string EmailAttachmentMaxFileSize { get; set; }
         public string TotalEmailAttachmentMaxFileSize { get; set; }
@@ -93,6 +100,7 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             IApplicationFormVersionAppService applicationFormVersionAppService,
             IScoresheetRepository scoresheetRepository,
             IFeatureChecker featureChecker,
+            ITenantRepository tenantRepository,
             ICurrentUser currentUser,
             IConfiguration configuration,
             IZoneManagementAppService zoneManagementAppService)
@@ -102,19 +110,50 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             _featureChecker = featureChecker;
             _applicationFormVersionAppService = applicationFormVersionAppService;
             _scoresheetRepository = scoresheetRepository;
+            _tenantRepository = tenantRepository;
             _zoneManagementAppService = zoneManagementAppService;
 
             CurrentUserId = currentUser.Id;
             CurrentUserName = currentUser.SurName + ", " + currentUser.Name;
-            Extensions = configuration["S3:DisallowedFileTypes"] ?? "";
+            AllowedFileTypes = configuration["S3:AllowedFileTypes"] ?? "";
             MaxFileSize = configuration["S3:MaxFileSize"] ?? "";
             EmailAttachmentMaxFileSize = configuration["S3:EmailAttachmentMaxFileSize"] ?? "20";
             TotalEmailAttachmentMaxFileSize = configuration["S3:EmailAttachmentsTotalMaxFileSize"] ?? "25";
         }
 
-        public async Task OnGetAsync()
+        public async Task<IActionResult> OnGetAsync()
         {
-            ApplicationFormSubmission applicationFormSubmission = await _grantApplicationAppService.GetFormSubmissionByApplicationId(ApplicationId);
+            if (TenantId.HasValue && TenantId.Value != CurrentTenant.Id)
+            {
+                var applicationTenant = await _tenantRepository.FindAsync(TenantId.Value);
+                return RedirectToPage("/Error", new
+                {
+                    httpStatusCode = 409,
+                    entityType = "Application",
+                    applicationTenantName = applicationTenant?.Name ?? TenantId.Value.ToString(),
+                    currentTenantName = CurrentTenant.Name ?? "Host"
+                });
+            }
+
+            if (await _featureChecker.IsEnabledAsync(SpecializationConsts.Onboarding))
+            {
+                ViewData["ActiveNavHref"] = "/TenantManagement/Onboarding";
+            }
+
+            ApplicationFormSubmission applicationFormSubmission;
+            try
+            {
+                applicationFormSubmission = await _grantApplicationAppService.GetFormSubmissionByApplicationId(ApplicationId);
+            }
+            catch (EntityNotFoundException)
+            {
+                return RedirectToPage("/Error", new
+                {
+                    httpStatusCode = 404,
+                    entityType = "Application",
+                    currentTenantName = CurrentTenant.Name ?? "Host"
+                });
+            }
             ZoneStateSet = await _zoneManagementAppService.GetZoneStateSetAsync(applicationFormSubmission.ApplicationFormId);
             
             var formVersion = applicationFormSubmission.ApplicationFormVersionId.HasValue
@@ -146,6 +185,8 @@ namespace Unity.GrantManager.Web.Pages.GrantApplications
             ArgumentNullException.ThrowIfNull(applicationForm);
             ApplicationScoresheetSchemaJson = await GetApplicationScoresheetSchemaJsonAsync(applicationForm);
             ApplicationFormSubmissionData = applicationFormSubmission.Submission;
+
+            return Page();
         }
 
         public async Task<IActionResult> OnPostAsync()

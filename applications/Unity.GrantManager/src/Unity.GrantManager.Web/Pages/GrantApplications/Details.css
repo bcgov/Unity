@@ -66,26 +66,6 @@
     justify-content: center;
 }
 
-.ai-button-content {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-}
-
-.ai-generate-btn {
-    height: 2.25rem;
-}
-
-.ai-generate-btn.btn-sm {
-    height: 2rem;
-}
-
-.ai-generate-btn .spinner-border-sm {
-    width: 0.875rem;
-    height: 0.875rem;
-}
-
 .left-card {
     border-right: 1px solid #dddddd;
 }
@@ -240,15 +220,6 @@ textarea::placeholder {
     resize: vertical;
 }
 
-.fa,
-.fas {
-    padding: 5px;
-}
-
-i.fas:hover {
-    cursor: pointer;
-}
-
 select.selected {
     border: 1px solid rgba(0, 51, 102, 38%) !important;
     background-color: #fff !important;
@@ -370,7 +341,7 @@ form label.error {
     font-size: 0.8em;
 }
 
-.input-group-text:has(i.fa-calendar) {
+.input-group-text:has(i.fa-calendar-days) {
     display: none !important;
 }
 

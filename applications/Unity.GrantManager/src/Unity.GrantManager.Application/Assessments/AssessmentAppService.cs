@@ -3,24 +3,14 @@ using Microsoft.AspNetCore.Authorization.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.AI.Permissions;
-using Unity.Flex;
-using Unity.Flex.Scoresheets;
-using Unity.Flex.Scoresheets.Enums;
-using Unity.Flex.Scoresheets.Events;
-using Unity.Flex.Worksheets.Definitions;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.Comments;
-using Unity.GrantManager.Exceptions;
 using Unity.GrantManager.Workflow;
 using Unity.Modules.Shared;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.Domain.Repositories;
-using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
 using Volo.Abp.Identity.Integration;
 using Volo.Abp.Users;
@@ -36,35 +26,24 @@ namespace Unity.GrantManager.Assessments
         private readonly IAssessmentRepository _assessmentRepository;
         private readonly AssessmentManager _assessmentManager;
         private readonly IApplicationRepository _applicationRepository;
-        private readonly IIdentityUserIntegrationService _userLookupProvider;        
-        private readonly IScoresheetInstanceAppService _scoresheetInstanceAppService;
-        private readonly IScoresheetAppService _scoresheetAppService;
-        private readonly ILocalEventBus _localEventBus;
+        private readonly IIdentityUserIntegrationService _userLookupProvider;
         private readonly IFeatureChecker _featureChecker;
-        private readonly IRepository<ApplicationForm, Guid> _applicationFormRepository;
-        private const string UnityFlex = "Unity.Flex";
+        private readonly IAssessmentScoresheetService _assessmentScoresheetService;
 
         public AssessmentAppService(
             IAssessmentRepository assessmentRepository,
             AssessmentManager assessmentManager,
             IApplicationRepository applicationRepository,
             IIdentityUserIntegrationService userLookupProvider,
-            ICommentsManager commentsManager,
-            IScoresheetInstanceAppService scoresheetInstanceAppService,
             IFeatureChecker featureChecker,
-            ILocalEventBus localEventBus,
-            IScoresheetAppService scoresheetAppService,
-            IRepository<ApplicationForm, Guid> applicationFormRepository)
+            IAssessmentScoresheetService assessmentScoresheetService)
         {
             _assessmentRepository = assessmentRepository;
             _assessmentManager = assessmentManager;
             _applicationRepository = applicationRepository;
             _userLookupProvider = userLookupProvider;
-            _scoresheetInstanceAppService = scoresheetInstanceAppService;
-            _scoresheetAppService = scoresheetAppService;
             _featureChecker = featureChecker;
-            _localEventBus = localEventBus;
-            _applicationFormRepository = applicationFormRepository;
+            _assessmentScoresheetService = assessmentScoresheetService;
         }
 
         public async Task<AssessmentDto> CreateAsync(CreateAssessmentDto dto)
@@ -103,7 +82,7 @@ namespace Unity.GrantManager.Assessments
             bool isApplicationUsingDefaultScoresheet = true;
             foreach (var assessment in assessmentList)
             {
-                var subtotalDto = await GetSubTotal(assessment);
+                var subtotalDto = await _assessmentScoresheetService.GetSubTotalAsync(assessment);
                 assessment.SubTotal = subtotalDto.SubTotal;
                 if (!subtotalDto.IsUsingDefaultScoresheet)
                 {
@@ -113,108 +92,11 @@ namespace Unity.GrantManager.Assessments
 
             if (assessmentList.Count == 0)
             {
-                isApplicationUsingDefaultScoresheet = await IsScoresheetNotLinkedToForm(applicationId);
+                var application = await _applicationRepository.GetAsync(applicationId);
+                isApplicationUsingDefaultScoresheet = await _assessmentScoresheetService.IsScoresheetNotLinkedToFormAsync(application.ApplicationFormId);
             }
 
             return new AssessmentDisplayListDto { Data = assessmentList, IsApplicationUsingDefaultScoresheet = isApplicationUsingDefaultScoresheet };
-        }
-
-        private async Task<bool> IsScoresheetNotLinkedToForm(Guid applicationId)
-        {
-            var application = await _applicationRepository.GetAsync(applicationId);
-            var applicationForm = await _applicationFormRepository.GetAsync(application.ApplicationFormId);
-            if (applicationForm.ScoresheetId == null)
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        private async Task<SubTotalDto> GetSubTotal(AssessmentListItemDto assessment)
-        {
-            if (await _featureChecker.IsEnabledAsync(UnityFlex))
-            {
-                var instance = await _scoresheetInstanceAppService.GetByCorrelationAsync(assessment.Id);
-
-                if (instance == null)
-                {
-
-                    double subTotal = (assessment.FinancialAnalysis ?? 0) + (assessment.EconomicImpact ?? 0) + (assessment.InclusiveGrowth ?? 0) + (assessment.CleanGrowth ?? 0);
-                    return new SubTotalDto { SubTotal = subTotal, IsUsingDefaultScoresheet = true };
-
-                }
-                else
-                {
-                    var questionIds = instance.Answers.Select(a => a.QuestionId).Distinct().ToList();
-
-                    var numericSubtotal = await GetNumericAnswerSubtotal(instance, questionIds);
-                    var yesNoSubtotal = await GetYesNoAnswerSubtotal(instance, questionIds);
-                    var selectListSubtotal = await GetSelectListAnswerSubtotal(instance, questionIds);
-
-                    double subTotal = numericSubtotal + yesNoSubtotal + selectListSubtotal;
-                    return new SubTotalDto { SubTotal = subTotal, IsUsingDefaultScoresheet = false };
-
-                }
-            }
-            else
-            {
-                double subTotal = (assessment.FinancialAnalysis ?? 0) + (assessment.EconomicImpact ?? 0) + (assessment.InclusiveGrowth ?? 0) + (assessment.CleanGrowth ?? 0);
-                return new SubTotalDto { SubTotal = subTotal, IsUsingDefaultScoresheet = true };
-            }
-        }
-
-        private async Task<double> GetSelectListAnswerSubtotal(ScoresheetInstanceDto instance, List<Guid> questionIds)
-        {
-            var existingSelectListQuestions = await _scoresheetAppService.GetSelectListQuestionsAsync(questionIds);
-            var existingSelectListQuestionIds = existingSelectListQuestions.Select(a => a.Id).ToList();
-            double selectListSubtotal = instance.Answers.Where(a => existingSelectListQuestionIds.Contains(a.QuestionId))
-                .Sum(answer =>
-                {
-                    var value = ValueResolver.Resolve(answer.CurrentValue!, QuestionType.SelectList)!.ToString();
-                    var question = existingSelectListQuestions.Find(q => q.Id == answer.QuestionId) ?? throw new AbpValidationException("Missing QuestionId");
-                    var definition = JsonSerializer.Deserialize<QuestionSelectListDefinition>(question.Definition ?? "{}");
-                    var selectedOption = definition?.Options.Find(o => o.Value == value);
-                    if (selectedOption != null)
-                    {
-                        return selectedOption.NumericValue;
-                    }
-                    else
-                    {
-                        return 0;
-                    }
-                });
-            return selectListSubtotal;
-        }
-
-        private async Task<double> GetYesNoAnswerSubtotal(ScoresheetInstanceDto instance, List<Guid> questionIds)
-        {
-            var existingYesNoQuestions = await _scoresheetAppService.GetYesNoQuestionsAsync(questionIds);
-            var existingYesNoQuestionIds = existingYesNoQuestions.Select(a => a.Id).ToList();
-            double yesNoSubtotal = instance.Answers.Where(a => existingYesNoQuestionIds.Contains(a.QuestionId))
-                .Sum(answer =>
-                {
-                    var value = ValueResolver.Resolve(answer.CurrentValue!, QuestionType.YesNo)!.ToString();
-                    var question = existingYesNoQuestions.Find(q => q.Id == answer.QuestionId) ?? throw new AbpValidationException("Missing QuestionId");
-                    var definition = JsonSerializer.Deserialize<QuestionYesNoDefinition>(question.Definition ?? "{}");
-                    return value switch
-                    {
-                        "Yes" => Convert.ToDouble(definition?.YesValue ?? 0),
-                        "No" => Convert.ToDouble(definition?.NoValue ?? 0),
-                        _ => 0,
-                    };
-                });
-            return yesNoSubtotal;
-        }
-
-        private async Task<double> GetNumericAnswerSubtotal(ScoresheetInstanceDto instance, List<Guid> questionIds)
-        {
-            var existingNumericQuestionIds = await _scoresheetAppService.GetNumericQuestionIdsAsync(questionIds);
-            double numericSubtotal = instance.Answers.Where(a => existingNumericQuestionIds.Contains(a.QuestionId))
-                .Sum(a => Convert.ToDouble(ValueResolver.Resolve(a.CurrentValue!, QuestionType.Number)!.ToString()));
-            return numericSubtotal;
         }
 
         /// <summary>
@@ -262,7 +144,7 @@ namespace Unity.GrantManager.Assessments
         public async Task<List<AssessmentAction>> GetPermittedActions(Guid assessmentId)
         {
             var assessment = await _assessmentRepository.GetAsync(assessmentId);
-            var workflowActions = assessment.Workflow.GetPermittedActions();
+            var workflowActions = await assessment.Workflow.GetPermittedActionsAsync();
 
             List<AssessmentAction> permittedActions = new();
             foreach (var triggerAction in workflowActions)
@@ -302,29 +184,11 @@ namespace Unity.GrantManager.Assessments
 
             await AuthorizationService.CheckAsync(assessment, GetActionAuthorizationRequirement(triggerAction));
 
-            await ApplyAdditionalValidationsAsync(assessmentId, triggerAction);
+            await _assessmentScoresheetService.ValidateAnswersOnCompleteAsync(assessmentId, triggerAction);
 
             await assessment.Workflow.ExecuteActionAsync(triggerAction);
 
             return ObjectMapper.Map<Assessment, AssessmentDto>(await _assessmentRepository.UpdateAsync(assessment, autoSave: true));
-        }
-
-        private async Task ApplyAdditionalValidationsAsync(Guid assessmentId, AssessmentAction triggerAction)
-        {
-            await ValidateValidScoresheetAsync(assessmentId, triggerAction);
-        }
-
-        private async Task ValidateValidScoresheetAsync(Guid assessmentId, AssessmentAction triggerAction)
-        {
-            if (await _featureChecker.IsEnabledAsync(UnityFlex) && triggerAction == AssessmentAction.Complete)
-            {
-                var requirementsMetResult = await _scoresheetInstanceAppService.ValidateAnswersAsync(assessmentId);
-
-                if (requirementsMetResult?.Errors?.Count > 0)
-                {
-                    throw new InvalidScoresheetAnswersException([.. requirementsMetResult.Errors]);
-                }
-            }
         }
 
         private static OperationAuthorizationRequirement GetActionAuthorizationRequirement(AssessmentAction triggerAction)
@@ -385,7 +249,7 @@ namespace Unity.GrantManager.Assessments
 
         /// <summary>
         /// Creates a new human assessment by cloning an existing AI assessment.
-        /// Copies the AI scoresheet answers (from Application.AIScoresheetAnswers) as real
+        /// Copies the AI scoresheet answers (from AI.ApplicationScoresheetAnswers) as real
         /// Answer records on the new assessment's scoresheet instance, and carries over
         /// ApprovalRecommended as a starting point for the reviewer.
         /// </summary>
@@ -415,128 +279,9 @@ namespace Unity.GrantManager.Assessments
             newAssessment.ApprovalRecommended = aiAssessment.ApprovalRecommended;
             await _assessmentRepository.UpdateAsync(newAssessment);
 
-            if (await _featureChecker.IsEnabledAsync(UnityFlex) && !string.IsNullOrEmpty(application.AIScoresheetAnswers))
-            {
-                await CopyAiAnswersToAssessmentAsync(application.AIScoresheetAnswers, newAssessment.Id);
-            }
+            await _assessmentScoresheetService.CopyAiAnswersIfEnabledAsync(aiAssessment.ApplicationId, newAssessment.Id);
 
             return ObjectMapper.Map<Assessment, AssessmentDto>(newAssessment);
-        }
-
-        /// <summary>
-        /// Parses Application.AIScoresheetAnswers (JSONB) and writes each AI answer as a
-        /// real Answer record on the new human assessment's scoresheet instance.
-        /// <para>
-        /// Question types are resolved via <see cref="IScoresheetAppService"/> so that each value
-        /// is stored in the correct serialized format. SelectList answers are converted from the
-        /// AI's 1-based numeric index to the actual option value before being persisted.
-        /// Questions not identified as Numeric, YesNo, or SelectList default to TextArea.
-        /// </para>
-        /// <para>
-        /// Answers are persisted by publishing a <see cref="PersistScoresheetSectionInstanceEto"/>
-        /// local event, reusing the same pipeline as <see cref="SaveScoresheetSectionAnswers"/>.
-        /// </para>
-        /// </summary>
-        private async Task CopyAiAnswersToAssessmentAsync(string aiScoresheetAnswers, Guid newAssessmentId)
-        {
-            var rawAiAnswers = new Dictionary<Guid, string>();
-            try
-            {
-                using var doc = JsonDocument.Parse(aiScoresheetAnswers);
-                foreach (var property in doc.RootElement.EnumerateObject())
-                {
-                    if (!Guid.TryParse(property.Name, out var questionId)) continue;
-                    if (property.Value.ValueKind != JsonValueKind.Object) continue;
-                    if (!property.Value.TryGetProperty("answer", out var answerProp)) continue;
-                    rawAiAnswers[questionId] = answerProp.ToString();
-                }
-            }
-            catch (JsonException)
-            {
-                return;
-            }
-
-            if (rawAiAnswers.Count == 0) return;
-
-            var questionIds = rawAiAnswers.Keys.ToList();
-            var numericQuestionIds = (await _scoresheetAppService.GetNumericQuestionIdsAsync(questionIds)).ToHashSet();
-            var yesNoQuestions = await _scoresheetAppService.GetYesNoQuestionsAsync(questionIds);
-            var selectListQuestions = await _scoresheetAppService.GetSelectListQuestionsAsync(questionIds);
-            var yesNoQuestionIds = yesNoQuestions.Select(q => q.Id).ToHashSet();
-            var selectListQuestionIds = selectListQuestions.Select(q => q.Id).ToHashSet();
-
-            var assessmentAnswers = new List<AssessmentAnswersEto>();
-            foreach (var (questionId, rawAnswer) in rawAiAnswers)
-            {
-                QuestionType questionType;
-                string answer;
-
-                if (numericQuestionIds.Contains(questionId))
-                {
-                    questionType = QuestionType.Number;
-                    answer = rawAnswer;
-                }
-                else if (yesNoQuestionIds.Contains(questionId))
-                {
-                    questionType = QuestionType.YesNo;
-                    answer = rawAnswer;
-                }
-                else if (selectListQuestionIds.Contains(questionId))
-                {
-                    questionType = QuestionType.SelectList;
-                    var q = selectListQuestions.Find(x => x.Id == questionId);
-                    answer = ConvertNumericAnswerToSelectListValue(rawAnswer, q?.Definition);
-                }
-                else
-                {
-                    questionType = QuestionType.TextArea;
-                    answer = rawAnswer;
-                }
-
-                assessmentAnswers.Add(new AssessmentAnswersEto
-                {
-                    QuestionId = questionId,
-                    Answer = answer,
-                    QuestionType = (int)questionType
-                });
-            }
-
-            if (assessmentAnswers.Count > 0)
-            {
-                await _localEventBus.PublishAsync(new PersistScoresheetSectionInstanceEto
-                {
-                    AssessmentId = newAssessmentId,
-                    AssessmentAnswers = assessmentAnswers
-                });
-            }
-        }
-
-        /// <summary>
-        /// Converts a 1-based numeric index (as returned by the AI for SelectList questions)
-        /// to the actual option value defined in the question's JSON definition.
-        /// Returns the original value unchanged if parsing fails or the index is out of range.
-        /// </summary>
-        private static string ConvertNumericAnswerToSelectListValue(string numericAnswer, string? definition)
-        {
-            if (string.IsNullOrEmpty(definition) || string.IsNullOrEmpty(numericAnswer))
-                return numericAnswer;
-            try
-            {
-                if (!int.TryParse(numericAnswer.Trim(), out var optionNumber) || optionNumber <= 0)
-                    return numericAnswer;
-                var selectListDefinition = JsonSerializer.Deserialize<QuestionSelectListDefinition>(definition);
-                if (selectListDefinition?.Options != null && selectListDefinition.Options.Count > 0)
-                {
-                    var optionIndex = optionNumber - 1;
-                    if (optionIndex < selectListDefinition.Options.Count)
-                        return selectListDefinition.Options[optionIndex].Value;
-                }
-            }
-            catch (JsonException)
-            {
-                // Malformed definition — return the raw answer unchanged
-            }
-            return numericAnswer;
         }
 
         public async Task SaveScoresheetSectionAnswers(AssessmentScoreSectionDto dto)
@@ -559,14 +304,7 @@ namespace Unity.GrantManager.Assessments
                         throw new AbpValidationException("Error: This assessment is already completed.");
                     }
 
-                    if (await _featureChecker.IsEnabledAsync(UnityFlex))
-                    {
-                        await _localEventBus.PublishAsync(new PersistScoresheetSectionInstanceEto()
-                        {
-                            AssessmentId = dto.AssessmentId,
-                            AssessmentAnswers = dto.AssessmentAnswers
-                        });
-                    }
+                    await _assessmentScoresheetService.PersistSectionAnswersIfEnabledAsync(dto.AssessmentId, dto.AssessmentAnswers);
                 }
                 else
                 {

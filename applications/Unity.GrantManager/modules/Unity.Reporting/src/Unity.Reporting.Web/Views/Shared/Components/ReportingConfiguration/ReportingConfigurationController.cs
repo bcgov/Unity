@@ -311,18 +311,16 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
 
         /// <summary>
         /// Retrieves preview data from a generated database view showing sample records for interface display.
-        /// Fetches sample data from the first application ID found in the view with pagination and filtering support.
+        /// Fetches sample data from the first application ID found in the view with pagination support.
         /// Provides preview functionality for users to validate view structure and content before full data access.
         /// </summary>
         /// <param name="viewName">The name of the database view to query for preview data.</param>
         /// <param name="skip">The number of records to skip for pagination (defaults to 0).</param>
         /// <param name="take">The maximum number of records to return (defaults to 100).</param>
-        /// <param name="filter">Optional SQL WHERE clause filter for restricting preview data.</param>
-        /// <param name="orderBy">Optional SQL ORDER BY clause for sorting preview results.</param>
         /// <returns>An OK result with preview data including sample records and column information, or BadRequest for invalid view names or query parameters.</returns>
         [HttpGet]
         [Route("GetViewPreviewData")]
-        public async Task<IActionResult> GetViewPreviewData(string viewName, int skip = 0, int take = 100, string? filter = null, string? orderBy = null)
+        public async Task<IActionResult> GetViewPreviewData(string viewName, int skip = 0, int take = 100)
         {
             if (!ModelState.IsValid)
             {
@@ -335,9 +333,7 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
                 var request = new Unity.Reporting.Configuration.ViewDataRequest
                 {
                     Skip = skip,
-                    Take = take,
-                    Filter = filter,
-                    OrderBy = orderBy
+                    Take = take
                 };
 
                 var result = await reportMappingService.GetViewPreviewDataAsync(viewName, request);
@@ -436,38 +432,6 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
         /// Keys represent field paths and values are human-readable labels that will be processed into valid PostgreSQL column names.
         /// </summary>
         public Dictionary<string, string> PathColumns { get; set; } = new Dictionary<string, string>();
-    }
-
-    /// <summary>
-    /// Request model for view data retrieval operations with pagination, filtering, and sorting capabilities.
-    /// Provides flexible parameters for querying generated reporting views with proper data access controls
-    /// and performance optimization through pagination and selective filtering.
-    /// </summary>
-    public class ViewDataRequest
-    {
-        /// <summary>
-        /// Gets or sets the number of records to skip for pagination.
-        /// Used in combination with Take to implement efficient pagination for large datasets.
-        /// </summary>
-        public int Skip { get; set; }
-
-        /// <summary>
-        /// Gets or sets the maximum number of records to return in the query result.
-        /// Provides control over result set size for performance and user interface optimization.
-        /// </summary>
-        public int Take { get; set; }
-
-        /// <summary>
-        /// Gets or sets the optional SQL WHERE clause filter for restricting query results.
-        /// Should be a valid PostgreSQL WHERE clause condition without the "WHERE" keyword.
-        /// </summary>
-        public string? Filter { get; set; }
-
-        /// <summary>
-        /// Gets or sets the optional SQL ORDER BY clause for sorting query results.
-        /// Should be a valid PostgreSQL ORDER BY clause without the "ORDER BY" keywords.
-        /// </summary>
-        public string? OrderBy { get; set; }
     }
 
     /// <summary>

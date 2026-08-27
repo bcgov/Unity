@@ -16,7 +16,7 @@ namespace Unity.GrantManager.ApplicationForms
         Task<IList<ApplicationFormDto>> GetConnectedApplicationFormsAsync();
         Task<(HashSet<string> MissingSubmissions, string MissingSubmissionsReport)> GetMissingSubmissions(int numberOfDaysToCheck);
         Task<HashSet<string>> GetChefsSubmissions(ApplicationFormDto applicationFormDto, int numberOfDaysToCheck);
-        HashSet<string> GetSubmissionsByForm(Guid applicationFormId);
+        Task<HashSet<string>> GetSubmissionsByFormAsync(Guid applicationFormId);
 
     }
 }

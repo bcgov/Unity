@@ -1,7 +1,6 @@
 @page "/GrantApplicants/Details"
 @using Microsoft.Extensions.Localization
 @using Unity.GrantManager.Localization
-@using Unity.GrantManager.Permissions
 @using Unity.GrantManager.Web.Pages.Applicants
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
 @using Volo.Abp.Authorization.Permissions
@@ -16,6 +15,18 @@
 
 @{
     PageLayout.Content.Title = L["Applicants"].Value;
+
+    var hasApplicantInfo    = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.Default);
+    var hasContacts         = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Contacts.Default);
+    var hasAddresses        = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Addresses.Default);
+    var hasHistory          = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.History.Default);
+    var hasPayments         = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Payments.Default);
+
+    // Set the first tab to display based on permissions
+    string firstTab = "nav-submissions";
+    if (hasApplicantInfo)  firstTab = "nav-organization-info";
+    else if (hasContacts)  firstTab = "nav-contacts";
+    else if (hasAddresses) firstTab = "nav-addresses";
 }
 
 @section styles {
@@ -31,7 +42,7 @@
     @await Component.InvokeAsync("ApplicantBreadcrumbWidget", new { applicantId = @Model.ApplicantId })
 </div>
 
-@if (!Model.ApplicantIsDeleted && await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Applicants.Edit))
+@if (!Model.ApplicantIsDeleted && await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Applicant.Update))
 {
     <div class="action-bar p-2 fade-in-load" id="applicantActionBar">
         <div id="ApplicantActionBarStart" class="d-flex align-items-stretch justify-content-start gap-2">
@@ -65,7 +76,7 @@
 <input type="hidden" id="ApplicantCurrentStatus" value="@Model.Status" />
 <input type="hidden" id="CurrentUserId" value="@Model.CurrentUserId" />
 <input type="hidden" id="CurrentUserName" value="@Model.CurrentUserName" />
-<input type="hidden" id="Extensions" value="@Model.Extensions" />
+<input type="hidden" id="AllowedFileTypes" value="@Model.AllowedFileTypes" />
 <input type="hidden" id="MaxFileSize" value="@Model.MaxFileSize" />
 
 @if (Model.ApplicantIsDeleted)
@@ -87,7 +98,7 @@ else
     </div>
     <div class="m-4 d-flex justify-content-center">
         <div class="spinner-border">
-            <span class="sr-only">Loading...</span>
+            <span class="visually-hidden">Loading...</span>
         </div>
     </div>
 </div>
@@ -97,32 +108,44 @@ else
         <abp-card>
             <abp-tabs name="detailsTab" id="detailsTab" class="nav-justified">
                 
-                @*-------- Organization Info Section ---------*@
-                <abp-tab name="nav-organization-info" active="true" title="Applicant Info">
+                @*-------- Applicant Organization Info Section ---------*@
+                @if (hasApplicantInfo)
+                {
+                <abp-tab name="nav-organization-info" active="@(firstTab == "nav-organization-info")" title="Applicant Info">
                     <div class="w-100 px-2" id="OrganizationInfoWidget">
                         @await Component.InvokeAsync("ApplicantOrganizationInfo", new { applicantId = Model.ApplicantId })
                     </div>
                 </abp-tab>
-                @*-------- Organization Info Section END ---------*@
+                }
+                @*-------- Applicant Organization Info Section END ---------*@
 
                 @*-------- Contacts Section ---------*@
-                <abp-tab name="nav-contacts" title="Contacts">
+                @if (hasContacts)
+                {
+                <abp-tab name="nav-contacts" active="@(firstTab == "nav-contacts")" title="Contacts">
+                    <zone id="@UnitySelector.ApplicantManagement.Contacts.Default" zone-type="PermissionOnly"
+                            permission-requirement="@UnitySelector.ApplicantManagement.Contacts.Default">
                     <div class="w-100 px-2" id="ContactsWidget">
                         @await Component.InvokeAsync("ApplicantContacts", new { applicantId = Model.ApplicantId })
                     </div>
+                    </zone>
                 </abp-tab>
+                }
                 @*-------- Contacts Section END ---------*@
 
                 @*-------- Addresses Section ---------*@
-                <abp-tab name="nav-addresses" title="Addresses">
+                @if (hasAddresses)
+                {
+                <abp-tab name="nav-addresses" active="@(firstTab == "nav-addresses")" title="Addresses">
                     <div class="w-100 px-2" id="AddressesWidget">
                         @await Component.InvokeAsync("ApplicantAddresses", new { applicantId = Model.ApplicantId })
                     </div>
                 </abp-tab>
+                }
                 @*-------- Addresses Section END ---------*@
 
                 @*-------- Submissions Section ---------*@
-                <abp-tab name="nav-submissions" title="Submissions">
+                <abp-tab name="nav-submissions" active="@(firstTab == "nav-submissions")" title="Submissions">
                     <div class="w-100 px-2" id="SubmissionsWidget">
                         @await Component.InvokeAsync("ApplicantSubmissions", new { applicantId = Model.ApplicantId })
                     </div>
@@ -130,22 +153,30 @@ else
                 @*-------- Submissions Section END ---------*@
 
                 @*-------- History Section ---------*@
+                @if (hasHistory)
+                {
                 <abp-tab name="nav-history" title="History">
+                    <zone id="@UnitySelector.ApplicantManagement.History.Default" zone-type="PermissionOnly">
                     <div class="w-100 px-2" id="HistoryWidget">
                         @await Component.InvokeAsync("ApplicantHistory", new { applicantId = Model.ApplicantId })
                     </div>
+                    </zone>
                 </abp-tab>
+                }
                 @*-------- History Section END ---------*@
 
                 @*-------- Payments Section ---------*@
-                @if (await FeatureChecker.IsEnabledAsync("Unity.Payments") &&
+                @if (await FeatureChecker.IsEnabledAsync("Unity.Payments") && hasPayments &&
                      (await PermissionChecker.IsGrantedAsync(UnitySelector.Payment.Summary.Default) ||
                       await PermissionChecker.IsGrantedAsync(UnitySelector.Payment.PaymentList.Default)))
                 {
                 <abp-tab name="nav-payments" title="Payments">
+                    <zone id="@UnitySelector.ApplicantManagement.Payments.Default"
+                        feature-requirement="Unity.Payments" zone-type="PermissionOnly">
                     <div class="w-100 px-2" id="PaymentsWidget">
                         @await Component.InvokeAsync("ApplicantPayments", new { applicantId = Model.ApplicantId })
                     </div>
+                    </zone>
                 </abp-tab>
                 }
                 @*-------- Payments Section END ---------*@
@@ -231,7 +262,7 @@ else
                 @*-------- Attachments Tab Section ---------*@
                 <div class="tab-pane fade" id="attachments" role="tabpanel" aria-labelledby="attachments-tab">
                     @await Component.InvokeAsync("ApplicantAttachments")
-                </div>
+                </div> 
                 @*-------- Attachments Tab Section END ---------*@
 
                 @*-------- History Tab Section ---------*@

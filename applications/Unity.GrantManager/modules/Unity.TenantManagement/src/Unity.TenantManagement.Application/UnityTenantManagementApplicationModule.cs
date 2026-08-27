@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Unity.Flex;
 using Volo.Abp.Mapperly;
 using Volo.Abp.Modularity;
 using Volo.Abp.TenantManagement;
@@ -9,7 +10,8 @@ namespace Unity.TenantManagement
         typeof(AbpTenantManagementDomainModule),
         typeof(UnityTenantManagementApplicationContractsModule),
         typeof(AbpTenantManagementApplicationModule),
-        typeof(AbpMapperlyModule)
+        typeof(AbpMapperlyModule),
+        typeof(FlexApplicationContractsModule)
     )]
     public class UnityTenantManagementApplicationModule : AbpModule
     {

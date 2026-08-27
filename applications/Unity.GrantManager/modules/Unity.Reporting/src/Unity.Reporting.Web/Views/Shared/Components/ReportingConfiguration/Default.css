@@ -8,6 +8,10 @@
     margin-bottom: 0.5rem;
 }
 
+    .provider-toggle-section .btn-compact {
+        height: 1.28rem !important;
+    }
+
 
     .provider-toggle-group {
         display: flex;

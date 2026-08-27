@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
 
 namespace Unity.Notifications.EmailGroups
@@ -11,6 +12,7 @@ namespace Unity.Notifications.EmailGroups
         Task<bool> DeleteUserAsync (Guid id);
         Task<bool> DeleteUsersByGroupIdAsync (Guid id);
         Task<bool> DeleteUsersByUserIdAsync(Guid id);
+        [AllowAnonymous]
         Task<List<EmailGroupUsersDto>> GetEmailGroupUsersByGroupIdAsync(Guid id);
         Task<List<EmailGroupUsersDto>> GetListAsync();
     }

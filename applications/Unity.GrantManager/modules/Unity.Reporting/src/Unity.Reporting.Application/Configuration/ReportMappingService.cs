@@ -136,6 +136,48 @@ namespace Unity.Reporting.Configuration
                 ? throw new EntityNotFoundException(typeof(ReportColumnsMap), $"CorrelationId: {correlationId}, CorrelationProvider: {correlationProvider}")
                 : ObjectMapper.Map<ReportColumnsMap, ReportColumnsMapDto>(reportColumnsMap);
 
+            // Mappings saved before the Worksheet Name / Source Order columns existed have neither value in
+            // their persisted JSON rows, so those columns would otherwise render blank/zero for a saved view
+            // even though a brand-new (unsaved) load of the same source shows them correctly. Backfill both
+            // from the live provider metadata by matching on Path, without requiring the user to re-save
+            // the configuration. SourceOrder of 0 is otherwise never assigned (providers always number from 1),
+            // so it doubles as the "missing" sentinel here.
+            var needsWorksheetNameBackfill = (providerKey == Providers.Worksheet || providerKey == Providers.WorksheetConsolidated) &&
+                map.Mapping.Rows.Any(row => string.IsNullOrEmpty(row.WorksheetName));
+            var needsSourceOrderBackfill = map.Mapping.Rows.Any(row => row.SourceOrder == 0);
+
+            if (needsWorksheetNameBackfill || needsSourceOrderBackfill)
+            {
+                var liveFields = await provider.GetFieldsMetadataAsync(correlationId);
+                var worksheetNameByPath = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                var sourceOrderByPath = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                foreach (var field in liveFields.Fields)
+                {
+                    if (!string.IsNullOrEmpty(field.WorksheetName) && !worksheetNameByPath.ContainsKey(field.Path))
+                    {
+                        worksheetNameByPath[field.Path] = field.WorksheetName;
+                    }
+                    if (!string.IsNullOrEmpty(field.Path) && !sourceOrderByPath.ContainsKey(field.Path))
+                    {
+                        sourceOrderByPath[field.Path] = field.SourceOrder;
+                    }
+                }
+
+                foreach (var row in map.Mapping.Rows)
+                {
+                    if (needsWorksheetNameBackfill && string.IsNullOrEmpty(row.WorksheetName) &&
+                        worksheetNameByPath.TryGetValue(row.Path, out var worksheetName))
+                    {
+                        row.WorksheetName = worksheetName;
+                    }
+
+                    if (needsSourceOrderBackfill && row.SourceOrder == 0 &&
+                        sourceOrderByPath.TryGetValue(row.Path, out var sourceOrder))
+                    {
+                        row.SourceOrder = sourceOrder;
+                    }
+                }
+            }
 
             // If we have an existing reportColumnsMap - let check if changes have occured that could effect the mapping
             map.DetectedChanges = await provider.DetectChangesAsync(correlationId, reportColumnsMap);
@@ -375,12 +417,12 @@ namespace Unity.Reporting.Configuration
         }
 
         /// <summary>
-        /// Retrieves paginated and filtered data from a generated database view with support for sorting and custom filtering.
+        /// Retrieves paginated data from a generated database view.
         /// Validates view existence, normalizes the view name, and delegates to the repository for secure data access
         /// with proper pagination controls to handle large datasets efficiently.
         /// </summary>
         /// <param name="viewName">The name of the database view to query for data.</param>
-        /// <param name="request">The request parameters containing pagination settings (skip/take), filtering criteria, and sort ordering.</param>
+        /// <param name="request">The request parameters containing pagination settings (skip/take).</param>
         /// <returns>A ViewDataResult containing the queried data rows, total record count, and column information for the requested page.</returns>
         /// <exception cref="ArgumentException">
         /// Thrown when:
@@ -411,7 +453,7 @@ namespace Unity.Reporting.Configuration
         /// Validates view existence and normalizes the view name before querying.
         /// </summary>
         /// <param name="viewName">The name of the database view to query for preview data.</param>
-        /// <param name="request">The request parameters for filtering (pagination settings are ignored as only top 1 record is returned).</param>
+        /// <param name="request">The request parameters (pagination settings are ignored as only top 1 record is returned).</param>
         /// <returns>A ViewDataResult containing the preview data (single top record), count of 1, and column information.</returns>
         /// <exception cref="ArgumentException">
         /// Thrown when:

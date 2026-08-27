@@ -47,7 +47,7 @@
         if (!sel || !preview) return;
         fetch('/api/form-notifications/templates').then(r => r.json()).then(list => {
             const t = list.find(x => String(x.id) === sel.value);
-            preview.innerText = t ? `Subject: ${t.subject}\n\n${t.body}` : '';
+            globalThis.renderNotificationTemplatePreview(preview, t);
         });
     }
 
@@ -149,12 +149,14 @@
     function handleTemplatesList(list) {
         const sel = document.getElementById('cf_template');
         sel.innerHTML = '';
-        list.forEach(t => {
+        [...list]
+            .sort((left, right) => left.name.localeCompare(right.name, undefined, { sensitivity: 'base' }))
+            .forEach(t => {
             const opt = document.createElement('option');
             opt.value = String(t.id);
             opt.text = `${t.name} — ${t.subject}`;
             sel.appendChild(opt);
-        });
+            });
         updatePreview();
         return list;
     }

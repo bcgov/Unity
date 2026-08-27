@@ -17,16 +17,17 @@
     <abp-modal>
         <abp-modal-header title="@L["Edit"].Value"></abp-modal-header>
         <abp-modal-body>
-            <input asp-for="Tenant.Id" />
-            <input asp-for="Tenant.ConcurrencyStamp" />
+            <input type="hidden" asp-for="Tenant.Id" />
+            <input type="hidden" asp-for="Tenant.ConcurrencyStamp" />
             <abp-input asp-for="Tenant.Name" label="@L["TenantName"].Value" />
+            <abp-input asp-for="Tenant.DisplayName" label="Display Name" />
             <abp-input asp-for="Tenant.Division" label="Division" />
             <abp-input asp-for="Tenant.Branch" label="Branch" />
             <abp-input asp-for="Tenant.Description" label="Description" />
 
             <div class="form-group">
-                <label for="Tenant_ClientCode">CAS Client Code</label>
-                <select asp-for="Tenant.CasClientCode" class="form-control cas-client-select" 
+                <label for="Tenant_CasClientCode">CAS Client Code</label>
+                <select asp-for="Tenant.CasClientCode" id="Tenant_CasClientCode" class="form-control cas-client-select"
                         data-ministry-target="#selected-ministry">
                     <option value="">Select a Client Code</option>
                     @foreach (var option in Model.CasClientOptions)

@@ -40,9 +40,8 @@
 
 .config-management {
     padding: 1rem;
-    max-height: calc(100vh - 140px);
     overflow: hidden;
-    margin-top: 20px;
+    margin-top: 10px;
     width: 95%;
 }
 

@@ -42,6 +42,8 @@
         dataTableName: 'AuditHistoryTable',
         dynamicButtonContainerId: 'dynamicButtonContainerId',
         externalSearchId: 'search-payment-history',
+        enableContextMenu: true,
+        contextMenuActionsSelector: '[data-selector="paymenthistory-table-actions"]'
     });
 
     function getColumns() {

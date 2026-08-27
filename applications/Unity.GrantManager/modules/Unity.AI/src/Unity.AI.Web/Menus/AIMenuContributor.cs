@@ -2,9 +2,14 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Unity.AI.Localization;
 using Unity.AI.Permissions;
+using Unity.AI.Settings;
+using Unity.Modules.Shared.Navigation;
+using Unity.Modules.Shared.Specializations;
 using Unity.Modules.Shared.Permissions;
 using Volo.Abp.Features;
+using Volo.Abp.Settings;
 using Volo.Abp.UI.Navigation;
+using Volo.Abp.Users;
 
 namespace Unity.AI.Web.Menus;
 
@@ -22,17 +27,27 @@ public class AIMenuContributor : IMenuContributor
     {
         var l = context.GetLocalizer<AIResource>();
         var featureChecker = context.ServiceProvider.GetRequiredService<IFeatureChecker>();
+        var settingProvider = context.ServiceProvider.GetRequiredService<ISettingProvider>();
 
-        context.Menu.AddItem(new ApplicationMenuItem(
-            name: AIMenus.Prompts,
-            displayName: "AI Prompts",
-            url: "~/Prompts",
-            icon: "fl fl-ai-prompts",
-            order: 900,
-            requiredPermissionName: IdentityConsts.ITOperationsPermissionName
-        ));
+        var specializationChecker = context.ServiceProvider.GetRequiredService<ISpecializationChecker>();
+        if (!await specializationChecker.IsEnabledAsync(SpecializationConsts.Onboarding))
+        {
+            await context.AddItemAsync(new ApplicationMenuItem(
+                name: AIMenus.Prompts,
+                displayName: "AI Prompts",
+                url: "~/Prompts",
+                icon: "fl fl-ai-prompts",
+                order: 900
+            ).OnlyWhenInRole(IdentityConsts.ITOperationsRoleName));
+        }
 
-        if (await featureChecker.IsEnabledAsync("Unity.AIReporting"))
+        var currentUser = context.ServiceProvider.GetRequiredService<ICurrentUser>();
+        var isItAdmin = currentUser.IsInRole(IdentityConsts.ITAdminRoleName);
+
+        var reportingEnabled = await featureChecker.IsEnabledAsync("Unity.AIReporting")
+            && await settingProvider.GetAsync<bool>(AISettings.ReportingEnabled, defaultValue: false);
+
+        if (reportingEnabled || isItAdmin)
         {
             context.Menu.AddItem(new ApplicationMenuItem(
                 name: AIMenus.Reporting,
@@ -43,5 +58,6 @@ public class AIMenuContributor : IMenuContributor
                 requiredPermissionName: AIPermissions.Reporting.ReportingDefault
             ));
         }
+
     }
 }

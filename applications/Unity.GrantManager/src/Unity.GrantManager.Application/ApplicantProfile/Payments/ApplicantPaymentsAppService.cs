@@ -23,7 +23,9 @@ public class ApplicantPaymentsAppService(
     public async Task<ApplicantPaymentSummaryDto> GetPaymentSummaryByApplicantIdAsync(Guid applicantId)
     {
         var applications = await applicationRepository.GetByApplicantIdAsync(applicantId);
-        var totalApproved = applications.Sum(a => a.ApprovedAmount);
+        var totalApproved = applications
+            .Where(a => a.ApplicationLinks == null || !a.ApplicationLinks.Any(l => l.LinkType == ApplicationLinkType.Parent))
+            .Sum(a => a.ApprovedAmount);
 
         if (applications.Count == 0)
             return new ApplicantPaymentSummaryDto { TotalApprovedAmount = totalApproved };

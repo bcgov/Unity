@@ -230,7 +230,10 @@ function initializeDataTable(options) {
         onStateLoaded,
         fixedHeaders = false,
         lengthMenu = [25, 50, 75, 100, -1],
-        deferRender = false
+        deferRender = false,
+        enableContextMenu = false,
+        contextMenuActionsSelector = '[data-selector$="-table-actions"]',
+        contextMenuLabels = {}
     } = options;
 
     // Process columns and visibility
@@ -350,9 +353,26 @@ function initializeDataTable(options) {
             }
         },
         stateLoadParams: function (settings, data) {
-            // Discard stale state when column count has changed so defaultVisibleColumns applies cleanly
-            if (data?.columns && data.columns.length !== settings.aoColumns.length) {
-                return false;
+            // Remap saved column state onto the live column list by name, rather than
+            // applying it positionally, so that state (including named "Saved Views")
+            // saved before columns were added/removed/reordered can still be loaded
+            // correctly. Always remapped (not just on a length mismatch) since a
+            // same-count reorder or rename would otherwise still be misapplied by
+            // position. Columns with no matching saved name fall back to the table's
+            // configured default visibility (defaultVisibleColumns).
+            if (data?.columns) {
+                const savedColumnsByName = new Map(
+                    data.columns.map(function (col) { return [col.name, col]; })
+                );
+                data.columns = settings.aoColumns.map(function (col) {
+                    const saved = savedColumnsByName.get(col.name);
+                    if (saved) return saved;
+                    return {
+                        name: col.name,
+                        visible: col.bVisible,
+                        search: { search: '', smart: true, regex: false, caseInsensitive: true, return: false }
+                    };
+                });
             }
 
             if (data?.externalSearch) {
@@ -451,6 +471,16 @@ function initializeDataTable(options) {
     // Initialize ScrollResize plugin for dynamic scroll body sizing
     if (fixedHeaders && DataTable.ScrollResize) {
         iDt.settings()[0]._scrollResize = new DataTable.ScrollResize(iDt);
+    }
+
+    // Initialize Context Menu plugin if enabled
+    if (enableContextMenu && typeof globalThis.initializeTableContextMenu === 'function') {
+        initializeTableContextMenu(iDt, {
+            enabled: true,
+            actionsSelector: contextMenuActionsSelector,
+            copyEnabled: true,
+            labels: contextMenuLabels
+        });
     }
 
     return iDt;

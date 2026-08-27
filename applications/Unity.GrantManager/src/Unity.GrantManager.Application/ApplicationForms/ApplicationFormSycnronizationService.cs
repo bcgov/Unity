@@ -1,39 +1,39 @@
 ﻿using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
-using RestSharp;
-using RestSharp.Authenticators;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
+using Unity.GrantManager.Integrations;
 using Unity.GrantManager.Integrations.Chefs;
+using Unity.Modules.Shared.Http;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.MultiTenancy;
 using Volo.Abp.Security.Encryption;
 using Volo.Abp.TenantManagement;
 using Unity.GrantManager.Notifications;
-using Unity.GrantManager.Notifications.Teams;
+using Unity.GrantManager.Notifications.Logs;
 
 namespace Unity.GrantManager.ApplicationForms
 {
 
     [RemoteService(false)]
-    public class ApplicationFormSycnronizationService :
+    public class ApplicationFormSycnronizationService(IRepository<ApplicationForm, Guid> repository) :
     CrudAppService<
         ApplicationForm,
         ApplicationFormDto,
         Guid,
         PagedAndSortedResultRequestDto,
-        CreateUpdateApplicationFormDto>,
+        CreateUpdateApplicationFormDto>(repository),
         IApplicationFormSycnronizationService
     {
         private static readonly JsonSerializerOptions _submissionSerializerOptions = new()
@@ -44,45 +44,27 @@ namespace Unity.GrantManager.ApplicationForms
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
         };
 
-        private readonly IStringEncryptionService _stringEncryptionService;
-        private readonly IApplicationFormRepository _applicationFormRepository;
-        private readonly ICurrentTenant _currentTenant;
-        private readonly IApplicationFormSubmissionRepository _applicationFormSubmissionRepository;
-        private readonly IApplicationFormVersionAppService _applicationFormVersionAppService;
-        private readonly IFormsApiService _formsApiService;
-        private readonly IIntakeFormSubmissionManager _intakeFormSubmissionManager;
-        private readonly INotificationsAppService _notificationsAppService;
+        // Pace requests to CHEFS across forms so a large form count doesn't burn through
+        // ResilientHttpRequest's per-call retry budget and trip its rate limiting.
+        private static readonly TimeSpan ChefsRequestPacingDelay = TimeSpan.FromMilliseconds(500);
+
+        // Collaborators are resolved lazily via ABP's LazyServiceProvider to keep the
+        // constructor within SonarQube's 7-parameter limit (S107). CurrentTenant, Logger,
+        // and ObjectMapper come from the ApplicationService base class.
+        private IStringEncryptionService StringEncryptionService => LazyServiceProvider.LazyGetRequiredService<IStringEncryptionService>();
+        private IApplicationFormRepository ApplicationFormRepository => LazyServiceProvider.LazyGetRequiredService<IApplicationFormRepository>();
+        private IApplicationFormSubmissionRepository ApplicationFormSubmissionRepository => LazyServiceProvider.LazyGetRequiredService<IApplicationFormSubmissionRepository>();
+        private IApplicationFormVersionAppService ApplicationFormVersionAppService => LazyServiceProvider.LazyGetRequiredService<IApplicationFormVersionAppService>();
+        private IFormsApiService FormsApiService => LazyServiceProvider.LazyGetRequiredService<IFormsApiService>();
+        private IIntakeFormSubmissionManager IntakeFormSubmissionManager => LazyServiceProvider.LazyGetRequiredService<IIntakeFormSubmissionManager>();
+        private INotificationsAppService NotificationsAppService => LazyServiceProvider.LazyGetRequiredService<INotificationsAppService>();
+        private IResilientHttpRequest ResilientHttpRequest => LazyServiceProvider.LazyGetRequiredService<IResilientHttpRequest>();
+        private IEndpointManagementAppService EndpointManagementAppService => LazyServiceProvider.LazyGetRequiredService<IEndpointManagementAppService>();
+        private ITenantRepository TenantRepository => LazyServiceProvider.LazyGetRequiredService<ITenantRepository>();
+
         private List<Fact> _facts = [];
-        private readonly RestClient _intakeClient;
-        private readonly ITenantRepository _tenantRepository;
         public List<ApplicationFormDto>? ApplicationFormDtoList { get; set; }
         public HashSet<string> FormVersionsInitializedVersionHash { get; set; } = [];
-      
-        public ApplicationFormSycnronizationService(
-            INotificationsAppService notificationsAppService,
-            ICurrentTenant currentTenant,
-            IRepository<ApplicationForm, Guid> repository,
-            ITenantRepository tenantRepository,
-            RestClient restClient,
-            IStringEncryptionService stringEncryptionService,
-            IApplicationFormRepository applicationFormRepository,
-            IApplicationFormSubmissionRepository applicationFormSubmissionRepository,
-            IApplicationFormVersionAppService applicationFormVersionAppService,
-            IFormsApiService formsApiService,
-            IIntakeFormSubmissionManager intakeFormSubmissionManager)
-            : base(repository)
-        {
-            _currentTenant = currentTenant;
-            _tenantRepository = tenantRepository;
-            _intakeClient = restClient;
-            _stringEncryptionService = stringEncryptionService;
-            _applicationFormRepository = applicationFormRepository;
-            _formsApiService = formsApiService;
-            _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
-            _applicationFormVersionAppService = applicationFormVersionAppService;
-            _intakeFormSubmissionManager = intakeFormSubmissionManager;
-            _notificationsAppService = notificationsAppService;
-        }
 
         private async Task SynchronizeFormSubmissions(HashSet<string> missingSubmissions, ApplicationFormDto applicationFormDto)
         {
@@ -108,7 +90,7 @@ namespace Unity.GrantManager.ApplicationForms
                 return;
             }
 
-            JObject? submissionData = await _formsApiService.GetSubmissionDataAsync(chefsFormId, chefsSubmissionId);
+            JObject? submissionData = await FormsApiService.GetSubmissionDataAsync(chefsFormId, chefsSubmissionId);
             if (submissionData == null)
             {
                 Logger.LogInformation("ApplicationFormSycnronizationService->SynchronizeFormSubmissions submissionData is null");
@@ -149,7 +131,7 @@ namespace Unity.GrantManager.ApplicationForms
 
         private async Task ProcessFormVersion(string formVersionId, int version, Guid chefsFormId, ApplicationFormDto applicationFormDto, JObject submissionData)
         {
-            bool formVersionExists = await _applicationFormVersionAppService.FormVersionExists(formVersionId);
+            bool formVersionExists = await ApplicationFormVersionAppService.FormVersionExists(formVersionId);
             string formId = chefsFormId.ToString();
 
             if (!formVersionExists && Guid.TryParse(applicationFormDto.ChefsApplicationFormGuid, out Guid applicationFormIdGuid))
@@ -167,14 +149,14 @@ namespace Unity.GrantManager.ApplicationForms
             AddFact("Form Version did NOT exist in Unity: ", $"{version}");
             AddFact("Version Created: ", "Please Fill in Mapping");
             bool published = false;
-            await _applicationFormVersionAppService.TryInitializeApplicationFormVersion(formId, version, applicationFormIdGuid, formVersionId, published);
+            await ApplicationFormVersionAppService.TryInitializeApplicationFormVersion(formId, version, applicationFormIdGuid, formVersionId, published);
             FormVersionsInitializedVersionHash.Add(formVersionId);
         }
 
         private async Task ProcessSubmission(ApplicationFormDto applicationFormDto, JObject submissionData, int version)
         {
             ApplicationForm applicationForm = ObjectMapper.Map<ApplicationFormDto, ApplicationForm>(applicationFormDto);
-            var result = await _intakeFormSubmissionManager.ProcessFormSubmissionAsync(applicationForm, submissionData);
+            var result = await IntakeFormSubmissionManager.ProcessFormSubmissionAsync(applicationForm, submissionData);
             AddFact("Synchronizing Data - Form Version: ", $"{version} Unity Application ID: {result}");
         }
 
@@ -199,7 +181,7 @@ namespace Unity.GrantManager.ApplicationForms
                     try
                     {
                         HashSet<string> newChefsSubmissions = await GetChefsSubmissions(applicationFormDto, numberOfDaysToCheck);
-                        HashSet<string> existingSubmissions = GetSubmissionsByForm(applicationFormDto.Id);
+                        HashSet<string> existingSubmissions = await GetSubmissionsByFormAsync(applicationFormDto.Id);
                         missingSubmissions = [.. newChefsSubmissions.Except(existingSubmissions)];
                         if (missingSubmissions.Count > 0)
                         {
@@ -231,6 +213,7 @@ namespace Unity.GrantManager.ApplicationForms
                         Logger.LogError(ex, "Exception: {Exception}", ex);
                     }
 
+                    await Task.Delay(ChefsRequestPacingDelay);
                 }
 
                 AddFact("------------------------------------", "----------------------------------------");
@@ -245,7 +228,7 @@ namespace Unity.GrantManager.ApplicationForms
                 string activityTitle = "Review Missed Chefs Submissions " + tenantName;
                 string activitySubtitle = "Environment: " + envInfo;
                 
-                await _notificationsAppService.PostToTeamsAsync(activityTitle, activitySubtitle, _facts);
+                await NotificationsAppService.PostToNotificationsAsync(activityTitle, activitySubtitle, _facts);
             }
             return (missingSubmissions ?? [], missingSubmissionsReportBuilder.ToString());
         }
@@ -253,31 +236,31 @@ namespace Unity.GrantManager.ApplicationForms
         private async Task<string?> GetTenantNameAsync()
         {
             string tenantName = "";
-            if (_currentTenant != null && !string.IsNullOrEmpty(_currentTenant.Name))
+            if (CurrentTenant != null && !string.IsNullOrEmpty(CurrentTenant.Name))
             {
-                tenantName = " -- Tenant: " + _currentTenant.Name;
-            } else if (_currentTenant != null && _currentTenant.Id != null)
+                tenantName = " -- Tenant: " + CurrentTenant.Name;
+            } else if (CurrentTenant != null && CurrentTenant.Id != null)
             {
                 // Lookup the tenant name
-                Tenant? tenant = await _tenantRepository.FindAsync(_currentTenant.Id.Value);
-                tenantName = tenant != null ? " -- Tenant: " + tenant.Name : " -- Tenant: " + _currentTenant.Id;
+                Tenant? tenant = await TenantRepository.FindAsync(CurrentTenant.Id.Value);
+                tenantName = tenant != null ? " -- Tenant: " + tenant.Name : " -- Tenant: " + CurrentTenant.Id;
             }   
 
             return tenantName;
         }
 
-        public HashSet<string> GetSubmissionsByForm(Guid applicationFormId)
+        public async Task<HashSet<string>> GetSubmissionsByFormAsync(Guid applicationFormId)
         {
-            IQueryable<ApplicationFormSubmission> queryableApplicationFormSubmissions = _applicationFormSubmissionRepository.GetQueryableAsync().Result;
+            IQueryable<ApplicationFormSubmission> queryableApplicationFormSubmissions = await ApplicationFormSubmissionRepository.GetQueryableAsync();
             var formSubmissionGuids = queryableApplicationFormSubmissions.Where(x => x.ApplicationFormId.Equals(applicationFormId)).Select(o => o.ChefsSubmissionGuid).ToHashSet();
             return formSubmissionGuids;
         }
 
         public async Task<IList<ApplicationFormDto>> GetConnectedApplicationFormsAsync()
         {
-            IQueryable<ApplicationForm> queryableApplicationForms = _applicationFormRepository.GetQueryableAsync().Result;
+            IQueryable<ApplicationForm> queryableApplicationForms = await ApplicationFormRepository.GetQueryableAsync();
             var forms = queryableApplicationForms.Where(x => (x.ApiKey ?? string.Empty) != string.Empty).ToList();
-            return await Task.FromResult<IList<ApplicationFormDto>>(ObjectMapper.Map<List<ApplicationForm>, List<ApplicationFormDto>>([.. forms]));
+            return ObjectMapper.Map<List<ApplicationForm>, List<ApplicationFormDto>>([.. forms]);
         }
 
         public async Task<HashSet<string>> GetChefsSubmissions(ApplicationFormDto applicationFormDto, int numberOfDaysToCheck)
@@ -306,35 +289,43 @@ namespace Unity.GrantManager.ApplicationForms
                 throw new ApiException(400, "Missing required parameter 'formId' when calling ListFormSubmissions");
             }
 
-            string requestUrl = $"/forms/{applicationForm.ChefsApplicationFormGuid}/submissions";
+            string chefsApi = await EndpointManagementAppService.GetChefsApiBaseUrlAsync();
+            string requestUrl = $"{chefsApi}/forms/{applicationForm.ChefsApplicationFormGuid}/submissions";
             if (!string.IsNullOrEmpty(queryString))
             {
                 requestUrl += queryString;
             }
+            requestUrl += (requestUrl.Contains('?') ? "&" : "?") + "deleted=false&filterformSubmissionStatusCode=true";
 
-            var restRequest = new RestRequest(requestUrl, Method.Get)
+            var decryptedApiKey = StringEncryptionService.Decrypt(applicationForm.ApiKey!) ?? string.Empty;
+            var response = await ResilientHttpRequest.HttpAsync(
+                HttpMethod.Get,
+                requestUrl,
+                basicAuth: (applicationForm.ChefsApplicationFormGuid!, decryptedApiKey));
+
+            string content = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
             {
-                Authenticator = new HttpBasicAuthenticator(applicationForm.ChefsApplicationFormGuid!, _stringEncryptionService.Decrypt(applicationForm.ApiKey!) ?? string.Empty)
-            };
+                string errorMessage = "Error calling ListFormSubmissions: " + content;
 
-            restRequest.AddParameter("deleted", "false");
-            restRequest.AddParameter("filterformSubmissionStatusCode", "true");
+                if (response.StatusCode == HttpStatusCode.TooManyRequests)
+                {
+                    // Transient/expected: CHEFS rate limiting. Skip quietly and let the next
+                    // scheduled sync pass retry, rather than paging anyone.
+                    Logger.LogWarning(
+                        "CHEFS rate limit reached while calling ListFormSubmissions for form {FormId}. Skipping this synchronization pass.",
+                        applicationForm.ChefsApplicationFormGuid);
+                    return null;
+                }
 
-            var response = await _intakeClient.GetAsync(restRequest);
-            string errorMessageBase = "Error calling ListFormSubmissions: ";
-            string errorMessage = (int)response.StatusCode switch
-            {
-                >= 400 => errorMessageBase + response.Content,
-                0 => errorMessageBase + response.ErrorMessage,
-                _ => ""
-            };
-
-            if (!string.IsNullOrEmpty(errorMessage))
-            {                
-                throw new ApiException((int)response.StatusCode, errorMessage, response.ErrorMessage ?? $"{response.StatusCode}");
+                // Unauthorized/Forbidden usually mean a misconfigured or revoked API key for this
+                // form, not a transient condition - let this throw through the normal exception/
+                // notification pipeline so it actually gets noticed and fixed.
+                throw new ApiException((int)response.StatusCode, errorMessage, response.ReasonPhrase ?? $"{response.StatusCode}");
             }
 
-            List<FormSubmissionSummaryDto>? jsonResponse = JsonSerializer.Deserialize<List<FormSubmissionSummaryDto>>(response.Content ?? string.Empty, _submissionSerializerOptions);
+            List<FormSubmissionSummaryDto>? jsonResponse = JsonSerializer.Deserialize<List<FormSubmissionSummaryDto>>(content, _submissionSerializerOptions);
             return jsonResponse;
         }
 

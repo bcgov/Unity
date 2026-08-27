@@ -35,7 +35,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ChefsAttachments
                 // View guard — for toggling visibility of existing summaries
                 ViewBag.IsAIAttachmentSummariesEnabled =
                     featureEnabled &&
-                    await permissionChecker.IsGrantedAsync(AIPermissions.Analysis.ViewAttachmentSummary);
+                    await permissionChecker.IsGrantedAsync(AIPermissions.AttachmentSummaries.View);
 
                 if (applicationFormId == Guid.Empty)
                 {
@@ -51,7 +51,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ChefsAttachments
                     featureEnabled &&
                     tenantManualEnabled &&
                     applicationForm.ManuallyInitiateAIAnalysis &&
-                    await permissionChecker.IsGrantedAsync(AIPermissions.Analysis.GenerateAttachmentSummaries);
+                    await permissionChecker.IsGrantedAsync(AIPermissions.AttachmentSummaries.Generate);
 
                 return View();
             }

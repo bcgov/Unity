@@ -140,5 +140,17 @@ namespace Unity.Reporting.Configuration
         /// a non-null value (e.g., "v1", "v2") means the column is specific to that form version.
         /// </summary>
         public string? VersionLabel { get; set; } = null;
+
+        /// <summary>
+        /// Gets or sets the name of the worksheet this field belongs to (includes the version suffix, e.g. "grant_application-v2").
+        /// Populated only for worksheet-based providers; null for scoresheet/formversion providers.
+        /// </summary>
+        public string? WorksheetName { get; set; } = null;
+
+        /// <summary>
+        /// Gets or sets the field's 1-based position in the provider's calculated overall field order.
+        /// Drives the report-config-table's default sort (Source Order 1 -> n); not shown by default.
+        /// </summary>
+        public int SourceOrder { get; set; }
     }
 }

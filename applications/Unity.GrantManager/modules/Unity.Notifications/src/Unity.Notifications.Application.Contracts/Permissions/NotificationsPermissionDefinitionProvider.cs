@@ -21,6 +21,10 @@ public class NotificationsPermissionDefinitionProvider : PermissionDefinitionPro
             L($"Permission:{NotificationsPermissions.Email.Send}"));
 
         notificationsPermissions.AddChild(
+            NotificationsPermissions.Email.SendBulk,
+            L($"Permission:{NotificationsPermissions.Email.SendBulk}"));
+
+        notificationsPermissions.AddChild(
             NotificationsPermissions.Email.DeleteDraft,
             L($"Permission:{NotificationsPermissions.Email.DeleteDraft}"));
 
@@ -40,10 +44,6 @@ public class NotificationsPermissionDefinitionProvider : PermissionDefinitionPro
         scheduleNotificationsPermissions.AddChild(
             NotificationsPermissions.Email.ScheduleCreate,
             L($"Permission:{NotificationsPermissions.Email.ScheduleCreate}"));
-
-        scheduleNotificationsPermissions.AddChild(
-            NotificationsPermissions.Email.ScheduleDelete,
-            L($"Permission:{NotificationsPermissions.Email.ScheduleDelete}"));
 
         scheduleNotificationsPermissions.AddChild(
             NotificationsPermissions.Email.ScheduleCancel,

@@ -12,10 +12,8 @@ using Volo.Abp.Users;
 namespace Unity.AI.RateLimit;
 
 /// <summary>
-/// Per-user cooldown for AI generate calls. KISS: a single cache entry per user
-/// holds the cooldown end ticks; the cache TTL matches the cooldown so a missing
-/// entry means the user can generate again. Anonymous/system callers are not
-/// rate-limited (background event handlers also flow through the AI queue).
+/// Per-user AI cooldown. Anonymous and system callers bypass it; activity providers
+/// augment the state returned to authenticated users.
 /// </summary>
 public class AIRateLimiter(
     IDistributedCache cache,
@@ -42,18 +40,20 @@ public class AIRateLimiter(
         }
     }
 
-    public virtual async Task EnsureAsync()
+    public virtual Task EnsureAsync() => EnsureAsync(currentUser.Id);
+
+    public virtual async Task EnsureAsync(Guid? userId)
     {
-        if (currentUser.Id is not Guid userId)
+        if (userId is not Guid resolvedUserId)
         {
             // No user (background/system flow). User-level rate limit does not apply.
             return;
         }
 
-        var userLock = distributedLockProvider.CreateLock(CooldownLockPrefix + userId);
+        var userLock = distributedLockProvider.CreateLock(CooldownLockPrefix + resolvedUserId);
         using (await userLock.AcquireAsync())
         {
-            var remaining = await GetRemainingSecondsAsync(userId);
+            var remaining = await GetRemainingSecondsAsync(resolvedUserId);
             if (remaining > 0)
             {
                 throw new UserFriendlyException(
@@ -86,11 +86,15 @@ public class AIRateLimiter(
             return new AIRateLimitStateDto { RetryAfterSeconds = 0, IsGenerating = false };
         }
 
-        return new AIRateLimitStateDto
+        var userLock = distributedLockProvider.CreateLock(CooldownLockPrefix + userId);
+        using (await userLock.AcquireAsync())
         {
-            RetryAfterSeconds = await GetRemainingSecondsAsync(userId),
-            IsGenerating = await HasActiveGenerationAsync()
-        };
+            return new AIRateLimitStateDto
+            {
+                RetryAfterSeconds = await GetRemainingSecondsAsync(userId),
+                IsGenerating = await HasActiveGenerationAsync()
+            };
+        }
     }
 
     private async Task<bool> HasActiveGenerationAsync()

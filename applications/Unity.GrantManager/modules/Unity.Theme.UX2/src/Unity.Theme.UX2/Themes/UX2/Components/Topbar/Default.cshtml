@@ -1,8 +1,10 @@
-﻿@using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.Brand
+﻿@using System.Linq
+@using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.Brand
 @using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.Menu
 @using Volo.Abp.Authorization.Permissions
 @using Volo.Abp.Features
 @using Volo.Abp.MultiTenancy
+@using Volo.Abp.Security.Claims
 @using Volo.Abp.Users;
 
 @inject ICurrentUser CurrentUser
@@ -32,6 +34,9 @@
         bool isAuthorizedForTenantSwitch = false;
         if (CurrentUser.IsAuthenticated && CurrentUser.FindClaimValue("has_multiple_tenants") == "true")
             isAuthorizedForTenantSwitch = true;
+
+        bool isItOperations = CurrentUser.IsInRole("ITOperations");
+        bool isDirectMessagingEnabled = isItOperations && await FeatureChecker.IsEnabledAsync("Unity.Notifications.DirectMessaging");
     }
     <abp-dropdown id="user-dropdown">
         <abp-dropdown-button class="btn-dropdown" text="@CurrentTenant.Name" />
@@ -44,13 +49,22 @@
             {
                 <abp-dropdown-item href="/ApplicantPortalSettings">Applicant Portal Configuration</abp-dropdown-item>
             }          
-            @if (CurrentUser.IsInRole("system_admin") && await FeatureChecker.IsEnabledAsync("SettingManagement.Enable"))
+            @* "system_admin" is a DB-managed role, not a Keycloak-native one - it's only ever
+               present as an AbpClaimTypes.Role claim (dynamically recomputed by ABP from the DB
+               on every request), never in client_roles/CurrentUser.IsInRole. *@
+            @if (CurrentUser.FindClaims(AbpClaimTypes.Role).Any(c => c.Value == "system_admin") && await FeatureChecker.IsEnabledAsync("SettingManagement.Enable"))
             {
                 <abp-dropdown-item href="/ConfigurationManagement">Configuration Management</abp-dropdown-item>
             }
-            @if (CurrentUser.IsInRole("ITOperations"))
+            @if (isItOperations)
             {
                 <abp-dropdown-item href="/UnityAdmin">Unity Admin</abp-dropdown-item>
+                <abp-dropdown-item href="/ExceptionLogs">Exception Logs</abp-dropdown-item>
+            }
+            @if (isDirectMessagingEnabled)
+            {
+                <abp-dropdown-item href="/UnityMessaging">Unity Messaging</abp-dropdown-item>
+                <abp-dropdown-item id="realtimeWidgetBubbleMenuItem" href="#" style="display: none;"></abp-dropdown-item>
             }
 
             <abp-dropdown-item href="/Account/Logout">Logout</abp-dropdown-item>

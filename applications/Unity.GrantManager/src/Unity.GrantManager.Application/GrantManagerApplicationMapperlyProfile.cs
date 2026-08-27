@@ -1,6 +1,7 @@
 using Riok.Mapperly.Abstractions;
 using System;
 using System.Reflection;
+using Unity.AI.Operations;
 using Unity.GrantManager.ApplicantProfile;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
@@ -16,7 +17,6 @@ using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Integrations;
 using Unity.GrantManager.Locality;
 using Unity.GrantManager.Zones;
-using Unity.AI.Operations;
 using Unity.Payments.Domain.AccountCodings;
 using Unity.Payments.PaymentRequests;
 using Volo.Abp.Mapperly;
@@ -345,11 +345,15 @@ public partial class ApplicationFormToDtoMapper : MapperBase<ApplicationForm, Ap
     [MapperIgnoreTarget(nameof(ApplicationFormDto.ChefsFormVersionGuid))]
     [MapperIgnoreTarget(nameof(ApplicationFormDto.SubmissionHeaderMapping))]
     [MapperIgnoreTarget(nameof(ApplicationFormDto.ApiToken))]
+    [MapperIgnoreTarget(nameof(ApplicationFormDto.ExternalLinks))]
+    [MapperIgnoreTarget(nameof(ApplicationFormDto.ApplicantMessage))]
     public override partial ApplicationFormDto Map(ApplicationForm source);
 
     [MapperIgnoreTarget(nameof(ApplicationFormDto.ChefsFormVersionGuid))]
     [MapperIgnoreTarget(nameof(ApplicationFormDto.SubmissionHeaderMapping))]
     [MapperIgnoreTarget(nameof(ApplicationFormDto.ApiToken))]
+    [MapperIgnoreTarget(nameof(ApplicationFormDto.ExternalLinks))]
+    [MapperIgnoreTarget(nameof(ApplicationFormDto.ApplicantMessage))]
     public override partial void Map(ApplicationForm source, ApplicationFormDto destination);
 }
 [Mapper]
@@ -366,6 +370,7 @@ public partial class ApplicationFormDtoToEntityMapper : MapperBase<ApplicationFo
     [MapperIgnoreTarget(nameof(ApplicationForm.ParentFormId))]
     [MapperIgnoreTarget(nameof(ApplicationForm.IsDeleted))]
     [MapperIgnoreTarget(nameof(ApplicationForm.PaymentApprovalThreshold))]
+    [MapperIgnoreTarget(nameof(ApplicationForm.ExternalLinksConfig))]
     public override partial ApplicationForm Map(ApplicationFormDto source);
 
     [MapperIgnoreTarget(nameof(ApplicationForm.DeleterId))]
@@ -379,6 +384,7 @@ public partial class ApplicationFormDtoToEntityMapper : MapperBase<ApplicationFo
     [MapperIgnoreTarget(nameof(ApplicationForm.ParentFormId))]
     [MapperIgnoreTarget(nameof(ApplicationForm.IsDeleted))]
     [MapperIgnoreTarget(nameof(ApplicationForm.PaymentApprovalThreshold))]
+    [MapperIgnoreTarget(nameof(ApplicationForm.ExternalLinksConfig))]
     public override partial void Map(ApplicationFormDto source, ApplicationForm destination);
 }
 [Mapper] public partial class ApplicationFormVersionToDtoMapper : MapperBase<ApplicationFormVersion, ApplicationFormVersionDto> { public override partial ApplicationFormVersionDto Map(ApplicationFormVersion source); public override partial void Map(ApplicationFormVersion source, ApplicationFormVersionDto destination); }
@@ -538,7 +544,6 @@ public partial class ApplicationActionResultItemToDtoMapper : MapperBase<Applica
 [Mapper] public partial class CommunityToDtoMapper : MapperBase<Community, CommunityDto> { public override partial CommunityDto Map(Community source); public override partial void Map(Community source, CommunityDto destination); }
 [Mapper] public partial class RegionalDistrictToDtoMapper : MapperBase<RegionalDistrict, RegionalDistrictDto> { public override partial RegionalDistrictDto Map(RegionalDistrict source); public override partial void Map(RegionalDistrict source, RegionalDistrictDto destination); }
 [Mapper] public partial class ApplicationTagsToDtoMapper : MapperBase<ApplicationTags, ApplicationTagsDto> { public override partial ApplicationTagsDto Map(ApplicationTags source); public override partial void Map(ApplicationTags source, ApplicationTagsDto destination); }
-[Mapper] public partial class AIGenerationRequestToDtoMapper : MapperBase<AIGenerationRequest, AIGenerationRequestDto> { public override partial AIGenerationRequestDto Map(AIGenerationRequest source); public override partial void Map(AIGenerationRequest source, AIGenerationRequestDto destination); }
 [Mapper(AllowNullPropertyAssignment = true)]
 public partial class ApplicantToGrantApplicationApplicantDtoMapper : MapperBase<Applicant, GrantApplicationApplicantDto>
 {
@@ -978,6 +983,13 @@ public class UpdateApplicantSummaryDtoToApplicantMapper : MapperBase<UpdateAppli
         if (source.IndigenousOrgInd != null)
         {
             destination.IndigenousOrgInd = GrantManagerMapperlyHelpers.BoolToIndigenousOrgInd(source.IndigenousOrgInd);
+        }
+
+        // FiscalDay: DTO is string?, entity is int? — CopyNonDefault skips mismatched
+        // types entirely, so the value is never written without this explicit conversion.
+        if (source.FiscalDay != null)
+        {
+            destination.FiscalDay = int.TryParse(source.FiscalDay, out var d) ? d : null;
         }
     }
 }

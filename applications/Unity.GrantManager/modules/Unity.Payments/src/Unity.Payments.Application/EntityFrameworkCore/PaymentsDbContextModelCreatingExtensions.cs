@@ -42,12 +42,24 @@ public static class PaymentsDbContextModelCreatingExtensions
                 .OnDelete(DeleteBehavior.NoAction);
 
             b.HasIndex(e => e.ReferenceNumber).IsUnique();
+            b.HasIndex(e => e.CreationTime);
+            b.HasIndex(e => e.Status);
+            b.HasIndex(e => e.CorrelationId);
+            b.HasIndex(e => e.SiteId);
+            b.HasIndex(e => e.AccountCodingId);
+            b.HasIndex(e => new { e.TenantId, e.CreationTime })
+                .HasFilter("\"IsDeleted\" = false");
 
             // FSB Notification Tracking
             b.Property(x => x.FsbNotificationEmailLogId).IsRequired(false);
             b.Property(x => x.FsbNotificationSentDate).IsRequired(false);
             b.Property(x => x.FsbApNotified).IsRequired(false).HasMaxLength(10);
             b.HasIndex(x => x.FsbNotificationEmailLogId);
+
+            // Cancellation tracking
+            b.Property(x => x.CancelledOn).HasColumnName("CancelledOn").IsRequired(false);
+            b.Property(x => x.CancelledById).HasColumnName("CancelledById").IsRequired(false);
+            b.Property(x => x.CancelledBy).HasColumnName("CancelledBy").HasMaxLength(256).IsRequired(false);
         });
 
 

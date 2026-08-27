@@ -39,6 +39,9 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string? DeclineRational { get; set; } = string.Empty;
     public string? Notes { get; set; } = string.Empty;
     public string? AssessmentResultStatus { get; set; } = string.Empty;
+    public bool ExternalStatusVisibility { get; set; } = false;
+    public string ExternalStatus { get; set; } = string.Empty;
+    public string? PublishedStatus { get; set; }
     public DateTime? AssessmentResultDate { get; set; }
     public GrantApplicationState StatusCode { get; set; }
     public DateTime? FinalDecisionDate { get; set; }
@@ -86,5 +89,5 @@ public class GrantApplicationDto : AuditedEntityDto<Guid>
     public string? AIAnalysis { get; set; }
     public Guid? DefaultSiteId { get; set; }
     public ApplicationAnalysisResponse? AIAnalysisData { get; set; }
-    public string? AIScoresheetAnswers { get; set; }
+    public bool EligibleForRenewal { get; set; }
 }

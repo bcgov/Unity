@@ -75,9 +75,7 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfigurationView
                 var request = new ViewDataRequest
                 {
                     Skip = 0,
-                    Take = 100, // This will be ignored by the preview method since it uses LIMIT 1 pattern
-                    OrderBy = null,
-                    Filter = null
+                    Take = 100 // This will be ignored by the preview method since it uses LIMIT 1 pattern
                 };
 
                 var viewData = await reportMappingService.GetViewPreviewDataAsync(reportColumnsMap.ViewName, request);

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Unity.GrantManager.GrantApplications;
+using Unity.Modules.Shared;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationContactsWidget
 {
@@ -13,7 +14,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicationContactsWidg
         RefreshUrl = "Widgets/ApplicationContacts/RefreshApplicationContacts",
         ScriptTypes = new[] { typeof(ApplicationContactsWidgetScriptBundleContributor) },
         StyleTypes = new[] { typeof(ApplicationContactsWidgetStyleBundleContributor) },
-        AutoInitialize = false)]
+        AutoInitialize = false,
+        RequiredPolicies = new [] { UnitySelector.ApplicantManagement.Contacts.Default })]
     public class ApplicationContactsWidgetViewComponent : AbpViewComponent
     {
         private readonly IApplicationContactService _applicationContactService;

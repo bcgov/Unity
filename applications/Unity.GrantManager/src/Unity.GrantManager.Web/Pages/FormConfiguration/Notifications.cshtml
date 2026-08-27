@@ -4,7 +4,8 @@
     ViewData["Title"] = "Form Configuration";
 }
 @section Scripts {
-    <script src="/lib/select2/js/select2.min.js"></script>
+    <script src="/libs/select2/js/select2.min.js"></script>
+    <script src="/js/formConfiguration/NotificationsPreview.js"></script>
     <script src="/js/formConfiguration/Notifications.js"></script>
 }
 
@@ -133,7 +134,6 @@
         </div>
 
         <div class="col-lg-4">
-            @* Placeholder for any extra widgets *@
             @await Component.InvokeAsync("Notifications", new { formid = Model.FormId })
         </div>
     </div>

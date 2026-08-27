@@ -272,15 +272,16 @@ namespace Unity.GrantManager.Reporting.Configuration
                 return formVersion.FormSchema;
             }
 
-            if (formVersion.ChefsApplicationFormGuid == null || formVersion.ChefsFormVersionGuid == null)
+            if (formVersion.ChefsFormVersionGuid == null)
             {
                 logger.LogError("Form version {FormVersionId} is missing CHEFS configuration", formVersionId);
                 return null;
             }
 
-            // Call off to CHEFS to get the schema
-            dynamic? formSchemaResponse = await formsApiService.GetFormDataAsync(
-                formVersion.ChefsApplicationFormGuid,
+            // ChefsApplicationFormGuid on ApplicationFormVersion can contain stale/incorrect data.
+            // Resolve the parent ApplicationForm via FK to get the authoritative CHEFS form GUID and API key.
+            dynamic? formSchemaResponse = await formsApiService.GetFormVersionDataAsync(
+                formVersion.ApplicationFormId,
                 formVersion.ChefsFormVersionGuid);
 
             if (formSchemaResponse == null || formSchemaResponse?.schema == null)

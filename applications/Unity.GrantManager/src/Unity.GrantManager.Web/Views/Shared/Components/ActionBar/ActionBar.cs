@@ -26,6 +26,17 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ActionBar
               .AddIfNotContains("/Views/Shared/Components/ActionBar/Default.css");
             context.Files
               .AddIfNotContains("/Pages/BulkApprovals/ApproveApplicationsModal.css");
+            context.Files
+              .AddIfNotContains("/Pages/BulkActions/BulkPublishApplications.css");
+            context.Files
+              .AddIfNotContains("/Pages/BulkEmailNotifications/SendEmailNotificationModal.css");
+            context.Files
+              .AddIfNotContains("/Pages/BulkEmailNotifications/ComposeAndSendEmailModal.css");
+            // The bulk-send modal mounts EmailsWidget dynamically (via abp.WidgetManager) for the selected
+            // application, rather than server-rendering it as part of this page — so its own [Widget] bundle
+            // never gets a chance to auto-register here. Pull it in explicitly.
+            context.Files
+              .AddIfNotContains("/Views/Shared/Components/EmailsWidget/Default.css");
         }
     }
 
@@ -46,6 +57,18 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ActionBar
               .AddIfNotContains("/Pages/PaymentRequests/CreateHistoricalPaymentsModal.js");
             context.Files
               .AddIfNotContains("/Pages/BulkApprovals/ApproveApplicationsModal.js");
+            context.Files
+              .AddIfNotContains("/Pages/BulkActions/BulkPublishApplications.js");
+            context.Files
+              .AddIfNotContains("/Pages/BulkEmailNotifications/SendEmailNotificationModal.js");
+            // Same reasoning as the style bundle above: EmailsWidget is only ever mounted dynamically inside
+            // the bulk-send modal on this page, so its script needs to be pulled in explicitly rather than
+            // relying on the widget's own [Widget(AutoInitialize = true)] bundle registration, which only
+            // fires for widgets that are actually server-rendered as part of a page's initial HTML.
+            context.Files
+              .AddIfNotContains("/Views/Shared/Components/EmailsWidget/Default.js");
+            context.Files
+              .AddIfNotContains("/Pages/BulkEmailNotifications/ComposeAndSendEmailModal.js");
         }
     }
 }

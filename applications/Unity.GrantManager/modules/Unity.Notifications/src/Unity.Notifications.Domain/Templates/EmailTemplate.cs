@@ -17,7 +17,9 @@ public class EmailTemplate : FullAuditedAggregateRoot<Guid>, IMultiTenant
         string subject,
         string bodyText,
         string bodyHTML,
-        string sendFrom)
+        string sendFrom,
+        string? recipientCategory = null,
+        string? recipientIdentifier = null)
         : base(id)
     {
         Name = name;
@@ -26,6 +28,8 @@ public class EmailTemplate : FullAuditedAggregateRoot<Guid>, IMultiTenant
         BodyText = bodyText;
         BodyHTML = bodyHTML;
         SendFrom = sendFrom;
+        RecipientCategory = recipientCategory;
+        RecipientIdentifier = recipientIdentifier;
     }
 
     public Guid? TenantId { get; set; }
@@ -37,4 +41,6 @@ public class EmailTemplate : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public string BodyText { get; set; } = string.Empty;
     public string BodyHTML { get; set; } = string.Empty;
     public string SendFrom { get; set; } = string.Empty;
+    public string? RecipientCategory { get; set; }
+    public string? RecipientIdentifier { get; set; }
 }

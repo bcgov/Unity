@@ -9,7 +9,7 @@ namespace Unity.Notifications.Templates
     {
         Task<EmailTemplate?> CreateAsync(EmailTempateDto templateDto);
         Task<EmailTemplate?> UpdateTemplate(Guid id, EmailTempateDto templateDto);
-        Task<List<EmailTemplate>> GetTemplatesByTenent();
+        Task<List<EmailTemplate>> GetTemplatesByTenant();
         Task<EmailTemplate?> GetTemplateById(Guid id);
         Task DeleteTemplate(Guid id);
         Task<EmailTemplate?> GetTemplateByName(string name);

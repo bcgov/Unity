@@ -13,5 +13,7 @@ namespace Unity.Notifications.Templates
         public string BodyText { get; set; } = "";
         public string BodyHTML { get; set; } = "";
         public string SendFrom { get; set; } = "";
+        public string? RecipientCategory { get; set; }
+        public string? RecipientIdentifier { get; set; }
     }
 }

@@ -18,6 +18,8 @@
     overflow: visible !important;
     width: 100%;
     box-sizing: border-box;
+    overflow-x: auto !important;
+    scrollbar-gutter: stable;
 }
 
 #EmailHistoryTable_wrapper .dt-scroll-head,
@@ -28,7 +30,6 @@
 /* Force fixed table layout to prevent column expansion */
 #EmailHistoryTable {
     width: 100% !important;
-    table-layout: fixed !important;
     box-sizing: border-box;
 }
 
@@ -47,6 +48,10 @@
 #EmailHistoryTable td:nth-child(2),
 #EmailHistoryTable th:nth-child(2) {
     white-space: normal;
+}
+
+.btn-w30 {
+    width: 30px !important;
 }
 
 @media (max-height: 768px) {

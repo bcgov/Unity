@@ -65,6 +65,23 @@ namespace Unity.GrantManager.Integrations.Chefs
             return await ParseJsonResponseAsync(response) ?? [];
         }
 
+        public async Task<JObject?> GetFormVersionDataAsync(Guid applicationFormId, string chefsFormVersionId)
+        {
+            var applicationForm = await applicationFormRepository.GetAsync(applicationFormId);
+
+            if (applicationForm == null || string.IsNullOrEmpty(applicationForm.ChefsApplicationFormGuid))
+            {
+                logger.LogWarning("No application form or CHEFS configuration found for ApplicationFormId: {ApplicationFormId}", applicationFormId);
+                return null;
+            }
+
+            string chefsApi = await GetChefsApiBaseUrlAsync();
+            string url = $"{chefsApi}/forms/{applicationForm.ChefsApplicationFormGuid}/versions/{chefsFormVersionId}";
+
+            var response = await GetRequestAsync(url, applicationForm.ChefsApplicationFormGuid!, applicationForm.ApiKey!);
+            return await ParseJsonResponseAsync(response);
+        }
+
         public async Task<JObject?> GetSubmissionDataAsync(Guid chefsFormId, Guid submissionId)
         {
             var applicationForm = await (await applicationFormRepository.GetQueryableAsync())

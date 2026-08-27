@@ -1,23 +1,28 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Unity.GrantManager.Applications;
+using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.Intakes;
+using Unity.GrantManager.Models;
 using Unity.Notifications.Emails;
 using Volo.Abp.AspNetCore.Mvc;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Validation;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using Unity.GrantManager.Models;
-using System.Threading;
 
 namespace Unity.GrantManager.Controllers
 {
@@ -47,6 +52,11 @@ namespace Unity.GrantManager.Controllers
         }
     }
 
+    // No [Authorize] anywhere means no authorization requirement at all here - this API has no
+    // application-level permission model of its own, so requiring an authenticated user is the
+    // floor: without it, upload/download actions are reachable by anonymous callers regardless of
+    // the authenticated pages that are meant to front them.
+    [Authorize]
     [Route("api/app/attachment")]
     public class AttachmentController : AbpController
     {
@@ -57,7 +67,16 @@ namespace Unity.GrantManager.Controllers
         private readonly ICurrentTenant _currentTenant;
         private readonly ILibreOfficeConversionService _libreOfficeConversionService;
         private readonly IAttachmentPreviewAppService _attachmentPreviewAppService;
-        private ILogger logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
+        private readonly IApplicantRepository _applicantRepository;
+        private readonly IApplicationRepository _applicationRepository;
+        private readonly IAssessmentRepository _assessmentRepository;
+        // LazyServiceProvider is populated via property injection when ASP.NET Core activates this
+        // controller through DI/routing. Unit tests that construct AttachmentController directly
+        // (new AttachmentController(...)) bypass that activation, leaving it null - guard against
+        // that so Logger.LogWarning/LogError calls don't crash tests with no interest in logging.
+        protected new ILogger Logger => LazyServiceProvider == null
+            ? NullLogger.Instance
+            : LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
         private const string badRequestFileMsg = "File name must be provided.";
         private const string NotFoundFileMsg = "File not found.";
         private const string errorFileMsg = "An error occurred while downloading the file.";
@@ -74,7 +93,10 @@ namespace Unity.GrantManager.Controllers
             IEmailLogAttachmentUploadService emailLogAttachmentUploadService,
             ICurrentTenant currentTenant,
             ILibreOfficeConversionService libreOfficeConversionService,
-            IAttachmentPreviewAppService attachmentPreviewAppService)
+            IAttachmentPreviewAppService attachmentPreviewAppService,
+            IApplicantRepository applicantRepository,
+            IApplicationRepository applicationRepository,
+            IAssessmentRepository assessmentRepository)
         {
             _fileAppService = fileAppService;
             _configuration = configuration;
@@ -83,6 +105,9 @@ namespace Unity.GrantManager.Controllers
             _currentTenant = currentTenant;
             _libreOfficeConversionService = libreOfficeConversionService;
             _attachmentPreviewAppService = attachmentPreviewAppService;
+            _applicantRepository = applicantRepository;
+            _applicationRepository = applicationRepository;
+            _assessmentRepository = assessmentRepository;
         }
 
         [HttpGet("applicant/{applicantId}/download/{fileName}")]
@@ -101,6 +126,11 @@ namespace Unity.GrantManager.Controllers
             if (string.IsNullOrWhiteSpace(fileName))
             {
                 return BadRequest(badRequestFileMsg);
+            }
+
+            if (!Guid.TryParse(applicantId, out var parsedApplicantId) || await _applicantRepository.FindAsync(parsedApplicantId) == null)
+            {
+                return NotFound(NotFoundFileMsg);
             }
 
             var folder = _configuration["S3:ApplicantS3Folder"] ?? throw new AbpValidationException("Missing server configuration: S3:ApplicantS3Folder");
@@ -127,7 +157,7 @@ namespace Unity.GrantManager.Controllers
             catch (Exception ex)
             {
                 string ExceptionMessage = ex.Message;
-                logger.LogError(ex, "AttachmentController->DownloadApplicantAttachment: {ExceptionMessage}", ExceptionMessage);
+                Logger.LogError(ex, "AttachmentController->DownloadApplicantAttachment: {ExceptionMessage}", ExceptionMessage);
                 return StatusCode(500, errorFileMsg);
             }
         }
@@ -148,6 +178,11 @@ namespace Unity.GrantManager.Controllers
             if (string.IsNullOrWhiteSpace(fileName))
             {
                 return BadRequest(badRequestFileMsg);
+            }
+
+            if (!Guid.TryParse(applicationId, out var parsedApplicationId) || await _applicationRepository.FindAsync(parsedApplicationId) == null)
+            {
+                return NotFound(NotFoundFileMsg);
             }
 
             var folder = _configuration["S3:ApplicationS3Folder"] ?? throw new AbpValidationException("Missing server configuration: S3:ApplicationS3Folder");
@@ -174,7 +209,7 @@ namespace Unity.GrantManager.Controllers
             catch (Exception ex)
             {
                 string ExceptionMessage = ex.Message;
-                logger.LogError(ex, "AttachmentController->DownloadApplicationAttachment: {ExceptionMessage}", ExceptionMessage);
+                Logger.LogError(ex, "AttachmentController->DownloadApplicationAttachment: {ExceptionMessage}", ExceptionMessage);
                 return StatusCode(500, errorFileMsg);
             }
         }
@@ -195,6 +230,11 @@ namespace Unity.GrantManager.Controllers
             if (string.IsNullOrWhiteSpace(fileName))
             {
                 return BadRequest(badRequestFileMsg);
+            }
+
+            if (!Guid.TryParse(assessmentId, out var parsedAssessmentId) || await _assessmentRepository.FindAsync(parsedAssessmentId) == null)
+            {
+                return NotFound(NotFoundFileMsg);
             }
 
             var folder = _configuration["S3:AssessmentS3Folder"] ?? throw new AbpValidationException("Missing server configuration: S3:AssessmentS3Folder");
@@ -221,11 +261,16 @@ namespace Unity.GrantManager.Controllers
             catch (Exception ex)
             {
                 string ExceptionMessage = ex.Message;
-                logger.LogError(ex, "AttachmentController->DownloadAssessmentAttachment: {ExceptionMessage}", ExceptionMessage);
+                Logger.LogError(ex, "AttachmentController->DownloadAssessmentAttachment: {ExceptionMessage}", ExceptionMessage);
                 return StatusCode(500, errorFileMsg);
             }
         }
 
+        // Matches ISubmissionAppService.GetChefsFileAttachment, which this action calls directly -
+        // that method is deliberately [AllowAnonymous] (an external AI service depends on it), so
+        // the controller-level [Authorize] must not override it here or the two would silently
+        // disagree on this route's access model.
+        [AllowAnonymous]
         [HttpGet("chefs/{formSubmissionId}/download/{chefsFileId}/{fileName}")]
         public async Task<IActionResult> DownloadChefsAttachment(Guid formSubmissionId, Guid chefsFileId, string fileName)
         {
@@ -253,12 +298,14 @@ namespace Unity.GrantManager.Controllers
             catch (Exception ex)
             {
                 string ExceptionMessage = ex.Message;
-                logger.LogError(ex, "AttachmentController->DownloadChefsAttachment: {ExceptionMessage}", ExceptionMessage);
+                Logger.LogError(ex, "AttachmentController->DownloadChefsAttachment: {ExceptionMessage}", ExceptionMessage);
                 var errorCode = ex.Data.Contains(ErrorCodeKey) ? Convert.ToInt32(ex.Data[ErrorCodeKey]) : 500;
                 return StatusCode(errorCode, ExceptionMessage);
             }
         }
 
+        // Same rationale as DownloadChefsAttachment above - also calls GetChefsFileAttachment.
+        [AllowAnonymous]
         [HttpPost("chefs/download-all")]
         [Consumes("application/json")]
         public async Task<IActionResult> DownloadAllChefsAttachment([FromBody] List<AttachmentsDto> input)
@@ -297,7 +344,7 @@ namespace Unity.GrantManager.Controllers
                 catch (Exception ex)
                 {
                     string ExceptionMessage = ex.Message;
-                    logger.LogError(ex, "AttachmentController->DownloadAllChefsAttachment: {ExceptionMessage}", ExceptionMessage);
+                    Logger.LogError(ex, "AttachmentController->DownloadAllChefsAttachment: {ExceptionMessage}", ExceptionMessage);
                     if (ExceptionMessage.Contains(chefsApiAccessError))
                     {                        
                         return StatusCode(403, chefsApiAccessError);
@@ -316,6 +363,7 @@ namespace Unity.GrantManager.Controllers
             if (string.IsNullOrWhiteSpace(applicationId)) return BadRequest("Application ID must be provided.");
             if (!Guid.TryParse(applicationId, out var parsedApplicationId)) return BadRequest("Application ID must be a valid GUID.");
             if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(badRequestFileMsg);
+            if (await _applicationRepository.FindAsync(parsedApplicationId) == null) return NotFound(NotFoundFileMsg);
             if (!LibreOfficeInstallationCache.IsInstalled(() => _libreOfficeConversionService.IsInstalled())) return StatusCode(503, new { error = libreOfficeNotInstalledMsg });
             try
             {
@@ -325,7 +373,7 @@ namespace Unity.GrantManager.Controllers
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "AttachmentController->PreviewApplicationAttachment: {Message}", ex.Message);
+                Logger.LogError(ex, "AttachmentController->PreviewApplicationAttachment: {Message}", ex.Message);
                 return StatusCode(500, errorFileMsg);
             }
         }
@@ -337,6 +385,7 @@ namespace Unity.GrantManager.Controllers
             if (string.IsNullOrWhiteSpace(assessmentId)) return BadRequest("Assessment ID must be provided.");
             if (!Guid.TryParse(assessmentId, out var parsedAssessmentId)) return BadRequest("Assessment ID must be a valid GUID.");
             if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(badRequestFileMsg);
+            if (await _assessmentRepository.FindAsync(parsedAssessmentId) == null) return NotFound(NotFoundFileMsg);
             if (!LibreOfficeInstallationCache.IsInstalled(() => _libreOfficeConversionService.IsInstalled())) return StatusCode(503, new { error = libreOfficeNotInstalledMsg });
             try
             {
@@ -346,7 +395,7 @@ namespace Unity.GrantManager.Controllers
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "AttachmentController->PreviewAssessmentAttachment: {Message}", ex.Message);
+                Logger.LogError(ex, "AttachmentController->PreviewAssessmentAttachment: {Message}", ex.Message);
                 return StatusCode(500, errorFileMsg);
             }
         }
@@ -356,21 +405,25 @@ namespace Unity.GrantManager.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             if (string.IsNullOrWhiteSpace(applicantId)) return BadRequest("Applicant ID must be provided.");
+            if (!Guid.TryParse(applicantId, out var parsedApplicantId)) return BadRequest("Applicant ID must be a valid GUID.");
             if (string.IsNullOrWhiteSpace(fileName)) return BadRequest(badRequestFileMsg);
+            if (await _applicantRepository.FindAsync(parsedApplicantId) == null) return NotFound(NotFoundFileMsg);
             if (!_libreOfficeConversionService.IsInstalled()) return StatusCode(503, new { error = libreOfficeNotInstalledMsg });
             try
             {
-                var blob = await _attachmentPreviewAppService.GetOrCreatePreviewPdfAsync(AttachmentType.APPLICANT, Guid.Parse(applicantId), fileName);
+                var blob = await _attachmentPreviewAppService.GetOrCreatePreviewPdfAsync(AttachmentType.APPLICANT, parsedApplicantId, fileName);
                 if (blob?.Content == null) return NotFound(NotFoundFileMsg);
                 return File(blob.Content, PdfContentType);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "AttachmentController->PreviewApplicantAttachment: {Message}", ex.Message);
+                Logger.LogError(ex, "AttachmentController->PreviewApplicantAttachment: {Message}", ex.Message);
                 return StatusCode(500, errorFileMsg);
             }
         }
 
+        // Same rationale as DownloadChefsAttachment above - also calls GetChefsFileAttachment.
+        [AllowAnonymous]
         [HttpGet("chefs/{formSubmissionId}/preview-pdf/{chefsFileId}/{fileName}")]
         public async Task<IActionResult> PreviewChefsAttachment(Guid formSubmissionId, Guid chefsFileId, string fileName)
         {
@@ -387,7 +440,7 @@ namespace Unity.GrantManager.Controllers
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "AttachmentController->PreviewChefsAttachment: {Message}", ex.Message);
+                Logger.LogError(ex, "AttachmentController->PreviewChefsAttachment: {Message}", ex.Message);
                 var errorCode = ex.Data.Contains(ErrorCodeKey) ? Convert.ToInt32(ex.Data[ErrorCodeKey]) : 500;
                 return StatusCode(errorCode, errorFileMsg);
             }
@@ -447,9 +500,21 @@ namespace Unity.GrantManager.Controllers
             return await UploadFiles(files);
         }
 
+        [HttpPost("template/{templateId}/upload")]
+        public async Task<IActionResult> UploadTemplateAttachments(Guid templateId, IList<IFormFile> files)
+        {
+            return await UploadEmailAttachments(null, templateId, files);
+        }
+
         [HttpPost("email/{emailLogId}/upload")]
         public async Task<IActionResult> UploadEmailAttachments(Guid emailLogId, IList<IFormFile> files)
         {
+            return await UploadEmailAttachments(emailLogId, null, files);
+        }
+
+        [NonAction]
+        public async Task<IActionResult> UploadEmailAttachments(Guid? emailLogId, Guid? templateId, IList<IFormFile> files)
+        { 
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
@@ -460,59 +525,68 @@ namespace Unity.GrantManager.Controllers
                 return BadRequest(fileProvidedError);
             }
 
-            List<ValidationResult> invalidFileTypes = GetInvalidFileTypes(files);
-            if (invalidFileTypes.Count > 0)
+            List<ValidationResult> invalidMetadata = GetInvalidFileMetadata(files);
+            if (invalidMetadata.Count > 0)
             {
-                throw new AbpValidationException(message: "ERROR: Invalid File Type.", validationErrors: invalidFileTypes);
+                throw new AbpValidationException(message: "ERROR: Invalid File Type.", validationErrors: invalidMetadata);
             }
 
+            // Email-specific size checks are metadata-only (file.Length / a total-size lookup),
+            // so they run before any file is buffered into memory, same as GetInvalidFileMetadata.
+            // A missing OR malformed config value both fall back to the default and the check
+            // still runs - a parse failure must not silently disable enforcement.
             var emailAttachmentMaxFileSizeConfig = _configuration["S3:EmailAttachmentMaxFileSize"] ?? "20";
-            if (double.TryParse(emailAttachmentMaxFileSizeConfig, out double maxFileSizeMB))
+            if (!double.TryParse(emailAttachmentMaxFileSizeConfig, out double maxFileSizeMB) || maxFileSizeMB <= 0)
             {
-                var oversizedFiles = files.Where(f => f.Length * 0.000001 > maxFileSizeMB).ToList();
-                if (oversizedFiles.Count > 0)
-                {
-                    var sizeErrors = oversizedFiles.Select(f =>
-                        new ValidationResult($"File '{f.FileName}' exceeds the maximum allowed size of {maxFileSizeMB} MB for email attachments.", [f.FileName])
-                    ).ToList();
-                    throw new AbpValidationException("One or more files exceed the maximum allowed size for email attachments.", sizeErrors);
-                }
+                maxFileSizeMB = 20;
+            }
+
+            var oversizedFiles = files.Where(f => f.Length * 0.000001 > maxFileSizeMB).ToList();
+            if (oversizedFiles.Count > 0)
+            {
+                var sizeErrors = oversizedFiles.Select(f =>
+                    new ValidationResult($"File '{f.FileName}' exceeds the maximum allowed size of {maxFileSizeMB} MB for email attachments.", [f.FileName])
+                ).ToList();
+                throw new AbpValidationException("One or more files exceed the maximum allowed size for email attachments.", sizeErrors);
             }
 
             var totalMaxFileSizeConfig = _configuration["S3:EmailAttachmentsTotalMaxFileSize"] ?? "25";
-            if (double.TryParse(totalMaxFileSizeConfig, out double totalMaxSizeMB))
+            if (!double.TryParse(totalMaxFileSizeConfig, out double totalMaxSizeMB) || totalMaxSizeMB <= 0)
             {
-                long existingTotalBytes = await _emailLogAttachmentUploadService
-                    .GetTotalFileSizeByEmailLogIdAsync(emailLogId);
-                long newFilesBytes = files.Sum(f => f.Length);
-                double combinedMB = (existingTotalBytes + newFilesBytes) * 0.000001;
-
-                if (combinedMB > totalMaxSizeMB)
-                {
-                    throw new AbpValidationException(
-                        $"The total size of all attachments ({combinedMB:F1} MB) would exceed the maximum allowed {totalMaxSizeMB} MB for email attachments. Please remove existing attachments or select a smaller file.",
-                        [new ValidationResult("Total attachment size exceeds the allowed limit.")]);
-                }
+                totalMaxSizeMB = 25;
             }
 
+            long existingTotalBytes = await _emailLogAttachmentUploadService
+                .GetTotalFileSizeByEmailLogIdAsync(emailLogId, templateId);
+            long newFilesBytes = files.Sum(f => f.Length);
+            double combinedMB = (existingTotalBytes + newFilesBytes) * 0.000001;
+
+            if (combinedMB > totalMaxSizeMB)
+            {
+                throw new AbpValidationException(
+                    $"The total size of all attachments ({combinedMB:F1} MB) would exceed the maximum allowed {totalMaxSizeMB} MB for email attachments. Please remove existing attachments or select a smaller file.",
+                    [new ValidationResult("Total attachment size exceeds the allowed limit.")]);
+            }
+
+            List<(IFormFile File, byte[] Content)> fileEntries = await ReadFilesAsync(files);
+
             var results = new List<object>();
-            foreach (var file in files)
+            foreach (var (file, content) in fileEntries)
             {
                 try
                 {
-                    using var ms = new MemoryStream();
-                    await file.CopyToAsync(ms);
                     var dto = await _emailLogAttachmentUploadService.UploadAsync(
                         emailLogId,
+                        templateId,
                         _currentTenant.Id,
                         file.FileName,
-                        ms.ToArray(),
+                        content,
                         file.ContentType ?? "application/octet-stream");
                     results.Add(dto);
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "AttachmentController->UploadEmailAttachments: Failed to upload {FileName}", file.FileName);
+                    Logger.LogError(ex, "AttachmentController->UploadEmailAttachments: Failed to upload {FileName}", file.FileName);
                     return StatusCode(500, $"Failed to upload {file.FileName}: {ex.Message}");
                 }
             }
@@ -522,23 +596,23 @@ namespace Unity.GrantManager.Controllers
 
         private async Task<IActionResult> UploadFiles(IList<IFormFile> files)
         {
-            List<ValidationResult> InvalidFileTypes = GetInvalidFileTypes(files);
-            if (InvalidFileTypes.Count > 0)
+            List<ValidationResult> invalidMetadata = GetInvalidFileMetadata(files);
+            if (invalidMetadata.Count > 0)
             {
-                throw new AbpValidationException(message: "ERROR: Invalid File Type.", validationErrors: InvalidFileTypes);
+                throw new AbpValidationException(message: "ERROR: Invalid File Type.", validationErrors: invalidMetadata);
             }
-            List<string> ErrorList = new();
-            foreach (IFormFile source in files)
+
+            List<(IFormFile File, byte[] Content)> fileEntries = await ReadFilesAsync(files);
+            List<string> ErrorList = [];
+            foreach (var (source, content) in fileEntries)
             {
                 try
                 {
-                    using var memoryStream = new MemoryStream();
-                    await source.CopyToAsync(memoryStream);
                     await _fileAppService.SaveBlobAsync(
                         new SaveBlobInputDto
                         {
                             Name = source.FileName,
-                            Content = memoryStream.ToArray()
+                            Content = content
                         });
                 }
                 catch (Exception ex)
@@ -556,26 +630,138 @@ namespace Unity.GrantManager.Controllers
             return Ok("All Files Are Successfully Uploaded!");
         }
 
-        private List<ValidationResult> GetInvalidFileTypes(IList<IFormFile> files)
+        private static async Task<List<(IFormFile File, byte[] Content)>> ReadFilesAsync(IList<IFormFile> files)
         {
-            List<ValidationResult> ErrorList = new();
-            var InvalidFileTypes = _configuration["S3:DisallowedFileTypes"] ?? "";
-            var DisallowedFileTypes = JsonConvert.DeserializeObject<string[]>(InvalidFileTypes);
-            if (DisallowedFileTypes == null)
+            var fileEntries = new List<(IFormFile File, byte[] Content)>();
+            foreach (var file in files)
             {
-                return ErrorList;
+                using var memoryStream = new MemoryStream();
+                await file.CopyToAsync(memoryStream);
+                fileEntries.Add((file, memoryStream.ToArray()));
             }
-            foreach (var fileName in files.Where(file =>
+            return fileEntries;
+        }
+
+        // Extensions for which the browser-supplied ContentType is reliable enough to cross-check
+        // against the file extension. Plain text and email formats (txt/csv/eml/msg) are exempt
+        // because their ContentType reporting is inconsistent across browsers/OSes/mail clients,
+        // so only the allowlist and size checks apply to them.
+        private static readonly HashSet<string> StrictlyValidatedExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "jpg", "jpeg", "png", "gif", "zip",
+            "odt", "ods", "odp", "rtf", "bmp", "tif", "tiff", "webp", "heic", "heif"
+        };
+
+        private static string GetExtension(string fileName)
+        {
+            var extension = Path.GetExtension(fileName);
+            if (extension.StartsWith('.'))
             {
-                string FileType = Path.GetExtension(file.FileName);
-                if (FileType.StartsWith('.'))
+                extension = extension[1..];
+            }
+            return extension.ToLowerInvariant();
+        }
+
+        // Used when S3:AllowedFileTypes is missing or fails to parse, so a config gap degrades
+        // to this known-safe, already-reviewed set rather than silently rejecting every upload
+        // (fail-closed-to-nothing) or silently allowing anything (fail-open).
+        private static readonly string[] DefaultAllowedFileTypes =
+        [
+            "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "jpg", "jpeg", "png", "gif", "txt", "csv", "zip",
+            "odt", "ods", "odp", "rtf", "bmp", "tif", "tiff", "webp", "heic", "heif", "eml", "msg"
+        ];
+
+        private string[]? GetConfiguredFileTypesOrNull()
+        {
+            var allowedFileTypesConfig = _configuration["S3:AllowedFileTypes"];
+            if (string.IsNullOrWhiteSpace(allowedFileTypesConfig))
+            {
+                return null;
+            }
+
+            try
+            {
+                var allowedFileTypes = JsonConvert.DeserializeObject<string[]>(allowedFileTypesConfig)
+                    // A syntactically valid array can still contain a null/blank entry (e.g. a
+                    // trailing comma typo producing ["pdf", null]) - without filtering these out,
+                    // the ToLowerInvariant() call below would throw on the null element, turning a
+                    // config typo into an unhandled 500 on every upload instead of the graceful
+                    // fallback this whole method exists to provide.
+                    ?.Where(t => !string.IsNullOrWhiteSpace(t))
+                    .ToArray();
+                if (allowedFileTypes == null || allowedFileTypes.Length == 0)
                 {
-                    FileType = FileType[1..];
+                    Logger.LogWarning("AttachmentController: S3:AllowedFileTypes was empty; falling back to the default allowlist.");
+                    return null;
                 }
-                return DisallowedFileTypes.Contains(FileType.ToLower());
-            }).Select(source => source.FileName))
+                return allowedFileTypes;
+            }
+            catch (JsonException ex)
             {
-                ErrorList.Add(new ValidationResult("Invalid file type for " + fileName, [nameof(fileName)]));
+                Logger.LogWarning(ex, "AttachmentController: S3:AllowedFileTypes could not be parsed as a JSON string array; falling back to the default allowlist.");
+                return null;
+            }
+        }
+
+        // DefaultAllowedFileTypes is only a fallback for when S3:AllowedFileTypes is missing or
+        // fails to parse - deliberately NOT a ceiling. When config is present, it is the effective
+        // allowlist outright, including any extension not in the default set (e.g. "exe"/"jsp").
+        // This is an intentional operational trust decision: config is set by whoever controls the
+        // deployment environment (devops), not by a remote/anonymous caller, so an operator adding
+        // a type here is a deliberate choice they own, not something this controller should second-
+        // guess. A config typo introducing a dangerous extension is a real risk under this design -
+        // accepted in exchange for devops being able to extend the allowlist without a code change.
+        private string[] GetAllowedFileTypes()
+        {
+            var configuredFileTypes = GetConfiguredFileTypesOrNull();
+            if (configuredFileTypes == null)
+            {
+                return DefaultAllowedFileTypes;
+            }
+
+            return configuredFileTypes.Select(t => t.ToLowerInvariant()).Distinct().ToArray();
+        }
+
+        // Per-file checks that require no stream I/O (extension allowlist, browser-supplied
+        // Content-Type consistency, and declared size). Run these before ever reading a file's
+        // bytes, so an invalid or oversized file is rejected without being buffered into memory.
+        private List<ValidationResult> GetInvalidFileMetadata(IList<IFormFile> files)
+        {
+            List<ValidationResult> ErrorList = [];
+            var AllowedFileTypes = GetAllowedFileTypes();
+            var contentTypeProvider = new FileExtensionContentTypeProvider();
+
+            var maxFileSizeConfig = _configuration["S3:MaxFileSize"] ?? "25";
+            if (!double.TryParse(maxFileSizeConfig, out double maxFileSizeMB) || maxFileSizeMB <= 0)
+            {
+                maxFileSizeMB = 25;
+            }
+
+            foreach (var file in files)
+            {
+                var fileName = file.FileName;
+                var extension = GetExtension(fileName);
+
+                if (!AllowedFileTypes.Contains(extension))
+                {
+                    ErrorList.Add(new ValidationResult("Invalid file type for " + fileName, [nameof(fileName)]));
+                    continue;
+                }
+
+                if (StrictlyValidatedExtensions.Contains(extension) &&
+                    contentTypeProvider.TryGetContentType(fileName, out var expectedContentType) &&
+                    !string.IsNullOrWhiteSpace(file.ContentType) &&
+                    !string.Equals(file.ContentType, "application/octet-stream", StringComparison.OrdinalIgnoreCase) &&
+                    !string.Equals(expectedContentType.Split('/')[0], file.ContentType.Split('/')[0], StringComparison.OrdinalIgnoreCase))
+                {
+                    ErrorList.Add(new ValidationResult("File content type does not match its extension for " + fileName, [nameof(fileName)]));
+                    continue;
+                }
+
+                if (file.Length * 0.000001 > maxFileSizeMB)
+                {
+                    ErrorList.Add(new ValidationResult($"File '{fileName}' exceeds the maximum allowed size of {maxFileSizeMB} MB.", [nameof(fileName)]));
+                }
             }
             return ErrorList;
         }

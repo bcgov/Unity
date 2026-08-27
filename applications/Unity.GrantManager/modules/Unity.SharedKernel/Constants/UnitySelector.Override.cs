@@ -3,6 +3,14 @@
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Critical Code Smell", "S3218:Inner class members should not shadow outer class \"static\" or type members", Justification = "Constants File")]
 public static partial class UnitySelector
 {
+    public static partial class Applicant
+    {
+        public static partial class Summary // ApplicantInfo
+        {
+            public const string Update_AssignApplicant = "Unity.GrantManager.ApplicationManagement.Applicant.Summary.Update.AssignApplicant";
+        }
+    }
+
     public static partial class Review
     {
         public static partial class Approval
@@ -47,6 +55,17 @@ public static partial class UnitySelector
             {
                 public const string UpdateFinalStateFields  = "Unity.GrantManager.ApplicationManagement.Project.Location.Update.UpdateFinalStateFields";
             }
+        }
+    }
+
+    public static partial class Application
+    {
+        public static partial class Status
+        {
+            public const string Default = "Unity.GrantManager.ApplicationManagement.Application.Status";
+            public const string Publish = "Unity.GrantManager.ApplicationManagement.Application.Status.Publish";
+            public const string Unpublish = "Unity.GrantManager.ApplicationManagement.Application.Status.Unpublish";
+            public const string BulkPublish = "Unity.GrantManager.ApplicationManagement.Application.Status.BulkPublish";
         }
     }
 }
