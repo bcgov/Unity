@@ -94,6 +94,10 @@
     margin-top: -24px;
 }
 
+#notificationEmailModal #schedule-date-input + button {
+    display: none;
+}
+
 @media (max-width: 768px) {
     #notificationEmailModal .modal-dialog {
         width: calc(100vw - 1rem);
