@@ -435,6 +435,11 @@ public class GrantApplicationAppService(
                 );
 
                 application.UpdateAssessmentResultStatus(input.AssessmentResultStatus);
+
+                if (await AuthorizationService.IsGrantedAsync(UnitySelector.Review.AssessmentResults.Update.UpdateEligibleForRenewal))
+                {
+                    application.UpdateEligibleForRenewal(input.EligibleForRenewal);
+                }
             }
         }
 

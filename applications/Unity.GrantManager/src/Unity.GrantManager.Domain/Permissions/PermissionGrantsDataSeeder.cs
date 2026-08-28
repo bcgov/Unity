@@ -29,6 +29,7 @@ namespace Unity.GrantManager.Permissions
 
             UnitySelector.Review.AssessmentResults.Default,
             UnitySelector.Review.AssessmentResults.Update.Default,
+            UnitySelector.Review.AssessmentResults.Update.UpdateFinalStateFields,
 
             UnitySelector.Review.AssessmentReviewList.Default,
             UnitySelector.Review.AssessmentReviewList.Create,
