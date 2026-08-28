@@ -25,7 +25,7 @@ namespace Unity.GrantManager.Applicants
         private readonly SubmissionFormDataProvider _provider;
 
         private const string SchemaJson = """{"type":"form","display":"form","components":[]}""";
-        private const string SubmissionJson = """{"createdAt":"2025-01-14T21:37:52.000Z","data":{"_ApplicantName":"Test"},"state":"submitted"}""";
+        private const string SubmissionJson = """{"id":"sub-id","createdAt":"2025-01-14T21:37:52.000Z","submission":{"data":{"_ApplicantName":"Test"},"state":"submitted"}}""";
 
         public SubmissionFormDataProviderTests()
         {
@@ -159,6 +159,50 @@ namespace Unity.GrantManager.Applicants
                     {
                         s.ApplicationFormVersionId = formVersionId;
                         s.Submission = """{"id":"some-id"}""";
+                    })
+                }.AsAsyncQueryable()));
+            _formVersionRepo.FindAsync(formVersionId, Arg.Any<bool>(), Arg.Any<System.Threading.CancellationToken>())
+                .Returns(Task.FromResult<ApplicationFormVersion?>(CreateFormVersion(formVersionId)));
+
+            var request = CreateRequest(submissionId);
+
+            await Should.ThrowAsync<EntityNotFoundException>(() => _provider.GetDataAsync(request));
+        }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldThrowEntityNotFound_WhenDataIsAtTopLevelInsteadOfNestedUnderSubmission()
+        {
+            var submissionId = Guid.NewGuid();
+            var formVersionId = Guid.NewGuid();
+            _submissionRepo.GetQueryableAsync()
+                .Returns(Task.FromResult(new[]
+                {
+                    CreateSubmission(submissionId, "TESTUSER", s =>
+                    {
+                        s.ApplicationFormVersionId = formVersionId;
+                        s.Submission = """{"id":"some-id","data":{"_ApplicantName":"Test"},"state":"submitted"}""";
+                    })
+                }.AsAsyncQueryable()));
+            _formVersionRepo.FindAsync(formVersionId, Arg.Any<bool>(), Arg.Any<System.Threading.CancellationToken>())
+                .Returns(Task.FromResult<ApplicationFormVersion?>(CreateFormVersion(formVersionId)));
+
+            var request = CreateRequest(submissionId);
+
+            await Should.ThrowAsync<EntityNotFoundException>(() => _provider.GetDataAsync(request));
+        }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldThrowEntityNotFound_WhenSubmissionObjectHasNoDataProperty()
+        {
+            var submissionId = Guid.NewGuid();
+            var formVersionId = Guid.NewGuid();
+            _submissionRepo.GetQueryableAsync()
+                .Returns(Task.FromResult(new[]
+                {
+                    CreateSubmission(submissionId, "TESTUSER", s =>
+                    {
+                        s.ApplicationFormVersionId = formVersionId;
+                        s.Submission = """{"id":"some-id","submission":{"state":"submitted"}}""";
                     })
                 }.AsAsyncQueryable()));
             _formVersionRepo.FindAsync(formVersionId, Arg.Any<bool>(), Arg.Any<System.Threading.CancellationToken>())
