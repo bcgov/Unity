@@ -8,6 +8,7 @@ namespace Unity.GrantManager.ApplicantProfile.ProfileData
     [JsonDerivedType(typeof(ApplicantAddressInfoDto), "ADDRESSINFO")]
     [JsonDerivedType(typeof(ApplicantSubmissionInfoDto), "SUBMISSIONINFO")]
     [JsonDerivedType(typeof(ApplicantPaymentInfoDto), "PAYMENTINFO")]
+    [JsonDerivedType(typeof(ApplicantSubmissionFormDataDto), "SUBMISSIONFORMDATA")]
     public class ApplicantProfileDataDto
     {
         [JsonIgnore]
