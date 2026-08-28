@@ -109,11 +109,11 @@ namespace Unity.GrantManager.ApplicantProfile
         }
 
         /// <summary>
-        /// Validates and returns the stored CHEFS submission resource JSON as-is: it already has
-        /// <c>data</c> (and <c>state</c>) as top-level siblings of the CHEFS metadata (<c>id</c>,
-        /// <c>formVersionId</c>, <c>createdAt</c>, ...) — see <c>IntakeFormSubmissionManager</c>,
-        /// which persists <c>formSubmission.submission</c> verbatim — so it already satisfies form.io's
-        /// <c>{ "data": {...} }</c> submission shape without any further unwrapping.
+        /// Extracts the nested <c>submission</c> object from the stored CHEFS submission resource
+        /// JSON, which carries <c>data</c> (and <c>state</c>) as siblings under that nested object,
+        /// not at the top level — the top level holds CHEFS metadata (<c>id</c>, <c>formVersionId</c>,
+        /// <c>createdAt</c>, ...) alongside the <c>submission</c> envelope. Returning <c>submission</c>
+        /// satisfies form.io's <c>{ "data": {...} }</c> submission shape.
         /// </summary>
         private static JsonElement? ExtractSubmissionData(string submissionJson)
         {
@@ -125,8 +125,9 @@ namespace Unity.GrantManager.ApplicantProfile
             try
             {
                 using var doc = JsonDocument.Parse(submissionJson);
-                return doc.RootElement.TryGetProperty("data", out _)
-                    ? doc.RootElement.Clone()
+                return doc.RootElement.TryGetProperty("submission", out var submissionElement)
+                    && submissionElement.TryGetProperty("data", out _)
+                    ? submissionElement.Clone()
                     : null;
             }
             catch (JsonException)
