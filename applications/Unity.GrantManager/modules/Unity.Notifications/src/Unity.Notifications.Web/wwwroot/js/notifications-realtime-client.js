@@ -380,8 +380,7 @@
                 || (window.jQuery?.('.select2-container--open').length > 0);
 
             if (!select2MenuOpen
-                && window.jQuery
-                && window.jQuery.fn?.select2
+                && window.jQuery?.fn?.select2
                 && window.jQuery(widget.target).data('select2')) {
                 window.jQuery(widget.target).trigger('change.select2');
             }

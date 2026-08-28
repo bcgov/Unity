@@ -81,6 +81,11 @@ function initializeDraftEmailsWidget() {
         bccInputRow: $('#bcc-input-row')
     };
 
+    const isNotificationEmail = $('#NotificationEmailContext').val() === 'true';
+    if (isNotificationEmail) {
+        $('#notificationEmailModal #btn-send-close-top').hide();
+    }
+
     let defaultValues = {
         emailTo: '',
         emailFrom: '',
@@ -1445,6 +1450,9 @@ function initializeDraftEmailsWidget() {
         UIElements.btnSendDropdown.show();
         UIElements.btnDiscard.show();
         UIElements.btnSendClose.show();
+        if (isNotificationEmail) {
+            UIElements.btnSendClose.hide();
+        }
         toggleBCCVisibility();
     }
 
@@ -1509,11 +1517,15 @@ function initializeDraftEmailsWidget() {
             isNewEmailDraft = false; newDraftId = null;
             hideConfirmation();
             handleCloseEmail();
-            abp.notify.success('Your email is being sent');
+            const isNotificationEmail = $('#NotificationEmailContext').val() === 'true';
+            abp.notify.success(isNotificationEmail ? 'Your email has been sent.' : 'Your email is being sent');
             // Pass along which application this save/send actually belonged to — a listener elsewhere on the
             // page (e.g. a multi-application context switching selection) can't otherwise tell which row this
             // completion is for, since UIElements.applicationId isn't visible outside this closure.
             PubSub.publish('refresh_application_emails', { applicationId: UIElements.applicationId });
+            if (isNotificationEmail) {
+                PubSub.publish('notification_email_sent');
+            }
         }).fail(function () {
             hideConfirmation();
             abp.notify.error('An error ocurred your email could not be sent.');
@@ -1586,6 +1598,9 @@ function initializeDraftEmailsWidget() {
                 abp.notify.success('Your email has been saved.');
                 // See the matching comment in performSendEmail's success handler above.
                 PubSub.publish('refresh_application_emails', { applicationId: UIElements.applicationId });
+                if ($('#NotificationEmailContext').val() === 'true') {
+                    PubSub.publish('notification_email_saved');
+                }
             }).fail(function () {
                 UIElements.btnSave.prop('disabled', false);
                 abp.notify.error('An error ocurred your email could not be saved.');
@@ -2148,6 +2163,7 @@ function initializeDraftEmailsWidget() {
         UIElements.inputOriginalEmailFrom.val(data.fromAddress);
         UIElements.inputOriginalEmailSubject.val(data.subject);
         resetEmailBody();
+        editorInstance = null;
         tinymce.get("EmailBody")?.remove(); // remove existing instance
 
         tinymce.init({
@@ -2176,7 +2192,10 @@ function initializeDraftEmailsWidget() {
                 const bodyContent = data.body ? refreshTodayDateSpans(data.body) : '';
                 if (bodyContent) {
                     const sanitizedBodyContent = sanitizeTinyMceHtml(bodyContent);
-                    editorInstance.setContent(sanitizedBodyContent);
+                    editor.setContent(sanitizedBodyContent);
+                    UIElements.inputEmailBody.val(sanitizedBodyContent);
+                } else {
+                    UIElements.inputEmailBody.val('');
                 }
 
                 // Create template label and buttons in label container
