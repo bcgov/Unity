@@ -6,10 +6,13 @@
 
 @section styles {
     <abp-style src="/Pages/Notifications/Index.css" />
+    <abp-style src="/Views/Shared/Components/EmailsWidget/Default.css" />
+    <abp-style src="/Views/Shared/Components/ApplicationBreadcrumbWidget/Default.css" />
 }
 
 @section scripts {
     <abp-script-bundle>
+        <abp-script src="/Views/Shared/Components/EmailsWidget/Default.js" />
         <abp-script src="/Pages/Notifications/Index.js" />
     </abp-script-bundle>
 }
@@ -59,4 +62,17 @@
         <span id="dynamicButtonContainerId"></span>
     </div>
     <abp-table id="NotificationListTable"></abp-table>
+</div>
+
+<div id="notificationEmailModal" class="modal fade" tabindex="-1" aria-labelledby="notificationEmailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 id="notificationEmailModalLabel" class="modal-title">@L["NotificationList:EmailModalTitle"]</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div id="notificationEmailModalBreadcrumb"></div>
+            <div id="notificationEmailModalBody" class="modal-body"></div>
+        </div>
+    </div>
 </div>

@@ -175,6 +175,24 @@ namespace Unity.GrantManager.Applicants
             result.ShouldBeOfType<ApplicantPaymentInfoDto>();
         }
 
+        private static SubmissionFormDataProvider CreateSubmissionFormDataProvider()
+        {
+            var currentTenant = Substitute.For<ICurrentTenant>();
+            currentTenant.Change(Arg.Any<Guid?>()).Returns(Substitute.For<IDisposable>());
+            var submissionRepo = Substitute.For<IRepository<ApplicationFormSubmission, Guid>>();
+            submissionRepo.GetQueryableAsync().Returns(Task.FromResult(Enumerable.Empty<ApplicationFormSubmission>().AsAsyncQueryable()));
+            var formVersionRepo = Substitute.For<IApplicationFormVersionRepository>();
+            var logger = Substitute.For<Microsoft.Extensions.Logging.ILogger<SubmissionFormDataProvider>>();
+            return new SubmissionFormDataProvider(currentTenant, submissionRepo, formVersionRepo, logger);
+        }
+
+        [Fact]
+        public void SubmissionFormDataProvider_Key_ShouldMatchExpected()
+        {
+            var provider = CreateSubmissionFormDataProvider();
+            provider.Key.ShouldBe(ApplicantProfileKeys.SubmissionFormData);
+        }
+
         [Fact]
         public void AllProviders_ShouldHaveUniqueKeys()
         {
@@ -184,7 +202,8 @@ namespace Unity.GrantManager.Applicants
                 CreateOrgInfoDataProvider(),
                 CreateAddressInfoDataProvider(),
                 CreateSubmissionInfoDataProvider(),
-                CreatePaymentInfoDataProvider()
+                CreatePaymentInfoDataProvider(),
+                CreateSubmissionFormDataProvider()
             ];
 
             var keys = providers.Select(p => p.Key).ToList();

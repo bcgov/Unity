@@ -23,7 +23,8 @@ namespace Unity.GrantManager.Swagger
                 ["ORGINFO"] = typeof(ApplicantOrgInfoDto),
                 ["ADDRESSINFO"] = typeof(ApplicantAddressInfoDto),
                 ["SUBMISSIONINFO"] = typeof(ApplicantSubmissionInfoDto),
-                ["PAYMENTINFO"] = typeof(ApplicantPaymentInfoDto)
+                ["PAYMENTINFO"] = typeof(ApplicantPaymentInfoDto),
+                ["SUBMISSIONFORMDATA"] = typeof(ApplicantSubmissionFormDataDto)
             };
 
             var oneOfSchemas = new List<IOpenApiSchema>();

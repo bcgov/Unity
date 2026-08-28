@@ -18,7 +18,7 @@
 }
 
 <div id="emails-div-@(Model.ApplicationId)"
-     class="mt-2 emails-container @(Model.NoDraftPreviewMode ? "no-draft-preview-mode" : string.Empty)"
+    class="mt-2 emails-container emails-widget-scope @(Model.NoDraftPreviewMode ? "no-draft-preview-mode" : string.Empty)"
      data-count="0"
      data-counttag="application_emails_count"
      data-no-draft-preview="@Model.NoDraftPreviewMode.ToString().ToLowerInvariant()">

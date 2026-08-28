@@ -1,0 +1,20 @@
+@using Microsoft.Extensions.Configuration
+@using System.Text.Json
+@model Unity.GrantManager.Web.Controllers.NotificationEmailModalViewModel
+@inject IConfiguration Configuration
+@{
+    Layout = null;
+    var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+}
+@* EmailsWidget/Default.js reads these ambient hidden fields directly off the page - they're normally rendered
+   once, page-wide, by GrantApplications/Details.cshtml or ActionBar/Default.cshtml. This modal's body is fully
+   replaced with this fragment on every open (see Notifications/Index.js), so they're rendered fresh here each
+   time rather than assumed to already exist on the host page. *@
+<input type="hidden" id="DetailsViewApplicationId" value="@Model.ApplicationId" />
+<input type="hidden" id="EmailAttachmentMaxFileSize" value="@(Configuration["S3:EmailAttachmentMaxFileSize"] ?? "20")" />
+<input type="hidden" id="TotalEmailAttachmentMaxFileSize" value="@(Configuration["S3:EmailAttachmentsTotalMaxFileSize"] ?? "25")" />
+<input type="hidden" id="AllowedFileTypes" value="@(Configuration["S3:AllowedFileTypes"] ?? "[]")" />
+<input type="hidden" id="NotificationEmailContext" value="true" />
+@await Component.InvokeAsync("ApplicationBreadcrumbWidget", new { applicationId = Model.ApplicationId })
+<script type="application/json" id="notificationSelectedEmail">@Html.Raw(JsonSerializer.Serialize(Model.SelectedEmail, jsonOptions))</script>
+@await Component.InvokeAsync("EmailsWidget", new { applicationId = Model.ApplicationId, currentUserId = Model.CurrentUserId })
