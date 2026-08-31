@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "mode": "report-only",
-  "generatedAt": "2026-08-25T21:10:46.644Z",
+  "generatedAt": "2026-08-31T22:27:00.572Z",
   "summary": {
     "total": 360,
     "matched": 147,
@@ -797,6 +797,7 @@
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantInfo/Default.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantPayments/Default.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantsActionBar/ListMerge.js",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantsActionBar/ListUnmerge.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicationLinksWidget/Default.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/CustomFields/Default.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/DetailsActionBar/Default.js",
@@ -824,6 +825,7 @@
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantInfo/Default.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantPayments/Default.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantsActionBar/ListMerge.js",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantsActionBar/ListUnmerge.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicationLinksWidget/Default.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/CustomFields/Default.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/DetailsActionBar/Default.js",
@@ -1779,6 +1781,7 @@
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260817212058_AddNotificationReadStateAndSender.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260818211028_AB33234_ExternalLinksApplicantMessage.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260820184916_AB33327_MoveAIScoresheetAnswersToAISchema.Designer.cs",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260828200348_AB33862_AddApplicantMergeHistory.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/GrantTenantDbContextModelSnapshot.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/GrantApplications/Details.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/GrantApplications/Details.js",
@@ -1840,6 +1843,7 @@
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260817212058_AddNotificationReadStateAndSender.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260818211028_AB33234_ExternalLinksApplicantMessage.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260820184916_AB33327_MoveAIScoresheetAnswersToAISchema.Designer.cs",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260828200348_AB33862_AddApplicantMergeHistory.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/GrantTenantDbContextModelSnapshot.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/AssigneeSelection/AssigneeSelectionModal.cshtml"
       ]
@@ -3039,6 +3043,7 @@
         "applications/Unity.GrantManager/modules/Unity.Theme.UX2/src/Unity.Theme.UX2/wwwroot/themes/ux2/json-editor.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantInfo/Default.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantsActionBar/ListMerge.cshtml",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantsActionBar/ListUnmerge.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/EmailsWidget/Default.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/EmailsWidget/Default.js"
       ]
@@ -3183,6 +3188,7 @@
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260817212058_AddNotificationReadStateAndSender.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260818211028_AB33234_ExternalLinksApplicantMessage.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260820184916_AB33327_MoveAIScoresheetAnswersToAISchema.Designer.cs",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260828200348_AB33862_AddApplicantMergeHistory.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/GrantTenantDbContextModelSnapshot.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/ApplicantHistory/ReportsHistoryModalViewModel.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantHistory/Default.js",
@@ -3461,6 +3467,7 @@
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260817212058_AddNotificationReadStateAndSender.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260818211028_AB33234_ExternalLinksApplicantMessage.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260820184916_AB33327_MoveAIScoresheetAnswersToAISchema.Designer.cs",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260828200348_AB33862_AddApplicantMergeHistory.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/GrantTenantDbContextModelSnapshot.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/GrantApplications/Index.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantSubmissions/Default.js",
@@ -3789,6 +3796,7 @@
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260817212058_AddNotificationReadStateAndSender.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260818211028_AB33234_ExternalLinksApplicantMessage.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260820184916_AB33327_MoveAIScoresheetAnswersToAISchema.Designer.cs",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260828200348_AB33862_AddApplicantMergeHistory.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/GrantTenantDbContextModelSnapshot.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantInfo/Default.js"
       ]
