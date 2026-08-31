@@ -26,6 +26,7 @@ public static partial class UnitySelector
             public static partial class Update
             {
                 public const string UpdateFinalStateFields = "Unity.GrantManager.ApplicationManagement.Review.AssessmentResults.Update.UpdateFinalStateFields";
+                public const string UpdateEligibleForRenewal = "Unity.GrantManager.ApplicationManagement.Review.AssessmentResults.Update.UpdateEligibleForRenewal";
             }
         }
 
