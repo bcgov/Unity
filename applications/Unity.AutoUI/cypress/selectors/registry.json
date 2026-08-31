@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "mode": "report-only",
-  "generatedAt": "2026-08-31T22:27:00.572Z",
+  "generatedAt": "2026-08-31T22:41:43.105Z",
   "summary": {
     "total": 360,
     "matched": 147,
@@ -3036,6 +3036,7 @@
         "applications/Unity.AutoUI/cypress_manyEmails/manyEmails.cy.ts:158"
       ],
       "applicationMatches": [
+        "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/Notifications/Index.cshtml",
         "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Views/Settings/NotificationsSettingGroup/InternalEmailGroups.js",
         "applications/Unity.GrantManager/modules/Unity.Reporting/src/Unity.Reporting.Web/Views/Shared/Components/ReportingConfiguration/Default.cshtml",
         "applications/Unity.GrantManager/modules/Unity.Reporting/src/Unity.Reporting.Web/Views/Shared/Components/ReportingConfigurationViewStatus/Default.cshtml",
