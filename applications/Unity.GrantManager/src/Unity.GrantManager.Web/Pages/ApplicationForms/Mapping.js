@@ -1093,22 +1093,6 @@ $(function () {
 
     }
 
-    function getWorkflowState(review) {
-        if (review?.state) {
-            return review.state;
-        }
-        return getEnumName(review?.workflowState, {
-            10: 'GenerateInitialMapping',
-            20: 'ReviewInitialMapping',
-            30: 'GenerateWorksheets',
-            40: 'ReviewWorksheets',
-            50: 'PublishAndAssignWorksheets',
-            60: 'GenerateFinalMapping',
-            70: 'ReviewFinalMapping',
-            80: 'Completed'
-        });
-    }
-
     function getWorkflowAction(review) {
         if (review?.action) {
             return review.action;

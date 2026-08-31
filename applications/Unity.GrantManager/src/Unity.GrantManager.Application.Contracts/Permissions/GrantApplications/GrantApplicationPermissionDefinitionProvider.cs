@@ -137,6 +137,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             var upx_Review_AssessmentResults                        = upx_Review.AddUnityChild(UnitySelector.Review.AssessmentResults.Default);
             var upx_Review_AssessmentResults_Update                 = upx_Review_AssessmentResults.AddUnityChild(UnitySelector.Review.AssessmentResults.Update.Default);
             var upx_Review_AssessmentResults_UpdateFinalStateFields = upx_Review_AssessmentResults_Update.AddUnityChild(UnitySelector.Review.AssessmentResults.Update.UpdateFinalStateFields);
+            var upx_Review_AssessmentResults_UpdateEligibleForRenewal = upx_Review_AssessmentResults_Update.AddUnityChild(UnitySelector.Review.AssessmentResults.Update.UpdateEligibleForRenewal);
 
             var upx_Review_AssessmentReviewList                     = upx_Review.AddUnityChild(UnitySelector.Review.AssessmentReviewList.Default);
             var upx_Review_AssessmentReviewList_Create              = upx_Review_AssessmentReviewList.AddUnityChild(UnitySelector.Review.AssessmentReviewList.Create);

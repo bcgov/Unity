@@ -215,6 +215,7 @@
     "Unity.GrantManager.ApplicationManagement.Review.AssessmentResults": "Application Assessment Results",
     "Unity.GrantManager.ApplicationManagement.Review.AssessmentResults.Update": "Edit Application Assessment Result",
     "Unity.GrantManager.ApplicationManagement.Review.AssessmentResults.Update.UpdateFinalStateFields": "Edit Application Assessment Result after approval",
+    "Unity.GrantManager.ApplicationManagement.Review.AssessmentResults.Update.UpdateEligibleForRenewal": "Edit Application Assessment Result Eligible for Renewal",
 
     "Unity.GrantManager.ApplicationManagement.Review.AssessmentReviewList": "Assessment List",
     "Unity.GrantManager.ApplicationManagement.Review.AssessmentReviewList.Create": "Create Assessment",
@@ -379,6 +380,7 @@
     "AssessmentResultsView:AssessmentResultsForm.NotificationDate": "Notification Date",
     "AssessmentResultsView:AssessmentResultsForm.RiskRanking": "Risk Ranking",
     "AssessmentResultsView:AssessmentResultsForm.Published": "Published",
+    "AssessmentResultsView:AssessmentResultsForm.EligibleForRenewal": "Eligible for Renewal",
     "DetailsActionBar:PublishButton": "Publish Status",
     "DetailsActionBar:UnpublishButton": "Unpublish Status",
     "DetailsActionBar:ConfirmActionTitle": "Confirm Action",

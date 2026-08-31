@@ -7,5 +7,6 @@
         public const string AddressInfo = "ADDRESSINFO";
         public const string SubmissionInfo = "SUBMISSIONINFO";
         public const string PaymentInfo = "PAYMENTINFO";
+        public const string SubmissionFormData = "SUBMISSIONFORMDATA";
     }
 }
