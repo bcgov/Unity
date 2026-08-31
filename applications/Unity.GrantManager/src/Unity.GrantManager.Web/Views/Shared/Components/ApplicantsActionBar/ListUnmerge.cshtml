@@ -13,8 +13,10 @@
                 <div id="applicantUnmergeStep1">
                     <p>@L["ApplicantMerge:UnmergeHistory"].Value</p>
                     <div id="applicantUnmergeLoading" class="text-center my-4">
-                        <div class="spinner-border" role="status"></div>
-                        <div class="mt-2">@L["ApplicantMerge:Loading"].Value</div>
+                        <output class="d-block">
+                            <span class="spinner-border" aria-hidden="true"></span>
+                            <span class="mt-2 d-block">@L["ApplicantMerge:Loading"].Value</span>
+                        </output>
                     </div>
                     <div id="applicantUnmergeHistoryContainer" class="table-responsive d-none">
                         <table class="table align-middle">
@@ -50,8 +52,10 @@
                                   placeholder="@L["ApplicantMerge:ReasonPlaceholder"].Value"></textarea>
                     </div>
                     <div id="applicantUnmergeSpinner" class="text-center my-3 d-none">
-                        <div class="spinner-border" role="status"></div>
-                        <div class="mt-2">@L["ApplicantMerge:Processing"].Value</div>
+                        <output class="d-block">
+                            <span class="spinner-border" aria-hidden="true"></span>
+                            <span class="mt-2 d-block">@L["ApplicantMerge:Processing"].Value</span>
+                        </output>
                     </div>
                     <div class="d-flex justify-content-between">
                         <button type="button" id="applicantUnmergeBackBtn" class="btn btn-secondary">
