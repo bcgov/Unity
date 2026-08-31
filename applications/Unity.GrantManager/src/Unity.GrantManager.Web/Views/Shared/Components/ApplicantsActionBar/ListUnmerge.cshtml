@@ -1,0 +1,68 @@
+@using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Localization
+@inject IStringLocalizer<GrantManagerResource> L
+
+<div class="modal fade" id="applicantUnmergeModal" tabindex="-1" aria-labelledby="applicantUnmergeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="applicantUnmergeModalLabel">@L["ApplicantMerge:UnmergeTitle"].Value</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="applicantUnmergeStep1">
+                    <p>@L["ApplicantMerge:UnmergeHistory"].Value</p>
+                    <div id="applicantUnmergeLoading" class="text-center my-4">
+                        <div class="spinner-border" role="status"></div>
+                        <div class="mt-2">@L["ApplicantMerge:Loading"].Value</div>
+                    </div>
+                    <div id="applicantUnmergeHistoryContainer" class="table-responsive d-none">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>@L["ApplicantMerge:MergedApplicants"].Value</th>
+                                    <th>@L["ApplicantMerge:MergedAt"].Value</th>
+                                    <th>@L["ApplicantMerge:ApplicationsMoved"].Value</th>
+                                </tr>
+                            </thead>
+                            <tbody id="applicantUnmergeHistoryBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="d-flex justify-content-end mt-3">
+                        <button type="button" id="applicantUnmergeNextBtn" class="btn btn-primary" disabled>
+                            @L["ApplicantMerge:Continue"].Value
+                        </button>
+                    </div>
+                </div>
+
+                <div id="applicantUnmergeStep2" class="d-none">
+                    <h6 class="fw-bold">@L["ApplicantMerge:ReviewUnmerge"].Value</h6>
+                    <p id="applicantUnmergeSummary" class="mb-2"></p>
+                    <p>@L["ApplicantMerge:UnmergeExplanation"].Value</p>
+                    <div id="applicantUnmergeBlocked" class="alert alert-danger d-none" role="alert"></div>
+                    <div class="mb-3">
+                        <label for="applicantUnmergeReason" class="form-label">@L["ApplicantMerge:Reason"].Value</label>
+                        <textarea id="applicantUnmergeReason"
+                                  class="form-control"
+                                  maxlength="1000"
+                                  rows="3"
+                                  placeholder="@L["ApplicantMerge:ReasonPlaceholder"].Value"></textarea>
+                    </div>
+                    <div id="applicantUnmergeSpinner" class="text-center my-3 d-none">
+                        <div class="spinner-border" role="status"></div>
+                        <div class="mt-2">@L["ApplicantMerge:Processing"].Value</div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <button type="button" id="applicantUnmergeBackBtn" class="btn btn-secondary">
+                            @L["ApplicantMerge:Back"].Value
+                        </button>
+                        <button type="button" id="applicantUnmergeConfirmBtn" class="btn btn-primary" disabled>
+                            @L["ApplicantMerge:ConfirmUnmerge"].Value
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

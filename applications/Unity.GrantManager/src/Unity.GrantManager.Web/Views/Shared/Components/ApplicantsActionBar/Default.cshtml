@@ -12,6 +12,7 @@
 @{
     var hasViewApplicant = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Applicant.Default);
     var hasMergeApplicant = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Applicant.Merge);
+    var hasUnmergeApplicant = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Applicant.Unmerge);
     var hasDeleteApplicant = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Applicant.Delete);
 }
 
@@ -28,11 +29,17 @@
                     button-type="Secondary"
                     abp-if="@hasViewApplicant" />
         <abp-button id="mergeApplicants"
-                    text="Merge"
+                    text="@L["ApplicantMerge:Merge"].Value"
                     data-selector="applicants-table-actions"
                     class="custom-table-btn flex-none btn btn-secondary d-none"
                     button-type="Secondary"
                     abp-if="@hasMergeApplicant" />
+        <abp-button id="unmergeApplicants"
+                    text="@L["ApplicantMerge:Unmerge"].Value"
+                    data-selector="applicants-table-actions"
+                    class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
+                    button-type="Secondary"
+                    abp-if="@hasUnmergeApplicant" />
         <abp-button id="deleteApplicant"
                     text="Delete"
                     data-selector="applicants-table-actions"
@@ -46,3 +53,4 @@
 </div>
 
 @await Html.PartialAsync("~/Views/Shared/Components/ApplicantsActionBar/ListMerge.cshtml")
+@await Html.PartialAsync("~/Views/Shared/Components/ApplicantsActionBar/ListUnmerge.cshtml")

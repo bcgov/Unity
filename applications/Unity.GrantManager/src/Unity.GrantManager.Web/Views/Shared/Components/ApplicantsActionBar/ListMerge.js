@@ -140,12 +140,7 @@
                 merged[f.key] = choice === 'a' ? a[f.key] : b[f.key];
             });
 
-            // Convert indigenousOrgInd "Yes"/"No"/null → bool?/null for UpdateApplicantSummaryDto
-            let indigenousOrgIndBool = null;
-            if (merged['indigenousOrgInd'] === 'Yes') indigenousOrgIndBool = true;
-            else if (merged['indigenousOrgInd'] === 'No') indigenousOrgIndBool = false;
-
-            // Build payload matching UpdateApplicantSummaryDto property names (camelCase via ABP)
+            const fiscalDay = merged['fiscalDay'];
             const summaryData = {
                 applicantName:               merged['applicantName'] ?? null,
                 unityApplicantId:            merged['unityApplicantId'] ?? null,
@@ -155,60 +150,33 @@
                 organizationType:            merged['organizationType'] ?? null,
                 approxNumberOfEmployees:     merged['approxNumberOfEmployees'] ?? null,
                 orgStatus:                   merged['orgStatus'] ?? null,
-                indigenousOrgInd:            indigenousOrgIndBool,
+                indigenousOrgInd:            merged['indigenousOrgInd'] ?? null,
                 sector:                      merged['sector'] ?? null,
                 subSector:                   merged['subSector'] ?? null,
                 sectorSubSectorIndustryDesc: merged['sectorSubSectorIndustryDesc'] ?? null,
-                fiscalDay:                   merged['fiscalDay'] === null ? null : String(merged['fiscalDay']),
+                fiscalDay:                   fiscalDay === null || fiscalDay === undefined || fiscalDay === ''
+                    ? null
+                    : Number(fiscalDay),
                 fiscalMonth:                 merged['fiscalMonth'] ?? null,
             };
-
-            const modifiedFields = Object.keys(summaryData);
 
             $('#listMergeSpinner').removeClass('d-none');
             $('#listMergeMergeBtn').prop('disabled', true);
 
-            // Step 1: mark non-principal as duplicated
+            const supplierSide = $('input[name="merge_SupplierId"]:checked').val();
+            const selectedSupplierId = supplierSide === 'a' ? (a.supplierId || null) : (b.supplierId || null);
+
             $.ajax({
-                url: '/api/app/applicant/set-duplicated',
+                url: '/api/app/applicant-merge',
                 method: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify({
                     principalApplicantId: principal.id,
-                    nonPrincipalApplicantId: nonPrincipal.id
+                    secondaryApplicantId: nonPrincipal.id,
+                    summary: summaryData,
+                    selectedSupplierId: selectedSupplierId,
+                    source: 0
                 })
-            }).then(() => {
-                // Step 2: transfer all non-principal applications to principal
-                return $.ajax({
-                    url: '/api/app/applicant/transfer-applicant-applications',
-                    method: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({
-                        principalApplicantId: principal.id,
-                        nonPrincipalApplicantId: nonPrincipal.id
-                    })
-                });
-            }).then(() => {
-                // Step 3: update principal's summary fields
-                return unity.grantManager.applicants.applicant
-                    .partialUpdateApplicantSummary(principal.id, {
-                        modifiedFields: modifiedFields,
-                        data: summaryData
-                    });
-            }).then(() => {
-                // Step 4: apply supplier selection and null all DefaultSiteId
-                const supplierSide = $('input[name="merge_SupplierId"]:checked').val();
-                const selectedSupplierId = supplierSide === 'a' ? (a.supplierId || null) : (b.supplierId || null);
-                return $.ajax({
-                    url: '/api/app/applicant-supplier/handle-supplier-after-merge',
-                    method: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({
-                        principalId: principal.id,
-                        nonPrincipalId: nonPrincipal.id,
-                        selectedSupplierId: selectedSupplierId
-                    })
-                });
             }).then(() => {
                 $('#applicantListMergeModal').modal('hide');
                 PubSub.publish('deselect_applicant', 'reset_data');
