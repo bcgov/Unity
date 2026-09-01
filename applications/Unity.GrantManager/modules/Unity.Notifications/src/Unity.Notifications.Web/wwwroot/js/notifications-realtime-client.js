@@ -61,6 +61,22 @@
             return;
         }
 
+        fetch('/api/notifications/realtime/feature-enabled', { credentials: 'same-origin' })
+            .then(function (response) {
+                return response.ok ? response.json() : false;
+            })
+            .then(function (isEnabled) {
+                if (isEnabled) {
+                    initializeWidget();
+                }
+            })
+            .catch(function () {
+                // Do not show or connect the widget when feature state cannot be confirmed.
+            });
+    }
+
+    function initializeWidget() {
+
         const l = window.abp?.localization?.getResource?.('Notifications')
             || function (key) { return key; };
 
@@ -72,21 +88,26 @@
         let activeMode = 'individual';
         let currentTenant = null;
         const selectedTargets = { individual: '', tenant: '' };
-        const modeNotificationCounts = { individual: 0, tenant: 0 };
+        const unreadIndividualCounts = {};
         let targetSelect2Open = false;
-        let targetOptionsRefreshPending = false;
         const histories = {};
+        const loadedConversationHistories = new Set();
         const MAX_HISTORY_ITEMS = 100;
         const STATUS_GREEN_MS = 10 * 60 * 1000;
         const STATUS_ORANGE_MS = 30 * 60 * 1000;
         const BUBBLE_POSITION_STORAGE_KEY = 'unity.notifications.realtime.bubble-position';
+        const BUBBLE_VISIBILITY_STORAGE_KEY = 'unity.notifications.realtime.bubble-hidden';
         const PANEL_SIZE_STORAGE_KEY = 'unity.notifications.realtime.panel-size';
         const PANEL_POSITION_STORAGE_KEY = 'unity.notifications.realtime.panel-position';
+        const BANNER_STORAGE_KEY = 'unity.notifications.realtime.banners';
         const widget = buildWidget();
+        let bubbleHiddenPreference = restoreBubbleHiddenPreference();
+        applyBubbleVisibility();
         setupBubbleDragging();
         setupPanelResizing();
         setupPanelDragging();
-        setupTargetSelect2();
+        setupIndividualsResizing();
+        setupBubbleMenuItem();
 
         const connection = new signalR.HubConnectionBuilder()
             .withUrl('/signalr/notifications')
@@ -109,33 +130,7 @@
         }
 
         connection.on('directMessageReceived', function (eventData) {
-            const scope = eventData?.scope || 'user';
-            const sender = eventData?.senderName || eventData?.senderId || 'unknown';
-            const senderId = eventData?.senderId;
-            const message = eventData?.message || '';
-            const targetId = scope === 'tenant'
-                ? eventData?.tenantId || currentTenant?.id
-                : senderId;
-
-            if (!targetId) {
-                return;
-            }
-
-            const mode = scope === 'tenant' ? 'tenant' : 'individual';
-            addMessage(mode, targetId, sender, senderId, message, eventData?.timestamp);
-
-            if (scope === 'user') {
-                ensurePeerOption(senderId, sender);
-            }
-
-            if (senderId !== myUserId) {
-                modeNotificationCounts[mode] += 1;
-                updateModeTabCounts();
-            }
-
-            if (eventData.source === 'UnityMessagingController' && senderId && senderId !== myUserId) {
-                showIncomingToast(sender, message);
-            }
+            handleIncomingMessage(eventData);
 
         });
 
@@ -172,38 +167,14 @@
                 let firstUnreadTarget = null;
 
                 (Array.isArray(messages) ? messages : []).forEach(function (eventData) {
-                    const scope = eventData.scope === 'tenant' ? 'tenant' : 'user';
-                    const senderId = eventData.senderId || null;
-                    const targetId = scope === 'tenant'
-                        ? eventData.targetId
-                        : eventData.targetId || senderId;
-
-                    if (!targetId) {
+                    const unreadMessage = processUnreadMessage(eventData);
+                    if (!unreadMessage) {
                         return;
                     }
 
-                    modeNotificationCounts[scope === 'tenant' ? 'tenant' : 'individual'] += 1;
-
                     if (!firstUnreadTarget) {
-                        firstUnreadMode = scope === 'tenant' ? 'tenant' : 'individual';
-                        firstUnreadTarget = targetId;
-                    }
-
-                    addMessage(
-                        scope === 'tenant' ? 'tenant' : 'individual',
-                        targetId,
-                        eventData.senderName || senderId || 'unknown',
-                        senderId,
-                        eventData.message || '',
-                        eventData.timestamp
-                    );
-
-                    if (scope === 'user') {
-                        ensurePeerOption(senderId, eventData.senderName || senderId);
-                    }
-
-                    if (eventData.source === 'UnityMessagingController' && senderId && senderId !== myUserId) {
-                        showIncomingToast(eventData.senderName || senderId, eventData.message || '');
+                        firstUnreadMode = unreadMessage.mode;
+                        firstUnreadTarget = unreadMessage.targetId;
                     }
                 });
 
@@ -218,10 +189,76 @@
                     renderConversation();
                 }
 
-                updateModeTabCounts();
+                renderIndividualList();
             }).catch(function () {
                 // Unread history is a convenience; realtime delivery remains available.
             });
+        }
+
+        function handleIncomingMessage(eventData) {
+            const scope = eventData?.scope || 'user';
+            const senderId = eventData?.senderId;
+            const targetId = scope === 'tenant'
+                ? eventData?.tenantId || currentTenant?.id
+                : senderId;
+
+            if (!targetId) {
+                return;
+            }
+
+            const sender = eventData?.senderName || '';
+            const message = eventData?.message || '';
+            const mode = scope === 'tenant' ? 'tenant' : 'individual';
+            addMessage(mode, targetId, sender, senderId, message, eventData?.timestamp);
+
+            if (scope === 'user') {
+                ensurePeerOption(senderId, sender);
+            }
+
+            updateUnreadIndividualCount(scope, targetId, senderId);
+            displayTenantNotification(eventData, scope, sender, message, senderId);
+        }
+
+        function processUnreadMessage(eventData) {
+            const scope = eventData.scope === 'tenant' ? 'tenant' : 'user';
+            const senderId = eventData.senderId || null;
+            const targetId = scope === 'tenant' ? eventData.targetId : eventData.targetId || senderId;
+
+            if (!targetId) {
+                return null;
+            }
+
+            const sender = eventData.senderName || '';
+            const message = eventData.message || '';
+            updateUnreadIndividualCount(scope, targetId, senderId);
+            addMessage(scope === 'tenant' ? 'tenant' : 'individual', targetId, sender, senderId, message, eventData.timestamp);
+
+            if (scope === 'user') {
+                ensurePeerOption(senderId, sender);
+            }
+
+            displayTenantNotification(eventData, scope, sender, message, senderId);
+            return { mode: scope === 'tenant' ? 'tenant' : 'individual', targetId };
+        }
+
+        function updateUnreadIndividualCount(scope, targetId, senderId) {
+            if (scope === 'user' && senderId && senderId !== myUserId
+                && !(panelOpen && activeMode === 'individual' && widget.target.value === targetId)) {
+                unreadIndividualCounts[targetId] = (unreadIndividualCounts[targetId] || 0) + 1;
+                renderIndividualList();
+            }
+        }
+
+        function displayTenantNotification(eventData, scope, sender, message, senderId) {
+            if (scope !== 'tenant' || senderId === myUserId || !claimNotification(eventData, scope)) {
+                return;
+            }
+
+            if (isBannerMessage(eventData, scope)) {
+                showIncomingBanner(sender, message, eventData?.timestamp);
+            } else {
+                showIncomingToast(sender, message);
+            }
         }
 
         function sendHeartbeat(force) {
@@ -258,11 +295,17 @@
             });
 
             if (targetSelect2Open) {
-                targetOptionsRefreshPending = true;
                 return;
             }
 
             renderTargetOptions();
+
+            peers.slice().sort(compareIndividualActivity).forEach(function (peer) {
+                const historyKey = `individual:${peer.userId}`;
+                if (!loadedConversationHistories.has(historyKey)) {
+                    loadConversationHistory('individual', peer.userId, false);
+                }
+            });
         }
 
         function refreshTenant() {
@@ -274,7 +317,6 @@
                 currentTenant = result || null;
 
                 if (targetSelect2Open) {
-                    targetOptionsRefreshPending = true;
                     return;
                 }
 
@@ -286,13 +328,13 @@
 
         function renderTargetOptions() {
             if (targetSelect2Open || (window.jQuery?.('.select2-container--open').length > 0)) {
-                targetOptionsRefreshPending = true;
                 return;
             }
 
             const currentValue = selectedTargets[activeMode] || widget.target.value;
 
             if (activeMode === 'tenant') {
+                widget.individualsPanel.classList.add('rt-widget-hidden');
                 widget.targetControl.style.display = 'none';
                 widget.target.innerHTML = currentTenant
                     ? `<option value="${escapeAttribute(currentTenant.id)}">${escapeHtml(currentTenant.name || currentTenant.id)}</option>`
@@ -309,12 +351,14 @@
             }
 
             widget.targetControl.style.display = '';
+            widget.individualsPanel.classList.remove('rt-widget-hidden');
 
             if (peers.length === 0) {
                 widget.target.innerHTML = `<option value="">${l('RealtimeWidget:NoOnlineUsers')}</option>`;
                 widget.target.disabled = true;
                 refreshTargetSelect2();
                 updateTargetStatusDot();
+                renderIndividualList();
                 return;
             }
 
@@ -332,41 +376,8 @@
 
             refreshTargetSelect2();
             updateTargetStatusDot();
+            renderIndividualList();
             renderConversation();
-        }
-
-        function setupTargetSelect2() {
-            if (!window.jQuery || !window.jQuery.fn?.select2) {
-                return;
-            }
-
-            window.jQuery(widget.target).select2({
-                theme: 'bootstrap-5',
-                width: '100%',
-                placeholder: l('RealtimeWidget:To'),
-                allowClear: true,
-                dropdownParent: window.jQuery(widget.targetControl),
-                templateResult: renderTargetSelect2Option,
-                templateSelection: renderTargetSelect2Option,
-                escapeMarkup: function (markup) { return markup; }
-            });
-
-            window.jQuery(widget.target)
-                .on('select2:open', function () {
-                    targetSelect2Open = true;
-                    syncTargetSelect2DropdownSize();
-                })
-                .on('select2:close', function () {
-                    targetSelect2Open = false;
-                    if (targetOptionsRefreshPending) {
-                        targetOptionsRefreshPending = false;
-                        renderTargetOptions();
-                    } else {
-                        refreshTargetSelect2();
-                    }
-                });
-
-            window.addEventListener('resize', syncTargetSelect2DropdownSize);
         }
 
         function syncTargetSelect2DropdownSize() {
@@ -385,48 +396,35 @@
                 || (window.jQuery?.('.select2-container--open').length > 0);
 
             if (!select2MenuOpen
-                && window.jQuery
-                && window.jQuery.fn?.select2
+                && window.jQuery?.fn?.select2
                 && window.jQuery(widget.target).data('select2')) {
                 window.jQuery(widget.target).trigger('change.select2');
             }
         }
 
-        function renderTargetSelect2Option(data) {
-            if (!data.id) {
-                return data.text;
-            }
-
-            const peer = peers.find(function (item) { return item.userId === data.id; });
-            const status = activeMode === 'tenant' ? null : getPeerStatus(peer);
-            const statusMarkup = status
-                ? `<span class="rt-status-dot rt-status-${status.className}" title="${escapeAttribute(status.label)}"></span>`
-                : '';
-
-            return `<span class="rt-widget-target-option-content">${statusMarkup}<span>${escapeHtml(data.text)}</span></span>`;
-        }
-
-        function loadConversationHistory(mode, targetId) {
+        function loadConversationHistory(mode, targetId, renderActiveConversation) {
             if (!targetId || connection.state !== signalR.HubConnectionState.Connected) {
                 return;
             }
 
             connection.invoke('GetConversationHistoryAsync', mode, targetId).then(function (messages) {
-                if (activeMode !== mode || widget.target.value !== targetId) {
-                    return;
-                }
-
                 const key = `${mode}:${targetId}`;
                 histories[key] = (Array.isArray(messages) ? messages : []).map(function (eventData) {
                     return {
-                        sender: eventData.senderName || eventData.senderId || 'unknown',
+                        sender: eventData.senderName || '',
                         senderId: eventData.senderId || null,
                         message: eventData.message || '',
                         timestamp: eventData.timestamp,
                         mode
                     };
                 }).slice(-MAX_HISTORY_ITEMS);
-                renderConversation();
+                loadedConversationHistories.add(key);
+
+                if (renderActiveConversation !== false && activeMode === mode && widget.target.value === targetId) {
+                    renderConversation();
+                } else if (mode === 'individual') {
+                    renderIndividualList();
+                }
             }).catch(function () {
                 // Conversation history is optional; realtime and unread messages remain available.
             });
@@ -469,6 +467,106 @@
             const status = getPeerStatus(peer);
             widget.targetStatus.className = `rt-status-dot rt-widget-target-status rt-status-${status.className}`;
             widget.targetStatus.title = status.label;
+        }
+
+        function renderIndividualList() {
+            if (!widget.individualsList) {
+                return;
+            }
+
+            widget.individualsList.innerHTML = '';
+            if (peers.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'rt-widget-individuals-empty';
+                empty.textContent = l('RealtimeWidget:NoOnlineUsers');
+                widget.individualsList.appendChild(empty);
+                return;
+            }
+
+            peers.forEach(function (peer) {
+                const targetId = peer.userId;
+                const unreadMessageCount = unreadIndividualCounts[targetId] || 0;
+                const status = getPeerStatus(peer);
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'rt-widget-individual' + (selectedTargets.individual === targetId ? ' active' : '');
+                button.dataset.userId = targetId;
+                button.title = peer.userName || targetId;
+
+                const avatar = document.createElement('span');
+                avatar.className = 'rt-widget-individual-avatar';
+                avatar.textContent = getInitials(peer.userName || targetId);
+
+                const details = document.createElement('span');
+                details.className = 'rt-widget-individual-details';
+                const name = document.createElement('span');
+                name.className = 'rt-widget-individual-name';
+                name.textContent = peer.userName || targetId;
+                const presence = document.createElement('span');
+                presence.className = 'rt-widget-individual-presence';
+                presence.innerHTML = `<span class="rt-status-dot rt-status-${status.className}"></span>${escapeHtml(status.label)}`;
+                details.appendChild(name);
+                details.appendChild(presence);
+
+                const count = document.createElement('span');
+                count.className = 'rt-widget-individual-count';
+                count.textContent = unreadMessageCount > 99 ? '99+' : String(unreadMessageCount);
+                count.classList.toggle('rt-widget-hidden', unreadMessageCount === 0);
+
+                button.appendChild(avatar);
+                button.appendChild(details);
+                button.appendChild(count);
+                button.addEventListener('click', function () {
+                    selectIndividual(targetId);
+                });
+                widget.individualsList.appendChild(button);
+            });
+        }
+
+        function compareIndividualActivity(firstPeer, secondPeer) {
+            const firstActivity = getIndividualActivityTime(firstPeer);
+            const secondActivity = getIndividualActivityTime(secondPeer);
+
+            if (firstActivity !== secondActivity) {
+                return secondActivity - firstActivity;
+            }
+
+            return String(firstPeer.userName || firstPeer.userId)
+                .localeCompare(String(secondPeer.userName || secondPeer.userId));
+        }
+
+        function getIndividualActivityTime(peer) {
+            const conversation = histories[`individual:${peer.userId}`] || [];
+            const messageActivity = conversation.reduce(function (latest, entry) {
+                const timestamp = entry.timestamp ? new Date(entry.timestamp).getTime() : Number.NaN;
+                return Number.isNaN(timestamp) ? latest : Math.max(latest, timestamp);
+            }, 0);
+
+            if (messageActivity > 0) {
+                return messageActivity;
+            }
+
+            const presenceActivity = peer.lastActivityUtc ? new Date(peer.lastActivityUtc).getTime() : 0;
+            return Number.isNaN(presenceActivity) ? 0 : presenceActivity;
+        }
+
+        function selectIndividual(targetId) {
+            selectedTargets.individual = targetId;
+            widget.target.value = targetId;
+            refreshTargetSelect2();
+            updateTargetStatusDot();
+            renderIndividualList();
+            renderConversation();
+            loadConversationHistory('individual', targetId);
+        }
+
+        function getInitials(value) {
+            return String(value || '?')
+                .split(/\s+/)
+                .filter(Boolean)
+                .slice(0, 2)
+                .map(function (part) { return part.charAt(0).toUpperCase(); })
+                .join('') || '?';
         }
 
         function setupBubbleDragging() {
@@ -695,6 +793,47 @@
             }
         }
 
+        function setupIndividualsResizing() {
+            let resizeState = null;
+
+            widget.individualsResizeHandle.addEventListener('pointerdown', function (event) {
+                if (event.button !== 0) {
+                    return;
+                }
+
+                resizeState = {
+                    startX: event.clientX,
+                    width: widget.individualsPanel.getBoundingClientRect().width
+                };
+                widget.individualsResizeHandle.setPointerCapture(event.pointerId);
+                event.preventDefault();
+            });
+
+            widget.individualsResizeHandle.addEventListener('pointermove', function (event) {
+                if (!resizeState) {
+                    return;
+                }
+
+                const width = Math.min(320, Math.max(120, resizeState.width + event.clientX - resizeState.startX));
+                widget.individualsPanel.style.flexBasis = `${width}px`;
+                event.preventDefault();
+            });
+
+            widget.individualsResizeHandle.addEventListener('pointerup', finishResize);
+            widget.individualsResizeHandle.addEventListener('pointercancel', finishResize);
+
+            function finishResize(event) {
+                if (!resizeState) {
+                    return;
+                }
+
+                if (widget.individualsResizeHandle.hasPointerCapture(event.pointerId)) {
+                    widget.individualsResizeHandle.releasePointerCapture(event.pointerId);
+                }
+                resizeState = null;
+            }
+        }
+
         function clampPanelPosition(left, top) {
             const bounds = widget.panel.getBoundingClientRect();
             const margin = 8;
@@ -773,23 +912,10 @@
             updateTargetStatusDot();
             renderConversation();
         });
-        if (window.jQuery) {
-            window.jQuery(widget.target).on('select2:select select2:clear', function () {
-                selectedTargets[activeMode] = widget.target.value;
-                updateTargetStatusDot();
-                renderConversation();
-
-                if (widget.target.value) {
-                    loadConversationHistory(activeMode, widget.target.value);
-                }
-            });
-        }
         widget.modeTabs.forEach(function (tab) {
             tab.addEventListener('click', function () {
                 selectedTargets[activeMode] = widget.target.value;
                 activeMode = tab.dataset.mode;
-                modeNotificationCounts[activeMode] = 0;
-                updateModeTabCounts();
                 widget.modeTabs.forEach(item => item.classList.toggle('active', item === tab));
                 renderTargetOptions();
                 renderConversation();
@@ -883,7 +1009,16 @@
         function renderConversation() {
             const targetId = widget.target.value;
             const items = targetId ? histories[`${activeMode}:${targetId}`] || [] : [];
+            const showIndividuals = activeMode === 'individual';
+            widget.individualsPanel.classList.toggle('rt-widget-hidden', !showIndividuals);
+            widget.individualsResizeHandle.classList.toggle('rt-widget-hidden', !showIndividuals);
+            renderIndividualList();
             widget.list.innerHTML = '';
+
+            if (panelOpen && targetId) {
+                clearUnreadCounts(targetId);
+                markMessagesRead();
+            }
 
             if (items.length === 0) {
                 const empty = document.createElement('div');
@@ -893,7 +1028,21 @@
                 return;
             }
 
+            let previousDateKey = null;
             items.forEach(function (entry) {
+                const entryDate = entry.timestamp ? new Date(entry.timestamp) : new Date();
+                const dateKey = Number.isNaN(entryDate.getTime())
+                    ? null
+                    : `${entryDate.getFullYear()}-${entryDate.getMonth()}-${entryDate.getDate()}`;
+
+                if (dateKey && dateKey !== previousDateKey) {
+                    const dateDivider = document.createElement('div');
+                    dateDivider.className = 'rt-widget-date-divider';
+                    dateDivider.textContent = entryDate.toLocaleDateString();
+                    widget.list.appendChild(dateDivider);
+                    previousDateKey = dateKey;
+                }
+
                 const item = document.createElement('div');
                 item.className = 'rt-widget-message' + (entry.mode === 'tenant' ? ' rt-widget-message-alert' : '');
 
@@ -921,9 +1070,35 @@
             widget.list.scrollTop = widget.list.scrollHeight;
         }
 
+        function markMessagesRead() {
+            if (connection.state !== signalR.HubConnectionState.Connected) {
+                return;
+            }
+
+            connection.invoke('MarkMessagesReadAsync').catch(function () {
+                // Read-state failures do not affect the displayed conversation.
+            });
+        }
+
+        function clearUnreadCounts(targetId) {
+            if (targetId) {
+                delete unreadIndividualCounts[targetId];
+                renderIndividualList();
+                return;
+            }
+
+            Object.keys(unreadIndividualCounts).forEach(function (userId) {
+                delete unreadIndividualCounts[userId];
+            });
+        }
+
         function formatTime(value) {
             const date = value ? new Date(value) : new Date();
-            return Number.isNaN(date.getTime()) ? '' : date.toLocaleTimeString();
+            if (Number.isNaN(date.getTime())) {
+                return '';
+            }
+
+            return date.toLocaleTimeString();
         }
 
         function updateBadge() {
@@ -944,44 +1119,263 @@
                     titleText: String(sender || ''),
                     text: message,
                     showConfirmButton: false,
-                    timer: 5000,
-                    timerProgressBar: true
+                    showCloseButton: true
                 });
                 return;
             }
 
             if (window.abp?.notify?.info && typeof window.abp.notify.info === 'function') {
-                abp.notify.info(`${sender}: ${message}`);
+                abp.notify.info(`${sender}: ${message}`, null, {
+                    timeOut: 0,
+                    extendedTimeOut: 0,
+                    closeButton: true,
+                    tapToDismiss: false
+                });
             }
         }
 
-        function updateModeTabCounts() {
-            widget.modeTabs.forEach(function (tab) {
-                const count = modeNotificationCounts[tab.dataset.mode] || 0;
-                const countElement = tab.querySelector('.rt-widget-mode-count');
+        function isBannerMessage(eventData, scope) {
+            return scope === 'tenant'
+                && String(eventData?.messageType || '').toLowerCase() === 'banner';
+        }
 
-                if (!countElement) {
-                    return;
+        function showIncomingBanner(sender, message, timestamp) {
+            if (timestamp && !isCurrentDay(timestamp)) {
+                return;
+            }
+
+            const banners = readStoredBanners();
+            const bannerKey = buildBannerKey(sender, message, timestamp);
+            if (banners.some(function (banner) {
+                return banner.key === bannerKey
+                    || (banner.sender === String(sender || '') && banner.message === String(message || ''));
+            })) {
+                return;
+            }
+
+            const banner = {
+                id: `${Date.now()}-${globalThis.crypto.randomUUID()}`,
+                sender: String(sender || ''),
+                message: String(message || ''),
+                key: bannerKey,
+                timestamp: timestamp || new Date().toISOString()
+            };
+            banners.push(banner);
+            saveStoredBanners(banners);
+
+            const navbar = document.getElementById('main-navbar');
+            if (!navbar) {
+                return;
+            }
+
+            let container = document.querySelector('.rt-widget-banners');
+            if (!container) {
+                container = document.createElement('div');
+                container.className = 'rt-widget-banners';
+                navbar.after(container);
+            }
+            container.appendChild(createBannerElement(banner));
+        }
+
+        function createBannerElement(banner) {
+            const element = document.createElement('div');
+            element.className = 'rt-widget-banner';
+            element.dataset.bannerId = banner.id;
+
+            const content = document.createElement('div');
+            content.className = 'rt-widget-banner-content';
+            if (banner.sender) {
+                const senderElement = document.createElement('strong');
+                senderElement.className = 'rt-widget-banner-sender';
+                senderElement.textContent = banner.sender;
+                content.appendChild(senderElement);
+            }
+            const messageElement = document.createElement('span');
+            messageElement.className = 'rt-widget-banner-message';
+            messageElement.textContent = banner.message;
+            content.appendChild(messageElement);
+
+            const closeButton = document.createElement('button');
+            closeButton.type = 'button';
+            closeButton.className = 'rt-widget-banner-close';
+            closeButton.setAttribute('aria-label', l('RealtimeWidget:CloseBanner'));
+            closeButton.innerHTML = '&times;';
+            closeButton.addEventListener('click', function () {
+                removeStoredBanner(banner.id);
+                element.remove();
+                const container = element.parentElement;
+                if (container?.children.length === 0) {
+                    container.remove();
                 }
-
-                countElement.textContent = count > 9 ? '9+' : String(count);
-                countElement.classList.toggle('rt-widget-hidden', count === 0);
             });
+
+            element.appendChild(content);
+            element.appendChild(closeButton);
+            return element;
+        }
+
+        function readStoredBanners() {
+            try {
+                const banners = JSON.parse(localStorage.getItem(BANNER_STORAGE_KEY) || '[]');
+                return Array.isArray(banners) ? banners.filter(function (banner) {
+                    return banner?.id && typeof banner.sender === 'string'
+                        && typeof banner.message === 'string'
+                        && isCurrentDay(banner.timestamp || banner.id.split('-')[0]);
+                }) : [];
+            } catch (error) {
+                console.warn('Unable to read stored realtime banners.', error);
+                return [];
+            }
+        }
+
+        function saveStoredBanners(banners) {
+            try {
+                localStorage.setItem(BANNER_STORAGE_KEY, JSON.stringify(banners));
+            } catch (error) {
+                console.warn('Unable to persist realtime banners.', error);
+            }
+        }
+
+        function removeStoredBanner(bannerId) {
+            saveStoredBanners(readStoredBanners().filter(function (banner) {
+                return banner.id !== bannerId;
+            }));
+        }
+
+        function claimNotification(eventData, scope) {
+            const timestamp = eventData?.timestamp || '';
+            const notificationKey = [
+                scope,
+                eventData?.tenantId || eventData?.targetId || '',
+                eventData?.senderId || '',
+                eventData?.message || '',
+                timestamp
+            ].join('|');
+            const storageKey = 'unity.notifications.realtime.shown';
+            let shownNotifications = {};
+
+            try {
+                shownNotifications = JSON.parse(localStorage.getItem(storageKey) || '{}');
+            } catch (error) {
+                console.warn('Unable to read shown realtime notifications.', error);
+            }
+
+            Object.keys(shownNotifications).forEach(function (key) {
+                if (!isCurrentDay(shownNotifications[key])) {
+                    delete shownNotifications[key];
+                }
+            });
+
+            if (shownNotifications[notificationKey]) {
+                return false;
+            }
+
+            shownNotifications[notificationKey] = new Date().toISOString();
+            try {
+                localStorage.setItem(storageKey, JSON.stringify(shownNotifications));
+            } catch (error) {
+                console.warn('Unable to persist shown realtime notifications.', error);
+            }
+            return true;
+        }
+
+        function buildBannerKey(sender, message, timestamp) {
+            return [String(sender || ''), String(message || ''), String(timestamp || '')].join('|');
+        }
+
+        function isCurrentDay(value) {
+            const numericValue = typeof value === 'string' && /^\d+$/.test(value)
+                ? Number(value)
+                : value;
+            const date = new Date(numericValue);
+            const today = new Date();
+            return !Number.isNaN(date.getTime())
+                && date.getFullYear() === today.getFullYear()
+                && date.getMonth() === today.getMonth()
+                && date.getDate() === today.getDate();
         }
 
         function togglePanel() {
             panelOpen = !panelOpen;
             widget.panel.classList.toggle('rt-widget-panel-open', panelOpen);
-            widget.bubble.classList.toggle('rt-widget-hidden', panelOpen);
+            applyBubbleVisibility();
+            updateBubbleMenuItem();
 
             if (panelOpen) {
                 unreadCount = 0;
                 updateBadge();
-                connection.invoke('MarkMessagesReadAsync').catch(function () {
-                    // Ignore read-state failures; messages remain available in the activity log.
-                });
+                renderConversation();
                 refreshPeers();
                 refreshTenant();
+            }
+        }
+
+        function setupBubbleMenuItem() {
+            document.addEventListener('click', function (event) {
+                const menuItem = event.target.closest('#realtimeWidgetBubbleMenuItem');
+                if (!menuItem) {
+                    return;
+                }
+
+                event.preventDefault();
+                bubbleHiddenPreference = !bubbleHiddenPreference;
+                saveBubbleHiddenPreference(bubbleHiddenPreference);
+                applyBubbleVisibility();
+                updateBubbleMenuItem();
+            });
+
+            const menuObserver = new MutationObserver(function (mutations) {
+                const menuWasAdded = mutations.some(function (mutation) {
+                    return Array.from(mutation.addedNodes).some(function (node) {
+                        return node.nodeType === Node.ELEMENT_NODE
+                            && (node.matches('#realtimeWidgetBubbleMenuItem')
+                                || node.querySelector('#realtimeWidgetBubbleMenuItem'));
+                    });
+                });
+
+                if (menuWasAdded) {
+                    updateBubbleMenuItem();
+                }
+            });
+            menuObserver.observe(document.body, { childList: true, subtree: true });
+            updateBubbleMenuItem();
+        }
+
+        function updateBubbleMenuItem() {
+            const menuItem = document.getElementById('realtimeWidgetBubbleMenuItem');
+            if (!menuItem) {
+                return;
+            }
+
+            menuItem.style.display = '';
+            menuItem.textContent = l(bubbleHiddenPreference ? 'RealtimeWidget:ShowBubble' : 'RealtimeWidget:HideBubble');
+            menuItem.setAttribute('aria-label', menuItem.textContent);
+        }
+
+        function applyBubbleVisibility() {
+            const bubbleIsHidden = panelOpen || bubbleHiddenPreference;
+            widget.bubble.classList.toggle('rt-widget-hidden', bubbleIsHidden);
+            widget.bubble.hidden = bubbleIsHidden;
+            widget.bubble.style.display = bubbleIsHidden ? 'none' : 'flex';
+            widget.container.classList.toggle('rt-widget-hidden', bubbleIsHidden && !panelOpen);
+            widget.container.hidden = bubbleIsHidden && !panelOpen;
+            widget.container.style.display = bubbleIsHidden && !panelOpen ? 'none' : '';
+        }
+
+        function restoreBubbleHiddenPreference() {
+            try {
+                return localStorage.getItem(BUBBLE_VISIBILITY_STORAGE_KEY) === 'true';
+            } catch (error) {
+                console.warn('Unable to restore bubble visibility preference.', error);
+                return false;
+            }
+        }
+
+        function saveBubbleHiddenPreference(hidden) {
+            try {
+                localStorage.setItem(BUBBLE_VISIBILITY_STORAGE_KEY, String(hidden));
+            } catch (error) {
+                console.warn('Unable to save bubble visibility preference.', error);
             }
         }
 
@@ -1024,16 +1418,11 @@
             header.appendChild(titleEl);
             header.appendChild(closeBtn);
 
-            const list = document.createElement('div');
-            list.className = 'rt-widget-list';
+            const conversationLayout = document.createElement('div');
+            conversationLayout.className = 'rt-widget-conversation-layout';
 
-            const empty = document.createElement('div');
-            empty.className = 'rt-widget-empty';
-            empty.textContent = l('RealtimeWidget:Empty');
-            list.appendChild(empty);
-
-            const compose = document.createElement('div');
-            compose.className = 'rt-widget-compose';
+            const conversationToolbar = document.createElement('div');
+            conversationToolbar.className = 'rt-widget-conversation-toolbar';
 
             const modeTabs = document.createElement('div');
             modeTabs.className = 'rt-widget-mode-tabs';
@@ -1043,17 +1432,53 @@
             individualTab.className = 'rt-widget-mode-tab active';
             individualTab.dataset.mode = 'individual';
             individualTab.textContent = l('RealtimeWidget:Individual');
-            appendModeCount(individualTab);
 
             const tenantTab = document.createElement('button');
             tenantTab.type = 'button';
             tenantTab.className = 'rt-widget-mode-tab';
             tenantTab.dataset.mode = 'tenant';
             tenantTab.textContent = l('RealtimeWidget:Tenant');
-            appendModeCount(tenantTab);
 
             modeTabs.appendChild(individualTab);
             modeTabs.appendChild(tenantTab);
+            conversationToolbar.appendChild(modeTabs);
+
+            const conversationBody = document.createElement('div');
+            conversationBody.className = 'rt-widget-conversation-body';
+
+            const individualsPanel = document.createElement('aside');
+            individualsPanel.className = 'rt-widget-individuals-panel';
+            const individualsHeading = document.createElement('div');
+            individualsHeading.className = 'rt-widget-individuals-heading';
+            individualsHeading.textContent = l('RealtimeWidget:Individual');
+            const individualsList = document.createElement('div');
+            individualsList.className = 'rt-widget-individuals-list';
+            individualsPanel.appendChild(individualsHeading);
+            individualsPanel.appendChild(individualsList);
+
+            const individualsResizeHandle = document.createElement('span');
+            individualsResizeHandle.className = 'rt-widget-individuals-resize-handle';
+            individualsResizeHandle.setAttribute('role', 'separator');
+            individualsResizeHandle.setAttribute('aria-label', l('RealtimeWidget:ResizeIndividuals'));
+
+            const conversation = document.createElement('div');
+            conversation.className = 'rt-widget-conversation';
+            const list = document.createElement('div');
+            list.className = 'rt-widget-list';
+
+            const empty = document.createElement('div');
+            empty.className = 'rt-widget-empty';
+            empty.textContent = l('RealtimeWidget:Empty');
+            list.appendChild(empty);
+            conversation.appendChild(list);
+            conversationBody.appendChild(individualsPanel);
+            conversationBody.appendChild(individualsResizeHandle);
+            conversationBody.appendChild(conversation);
+            conversationLayout.appendChild(conversationToolbar);
+            conversationLayout.appendChild(conversationBody);
+
+            const compose = document.createElement('div');
+            compose.className = 'rt-widget-compose';
 
             const targetRow = document.createElement('div');
             targetRow.className = 'rt-widget-target-row';
@@ -1087,12 +1512,11 @@
 
             composeRow.appendChild(composeInput);
             composeRow.appendChild(composeSend);
-            compose.appendChild(modeTabs);
             compose.appendChild(targetRow);
             compose.appendChild(composeRow);
 
             panel.appendChild(header);
-            panel.appendChild(list);
+            panel.appendChild(conversationLayout);
             panel.appendChild(compose);
 
             const bubble = document.createElement('button');
@@ -1112,13 +1536,7 @@
             container.appendChild(bubble);
             document.body.appendChild(container);
 
-            return { container, panel, list, bubble, badge, resizeHandle, header, modeTabs: [individualTab, tenantTab], targetControl, target, targetStatus, composeInput, composeSend };
-
-            function appendModeCount(tab) {
-                const count = document.createElement('span');
-                count.className = 'rt-widget-mode-count rt-widget-hidden';
-                tab.appendChild(count);
-            }
+            return { container, panel, list, bubble, badge, resizeHandle, header, modeTabs: [individualTab, tenantTab], targetControl, target, targetStatus, composeInput, composeSend, individualsPanel, individualsList, individualsResizeHandle };
         }
     }
 })();

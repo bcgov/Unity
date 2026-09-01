@@ -21,6 +21,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
         public bool IsEditGranted { get; set; }
         public bool IsPostEditFieldsAllowed_Approval { get; set; }
         public bool IsPostEditFieldsAllowed_AssessmentResults { get; set; }
+        public bool IsUpdateEligibleForRenewalGranted { get; set; }  
         public HashSet<string> ZoneStateSet { get; set; } = [];
 
         public class ApprovalModel
@@ -88,6 +89,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
             [Display(Name = "AssessmentResultsView:AssessmentResultsForm.RiskRanking")]
             [SelectItems(nameof(RiskRankingList))]
             public string? RiskRanking { get; set; }
+
+            [Display(Name = "AssessmentResultsView:AssessmentResultsForm.EligibleForRenewal")]
+            public bool EligibleForRenewal { get; set; }
         }
 
         public List<SelectListItem> FundingRiskList { get; set; } = FormatOptionsList(AssessmentResultsOptionsList.FundingList);

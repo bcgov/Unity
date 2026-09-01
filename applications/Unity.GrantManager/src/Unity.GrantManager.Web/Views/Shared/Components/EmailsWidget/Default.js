@@ -81,6 +81,11 @@ function initializeDraftEmailsWidget() {
         bccInputRow: $('#bcc-input-row')
     };
 
+    const isNotificationEmail = $('#NotificationEmailContext').val() === 'true';
+    if (isNotificationEmail) {
+        $('#notificationEmailModal #btn-send-close-top').hide();
+    }
+
     let defaultValues = {
         emailTo: '',
         emailFrom: '',
@@ -252,6 +257,8 @@ function initializeDraftEmailsWidget() {
         defaultValues.emailFrom = UIElements.inputOriginalEmailFrom.val();
         defaultValues.emailCC = UIElements.inputOriginalEmailCC.val() || '';
         defaultValues.emailBCC = UIElements.inputOriginalEmailBCC.val() || '';
+        initializeSenderAddressSelector();
+        loadActiveSenderAddresses();
         preloadTemplates(); // Pre-fetch templates on page load
         initTemplateDetails();
         $('#templateTextContainer').hide();
@@ -261,6 +268,44 @@ function initializeDraftEmailsWidget() {
         UIElements.btnSendDropdown.hide();
         UIElements.btnDiscard.hide();
         UIElements.btnSendClose.hide();
+    }
+
+    function initializeSenderAddressSelector() {
+        if (UIElements.inputEmailFrom.length && $.fn?.select2) {
+            UIElements.inputEmailFrom.select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                tags: true,
+                allowClear: true,
+                placeholder: 'Select or enter a from address'
+            });
+        }
+    }
+
+    function loadActiveSenderAddresses() {
+        if (!UIElements.inputEmailFrom.length || typeof unity === 'undefined' ||
+            !unity.notifications?.emailAddresses?.emailAddressConfigurations) {
+            return;
+        }
+
+        unity.notifications.emailAddresses.emailAddressConfigurations.getList().then(function (addresses) {
+            const activeSenders = addresses.filter(address => address.isActive && address.emailType === 'Sender');
+            const currentAddress = UIElements.inputEmailFrom.val() || UIElements.inputOriginalEmailFrom.val();
+            const selectedAddress = currentAddress || activeSenders[0]?.emailAddress || '';
+
+            UIElements.inputEmailFrom.find('option:not(:first)').remove();
+            activeSenders.forEach(address => {
+                $('<option>').val(address.emailAddress).text(address.emailAddress).appendTo(UIElements.inputEmailFrom);
+            });
+            if (selectedAddress && !activeSenders.some(address => address.emailAddress === selectedAddress)) {
+                $('<option>').val(selectedAddress).text(selectedAddress).appendTo(UIElements.inputEmailFrom);
+            }
+            UIElements.inputEmailFrom.val(selectedAddress).trigger('change');
+            UIElements.inputOriginalEmailFrom.val(selectedAddress);
+            defaultValues.emailFrom = selectedAddress;
+        }).catch(function (error) {
+            console.warn('Failed to load active sender addresses:', error);
+        });
     }
 
     async function initTemplateDetails() {
@@ -1445,6 +1490,9 @@ function initializeDraftEmailsWidget() {
         UIElements.btnSendDropdown.show();
         UIElements.btnDiscard.show();
         UIElements.btnSendClose.show();
+        if (isNotificationEmail) {
+            UIElements.btnSendClose.hide();
+        }
         toggleBCCVisibility();
     }
 
@@ -1509,11 +1557,15 @@ function initializeDraftEmailsWidget() {
             isNewEmailDraft = false; newDraftId = null;
             hideConfirmation();
             handleCloseEmail();
-            abp.notify.success('Your email is being sent');
+            const isNotificationEmail = $('#NotificationEmailContext').val() === 'true';
+            abp.notify.success(isNotificationEmail ? 'Your email has been sent.' : 'Your email is being sent');
             // Pass along which application this save/send actually belonged to — a listener elsewhere on the
             // page (e.g. a multi-application context switching selection) can't otherwise tell which row this
             // completion is for, since UIElements.applicationId isn't visible outside this closure.
             PubSub.publish('refresh_application_emails', { applicationId: UIElements.applicationId });
+            if (isNotificationEmail) {
+                PubSub.publish('notification_email_sent');
+            }
         }).fail(function () {
             hideConfirmation();
             abp.notify.error('An error ocurred your email could not be sent.');
@@ -1586,6 +1638,9 @@ function initializeDraftEmailsWidget() {
                 abp.notify.success('Your email has been saved.');
                 // See the matching comment in performSendEmail's success handler above.
                 PubSub.publish('refresh_application_emails', { applicationId: UIElements.applicationId });
+                if ($('#NotificationEmailContext').val() === 'true') {
+                    PubSub.publish('notification_email_saved');
+                }
             }).fail(function () {
                 UIElements.btnSave.prop('disabled', false);
                 abp.notify.error('An error ocurred your email could not be saved.');
@@ -2148,6 +2203,7 @@ function initializeDraftEmailsWidget() {
         UIElements.inputOriginalEmailFrom.val(data.fromAddress);
         UIElements.inputOriginalEmailSubject.val(data.subject);
         resetEmailBody();
+        editorInstance = null;
         tinymce.get("EmailBody")?.remove(); // remove existing instance
 
         tinymce.init({
@@ -2176,7 +2232,10 @@ function initializeDraftEmailsWidget() {
                 const bodyContent = data.body ? refreshTodayDateSpans(data.body) : '';
                 if (bodyContent) {
                     const sanitizedBodyContent = sanitizeTinyMceHtml(bodyContent);
-                    editorInstance.setContent(sanitizedBodyContent);
+                    editor.setContent(sanitizedBodyContent);
+                    UIElements.inputEmailBody.val(sanitizedBodyContent);
+                } else {
+                    UIElements.inputEmailBody.val('');
                 }
 
                 // Create template label and buttons in label container

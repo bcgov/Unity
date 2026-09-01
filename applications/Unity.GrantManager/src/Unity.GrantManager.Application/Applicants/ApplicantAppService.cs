@@ -12,7 +12,6 @@ using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Intakes.Mapping;
 using Unity.GrantManager.Integrations.Orgbook;
-using Unity.GrantManager.Permissions;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Utils;
 using Unity.Payments.Domain.Suppliers;
@@ -21,6 +20,7 @@ using Unity.Payments.Integrations.Cas;
 using Unity.Payments.Suppliers;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Authorization;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 
@@ -179,7 +179,25 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         }
     }
 
-    [Authorize(UnitySelector.Applicant.Summary.Update)]
+    // Fields owned by the Organization Info zone; everything else belongs to the Applicant Info zone.
+    private static readonly HashSet<string> OrganizationInfoFields = new(StringComparer.OrdinalIgnoreCase)
+    {
+        nameof(UpdateApplicantSummaryDto.Sector),
+        nameof(UpdateApplicantSummaryDto.SubSector),
+        nameof(UpdateApplicantSummaryDto.OrgNumber),
+        nameof(UpdateApplicantSummaryDto.OrgName),
+        nameof(UpdateApplicantSummaryDto.NonRegOrgName),
+        nameof(UpdateApplicantSummaryDto.OrgStatus),
+        nameof(UpdateApplicantSummaryDto.BusinessNumber),
+        nameof(UpdateApplicantSummaryDto.OrganizationType),
+        nameof(UpdateApplicantSummaryDto.ApproxNumberOfEmployees),
+        nameof(UpdateApplicantSummaryDto.SectorSubSectorIndustryDesc),
+        nameof(UpdateApplicantSummaryDto.IndigenousOrgInd),
+        nameof(UpdateApplicantSummaryDto.FiscalDay),
+        nameof(UpdateApplicantSummaryDto.FiscalMonth),
+        nameof(UpdateApplicantSummaryDto.StartedOperatingDate)
+    };
+
     public async Task<Applicant> PartialUpdateApplicantSummaryAsync(Guid applicantId, PartialUpdateDto<UpdateApplicantSummaryDto> input)
     {
         if (applicantId == Guid.Empty)
@@ -191,9 +209,19 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
 
         ArgumentNullException.ThrowIfNull(input.Data);
 
-        var applicant = await applicantRepository.GetAsync(applicantId);
+        // SECURITY NOTE: If user can merge applicants, they can update any field.
+        // Otherwise, check if they have permission to update either the Applicant Info or Organization Info zones.
+        var canMergeApplicant           = await AuthorizationService.IsGrantedAsync(UnitySelector.ApplicantManagement.Applicant.Merge);
+        var canUpdateApplicantInfo      = canMergeApplicant || await AuthorizationService.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.Update);
+        var canUpdateOrganizationInfo   = canMergeApplicant || await AuthorizationService.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.OrganizationInfo.Update);
+        var canUpdateApplicantRedStop   = canMergeApplicant || await AuthorizationService.IsGrantedAsync(UnitySelector.ApplicantManagement.ApplicantInfo.Update_RedStop);
 
-        ObjectMapper.Map(input.Data, applicant);
+        if (!canUpdateApplicantInfo && !canUpdateOrganizationInfo)
+        {
+            throw new AbpAuthorizationException("You do not have permission to update applicant information.");
+        }
+
+        var applicant = await applicantRepository.GetAsync(applicantId);
 
         List<string> modifiedSummaryFields = input.ModifiedFields?
             .Where(field => !string.IsNullOrWhiteSpace(field))
@@ -208,17 +236,54 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                 return segments[^1];
             })
             .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList() ?? [];
+            .ToList()
+            ?? [];
 
-        if (modifiedSummaryFields.Contains(nameof(UpdateApplicantSummaryDto.RedStop), StringComparer.OrdinalIgnoreCase)
-            && await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.Applicants.EditRedStop))
+        if (modifiedSummaryFields.Count == 0)
         {
-            applicant.RedStop = input.Data.RedStop;
+            modifiedSummaryFields = typeof(UpdateApplicantSummaryDto)
+                .GetProperties()
+                .Select(property => property.Name)
+                .ToList();
         }
 
-        if (modifiedSummaryFields.Contains(nameof(UpdateApplicantSummaryDto.IndigenousOrgInd), StringComparer.OrdinalIgnoreCase))
+        // Helper function to determine if a field is authorized for update based on the user's permissions
+        // 1. The function checks if the field is "RedStop" and if the user has permission to update it.
+        // 2. If not, it checks if the field belongs to the Organization Info zone and if the user has permission to update it.
+        // 3. Otherwise, it assumes the field belongs to the Applicant Info zone and checks for that permission.
+        bool IsFieldAuthorized(string field)
         {
-            applicant.IndigenousOrgInd = input.Data.IndigenousOrgInd switch
+            if (field.Equals(nameof(UpdateApplicantSummaryDto.RedStop), StringComparison.OrdinalIgnoreCase))
+            {
+                return canUpdateApplicantRedStop;
+            }
+
+            return OrganizationInfoFields.Contains(field) ? canUpdateOrganizationInfo : canUpdateApplicantInfo;
+        }
+
+        modifiedSummaryFields = modifiedSummaryFields
+            .Where(IsFieldAuthorized)
+            .ToList();
+
+        if (modifiedSummaryFields.Count == 0)
+        {
+            return applicant;
+        }
+
+        var modifiedSummary = CreateSparseDto(input.Data, modifiedSummaryFields);
+
+        ObjectMapper.Map(modifiedSummary, applicant);
+
+        if (modifiedSummaryFields.Contains(nameof(UpdateApplicantSummaryDto.RedStop), StringComparer.OrdinalIgnoreCase)
+            && canUpdateApplicantRedStop)
+        {
+            applicant.RedStop = modifiedSummary.RedStop;
+        }
+
+        if (modifiedSummaryFields.Contains(nameof(UpdateApplicantSummaryDto.IndigenousOrgInd), StringComparer.OrdinalIgnoreCase)
+            && canUpdateOrganizationInfo)
+        {
+            applicant.IndigenousOrgInd = modifiedSummary.IndigenousOrgInd switch
             {
                 true => "Yes",
                 false => "No",
@@ -226,15 +291,34 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             };
         }
 
-        if (modifiedSummaryFields.Count > 0)
-        {
-            PropertyHelper.ApplyNullValuesFromDto(input.Data, applicant, modifiedSummaryFields);
-        }
+        PropertyHelper.ApplyNullValuesFromDto(modifiedSummary, applicant, modifiedSummaryFields);
 
         return await applicantRepository.UpdateAsync(applicant);
     }
 
-    [Authorize(GrantApplicationPermissions.Applicants.Edit)]
+    private static TDto CreateSparseDto<TDto>(TDto source, IEnumerable<string> modifiedFields)
+        where TDto : class, new()
+    {
+        var sparseDto = new TDto();
+        var properties = typeof(TDto)
+            .GetProperties()
+            .Where(property => property.CanRead && property.CanWrite)
+            .ToDictionary(property => property.Name, property => property, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var fieldName in modifiedFields.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            if (!properties.TryGetValue(fieldName, out var property))
+            {
+                continue;
+            }
+
+            property.SetValue(sparseDto, property.GetValue(source));
+        }
+
+        return sparseDto;
+    }
+
+    [Authorize(UnitySelector.ApplicantManagement.Applicant.Update)]
     public async Task UpdateApplicantStatusAsync(Guid applicantId, string status)
     {
         if (status != "Active" && status != "Inactive")
@@ -247,6 +331,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         await applicantRepository.UpdateAsync(applicant);
     }
 
+    [Authorize(UnitySelector.ApplicantManagement.Addresses.Update)]
     public async Task UpdateApplicantContactAddressesAsync(Guid applicantId, UpdateApplicantContactAddressesDto input)
     {
         if (applicantId == Guid.Empty)
@@ -263,20 +348,19 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             return;
         }
 
-        if (input.PrimaryContact != null &&
-            await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Contact.Update))
+        if (input.PrimaryContact != null)
         {
+            // NOTE: This updates primary contact information for the applicant
+            // which is typically guarded by ApplicantManagement > Contacts > Update
             await UpdatePrimaryContactAsync(applicantId, input.PrimaryContact);
         }
 
-        if (input.PrimaryPhysicalAddress != null &&
-            await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Location.Update))
+        if (input.PrimaryPhysicalAddress != null)
         {
             await UpdatePrimaryAddressAsync(applicantId, input.PrimaryPhysicalAddress, GrantApplications.AddressType.PhysicalAddress);
         }
 
-        if (input.PrimaryMailingAddress != null &&
-            await AuthorizationService.IsGrantedAsync(UnitySelector.Applicant.Location.Update))
+        if (input.PrimaryMailingAddress != null)
         {
             await UpdatePrimaryAddressAsync(applicantId, input.PrimaryMailingAddress, GrantApplications.AddressType.MailingAddress);
         }
@@ -585,129 +669,14 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     }
 
     [RemoteService(true)]
-    public async Task UpdateApplicantIdAsync(UpdateApplicantIdDto dto)
-    {
-        // Validate input
-        if (dto == null)
-        {
-            Logger.LogWarning("UpdateApplicantIdAsync called with null dto.");
-            return;
-        }
-
-        //Update Application
-        var application = await applicationRepository.GetAsync(dto.ApplicationId);
-        if (application == null)
-        {
-            Logger.LogWarning("Application not found for ApplicationId: {ApplicationId}", dto.ApplicationId);
-            return;
-        }
-
-        var oldApplicantId = application.ApplicantId;
-        if (oldApplicantId == dto.ApplicantId)
-        {
-            Logger.LogInformation("ApplicantId is already set to the requested value. No update required.");
-            return;
-        }
-
-        application.ApplicantId = dto.ApplicantId;
-        await applicationRepository.UpdateAsync(application);
-
-        //Update ApplicationFormSubmissions
-        await UpdateApplicationFormSubmissionsAsync(dto.ApplicationId, dto.ApplicantId);
-
-        //Update ApplicantAgent records
-        await UpdateApplicantAgentRecordsAsync(oldApplicantId, dto.ApplicantId, dto.ApplicationId);
-
-        //Update ApplicantAddresses records
-        await UpdateApplicantAddressRecords(oldApplicantId, dto.ApplicantId, dto.ApplicationId);
-    }
-
-    private async Task UpdateApplicantAddressRecords(Guid oldApplicantId, Guid newApplicantId, Guid applicationId)
-    {
-        try
-        {
-            List<ApplicantAddress> applicantAddresses = await addressRepository.FindByApplicantIdAndApplicationIdAsync(oldApplicantId, applicationId);
-            await UpdateAddress(applicantAddresses, AddressType.MailingAddress, newApplicantId, applicationId);
-            await UpdateAddress(applicantAddresses, AddressType.PhysicalAddress, newApplicantId, applicationId);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error updating ApplicantAddress records for ApplicationId: {ApplicationId}", applicationId);
-            throw new UserFriendlyException("An error occurred while updating applicant address records.");
-        }
-    }
-
-    private async Task UpdateAddress(List<ApplicantAddress> applicantAddresses, AddressType applicantAddressType, Guid newApplicantId, Guid applicationId)
-    {
-        ApplicantAddress? dbAddress = applicantAddresses.Find(address => address.AddressType == applicantAddressType && address.ApplicationId == applicationId);
-
-        if (dbAddress != null)
-        {
-            dbAddress.ApplicantId = newApplicantId;
-            await addressRepository.UpdateAsync(dbAddress);
-        }
-    }
-
-
-    [RemoteService(true)]
-    public async Task TransferApplicantApplicationsAsync(TransferApplicantApplicationsDto dto)
-    {
-        var principal = await applicantRepository.GetAsync(dto.PrincipalApplicantId);
-        var nonPrincipal = await applicantRepository.GetAsync(dto.NonPrincipalApplicantId);
-
-        if ((principal != null && principal.IsDeleted) || (nonPrincipal != null && nonPrincipal.IsDeleted))
-        {
-            throw new UserFriendlyException(
-                "One or more selected applicants have been deleted. Please refresh the applicant list to update the view.");
-        }
-
-        var applications = await applicationRepository.GetByApplicantIdAsync(dto.NonPrincipalApplicantId);
-        foreach (var application in applications)
-        {
-            await UpdateApplicantIdAsync(new UpdateApplicantIdDto
-            {
-                ApplicationId = application.Id,
-                ApplicantId = dto.PrincipalApplicantId
-            });
-        }
-    }
-
-    [RemoteService(true)]
-    public async Task SetDuplicatedAsync(SetApplicantDuplicateDto dto)
-    {
-        // Set principal as not duplicated
-        var principal = await applicantRepository.GetAsync(dto.PrincipalApplicantId);
-        var nonPrincipal = await applicantRepository.GetAsync(dto.NonPrincipalApplicantId);
-
-        if ((principal != null && principal.IsDeleted) || (nonPrincipal != null && nonPrincipal.IsDeleted))
-        {
-            throw new UserFriendlyException(
-                "One or more selected applicants have been deleted. Please refresh the applicant list to update the view.");
-        }
-
-        if (principal != null && principal.IsDuplicated)
-        {
-            principal.IsDuplicated = false;
-            await applicantRepository.UpdateAsync(principal);
-        }
-
-        // Set non-principal as duplicated
-        if (nonPrincipal != null && !nonPrincipal.IsDuplicated)
-        {
-            nonPrincipal.IsDuplicated = true;
-            await applicantRepository.UpdateAsync(nonPrincipal);
-        }
-    }
-
-    [RemoteService(true)]
-    [Authorize(GrantApplicationPermissions.Applicants.Delete)]
+    [Authorize(UnitySelector.ApplicantManagement.Applicant.Default)]
     public async Task<bool> HasSubmissionsAsync(Guid id)
     {
         return await applicationRepository.HasApplicationsByApplicantIdAsync(id);
     }
 
     [RemoteService(true)]
-    [Authorize(GrantApplicationPermissions.Applicants.Delete)]
+    [Authorize(UnitySelector.ApplicantManagement.Applicant.Delete)]
     public async Task DeleteApplicantAsync(Guid id)
     {
         if (await applicationRepository.HasApplicationsByApplicantIdAsync(id))
@@ -723,51 +692,8 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         await applicantRepository.UpdateAsync(applicant, autoSave: true);
     }
 
-    private async Task UpdateApplicationFormSubmissionsAsync(Guid applicationId, Guid newApplicantId)
-    {
-        try
-        {
-            var formSubmissionRepository = LazyServiceProvider.LazyGetRequiredService<IApplicationFormSubmissionRepository>();
-            var formSubmissions = await (await formSubmissionRepository.GetQueryableAsync())
-                .Where(s => s.ApplicationId == applicationId)
-                .ToListAsync();
-
-            foreach (var submission in formSubmissions)
-            {
-                submission.ApplicantId = newApplicantId;
-                await formSubmissionRepository.UpdateAsync(submission);
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error updating ApplicationFormSubmissions for ApplicationId: {ApplicationId}", applicationId);
-            throw new UserFriendlyException("An error occurred while updating application form submissions.");
-        }
-    }
-
-    private async Task UpdateApplicantAgentRecordsAsync(Guid oldApplicantId, Guid newApplicantId, Guid applicationId)
-    {
-        try
-        {
-            var agentQueryable = await applicantAgentRepository.GetQueryableAsync();
-
-            var agent = await agentQueryable
-                .FirstOrDefaultAsync(a => a.ApplicantId == oldApplicantId && a.ApplicationId == applicationId);
-
-            if (agent != null)
-            {
-                agent.ApplicantId = newApplicantId;
-                await applicantAgentRepository.UpdateAsync(agent);
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error updating ApplicantAgent records for ApplicationId: {ApplicationId}", applicationId);
-            throw new UserFriendlyException("An error occurred while updating applicant agent records.");
-        }
-    }
-
     [RemoteService(true)]
+    [Authorize(UnitySelector.ApplicantManagement.Applicant.Default)]
     public async Task<PagedResultDto<ApplicantListDto>> GetListAsync(ApplicantListRequestDto input)
     {
         var listRecords = await applicantRepository.GetApplicantListRecordsAsync(input.RequestedFields);
@@ -800,6 +726,10 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                 CreationTime = applicant.CreationTime,
                 LastModificationTime = applicant.LastModificationTime,
                 FiscalYearEnd = applicant.FiscalYearEnd,
+                SupplierId = applicant.SupplierId,
+                SupplierNumber = applicant.SupplierNumber,
+                SupplierName = applicant.SupplierName,
+                SupplierStatus = applicant.SupplierStatus,
         }).ToList();
         // Use items.Count while client side datatables are used. When going to server
         // side actually query the correct amount with paging enabled.

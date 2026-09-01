@@ -435,6 +435,12 @@ public class GrantApplicationAppService(
                 );
 
                 application.UpdateAssessmentResultStatus(input.AssessmentResultStatus);
+
+                if (await ZoneChecker.IsEnabledAsync(UnitySelector.Review.AssessmentResults.Default, application.ApplicationFormId)
+                    && await AuthorizationService.IsGrantedAsync(UnitySelector.Review.AssessmentResults.Update.UpdateEligibleForRenewal))
+                {
+                    application.UpdateEligibleForRenewal(input.EligibleForRenewal);
+                }
             }
         }
 
@@ -851,32 +857,6 @@ public class GrantApplicationAppService(
         }
 
         return await applicantAgentRepository.UpdateAsync(applicantAgent);
-    }
-
-    [Authorize(UnitySelector.Applicant.UpdatePolicy)]
-    public async Task UpdateMergedApplicantAsync(Guid applicationId, CreateUpdateApplicantInfoDto input)
-    {
-        var application = await applicationRepository.GetAsync(applicationId);
-
-        var applicant = await applicantRepository
-            .FirstOrDefaultAsync(a => a.Id == application.ApplicantId) ?? throw new EntityNotFoundException();
-
-        applicant.OrganizationType = input.OrganizationType ?? "";
-        applicant.OrgName = input.OrgName ?? "";
-        applicant.OrgNumber = input.OrgNumber ?? "";
-        applicant.OrgStatus = input.OrgStatus ?? "";
-        applicant.ApproxNumberOfEmployees = input.ApproxNumberOfEmployees ?? "";
-        applicant.Sector = input.Sector ?? "";
-        applicant.SubSector = input.SubSector ?? "";
-        applicant.SectorSubSectorIndustryDesc = input.SectorSubSectorIndustryDesc ?? "";
-        applicant.IndigenousOrgInd = input.IndigenousOrgInd ?? "";
-        applicant.UnityApplicantId = input.UnityApplicantId ?? "";
-        applicant.FiscalDay = input.FiscalDay;
-        applicant.FiscalMonth = input.FiscalMonth ?? "";
-        applicant.NonRegOrgName = input.NonRegOrgName ?? "";
-        applicant.ApplicantName = input.ApplicantName ?? "";
-
-        _ = await applicantRepository.UpdateAsync(applicant);
     }
 
     protected virtual async Task PublishCustomFieldUpdatesAsync(Guid applicationId,

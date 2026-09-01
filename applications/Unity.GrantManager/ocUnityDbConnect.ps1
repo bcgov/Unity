@@ -5,19 +5,9 @@ do {
     $environment = Read-Host
 } while (-not ($validEnvironments -contains $environment))
 
-# Prompt user for cluster selection
-$validPlatforms = @("gold", "silver")
-do {
-    Write-Host "Enter OpenShift cluster (gold, silver)" -ForegroundColor Green
-    $platform = Read-Host
-} while (-not ($validPlatforms -contains $platform.ToLowerInvariant()))
-
-$platform = $platform.ToLowerInvariant()
-$server = if ($platform -eq "gold") {
-    "https://api.gold.devops.gov.bc.ca:6443"
-} else {
-    "https://api.silver.devops.gov.bc.ca:6443"
-}
+# Use the Gold OpenShift cluster only
+$platform = "gold"
+$server = "https://api.gold.devops.gov.bc.ca:6443"
 
 # Prompt the user to optionally login to OpenShift
 Write-Host "Do you want to log in to OpenShift now? (y/n)" -ForegroundColor Green
@@ -51,8 +41,8 @@ if ($environment -eq 'prod') {
 }
 
 
-# Configuration parameters (dynamically updated based on environment and cluster)
-$namespacePrefix = if ($platform -eq "gold") { "ce395f" } else { "d18498" }
+# Configuration parameters for the Gold OpenShift cluster
+$namespacePrefix = "ce395f"
 $NameSpace = "$namespacePrefix-$environment"  # OpenShift project namespace
 $ClusterName = "$cluster-crunchy-postgres"
 $LocalPort = 5436

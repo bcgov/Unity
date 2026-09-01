@@ -72,7 +72,6 @@ $(function () {
         btnPublishAssignWorksheets: $('#btn-publish-assign-worksheets'),
         btnGenerateFinalMapping: $('#btn-generate-final-mapping'),
         btnReviewFinalMapping: $('#btn-review-final-mapping'),
-        btnRestartAiFlow: $('#btn-restart-ai-flow'),
         worksheetReviewModal: $('#aiWorksheetReviewModal'),
         mappingReviewModal: $('#aiMappingReviewModal'),
         mappingReviewFields: $('#aiMappingReviewFields'),
@@ -277,7 +276,6 @@ $(function () {
         });
         UIElements.btnGenerateWorksheet.on('click', queueFormWorksheet);
         UIElements.btnGenerateFinalMapping.on('click', finalizeMappingReview);
-        UIElements.btnRestartAiFlow.on('click', restartAiFlow);
         UIElements.btnGenerateScoresheet.on('click', function () {
             queueFormScoresheet(this);
         });
@@ -1075,7 +1073,6 @@ $(function () {
 
     function updateWorkflowActions(review) {
         const action = getWorkflowAction(review);
-        const state = getWorkflowState(review);
         const isInitial = action === 'GenerateInitialMapping';
         const isInitialReview = action === 'ReviewInitialMapping';
         const isGenerateWorksheets = action === 'GenerateWorksheets';
@@ -1083,7 +1080,6 @@ $(function () {
         const isPublishAssign = action === 'PublishAndAssignWorksheets';
         const isFinalMapping = action === 'GenerateFinalMapping';
         const isFinalReview = action === 'ReviewFinalMapping';
-        const isCompleted = state === 'Completed';
 
         UIElements.btnGenerate.toggleClass('d-none', !isInitial);
         UIElements.btnReviewMapping.toggleClass('d-none', !isInitialReview);
@@ -1092,26 +1088,9 @@ $(function () {
         UIElements.btnPublishAssignWorksheets.toggleClass('d-none', !isPublishAssign);
         UIElements.btnGenerateFinalMapping.toggleClass('d-none', !isFinalMapping);
         UIElements.btnReviewFinalMapping.toggleClass('d-none', !isFinalReview);
-        UIElements.btnRestartAiFlow.toggleClass('d-none', !isCompleted);
         UIElements.btnGenerate.prop('disabled', !review?.actionEnabled && isInitial);
         UIElements.btnGenerateFinalMapping.prop('disabled', !review?.actionEnabled);
 
-    }
-
-    function getWorkflowState(review) {
-        if (review?.state) {
-            return review.state;
-        }
-        return getEnumName(review?.workflowState, {
-            10: 'GenerateInitialMapping',
-            20: 'ReviewInitialMapping',
-            30: 'GenerateWorksheets',
-            40: 'ReviewWorksheets',
-            50: 'PublishAndAssignWorksheets',
-            60: 'GenerateFinalMapping',
-            70: 'ReviewFinalMapping',
-            80: 'Completed'
-        });
     }
 
     function getWorkflowAction(review) {
@@ -1284,31 +1263,6 @@ $(function () {
                     .fail(function () {
                         abp.notify.error('', 'Unable to discard the mapping suggestions.');
                     });
-            });
-    }
-
-    function restartAiFlow() {
-        const formVersion = String(document.getElementById('formVersionId')?.value ?? '').trim();
-        if (!validateGuid(formVersion)) {
-            return;
-        }
-
-        abp.message.confirm(
-            'This permanently deletes AI workflow progress, AI-created worksheets and assignments, and all saved mappings for this form version.',
-            'Restart AI Flow?')
-            .then(function (confirmed) {
-                if (!confirmed) {
-                    return;
-                }
-
-                UIElements.btnRestartAiFlow.prop('disabled', true);
-                return globalThis.AIFormWorkflowApi.resetAiFlow(formVersion).done(function () {
-                    globalThis.location.reload();
-                }).fail(function (error) {
-                    abp.notify.error('', error?.responseJSON?.error?.message || 'Unable to restart the AI flow.');
-                }).always(function () {
-                    UIElements.btnRestartAiFlow.prop('disabled', false);
-                });
             });
     }
 

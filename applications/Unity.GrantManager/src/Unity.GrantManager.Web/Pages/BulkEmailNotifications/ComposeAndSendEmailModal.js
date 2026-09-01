@@ -100,12 +100,68 @@
         $('#EmailTo').val(state.emailTo || '');
         $('#EmailCC').val(state.emailCC || '');
         $('#EmailBCC').val(state.emailBCC || '');
-        $('#EmailFrom').val(state.emailFrom || '');
+        setEmailFromValue(state.emailFrom || '');
         $('#EmailSubject').val(state.emailSubject || '');
         $('#EmailTemplate').val(state.templateId || '');
         $('#EmailTemplateName').val(state.templateName || '');
         setEditorBody(state.emailBody || '');
         $('#btn-save-top').prop('disabled', true);
+    }
+
+    function initializeSenderAddressSelector() {
+        const $emailFrom = $('#EmailFrom');
+        if ($emailFrom.length && $.fn?.select2) {
+            $emailFrom.select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                tags: true,
+                allowClear: true,
+                minimumResultsForSearch: 0,
+                dropdownParent: $('#composeAndSendEmailModal'),
+                placeholder: 'Select or enter a from address'
+            });
+            $emailFrom.on('select2:open.bulkEmailFrom', function () {
+                $('.select2-container--open .select2-search__field')
+                    .prop('disabled', false)
+                    .prop('readonly', false)
+                    .trigger('focus');
+            });
+        }
+    }
+
+    function loadActiveSenderAddresses() {
+        const $emailFrom = $('#EmailFrom');
+        if (!$emailFrom.length || typeof unity === 'undefined' ||
+            !unity.notifications?.emailAddresses?.emailAddressConfigurations) {
+            return Promise.resolve();
+        }
+
+        return unity.notifications.emailAddresses.emailAddressConfigurations.getList().then(function (addresses) {
+            const currentAddress = $emailFrom.val() || '';
+            const activeSenders = addresses.filter(function (address) {
+                return address.isActive && address.emailType === 'Sender';
+            });
+
+            $emailFrom.find('option:not(:first)').remove();
+            activeSenders.forEach(function (address) {
+                $('<option>').val(address.emailAddress).text(address.emailAddress).appendTo($emailFrom);
+            });
+            setEmailFromValue(currentAddress || activeSenders[0]?.emailAddress || '');
+        }).catch(function (error) {
+            console.warn('Failed to load active sender addresses:', error);
+        });
+    }
+
+    function setEmailFromValue(value) {
+        const $emailFrom = $('#EmailFrom');
+        const selectedAddress = value || '';
+        const hasSelectedAddress = $emailFrom.find('option').toArray().some(function (option) {
+            return option.value === selectedAddress;
+        });
+        if (selectedAddress && !hasSelectedAddress) {
+            $('<option>').val(selectedAddress).text(selectedAddress).appendTo($emailFrom);
+        }
+        $emailFrom.val(selectedAddress).trigger('change');
     }
 
     function syncCurrentState() {
@@ -198,6 +254,8 @@
         }
         if (!(state.emailFrom || '').trim()) {
             errors.push('From is required.');
+        } else if (!isValidAddressList(state.emailFrom, true)) {
+            errors.push('From contains an invalid email address.');
         }
         if (!(state.emailSubject || '').trim()) {
             errors.push('Subject is required.');
@@ -233,6 +291,9 @@
         }
 
         $field.addClass('input-validation-error');
+        $field.nextAll('.select2-container').first()
+            .find('.select2-selection--single')
+            .addClass('input-validation-error');
         $('<span class="compose-field-error field-validation-error"></span>')
             .text(message)
             .insertAfter($field);
@@ -560,7 +621,7 @@
         const fields = getTemplateFields(template);
         if (currentStep === 1) {
             await loadAttachments(fields.id);
-            $('#EmailFrom').val(fields.sendFrom || masterState.emailFrom);
+            setEmailFromValue(fields.sendFrom || masterState.emailFrom);
             $('#EmailSubject').val(fields.subject);
             $('#EmailTemplateName').val(fields.name);
             setEditorBody(fields.body);
@@ -1033,6 +1094,8 @@
         applicationDetailsCache.clear();
 
         bindEvents();
+        initializeSenderAddressSelector();
+        await loadActiveSenderAddresses();
         await Promise.all([initializeEditor(), loadReferenceData()]);
         if ($.fn.maskMoney) {
             $('#composeApplicationList .unity-currency-input')

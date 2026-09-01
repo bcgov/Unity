@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Unity.AspNetCore.Mvc.UI.Theme.UX2.Renderers;
 using Unity.GrantManager.Notifications;
 using Unity.Notifications.Emails;
+using Unity.Notifications.EmailAddresses;
 using Unity.Notifications.Permissions;
 using Unity.Notifications.Settings;
 using Volo.Abp;
@@ -32,7 +33,8 @@ public class EmailNotificationService(
         ISettingManager settingManager,
         IFeatureChecker featureChecker,
         IConfiguration configuration,
-        IMarkdownRenderer markdownRenderer) : ApplicationService, IEmailNotificationService
+        IMarkdownRenderer markdownRenderer,
+        IEmailAddressConfigurationsRepository emailAddressConfigurationsRepository) : ApplicationService, IEmailNotificationService
 {
 
     public async Task<Guid> InitializeDraftAsync(Guid applicationId)
@@ -102,7 +104,6 @@ public class EmailNotificationService(
         {
             if (await featureChecker.IsEnabledAsync("Unity.Notifications"))
             {
-                var defaultFromAddress = await SettingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
                 var baseUrl = await GetBaseUrlAsync();
 
                 string commentLink = input.CommentType switch
@@ -123,7 +124,9 @@ public class EmailNotificationService(
                 };
 
                 var subject = $"Unity-Comment: {input.Subject}";
-                var fromEmail = defaultFromAddress ?? "NoReply@gov.bc.ca";
+                var senderAddresses = await emailAddressConfigurationsRepository.GetListAsync(address =>
+                    address.EmailType == "Sender" && address.IsActive);
+                var fromEmail = senderAddresses.FirstOrDefault()?.EmailAddress ?? "NoReply@gov.bc.ca";
 
                 var hasSurname = !string.IsNullOrWhiteSpace(CurrentUser.SurName);
                 var hasName = !string.IsNullOrWhiteSpace(CurrentUser.Name);
@@ -242,7 +245,6 @@ public class EmailNotificationService(
     [Authorize(NotificationsPermissions.Settings)]
     public async Task UpdateSettings(NotificationsSettingsDto settingsDto)
     {
-        await UpdateTenantSettings(NotificationsSettings.Mailing.DefaultFromAddress, settingsDto.DefaultFromAddress);
         await UpdateTenantSettings(NotificationsSettings.Mailing.EmailMaxRetryAttempts, settingsDto.MaximumRetryAttempts);
         await settingManager.SetForCurrentTenantAsync(NotificationsSettings.Mailing.EnableEmailDelay, settingsDto.EnableEmailDelay ? "true" : "false");
     }

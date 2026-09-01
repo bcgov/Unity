@@ -82,6 +82,8 @@ public partial class ApplicationToGrantApplicationDtoWebMapper : MapperBase<Appl
     [MapperIgnoreTarget(nameof(GrantApplicationDto.SectorSubSectorIndustryDesc))]
     [MapperIgnoreTarget(nameof(GrantApplicationDto.PaymentInfo))]
     [MapperIgnoreTarget(nameof(GrantApplicationDto.AIAnalysisData))]    
+    [MapperIgnoreTarget(nameof(GrantApplicationDto.ExternalStatus))]
+    [MapperIgnoreTarget(nameof(GrantApplicationDto.PublishedStatus))]
     public override partial GrantApplicationDto Map(Application source);
 
 
@@ -111,6 +113,8 @@ public partial class ApplicationToGrantApplicationDtoWebMapper : MapperBase<Appl
     [MapperIgnoreTarget(nameof(GrantApplicationDto.SectorSubSectorIndustryDesc))]
     [MapperIgnoreTarget(nameof(GrantApplicationDto.PaymentInfo))]
     [MapperIgnoreTarget(nameof(GrantApplicationDto.AIAnalysisData))]    
+    [MapperIgnoreTarget(nameof(GrantApplicationDto.ExternalStatus))]
+    [MapperIgnoreTarget(nameof(GrantApplicationDto.PublishedStatus))]
     public override partial void Map(Application source, GrantApplicationDto destination);
 
     [MapperIgnoreTarget(nameof(GrantApplicationApplicantDto.SiteId))]
@@ -123,6 +127,8 @@ public partial class ApplicationToGrantApplicationDtoWebMapper : MapperBase<Appl
     [MapperIgnoreTarget(nameof(ApplicationFormDto.ChefsFormVersionGuid))]
     [MapperIgnoreTarget(nameof(ApplicationFormDto.SubmissionHeaderMapping))]
     [MapperIgnoreTarget(nameof(ApplicationFormDto.ApiToken))]
+    [MapperIgnoreTarget(nameof(ApplicationFormDto.ExternalLinks))]
+    [MapperIgnoreTarget(nameof(ApplicationFormDto.ApplicantMessage))]
     private partial ApplicationFormDto ToDto(ApplicationForm source);
 
     [MapperIgnoreTarget(nameof(GrantApplicationAssigneeDto.AssigneeId))]

@@ -11,14 +11,14 @@
 @{
     Layout = null;
     var sendEmailGranted    = await PermissionChecker.IsGrantedAsync("Notifications.Email.Send");
-    var emailFieldsetState  = sendEmailGranted ? string.Empty : "disabled";
+    var emailFieldsetState  = sendEmailGranted || Model.NoDraftPreviewMode ? string.Empty : "disabled";
     var enableEmailDelay = Model.EnableEmailDelay;
     var scheduleEmailGranted = await PermissionChecker.IsGrantedAsync("Notifications.Email.Schedule");
     var enableScheduleSend = enableEmailDelay && scheduleEmailGranted && !Model.NoDraftPreviewMode;
 }
 
 <div id="emails-div-@(Model.ApplicationId)"
-     class="mt-2 emails-container @(Model.NoDraftPreviewMode ? "no-draft-preview-mode" : string.Empty)"
+    class="mt-2 emails-container emails-widget-scope @(Model.NoDraftPreviewMode ? "no-draft-preview-mode" : string.Empty)"
      data-count="0"
      data-counttag="application_emails_count"
      data-no-draft-preview="@Model.NoDraftPreviewMode.ToString().ToLowerInvariant()">
@@ -87,12 +87,14 @@
             <input type="hidden" id="OriginalDraftEmailBody" />
 
             <!-- Top Buttons -->
-            <abp-row class="m-0 p-0" abp-if="@sendEmailGranted">
+            <abp-row class="m-0 p-0" abp-if="@(sendEmailGranted || Model.NoDraftPreviewMode)">
                 <abp-column size="_10" class="email-buttons-container">
                     <!-- From Field -->
                     <div class="from-field-container">
                         <label for="EmailFrom" class="from-label">From:</label>
-                        <abp-input asp-for="@Model.EmailFrom" class="email-input from-input" suppress-label="true" />
+                        <select id="EmailFrom" name="EmailFrom" class="email-input from-input form-control form-select" required>
+                            <option value=""></option>
+                        </select>
                     </div>
                     <div class="email-buttons-group">
                         <div class="btn-group">
