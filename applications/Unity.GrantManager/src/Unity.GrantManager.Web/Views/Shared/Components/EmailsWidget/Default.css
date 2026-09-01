@@ -252,7 +252,7 @@
 /* 1. Style the select itself when the empty value is selected */
 .emails-widget-scope #EmailTemplate:has(option[value=""]:checked) {
     color: #b9b9b9 !important;
-    width: 100%;
+    width: 99%;
     max-width: none;
     flex: 0 0 auto;
 }
