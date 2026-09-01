@@ -881,6 +881,14 @@
     margin-bottom: 0 !important;
 }
 
+.emails-widget-scope select#EmailFrom:not(.input-validation-error) + .select2-container .select2-selection--single {
+    font-size: var(--bc-font-size);
+    color: var(--bc-colors-grey-text-500);
+    border-radius: var(--bc-layout-margin-small) !important;
+    border: 2px solid var(--bc-colors-blue-primary);
+    text-overflow: ellipsis;
+}
+
 .emails-widget-scope .select2-selection--single.input-validation-error,
 .emails-widget-scope .select2-selection--single.input-validation-error:hover,
 .emails-widget-scope .select2-container--focus .select2-selection--single.input-validation-error {
