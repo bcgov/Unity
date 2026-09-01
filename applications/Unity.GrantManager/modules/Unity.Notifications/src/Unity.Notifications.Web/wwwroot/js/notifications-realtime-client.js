@@ -61,6 +61,22 @@
             return;
         }
 
+        fetch('/api/notifications/realtime/feature-enabled', { credentials: 'same-origin' })
+            .then(function (response) {
+                return response.ok ? response.json() : false;
+            })
+            .then(function (isEnabled) {
+                if (isEnabled) {
+                    initializeWidget();
+                }
+            })
+            .catch(function () {
+                // Do not show or connect the widget when feature state cannot be confirmed.
+            });
+    }
+
+    function initializeWidget() {
+
         const l = window.abp?.localization?.getResource?.('Notifications')
             || function (key) { return key; };
 
