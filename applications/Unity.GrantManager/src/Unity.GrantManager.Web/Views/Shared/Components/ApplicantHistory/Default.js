@@ -299,6 +299,7 @@ $(function () {
         ],
         serverSideEnabled: false,
         pagingEnabled: true,
+        persistSearchState: false,
         dataTableName: 'FundingHistoryTable',
         dynamicButtonContainerId: 'fundingHistoryDynamicButtons'
     });
@@ -329,6 +330,7 @@ $(function () {
         ],
         serverSideEnabled: false,
         pagingEnabled: true,
+        persistSearchState: false,
         dataTableName: 'IssueTrackingTable',
         dynamicButtonContainerId: 'issueTrackingDynamicButtons'
     });
@@ -359,6 +361,7 @@ $(function () {
         ],
         serverSideEnabled: false,
         pagingEnabled: true,
+        persistSearchState: false,
         dataTableName: 'AuditHistoryTable',
         dynamicButtonContainerId: 'auditHistoryDynamicButtons'
     });
@@ -389,6 +392,7 @@ $(function () {
         ],
         serverSideEnabled: false,
         pagingEnabled: true,
+        persistSearchState: false,
         dataTableName: 'ReportsHistoryTable',
         dynamicButtonContainerId: 'reportsHistoryDynamicButtons'
     });
