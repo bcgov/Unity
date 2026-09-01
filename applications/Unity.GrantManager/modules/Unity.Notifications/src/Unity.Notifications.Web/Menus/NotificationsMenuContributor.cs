@@ -16,14 +16,13 @@ public class NotificationsMenuContributor : IMenuContributor
         var featureChecker = context.ServiceProvider.GetRequiredService<IFeatureChecker>();
 
         if (await featureChecker.IsEnabledAsync("Unity.Notifications")
-            && await featureChecker.IsEnabledAsync(NotificationsFeatureConsts.DirectMessaging)
             && context.Menu.Name == StandardMenus.Main)
         {
-            ConfigureMainMenu(context);
+            await ConfigureMainMenuAsync(context, featureChecker);
         }
     }
 
-    private static void ConfigureMainMenu(MenuConfigurationContext context)
+    private static async Task ConfigureMainMenuAsync(MenuConfigurationContext context, IFeatureChecker featureChecker)
     {
         var l = context.GetLocalizer<NotificationsResource>();
 
@@ -49,15 +48,18 @@ public class NotificationsMenuContributor : IMenuContributor
             )
         );
 
-        context.Menu.AddItem(
-            new ApplicationMenuItem(
-                NotificationsMenus.UnityMessaging,
-                l["Menu:RealtimeOps"],
-                "~/UnityMessaging",
-                icon: "fl fl-users",
-                order: 11,
-                requiredPermissionName: IdentityConsts.ITOperationsPermissionName
-            )
-        );
+        if (await featureChecker.IsEnabledAsync(NotificationsFeatureConsts.DirectMessaging))
+        {
+            context.Menu.AddItem(
+                new ApplicationMenuItem(
+                    NotificationsMenus.UnityMessaging,
+                    l["Menu:RealtimeOps"],
+                    "~/UnityMessaging",
+                    icon: "fl fl-users",
+                    order: 11,
+                    requiredPermissionName: IdentityConsts.ITOperationsPermissionName
+                )
+            );
+        }
     }
 }
