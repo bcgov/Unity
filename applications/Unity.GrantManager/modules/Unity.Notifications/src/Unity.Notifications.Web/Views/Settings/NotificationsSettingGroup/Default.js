@@ -73,9 +73,9 @@ $(function () {
     function setSendFromValue(value) {
         const $sendFrom = $('#sendFrom');
         const selectedAddress = value || '';
-        const hasSelectedAddress = $sendFrom.find('option').filter(function () {
-            return this.value === selectedAddress;
-        }).length > 0;
+        const hasSelectedAddress = $sendFrom.find('option').toArray().some(function (option) {
+            return option.value === selectedAddress;
+        });
         if (selectedAddress && !hasSelectedAddress) {
             $('<option>').val(selectedAddress).text(selectedAddress).appendTo($sendFrom);
         }
