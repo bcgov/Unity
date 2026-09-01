@@ -3,6 +3,7 @@ using Unity.Notifications.Emails;
 using Unity.Notifications.Logs;
 using Unity.Notifications.ReadStates;
 using Unity.Notifications.Templates;
+using Unity.Notifications.EmailAddresses;
 using Volo.Abp.Data;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -18,4 +19,5 @@ public interface INotificationsDbContext : IEfCoreDbContext
     public DbSet<TemplateVariable> TemplateVariables { get; set; }
     public DbSet<NotificationLog> NotificationLogs { get; set; }
     public DbSet<NotificationReadState> NotificationReadStates { get; set; }
+    public DbSet<EmailAddressConfiguration> EmailAddressConfigurations { get; set; }
 }

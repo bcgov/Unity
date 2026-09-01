@@ -5,6 +5,7 @@ using Unity.Notifications.Logs;
 using Unity.Notifications.ReadStates;
 using Unity.Notifications.Templates;
 using Unity.Notifications.EmailGroups;
+using Unity.Notifications.EmailAddresses;
 using Volo.Abp;
 using Volo.Abp.EntityFrameworkCore.Modeling;
 
@@ -144,6 +145,16 @@ public static class NotificationsDbContextModelCreatingExtensions
             b.HasOne<EmailGroup>()
               .WithMany()
               .HasForeignKey(x => x.GroupId);
+        });
+
+        modelBuilder.Entity<EmailAddressConfiguration>(b =>
+        {
+            b.ToTable(NotificationsDbProperties.DbTablePrefix + "EmailAddressConfigurations", NotificationsDbProperties.DbSchema);
+            b.ConfigureByConvention();
+            b.Property(x => x.EmailAddress).IsRequired().HasMaxLength(1024);
+            b.Property(x => x.EmailType).IsRequired().HasMaxLength(32);
+            b.Property(x => x.Description).HasMaxLength(2048);
+            b.HasIndex(x => new { x.TenantId, x.EmailAddress, x.EmailType }).IsUnique();
         });
 
         modelBuilder.Entity<NotificationLog>(b =>
