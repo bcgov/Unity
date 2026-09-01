@@ -116,7 +116,15 @@
                 width: '100%',
                 tags: true,
                 allowClear: true,
+                minimumResultsForSearch: 0,
+                dropdownParent: $('#composeAndSendEmailModal'),
                 placeholder: 'Select or enter a from address'
+            });
+            $emailFrom.on('select2:open.bulkEmailFrom', function () {
+                $('.select2-container--open .select2-search__field')
+                    .prop('disabled', false)
+                    .prop('readonly', false)
+                    .trigger('focus');
             });
         }
     }
