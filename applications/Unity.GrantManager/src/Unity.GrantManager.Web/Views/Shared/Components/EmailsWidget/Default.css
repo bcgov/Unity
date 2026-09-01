@@ -61,6 +61,15 @@
     position: relative;
 }
 
+.emails-widget-scope .compose-recipient-row > .col {
+    padding-right: 0.25rem !important;
+}
+
+.emails-widget-scope .compose-recipient-row > .col .email-input {
+    box-sizing: border-box;
+    width: calc(100% - 18px);
+}
+
 .emails-widget-scope .email-to-container .email-input {
     padding-right: 60px;
 }
@@ -123,6 +132,7 @@
 .emails-widget-scope .from-label {
     font-size: 1rem !important;
     font-weight: 500;
+    flex-shrink: 0;
     white-space: nowrap;
     margin-left: 0px !important;
     margin-bottom: 0;
@@ -142,6 +152,11 @@
     margin: 0px !important;
 }
 
+.emails-widget-scope .from-field-container .select2-container {
+    flex-grow: 1;
+    width: auto !important;
+}
+
 .emails-widget-scope .from-field-container .mb-3 {
     display: inline-block;
     vertical-align: middle;
@@ -154,6 +169,7 @@
 .emails-widget-scope .email-form label {
     color: var(--bc-colors-grey-text-300);
     white-space: nowrap;
+    flex-shrink: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     margin-left: 8px;
@@ -236,6 +252,9 @@
 /* 1. Style the select itself when the empty value is selected */
 .emails-widget-scope #EmailTemplate:has(option[value=""]:checked) {
     color: #b9b9b9 !important;
+    width: 100%;
+    max-width: none;
+    flex: 0 0 auto;
 }
 
 /* 2. Style the placeholder option inside the dropdown list */
@@ -369,6 +388,11 @@
     gap: 0.5rem;
     width: 100%;
     overflow: visible;
+}
+
+.emails-widget-scope .email-buttons-container.col-10 {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
 }
 
 .emails-widget-scope .email-buttons-container abp-modal-footer {
@@ -855,6 +879,14 @@
 
 .emails-widget-scope input#EmailFrom.input-validation-error {
     margin-bottom: 0 !important;
+}
+
+.emails-widget-scope .select2-selection--single.input-validation-error,
+.emails-widget-scope .select2-selection--single.input-validation-error:hover,
+.emails-widget-scope .select2-container--focus .select2-selection--single.input-validation-error {
+    border: 1px solid #dc3545 !important;
+    border-color: #dc3545 !important;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 0.2rem rgba(220, 53, 69, .5) !important;
 }
 
 

@@ -254,6 +254,8 @@
         }
         if (!(state.emailFrom || '').trim()) {
             errors.push('From is required.');
+        } else if (!isValidAddressList(state.emailFrom, true)) {
+            errors.push('From contains an invalid email address.');
         }
         if (!(state.emailSubject || '').trim()) {
             errors.push('Subject is required.');
@@ -289,6 +291,9 @@
         }
 
         $field.addClass('input-validation-error');
+        $field.nextAll('.select2-container').first()
+            .find('.select2-selection--single')
+            .addClass('input-validation-error');
         $('<span class="compose-field-error field-validation-error"></span>')
             .text(message)
             .insertAfter($field);
