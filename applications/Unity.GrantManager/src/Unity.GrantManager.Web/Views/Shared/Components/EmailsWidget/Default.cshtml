@@ -92,7 +92,9 @@
                     <!-- From Field -->
                     <div class="from-field-container">
                         <label for="EmailFrom" class="from-label">From:</label>
-                        <abp-input asp-for="@Model.EmailFrom" class="email-input from-input" suppress-label="true" />
+                        <select id="EmailFrom" name="EmailFrom" class="email-input from-input form-control form-select" required>
+                            <option value=""></option>
+                        </select>
                     </div>
                     <div class="email-buttons-group">
                         <div class="btn-group">

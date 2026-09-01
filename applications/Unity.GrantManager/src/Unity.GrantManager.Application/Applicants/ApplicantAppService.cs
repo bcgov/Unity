@@ -669,140 +669,6 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     }
 
     [RemoteService(true)]
-    [Authorize]
-    public async Task UpdateApplicantIdAsync(UpdateApplicantIdDto dto)
-    {
-        // Validate input
-        if (dto == null)
-        {
-            Logger.LogWarning("UpdateApplicantIdAsync called with null dto.");
-            return;
-        }
-
-        //Update Application
-        var application = await applicationRepository.GetAsync(dto.ApplicationId);
-        if (application == null)
-        {
-            Logger.LogWarning("Application not found for ApplicationId: {ApplicationId}", dto.ApplicationId);
-            return;
-        }
-
-        var oldApplicantId = application.ApplicantId;
-        if (oldApplicantId == dto.ApplicantId)
-        {
-            Logger.LogInformation("ApplicantId is already set to the requested value. No update required.");
-            return;
-        }
-
-        application.ApplicantId = dto.ApplicantId;
-        await applicationRepository.UpdateAsync(application);
-
-        //Update ApplicationFormSubmissions
-        await UpdateApplicationFormSubmissionsAsync(dto.ApplicationId, dto.ApplicantId);
-
-        //Update ApplicantAgent records
-        await UpdateApplicantAgentRecordsAsync(oldApplicantId, dto.ApplicantId, dto.ApplicationId);
-
-        //Update ApplicantAddresses records
-        await UpdateApplicantAddressRecords(oldApplicantId, dto.ApplicantId, dto.ApplicationId);
-    }
-
-    private async Task UpdateApplicantAddressRecords(Guid oldApplicantId, Guid newApplicantId, Guid applicationId)
-    {
-        try
-        {
-            List<ApplicantAddress> applicantAddresses = await addressRepository.FindByApplicantIdAndApplicationIdAsync(oldApplicantId, applicationId);
-            await UpdateAddress(applicantAddresses, AddressType.MailingAddress, newApplicantId, applicationId);
-            await UpdateAddress(applicantAddresses, AddressType.PhysicalAddress, newApplicantId, applicationId);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error updating ApplicantAddress records for ApplicationId: {ApplicationId}", applicationId);
-            throw new UserFriendlyException("An error occurred while updating applicant address records.");
-        }
-    }
-
-    private async Task UpdateAddress(List<ApplicantAddress> applicantAddresses, AddressType applicantAddressType, Guid newApplicantId, Guid applicationId)
-    {
-        ApplicantAddress? dbAddress = applicantAddresses.Find(address => address.AddressType == applicantAddressType && address.ApplicationId == applicationId);
-
-        if (dbAddress != null)
-        {
-            dbAddress.ApplicantId = newApplicantId;
-            await addressRepository.UpdateAsync(dbAddress);
-        }
-    }
-
-    private async Task AuthorizeApplicantMerge()
-    {
-        if (!await AuthorizationService.IsGrantedAnyAsync(
-            UnitySelector.ApplicantManagement.Applicant.Merge,
-            UnitySelector.Application.Summary.Update))
-        {
-            throw new AbpAuthorizationException(code: AbpAuthorizationErrorCodes.GivenPolicyHasNotGranted);
-        }  
-    }
-
-
-    [RemoteService(true)]
-    [Authorize]
-    public async Task TransferApplicantApplicationsAsync(TransferApplicantApplicationsDto dto)
-    {
-        // Used by both Applicant List Merge and Applicant Info Merge
-        await AuthorizeApplicantMerge();
-
-        var principal = await applicantRepository.GetAsync(dto.PrincipalApplicantId);
-        var nonPrincipal = await applicantRepository.GetAsync(dto.NonPrincipalApplicantId);
-
-        if ((principal != null && principal.IsDeleted) || (nonPrincipal != null && nonPrincipal.IsDeleted))
-        {
-            throw new UserFriendlyException(
-                "One or more selected applicants have been deleted. Please refresh the applicant list to update the view.");
-        }
-
-        var applications = await applicationRepository.GetByApplicantIdAsync(dto.NonPrincipalApplicantId);
-        foreach (var application in applications)
-        {
-            await UpdateApplicantIdAsync(new UpdateApplicantIdDto
-            {
-                ApplicationId = application.Id,
-                ApplicantId = dto.PrincipalApplicantId
-            });
-        }
-    }
-
-    [RemoteService(true)]
-    [Authorize]
-    public async Task SetDuplicatedAsync(SetApplicantDuplicateDto dto)
-    {
-        // Used by both Applicant List Merge and Applicant Info Merge
-        await AuthorizeApplicantMerge();
-
-        // Set principal as not duplicated
-        var principal = await applicantRepository.GetAsync(dto.PrincipalApplicantId);
-        var nonPrincipal = await applicantRepository.GetAsync(dto.NonPrincipalApplicantId);
-
-        if ((principal != null && principal.IsDeleted) || (nonPrincipal != null && nonPrincipal.IsDeleted))
-        {
-            throw new UserFriendlyException(
-                "One or more selected applicants have been deleted. Please refresh the applicant list to update the view.");
-        }
-
-        if (principal != null && principal.IsDuplicated)
-        {
-            principal.IsDuplicated = false;
-            await applicantRepository.UpdateAsync(principal);
-        }
-
-        // Set non-principal as duplicated
-        if (nonPrincipal != null && !nonPrincipal.IsDuplicated)
-        {
-            nonPrincipal.IsDuplicated = true;
-            await applicantRepository.UpdateAsync(nonPrincipal);
-        }
-    }
-
-    [RemoteService(true)]
     [Authorize(UnitySelector.ApplicantManagement.Applicant.Default)]
     public async Task<bool> HasSubmissionsAsync(Guid id)
     {
@@ -824,50 +690,6 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         applicant.DeletionTime = Clock.Now;
         applicant.DeleterId = CurrentUser.Id;
         await applicantRepository.UpdateAsync(applicant, autoSave: true);
-    }
-
-    private async Task UpdateApplicationFormSubmissionsAsync(Guid applicationId, Guid newApplicantId)
-    {
-        try
-        {
-            var formSubmissionRepository = LazyServiceProvider.LazyGetRequiredService<IApplicationFormSubmissionRepository>();
-            var formSubmissions = await (await formSubmissionRepository.GetQueryableAsync())
-                .Where(s => s.ApplicationId == applicationId)
-                .ToListAsync();
-
-            foreach (var submission in formSubmissions)
-            {
-                submission.ApplicantId = newApplicantId;
-                await formSubmissionRepository.UpdateAsync(submission);
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error updating ApplicationFormSubmissions for ApplicationId: {ApplicationId}", applicationId);
-            throw new UserFriendlyException("An error occurred while updating application form submissions.");
-        }
-    }
-
-    private async Task UpdateApplicantAgentRecordsAsync(Guid oldApplicantId, Guid newApplicantId, Guid applicationId)
-    {
-        try
-        {
-            var agentQueryable = await applicantAgentRepository.GetQueryableAsync();
-
-            var agent = await agentQueryable
-                .FirstOrDefaultAsync(a => a.ApplicantId == oldApplicantId && a.ApplicationId == applicationId);
-
-            if (agent != null)
-            {
-                agent.ApplicantId = newApplicantId;
-                await applicantAgentRepository.UpdateAsync(agent);
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error updating ApplicantAgent records for ApplicationId: {ApplicationId}", applicationId);
-            throw new UserFriendlyException("An error occurred while updating applicant agent records.");
-        }
     }
 
     [RemoteService(true)]
@@ -904,6 +726,10 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                 CreationTime = applicant.CreationTime,
                 LastModificationTime = applicant.LastModificationTime,
                 FiscalYearEnd = applicant.FiscalYearEnd,
+                SupplierId = applicant.SupplierId,
+                SupplierNumber = applicant.SupplierNumber,
+                SupplierName = applicant.SupplierName,
+                SupplierStatus = applicant.SupplierStatus,
         }).ToList();
         // Use items.Count while client side datatables are used. When going to server
         // side actually query the correct amount with paging enabled.

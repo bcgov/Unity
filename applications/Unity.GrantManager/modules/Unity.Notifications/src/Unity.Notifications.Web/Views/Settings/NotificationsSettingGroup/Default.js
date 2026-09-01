@@ -33,6 +33,9 @@ $(function () {
 
     function init() {
         $('#email-attachments-section').hide();
+        initializeEmailAddressDataTable();
+        initializeSenderAddressSelector();
+        loadActiveEmailAddresses();
         initializeTooltips();
         initializeTemplateDataTables();
         initializeDivider();
@@ -40,6 +43,163 @@ $(function () {
         initializeRecipientSelect();
         checkFormChanges();
     }      
+
+    function loadActiveEmailAddresses() {
+        unity.notifications.emailAddresses.emailAddressConfigurations.getList().then(function (addresses) {
+            const $sendFrom = $('#sendFrom');
+            const currentAddress = $sendFrom.val() || '';
+            const activeSenders = addresses.filter(address => address.isActive && address.emailType === 'Sender');
+            $sendFrom.empty().append('<option value=""></option>');
+            activeSenders.forEach(address => {
+                $('<option>').val(address.emailAddress).text(address.emailAddress).appendTo($sendFrom);
+            });
+            setSendFromValue(currentAddress || activeSenders[0]?.emailAddress || '');
+        });
+    }
+
+    function initializeSenderAddressSelector() {
+        const $sendFrom = $('#sendFrom');
+        if ($sendFrom.length && $.fn?.select2) {
+            $sendFrom.select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                tags: true,
+                allowClear: true,
+                placeholder: 'Select or enter a from address'
+            });
+        }
+    }
+
+    function setSendFromValue(value) {
+        const $sendFrom = $('#sendFrom');
+        const selectedAddress = value || '';
+        const hasSelectedAddress = $sendFrom.find('option').toArray().some(function (option) {
+            return option.value === selectedAddress;
+        });
+        if (selectedAddress && !hasSelectedAddress) {
+            $('<option>').val(selectedAddress).text(selectedAddress).appendTo($sendFrom);
+        }
+        $sendFrom.val(selectedAddress).trigger('change');
+    }
+
+    function initializeEmailAddressDataTable() {
+        const $table = $('#EmailAddressesTable');
+        if (!$table.length || !$.fn.DataTable) return;
+
+        $table.DataTable(abp.libs.datatables.normalizeConfiguration({
+            processing: true,
+            serverSide: false,
+            paging: true,
+            searching: true,
+            ordering: true,
+            ajax: function (requestData, callback) {
+                unity.notifications.emailAddresses.emailAddressConfigurations.getList().then(function (result) {
+                    callback({ recordsTotal: result.length, recordsFiltered: result.length, data: result });
+                });
+            },
+            columnDefs: [
+                { title: 'Email Address', data: 'emailAddress' },
+                { title: 'Email Type', data: 'emailType', render: formatEmailType },
+                { title: 'Description', data: 'description', defaultContent: '' },
+                { title: 'Status', data: 'isActive', render: data => data ? 'Active' : 'Inactive' },
+                {
+                    title: 'Actions', data: null, width: '48px', className: 'text-center', orderable: false,
+                    render: function (data, type, row) {
+                        return `<div class="dropdown" style="float:right;">
+                            <button class="btn btn-light dropbtn" type="button" aria-label="More actions" title="More actions">
+                                <i class="fl fl-attachment-more" aria-hidden="true"></i>
+                            </button>
+                            <div class="dropdown-content">
+                                <button class="btn fullWidth edit-email-address" style="margin:10px" type="button" data-id="${row.id}">
+                                    <i class="fl fl-edit"></i><span>Edit</span>
+                                </button>
+                                <button class="btn fullWidth delete-email-address" style="margin:10px" type="button" data-id="${row.id}" data-in-use="${row.isInUse}">
+                                    <i class="fl fl-delete"></i><span>Delete</span>
+                                </button>
+                            </div>
+                        </div>`;
+                    }
+                }
+            ]
+        }));
+
+        $table.on('click', '.edit-email-address', function () {
+            const row = $table.DataTable().row($(this).closest('tr')).data();
+            showEmailAddressModal(row);
+        });
+        $table.on('click', '.delete-email-address', function () {
+            const row = $table.DataTable().row($(this).closest('tr')).data();
+            if (row.isInUse) {
+                abp.notify.error('This email address must first be removed from the associated configuration before it can be deleted.');
+                return;
+            }
+            abp.message.confirm('Are you sure you want to delete this email address?', 'Delete Email Address', function (confirmed) {
+                if (confirmed) unity.notifications.emailAddresses.emailAddressConfigurations.delete(row.id).then(() => $table.DataTable().ajax.reload());
+            });
+        });
+        $('#AddEmailAddress').on('click', function () { showEmailAddressModal(null); });
+    }
+
+    function formatEmailType(data) {
+        return { Sender: 'Sender Address', ReplyTo: 'Reply-to Address', NoReply: 'No-reply Address', Inbound: 'Inbound Address', Support: 'Support Address', Other: 'Other' }[data] || data;
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
+    }
+
+    function showEmailAddressModal(address) {
+        const id = 'emailAddressModal';
+        $(`#${id}`).remove();
+        const item = address || { emailAddress: '', emailType: 'Sender', description: '', isActive: true };
+        $('body').append(`<div class="modal fade" id="${id}" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">${address ? 'Edit' : 'Add'} Email Address</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><form id="configuredEmailForm"><div class="modal-body"><label class="form-label" for="configuredEmailAddress">Email Address</label><input id="configuredEmailAddress" name="configuredEmailAddress" class="email-input from-input form-control" type="text" value="${escapeHtml(item.emailAddress)}" required><label class="form-label mt-3" for="configuredEmailType">Email Type</label><select id="configuredEmailType" class="form-select"><option value="Sender">Sender Address</option><option value="ReplyTo">Reply-to Address</option><option value="NoReply">No-reply Address</option><option value="Inbound">Inbound Address</option><option value="Support">Support Address</option><option value="Other">Other</option></select><label class="form-label mt-3" for="configuredEmailDescription">Description</label><textarea id="configuredEmailDescription" class="form-control">${escapeHtml(item.description)}</textarea><div class="form-check mt-3"><input id="configuredEmailActive" class="form-check-input" type="checkbox" ${item.isActive ? 'checked' : ''}><label class="form-check-label" for="configuredEmailActive">Active</label></div></div><div class="modal-footer"><button type="submit" class="btn btn-primary" id="saveConfiguredEmail">Save</button><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button></div></form></div></div></div>`);
+        $('#configuredEmailType').val(item.emailType);
+        const modal = new bootstrap.Modal(document.getElementById(id));
+        modal.show();
+        const $emailForm = $('#configuredEmailForm');
+        const emailInput = $('#configuredEmailAddress');
+        $.validator.addMethod('configuredEmail', function (value, element) {
+            return this.optional(element) || validateEmail(value.trim());
+        }, 'Enter a valid email address.');
+        $emailForm.validate({
+            errorClass: 'field-validation-error',
+            validClass: 'field-validation-valid',
+            rules: {
+                configuredEmailAddress: {
+                    required: true,
+                    configuredEmail: true
+                }
+            },
+            messages: {
+                configuredEmailAddress: {
+                    required: 'Email Address is required.'
+                }
+            },
+            highlight: function (element, errorClass, validClass) {
+                $(element).addClass('input-validation-error').removeClass(validClass);
+            },
+            unhighlight: function (element, errorClass, validClass) {
+                $(element).removeClass('input-validation-error').addClass(validClass);
+            },
+            errorPlacement: function (error, element) {
+                let errorSpan = element.siblings('.field-validation-error');
+                if (errorSpan.length === 0) {
+                    errorSpan = $('<span class="field-validation-error"></span>').insertAfter(element);
+                }
+                errorSpan.text(error.text());
+            }
+        });
+        $emailForm.on('submit', function (event) {
+            event.preventDefault();
+            if (!$emailForm.valid()) {
+                return;
+            }
+
+            const input = { id: address?.id, emailAddress: emailInput.val().trim(), emailType: $('#configuredEmailType').val(), description: $('#configuredEmailDescription').val(), isActive: $('#configuredEmailActive').prop('checked') };
+            const request = address ? unity.notifications.emailAddresses.emailAddressConfigurations.update(input) : unity.notifications.emailAddresses.emailAddressConfigurations.create(input);
+            request.then(() => { modal.hide(); $('#EmailAddressesTable').DataTable().ajax.reload(); loadActiveEmailAddresses(); }).catch(error => abp.notify.error(error.message || 'Unable to save email address.'));
+        });
+    }
 
     function checkFormChanges() {
         let currentFormState = NotificationUiElements.settingForm.serialize();
@@ -275,7 +435,7 @@ $(function () {
         
         $('#templateId').val(data.id);
         $('#templateName').val(data.name);
-        $('#sendFrom').val(data.sendFrom);
+        setSendFromValue(data.sendFrom);
         $('#subject').val(data.subject);
         $('#templateRecipientCategory').val(data.recipientCategory || '');
         
@@ -324,7 +484,7 @@ $(function () {
         
         $('#templateId').val('');
         $('#templateName').val('');
-        $('#sendFrom').val('');
+        setSendFromValue('');
         $('#subject').val('');
         $('#templateRecipientCategory').val('');
         $('#templateRecipientSelect').empty().val([]).trigger('change');
@@ -338,7 +498,7 @@ $(function () {
         if (Object.keys(originalFormValues).length > 0) {
             $('#templateId').val(originalFormValues.id);
             $('#templateName').val(originalFormValues.name);
-            $('#sendFrom').val(originalFormValues.sendFrom);
+            setSendFromValue(originalFormValues.sendFrom);
             $('#subject').val(originalFormValues.subject);
             $('#templateRecipientCategory').val(originalFormValues.recipientCategory || '');
             

@@ -137,6 +137,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             var upx_Review_AssessmentResults                        = upx_Review.AddUnityChild(UnitySelector.Review.AssessmentResults.Default);
             var upx_Review_AssessmentResults_Update                 = upx_Review_AssessmentResults.AddUnityChild(UnitySelector.Review.AssessmentResults.Update.Default);
             var upx_Review_AssessmentResults_UpdateFinalStateFields = upx_Review_AssessmentResults_Update.AddUnityChild(UnitySelector.Review.AssessmentResults.Update.UpdateFinalStateFields);
+            var upx_Review_AssessmentResults_UpdateEligibleForRenewal = upx_Review_AssessmentResults_Update.AddUnityChild(UnitySelector.Review.AssessmentResults.Update.UpdateEligibleForRenewal);
 
             var upx_Review_AssessmentReviewList                     = upx_Review.AddUnityChild(UnitySelector.Review.AssessmentReviewList.Default);
             var upx_Review_AssessmentReviewList_Create              = upx_Review_AssessmentReviewList.AddUnityChild(UnitySelector.Review.AssessmentReviewList.Create);
@@ -195,6 +196,7 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             upx_Applicant.AddUnityChild(UnitySelector.ApplicantManagement.Applicant.Update);
             upx_Applicant.AddUnityChild(UnitySelector.ApplicantManagement.Applicant.Delete);
             upx_Applicant.AddUnityChild(UnitySelector.ApplicantManagement.Applicant.Merge);
+            upx_Applicant.AddUnityChild(UnitySelector.ApplicantManagement.Applicant.Unmerge);
 
             var upx_ApplicantInfo = group.AddPermission(UnitySelector.ApplicantManagement.ApplicantInfo.Default, L(UnitySelector.ApplicantManagement.ApplicantInfo.Default));
             var upx_ApplicantInfo_Update = upx_ApplicantInfo.AddUnityChild(UnitySelector.ApplicantManagement.ApplicantInfo.Update);

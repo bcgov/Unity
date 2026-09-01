@@ -58,6 +58,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
             
             model.IsPostEditFieldsAllowed_Approval = isEditGranted || (await _authorizationService.IsGrantedAsync(UnitySelector.Review.Approval.Update.UpdateFinalStateFields) && finalDecisionState);
             model.IsPostEditFieldsAllowed_AssessmentResults = isEditGranted || (await _authorizationService.IsGrantedAsync(UnitySelector.Review.AssessmentResults.Update.UpdateFinalStateFields) && finalDecisionState);
+            model.IsUpdateEligibleForRenewalGranted = isEditGranted && await _authorizationService.IsGrantedAsync(UnitySelector.Review.AssessmentResults.Update.UpdateEligibleForRenewal);
 
             model.ZoneStateSet = await _zoneManagementAppService.GetZoneStateSetAsync(application.ApplicationForm.Id);
 
@@ -88,6 +89,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
                     NotificationDate = application.NotificationDate,
                     DueDate = application.DueDate,
                     ProjectSummary = application.ProjectSummary,
+                    EligibleForRenewal = application.EligibleForRenewal
                 };
             }
 

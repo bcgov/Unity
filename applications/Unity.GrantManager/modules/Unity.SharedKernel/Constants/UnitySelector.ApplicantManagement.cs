@@ -14,6 +14,7 @@ public static partial class UnitySelector
             public const string Update  = "Unity.GrantManager.ApplicantManagement.Applicant.Update";
             public const string Delete  = "Unity.GrantManager.ApplicantManagement.Applicant.Delete";
             public const string Merge   = "Unity.GrantManager.ApplicantManagement.Applicant.Merge";
+            public const string Unmerge = "Unity.GrantManager.ApplicantManagement.Applicant.Unmerge";
         }
 
         public static partial class ApplicantInfo

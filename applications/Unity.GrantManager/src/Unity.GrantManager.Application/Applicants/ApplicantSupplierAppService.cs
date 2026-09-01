@@ -12,7 +12,6 @@ using Unity.Payments.Integrations.Cas;
 using Unity.Payments.PaymentRequests;
 using Unity.Payments.Suppliers;
 using Volo.Abp;
-using Volo.Abp.Authorization;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 
@@ -177,52 +176,4 @@ public class ApplicantSupplierAppService(ISiteRepository siteRepository,
         return pendingPayments != null && pendingPayments.Count > 0;
     }
 
-    [HttpPost("api/app/applicant-supplier/handle-supplier-after-merge")]
-    [Authorize]
-    public async Task HandleSupplierAfterMergeAsync(HandleSupplierAfterMergeDto dto)
-    {
-        var isGranted = await AuthorizationService.IsGrantedAnyAsync(
-            UnitySelector.Payment.Supplier.Update,
-            UnitySelector.ApplicantManagement.Applicant.Merge);
-
-        if (!isGranted)
-        {
-            throw new AbpAuthorizationException("You do not have permission to update supplier or merge applicants.");
-        }
-
-        // Used by both Applicant List Merge and Applicant Info Merge
-        await EnsureNoPendingPaymentsForApplicantAsync(dto.PrincipalId);
-        await EnsureNoPendingPaymentsForApplicantAsync(dto.NonPrincipalId);
-
-        var principal = await applicantRepository.FindAsync(dto.PrincipalId);
-        var nonPrincipal = await applicantRepository.FindAsync(dto.NonPrincipalId);
-
-        if (principal == null || nonPrincipal == null)
-        {
-            throw new UserFriendlyException(
-                "One or more selected applicants could not be found. Please refresh the applicant list to update the view.");
-        }
-
-        if (principal.IsDeleted || nonPrincipal.IsDeleted)
-        {
-            throw new UserFriendlyException(
-                "One or more selected applicants have been deleted. Please refresh the applicant list to update the view.");
-        }
-
-        principal.SupplierId = dto.SelectedSupplierId;
-        await applicantRepository.UpdateAsync(principal);
-
-        nonPrincipal.SupplierId = dto.SelectedSupplierId;
-        await applicantRepository.UpdateAsync(nonPrincipal);
-
-        // Null DefaultSiteId on all applications now belonging to the principal
-        // (both transferred and pre-existing). Staff re-set per application.
-        var applications = await applicationRepository
-            .GetListAsync(a => a.ApplicantId == dto.PrincipalId);
-        foreach (var application in applications)
-        {
-            application.DefaultSiteId = null;
-            await applicationRepository.UpdateAsync(application);
-        }
-    }
 }

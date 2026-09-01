@@ -1,9 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp;
+using Unity.GrantManager.Notifications;
 
 
 namespace Unity.Notifications.EmailGroups
@@ -15,10 +19,14 @@ namespace Unity.Notifications.EmailGroups
     public class EmailGroupsAppService : ApplicationService, IEmailGroupsAppService
     {
         private readonly IEmailGroupsRepository _emailGroupsRepository;
+        private readonly IRepository<ScheduledNotification, Guid> _scheduledNotificationRepository;
 
-        public EmailGroupsAppService(IEmailGroupsRepository emailGroupsRepository)
+        public EmailGroupsAppService(
+            IEmailGroupsRepository emailGroupsRepository,
+            IRepository<ScheduledNotification, Guid> scheduledNotificationRepository)
         {
             _emailGroupsRepository = emailGroupsRepository;
+            _scheduledNotificationRepository = scheduledNotificationRepository;
         }
         public async Task<EmailGroupDto> CreateAsync(EmailGroupDto dto)
         {
@@ -55,6 +63,14 @@ namespace Unity.Notifications.EmailGroups
 
         public async Task<bool> DeleteAsync(Guid id)
         {
+            var emailGroup = await _emailGroupsRepository.GetAsync(id);
+            if (await IsUsedByScheduledNotificationAsync(emailGroup.Name))
+            {
+                throw new BusinessException(
+                    "Unity.Notifications:EmailGroupInUse",
+                    "This email group is associated with a scheduled notification and cannot be deleted.");
+            }
+
             try
             {
                 await _emailGroupsRepository.DeleteAsync(id);
@@ -70,13 +86,39 @@ namespace Unity.Notifications.EmailGroups
         public async Task<List<EmailGroupDto>> GetListAsync()
         {
             var groups =  await _emailGroupsRepository.GetListAsync();
-            return ObjectMapper.Map<List<EmailGroup>, List<EmailGroupDto>>(groups);
+            var usedGroupNames = await GetScheduledNotificationGroupNamesAsync();
+            var groupDtos = ObjectMapper.Map<List<EmailGroup>, List<EmailGroupDto>>(groups);
+
+            foreach (var groupDto in groupDtos)
+            {
+                groupDto.IsUsedByScheduledNotification = usedGroupNames.Contains(groupDto.Name);
+            }
+
+            return groupDtos;
         }
 
         public async Task<EmailGroupDto> GetEmailGroupByIdAsync(Guid id)
         {
             var group = await _emailGroupsRepository.GetAsync(id);
             return ObjectMapper.Map<EmailGroup, EmailGroupDto>(group);
+        }
+
+        private async Task<bool> IsUsedByScheduledNotificationAsync(string groupName)
+        {
+            var usedGroupNames = await GetScheduledNotificationGroupNamesAsync();
+            return usedGroupNames.Contains(groupName);
+        }
+
+        private async Task<HashSet<string>> GetScheduledNotificationGroupNamesAsync()
+        {
+            var notifications = await _scheduledNotificationRepository.GetListAsync();
+
+            return notifications
+                .Where(notification => notification.IsActive &&
+                    string.Equals(notification.RecipientCategory, "Internal", StringComparison.OrdinalIgnoreCase))
+                .SelectMany(notification => (notification.RecipientIdentifier ?? string.Empty)
+                    .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
         }
 
     }
