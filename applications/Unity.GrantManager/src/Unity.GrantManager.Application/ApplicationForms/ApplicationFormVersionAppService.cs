@@ -604,6 +604,10 @@ namespace Unity.GrantManager.ApplicationForms
             {
                 throw new UserFriendlyException(localizer[AILocalizationKeys.WorksheetTitleRequired]);
             }
+            if (string.IsNullOrEmpty(AiDraftName.NormalizeTitle(title)))
+            {
+                throw new UserFriendlyException(localizer[AILocalizationKeys.WorksheetTitleRequired]);
+            }
 
             var selectedFieldIds = input.SelectedFieldIds?.ToHashSet() ?? [];
             if (selectedFieldIds.Count == 0)
@@ -620,6 +624,7 @@ namespace Unity.GrantManager.ApplicationForms
 
             var draftName = await GetNextAiWorksheetDraftNameAsync(title);
             var draft = new Worksheet(GuidGenerator.Create(), draftName, title);
+            draft.SetVersion(ParseDraftVersion(draftName));
 
             var draftSection = new WorksheetSection(GuidGenerator.Create(), "Suggested Fields")
             {
@@ -712,7 +717,7 @@ namespace Unity.GrantManager.ApplicationForms
 
             var formVersion = await formVersionRepository.GetAsync(formVersionId);
             var scoresheet = await scoresheetRepository.GetByNameAsync(
-                AiScoresheetSuggestionName.Build(formVersion.ApplicationFormId, formVersion.Id), true);
+                AiScoresheetSuggestionName.Build(formVersion.Id), true);
             return scoresheet?.Published == false ? MapAiScoresheetReview(scoresheet) : null;
         }
 
@@ -732,6 +737,10 @@ namespace Unity.GrantManager.ApplicationForms
             {
                 throw new UserFriendlyException(localizer[AILocalizationKeys.FormScoresheetTitleRequired]);
             }
+            if (string.IsNullOrEmpty(AiDraftName.NormalizeTitle(title)))
+            {
+                throw new UserFriendlyException(localizer[AILocalizationKeys.FormScoresheetTitleRequired]);
+            }
 
             var selectedIds = input.SelectedQuestionIds?.ToHashSet() ?? [];
             if (selectedIds.Count == 0)
@@ -747,6 +756,7 @@ namespace Unity.GrantManager.ApplicationForms
 
             var draftName = await GetNextAiScoresheetDraftNameAsync(title);
             var draft = new Scoresheet(GuidGenerator.Create(), title, draftName);
+            draft.Version = ParseDraftVersion(draftName);
             foreach (var sourceSection in suggestion.Sections.OrderBy(section => section.Order))
             {
                 var selectedQuestions = sourceSection.Fields
@@ -836,7 +846,7 @@ namespace Unity.GrantManager.ApplicationForms
 
             var formVersion = await formVersionRepository.GetAsync(formVersionId);
             var scoresheet = await scoresheetRepository.GetByNameAsync(
-                AiScoresheetSuggestionName.Build(formVersion.ApplicationFormId, formVersion.Id), true);
+                AiScoresheetSuggestionName.Build(formVersion.Id), true);
             return scoresheet?.Published == false ? scoresheet : null;
         }
 
@@ -920,7 +930,7 @@ namespace Unity.GrantManager.ApplicationForms
         private async Task<Worksheet?> GetAiSuggestionWorksheetAsync(ApplicationFormVersion formVersion)
         {
             return await worksheetRepository.GetByNameAsync(
-                AiWorksheetSuggestionName.Build(formVersion.ApplicationFormId, formVersion.Id), true);
+                AiWorksheetSuggestionName.Build(formVersion.Id), true);
         }
 
         private static AiWorksheetReviewDto MapAiWorksheetReview(Worksheet worksheet) => new()
@@ -1178,14 +1188,13 @@ namespace Unity.GrantManager.ApplicationForms
 
         private async Task<string> GetNextAiWorksheetDraftNameAsync(string title)
         {
-            var titlePart = Regex.Replace(title.Trim().ToLowerInvariant(), "[^a-z0-9]+", "-").Trim('-');
-            var baseName = $"ai-{(string.IsNullOrEmpty(titlePart) ? "worksheet" : titlePart)}";
-            var candidate = baseName;
-            var suffix = 2;
+            var baseName = AiDraftName.BuildBaseName(title);
+            var version = 1;
+            var candidate = $"{baseName}-v{version}";
 
             while (await worksheetRepository.GetByNameAsync(candidate, false) != null)
             {
-                candidate = $"{baseName}-{suffix++}";
+                candidate = $"{baseName}-v{++version}";
             }
 
             return candidate;
@@ -1193,18 +1202,20 @@ namespace Unity.GrantManager.ApplicationForms
 
         private async Task<string> GetNextAiScoresheetDraftNameAsync(string title)
         {
-            var titlePart = Regex.Replace(title.Trim().ToLowerInvariant(), "[^a-z0-9]+", "-").Trim('-');
-            var baseName = $"ai-{(string.IsNullOrEmpty(titlePart) ? "scoresheet" : titlePart)}";
-            var candidate = baseName;
-            var suffix = 2;
+            var baseName = AiDraftName.BuildBaseName(title);
+            var version = 1;
+            var candidate = $"{baseName}-v{version}";
 
             while (await scoresheetRepository.GetByNameAsync(candidate, false) != null)
             {
-                candidate = $"{baseName}-{suffix++}";
+                candidate = $"{baseName}-v{++version}";
             }
 
             return candidate;
         }
+
+        private static uint ParseDraftVersion(string name) =>
+            uint.Parse(name[(name.LastIndexOf("-v", StringComparison.Ordinal) + 2)..]);
 
         private static string NormalizeCustomFieldDefinition(string definition)
         {
