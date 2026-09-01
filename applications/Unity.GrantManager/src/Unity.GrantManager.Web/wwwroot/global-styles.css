@@ -1,5 +1,16 @@
 /* Your Global Styles */
 
+.field-validation-error {
+    display: block;
+    margin-top: 0.25rem;
+    color: #dc3545;
+    font-size: 0.875rem;
+}
+
+.input-validation-error {
+    border-color: #dc3545 !important;
+}
+
 :root {
     --lpx-brand: #FCBA19;
     --lpx-primary: #003366;

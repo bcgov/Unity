@@ -257,6 +257,8 @@ function initializeDraftEmailsWidget() {
         defaultValues.emailFrom = UIElements.inputOriginalEmailFrom.val();
         defaultValues.emailCC = UIElements.inputOriginalEmailCC.val() || '';
         defaultValues.emailBCC = UIElements.inputOriginalEmailBCC.val() || '';
+        initializeSenderAddressSelector();
+        loadActiveSenderAddresses();
         preloadTemplates(); // Pre-fetch templates on page load
         initTemplateDetails();
         $('#templateTextContainer').hide();
@@ -266,6 +268,44 @@ function initializeDraftEmailsWidget() {
         UIElements.btnSendDropdown.hide();
         UIElements.btnDiscard.hide();
         UIElements.btnSendClose.hide();
+    }
+
+    function initializeSenderAddressSelector() {
+        if (UIElements.inputEmailFrom.length && $.fn?.select2) {
+            UIElements.inputEmailFrom.select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                tags: true,
+                allowClear: true,
+                placeholder: 'Select or enter a from address'
+            });
+        }
+    }
+
+    function loadActiveSenderAddresses() {
+        if (!UIElements.inputEmailFrom.length || typeof unity === 'undefined' ||
+            !unity.notifications?.emailAddresses?.emailAddressConfigurations) {
+            return;
+        }
+
+        unity.notifications.emailAddresses.emailAddressConfigurations.getList().then(function (addresses) {
+            const activeSenders = addresses.filter(address => address.isActive && address.emailType === 'Sender');
+            const currentAddress = UIElements.inputEmailFrom.val() || UIElements.inputOriginalEmailFrom.val();
+            const selectedAddress = currentAddress || activeSenders[0]?.emailAddress || '';
+
+            UIElements.inputEmailFrom.find('option:not(:first)').remove();
+            activeSenders.forEach(address => {
+                $('<option>').val(address.emailAddress).text(address.emailAddress).appendTo(UIElements.inputEmailFrom);
+            });
+            if (selectedAddress && !activeSenders.some(address => address.emailAddress === selectedAddress)) {
+                $('<option>').val(selectedAddress).text(selectedAddress).appendTo(UIElements.inputEmailFrom);
+            }
+            UIElements.inputEmailFrom.val(selectedAddress).trigger('change');
+            UIElements.inputOriginalEmailFrom.val(selectedAddress);
+            defaultValues.emailFrom = selectedAddress;
+        }).catch(function (error) {
+            console.warn('Failed to load active sender addresses:', error);
+        });
     }
 
     async function initTemplateDetails() {

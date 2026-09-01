@@ -62,6 +62,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
         public override void ConfigureBundle(BundleConfigurationContext context)
         {
             context.Files.AddIfNotContains("/Views/Shared/Components/EmailsWidget/Default.css");
+            context.Files.AddIfNotContains("/libs/select2/dist/css/select2.min.css");
         }
     }
 
@@ -71,6 +72,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
         {
             context.Files.AddIfNotContains("/Views/Shared/Components/EmailsWidget/Default.js");
             context.Files.AddIfNotContains("/libs/pubsub-js/src/pubsub.js");
+            context.Files.AddIfNotContains("/libs/select2/dist/js/select2.full.min.js");
         }
     }
 }
