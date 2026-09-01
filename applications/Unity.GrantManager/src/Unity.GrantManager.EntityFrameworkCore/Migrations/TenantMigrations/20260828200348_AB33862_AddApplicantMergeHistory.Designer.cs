@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260828200348_AB33862_AddApplicantMergeHistory")]
+    partial class AB33862_AddApplicantMergeHistory
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3464,70 +3467,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsUnique();
 
                     b.ToTable("ScheduledNotificationTracking", "Notifications");
-                });
-
-            modelBuilder.Entity("Unity.Notifications.EmailAddresses.EmailAddressConfiguration", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(2048)
-                        .HasColumnType("character varying(2048)");
-
-                    b.Property<string>("EmailAddress")
-                        .IsRequired()
-                        .HasMaxLength(1024)
-                        .HasColumnType("character varying(1024)");
-
-                    b.Property<string>("EmailType")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
-                    b.Property<string>("ExtraProperties")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("TenantId");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "EmailAddress", "EmailType")
-                        .IsUnique();
-
-                    b.ToTable("EmailAddressConfigurations", "Notifications");
                 });
 
             modelBuilder.Entity("Unity.Notifications.EmailGroups.EmailGroup", b =>

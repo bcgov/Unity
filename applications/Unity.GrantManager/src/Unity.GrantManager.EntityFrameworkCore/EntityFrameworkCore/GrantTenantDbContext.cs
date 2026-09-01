@@ -34,6 +34,8 @@ namespace Unity.GrantManager.EntityFrameworkCore
         public DbSet<ApplicationFormVersion> ApplicationFormVersions { get; set; }
         public DbSet<GenerationReview> GenerationReviews { get; set; }
         public DbSet<Applicant> Applicants { get; set; }
+        public DbSet<ApplicantMergeOperation> ApplicantMergeOperations { get; set; }
+        public DbSet<ApplicantMergeApplicationChange> ApplicantMergeApplicationChanges { get; set; }
         public DbSet<Application> Applications { get; set; }
         public DbSet<ApplicationScoresheetAnswers> ApplicationScoresheetAnswers { get; set; }
         public DbSet<ApplicationStatus> ApplicationStatuses { get; set; }
@@ -77,6 +79,8 @@ namespace Unity.GrantManager.EntityFrameworkCore
             // convention-based entity discovery.
             modelBuilder.Ignore<ExternalLinksConfig>();
             modelBuilder.Ignore<ExternalLink>();
+
+            modelBuilder.ConfigureApplicantMerges();
 
             modelBuilder.Entity<Person>(b =>
             {

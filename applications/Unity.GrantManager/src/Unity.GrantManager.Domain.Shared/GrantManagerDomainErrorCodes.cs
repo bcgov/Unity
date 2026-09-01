@@ -32,4 +32,16 @@ public static class GrantManagerDomainErrorCodes
     public const string RenewalLinkInvalidUri = "GrantManager:RenewalLinkInvalidUri";
     public const string RelatedLinkInvalidUri = "GrantManager:RelatedLinkInvalidUri";
     public const string TooManyRelatedLinks = "GrantManager:TooManyRelatedLinks";
+
+    /* APPLICANT MERGE */
+    public const string ApplicantMergeSameApplicant = "GrantManager:ApplicantMergeSameApplicant";
+    public const string ApplicantMergeApplicantUnavailable = "GrantManager:ApplicantMergeApplicantUnavailable";
+    public const string ApplicantMergeInvalidSelection = "GrantManager:ApplicantMergeInvalidSelection";
+    public const string ApplicantMergeInvalidSupplier = "GrantManager:ApplicantMergeInvalidSupplier";
+    public const string ApplicantMergeInvalidHistory = "GrantManager:ApplicantMergeInvalidHistory";
+    public const string ApplicantMergeAlreadyReversed = "GrantManager:ApplicantMergeAlreadyReversed";
+    public const string ApplicantMergeNotLatest = "GrantManager:ApplicantMergeNotLatest";
+    public const string ApplicantMergeStateChanged = "GrantManager:ApplicantMergeStateChanged";
+    public const string ApplicantMergeRelatedRecordsChanged = "GrantManager:ApplicantMergeRelatedRecordsChanged";
+    public const string ApplicantMergePendingPayments = "GrantManager:ApplicantMergePendingPayments";
 }
