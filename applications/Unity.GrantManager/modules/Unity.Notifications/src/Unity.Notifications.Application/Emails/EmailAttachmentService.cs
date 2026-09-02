@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Unity.Notifications.Emails;
 using Volo.Abp.Authorization;
@@ -111,6 +112,20 @@ public class EmailAttachmentService : ITransientDependency
         return memoryStream.ToArray();
     }
 
+    public async Task<byte[]?> DownloadAttachmentFromS3Async(EmailLogAttachment attachment)
+    {
+        try
+        {
+            return await DownloadFromS3Async(attachment.S3ObjectKey);
+        }
+        catch (AmazonS3Exception ex) when (IsMissingObject(ex))
+        {
+            throw new MissingEmailAttachmentsException(
+                [GetAttachmentName(attachment)],
+                EmailAttachmentValidationContext.Email);
+        }
+    }
+
     public async Task<EmailLogAttachment> UploadUserAttachmentAsync(
         Guid? emailLogId,
         Guid? templateId,
@@ -178,6 +193,41 @@ public class EmailAttachmentService : ITransientDependency
         return await _emailLogAttachmentRepository.GetByEmailLogIdAsync(emailLogId);
     }
 
+    public async Task ValidateEmailAttachmentsAsync(Guid emailLogId)
+    {
+        var attachments = await GetAttachmentsAsync(emailLogId);
+        await ValidateAttachmentsExistAsync(attachments, EmailAttachmentValidationContext.Email);
+    }
+
+    public async Task ValidateAttachmentsExistAsync(
+        IEnumerable<EmailLogAttachment> attachments,
+        EmailAttachmentValidationContext context)
+    {
+        var missingFiles = new List<string>();
+        var bucket = _configuration[S3BucketConfigKey];
+
+        foreach (var attachment in attachments)
+        {
+            try
+            {
+                await _amazonS3Client.GetObjectMetadataAsync(new GetObjectMetadataRequest
+                {
+                    BucketName = bucket,
+                    Key = attachment.S3ObjectKey
+                });
+            }
+            catch (AmazonS3Exception ex) when (IsMissingObject(ex))
+            {
+                missingFiles.Add(GetAttachmentName(attachment));
+            }
+        }
+
+        if (missingFiles.Count != 0)
+        {
+            throw new MissingEmailAttachmentsException(missingFiles, context);
+        }
+    }
+
     public async Task<int> CopyTemplateAttachmentsAsync(Guid templateId, Guid emailLogId, Guid? tenantId)
     {
         var templateAttachments = await _emailLogAttachmentRepository.GetByTemplateIdAsync(templateId);
@@ -190,49 +240,167 @@ public class EmailAttachmentService : ITransientDependency
             .Select(a => (a.FileName, a.FileSize, a.ContentType))
             .ToHashSet();
 
-        var bucket = _configuration[S3BucketConfigKey];
-        var copiedAttachmentCount = 0;
-        foreach (var templateAttachment in templateAttachments)
+        var attachmentsToCopy = templateAttachments
+            .Where(attachment => !alreadyCopied.Contains(
+                (attachment.FileName, attachment.FileSize, attachment.ContentType)))
+            .ToList();
+
+        return await CopyAttachmentsAsync(templateId, emailLogId, tenantId, attachmentsToCopy);
+    }
+
+    public async Task<int> ReplaceTemplateAttachmentsAsync(Guid templateId, Guid emailLogId, Guid? tenantId)
+    {
+        var templateAttachments = await _emailLogAttachmentRepository.GetByTemplateIdAsync(templateId);
+        var previousTemplateAttachments = await _emailLogAttachmentRepository
+            .GetOriginAttachmentsByEmailLogIdAsync(emailLogId);
+
+        // Validate every source before changing the draft. This also catches orphaned template
+        // metadata when the same template is reapplied to an email that already has matching rows.
+        await ValidateAttachmentsExistAsync(
+            templateAttachments,
+            EmailAttachmentValidationContext.Template);
+
+        // A template replacement always gets fresh, email-owned S3 objects. Only after all new
+        // objects and rows exist do we remove the previous template-origin attachments. Manually
+        // uploaded draft attachments have no OriginTemplateId and are intentionally left alone.
+        var copiedCount = await CopyAttachmentsAsync(
+            templateId,
+            emailLogId,
+            tenantId,
+            templateAttachments,
+            sourcesAlreadyValidated: true);
+
+        foreach (var previousAttachment in previousTemplateAttachments)
         {
-            var identity = (templateAttachment.FileName, templateAttachment.FileSize, templateAttachment.ContentType);
-            if (!alreadyCopied.Add(identity))
-            {
-                continue;
-            }
-
-            // Physically duplicate the S3 object under a new key instead of pointing at the
-            // template attachment's own key. EmailLogAttachmentAppService.DeleteAsync deletes the
-            // underlying S3 object whenever a template attachment (TemplateId.HasValue) is removed;
-            // sharing the key would silently break the attachment on every scheduled email that had
-            // already copied it.
-            var copiedS3Key = BuildUserAttachmentS3Key(
-                tenantId, emailLogId, Guid.NewGuid(), templateAttachment.FileName ?? templateAttachment.DisplayName ?? "attachment");
-            await _amazonS3Client.CopyObjectAsync(new CopyObjectRequest
-            {
-                SourceBucket = bucket,
-                SourceKey = templateAttachment.S3ObjectKey,
-                DestinationBucket = bucket,
-                DestinationKey = copiedS3Key
-            });
-
-            await _emailLogAttachmentRepository.InsertAsync(new EmailLogAttachment
-            {
-                EmailLogId = emailLogId,
-                TemplateId = null,
-                OriginTemplateId = templateId,
-                S3ObjectKey = copiedS3Key,
-                FileName = templateAttachment.FileName,
-                DisplayName = templateAttachment.DisplayName,
-                ContentType = templateAttachment.ContentType,
-                FileSize = templateAttachment.FileSize,
-                Time = DateTime.UtcNow,
-                UserId = Guid.Empty,
-                TenantId = tenantId
-            });
-            copiedAttachmentCount++;
+            await DeleteAttachmentAsync(previousAttachment);
         }
 
-        return copiedAttachmentCount;
+        return copiedCount;
+    }
+
+    private async Task<int> CopyAttachmentsAsync(
+        Guid templateId,
+        Guid emailLogId,
+        Guid? tenantId,
+        IReadOnlyCollection<EmailLogAttachment> attachmentsToCopy,
+        bool sourcesAlreadyValidated = false)
+    {
+        if (!sourcesAlreadyValidated)
+        {
+            await ValidateAttachmentsExistAsync(
+                attachmentsToCopy,
+                EmailAttachmentValidationContext.Template);
+        }
+
+        var bucket = _configuration[S3BucketConfigKey];
+        var copiedS3Keys = new List<string>();
+        var copiedAttachments = new List<EmailLogAttachment>();
+
+        try
+        {
+            foreach (var templateAttachment in attachmentsToCopy)
+            {
+                var copiedS3Key = BuildUserAttachmentS3Key(
+                    tenantId,
+                    emailLogId,
+                    Guid.NewGuid(),
+                    GetAttachmentName(templateAttachment));
+
+                try
+                {
+                    await _amazonS3Client.CopyObjectAsync(new CopyObjectRequest
+                    {
+                        SourceBucket = bucket,
+                        SourceKey = templateAttachment.S3ObjectKey,
+                        DestinationBucket = bucket,
+                        DestinationKey = copiedS3Key
+                    });
+                }
+                catch (AmazonS3Exception ex) when (IsMissingObject(ex))
+                {
+                    throw new MissingEmailAttachmentsException(
+                        [GetAttachmentName(templateAttachment)],
+                        EmailAttachmentValidationContext.Template);
+                }
+
+                copiedS3Keys.Add(copiedS3Key);
+                copiedAttachments.Add(new EmailLogAttachment
+                {
+                    EmailLogId = emailLogId,
+                    TemplateId = null,
+                    OriginTemplateId = templateId,
+                    S3ObjectKey = copiedS3Key,
+                    FileName = templateAttachment.FileName,
+                    DisplayName = templateAttachment.DisplayName,
+                    ContentType = templateAttachment.ContentType,
+                    FileSize = templateAttachment.FileSize,
+                    Time = DateTime.UtcNow,
+                    UserId = _currentUser.Id ?? Guid.Empty,
+                    TenantId = tenantId
+                });
+            }
+
+            if (copiedAttachments.Count != 0)
+            {
+                await _emailLogAttachmentRepository.InsertManyAsync(copiedAttachments, autoSave: true);
+            }
+
+            return copiedAttachments.Count;
+        }
+        catch
+        {
+            await DeleteCopiedObjectsBestEffortAsync(copiedS3Keys);
+            throw;
+        }
+    }
+
+    public async Task<int> DeleteOriginAttachmentsAsync(Guid emailLogId)
+    {
+        var attachments = await _emailLogAttachmentRepository.GetOriginAttachmentsByEmailLogIdAsync(emailLogId);
+        foreach (var attachment in attachments)
+        {
+            await DeleteAttachmentAsync(attachment);
+        }
+
+        return attachments.Count;
+    }
+
+    public async Task DeleteAttachmentAsync(EmailLogAttachment attachment)
+    {
+        var hasOtherReferences = await _emailLogAttachmentRepository.HasOtherReferencesAsync(
+            attachment.S3ObjectKey,
+            attachment.Id);
+
+        try
+        {
+            await _emailLogAttachmentRepository.DeleteAsync(attachment, autoSave: true);
+        }
+        catch (Volo.Abp.Domain.Entities.EntityNotFoundException)
+        {
+            return;
+        }
+
+        if (hasOtherReferences)
+        {
+            _logger.LogInformation(
+                "Preserved shared S3 attachment object while deleting metadata for attachment {AttachmentId}.",
+                attachment.Id);
+            return;
+        }
+
+        try
+        {
+            await DeleteFromS3Async(attachment.S3ObjectKey);
+        }
+        catch (Exception ex)
+        {
+            // The database must never retain a key merely because best-effort storage cleanup failed.
+            // A leaked object is safer than deleting an object that another attachment still needs.
+            _logger.LogError(
+                ex,
+                "Failed to delete unreferenced S3 object for attachment {AttachmentId}.",
+                attachment.Id);
+        }
     }
 
     public async Task<long> GetTotalFileSizeAsync(Guid? emailLogId, Guid? templateId)
@@ -269,5 +437,34 @@ public class EmailAttachmentService : ITransientDependency
         var escapedFileName = Uri.EscapeDataString(fileName);
 
         return $"{basePath}/{tenantPart}/{emailLogId}/{escapedFileName}";
+    }
+
+    private async Task DeleteCopiedObjectsBestEffortAsync(IEnumerable<string> s3ObjectKeys)
+    {
+        foreach (var s3ObjectKey in s3ObjectKeys)
+        {
+            try
+            {
+                await DeleteFromS3Async(s3ObjectKey);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to clean up copied S3 attachment object.");
+            }
+        }
+    }
+
+    private static bool IsMissingObject(AmazonS3Exception exception)
+    {
+        return exception.StatusCode == HttpStatusCode.NotFound
+            || string.Equals(exception.ErrorCode, "NoSuchKey", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(exception.ErrorCode, "NotFound", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string GetAttachmentName(EmailLogAttachment attachment)
+    {
+        return attachment.FileName
+            ?? attachment.DisplayName
+            ?? "Unnamed attachment";
     }
 }

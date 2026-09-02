@@ -5,7 +5,7 @@ using System.Linq;
 using Unity.GrantManager.GrantApplications;
 using Unity.Notifications.EmailGroups;
 using System.Threading.Tasks;
-using Unity.Notifications.Emails;
+using Unity.Notifications.EmailNotifications;
 using Volo.Abp.Users;
 using Unity.GrantManager.Events;
 using Unity.Payments.Enums;
@@ -21,20 +21,20 @@ namespace Unity.GrantManager.Web.Controllers
         private readonly IEmailGroupsAppService _emailGroupsAppService;
         private readonly Unity.Notifications.Templates.ITemplateService _templateService;
         private readonly Notifications.IAutomatedNotificationAppService _automatedNotificationAppService;
-        private readonly IEmailLogAttachmentRepository _emailLogAttachmentRepository;
+        private readonly EmailAttachmentService _emailAttachmentService;
         private readonly ICurrentUser _currentUser;
         private readonly IEmailGroupUsersAppService _emailGroupUsersAppService;
         private readonly IIdentityUserIntegrationService _identityUserIntegrationService;
         private readonly IGrantApplicationAppService _grantApplicationAppService;
         private readonly ScheduledNotificationHelper _scheduledNotificationHelper;
 
-        public FormNotificationsApiController(IApplicationStatusService statusService, IEmailGroupsAppService emailGroupsAppService, Unity.Notifications.Templates.ITemplateService templateService, Unity.GrantManager.Notifications.IAutomatedNotificationAppService automatedNotificationAppService, IEmailLogAttachmentRepository emailLogAttachmentRepository, ICurrentUser currentUser, IEmailGroupUsersAppService emailGroupUsersAppService, IIdentityUserIntegrationService identityUserIntegrationService, IGrantApplicationAppService grantApplicationAppService, ScheduledNotificationHelper scheduledNotificationHelper)
+        public FormNotificationsApiController(IApplicationStatusService statusService, IEmailGroupsAppService emailGroupsAppService, Unity.Notifications.Templates.ITemplateService templateService, Unity.GrantManager.Notifications.IAutomatedNotificationAppService automatedNotificationAppService, EmailAttachmentService emailAttachmentService, ICurrentUser currentUser, IEmailGroupUsersAppService emailGroupUsersAppService, IIdentityUserIntegrationService identityUserIntegrationService, IGrantApplicationAppService grantApplicationAppService, ScheduledNotificationHelper scheduledNotificationHelper)
         {
             _statusService = statusService;
             _emailGroupsAppService = emailGroupsAppService;
             _templateService = templateService;
             _automatedNotificationAppService = automatedNotificationAppService;
-            _emailLogAttachmentRepository = emailLogAttachmentRepository;
+            _emailAttachmentService = emailAttachmentService;
             _currentUser = currentUser;
             _emailGroupUsersAppService = emailGroupUsersAppService;
             _identityUserIntegrationService = identityUserIntegrationService;
@@ -155,36 +155,10 @@ namespace Unity.GrantManager.Web.Controllers
             if (input.EmailLogId == Guid.Empty)
                 return BadRequest("EmailLogId is required");
 
-            // Get all attachments for the template
-            var templateAttachments = await _emailLogAttachmentRepository.GetByTemplateIdAsync(templateId);
-
-            if (templateAttachments.Count == 0)
-            {
-                return Ok(new CopyAttachmentsResponseDto { AttachmentCount = 0 });
-            }
-
-            // Copy attachments to the email log
-            int copiedCount = 0;
-            foreach (var templateAttachment in templateAttachments)
-            {
-                var newAttachment = new EmailLogAttachment
-                {
-                    EmailLogId = input.EmailLogId,
-                    TemplateId = null,
-                    OriginTemplateId = templateId,
-                    S3ObjectKey = templateAttachment.S3ObjectKey,
-                    FileName = templateAttachment.FileName,
-                    DisplayName = templateAttachment.DisplayName,
-                    ContentType = templateAttachment.ContentType,
-                    FileSize = templateAttachment.FileSize,
-                    Time = DateTime.UtcNow,
-                    UserId = _currentUser.Id ?? Guid.Empty,
-                    TenantId = _currentUser.TenantId ?? Guid.Empty
-                };
-
-                await _emailLogAttachmentRepository.InsertAsync(newAttachment);
-                copiedCount++;
-            }
+            var copiedCount = await _emailAttachmentService.ReplaceTemplateAttachmentsAsync(
+                templateId,
+                input.EmailLogId,
+                _currentUser.TenantId);
 
             return Ok(new CopyAttachmentsResponseDto { AttachmentCount = copiedCount });
         }
@@ -192,12 +166,8 @@ namespace Unity.GrantManager.Web.Controllers
         [HttpDelete("email-log/{emailLogId}/origin-attachments")]
         public async Task<ActionResult<CopyAttachmentsResponseDto>> DeleteOriginAttachments(Guid emailLogId)
         {
-            var attachments = await _emailLogAttachmentRepository.GetOriginAttachmentsByEmailLogIdAsync(emailLogId);
-            foreach (var attachment in attachments)
-            {
-                await _emailLogAttachmentRepository.DeleteAsync(attachment.Id);
-            }
-            return Ok(new CopyAttachmentsResponseDto { AttachmentCount = attachments.Count });
+            var deletedCount = await _emailAttachmentService.DeleteOriginAttachmentsAsync(emailLogId);
+            return Ok(new CopyAttachmentsResponseDto { AttachmentCount = deletedCount });
         }
 
         [HttpGet("statuses")]

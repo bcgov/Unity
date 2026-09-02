@@ -43,7 +43,20 @@ namespace Unity.GrantManager.Events
                 // Create a new UnitOfWork for this tenant to ensure database operations use the correct tenant's connection
                 using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
 
+                if (eventData.Action == EmailAction.SendCustom && eventData.Id != Guid.Empty)
+                {
+                    // Fail before changing an existing draft or copying any new S3 objects.
+                    await emailAttachmentService.ValidateEmailAttachmentsAsync(eventData.Id);
+                }
+
                 var emailLog = await EmailNotificationEventAsync(eventData);
+
+                if (emailLog != null)
+                {
+                    // Validate before committing the transition out of Draft. If an object is
+                    // missing, the unit of work rolls back so the user can remove/re-upload it.
+                    await emailAttachmentService.ValidateEmailAttachmentsAsync(emailLog.Id);
+                }
 
                 await uow.CompleteAsync();
 
@@ -239,6 +252,10 @@ namespace Unity.GrantManager.Events
                     _logger.LogInformation(
                         "Copied {AttachmentCount} template attachments for email {EmailId} from template {TemplateId}.",
                         copiedAttachmentCount, emailLog.Id, eventData.TemplateId);
+                }
+                catch (MissingEmailAttachmentsException)
+                {
+                    throw;
                 }
                 catch (Exception ex)
                 {

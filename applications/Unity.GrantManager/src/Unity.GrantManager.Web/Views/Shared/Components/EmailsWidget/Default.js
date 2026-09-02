@@ -102,6 +102,8 @@ function initializeDraftEmailsWidget() {
     let activeTemplateId = null; // Track if a template has been applied to the current draft
     let originalTemplateState = { name: '', id: '' }; // Baseline template for discard restore
     let activeTemplateAttachmentCount = 0; // Track how many attachments were copied from the active template
+    let templateAttachmentError = null;
+    const TEMPLATE_ATTACHMENT_ERROR_TOAST_LIFE_MS = 10000; // Missing S3 attachments need more read time than the default 5s toast
     let isApplicationEmailContext = true; // Flag to track if we're in application email or template preview context
     let cachedTemplates = null; // Cache templates globally
     let scheduleState = {
@@ -331,8 +333,8 @@ function initializeDraftEmailsWidget() {
     }
 
     function enableEmail() {
-        UIElements.btnSend.prop('disabled', false);
-        UIElements.btnSendDropdown.prop('disabled', false);
+        UIElements.btnSend.prop('disabled', !!templateAttachmentError);
+        UIElements.btnSendDropdown.prop('disabled', !!templateAttachmentError);
         UIElements.btnSave.prop('disabled', false);
         UIElements.btnDiscard.prop('disabled', false);
         UIElements.inputEmailTo.prop('disabled', false);
@@ -770,10 +772,13 @@ function initializeDraftEmailsWidget() {
         activeTemplateId = null;
         originalTemplateState = { name: '', id: '' };
         activeTemplateAttachmentCount = 0;
+        templateAttachmentError = null;
         closeEmailFormUI();
     }
 
     function handleDiscardEmail() {
+        setTemplateAttachmentError(null);
+
         // If it's a new email draft, delete it and reset the form
         if (isNewEmailDraft && newDraftId) {
             $.ajax({
@@ -959,23 +964,22 @@ function initializeDraftEmailsWidget() {
                 contentType: 'application/json'
             });
             return response?.attachmentCount || 0;
-        } catch (e) {
-            console.warn('Failed to copy template attachments:', e);
-            return 0;
+        } catch (error) {
+            error.isTemplateAttachmentError = true;
+            throw error;
         }
     }
 
-    async function deleteOriginAttachments(emailLogId) {
-        try {
-            const response = await $.ajax({
-                url: `/api/form-notifications/email-log/${emailLogId}/origin-attachments`,
-                type: 'DELETE'
-            });
-            return response?.attachmentCount || 0;
-        } catch (e) {
-            console.warn('Failed to delete origin attachments:', e);
-            return 0;
-        }
+    function getAttachmentErrorMessage(error, fallbackMessage) {
+        return error?.responseJSON?.error?.message
+            || error?.responseJSON?.message
+            || fallbackMessage;
+    }
+
+    function setTemplateAttachmentError(message) {
+        templateAttachmentError = message || null;
+        UIElements.btnSend.prop('disabled', !!templateAttachmentError);
+        UIElements.btnSendDropdown.prop('disabled', !!templateAttachmentError);
     }
 
     function populateTemplatesSelectOptions($select, templates) {
@@ -1262,14 +1266,6 @@ function initializeDraftEmailsWidget() {
             return false;
         }
 
-        if (activeTemplateAttachmentCount > 0) {
-            await deleteOriginAttachments(newDraftId);
-            activeTemplateAttachmentCount = 0;
-            if (emailAttachmentsTable) {
-                emailAttachmentsTable.ajax.reload();
-            }
-        }
-
         return true;
     }
 
@@ -1286,6 +1282,7 @@ function initializeDraftEmailsWidget() {
 
         const attachmentCount = await copyTemplateAttachments(selectedTemplateId, draftId);
         activeTemplateAttachmentCount = attachmentCount;
+        setTemplateAttachmentError(null);
 
         if (emailAttachmentsTable) {
             emailAttachmentsTable.ajax.reload();
@@ -1346,7 +1343,13 @@ function initializeDraftEmailsWidget() {
             console.error('Failed to load template - Full error:', e);
             console.error('Response text:', e.responseText);
             console.error('Status:', e.status);
-            abp.notify.error('Failed to load template. Please try again.');
+            const message = getAttachmentErrorMessage(e, 'Failed to load template. Please try again.');
+            if (e.isTemplateAttachmentError) {
+                setTemplateAttachmentError(message);
+                abp.notify.error(message, null, { life: TEMPLATE_ATTACHMENT_ERROR_TOAST_LIFE_MS });
+            } else {
+                abp.notify.error(message);
+            }
         }
     }
 
@@ -1375,6 +1378,9 @@ function initializeDraftEmailsWidget() {
     async function handleNewEmail(fromTemplate = false, templateSubject = '', templateBody = '', templateFrom = '', templateName = '', templateId = '') {
         // Set context flag - if loaded from template, it's not application email context
         isApplicationEmailContext = !fromTemplate;
+        if (!fromTemplate) {
+            setTemplateAttachmentError(null);
+        }
 
         // Update body class for CSS visibility control
         if (isApplicationEmailContext) {
@@ -1566,9 +1572,11 @@ function initializeDraftEmailsWidget() {
             if (isNotificationEmail) {
                 PubSub.publish('notification_email_sent');
             }
-        }).fail(function () {
+        }).fail(function (error) {
             hideConfirmation();
-            abp.notify.error('An error ocurred your email could not be sent.');
+            abp.notify.error(getAttachmentErrorMessage(
+                error,
+                'An error occurred and your email could not be sent.'));
         });
     }
 
@@ -1801,6 +1809,12 @@ function initializeDraftEmailsWidget() {
     }
 
     function handleSendEmail(e) {
+        if (templateAttachmentError) {
+            e?.preventDefault();
+            abp.notify.error(templateAttachmentError, null, { life: TEMPLATE_ATTACHMENT_ERROR_TOAST_LIFE_MS });
+            return false;
+        }
+
         // Check if the form is valid
         if (validateEmailForm(e)) {
             showConfirmation(); // Show confirmation if the form is valid
@@ -2024,16 +2038,6 @@ function initializeDraftEmailsWidget() {
         return result.isConfirmed;
     }
 
-    async function clearPreviousAttachments(currentEmailId) {
-        if (currentEmailId) {
-            await deleteOriginAttachments(currentEmailId);
-            activeTemplateAttachmentCount = 0;
-            if (emailAttachmentsTable) {
-                emailAttachmentsTable.ajax.reload();
-            }
-        }
-    }
-
     async function populateEmailFields(fields, body, templateRecipients) {
         UIElements.inputEmailSubject.val(fields.subject);
         if (body) {
@@ -2055,22 +2059,19 @@ function initializeDraftEmailsWidget() {
                 return;
             }
 
-            await clearPreviousAttachments(currentEmailId);
-
             const fields = extractTemplateFields(template);
             let body = fields.body;
             body = await processTemplateBody(body);
 
             const templateRecipients = await resolveTemplateRecipientEmailsFromApi(template, fields.id);
+            const attachmentCount = await copyTemplateAttachments(fields.id, currentEmailId);
             await populateEmailFields(fields, body, templateRecipients);
 
             activeTemplateId = fields.id;
-            activeTemplateAttachmentCount = 0;
+            activeTemplateAttachmentCount = attachmentCount;
+            setTemplateAttachmentError(null);
             updateSelectedTemplateLabel(fields.name, fields.id);
             handleDraftChange();
-
-            const attachmentCount = await copyTemplateAttachments(fields.id, currentEmailId);
-            activeTemplateAttachmentCount = attachmentCount;
 
             if (emailAttachmentsTable) {
                 emailAttachmentsTable.ajax.reload();
@@ -2080,7 +2081,13 @@ function initializeDraftEmailsWidget() {
             await showSuccessNotification(message);
         } catch (e) {
             console.error('Failed to apply template:', e);
-            abp.notify.error('Failed to apply template. Please try again.');
+            const message = getAttachmentErrorMessage(e, 'Failed to apply template. Please try again.');
+            if (e.isTemplateAttachmentError) {
+                setTemplateAttachmentError(message);
+                abp.notify.error(message, null, { life: TEMPLATE_ATTACHMENT_ERROR_TOAST_LIFE_MS });
+            } else {
+                abp.notify.error(message);
+            }
         }
     }
 
@@ -2165,6 +2172,7 @@ function initializeDraftEmailsWidget() {
 
     PubSub.subscribe('email_selected', (msg, data) => {
         console.log("EMAIL SELECTED EVENT FIRED", data);
+        templateAttachmentError = null;
 
         // Set application context (editing existing emails, not templates)
         isApplicationEmailContext = true;
@@ -2187,7 +2195,7 @@ function initializeDraftEmailsWidget() {
         }
 
         const selectedRecordTemplateName = resolveEmailRecordTemplateName(data);
-        activeTemplateId = data?.templateId || data?.emailTemplateId || data?.TemplateId || data?.EmailTemplateId || activeTemplateId;
+        activeTemplateId = data?.templateId || data?.emailTemplateId || data?.TemplateId || data?.EmailTemplateId || null;
         originalTemplateState = {
             name: selectedRecordTemplateName,
             id: (activeTemplateId || '').toString()
@@ -2454,7 +2462,7 @@ function initializeDraftEmailsWidget() {
             $('#btn-send-top').prop('disabled', true);
         } else {
             $('#email-attachment-size-error').hide();
-            $('#btn-send-top').prop('disabled', false);
+            $('#btn-send-top').prop('disabled', !!templateAttachmentError);
         }
     }
 
