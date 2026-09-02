@@ -26,6 +26,7 @@ namespace Unity.GrantManager.ApplicantProfile
         ICurrentTenant currentTenant,
         IRepository<ApplicationFormSubmission, Guid> applicationFormSubmissionRepository,
         IApplicationFormVersionRepository applicationFormVersionRepository,
+        IApplicantSubmissionMatcher applicantSubmissionMatcher,
         ILogger<SubmissionFormDataProvider> logger)
         : IApplicantProfileDataProvider, ITransientDependency
     {
@@ -47,10 +48,10 @@ namespace Unity.GrantManager.ApplicantProfile
             {
                 var submissionsQuery = await applicationFormSubmissionRepository.GetQueryableAsync();
                 var submission = await submissionsQuery
-                    .Where(s => s.Id == request.SubmissionId.Value && s.OidcSub == normalizedSubject)
+                    .Where(s => s.Id == request.SubmissionId.Value)
                     .FirstOrDefaultAsync();
 
-                if (submission == null)
+                if (submission == null || !await IsOwnedByApplicantAsync(submission, submissionsQuery, normalizedSubject))
                 {
                     logger.LogWarning("Submission {SubmissionId} was not found or is not owned by the requesting applicant.", sanitizedSubmissionId);
                     throw new EntityNotFoundException("Submission not found.");
@@ -91,6 +92,25 @@ namespace Unity.GrantManager.ApplicantProfile
                 .Replace(Environment.NewLine, string.Empty, StringComparison.Ordinal)
                 .Replace("\n", string.Empty, StringComparison.Ordinal)
                 .Replace("\r", string.Empty, StringComparison.Ordinal);
+
+        /// <summary>
+        /// A submission is owned by the requesting applicant when it was submitted under their own
+        /// OIDC subject, or when it shares an applicant ID with one of their own submissions (i.e.
+        /// the same applicant filed it under a different login).
+        /// </summary>
+        private async Task<bool> IsOwnedByApplicantAsync(
+            ApplicationFormSubmission submission,
+            IQueryable<ApplicationFormSubmission> submissionsQuery,
+            string normalizedSubject)
+        {
+            if (submission.OidcSub == normalizedSubject)
+            {
+                return true;
+            }
+
+            var applicantIds = await applicantSubmissionMatcher.ResolveApplicantIdsAsync(submissionsQuery, normalizedSubject);
+            return submission.ApplicantId != Guid.Empty && applicantIds.Contains(submission.ApplicantId);
+        }
 
         private async Task<ApplicationFormVersion?> ResolveFormVersionAsync(ApplicationFormSubmission submission)
         {

@@ -16,7 +16,7 @@ graph TD
     A[Applicant Portal<br/>External System] -->|HTTPS + API Key| B[Unity Grant Manager<br/>HttpApi Layer]
     B -->|GET /api/app/applicant-profiles/profile| B
     B -->|GET /api/app/applicant-profiles/tenants| B
-    B --> C[ApplicantProfileAppService<br/>Business Logic]
+    B --> C[ApplicantProfileQueryService<br/>Business Logic]
     C --> D[Host Database<br/>AppApplicantTenantMaps Table<br/>Centralized Lookup]
     
     style A fill:#e1f5ff

@@ -39,7 +39,8 @@ namespace Unity.GrantManager.ApplicantProfile
                 _submissionRepository,
                 _applicationContactRepository,
                 _applicantAgentRepository,
-                _applicationRepository);
+                _applicationRepository,
+                new TestApplicantSubmissionMatcher());
         }
 
         private static T WithId<T>(T entity, Guid id) where T : Entity<Guid>

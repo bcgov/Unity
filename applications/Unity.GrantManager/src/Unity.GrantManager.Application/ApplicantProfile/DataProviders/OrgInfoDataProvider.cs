@@ -18,7 +18,8 @@ namespace Unity.GrantManager.ApplicantProfile
     public class OrgInfoDataProvider(
         ICurrentTenant currentTenant,
         IRepository<ApplicationFormSubmission, Guid> applicationFormSubmissionRepository,
-        IRepository<Applicant, Guid> applicantRepository)
+        IRepository<Applicant, Guid> applicantRepository,
+        IApplicantSubmissionMatcher applicantSubmissionMatcher)
         : IApplicantProfileDataProvider, ITransientDependency
     {
         /// <inheritdoc />
@@ -40,10 +41,11 @@ namespace Unity.GrantManager.ApplicantProfile
                 var submissionsQuery = await applicationFormSubmissionRepository.GetQueryableAsync();
                 var applicantsQuery = await applicantRepository.GetQueryableAsync();
 
+                var matchingSubmissions = await applicantSubmissionMatcher.GetMatchingSubmissionsAsync(submissionsQuery, normalizedSubject);
+
                 var results = await (
-                    from submission in submissionsQuery
+                    from submission in matchingSubmissions
                     join applicant in applicantsQuery on submission.ApplicantId equals applicant.Id
-                    where submission.OidcSub == normalizedSubject
                     select new
                     {
                         applicant.Id,

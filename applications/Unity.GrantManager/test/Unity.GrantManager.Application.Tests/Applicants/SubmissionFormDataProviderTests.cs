@@ -38,7 +38,7 @@ namespace Unity.GrantManager.Applicants
             _submissionRepo.GetQueryableAsync()
                 .Returns(Task.FromResult(Enumerable.Empty<ApplicationFormSubmission>().AsAsyncQueryable()));
 
-            _provider = new SubmissionFormDataProvider(_currentTenant, _submissionRepo, _formVersionRepo, _logger);
+            _provider = new SubmissionFormDataProvider(_currentTenant, _submissionRepo, _formVersionRepo, new TestApplicantSubmissionMatcher(), _logger);
         }
 
         private static ApplicantProfileInfoRequest CreateRequest(Guid? submissionId) => new()
@@ -109,6 +109,53 @@ namespace Unity.GrantManager.Applicants
                 .Returns(Task.FromResult(new[] { CreateSubmission(submissionId, "OTHERUSER") }.AsAsyncQueryable()));
 
             var request = CreateRequest(submissionId);
+
+            await Should.ThrowAsync<EntityNotFoundException>(() => _provider.GetDataAsync(request));
+        }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldReturnData_WhenSubmissionBelongsToSameApplicantUnderDifferentOidcSub()
+        {
+            var applicantId = Guid.NewGuid();
+            var ownSubmissionId = Guid.NewGuid();
+            var targetSubmissionId = Guid.NewGuid();
+            var formVersionId = Guid.NewGuid();
+
+            _submissionRepo.GetQueryableAsync()
+                .Returns(Task.FromResult(new[]
+                {
+                    CreateSubmission(ownSubmissionId, "TESTUSER", s => s.ApplicantId = applicantId),
+                    CreateSubmission(targetSubmissionId, "OTHERUSER", s =>
+                    {
+                        s.ApplicantId = applicantId;
+                        s.ApplicationFormVersionId = formVersionId;
+                    })
+                }.AsAsyncQueryable()));
+            _formVersionRepo.FindAsync(formVersionId, Arg.Any<bool>(), Arg.Any<System.Threading.CancellationToken>())
+                .Returns(Task.FromResult<ApplicationFormVersion?>(CreateFormVersion(formVersionId)));
+
+            var request = CreateRequest(targetSubmissionId);
+
+            var result = await _provider.GetDataAsync(request);
+
+            var dto = result.ShouldBeOfType<ApplicantSubmissionFormDataDto>();
+            dto.Schema.GetProperty("type").GetString().ShouldBe("form");
+        }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldThrowEntityNotFound_WhenSubmissionBelongsToUnrelatedApplicantUnderDifferentOidcSub()
+        {
+            var ownSubmissionId = Guid.NewGuid();
+            var targetSubmissionId = Guid.NewGuid();
+
+            _submissionRepo.GetQueryableAsync()
+                .Returns(Task.FromResult(new[]
+                {
+                    CreateSubmission(ownSubmissionId, "TESTUSER", s => s.ApplicantId = Guid.NewGuid()),
+                    CreateSubmission(targetSubmissionId, "OTHERUSER", s => s.ApplicantId = Guid.NewGuid())
+                }.AsAsyncQueryable()));
+
+            var request = CreateRequest(targetSubmissionId);
 
             await Should.ThrowAsync<EntityNotFoundException>(() => _provider.GetDataAsync(request));
         }

@@ -36,7 +36,8 @@ namespace Unity.GrantManager.Contacts
                 _submissionRepository,
                 _applicationContactRepository,
                 _applicantAgentRepository,
-                _applicationRepository);
+                _applicationRepository,
+                new TestApplicantSubmissionMatcher());
         }
 
         private static T WithId<T>(T entity, Guid id) where T : Entity<Guid>
@@ -303,6 +304,58 @@ namespace Unity.GrantManager.Contacts
         }
 
         [Fact]
+        public async Task GetApplicationContactsBySubjectAsync_WithSameApplicantUnderDifferentOidcSub_ShouldReturnContacts()
+        {
+            // Arrange
+            var applicantId = Guid.NewGuid();
+            var applicationId1 = Guid.NewGuid();
+            var applicationId2 = Guid.NewGuid();
+
+            var submissions = new[]
+            {
+                new ApplicationFormSubmission
+                {
+                    OidcSub = "TESTUSER",
+                    ApplicationId = applicationId1,
+                    ApplicantId = applicantId,
+                    ApplicationFormId = Guid.NewGuid()
+                },
+                new ApplicationFormSubmission
+                {
+                    OidcSub = "OTHERUSER",
+                    ApplicationId = applicationId2,
+                    ApplicantId = applicantId,
+                    ApplicationFormId = Guid.NewGuid()
+                }
+            }.AsAsyncQueryable();
+
+            var applicationContacts = new[]
+            {
+                WithId(new ApplicationContact
+                {
+                    ApplicationId = applicationId2,
+                    ContactFullName = "Cross Login Contact"
+                }, Guid.NewGuid())
+            }.AsAsyncQueryable();
+
+            _submissionRepository.GetQueryableAsync().Returns(submissions);
+            _applicationContactRepository.GetQueryableAsync().Returns(applicationContacts);
+            _applicationRepository.GetQueryableAsync().Returns(
+                new[]
+                {
+                    WithId(new Application(), applicationId1),
+                    WithId(new Application(), applicationId2)
+                }.AsAsyncQueryable());
+
+            // Act
+            var result = await _service.GetApplicationContactsBySubjectAsync("TESTUSER");
+
+            // Assert
+            result.Count.ShouldBe(1);
+            result[0].Name.ShouldBe("Cross Login Contact");
+        }
+
+        [Fact]
         public async Task GetApplicantAgentContactsBySubjectAsync_WithMatchingSubmission_ShouldReturnAgentContacts()
         {
             // Arrange
@@ -378,6 +431,60 @@ namespace Unity.GrantManager.Contacts
 
             // Assert
             result.ShouldBeEmpty();
+        }
+
+        [Fact]
+        public async Task GetApplicantAgentContactsBySubjectAsync_WithSameApplicantUnderDifferentOidcSub_ShouldReturnAgentContacts()
+        {
+            // Arrange
+            var applicantId = Guid.NewGuid();
+            var applicationId1 = Guid.NewGuid();
+            var applicationId2 = Guid.NewGuid();
+            var agentId = Guid.NewGuid();
+
+            var submissions = new[]
+            {
+                new ApplicationFormSubmission
+                {
+                    OidcSub = "TESTUSER",
+                    ApplicationId = applicationId1,
+                    ApplicantId = applicantId,
+                    ApplicationFormId = Guid.NewGuid()
+                },
+                new ApplicationFormSubmission
+                {
+                    OidcSub = "OTHERUSER",
+                    ApplicationId = applicationId2,
+                    ApplicantId = applicantId,
+                    ApplicationFormId = Guid.NewGuid()
+                }
+            }.AsAsyncQueryable();
+
+            var agents = new[]
+            {
+                WithId(new ApplicantAgent
+                {
+                    ApplicationId = applicationId2,
+                    ApplicantId = Guid.NewGuid(),
+                    Name = "Cross Login Agent"
+                }, agentId)
+            }.AsAsyncQueryable();
+
+            _submissionRepository.GetQueryableAsync().Returns(submissions);
+            _applicantAgentRepository.GetQueryableAsync().Returns(agents);
+            _applicationRepository.GetQueryableAsync().Returns(
+                new[]
+                {
+                    WithId(new Application(), applicationId1),
+                    WithId(new Application(), applicationId2)
+                }.AsAsyncQueryable());
+
+            // Act
+            var result = await _service.GetApplicantAgentContactsBySubjectAsync("TESTUSER");
+
+            // Assert
+            result.Count.ShouldBe(1);
+            result[0].Name.ShouldBe("Cross Login Agent");
         }
 
         [Fact]
