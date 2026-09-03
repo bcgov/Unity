@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260902202447_AddEmailAddressDefault")]
+    partial class AddEmailAddressDefault
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1261,155 +1264,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasIndex("ApplicantId");
 
                     b.ToTable("ApplicantAttachments", (string)null);
-                });
-
-            modelBuilder.Entity("Unity.GrantManager.Applications.ApplicantMergeApplicationChange", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ApplicantIdAfter")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ApplicantIdBefore")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ApplicantMergeOperationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ApplicationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("DefaultSiteIdAfter")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("DefaultSiteIdBefore")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("RelatedRecordsSnapshot")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("TenantId");
-
-                    b.Property<bool>("WasTransferred")
-                        .HasColumnType("boolean");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ApplicationId");
-
-                    b.HasIndex("ApplicantMergeOperationId", "ApplicationId")
-                        .IsUnique();
-
-                    b.HasIndex("TenantId", "ApplicationId");
-
-                    b.ToTable("ApplicantMergeApplicationChanges", (string)null);
-                });
-
-            modelBuilder.Entity("Unity.GrantManager.Applications.ApplicantMergeOperation", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<string>("ExtraProperties")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("timestamp without time zone")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<DateTime>("MergedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<Guid?>("MergedById")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("PrincipalApplicantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("PrincipalStateAfter")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<string>("PrincipalStateBefore")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<string>("ReversalReason")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<DateTime?>("ReversedAt")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<Guid?>("ReversedById")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("SecondaryApplicantId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("SecondaryStateAfter")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<string>("SecondaryStateBefore")
-                        .IsRequired()
-                        .HasColumnType("jsonb");
-
-                    b.Property<int>("SnapshotVersion")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Source")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("TenantId");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PrincipalApplicantId");
-
-                    b.HasIndex("SecondaryApplicantId");
-
-                    b.HasIndex("TenantId", "MergedAt");
-
-                    b.HasIndex("TenantId", "PrincipalApplicantId", "Status");
-
-                    b.HasIndex("TenantId", "SecondaryApplicantId", "Status");
-
-                    b.ToTable("ApplicantMergeOperations", (string)null);
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.Application", b =>
@@ -5325,36 +5179,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Unity.GrantManager.Applications.ApplicantMergeApplicationChange", b =>
-                {
-                    b.HasOne("Unity.GrantManager.Applications.ApplicantMergeOperation", null)
-                        .WithMany("ApplicationChanges")
-                        .HasForeignKey("ApplicantMergeOperationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Unity.GrantManager.Applications.Application", null)
-                        .WithMany()
-                        .HasForeignKey("ApplicationId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Unity.GrantManager.Applications.ApplicantMergeOperation", b =>
-                {
-                    b.HasOne("Unity.GrantManager.Applications.Applicant", null)
-                        .WithMany()
-                        .HasForeignKey("PrincipalApplicantId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("Unity.GrantManager.Applications.Applicant", null)
-                        .WithMany()
-                        .HasForeignKey("SecondaryApplicantId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("Unity.GrantManager.Applications.Application", b =>
                 {
                     b.HasOne("Unity.GrantManager.Applications.Applicant", "Applicant")
@@ -5786,11 +5610,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
             modelBuilder.Entity("Unity.GrantManager.Applications.Applicant", b =>
                 {
                     b.Navigation("ApplicantAddresses");
-                });
-
-            modelBuilder.Entity("Unity.GrantManager.Applications.ApplicantMergeOperation", b =>
-                {
-                    b.Navigation("ApplicationChanges");
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.Application", b =>

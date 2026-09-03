@@ -289,15 +289,17 @@ function initializeDraftEmailsWidget() {
         }
 
         unity.notifications.emailAddresses.emailAddressConfigurations.getList().then(function (addresses) {
-            const activeSenders = addresses.filter(address => address.isActive && address.emailType === 'Sender');
+            const activeEmailAddresses = addresses.filter(address => address.isActive);
             const currentAddress = UIElements.inputEmailFrom.val() || UIElements.inputOriginalEmailFrom.val();
-            const selectedAddress = currentAddress || activeSenders[0]?.emailAddress || '';
+            const defaultAddress = activeEmailAddresses.find(address => address.isDefault)?.emailAddress || '';
+            const isNewEmail = !UIElements.inputEmailId.val();
+            const selectedAddress = isNewEmail ? defaultAddress : currentAddress || defaultAddress;
 
             UIElements.inputEmailFrom.find('option:not(:first)').remove();
-            activeSenders.forEach(address => {
+            activeEmailAddresses.forEach(address => {
                 $('<option>').val(address.emailAddress).text(address.emailAddress).appendTo(UIElements.inputEmailFrom);
             });
-            if (selectedAddress && !activeSenders.some(address => address.emailAddress === selectedAddress)) {
+            if (selectedAddress && !activeEmailAddresses.some(address => address.emailAddress === selectedAddress)) {
                 $('<option>').val(selectedAddress).text(selectedAddress).appendTo(UIElements.inputEmailFrom);
             }
             UIElements.inputEmailFrom.val(selectedAddress).trigger('change');

@@ -112,6 +112,8 @@ public class NotificationsDataSeedContributor(ITemplateVariablesRepository templ
             var existingSenderAddress = await emailAddressConfigurationsRepository.GetListAsync(configuration =>
                 configuration.EmailType == "Sender" &&
                 configuration.EmailAddress.ToUpper() == normalizedDefaultFromAddress.ToUpper());
+            var existingDefaultSender = await emailAddressConfigurationsRepository.GetListAsync(configuration =>
+                configuration.EmailType == "Sender" && configuration.IsDefault);
 
             if (existingSenderAddress.Count == 0)
             {
@@ -120,8 +122,16 @@ public class NotificationsDataSeedContributor(ITemplateVariablesRepository templ
                         Guid.NewGuid(),
                         normalizedDefaultFromAddress,
                         "Sender",
-                        "Default sender address"),
+                        "Default sender address",
+                        isDefault: true),
                     autoSave: true);
+            }
+            else if (existingDefaultSender.Count == 0)
+            {
+                var copiedConfiguration = existingSenderAddress.First();
+                copiedConfiguration.IsActive = true;
+                copiedConfiguration.IsDefault = true;
+                await emailAddressConfigurationsRepository.UpdateAsync(copiedConfiguration, autoSave: true);
             }
         }
     }

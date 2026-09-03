@@ -155,6 +155,9 @@ public static class NotificationsDbContextModelCreatingExtensions
             b.Property(x => x.EmailType).IsRequired().HasMaxLength(32);
             b.Property(x => x.Description).HasMaxLength(2048);
             b.HasIndex(x => new { x.TenantId, x.EmailAddress, x.EmailType }).IsUnique();
+            b.HasIndex(x => x.TenantId)
+                .IsUnique()
+                .HasFilter("\"IsDefault\" = true");
         });
 
         modelBuilder.Entity<NotificationLog>(b =>
