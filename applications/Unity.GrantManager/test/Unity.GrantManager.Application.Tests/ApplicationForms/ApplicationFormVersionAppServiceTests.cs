@@ -366,7 +366,7 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
         });
 
         createdDraft.ShouldNotBeNull();
-        createdDraft!.Name.ShouldBe("ai-risk-review");
+        createdDraft!.Name.ShouldBe("ai-riskreview-v1");
         createdDraft.Title.ShouldBe("Risk Review");
         createdDraft.Published.ShouldBeFalse();
         createdDraft.Links.ShouldBeEmpty();
@@ -396,8 +396,8 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
         var customFieldRepository = Substitute.For<IRepository<CustomField, Guid>>();
         var reviewRepository = CreateActiveWorksheetReviewRepository(formVersionId);
         Worksheet? createdDraft = null;
-        worksheetRepository.GetByNameAsync("ai-risk-review", false).Returns(new Worksheet(Guid.NewGuid(), "ai-risk-review", "Existing"));
-        worksheetRepository.GetByNameAsync("ai-risk-review-2", false).Returns((Worksheet?)null);
+        worksheetRepository.GetByNameAsync("ai-riskreview-v1", false).Returns(new Worksheet(Guid.NewGuid(), "ai-riskreview-v1", "Existing"));
+        worksheetRepository.GetByNameAsync("ai-riskreview-v2", false).Returns((Worksheet?)null);
         worksheetRepository.InsertAsync(Arg.Do<Worksheet>(worksheet => createdDraft = worksheet), true)
             .Returns(Task.FromResult<Worksheet>(null!));
 
@@ -417,7 +417,7 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
             SelectedFieldIds = worksheet.Sections.Single().Fields.Select(field => field.Id).ToList()
         });
 
-        createdDraft!.Name.ShouldBe("ai-risk-review-2");
+        createdDraft!.Name.ShouldBe("ai-riskreview-v2");
         createdDraft.Published.ShouldBeFalse();
         await customFieldRepository.Received(2).DeleteAsync(Arg.Any<Guid>());
         await worksheetRepository.Received(1).DeleteAsync(worksheet, true);
@@ -430,7 +430,7 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
         var formId = Guid.NewGuid();
         var formVersionRepository = Substitute.For<IApplicationFormVersionRepository>();
         formVersionRepository.GetAsync(formVersionId).Returns(new ApplicationFormVersion { ApplicationFormId = formId });
-        var scoresheet = new Scoresheet(Guid.NewGuid(), "AI Scoresheet", $"ai-form-{formId}-version-{formVersionId}-scoresheet");
+        var scoresheet = new Scoresheet(Guid.NewGuid(), "AI Scoresheet", AiScoresheetSuggestionName.Build(formVersionId));
         scoresheet.Instances.Add(new Unity.Flex.Domain.ScoresheetInstances.ScoresheetInstance(Guid.NewGuid(), scoresheet.Id, Guid.NewGuid(), "FormVersion"));
         var scoresheetRepository = Substitute.For<IScoresheetRepository>();
         scoresheetRepository.GetByNameAsync(Arg.Any<string>(), true).Returns(scoresheet);
@@ -481,7 +481,7 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
     {
         var worksheet = new Worksheet(
             Guid.NewGuid(),
-            AiWorksheetSuggestionName.Build(formId, formVersionId),
+            AiWorksheetSuggestionName.Build(formVersionId),
             "AI Worksheet");
         worksheet.SetPublished(published);
 
