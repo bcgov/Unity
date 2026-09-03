@@ -163,6 +163,13 @@ namespace Unity.GrantManager.Web.Controllers
             return Ok(new CopyAttachmentsResponseDto { AttachmentCount = copiedCount });
         }
 
+        [HttpGet("email-template/{templateId}/validate-attachments")]
+        public async Task<IActionResult> ValidateTemplateAttachments(Guid templateId)
+        {
+            await _emailAttachmentService.ValidateTemplateAttachmentsAsync(templateId);
+            return NoContent();
+        }
+
         [HttpDelete("email-log/{emailLogId}/origin-attachments")]
         public async Task<ActionResult<CopyAttachmentsResponseDto>> DeleteOriginAttachments(Guid emailLogId)
         {

@@ -210,6 +210,31 @@ public class EmailAttachmentServiceTests
             "One or more email attachments cannot be found: first.pdf, second.pdf. Remove and re-upload them before sending.");
     }
 
+    [Fact]
+    public async Task ValidateTemplateAttachmentsAsync_ReportsEveryMissingFile()
+    {
+        var templateId = Guid.NewGuid();
+        var first = CreateAttachment("template/first.pdf", "first.pdf", templateId: templateId);
+        var second = CreateAttachment("template/second.pdf", "second.pdf", templateId: templateId);
+        var repository = Substitute.For<IEmailLogAttachmentRepository>();
+        var s3 = Substitute.For<IAmazonS3>();
+        var service = CreateService(repository, s3);
+
+        repository.GetByTemplateIdAsync(templateId)
+            .Returns(Task.FromResult(new List<EmailLogAttachment> { second, first }));
+        s3.GetObjectMetadataAsync(
+                Arg.Any<GetObjectMetadataRequest>(),
+                Arg.Any<CancellationToken>())
+            .Returns(Task.FromException<GetObjectMetadataResponse>(CreateMissingObjectException()));
+
+        var exception = await Should.ThrowAsync<MissingEmailAttachmentsException>(() =>
+            service.ValidateTemplateAttachmentsAsync(templateId));
+
+        exception.FileNames.ShouldBe(new[] { "first.pdf", "second.pdf" });
+        exception.Message.ShouldBe(
+            "This template contains attachments that cannot be found: first.pdf, second.pdf. Re-upload them in the email template before using it.");
+    }
+
     private static EmailAttachmentService CreateService(
         IEmailLogAttachmentRepository repository,
         IAmazonS3 s3)

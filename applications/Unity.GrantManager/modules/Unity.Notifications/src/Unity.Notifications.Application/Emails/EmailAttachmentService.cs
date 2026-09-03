@@ -199,6 +199,12 @@ public class EmailAttachmentService : ITransientDependency
         await ValidateAttachmentsExistAsync(attachments, EmailAttachmentValidationContext.Email);
     }
 
+    public async Task ValidateTemplateAttachmentsAsync(Guid templateId)
+    {
+        var attachments = await _emailLogAttachmentRepository.GetByTemplateIdAsync(templateId);
+        await ValidateAttachmentsExistAsync(attachments, EmailAttachmentValidationContext.Template);
+    }
+
     public async Task ValidateAttachmentsExistAsync(
         IEnumerable<EmailLogAttachment> attachments,
         EmailAttachmentValidationContext context)

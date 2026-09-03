@@ -237,15 +237,28 @@ function initializeDraftEmailsWidget() {
             validClass: 'field-validation-valid',
             highlight: function (element, errorClass, validClass) {
                 $(element).addClass('input-validation-error').removeClass(validClass);
+                if (element.id === 'EmailFrom') {
+                    $(element).nextAll('.select2-container').first()
+                        .find('.select2-selection--single')
+                        .addClass('input-validation-error');
+                }
             },
             unhighlight: function (element, errorClass, validClass) {
                 $(element).removeClass('input-validation-error').addClass(validClass);
+                if (element.id === 'EmailFrom') {
+                    $(element).nextAll('.select2-container').first()
+                        .find('.select2-selection--single')
+                        .removeClass('input-validation-error');
+                }
             },
             errorPlacement: function (error, element) {
-                // Create or update error span after the element
-                let errorSpan = element.siblings('.field-validation-error');
+                const select2Container = element.nextAll('.select2-container').first();
+                const validationTarget = element.attr('id') === 'EmailFrom' && select2Container.length
+                    ? select2Container
+                    : element;
+                let errorSpan = validationTarget.siblings('.field-validation-error').first();
                 if (errorSpan.length === 0) {
-                    errorSpan = $('<span class="field-validation-error"></span>').insertAfter(element);
+                    errorSpan = $('<span class="field-validation-error"></span>').insertAfter(validationTarget);
                 }
                 errorSpan.text(error.text());
             }
@@ -284,6 +297,29 @@ function initializeDraftEmailsWidget() {
         }
     }
 
+    function setEmailFromAddress(address) {
+        const normalizedAddress = typeof address === 'string' ? address.trim() : '';
+        if (!normalizedAddress) {
+            UIElements.inputEmailFrom.val(null).trigger('change');
+            return;
+        }
+
+        const matchingOption = UIElements.inputEmailFrom.find('option').filter(function () {
+            return ($(this).val() || '').trim().toLowerCase() === normalizedAddress.toLowerCase();
+        }).first();
+
+        if (matchingOption.length) {
+            UIElements.inputEmailFrom.val(matchingOption.val()).trigger('change');
+            return;
+        }
+
+        $('<option>')
+            .val(normalizedAddress)
+            .text(normalizedAddress)
+            .appendTo(UIElements.inputEmailFrom);
+        UIElements.inputEmailFrom.val(normalizedAddress).trigger('change');
+    }
+
     function loadActiveSenderAddresses() {
         if (!UIElements.inputEmailFrom.length || typeof unity === 'undefined' ||
             !unity.notifications?.emailAddresses?.emailAddressConfigurations) {
@@ -302,9 +338,10 @@ function initializeDraftEmailsWidget() {
             if (selectedAddress && !activeSenders.some(address => address.emailAddress === selectedAddress)) {
                 $('<option>').val(selectedAddress).text(selectedAddress).appendTo(UIElements.inputEmailFrom);
             }
-            UIElements.inputEmailFrom.val(selectedAddress).trigger('change');
-            UIElements.inputOriginalEmailFrom.val(selectedAddress);
-            defaultValues.emailFrom = selectedAddress;
+            setEmailFromAddress(selectedAddress);
+            const resolvedAddress = UIElements.inputEmailFrom.val() || '';
+            UIElements.inputOriginalEmailFrom.val(resolvedAddress);
+            defaultValues.emailFrom = resolvedAddress;
         }).catch(function (error) {
             console.warn('Failed to load active sender addresses:', error);
         });
@@ -792,7 +829,7 @@ function initializeDraftEmailsWidget() {
                     UIElements.inputEmailTo.val('');
                     UIElements.inputEmailCC.val('');
                     UIElements.inputEmailBCC.val('');
-                    UIElements.inputEmailFrom.val('');
+                    setEmailFromAddress('');
                     UIElements.inputEmailSubject.val('');
                     UIElements.inputEmailBody.val('');
                     // Reset TinyMCE editor
@@ -832,7 +869,7 @@ function initializeDraftEmailsWidget() {
                     UIElements.inputEmailTo.val('');
                     UIElements.inputEmailCC.val('');
                     UIElements.inputEmailBCC.val('');
-                    UIElements.inputEmailFrom.val('');
+                    setEmailFromAddress('');
                     UIElements.inputEmailSubject.val('');
                     UIElements.inputEmailBody.val('');
                     // Reset TinyMCE editor
@@ -870,7 +907,7 @@ function initializeDraftEmailsWidget() {
                 UIElements.inputEmailTo.val(selectedEmailData.toAddress);
                 UIElements.inputEmailCC.val(selectedEmailData.cc?.replaceAll(',', '; ') ?? '');
                 UIElements.inputEmailBCC.val(selectedEmailData.bcc?.replaceAll(',', '; ') ?? '');
-                UIElements.inputEmailFrom.val(selectedEmailData.fromAddress);
+                setEmailFromAddress(selectedEmailData.fromAddress);
                 UIElements.inputEmailSubject.val(selectedEmailData.subject);
                 UIElements.inputEmailBody.val(refreshTodayDateSpans(selectedEmailData.body));
                 $('#EmailTemplateName').val(originalTemplateName);
@@ -893,7 +930,7 @@ function initializeDraftEmailsWidget() {
                 UIElements.inputEmailTo.val(UIElements.inputOriginalEmailTo.val());
                 UIElements.inputEmailCC.val(UIElements.inputOriginalEmailCC.val());
                 UIElements.inputEmailBCC.val(UIElements.inputOriginalEmailBCC.val());
-                UIElements.inputEmailFrom.val(UIElements.inputOriginalEmailFrom.val());
+                setEmailFromAddress(UIElements.inputOriginalEmailFrom.val());
                 UIElements.inputEmailSubject.val(UIElements.inputOriginalEmailSubject.val());
                 UIElements.inputEmailBody.val(UIElements.inputOriginalEmailBody.val());
                 $('#EmailTemplateName').val(originalTemplateState.name || '');
@@ -955,6 +992,18 @@ function initializeDraftEmailsWidget() {
         UIElements.templateSelectionDropdown.val('');
     }
 
+    async function validateTemplateAttachments(templateId) {
+        try {
+            await $.ajax({
+                url: `/api/form-notifications/email-template/${encodeURIComponent(templateId)}/validate-attachments`,
+                type: 'GET'
+            });
+        } catch (error) {
+            error.isTemplateAttachmentValidationError = true;
+            throw error;
+        }
+    }
+
     async function copyTemplateAttachments(templateId, emailLogId) {
         try {
             const response = await $.ajax({
@@ -971,9 +1020,29 @@ function initializeDraftEmailsWidget() {
     }
 
     function getAttachmentErrorMessage(error, fallbackMessage) {
-        return error?.responseJSON?.error?.message
-            || error?.responseJSON?.message
-            || fallbackMessage;
+        const responseMessage = error?.responseJSON?.error?.message
+            || error?.responseJSON?.message;
+        if (responseMessage) {
+            return responseMessage;
+        }
+
+        if (typeof error?.responseText === 'string' && error.responseText.trim()) {
+            try {
+                const parsedResponse = JSON.parse(error.responseText);
+                const parsedMessage = parsedResponse?.error?.message || parsedResponse?.message;
+                if (parsedMessage) {
+                    return parsedMessage;
+                }
+            } catch {
+                const plainText = error.responseText.trim();
+                if (plainText.startsWith('One or more email attachments cannot be found:')
+                    || plainText.startsWith('This template contains attachments that cannot be found:')) {
+                    return plainText;
+                }
+            }
+        }
+
+        return fallbackMessage;
     }
 
     function setTemplateAttachmentError(message) {
@@ -1316,6 +1385,8 @@ function initializeDraftEmailsWidget() {
                 return;
             }
 
+            await validateTemplateAttachments(selectedTemplateId);
+
             console.log('Selected template:', selectedTemplate);
 
             const { subject, body: initialBody, sendFrom, name: templateName } = extractTemplateValues(selectedTemplate, useUpperCase);
@@ -1344,7 +1415,9 @@ function initializeDraftEmailsWidget() {
             console.error('Response text:', e.responseText);
             console.error('Status:', e.status);
             const message = getAttachmentErrorMessage(e, 'Failed to load template. Please try again.');
-            if (e.isTemplateAttachmentError) {
+            if (e.isTemplateAttachmentValidationError) {
+                abp.notify.error(message, null, { life: TEMPLATE_ATTACHMENT_ERROR_TOAST_LIFE_MS });
+            } else if (e.isTemplateAttachmentError) {
                 setTemplateAttachmentError(message);
                 abp.notify.error(message, null, { life: TEMPLATE_ATTACHMENT_ERROR_TOAST_LIFE_MS });
             } else {
@@ -1418,7 +1491,7 @@ function initializeDraftEmailsWidget() {
 
         // Show modal FIRST so element is in DOM
         UIElements.inputEmailSubject.val(templateSubject);
-        UIElements.inputEmailFrom.val(templateFrom || defaultValues.emailFrom);
+        setEmailFromAddress(templateFrom || defaultValues.emailFrom);
         showModalEmail();
 
         // Then initialize TinyMCE
@@ -1762,7 +1835,12 @@ function initializeDraftEmailsWidget() {
         if (isValid && allErrors.length === 0) return true;
 
         // Collect jQuery validator errors
-        const formErrors = errorList.map(err => normalizeErrorMessage(err.message));
+        const formErrors = errorList.map(err => {
+            if (err.element?.name === 'EmailFrom' && /^This field is required\.?$/i.test(err.message)) {
+                return 'The From field is required.';
+            }
+            return normalizeErrorMessage(err.message);
+        });
         formErrors.forEach(err => {
             if (!allErrors.includes(err)) allErrors.push(err);
         });
@@ -2044,7 +2122,7 @@ function initializeDraftEmailsWidget() {
             editorInstance.setContent(body);
         }
         UIElements.inputEmailBody.val(body || '');
-        UIElements.inputEmailFrom.val(fields.sendFrom || defaultValues.emailFrom);
+        setEmailFromAddress(fields.sendFrom || defaultValues.emailFrom);
         if (templateRecipients) {
             UIElements.inputEmailTo.val(templateRecipients).trigger('change');
         }
@@ -2054,12 +2132,14 @@ function initializeDraftEmailsWidget() {
     async function applyTemplateToEmail(template) {
         try {
             const currentEmailId = UIElements.inputEmailId.val();
+            const fields = extractTemplateFields(template);
+
+            await validateTemplateAttachments(fields.id);
 
             if (!await showTemplateConfirmation()) {
                 return;
             }
 
-            const fields = extractTemplateFields(template);
             let body = fields.body;
             body = await processTemplateBody(body);
 
@@ -2082,7 +2162,9 @@ function initializeDraftEmailsWidget() {
         } catch (e) {
             console.error('Failed to apply template:', e);
             const message = getAttachmentErrorMessage(e, 'Failed to apply template. Please try again.');
-            if (e.isTemplateAttachmentError) {
+            if (e.isTemplateAttachmentValidationError) {
+                abp.notify.error(message, null, { life: TEMPLATE_ATTACHMENT_ERROR_TOAST_LIFE_MS });
+            } else if (e.isTemplateAttachmentError) {
                 setTemplateAttachmentError(message);
                 abp.notify.error(message, null, { life: TEMPLATE_ATTACHMENT_ERROR_TOAST_LIFE_MS });
             } else {
@@ -2268,7 +2350,7 @@ function initializeDraftEmailsWidget() {
         UIElements.inputEmailTo.val(data.toAddress);
         UIElements.inputEmailCC.val(data.cc?.replaceAll(',', '; ') ?? '');
         UIElements.inputEmailBCC.val(data.bcc?.replaceAll(',', '; ') ?? '');
-        UIElements.inputEmailFrom.val(data.fromAddress);
+        setEmailFromAddress(data.fromAddress);
         UIElements.inputEmailSubject.val(data.subject);
         const bodyContentWithRefresh = refreshTodayDateSpans(data.body);
         UIElements.inputEmailBody.val(bodyContentWithRefresh);
