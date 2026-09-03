@@ -111,10 +111,7 @@
             let sections = JSON.parse(json || '[]');
             return Array.isArray(sections) ? sections : [];
         } catch (e) {
-            // Malformed/unexpected sections JSON is treated the same as "no post-creation steps
-            // recorded" (empty array) - the row already renders that case as no status icon at
-            // all (see _renderPostCreationStatusIcon), so there's nothing actionable to surface
-            // to the user here.
+            console.error(e);
             return [];
         }
     }
