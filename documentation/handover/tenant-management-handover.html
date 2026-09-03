@@ -481,7 +481,7 @@ if (await _permissionChecker.IsGrantedAsync(context.User, requirement.Permission
     <div class="rowlist">
       <div class="row"><div class="k">GetListAsync / GetAsync</div><div class="v"><p>Paged/filtered/sorted list and single-request read, merging core <span class="code">Application</span> fields with mapped Flex worksheet fields.</p></div></div>
       <div class="row"><div class="k">ValidateAsync</div><div class="v"><p>Client pre-check — same steps re-run server-side.</p></div></div>
-      <div class="row"><div class="k">CreateTenantAsync</div><div class="v"><p>Approves the request — resolves super users/features, calls <span class="code">TenantAppService.CreateAsync</span>, assigns extra managers, updates Metabase defaults, closes the source application.</p></div></div>
+      <div class="row"><div class="k">CreateTenantAsync</div><div class="v"><p>Approves the request — resolves program managers/features, calls <span class="code">TenantAppService.CreateAsync</span>, assigns extra managers, updates Metabase defaults, closes the source application.</p></div></div>
       <div class="row"><div class="k">GetColumnSchemaAsync / GetAvailableCategoriesAsync</div><div class="v"><p>Drives the admin field-mapping UI and the intake-category picker.</p></div></div>
     </div>
 
@@ -508,7 +508,7 @@ if (await _permissionChecker.IsGrantedAsync(context.User, requirement.Permission
     </div>
 
     <h3>Field mapping is admin-configurable, not hardcoded</h3>
-    <p>Which worksheet-field <em>key</em> means "tenant name", "super users", "branch", "features", etc. is stored per-user (falling back to global) via <span class="code">ISettingManager</span> (<span class="code">OnboardingColumnConfigSettings</span>). Different onboarding CHEFS forms — with entirely different field keys — can all feed the same tenant-creation flow, as long as an admin maps the columns once through the UI. No code change per form revision.</p>
+    <p>Which worksheet-field <em>key</em> means "tenant name", "program managers", "branch", "features", etc. is stored per-user (falling back to global) via <span class="code">ISettingManager</span> (<span class="code">OnboardingColumnConfigSettings</span>). Different onboarding CHEFS forms — with entirely different field keys — can all feed the same tenant-creation flow, as long as an admin maps the columns once through the UI. No code change per form revision.</p>
 
     <h3>Validation steps</h3>
     <p>Same auto-discovery pattern as post-creation steps (§07): <span class="code">ITransientDependency</span>, <span class="code">Order</span>/<span class="code">StepName</span>/<span class="code">ValidateAsync</span>, run ascending, collected into <span class="code">"[{StepName}] {Issue}"</span> messages. Run by <strong>both</strong> the client pre-check and the server-authoritative approval — the client result is never trusted alone.</p>
@@ -516,17 +516,17 @@ if (await _permissionChecker.IsGrantedAsync(context.User, requirement.Permission
       <thead><tr><th>Step</th><th>Order</th><th>Checks</th></tr></thead>
       <tbody>
         <tr><td class="code">TenantNameUniquenessStep</td><td class="mono">10</td><td><span class="code">ITenantRepository.FindByNameAsync</span> — no existing tenant with this normalized name.</td></tr>
-        <tr><td class="code">SuperUsersValidationStep</td><td class="mono">20</td><td>Parses <span class="code">SuperUsers</span> as either a CHEFS DataGrid JSON shape or a delimited string; requires at least one email to resolve via <span class="code">IOnboardingUserLookup</span>.</td></tr>
+        <tr><td class="code">ProgramManagersValidationStep</td><td class="mono">20</td><td>Parses <span class="code">ProgramManagers</span> as either a CHEFS DataGrid JSON shape or a delimited string; requires at least one email to resolve via <span class="code">IOnboardingUserLookup</span>.</td></tr>
       </tbody>
     </table>
 
     <h3>CreateTenantAsync — the approval flow</h3>
     <div class="rowlist">
       <div class="row"><div class="k">1 · Re-validate</div><div class="v"><p>Re-resolves field mappings, re-runs both validation steps server-side.</p></div></div>
-      <div class="row"><div class="k">2 · Resolve users</div><div class="v"><p>Parses super-user emails, resolves each via <span class="code">IOnboardingUserLookup</span>; <strong>throws</strong> if zero resolve.</p></div></div>
+      <div class="row"><div class="k">2 · Resolve users</div><div class="v"><p>Parses program manager emails, resolves each via <span class="code">IOnboardingUserLookup</span>; <strong>throws</strong> if zero resolve.</p></div></div>
       <div class="row"><div class="k">3 · Resolve features</div><div class="v"><p><span class="code">OnboardingFeatureMap.ResolveFeatureKeys</span> — static dictionary mapping human labels/checkbox keys to real ABP feature keys.</p></div></div>
       <div class="row"><div class="k">4 · Create the tenant</div><div class="v"><p><span class="code">TenantAppService.CreateAsync(...)</span> — the exact same call the "New Tenant" modal makes, populated from request field data.</p></div></div>
-      <div class="row"><div class="k">5 · Extra managers</div><div class="v"><p>Any resolved super users beyond the first become tenant managers via <span class="code">AssignManagerAsync</span>.</p></div></div>
+      <div class="row"><div class="k">5 · Extra managers</div><div class="v"><p>Any resolved program managers beyond the first become tenant managers via <span class="code">AssignManagerAsync</span>.</p></div></div>
       <div class="row"><div class="k">6 · Metabase defaults</div><div class="v"><p>Optionally folds new/removed emails into the global default list ("save as default" on the approval modal).</p></div></div>
       <div class="row"><div class="k">7 · Close the request</div><div class="v"><p><span class="code">CloseApplicationAsync</span> — the source <span class="code">Application</span> drops out of the pending-onboarding queue.</p></div></div>
     </div>

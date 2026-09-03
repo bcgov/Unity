@@ -26,7 +26,7 @@ An onboarding request's visible fields come from two places, merged in `Onboardi
 
 ## Field mapping is admin-configurable, not hardcoded
 
-Which worksheet-field *key* means "tenant name", "display name", "super users", "branch", "features", "ministry", "division", "program area" is **not** fixed in code — it's stored per-user (falling back to a global default) via `ISettingManager` (`OnboardingColumnConfigSettings`, provider `"U"`). `ReadTenantMappingAsync` / `SaveFieldMappingAsync` / `ResolveFieldMappings` implement this. Practical effect: different onboarding CHEFS forms — with entirely different field keys — can all feed the same tenant-creation flow, as long as an admin maps the relevant columns once through the UI. This is what makes "one onboarding pipeline, many possible intake forms" work without a code change per form revision.
+Which worksheet-field *key* means "tenant name", "display name", "program managers", "branch", "features", "ministry", "division", "program area" is **not** fixed in code — it's stored per-user (falling back to a global default) via `ISettingManager` (`OnboardingColumnConfigSettings`, provider `"U"`). `ReadTenantMappingAsync` / `SaveFieldMappingAsync` / `ResolveFieldMappings` implement this. Practical effect: different onboarding CHEFS forms — with entirely different field keys — can all feed the same tenant-creation flow, as long as an admin maps the relevant columns once through the UI. This is what makes "one onboarding pipeline, many possible intake forms" work without a code change per form revision.
 
 ## Validation steps (`IOnboardingValidationStep`)
 
@@ -35,7 +35,7 @@ Same auto-discovery pattern as post-creation steps: `ITransientDependency`, `[Re
 |Step|Order|Checks|
 |---|---|---|
 |`TenantNameUniquenessStep`|10|`ITenantRepository.FindByNameAsync(name.ToUpper())` — no existing tenant with this normalized name.|
-|`SuperUsersValidationStep`|20|Parses `request.SuperUsers` two ways — first as a Formio/CHEFS DataGrid JSON shape (`DataGridRowsValue`, matching a cell whose *key contains* "email", since the DataGrid column key varies per worksheet, e.g. `s03_SuperUserEmail`), falling back to a delimited string (`,`/`;`/`|`). Requires **at least one** email to resolve to a real user via `IOnboardingUserLookup`.|
+|`ProgramManagersValidationStep`|20|Parses `request.ProgramManagers` two ways — first as a Formio/CHEFS DataGrid JSON shape (`DataGridRowsValue`, matching a cell whose *key contains* "email", since the DataGrid column key varies per worksheet, e.g. `s03_SuperUserEmail`), falling back to a delimited string (`,`/`;`/`|`). Requires **at least one** email to resolve to a real user via `IOnboardingUserLookup`.|
 
 Both the client (`ValidateAsync`, a pre-check the UI calls before enabling the approve button) and the server (`CreateTenantAsync`, unconditionally) run the same steps — the client result is explicitly not trusted, and is re-verified server-side even if the UI already showed green.
 
@@ -48,10 +48,10 @@ Both the client (`ValidateAsync`, a pre-check the UI calls before enabling the a
 `OnboardingRequestAppService.CreateTenantAsync(id, CreateTenantInputDto?)`:
 
 1. Re-resolves field mappings and re-runs validation (defense in depth against a stale/tampered client state).
-2. Parses `SuperUsers` → email list → resolves each via `IOnboardingUserLookup`; **throws** if zero resolve ("Cannot create tenant without at least one valid program manager").
-3. Resolves feature checkboxes via `OnboardingFeatureMap.ResolveFeatureKeys` — a static dictionary mapping human-readable labels ("Payments", "AI Reporting") and camelCase checkbox-group keys (`aiReporting`) to real ABP feature keys (`Unity.Payments`, `Unity.AIReporting`, ...). Accepts either a JSON checkbox-group array (`[{"key":...,"value":true}]`) or a delimited string — mirroring the same dual-format tolerance as the super-users parsing.
+2. Parses `ProgramManagers` → email list → resolves each via `IOnboardingUserLookup`; **throws** if zero resolve ("Cannot create tenant without at least one valid program manager").
+3. Resolves feature checkboxes via `OnboardingFeatureMap.ResolveFeatureKeys` — a static dictionary mapping human-readable labels ("Payments", "AI Reporting") and camelCase checkbox-group keys (`aiReporting`) to real ABP feature keys (`Unity.Payments`, `Unity.AIReporting`, ...). Accepts either a JSON checkbox-group array (`[{"key":...,"value":true}]`) or a delimited string — mirroring the same dual-format tolerance as the program-managers parsing.
 4. Calls **`TenantAppService.CreateAsync(new TenantCreateDto{ Name, DisplayName, Branch, Division, Description, UserIdentifier = userGuids[0], FeatureKeys, MetabaseUserEmails = input?.MetabaseUserEmails })`** — the identical app service method the "New Tenant" modal uses, just populated from onboarding-request field data instead of a hand-filled form. There is no separate/elevated tenant-creation path for onboarding.
-5. Any additional resolved super users beyond the first become tenant managers via a loop of `TenantAppService.AssignManagerAsync`.
+5. Any additional resolved program managers beyond the first become tenant managers via a loop of `TenantAppService.AssignManagerAsync`.
 6. Optionally folds `input.MetabaseNewDefaultUserEmails` / `MetabaseRemovedDefaultUserEmails` into the **global** `MetabaseSettings.UserEmails` list (add new, remove removed, de-duplicated case-insensitively) — the "save as default" checkbox on the approval modal's Metabase tab.
 7. Calls `ApplicationProvider.CloseApplicationAsync(id)` → `OnboardingApplicationManager.TriggerAction(applicationId, GrantApplicationAction.Close)`, marking the source onboarding `Application` Closed so it drops out of the pending-onboarding queue.
 

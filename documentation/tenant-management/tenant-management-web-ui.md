@@ -10,7 +10,7 @@ All Razor Pages live under `modules/Unity.TenantManagement/src/Unity.TenantManag
 |`CreateModal.cshtml(.cs)`|"New Tenant" form — name, display metadata, CAS client code, and (IT-Admin/Ops only) Features and Metabase tabs.|`ITAdministrator` role only — tightened deliberately so IT Operations creates tenants through Onboarding instead (see below).|
 |`EditModal.cshtml(.cs)`|Rename + edit `ExtraProperties` (display metadata, CAS code) for an existing tenant.|`Tenants.Update` (resolves to IT Admin/Ops OR the raw permission — see domain model doc)|
 |`ConfigurationModal.cshtml(.cs)`|Everything else for an existing tenant: connection-string management, Features/Metabase tabs, the Reporting view-role tab (`Unity.Reporting.Application.Contracts`), and the managers list.|`TenantsOrITOps`, with `ManageConnectionStrings`/`ITAdminOrITOperations` gating individual tabs|
-|`AssignManagerModal.cshtml(.cs)`|Attach an additional program manager to an existing tenant (separate control from Onboarding's "extra super users" loop, though both ultimately call `TenantAppService.AssignManagerAsync`).|`Tenants.Create` (shared with the create-flow policy)|
+|`AssignManagerModal.cshtml(.cs)`|Attach an additional program manager to an existing tenant (separate control from Onboarding's "extra program managers" loop, though both ultimately call `TenantAppService.AssignManagerAsync`).|`Tenants.Create` (shared with the create-flow policy)|
 |`TenantManagementPageModel`|Shared abstract base for this folder.|—|
 
 ### Why "New Tenant" is IT-Administrator-only

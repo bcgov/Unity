@@ -698,7 +698,7 @@
     "CreateTenantModal:FieldMappingLabel": "Field mapping",
     "CreateTenantModal:TenantNameFieldLabel": "Name",
     "CreateTenantModal:DisplayNameFieldLabel": "Display Name",
-    "CreateTenantModal:SuperUsersFieldLabel": "Program Managers",
+    "CreateTenantModal:ProgramManagersFieldLabel": "Program Managers",
     "CreateTenantModal:MappingPlaceholder": "-- Select a field --",
     "CreateTenantModal:RevalidateButton": "Re-validate",
     "CreateTenantModal:Validating": "Validating request…",

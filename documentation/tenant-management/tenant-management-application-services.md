@@ -49,7 +49,7 @@ Class-level `[Authorize(IdentityConsts.ITOperationsPolicyName)]` — the entire 
 |`GetListAsync(OnboardingListRequestDto)`|Paged, filtered, sorted list merging core `Application` fields with mapped Flex worksheet fields.|
 |`GetAsync(id)`|One onboarding request, fully resolved (core fields + mapped worksheet fields).|
 |`ValidateAsync(id)`|Client-triggered pre-check — runs the same validation steps `CreateTenantAsync` re-runs server-side.|
-|`CreateTenantAsync(id, CreateTenantInputDto?)`|Approves the request: resolves super users, feature keys, calls `TenantAppService.CreateAsync`, assigns extra managers, updates the Metabase default email list, closes the source application.|
+|`CreateTenantAsync(id, CreateTenantInputDto?)`|Approves the request: resolves program managers, feature keys, calls `TenantAppService.CreateAsync`, assigns extra managers, updates the Metabase default email list, closes the source application.|
 |`GetColumnSchemaAsync()` / `GetAvailableCategoriesAsync()`|Drives the admin field-mapping UI (which worksheet field key means "tenant name", etc.) and the intake-category picker.|
 
 Exposed over HTTP by a **hand-written** `OnboardingRequestController` (`api/onboarding-requests`) rather than an auto-generated ABP dynamic proxy — every action additionally does a defensive `ModelState.IsValid` check throwing `UserFriendlyException`, redundant with ASP.NET Core's own model validation but consistent across all five routes.
