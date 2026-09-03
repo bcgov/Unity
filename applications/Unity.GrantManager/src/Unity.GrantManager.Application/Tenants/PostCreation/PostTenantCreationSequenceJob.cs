@@ -102,8 +102,16 @@ public class PostTenantCreationSequenceJob(
     private async Task UpdateStepStatusAsync(
         Guid tenantId, IPostTenantCreationStep step, PostTenantCreationStepStatus status, string? message)
     {
-        var tenant = await tenantRepository.GetAsync(tenantId);
-        tenant.SetPostTenantCreationStepStatus(step.Key, step.StepName, status, message, clock.Now);
-        await tenantRepository.UpdateAsync(tenant);
+        // Tenant is host-side data. The success path calls this from inside the
+        // currentTenant.Change(args.TenantId) block above, so without forcing back to the host
+        // context here, ITenantRepository could resolve against the wrong DB/connection - the
+        // same reason ProgramDetailsAppService wraps its own Tenant repository calls in
+        // CurrentTenant.Change(null).
+        using (currentTenant.Change(null))
+        {
+            var tenant = await tenantRepository.GetAsync(tenantId);
+            tenant.SetPostTenantCreationStepStatus(step.Key, step.StepName, status, message, clock.Now);
+            await tenantRepository.UpdateAsync(tenant);
+        }
     }
 }

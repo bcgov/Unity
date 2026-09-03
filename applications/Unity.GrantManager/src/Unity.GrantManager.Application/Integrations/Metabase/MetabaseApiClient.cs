@@ -68,7 +68,11 @@ public class MetabaseApiClient(
                 await PostVoidAsync(path, new { }, cancellationToken);
                 return;
             }
-            catch (IntegrationServiceException) when (attempt < MaxDatabaseSyncAttempts)
+            // Narrowed to the specific transient status described on MaxDatabaseSyncAttempts - a
+            // 401/403/404/500/etc. here means real misconfiguration or an outage, and should fail
+            // immediately rather than retrying (and delaying) a failure that won't resolve itself.
+            catch (IntegrationServiceException ex) when (attempt < MaxDatabaseSyncAttempts
+                && ex.StatusCode == HttpStatusCode.UnprocessableEntity)
             {
                 // Loop around and retry immediately - see the comment on MaxDatabaseSyncAttempts.
             }
@@ -273,7 +277,10 @@ public class MetabaseApiClient(
         if (!response.IsSuccessStatusCode)
         {
             throw new IntegrationServiceException(
-                $"Metabase API call to '{path}' failed with status {response.StatusCode}: {content}");
+                $"Metabase API call to '{path}' failed with status {response.StatusCode}: {content}")
+            {
+                StatusCode = response.StatusCode
+            };
         }
 
         return string.IsNullOrWhiteSpace(content) ? new JObject() : JToken.Parse(content);

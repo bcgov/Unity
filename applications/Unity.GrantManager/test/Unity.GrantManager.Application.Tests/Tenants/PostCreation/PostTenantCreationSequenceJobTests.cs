@@ -48,7 +48,7 @@ public class PostTenantCreationSequenceJobTests
         return (Tenant)ctor.Invoke([id, "test-tenant", "TEST-TENANT"]);
     }
 
-    private static (PostTenantCreationSequenceJob Job, List<PostTenantCreationStepArgs> Enqueued, Tenant Tenant) CreateJob(
+    private static (PostTenantCreationSequenceJob Job, List<PostTenantCreationStepArgs> Enqueued, Tenant Tenant, ICurrentTenant CurrentTenant) CreateJob(
         IEnumerable<IPostTenantCreationStep> steps, Guid? tenantId = null)
     {
         var enqueued = new List<PostTenantCreationStepArgs>();
@@ -79,7 +79,7 @@ public class PostTenantCreationSequenceJobTests
             steps, backgroundJobManager, tenantRepository, currentTenant, clock,
             Substitute.For<ILogger<PostTenantCreationSequenceJob>>());
 
-        return (job, enqueued, tenant);
+        return (job, enqueued, tenant, currentTenant);
     }
 
     [Fact]
@@ -87,7 +87,7 @@ public class PostTenantCreationSequenceJobTests
     {
         var step0 = new FakeStep(0, "Step0", continueOnError: false);
         var step1 = new FakeStep(1, "Step1", continueOnError: false);
-        var (job, enqueued, tenant) = CreateJob([step0, step1]);
+        var (job, enqueued, tenant, _) = CreateJob([step0, step1]);
 
         await job.ExecuteAsync(new PostTenantCreationStepArgs { TenantId = tenant.Id, StepIndex = 0 });
 
@@ -101,7 +101,7 @@ public class PostTenantCreationSequenceJobTests
     [Fact]
     public async Task ExecuteAsync_StepIndexPastEnd_DoesNothing()
     {
-        var (job, enqueued, tenant) = CreateJob([new FakeStep(0, "Step0", continueOnError: false)]);
+        var (job, enqueued, tenant, _) = CreateJob([new FakeStep(0, "Step0", continueOnError: false)]);
 
         await job.ExecuteAsync(new PostTenantCreationStepArgs { TenantId = tenant.Id, StepIndex = 1 });
 
@@ -112,7 +112,7 @@ public class PostTenantCreationSequenceJobTests
     public async Task ExecuteAsync_StepThrows_ContinueOnErrorTrue_StillEnqueuesNextStep()
     {
         var step = new FakeStep(0, "Flaky", continueOnError: true, onExecute: _ => throw new InvalidOperationException("boom"));
-        var (job, enqueued, tenant) = CreateJob([step]);
+        var (job, enqueued, tenant, _) = CreateJob([step]);
 
         await job.ExecuteAsync(new PostTenantCreationStepArgs { TenantId = tenant.Id, StepIndex = 0 });
 
@@ -123,7 +123,7 @@ public class PostTenantCreationSequenceJobTests
     public async Task ExecuteAsync_StepThrows_ContinueOnErrorFalse_StopsSequence()
     {
         var step = new FakeStep(0, "Fatal", continueOnError: false, onExecute: _ => throw new InvalidOperationException("boom"));
-        var (job, enqueued, tenant) = CreateJob([step]);
+        var (job, enqueued, tenant, _) = CreateJob([step]);
 
         await job.ExecuteAsync(new PostTenantCreationStepArgs { TenantId = tenant.Id, StepIndex = 0 });
 
@@ -135,7 +135,7 @@ public class PostTenantCreationSequenceJobTests
     {
         var step0 = new FakeStep(0, "Step0", continueOnError: false, canExecute: false);
         var step1 = new FakeStep(1, "Step1", continueOnError: false);
-        var (job, enqueued, tenant) = CreateJob([step0, step1]);
+        var (job, enqueued, tenant, _) = CreateJob([step0, step1]);
 
         await job.ExecuteAsync(new PostTenantCreationStepArgs { TenantId = tenant.Id, StepIndex = 0 });
 
@@ -152,7 +152,7 @@ public class PostTenantCreationSequenceJobTests
             onExecute: _ => { executed.Add("High"); return Task.CompletedTask; });
         var stepLow = new FakeStep(1, "Low", continueOnError: false,
             onExecute: _ => { executed.Add("Low"); return Task.CompletedTask; });
-        var (job, _, tenant) = CreateJob([stepHigh, stepLow]);
+        var (job, _, tenant, _) = CreateJob([stepHigh, stepLow]);
 
         await job.ExecuteAsync(new PostTenantCreationStepArgs { TenantId = tenant.Id, StepIndex = 0 });
 
@@ -163,7 +163,7 @@ public class PostTenantCreationSequenceJobTests
     public async Task ExecuteAsync_StepSucceeds_RecordsSuccessStatusOnTenant()
     {
         var step = new FakeStep(0, "Step0", continueOnError: false);
-        var (job, _, tenant) = CreateJob([step]);
+        var (job, _, tenant, _) = CreateJob([step]);
 
         await job.ExecuteAsync(new PostTenantCreationStepArgs { TenantId = tenant.Id, StepIndex = 0 });
 
@@ -174,10 +174,25 @@ public class PostTenantCreationSequenceJobTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_StepSucceeds_RecordsStatusUnderHostTenantContext()
+    {
+        // Tenant is host-side data. The success path calls UpdateStepStatusAsync from inside the
+        // currentTenant.Change(args.TenantId) block, so it must switch back to the host (null)
+        // context itself before touching ITenantRepository, rather than relying on the ambient
+        // per-tenant context still being active.
+        var step = new FakeStep(0, "Step0", continueOnError: false);
+        var (job, _, tenant, currentTenant) = CreateJob([step]);
+
+        await job.ExecuteAsync(new PostTenantCreationStepArgs { TenantId = tenant.Id, StepIndex = 0 });
+
+        currentTenant.Received().Change(null);
+    }
+
+    [Fact]
     public async Task ExecuteAsync_StepThrows_RecordsErrorStatusWithMessageOnTenant()
     {
         var step = new FakeStep(0, "Flaky", continueOnError: true, onExecute: _ => throw new InvalidOperationException("boom"));
-        var (job, _, tenant) = CreateJob([step]);
+        var (job, _, tenant, _) = CreateJob([step]);
 
         await job.ExecuteAsync(new PostTenantCreationStepArgs { TenantId = tenant.Id, StepIndex = 0 });
 
@@ -190,7 +205,7 @@ public class PostTenantCreationSequenceJobTests
     public async Task ExecuteAsync_CanExecuteAsyncReturnsFalse_LeavesStepStatusUnrecorded()
     {
         var step = new FakeStep(0, "Step0", continueOnError: false, canExecute: false);
-        var (job, _, tenant) = CreateJob([step]);
+        var (job, _, tenant, _) = CreateJob([step]);
 
         await job.ExecuteAsync(new PostTenantCreationStepArgs { TenantId = tenant.Id, StepIndex = 0 });
 

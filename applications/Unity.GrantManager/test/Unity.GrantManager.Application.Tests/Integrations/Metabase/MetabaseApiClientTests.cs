@@ -199,6 +199,24 @@ public class MetabaseApiClientTests
             Arg.Any<System.Collections.Generic.IReadOnlyDictionary<string, string>?>(), Arg.Any<CancellationToken>());
     }
 
+    // Only the specific transient 422 right after database creation is worth retrying - a 500 (or
+    // any other status) here means real misconfiguration or an outage, which retrying three times
+    // would only delay surfacing.
+    [Fact]
+    public async Task SyncDatabaseSchemaAsync_NonTransientServerError_ThrowsImmediatelyWithoutRetrying()
+    {
+        var (client, http) = CreateClient();
+        SetupHttpSequence(http,
+            JsonResponse(HttpStatusCode.InternalServerError, "boom"));
+
+        await Should.ThrowAsync<IntegrationServiceException>(() => client.SyncDatabaseSchemaAsync(48));
+
+        await http.Received(1).HttpAsync(
+            Arg.Any<HttpMethod>(), Arg.Any<string>(), Arg.Any<object?>(), Arg.Any<string?>(),
+            Arg.Any<(string username, string password)?>(), Arg.Any<HttpCompletionOption>(),
+            Arg.Any<System.Collections.Generic.IReadOnlyDictionary<string, string>?>(), Arg.Any<CancellationToken>());
+    }
+
     // /api/permissions/group returns a raw JSON array, unlike /api/database.
     [Fact]
     public async Task FindOrCreateGroupAsync_GroupWithSameNameAlreadyExists_ReturnsExistingIdWithoutCreating()
