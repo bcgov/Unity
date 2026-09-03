@@ -27,7 +27,8 @@ public class ApplicantContactQueryService(
     IRepository<ApplicationFormSubmission, Guid> applicationFormSubmissionRepository,
     IRepository<ApplicationContact, Guid> applicationContactRepository,
     IRepository<ApplicantAgent, Guid> applicantAgentRepository,
-    IRepository<Application, Guid> applicationRepository)
+    IRepository<Application, Guid> applicationRepository,
+    IApplicantSubmissionMatcher applicantSubmissionMatcher)
     : IApplicantContactQueryService, ITransientDependency
 {
     private const string ApplicantEntityType = "Applicant";
@@ -39,11 +40,7 @@ public class ApplicantContactQueryService(
         var contactsQuery = await contactRepository.GetQueryableAsync();
         var submissionsQuery = await applicationFormSubmissionRepository.GetQueryableAsync();
 
-        var applicantIds = await submissionsQuery
-            .Where(s => s.OidcSub == subject)
-            .Select(s => s.ApplicantId)
-            .Distinct()
-            .ToListAsync();
+        var applicantIds = await applicantSubmissionMatcher.ResolveApplicantIdsAsync(submissionsQuery, subject);
 
         var isEditable = applicantIds.Count <= 1;
 
@@ -78,12 +75,12 @@ public class ApplicantContactQueryService(
         var submissionsQuery = await applicationFormSubmissionRepository.GetQueryableAsync();
         var applicationContactsQuery = await applicationContactRepository.GetQueryableAsync();
         var applicationsQuery = await applicationRepository.GetQueryableAsync();
+        var matchingSubmissions = await applicantSubmissionMatcher.GetMatchingSubmissionsAsync(submissionsQuery, subject);
 
         var applicationContacts = await (
-            from submission in submissionsQuery
+            from submission in matchingSubmissions
             join appContact in applicationContactsQuery on submission.ApplicationId equals appContact.ApplicationId
             join application in applicationsQuery on submission.ApplicationId equals application.Id
-            where submission.OidcSub == subject
             select new ContactInfoItemDto
             {
                 ContactId = appContact.Id,
@@ -110,12 +107,12 @@ public class ApplicantContactQueryService(
         var submissionsQuery = await applicationFormSubmissionRepository.GetQueryableAsync();
         var agentsQuery = await applicantAgentRepository.GetQueryableAsync();
         var applicationsQuery = await applicationRepository.GetQueryableAsync();
+        var matchingSubmissions = await applicantSubmissionMatcher.GetMatchingSubmissionsAsync(submissionsQuery, subject);
 
         var agentContacts = await (
-            from submission in submissionsQuery
+            from submission in matchingSubmissions
             join agent in agentsQuery on submission.ApplicationId equals agent.ApplicationId
             join application in applicationsQuery on submission.ApplicationId equals application.Id
-            where submission.OidcSub == subject
             select new ContactInfoItemDto
             {
                 ContactId = agent.Id,

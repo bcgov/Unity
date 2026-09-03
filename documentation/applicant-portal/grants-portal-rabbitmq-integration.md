@@ -125,7 +125,7 @@ All inbound commands use the `PluginDataEnvelope` wrapper:
 | `addressId` | `string?` | Target address ID (for address commands) |
 | `organizationId` | `string?` | Target organization/applicant ID |
 | `profileId` | `string?` | Applicant profile ID |
-| `subject` | `string?` | Raw OIDC subject identifier (e.g. `testuser@idir`). Used by `ContactCreateHandler` to match submissions — Unity normalizes by stripping the IDP suffix and uppercasing before comparison. |
+| `subject` | `string?` | Raw OIDC subject identifier (e.g. `testuser@idir`). Carried in every command payload but not currently read by any handler — write commands identify their target entity by `contactId`/`addressId`/`organizationId` plus an explicit `applicantId` in the inner `data` payload, not by `OidcSub`. See [Write commands are ApplicantId-scoped, not OidcSub-scoped](#write-commands-are-applicantid-scoped-not-oidcsub-scoped) below. |
 | `provider` | `string?` | **Tenant ID** as a GUID string — used for tenant resolution |
 | `data` | `JObject?` | Inner command-specific data payload |
 
@@ -253,7 +253,7 @@ The return string becomes the `Details` field in the outbound acknowledgment.
 
 | DataType | Handler | Entity | Description |
 |----------|---------|--------|-------------|
-| `CONTACT_CREATE_COMMAND` | `ContactCreateHandler` | `Contact` + `ContactLink` | Creates a new contact and links it to the profile. Enriches the contact with applicant agent IDs from matching submissions. Idempotent — skips if contact already exists. |
+| `CONTACT_CREATE_COMMAND` | `ContactCreateHandler` | `Contact` + `ContactLink` | Creates a new contact and links it to the applicant (`applicantId` from the inner `data` payload) via a `ContactLink`. Idempotent — skips if contact already exists. |
 | `CONTACT_EDIT_COMMAND` | `ContactEditHandler` | `Contact` | Updates an existing contact's fields. Syncs `IsPrimary` on the contact link — when set to true, demotes other links for the same profile. |
 | `CONTACT_SET_PRIMARY_COMMAND` | `ContactSetPrimaryHandler` | `ContactLink` | Sets one contact as primary for a profile; clears primary on all other links. |
 | `CONTACT_DELETE_COMMAND` | `ContactDeleteHandler` | `ContactLink` + `Contact` | Deletes contact links then the contact entity. |
@@ -283,32 +283,16 @@ Each command that requires inner data deserializes `payload.Data` to a typed cla
 }
 ```
 
-### Applicant Agent ID Enrichment
+### Write commands are ApplicantId-scoped, not OidcSub-scoped
 
-When a contact is created via `CONTACT_CREATE_COMMAND`, the handler enriches the `Contact` entity with applicant agent IDs linked to the subject's submissions. This allows downstream systems to associate portal contacts with existing application agents.
+None of the `IPortalCommandHandler` implementations (`ContactCreateHandler`, `ContactEditHandler`, `AddressCreateHandler`, `AddressEditHandler`, `OrganizationEditHandler`, etc.) read `payload.Subject` or query by `ApplicationFormSubmission.OidcSub`. Each handler instead:
 
-**How it works**:
+- Looks up the target record directly by the ID in the payload (`contactId` / `addressId` / `organizationId`) via `repository.GetAsync(id)` / `FindAsync(id)`.
+- Reads an explicit `applicantId` out of the inner `data` payload (`ContactCreateData.ApplicantId`, `AddressCreateData.ApplicantId`, etc.) for scoping operations like "demote the other primary contacts/addresses for this applicant".
 
-1. The handler reads the raw OIDC subject from `payload.Subject` (e.g. `testuser@idir`).
-2. It normalizes the subject to match the format stored in `ApplicationFormSubmission.OidcSub`:
-   - Strips the IDP suffix (everything after and including `@`)
-   - Converts to uppercase
-   - Example: `testuser@idir` → `TESTUSER`
-3. It queries `ApplicationFormSubmission` records where `OidcSub` matches the normalized value.
-4. From those submissions, it collects distinct `ApplicationId` values.
-5. It queries `ApplicantAgent` records linked to those applications.
-6. The distinct agent IDs are stored on the contact's `ExtraProperties` as `applicantAgentIds`.
+This means the write path has always been keyed at the `ApplicantId` level, independent of which login (`OidcSub`) originated a given submission. It is therefore unaffected by — and already consistent with — the read-side cross-login matching described in [Cross-Login Applicant Matching](./applicant-profile-data-providers.md#cross-login-applicant-matching): an applicant who reaches Unity through two different logins gets one combined read view keyed by `ApplicantId`, and every write command the portal sends back is accepted or rejected purely on `ApplicantId` + record ID, never on which login the portal session used.
 
-> **Note**: The normalization follows the same convention as `IntakeSubmissionHelper.ExtractOidcSub`, which is used when CHEFS submissions are ingested.
-
-**Resulting ExtraProperties** (on the `Contact` entity):
-```json
-{
-  "applicantAgentIds": ["agent-guid-1", "agent-guid-2"]
-}
-```
-
-If `subject` is null/empty, or no matching submissions or agents are found, the `applicantAgentIds` property is not set. This is a best-effort enrichment and does not fail the contact creation.
+> **Note**: `payload.Subject` is still present in the wire format (see the `PluginDataPayload Fields` table under [Message Format](#message-format) above) but is effectively unused today. An earlier design intended to use it in `ContactCreateHandler` to enrich new contacts with `ApplicantAgent` IDs derived from `OidcSub`-matched submissions; that enrichment was never implemented (no `applicantAgentIds` property exists anywhere in the codebase) and this document previously described it incorrectly.
 
 **AddressEditData**:
 ```json

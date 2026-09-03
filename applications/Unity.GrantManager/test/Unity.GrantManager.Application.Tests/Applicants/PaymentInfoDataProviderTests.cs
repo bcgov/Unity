@@ -37,7 +37,7 @@ namespace Unity.GrantManager.Applicants
 
             SetupEmptyQueryables();
 
-            _provider = new PaymentInfoDataProvider(_currentTenant, _submissionRepo, _applicationRepo, _paymentRequestRepo);
+            _provider = new PaymentInfoDataProvider(_currentTenant, _submissionRepo, _applicationRepo, _paymentRequestRepo, new TestApplicantSubmissionMatcher());
         }
 
         private void SetupEmptyQueryables()
@@ -71,10 +71,12 @@ namespace Unity.GrantManager.Applicants
             Key = ApplicantProfileKeys.PaymentInfo
         };
 
-        private static ApplicationFormSubmission CreateSubmission(Guid applicationId, string oidcSub)
+        private static ApplicationFormSubmission CreateSubmission(
+            Guid applicationId, string oidcSub, Action<ApplicationFormSubmission>? configure = null)
         {
             var entity = new ApplicationFormSubmission { ApplicationId = applicationId, OidcSub = oidcSub };
             EntityHelper.TrySetId(entity, () => Guid.NewGuid());
+            configure?.Invoke(entity);
             return entity;
         }
 
@@ -429,6 +431,64 @@ namespace Unity.GrantManager.Applicants
                 [
                     CreatePaymentRequest(matchedAppId, 1000m),
                     CreatePaymentRequest(unrelatedAppId, 5000m)
+                ]);
+
+            var result = await _provider.GetDataAsync(request);
+
+            var dto = result.ShouldBeOfType<ApplicantPaymentInfoDto>();
+            dto.Payments.Count.ShouldBe(1);
+            dto.Payments[0].ReferenceNo.ShouldBe("REF-001");
+        }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldIncludePayments_ForSameApplicantUnderDifferentOidcSub()
+        {
+            var request = CreateRequest();
+            var applicantId = Guid.NewGuid();
+            var appId1 = Guid.NewGuid();
+            var appId2 = Guid.NewGuid();
+
+            SetupQueryables(
+                [
+                    CreateSubmission(appId1, "TESTUSER", s => s.ApplicantId = applicantId),
+                    CreateSubmission(appId2, "OTHERUSER", s => s.ApplicantId = applicantId)
+                ],
+                [
+                    CreateApplication(appId1, "REF-001"),
+                    CreateApplication(appId2, "REF-002")
+                ],
+                [
+                    CreatePaymentRequest(appId1, 1000m),
+                    CreatePaymentRequest(appId2, 2000m)
+                ]);
+
+            var result = await _provider.GetDataAsync(request);
+
+            var dto = result.ShouldBeOfType<ApplicantPaymentInfoDto>();
+            dto.Payments.Count.ShouldBe(2);
+            dto.Payments.ShouldContain(p => p.ReferenceNo == "REF-001");
+            dto.Payments.ShouldContain(p => p.ReferenceNo == "REF-002");
+        }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldExcludePayments_ForUnrelatedApplicantUnderDifferentOidcSub()
+        {
+            var request = CreateRequest();
+            var appId1 = Guid.NewGuid();
+            var appId2 = Guid.NewGuid();
+
+            SetupQueryables(
+                [
+                    CreateSubmission(appId1, "TESTUSER", s => s.ApplicantId = Guid.NewGuid()),
+                    CreateSubmission(appId2, "OTHERUSER", s => s.ApplicantId = Guid.NewGuid())
+                ],
+                [
+                    CreateApplication(appId1, "REF-001"),
+                    CreateApplication(appId2, "REF-002")
+                ],
+                [
+                    CreatePaymentRequest(appId1, 1000m),
+                    CreatePaymentRequest(appId2, 2000m)
                 ]);
 
             var result = await _provider.GetDataAsync(request);

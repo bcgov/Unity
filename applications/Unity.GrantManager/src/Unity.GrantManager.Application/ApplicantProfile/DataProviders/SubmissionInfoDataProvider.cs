@@ -27,6 +27,7 @@ namespace Unity.GrantManager.ApplicantProfile
         IRepository<ApplicationForm, Guid> applicationFormRepository,
         IRepository<ApplicationStatus, Guid> applicationStatusRepository,
         IEndpointManagementAppService endpointManagementAppService,
+        IApplicantSubmissionMatcher applicantSubmissionMatcher,
         ILogger<SubmissionInfoDataProvider> logger)
         : IApplicantProfileDataProvider, ITransientDependency
     {
@@ -53,12 +54,13 @@ namespace Unity.GrantManager.ApplicantProfile
                 var formsQuery = await applicationFormRepository.GetQueryableAsync();
                 var statusesQuery = await applicationStatusRepository.GetQueryableAsync();
 
+                var matchingSubmissions = await applicantSubmissionMatcher.GetMatchingSubmissionsAsync(submissionsQuery, normalizedSubject);
+
                 var results = await (
-                    from submission in submissionsQuery
+                    from submission in matchingSubmissions
                     join application in applicationsQuery on submission.ApplicationId equals application.Id
                     join form in formsQuery on application.ApplicationFormId equals form.Id
                     join status in statusesQuery on application.ApplicationStatusId equals status.Id
-                    where submission.OidcSub == normalizedSubject
                     select new
                     {
                         submission.Id,
