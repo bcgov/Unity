@@ -49,7 +49,7 @@ public sealed class FormScoresheetOperationExecutor(
             ?? throw new InvalidOperationException(localizer[AILocalizationKeys.ScoresheetGenerationRequiresFormVersion]);
         var formVersion = await applicationFormVersionRepository.GetAsync(applicationFormVersionId);
         var applicationForm = await applicationFormRepository.GetAsync(formVersion.ApplicationFormId);
-        var scoresheetName = AiScoresheetSuggestionName.Build(applicationForm.Id, formVersion.Id);
+        var scoresheetName = AiScoresheetSuggestionName.Build(formVersion.Id);
         var existingScoresheet = await scoresheetRepository.GetByNameAsync(scoresheetName, true);
         var review = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(
             AIGenerationOperations.FormScoresheet,

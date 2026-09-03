@@ -39,7 +39,10 @@
                                 <abp-input asp-for="@Model.BulkEmailNotificationResults[i].ReferenceNo" suppress-label disabled=true />
                             </td>
                             <td class="col-60">
-                                <abp-input asp-for="@Model.BulkEmailNotificationResults[i].Message" suppress-label disabled=true />
+                                <div class="send-email-status-tooltip"
+                                     title="@Model.BulkEmailNotificationResults[i].Message">
+                                    <abp-input asp-for="@Model.BulkEmailNotificationResults[i].Message" suppress-label disabled=true />
+                                </div>
                             </td>
                         </tr>
                     }

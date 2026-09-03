@@ -27,7 +27,8 @@ public class DynamicUrlDataSeederTests
     [InlineData("Test")]
     [InlineData("test2")]
     [InlineData("UAT")]
-    public void GetEnvironmentUrl_TestOrUat_ReturnsTestUrl(string aspNetCoreEnvironment)
+    [InlineData("Staging")] // UAT's ASPNETCORE_ENVIRONMENT is "Staging" - shares the test Metabase/Matomo instance
+    public void GetEnvironmentUrl_TestOrUatOrStaging_ReturnsTestUrl(string aspNetCoreEnvironment)
     {
         var result = DynamicUrlDataSeeder.GetEnvironmentUrl(
             aspNetCoreEnvironment, DevUrl, TestUrl, ProdUrl);
@@ -37,7 +38,6 @@ public class DynamicUrlDataSeederTests
 
     [Theory]
     [InlineData("Production")]
-    [InlineData("Staging")]
     public void GetEnvironmentUrl_AnythingElse_ReturnsProdUrl(string aspNetCoreEnvironment)
     {
         var result = DynamicUrlDataSeeder.GetEnvironmentUrl(

@@ -15,7 +15,10 @@ namespace Unity.GrantManager.Notifications
     [Authorize]
     [Dependency(ReplaceServices = true)]
     [ExposeServices(typeof(EmailAppService), typeof(IEmailAppService))]
-    public class EmailAppService(ILocalEventBus localEventBus, IEmailNotificationService emailNotificationService) : ApplicationService, IEmailAppService
+    public class EmailAppService(
+        ILocalEventBus localEventBus,
+        IEmailNotificationService emailNotificationService,
+        EmailAttachmentService emailAttachmentService) : ApplicationService, IEmailAppService
     {
         public async Task<Guid> InitializeDraftAsync(Guid applicationId)
         {
@@ -23,6 +26,14 @@ namespace Unity.GrantManager.Notifications
         }
         public async Task<bool> SendAsync(CreateEmailDto dto)
         {
+            if (dto.EmailId != Guid.Empty)
+            {
+                // Validate at the HTTP application-service boundary so ABP serializes the
+                // user-friendly missing-file message directly back to the email composer.
+                // The event, queue, and worker checks remain as race-condition defenses.
+                await emailAttachmentService.ValidateEmailAttachmentsAsync(dto.EmailId);
+            }
+
             EmailNotificationEvent emailNotificationEvent = GetEmailNotificationEvent(dto);
             emailNotificationEvent.Action = EmailAction.SendCustom;
             await localEventBus.PublishAsync(emailNotificationEvent);
