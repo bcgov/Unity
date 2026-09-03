@@ -138,15 +138,18 @@
 
         return unity.notifications.emailAddresses.emailAddressConfigurations.getList().then(function (addresses) {
             const currentAddress = $emailFrom.val() || '';
-            const activeSenders = addresses.filter(function (address) {
-                return address.isActive && address.emailType === 'Sender';
+            const activeEmailAddresses = addresses.filter(function (address) {
+                return address.isActive;
             });
 
             $emailFrom.find('option:not(:first)').remove();
-            activeSenders.forEach(function (address) {
+            activeEmailAddresses.forEach(function (address) {
                 $('<option>').val(address.emailAddress).text(address.emailAddress).appendTo($emailFrom);
             });
-            setEmailFromValue(currentAddress || activeSenders[0]?.emailAddress || '');
+            const defaultAddress = activeEmailAddresses.find(function (address) {
+                return address.isDefault;
+            })?.emailAddress || '';
+            setEmailFromValue(currentAddress || defaultAddress || activeEmailAddresses[0]?.emailAddress || '');
         }).catch(function (error) {
             console.warn('Failed to load active sender addresses:', error);
         });

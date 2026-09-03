@@ -966,7 +966,7 @@ public class GrantApplicationAppService(
     public async Task<ApplicationFormSubmission> GetFormSubmissionByApplicationId(Guid applicationId)
     {
         ApplicationFormSubmission applicationFormSubmission = new();
-        var application = await applicationRepository.GetAsync(applicationId, false);
+        var application = await applicationRepository.FindAsync(applicationId, false);
         if (application != null)
         {
             IQueryable<ApplicationFormSubmission> queryableFormSubmissions = await applicationFormSubmissionRepository.GetQueryableAsync();
@@ -981,6 +981,11 @@ public class GrantApplicationAppService(
                 }
             }
         }
+        else
+        {
+            Logger.LogWarning("Application {ApplicationId} was not found while retrieving its form submission.", applicationId);
+        }
+
         return applicationFormSubmission;
     }
 

@@ -125,7 +125,7 @@ public class EmailNotificationService(
 
                 var subject = $"Unity-Comment: {input.Subject}";
                 var senderAddresses = await emailAddressConfigurationsRepository.GetListAsync(address =>
-                    address.EmailType == "Sender" && address.IsActive);
+                    address.EmailType == "Sender" && address.IsActive && address.IsDefault);
                 var fromEmail = senderAddresses.FirstOrDefault()?.EmailAddress ?? "NoReply@gov.bc.ca";
 
                 var hasSurname = !string.IsNullOrWhiteSpace(CurrentUser.SurName);

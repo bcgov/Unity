@@ -272,7 +272,7 @@ namespace Unity.Notifications.EmailNotifications
             var bccList = email.EmailBCC.ParseEmailList();
 
             var senderAddresses = await emailAddressConfigurationsRepository.GetListAsync(configuration =>
-                configuration.EmailType == "Sender" && configuration.IsActive);
+                configuration.EmailType == "Sender" && configuration.IsActive && configuration.IsDefault);
             var senderAddress = senderAddresses.FirstOrDefault()?.EmailAddress;
 
             dynamic emailObject = new ExpandoObject();
