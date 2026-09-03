@@ -203,6 +203,8 @@ namespace Unity.Notifications.EmailNotifications
         /// <param name="emailLog">The email log to send to queue</param>
         public async Task QueueEmailAsync(EmailLog emailLog)
         {
+            await emailAttachmentService.ValidateEmailAttachmentsAsync(emailLog.Id);
+
             EmailNotificationEvent emailNotificationEvent = new()
             {
                 Id = emailLog.Id,
@@ -245,10 +247,14 @@ namespace Unity.Notifications.EmailNotifications
             var attachments = await emailAttachmentService.GetAttachmentsAsync(emailLog.Id);
             if (attachments.Count != 0)
             {
+                await emailAttachmentService.ValidateAttachmentsExistAsync(
+                    attachments,
+                    EmailAttachmentValidationContext.Email);
+
                 var attachmentList = new List<object>();
                 foreach (var attachment in attachments)
                 {
-                    byte[]? content = await emailAttachmentService.DownloadFromS3Async(attachment.S3ObjectKey);
+                    byte[]? content = await emailAttachmentService.DownloadAttachmentFromS3Async(attachment);
                     if (content != null)
                     {
                         attachmentList.Add(CreateAttachmentObject(attachment, content));
@@ -389,6 +395,10 @@ namespace Unity.Notifications.EmailNotifications
             {
                 var emailObject = await buildEmailObject();
                 return await chesClientService.SendAsync(emailObject);
+            }
+            catch (MissingEmailAttachmentsException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -545,17 +555,7 @@ namespace Unity.Notifications.EmailNotifications
             var attachments = await emailAttachmentService.GetAttachmentsAsync(emailLogId);
             foreach (var attachment in attachments)
             {
-                try
-                {
-                    await emailAttachmentService.DeleteFromS3Async(attachment.S3ObjectKey);
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError(
-                        ex,
-                        "Failed to delete S3 attachment with key: {S3ObjectKey}",
-                        attachment.S3ObjectKey);
-                }
+                await emailAttachmentService.DeleteAttachmentAsync(attachment);
             }
         }
 

@@ -157,14 +157,16 @@
 
     function setEmailFromValue(value) {
         const $emailFrom = $('#EmailFrom');
-        const selectedAddress = value || '';
-        const hasSelectedAddress = $emailFrom.find('option').toArray().some(function (option) {
-            return option.value === selectedAddress;
-        });
-        if (selectedAddress && !hasSelectedAddress) {
+        const selectedAddress = typeof value === 'string' ? value.trim() : '';
+        const matchingOption = $emailFrom.find('option').filter(function () {
+            return ($(this).val() || '').trim().toLowerCase() === selectedAddress.toLowerCase();
+        }).first();
+        const resolvedAddress = matchingOption.length ? matchingOption.val() : selectedAddress;
+
+        if (selectedAddress && !matchingOption.length) {
             $('<option>').val(selectedAddress).text(selectedAddress).appendTo($emailFrom);
         }
-        $emailFrom.val(selectedAddress).trigger('change');
+        $emailFrom.val(resolvedAddress || null).trigger('change');
     }
 
     function syncCurrentState() {
@@ -422,6 +424,38 @@
         );
     }
 
+    function getTemplateAttachmentErrorMessage(error, fallbackMessage) {
+        const responseMessage = error?.responseJSON?.error?.message
+            || error?.responseJSON?.message;
+        if (responseMessage) {
+            return responseMessage;
+        }
+
+        if (typeof error?.responseText === 'string' && error.responseText.trim()) {
+            try {
+                const parsedResponse = JSON.parse(error.responseText);
+                const parsedMessage = parsedResponse?.error?.message || parsedResponse?.message;
+                if (parsedMessage) {
+                    return parsedMessage;
+                }
+            } catch {
+                const plainText = error.responseText.trim();
+                if (plainText.startsWith('This template contains attachments that cannot be found:')) {
+                    return plainText;
+                }
+            }
+        }
+
+        return fallbackMessage;
+    }
+
+    async function validateTemplateAttachments(templateId) {
+        await $.ajax({
+            url: `/api/form-notifications/email-template/${encodeURIComponent(templateId)}/validate-attachments`,
+            type: 'GET'
+        });
+    }
+
     async function loadAttachments(templateId) {
         if (!templateId) {
             renderAttachments([]);
@@ -471,6 +505,24 @@
             cancelButtonText: 'Cancel'
         });
         return result.isConfirmed;
+    }
+
+    function buildTemplateAppliedMessage(attachmentCount) {
+        if (attachmentCount === 0) {
+            return 'Template applied successfully. No attachments will be included.';
+        }
+
+        const plural = attachmentCount === 1 ? '' : 's';
+        return `Template applied successfully. ${attachmentCount} template attachment${plural} will be included when the email is sent.`;
+    }
+
+    async function showTemplateAppliedConfirmation(attachmentCount) {
+        await Swal.fire({
+            title: 'Template Applied',
+            text: buildTemplateAppliedMessage(attachmentCount),
+            icon: 'success',
+            confirmButtonText: 'OK'
+        });
     }
 
     async function getApplicationDetails(applicationId) {
@@ -617,13 +669,15 @@
             return false;
         }
 
+        const fields = getTemplateFields(template);
+        await validateTemplateAttachments(fields.id);
+
         if (!await confirmTemplateReplacement()) {
             return false;
         }
 
-        const fields = getTemplateFields(template);
         if (currentStep === 1) {
-            await loadAttachments(fields.id);
+            const attachments = await loadAttachments(fields.id);
             setEmailFromValue(fields.sendFrom || masterState.emailFrom);
             $('#EmailSubject').val(fields.subject);
             $('#EmailTemplateName').val(fields.name);
@@ -636,6 +690,7 @@
             };
             updateRecipientSummary(fields.id);
             showStepOneErrors(validateState(masterState, false));
+            await showTemplateAppliedConfirmation(attachments.length);
             return true;
         }
 
@@ -659,7 +714,7 @@
             attachmentBytes: 0,
             preparationError: ''
         };
-        await loadAttachments(fields.id);
+        const attachments = await loadAttachments(fields.id);
         nextState.attachmentBytes = getSelectedAttachmentBytes(fields.id);
         applicationStates.set(selectedApplicationId, nextState);
         writeVisibleEditor(nextState);
@@ -668,6 +723,7 @@
             showStepTwoErrors(errors);
         }
         updateAllValidations();
+        await showTemplateAppliedConfirmation(attachments.length);
         return true;
     }
 
@@ -884,7 +940,10 @@
                 }
             } catch (error) {
                 console.error('Failed to update the selected template.', error);
-                abp.notify.error('The selected template could not be applied.');
+                const errorMessage = getTemplateAttachmentErrorMessage(
+                    error,
+                    'The selected template could not be applied.');
+                abp.notify.error(errorMessage, null, { life: 10000 });
                 $(this).val(previousTemplateId || '');
             }
         });
