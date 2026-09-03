@@ -7,6 +7,8 @@ using Unity.Modules.Shared.PostTenantCreation;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.TenantManagement;
+using Volo.Abp.Timing;
 
 namespace Unity.GrantManager.Tenants.PostCreation;
 
@@ -23,11 +25,19 @@ namespace Unity.GrantManager.Tenants.PostCreation;
 /// entirely on failure (later steps do not run). Either way, the failed step itself does not get
 /// another automatic attempt - recovering it currently requires manually re-enqueuing a
 /// <see cref="PostTenantCreationStepArgs"/> for that step index.
+///
+/// Every outcome (skip aside - see below) is also persisted onto the tenant's "Sections" status
+/// (<see cref="TenantPostCreationSectionsExtensions"/>), so an admin can see step state from the
+/// Tenants screen without reading logs. A step skipped via <c>CanExecuteAsync</c> returning false
+/// is left as "Waiting" rather than marked as a result, since it may still run on a later manual
+/// re-enqueue (e.g. once required configuration is added).
 /// </summary>
 public class PostTenantCreationSequenceJob(
     IEnumerable<IPostTenantCreationStep> steps,
     IBackgroundJobManager backgroundJobManager,
+    ITenantRepository tenantRepository,
     ICurrentTenant currentTenant,
+    IClock clock,
     ILogger<PostTenantCreationSequenceJob> logger)
     : AsyncBackgroundJob<PostTenantCreationStepArgs>, ITransientDependency
 {
@@ -61,6 +71,7 @@ public class PostTenantCreationSequenceJob(
                         LogPrefix, args.StepIndex, step.StepName, args.TenantId);
 
                     await step.ExecuteAsync(args.TenantId);
+                    await UpdateStepStatusAsync(args.TenantId, step, PostTenantCreationStepStatus.Success, null);
                 }
             }
         }
@@ -69,6 +80,8 @@ public class PostTenantCreationSequenceJob(
             logger.LogError(ex,
                 "{Prefix} Step {StepIndex} '{StepName}' failed for tenant {TenantId}",
                 LogPrefix, args.StepIndex, step.StepName, args.TenantId);
+
+            await UpdateStepStatusAsync(args.TenantId, step, PostTenantCreationStepStatus.Error, ex.Message);
 
             if (!step.ContinueOnError)
             {
@@ -84,5 +97,13 @@ public class PostTenantCreationSequenceJob(
             TenantId = args.TenantId,
             StepIndex = args.StepIndex + 1
         });
+    }
+
+    private async Task UpdateStepStatusAsync(
+        Guid tenantId, IPostTenantCreationStep step, PostTenantCreationStepStatus status, string? message)
+    {
+        var tenant = await tenantRepository.GetAsync(tenantId);
+        tenant.SetPostTenantCreationStepStatus(step.Key, step.StepName, status, message, clock.Now);
+        await tenantRepository.UpdateAsync(tenant);
     }
 }

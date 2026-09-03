@@ -73,10 +73,134 @@
                 return data;
             }
         },
-        { title: l('Id'), data: 'id', name: 'id', index: 8 }
+        {
+            // Small info icon next to the header, hinting that the status icon in this column is
+            // clickable - a native title attribute (not a Bootstrap tooltip) so it works without
+            // needing to re-run ABP's tooltip auto-init after every DataTable redraw.
+            title: lGm('TenantList:PostCreationStatus') +
+                ' <i class="fa-regular fa-circle-question text-muted" title="' +
+                $('<span>').text(lGm('TenantList:PostCreationStatus:HeaderHint')).html() + '"></i>',
+            data: 'sections',
+            name: 'sections',
+            orderable: false,
+            className: 'text-center',
+            index: 8,
+            render: function (data, type) {
+                if (type !== 'display') {
+                    return data;
+                }
+                return _renderPostCreationStatusIcon(data);
+            }
+        },
+        { title: l('Id'), data: 'id', name: 'id', index: 9 }
     ];
 
-    let defaultVisibleColumns = ['actions', 'name', 'displayName', 'licencePlate', 'division', 'branch', 'description', 'casClientCode'];
+    let defaultVisibleColumns = ['actions', 'name', 'displayName', 'licencePlate', 'division', 'branch', 'description', 'casClientCode', 'sections'];
+
+    // ─── Post-creation status column (e.g. Metabase sync) ─────────────────────
+
+    let _postCreationSummaryByStatus = {
+        Waiting: { icon: 'fa-clock', cssClass: 'text-secondary' },
+        Success: { icon: 'fa-circle-check', cssClass: 'text-success' },
+        Partial: { icon: 'fa-triangle-exclamation', cssClass: 'text-warning' },
+        Failure: { icon: 'fa-circle-xmark', cssClass: 'text-danger' }
+    };
+
+    function _parsePostCreationSections(json) {
+        try {
+            let sections = JSON.parse(json || '[]');
+            return Array.isArray(sections) ? sections : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    // Rolls up the per-step statuses into one of Waiting / Success / Partial / Failure:
+    // Success - every step succeeded; Failure - nothing succeeded and at least one step
+    // failed; Partial - a mix of succeeded and failed steps; Waiting - otherwise (nothing has
+    // failed yet, but not every step has finished either).
+    function _summarizePostCreationStatus(sections) {
+        if (!sections.length) {
+            return 'Waiting';
+        }
+        let successCount = sections.filter(function (s) { return s.status === 'Success'; }).length;
+        let failedCount = sections.filter(function (s) { return s.status === 'Error' || s.status === 'Failure'; }).length;
+        let waitingCount = sections.length - successCount - failedCount;
+
+        if (failedCount === 0 && waitingCount === 0) {
+            return 'Success';
+        }
+        if (successCount === 0 && failedCount > 0) {
+            return 'Failure';
+        }
+        if (successCount > 0 && failedCount > 0) {
+            return 'Partial';
+        }
+        return 'Waiting';
+    }
+
+    function _renderPostCreationStatusIcon(json) {
+        let sections = _parsePostCreationSections(json);
+
+        // No tracked steps at all means this is a legacy tenant that predates post-creation step
+        // tracking (created before this feature shipped) - it will never get seeded/updated, so
+        // showing a permanent "Waiting" icon for it would be misleading. Only tenants created
+        // going forward (seeded at creation time - see SeedPostTenantCreationSections) have any
+        // sections, so an empty list here is the legacy case, not a "still waiting" case.
+        if (!sections.length) {
+            return '';
+        }
+
+        let status = _summarizePostCreationStatus(sections);
+        let summary = _postCreationSummaryByStatus[status] || _postCreationSummaryByStatus.Waiting;
+        let statusText = lGm('TenantList:PostCreationStatus:' + status);
+        let title = $('<span>').text(statusText + ' - ' + lGm('TenantList:PostCreationStatus:ClickForDetails')).html();
+
+        // The per-step detail (name/status/message/timestamp) is read back from the DataTable's
+        // own row data on click (see the delegated click handler below) rather than embedded here
+        // as a data-* attribute - the sections JSON contains double quotes, which break a
+        // double-quoted HTML attribute unless escaped for attribute context specifically (`.text()`
+        // + `.html()` only escapes for element *content*, not attribute values).
+        return '<a href="javascript:;" class="post-creation-status-icon" title="' + title + '">' +
+            '<i class="fa-solid ' + summary.icon + ' ' + summary.cssClass + '" style="font-size: 1.1rem;"></i>' +
+            '</a>';
+    }
+
+    // abp.message.info in this app falls back to a plain browser alert() (see abp.jquery.js),
+    // which can't render markup - HTML passed to it just shows up as literal tag text. Use
+    // SweetAlert2 directly instead (already used elsewhere in this codebase, e.g.
+    // AssessmentScoresWidget/Default.js, for the same reason: it supports an `html` option).
+    function _showPostCreationSectionsDetail(sections) {
+        if (!sections.length) {
+            Swal.fire({
+                title: lGm('TenantList:PostCreationStatus'),
+                text: lGm('TenantList:PostCreationStatus:NoSteps'),
+                confirmButtonText: 'OK',
+                customClass: { confirmButton: 'btn btn-primary' }
+            });
+            return;
+        }
+
+        let html = '<div class="text-start">' + sections.map(function (section) {
+            let statusKey = section.status || 'Waiting';
+            let statusText = lGm('TenantList:PostCreationStatus:' + statusKey);
+            let updatedAtText = section.updatedAt ? new Date(section.updatedAt).toLocaleString() : '';
+            return '<div class="mb-2">' +
+                '<strong>' + $('<span>').text(section.name || section.key || '').html() + '</strong>: ' +
+                $('<span>').text(statusText).html() +
+                (section.message ? '<div class="text-muted small">' + $('<span>').text(section.message).html() + '</div>' : '') +
+                (updatedAtText ? '<div class="text-muted small">' + $('<span>').text(updatedAtText).html() + '</div>' : '') +
+                '</div>';
+        }).join('') + '</div>';
+
+        Swal.fire({
+            title: lGm('TenantList:PostCreationStatus'),
+            html: html,
+            width: '32rem',
+            confirmButtonText: 'OK',
+            customClass: { confirmButton: 'btn btn-primary' }
+        });
+    }
 
     let responseCallback = function (result) {
         return {
@@ -722,6 +846,12 @@
         $(document).on('click', '.tenant-action-delete', function (e) {
             e.preventDefault();
             _confirmDeleteTenant($(this).data('id'), $(this).data('name'));
+        });
+
+        $(document).on('click', '.post-creation-status-icon', function (e) {
+            e.preventDefault();
+            let rowData = _dataTable.row($(this).closest('tr')).data();
+            _showPostCreationSectionsDetail(_parsePostCreationSections(rowData ? rowData.sections : '[]'));
         });
     });
 

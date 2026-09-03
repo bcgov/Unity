@@ -1,0 +1,622 @@
+<title>Unity.TenantManagement</title>
+<meta name="description" content="Complete technical handover of Unity Portal's tenant creation, onboarding, and configuration module — architecture, domain model, permissions, onboarding-as-intake, post-creation provisioning, and UI in one page.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --paper:#F5F3EB;
+    --paper-raised:#EEEADB;
+    --ink:#20242B;
+    --ink-soft:#5B6472;
+    --line:#D9D3BF;
+    --accent:#2C6E68;
+    --accent-strong:#1B4B47;
+    --accent-soft:#DCEAE6;
+    --warn:#A85D2E;
+    --warn-soft:#F1E1D0;
+    --good:#3D7A3D;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#12161A;
+      --paper-raised:#1A2024;
+      --ink:#E9E6DC;
+      --ink-soft:#98A2AB;
+      --line:#2B333A;
+      --accent:#63C4B9;
+      --accent-strong:#8AD8CE;
+      --accent-soft:#17302C;
+      --warn:#E0975A;
+      --warn-soft:#2E2013;
+      --good:#7BC47B;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#12161A;
+    --paper-raised:#1A2024;
+    --ink:#E9E6DC;
+    --ink-soft:#98A2AB;
+    --line:#2B333A;
+    --accent:#63C4B9;
+    --accent-strong:#8AD8CE;
+    --accent-soft:#17302C;
+    --warn:#E0975A;
+    --warn-soft:#2E2013;
+    --good:#7BC47B;
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Source Serif 4', Georgia, 'Times New Roman', serif;
+    font-size:16px;
+    line-height:1.55;
+  }
+  .sheet{
+    max-width:960px;
+    margin:0 auto;
+    padding:56px 40px 90px;
+  }
+  h1,h2,h3,h4{
+    font-family:'Big Shoulders Display', 'Archivo Black', Impact, sans-serif;
+    text-transform:uppercase;
+    letter-spacing:0.01em;
+    text-wrap:balance;
+    color:var(--ink);
+    margin:0;
+  }
+  .mono{ font-family:'JetBrains Mono', ui-monospace, Consolas, monospace; }
+  code, .code{
+    font-family:'JetBrains Mono', ui-monospace, Consolas, monospace;
+    font-size:0.85em;
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:0.05em 0.4em;
+    color:var(--accent-strong);
+    white-space:nowrap;
+  }
+  p{ margin:0 0 0.9em; max-width:68ch; }
+  p:last-child{ margin-bottom:0; }
+  a{ color:var(--accent-strong); }
+  ul{ margin:0; padding-left:1.2em; }
+  li{ margin-bottom:0.4em; }
+  strong{ color:var(--ink); }
+
+  /* ---------- Header ---------- */
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--accent-strong);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .eyebrow::before{ content:""; width:22px; height:1px; background:var(--accent-strong); }
+  h1.title{ font-size:clamp(40px, 7vw, 76px); line-height:0.92; font-weight:800; }
+  .subtitle{ max-width:60ch; font-size:19px; color:var(--ink-soft); margin-top:16px; }
+  .meta-row{
+    margin-top:26px;
+    padding-top:18px;
+    border-top:1px solid var(--line);
+    display:flex;
+    flex-wrap:wrap;
+    gap:22px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .meta-row b{ color:var(--ink); font-weight:600; }
+
+  /* ---------- TOC ---------- */
+  .toc{
+    margin-top:22px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    padding-top:18px;
+    border-top:1px solid var(--line);
+  }
+  .toc a{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    text-decoration:none;
+    color:var(--ink-soft);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:6px 12px;
+    background:var(--paper-raised);
+    transition:color .15s, border-color .15s;
+  }
+  .toc a:hover{ color:var(--accent-strong); border-color:var(--accent); }
+  .toc a b{ color:var(--accent-strong); font-weight:600; margin-right:4px; }
+
+  /* ---------- Fact strip ---------- */
+  .facts{
+    margin-top:40px;
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+  }
+  .fact{ padding:16px 18px; border-left:1px solid var(--line); }
+  .fact:first-child{ border-left:none; }
+  .fact .num{ font-family:'Big Shoulders Display', sans-serif; font-weight:700; font-size:34px; line-height:1; color:var(--accent-strong); }
+  .fact .lbl{ margin-top:6px; font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.04em; text-transform:uppercase; color:var(--ink-soft); }
+
+  /* ---------- Sections ---------- */
+  section{ margin-top:64px; scroll-margin-top:24px; }
+  .sec-head{ display:flex; align-items:baseline; gap:14px; margin-bottom:8px; }
+  .sec-num{ font-family:'JetBrains Mono', monospace; font-size:13px; color:var(--ink-soft); }
+  h2{ font-size:26px; font-weight:700; }
+  h3{
+    font-size:16px;
+    font-weight:700;
+    text-transform:none;
+    font-family:'JetBrains Mono', monospace;
+    letter-spacing:0.01em;
+    color:var(--accent-strong);
+    margin-top:32px;
+    margin-bottom:12px;
+    padding-bottom:6px;
+    border-bottom:1px solid var(--line);
+  }
+  section > .lede{ color:var(--ink-soft); font-size:15.5px; max-width:72ch; margin-bottom:20px; }
+  .note{ font-size:14px; color:var(--ink-soft); }
+
+  /* ---------- Pipeline ---------- */
+  .pipeline{ display:grid; grid-template-columns:repeat(3, 1fr); gap:0; border:1px solid var(--line); border-radius:2px; overflow:hidden; }
+  .pipe-step{ padding:20px 20px 22px; border-left:1px solid var(--line); position:relative; }
+  .pipe-step:first-child{ border-left:none; }
+  .pipe-step::after{
+    content:"→"; position:absolute; right:-13px; top:50%; transform:translateY(-50%);
+    color:var(--accent); font-size:20px; font-weight:600; background:var(--paper); width:24px; text-align:center; z-index:1;
+  }
+  .pipe-step:last-child::after{ content:""; }
+  .pipe-kicker{ font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:8px; }
+  .pipe-tracks{ display:flex; flex-direction:column; gap:6px; }
+  .pipe-tracks .code{ white-space:normal; }
+  .track-label{ font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.03em; margin-top:2px; }
+
+  /* ---------- Chips ---------- */
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chip{ font-family:'JetBrains Mono', monospace; font-size:12px; padding:6px 11px; border:1px solid var(--line); border-radius:999px; color:var(--ink-soft); background:var(--paper-raised); }
+  .chip.on{ border-color:var(--accent); color:var(--accent-strong); background:var(--accent-soft); }
+
+  /* ---------- Data table (generic) ---------- */
+  table.data{ width:100%; border-collapse:collapse; font-size:14px; }
+  table.data th{
+    text-align:left; font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.04em; text-transform:uppercase;
+    color:var(--ink-soft); border-bottom:1px solid var(--line); padding:0 10px 8px 0; font-weight:500;
+  }
+  table.data td{ padding:9px 10px 9px 0; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.data tr:last-child td{ border-bottom:none; }
+  table.data .yes{ color:var(--good); font-weight:700; }
+  table.data .no{ color:var(--ink-soft); opacity:0.5; }
+  .table-scroll{ overflow-x:auto; }
+
+  /* ---------- kv grid ---------- */
+  .kv-grid{ display:grid; grid-template-columns:1fr 1.6fr; gap:0; border:1px solid var(--line); }
+  .kv-grid > div{ padding:14px 18px; border-top:1px solid var(--line); font-size:14.5px; }
+  .kv-grid > div:nth-child(-n+2){ border-top:none; }
+  .kv-grid .k{ font-family:'JetBrains Mono', monospace; font-size:12.5px; color:var(--ink-soft); background:var(--paper-raised); }
+
+  /* ---------- Rowlist (entity trees, API groups, invariants) ---------- */
+  .rowlist{ display:flex; flex-direction:column; border-top:1px solid var(--line); }
+  .rowlist .row{ display:grid; grid-template-columns:210px 1fr; gap:20px; padding:13px 0; border-bottom:1px solid var(--line); }
+  .rowlist .row .k{ font-family:'JetBrains Mono', monospace; font-size:13px; font-weight:600; color:var(--accent-strong); line-height:1.4; }
+  .rowlist .row .k .sub{ display:block; font-weight:400; color:var(--ink-soft); font-size:11px; margin-top:2px; text-transform:none; }
+  .rowlist .row .v{ font-size:14.5px; }
+  .rowlist .row .v p{ margin:0; }
+  .rowlist .row .v .methods{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .rowlist .row .v .methods span{
+    font-family:'JetBrains Mono', monospace; font-size:11px; background:var(--paper-raised); border:1px solid var(--line);
+    border-radius:3px; padding:2px 6px; color:var(--ink-soft);
+  }
+
+  /* ---------- Tag badges (rough edges, tech debt) ---------- */
+  .tag{
+    font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.03em; text-transform:uppercase;
+    border-radius:3px; padding:3px 8px; height:fit-content; white-space:nowrap; display:inline-block;
+  }
+  .tag.warn{ color:var(--warn); background:var(--warn-soft); }
+  .tag.accent{ color:var(--accent-strong); background:var(--accent-soft); }
+  .tag.roadmap{ color:var(--accent-strong); background:transparent; border:1px dashed var(--accent); }
+
+  .schematic{
+    font-family:'JetBrains Mono', monospace; font-size:13px; color:var(--ink-soft);
+    background:var(--paper-raised); border:1px solid var(--line); border-radius:3px; padding:10px 14px; margin-bottom:14px; overflow-x:auto; white-space:pre;
+  }
+
+  /* ---------- Footer ---------- */
+  footer{
+    margin-top:70px; padding-top:22px; border-top:1px solid var(--line);
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px;
+    font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--ink-soft);
+  }
+
+  @media (max-width:640px){
+    .sheet{ padding:36px 20px 60px; }
+    .facts{ grid-template-columns:repeat(2,1fr); }
+    .fact:nth-child(3){ border-left:none; }
+    .pipeline{ grid-template-columns:1fr; }
+    .pipe-step::after{ content:"↓"; right:auto; left:16px; top:auto; bottom:-13px; transform:none; }
+    .pipe-step{ border-left:none; border-top:1px solid var(--line); }
+    .pipe-step:first-child{ border-top:none; }
+    .kv-grid{ grid-template-columns:1fr; }
+    .kv-grid .k{ border-bottom:none; padding-bottom:4px; }
+    .rowlist .row{ grid-template-columns:1fr; gap:6px; }
+  }
+</style>
+
+<div class="sheet">
+
+  <header>
+    <div class="eyebrow">Module Handover · Unity Portal</div>
+    <h1 class="title">Unity.TenantManagement</h1>
+    <p class="subtitle">Every path a tenant can come into existence through — a direct form for IT Administrators, or a reviewed Onboarding request built entirely on the existing intake/Flex pipeline for IT Operations — converges on one call. This page is the complete reference: architecture, domain model, permissions, onboarding, post-creation provisioning, and UI in one place.</p>
+    <div class="meta-row">
+      <span><b>Path</b> <span class="mono">applications/Unity.GrantManager/modules/Unity.TenantManagement</span></span>
+      <span><b>Domain layer</b> <span class="mono">none — see §02</span></span>
+      <span><b>Connection strings</b> <span class="mono">AES-256, 2 per tenant</span></span>
+    </div>
+    <nav class="toc">
+      <a href="#pattern"><b>01</b>The pattern</a>
+      <a href="#architecture"><b>02</b>Module architecture</a>
+      <a href="#domain"><b>03</b>Tenant &amp; connection strings</a>
+      <a href="#permissions"><b>04</b>Permissions &amp; policies</a>
+      <a href="#services"><b>05</b>Application services</a>
+      <a href="#onboarding"><b>06</b>Onboarding</a>
+      <a href="#postcreation"><b>07</b>Post-creation &amp; Metabase</a>
+      <a href="#ui"><b>08</b>Web UI</a>
+      <a href="#edges"><b>09</b>Known rough edges</a>
+    </nav>
+  </header>
+
+  <div class="facts">
+    <div class="fact"><div class="num">0</div><div class="lbl">Domain/EF projects of its own</div></div>
+    <div class="fact"><div class="num">2</div><div class="lbl">IT roles: Admin / Operations</div></div>
+    <div class="fact"><div class="num">2</div><div class="lbl">Encrypted connection strings / tenant</div></div>
+    <div class="fact"><div class="num">1</div><div class="lbl">Post-creation step registered (Metabase)</div></div>
+  </div>
+
+  <!-- ============ 01 THE PATTERN ============ -->
+  <section id="pattern">
+    <div class="sec-head"><span class="sec-num">01</span><h2>The pattern</h2></div>
+    <p class="lede">Unity Portal is multi-tenant: every ministry/program area is a separate ABP tenant with its own database, users, and feature set. This module creates, provisions, and configures those tenants — from IT Administrators using a direct "New Tenant" form, through IT Operations reviewing and approving <strong>Onboarding</strong> requests submitted as a specialized CHEFS intake form, to ongoing configuration (connection strings, features, Metabase reporting access, CAS client code, managers).</p>
+
+    <p>Whichever door a tenant comes in through, creation converges on exactly one call:</p>
+
+    <div class="pipeline">
+      <div class="pipe-step">
+        <div class="pipe-kicker">Door A · IT Administrator</div>
+        <div class="pipe-tracks">
+          <span class="code">CreateModal</span>
+          <span class="track-label">hand-filled "New Tenant" form</span>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-kicker">Converges on</div>
+        <div class="pipe-tracks">
+          <span class="code">TenantAppService.CreateAsync</span>
+          <span class="track-label">provisioning, connection strings, ETO</span>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-kicker">Door B · IT Operations</div>
+        <div class="pipe-tracks">
+          <span class="code">OnboardingRequestAppService</span>
+          <span class="track-label">.CreateTenantAsync — approved intake form</span>
+        </div>
+      </div>
+    </div>
+    <p class="note" style="margin-top:16px;">Neither door is a "lesser" path — Onboarding is a guided front end with an approvable request queue, admin-configurable field mapping, and pre-flight validation layered on top of the identical provisioning logic IT Admins trigger directly. See §06.</p>
+
+    <h3>Glossary</h3>
+    <table class="data">
+      <tbody>
+        <tr><td class="code">Tenant</td><td>Stock ABP <span class="code">Volo.Abp.TenantManagement.Tenant</span> — one ministry/program area's isolated database + user base. Extended via flat <span class="code">ExtraProperties</span>, not a custom entity.</td></tr>
+        <tr><td class="code">Licence plate</td><td>The auto-generated <span class="code">T_XXX999</span> (3 random letters + 3 random digits) tenant/database/username stem.</td></tr>
+        <tr><td class="code">Tenant / Tenant_Readonly</td><td>Two AES-256-encrypted connection strings per tenant — full read-write role and an independent read-only role, both real Postgres roles.</td></tr>
+        <tr><td class="code">Onboarding request</td><td>Not a dedicated entity — a <span class="code">Unity.GrantManager</span> <span class="code">Application</span> whose form's category is <span class="code">"Onboarding"</span>, submitted through the normal CHEFS intake pipeline.</td></tr>
+        <tr><td class="code">Post-tenant-creation step</td><td>One unit of asynchronous provisioning work run after a tenant is created (currently just Metabase registration), tracked and surfaced in the Tenants list UI.</td></tr>
+        <tr><td class="code">IT Administrator / IT Operations</td><td>Two distinct Keycloak roles with overlapping-but-different rights. Roughly: IT Admin can do anything directly; IT Operations creates tenants only through Onboarding approval.</td></tr>
+        <tr><td class="code">CAS client code</td><td>BC Government's Corporate Accounting System ministry client code, attached to a tenant for downstream <span class="code">Unity.Payments</span> invoicing.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ============ 02 MODULE ARCHITECTURE ============ -->
+  <section id="architecture">
+    <div class="sec-head"><span class="sec-num">02</span><h2>Module architecture</h2></div>
+    <p class="lede">Unlike <span class="code">Unity.Flex</span>, which owns its entire domain model, EF Core context, and database schema, <strong>this module owns no domain layer and no persistence of its own.</strong> No <span class="code">Unity.TenantManagement.Domain</span>, no <span class="code">Unity.TenantManagement.EntityFrameworkCore</span> project exists — confirmed by directory listing, not assumed.</p>
+
+    <div class="schematic">Unity.TenantManagement.Application.Contracts   → DTOs, app service interfaces
+        ↑
+Unity.TenantManagement.Application             → AbpTenantManagementDomainModule (ABP's own), Unity.SharedKernel,
+                                                  Unity.Flex.Application.Contracts
+                                                  ZERO reference to Unity.GrantManager — host callbacks via DI only
+        ↑
+Unity.TenantManagement.Web                      → Razor Pages. Reaches into Unity.GrantManager.Application.Contracts
+                                                  and Unity.Reporting.Application.Contracts for UI convenience — the
+                                                  one place the "no host reference" rule relaxes, Web tier only
+        ↑
+Unity.TenantManagement.HttpApi / .HttpApi.Client → thin controller/proxy wrappers</div>
+
+    <p>Everything domain-specific this module manages is one of: <strong>ABP's own built-in <span class="code">Tenant</span>/<span class="code">TenantConnectionString</span> entities</strong>, extended purely through flat <span class="code">ExtraProperties</span> — hosted in the <strong>host</strong> <span class="code">GrantManagerDbContext</span> via <span class="code">[ReplaceDbContext(typeof(ITenantManagementDbContext))]</span> — or <strong>host-owned entities it never compiles against</strong> (<span class="code">CasClientCode</span>, <span class="code">DynamicUrl</span>, the onboarding-source <span class="code">Application</span>/<span class="code">WorksheetInstance</span>), resolved purely via runtime DI.</p>
+
+    <h3>The inversion: contracts here, implementations in the host</h3>
+    <p><span class="code">Unity.GrantManager.Application</span> implements two contracts this module defines but cannot itself fulfil — the same decoupling idea Flex uses for its local-event handlers, just wired through plain DI resolution (<span class="code">LazyServiceProvider.LazyGetService&lt;T&gt;()</span>, degrading gracefully to empty results if nothing is registered) instead of an event bus:</p>
+    <div class="rowlist">
+      <div class="row"><div class="k">IOnboardingApplicationProvider<span class="sub">→ GrantManagerOnboardingApplicationProvider</span></div><div class="v"><p>Reads onboarding request data out of the host's <span class="code">Application</span>/Flex <span class="code">WorksheetInstance</span> tables. See §06.</p></div></div>
+      <div class="row"><div class="k">IOnboardingUserLookup<span class="sub">→ CssOnboardingUserLookup</span></div><div class="v"><p>Resolves an email to an IDIR GUID via the host's existing CSS/IDIR directory integration.</p></div></div>
+    </div>
+  </section>
+
+  <!-- ============ 03 TENANT & CONNECTION STRINGS ============ -->
+  <section id="domain">
+    <div class="sec-head"><span class="sec-num">03</span><h2>Tenant &amp; connection strings</h2></div>
+    <p class="lede"><span class="code">Tenant</span> is <span class="code">Volo.Abp.TenantManagement.Tenant</span> unmodified — no subclass, no <span class="code">[ReplaceDbSetType]</span>. Every domain-specific field is a flat string in <span class="code">Tenant.ExtraProperties</span> (persisted as a single <span class="code">text</span> column, not <span class="code">jsonb</span>).</p>
+
+    <h3>ExtraProperties keys</h3>
+    <table class="data">
+      <thead><tr><th>Key</th><th>Set by</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td class="code">DisplayName</td><td class="mono">CreateAsync/UpdateAsync</td><td>Human-readable name (distinct from ABP's own normalized <span class="code">Tenant.Name</span>).</td></tr>
+        <tr><td class="code">Division / Branch / Description</td><td class="mono">Same</td><td>Free-text ministry org metadata.</td></tr>
+        <tr><td class="code">CasClientCode</td><td class="mono">Same</td><td>BC Gov CAS ministry client code — see §05.</td></tr>
+        <tr><td class="code">LicencePlate</td><td class="mono">CreateAsync</td><td>The <span class="code">T_XXX999</span> DB/username stem.</td></tr>
+        <tr><td class="code">PostCreationStepKeys, PostCreationStep_*</td><td class="mono">PostTenantCreationSequenceJob</td><td>Per-step provisioning status — see §07.</td></tr>
+      </tbody>
+    </table>
+    <p class="note" style="margin-top:12px;"><strong>Every value here is a deliberate scalar, not a JSON blob</strong> — a single JSON-serialized value in one <span class="code">ExtraProperties</span> entry can trip ABP's own Newtonsoft-based change-tracking for that dictionary on the next save (a real, reproducible failure mode). Full detail in §07.</p>
+
+    <h3>Two connection strings, both encrypted at rest</h3>
+    <p>Also stock ABP (<span class="code">TenantConnectionString</span>, keyed by <span class="code">Name</span>): <strong><span class="code">"Tenant"</span></strong> (full read-write) and <strong><span class="code">"Tenant_Readonly"</span></strong> (independent read-only role, consumed by Metabase — §07). Both AES-256-CBC encrypted via ABP's <span class="code">IStringEncryptionService</span> (PBKDF2/SHA-1, base64), pass phrase from <span class="code">StringEncryption:DefaultPassPhrase</span>.</p>
+    <div class="rowlist">
+      <div class="row"><div class="k">Encrypt on write</div><div class="v"><p><span class="code">TenantAppService.CreateAsync</span> / <span class="code">UpdateConnectionStringsAsync</span>.</p></div></div>
+      <div class="row"><div class="k">Runtime decrypt</div><div class="v"><p><span class="code">EncryptedTenantConnectionStringResolver</span> — replaces ABP's own resolver via <span class="code">[Dependency(ReplaceServices = true)]</span>; falls back to plain text on decrypt failure.</p></div></div>
+      <div class="row"><div class="k">Migration-time decrypt</div><div class="v"><p><span class="code">EntityFrameworkCoreGrantManagerDbSchemaMigrator.cs</span>.</p></div></div>
+      <div class="row"><div class="k">One-time backfill</div><div class="v"><p><span class="code">TenantConnectionStringEncryptionMigrator.cs</span>, run from <span class="code">GrantManagerDbMigrationService.MigrateAsync()</span> at startup.</p></div></div>
+    </div>
+
+    <h3>Credential generation — TenantConnectionStringBuilder</h3>
+    <div class="rowlist">
+      <div class="row"><div class="k">GenerateCredentialsAsync</div><div class="v"><p>Unique <span class="code">T_XXX999</span> (3 random letters + 3 digits, CSPRNG), checked against <strong>currently-existing tenants'</strong> <span class="code">LicencePlate</span> only — not orphaned roles from a deleted tenant (§09). Plus a fresh 24-char password.</p></div></div>
+      <div class="row"><div class="k">GeneratePassword</div><div class="v"><p>24 chars, <span class="code">A-Za-z0-9</span> only — quote/backslash excluded <strong>at generation</strong>, not escaped later, because the password is interpolated into a single-quoted SQL literal by the migrator.</p></div></div>
+      <div class="row"><div class="k">GenerateReadOnlyCredentials</div><div class="v"><p>Same DB name, username <span class="code">+ "_readonly"</span>, a <strong>freshly generated, independent</strong> password.</p></div></div>
+    </div>
+
+    <h3>Postgres role provisioning</h3>
+    <p><span class="code">EntityFrameworkCoreGrantManagerDbSchemaMigrator</span> runs <strong>synchronously</strong> from <span class="code">TenantCreatedEventHandler</span> — before the deferred post-creation sequence is even enqueued, so no race with it. Validates identifiers against an allowlist before interpolating into admin DDL (Postgres identifiers can't be parameterized), then:</p>
+    <div class="schematic">DO $$
+BEGIN
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '{roleName}') THEN
+    CREATE ROLE "{roleName}" WITH LOGIN PASSWORD '{password}';
+  END IF;
+END
+$$;</div>
+    <p class="note"><strong>Known gap:</strong> the password is only ever set on the <span class="code">CREATE ROLE</span> branch — no <span class="code">ALTER ROLE ... PASSWORD</span> on the "already exists" path. See §09 for the full desync chain this creates.</p>
+  </section>
+
+  <!-- ============ 04 PERMISSIONS & POLICIES ============ -->
+  <section id="permissions">
+    <div class="sec-head"><span class="sec-num">04</span><h2>Permissions &amp; policies</h2></div>
+    <p class="lede">Two Keycloak roles sit above this module's own ABP permissions, defined in <span class="code">modules/Unity.SharedKernel/Permissions/IdentityConsts.cs</span>: <span class="code">ITAdministrator</span> and <span class="code">ITOperations</span>, plus a role-only OR of both, <span class="code">ITAdminOrITOperations</span>.</p>
+
+    <h3>RoleOrPermissionRequirement — the actual OR logic</h3>
+    <p>None of this module's composite policies (nor the raw <span class="code">Tenants.Create</span>/<span class="code">Update</span> permission names themselves) are gated purely through ABP's normal permission-grant tree. They're registered as custom ASP.NET Core authorization policies in the host: <span class="code">src/Unity.GrantManager.Web/Identity/PolicyRegistrant.cs</span>. Both the raw permission name <strong>and</strong> its <span class="code">...OrITOps</span> alias resolve to the identical requirement:</p>
+    <div class="schematic">if (requirement.RoleNames.Any(context.User.IsInRole)) { Succeed; return; }
+if (await _permissionChecker.IsGrantedAsync(context.User, requirement.PermissionName)) { Succeed; }</div>
+    <p>i.e. succeeds for <strong>ITAdministrator</strong> OR <strong>ITOperations</strong> role, OR an individually-granted <span class="code">Tenants.Create</span> ABP permission. Practical effect: IT Operations and IT Administrator can do almost everything gated by these composite policies.</p>
+
+    <h3>The one deliberate exception</h3>
+    <p>The "New Tenant" modal/button is tightened to <span class="code">IdentityConsts.ITAdminPolicyName</span> alone — a plain role check, no OR — so IT Operations is steered to create tenants only through Onboarding approval instead. Two changes were needed, both scoped to the <span class="code">CreateModal</span> page only (never <span class="code">TenantAppService.CreateAsync</span> itself, which Onboarding still needs unchanged):</p>
+    <ul>
+      <li>The toolbar button's <span class="code">AbpPageToolbarOptions.requiredPolicyName</span>.</li>
+      <li>The <span class="code">/TenantManagement/Tenants/CreateModal</span> page's own <span class="code">AuthorizePage</span> convention — closing the "navigate straight to the URL" gap that hiding the button alone would leave open. This codebase's own rule: never rely solely on UI-level permission hiding.</li>
+    </ul>
+
+    <h3>Permission reference</h3>
+    <table class="data">
+      <thead><tr><th>Permission / Policy</th><th>Resolves to</th></tr></thead>
+      <tbody>
+        <tr><td class="code">Tenants.Create / Update / Delete</td><td>IT Admin OR IT Ops role, OR the raw ABP permission (via <span class="code">RoleOrPermissionRequirement</span>)</td></tr>
+        <tr><td class="code">Tenants.ManageConnectionStrings</td><td>Same OR pattern — gates the connection-string tab of the Configuration modal</td></tr>
+        <tr><td class="code">Tenants.ManageFeatures / ManageEndpoints</td><td class="no">Declared, not observed enforced anywhere (§09)</td></tr>
+        <tr><td class="code">Policies.TenantsOrITOps / TenantsUpdateOrITOps / TenantsCreateOrITOps</td><td>Named aliases of the same OR pattern, used by app-service <span class="code">[Authorize]</span> attributes</td></tr>
+        <tr><td class="code">ITAdminPolicyName</td><td>Plain role check — <span class="code">ITAdministrator</span> only, no OR. Used solely to gate direct tenant creation.</td></tr>
+        <tr><td class="code">ITOperationsPolicyName</td><td>Plain role check — <span class="code">ITOperations</span> only. Gates the entire Onboarding surface.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ============ 05 APPLICATION SERVICES ============ -->
+  <section id="services">
+    <div class="sec-head"><span class="sec-num">05</span><h2>Application services</h2></div>
+
+    <h3>TenantAppService</h3>
+    <div class="rowlist">
+      <div class="row"><div class="k">GetAsync / GetListAsync<span class="sub">TenantsOrITOps</span></div><div class="v"><p><span class="code">GetListAsync</span> branches: a fast DB path when sorting/filtering only touches native columns, an in-memory path (fetch all, filter/sort in memory) the moment an <span class="code">ExtraProperties</span> field is involved — deliberate tradeoff for tenant-count scale, not thousands.</p></div></div>
+      <div class="row"><div class="k">CreateAsync<span class="sub">TenantsCreateOrITOps</span></div><div class="v"><p>Full provisioning sequence — see below. The single choke point both doors in §01 call.</p></div></div>
+      <div class="row"><div class="k">UpdateAsync<span class="sub">TenantsUpdateOrITOps</span></div><div class="v"><p>Rename + <span class="code">ExtraProperties</span> update.</p></div></div>
+      <div class="row"><div class="k">DeleteAsync<span class="sub">Tenants.Delete</span></div><div class="v"><p>Deletes <strong>only</strong> the ABP <span class="code">Tenant</span> row — no Postgres or Metabase cleanup. See §09.</p></div></div>
+      <div class="row"><div class="k">AssignManagerAsync<span class="sub">TenantsUpdateOrITOps</span></div><div class="v"><p>Publishes <span class="code">TenantAssignManagerEto</span> rather than assigning directly.</p></div></div>
+      <div class="row"><div class="k">GetConnectionStringsAsync / UpdateConnectionStringsAsync<span class="sub">ManageConnectionStrings</span></div><div class="v"><p>Decrypt for display / encrypt on save. <strong>Never touches Postgres</strong> — root of the desync gap in §09.</p></div></div>
+      <div class="row"><div class="k">GetManagersAsync<span class="sub">TenantsUpdateOrITOps</span></div><div class="v"><p>Switches into the tenant and lists users with the <span class="code">PROGRAM_MANAGER</span> role.</p></div></div>
+    </div>
+
+    <h3>CreateAsync — the provisioning sequence</h3>
+    <div class="pipeline">
+      <div class="pipe-step">
+        <div class="pipe-kicker">01 · In the UoW</div>
+        <div class="pipe-tracks">
+          <span class="code">tenantManager.CreateAsync</span>
+          <span class="track-label">generate + encrypt both connection strings, set ExtraProperties, seed post-creation "Waiting"</span>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-kicker">02 · On commit</div>
+        <div class="pipe-tracks">
+          <span class="code">TenantCreatedEto</span>
+          <span class="track-label">published after the UoW commits</span>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-kicker">03 · Synchronous handler</div>
+        <div class="pipe-tracks">
+          <span class="code">TenantCreatedEventHandler</span>
+          <span class="track-label">migrate DB, provision Postgres roles, import IDIR user, enable features, enqueue post-creation job</span>
+        </div>
+      </div>
+    </div>
+
+    <h3>OnboardingRequestAppService</h3>
+    <p>Class-level <span class="code">[Authorize(ITOperationsPolicyName)]</span> — full lifecycle in §06.</p>
+    <div class="rowlist">
+      <div class="row"><div class="k">GetListAsync / GetAsync</div><div class="v"><p>Paged/filtered/sorted list and single-request read, merging core <span class="code">Application</span> fields with mapped Flex worksheet fields.</p></div></div>
+      <div class="row"><div class="k">ValidateAsync</div><div class="v"><p>Client pre-check — same steps re-run server-side.</p></div></div>
+      <div class="row"><div class="k">CreateTenantAsync</div><div class="v"><p>Approves the request — resolves super users/features, calls <span class="code">TenantAppService.CreateAsync</span>, assigns extra managers, updates Metabase defaults, closes the source application.</p></div></div>
+      <div class="row"><div class="k">GetColumnSchemaAsync / GetAvailableCategoriesAsync</div><div class="v"><p>Drives the admin field-mapping UI and the intake-category picker.</p></div></div>
+    </div>
+
+    <h3>Endpoint management, CAS lookup &amp; Metabase settings</h3>
+    <div class="kv-grid">
+      <div class="k">Endpoint management</div>
+      <div><span class="code">DynamicUrl</span> (host-owned, lives oddly in <span class="code">Unity.Notifications.Domain</span>) — schema supports per-tenant URL overrides (<span class="code">TenantId</span> nullable), but every consumer (Metabase, CHEFS, GitHub base URLs) calls the <span class="code">tenantSpecific: false</span> path today. Cached 1h in <span class="code">IDistributedCache</span>.</div>
+      <div class="k">CAS client code</div>
+      <div><span class="code">ICasClientCodeLookupService</span> fronts the host-owned <span class="code">CasClientCode</span> entity — this module's role is purely "let an admin attach the right code," the real CAS integration lives entirely in <span class="code">Unity.Payments</span>.</div>
+      <div class="k">Metabase settings</div>
+      <div><span class="code">MetabaseSettings.UserEmails</span> — global default + per-tenant snapshot at creation time, so the async registration step (§07) reads a stable list even if the global default changes meanwhile.</div>
+    </div>
+  </section>
+
+  <!-- ============ 06 ONBOARDING ============ -->
+  <section id="onboarding">
+    <div class="sec-head"><span class="sec-num">06</span><h2>Onboarding — tenant creation as a specialized intake form</h2></div>
+    <p class="lede">The single most important thing to understand about Onboarding: <strong>there is no <span class="code">OnboardingRequest</span> table.</strong> An onboarding request is a <span class="code">Unity.GrantManager</span> <span class="code">Application</span> — the exact same entity behind ordinary grant applications — whose <span class="code">ApplicationForm.Category == "Onboarding"</span>. A CHEFS form is authored with that category, submitted through the normal intake pipeline, and the resulting <span class="code">Application</span> plus its Flex <span class="code">WorksheetInstance</span> data is what the Onboarding screens read and act on. Zero new persistence was built — it's the intake/Flex machinery, repurposed wholesale.</p>
+
+    <h3>Two data sources merged per request</h3>
+    <div class="rowlist">
+      <div class="row"><div class="k">Core fields<span class="sub">SQL-filterable</span></div><div class="v"><p>Real <span class="code">Application</span>/<span class="code">Applicant</span>/<span class="code">ApplicantAgent</span> columns, enumerated by <span class="code">OnboardingCoreFieldRegistry</span> — a static list of <span class="code">CoreFieldDefinition(Key, Label, Type, EfPath, Selector)</span>, filterable/sortable in SQL via <span class="code">System.Linq.Dynamic.Core</span>.</p></div></div>
+      <div class="row"><div class="k">Worksheet fields<span class="sub">in-memory only</span></div><div class="v"><p>Arbitrary Flex <span class="code">CustomField</span>s on the form's <span class="code">WorksheetInstance</span>s, fetched via <span class="code">IWorksheetInstanceAppService</span> and parsed in memory — JSONB can't be filtered/sorted in SQL. An explicit PERF comment flags this as fine at current volume.</p></div></div>
+    </div>
+
+    <h3>Field mapping is admin-configurable, not hardcoded</h3>
+    <p>Which worksheet-field <em>key</em> means "tenant name", "super users", "branch", "features", etc. is stored per-user (falling back to global) via <span class="code">ISettingManager</span> (<span class="code">OnboardingColumnConfigSettings</span>). Different onboarding CHEFS forms — with entirely different field keys — can all feed the same tenant-creation flow, as long as an admin maps the columns once through the UI. No code change per form revision.</p>
+
+    <h3>Validation steps</h3>
+    <p>Same auto-discovery pattern as post-creation steps (§07): <span class="code">ITransientDependency</span>, <span class="code">Order</span>/<span class="code">StepName</span>/<span class="code">ValidateAsync</span>, run ascending, collected into <span class="code">"[{StepName}] {Issue}"</span> messages. Run by <strong>both</strong> the client pre-check and the server-authoritative approval — the client result is never trusted alone.</p>
+    <table class="data">
+      <thead><tr><th>Step</th><th>Order</th><th>Checks</th></tr></thead>
+      <tbody>
+        <tr><td class="code">TenantNameUniquenessStep</td><td class="mono">10</td><td><span class="code">ITenantRepository.FindByNameAsync</span> — no existing tenant with this normalized name.</td></tr>
+        <tr><td class="code">SuperUsersValidationStep</td><td class="mono">20</td><td>Parses <span class="code">SuperUsers</span> as either a CHEFS DataGrid JSON shape or a delimited string; requires at least one email to resolve via <span class="code">IOnboardingUserLookup</span>.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>CreateTenantAsync — the approval flow</h3>
+    <div class="rowlist">
+      <div class="row"><div class="k">1 · Re-validate</div><div class="v"><p>Re-resolves field mappings, re-runs both validation steps server-side.</p></div></div>
+      <div class="row"><div class="k">2 · Resolve users</div><div class="v"><p>Parses super-user emails, resolves each via <span class="code">IOnboardingUserLookup</span>; <strong>throws</strong> if zero resolve.</p></div></div>
+      <div class="row"><div class="k">3 · Resolve features</div><div class="v"><p><span class="code">OnboardingFeatureMap.ResolveFeatureKeys</span> — static dictionary mapping human labels/checkbox keys to real ABP feature keys.</p></div></div>
+      <div class="row"><div class="k">4 · Create the tenant</div><div class="v"><p><span class="code">TenantAppService.CreateAsync(...)</span> — the exact same call the "New Tenant" modal makes, populated from request field data.</p></div></div>
+      <div class="row"><div class="k">5 · Extra managers</div><div class="v"><p>Any resolved super users beyond the first become tenant managers via <span class="code">AssignManagerAsync</span>.</p></div></div>
+      <div class="row"><div class="k">6 · Metabase defaults</div><div class="v"><p>Optionally folds new/removed emails into the global default list ("save as default" on the approval modal).</p></div></div>
+      <div class="row"><div class="k">7 · Close the request</div><div class="v"><p><span class="code">CloseApplicationAsync</span> — the source <span class="code">Application</span> drops out of the pending-onboarding queue.</p></div></div>
+    </div>
+
+    <h3>Why IT Operations, specifically</h3>
+    <p>The whole surface — controller, both pages, the app service — is <span class="code">[Authorize(ITOperationsPolicyName)]</span>. This is the flip side of the "New Tenant" button being IT-Administrator-only (§04): IT Operations creates tenants exclusively through this reviewed, validated path; IT Administrators can also use the direct modal. Both converge on the identical <span class="code">TenantAppService.CreateAsync</span> call.</p>
+  </section>
+
+  <!-- ============ 07 POST-CREATION & METABASE ============ -->
+  <section id="postcreation">
+    <div class="sec-head"><span class="sec-num">07</span><h2>Post-creation provisioning &amp; Metabase</h2></div>
+    <p class="lede">Creating the ABP <span class="code">Tenant</span> row, its Postgres database, and its roles happens synchronously. Everything that depends on an external system — currently, registering the tenant with Metabase for reporting access — happens asynchronously, as a deferred background job sequence.</p>
+
+    <h3>The step sequence</h3>
+    <p><span class="code">IPostTenantCreationStep</span> — implement in any module, register <span class="code">ITransientDependency</span>, picked up automatically:</p>
+    <div class="schematic">interface IPostTenantCreationStep {
+  int Order { get; }
+  string Key { get; }        // stable, machine-readable — must not change once shipped
+  string StepName { get; }   // human-readable, used in logs and the status UI
+  bool ContinueOnError { get; }
+  Task&lt;bool&gt; CanExecuteAsync(Guid tenantId) =&gt; Task.FromResult(true);
+  Task ExecuteAsync(Guid tenantId);
+}</div>
+    <p><span class="code">PostTenantCreationSequenceJob</span> runs steps one per job execution, ascending <span class="code">Order</span>, self-re-enqueuing for the next index — driven entirely by ABP's background job queue. A step's exception is always caught and logged, never rethrown; ABP's own job retry never engages. <span class="code">ContinueOnError = true</span> logs and moves to the next step; <span class="code">false</span> stops the sequence. Recovery from a failure is currently a <strong>manual</strong> re-enqueue — no retry button exists yet (§09).</p>
+
+    <h3>Status tracking — Waiting / Success / Failure / Error</h3>
+    <p><span class="code">Waiting</span> is seeded for every step at tenant-creation time, so the UI shows something immediately. <span class="code">Success</span>/<span class="code">Error</span> are set after a step returns/throws. <span class="code">Failure</span> is reserved for a future step reporting a handled non-exception failure — unreachable today since the one step either succeeds or throws. A step skipped via <span class="code">CanExecuteAsync</span> returning <span class="code">false</span> stays <span class="code">Waiting</span>, not a terminal result — it may still run on a later manual re-enqueue.</p>
+
+    <h3>Why flat ExtraProperties, not a JSON blob</h3>
+    <p>Status is stored as one flat scalar key per field — <span class="code">PostCreationStepKeys</span> (comma-separated) plus <span class="code">PostCreationStep_{key}_Name/Status/Message/UpdatedAt</span> per step — matching how every other <span class="code">ExtraProperties</span> entry in this module is a flat string. This matters: <span class="code">Tenant.ExtraProperties</span> round-trips through EF Core via ABP's own Newtonsoft-based change-tracking, and a string value that itself parses as a JSON array makes the <em>next</em> save of that tenant throw <span class="code">Unable to cast object of type 'JArray' to type 'JObject'</span> — a real, reproducible failure mode. Keeping every value a plain scalar avoids it entirely.</p>
+    <p class="note">The DTO surfaced to the browser is still a JSON array string, but built <strong>fresh at read time</strong> from the flat fields — never written back into <span class="code">ExtraProperties</span>.</p>
+
+    <h3>MetabaseApiClient — handling Metabase's API inconsistencies</h3>
+    <p>Metabase's own API is inconsistent enough that the client works around it in three specific ways.</p>
+    <div class="rowlist">
+      <div class="row"><div class="k"><span class="tag accent">Response shape</span></div><div class="v"><p>Metabase inconsistently wraps list responses (<span class="code">{"data":[...]}</span>) or returns a raw array — including the response body of <span class="code">POST /api/permissions/membership</span>, which the code doesn't even use. Call sites that only need success/failure use <span class="code">PostVoidAsync</span>, which validates the HTTP status without forcing a <span class="code">JObject</span> cast on a body nothing needs.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">Racy membership check</span></div><div class="v"><p><span class="code">AddGroupMemberAsync</span>'s check-then-act can race under concurrent/retried registrations; Metabase surfaces a duplicate membership as a raw <span class="code">500</span> (unhandled DB unique-constraint violation), not a clean <span class="code">409</span>. On a POST failure, it re-checks membership — if the user is a member now, by whatever path, that's treated as success.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">Transient 422</span></div><div class="v"><p><span class="code">POST /api/database</span> returns before Metabase finishes asynchronously validating the connection; an immediate <span class="code">sync_schema</span>/<span class="code">rescan_values</span> call can transiently 422 (<span class="code">"Looks like your Password is incorrect"</span>) though the connection is fine — and 422 isn't in the HTTP client's auto-retry list. Both calls retry up to 3 times immediately.</p></div></div>
+    </div>
+
+    <h3>Status UI on the Tenants list</h3>
+    <p>An aggregate icon per tenant, rolled up from all tracked steps — green check (all succeeded), red X (nothing succeeded, at least one failed), amber warning (mixed), gray clock (nothing finished yet). A tenant with <strong>no</strong> tracked steps (a legacy tenant created before this feature shipped) renders no icon at all, not a permanent clock. Clicking opens a SweetAlert2 dialog listing every step's name/status/message/timestamp, sourced from the DataTable's own row data on click — never embedded as a <span class="code">data-*</span> attribute, since the sections JSON's embedded quotes would break naive attribute escaping.</p>
+  </section>
+
+  <!-- ============ 08 WEB UI ============ -->
+  <section id="ui">
+    <div class="sec-head"><span class="sec-num">08</span><h2>Web UI</h2></div>
+    <p class="lede">All Razor Pages under <span class="code">Unity.TenantManagement.Web/Pages/</span>, page-level authorization registered via <span class="code">RazorPagesOptions.Conventions.AuthorizePage</span> — not just toolbar-button visibility.</p>
+
+    <h3>TenantManagement/Tenants/</h3>
+    <div class="rowlist">
+      <div class="row"><div class="k">Index<span class="sub">TenantsOrITOps</span></div><div class="v"><p>The Tenants admin list — DataTable with the post-creation "Setup Status" icon.</p></div></div>
+      <div class="row"><div class="k">CreateModal<span class="sub">ITAdministrator only</span></div><div class="v"><p>"New Tenant" form. See §04 for why this is tightened off the shared OR policy.</p></div></div>
+      <div class="row"><div class="k">EditModal<span class="sub">Tenants.Update</span></div><div class="v"><p>Rename + edit display metadata.</p></div></div>
+      <div class="row"><div class="k">ConfigurationModal<span class="sub">TenantsOrITOps + tab-level gates</span></div><div class="v"><p>Connection strings, Features/Metabase, Reporting view-role, managers list.</p></div></div>
+      <div class="row"><div class="k">AssignManagerModal<span class="sub">Tenants.Create</span></div><div class="v"><p>Attach an additional manager to an existing tenant.</p></div></div>
+    </div>
+
+    <h3>TenantManagement/Onboarding/ — see §06</h3>
+    <p>Both pages <span class="code">[Authorize(ITOperationsPolicyName)]</span>: <span class="code">Index</span> (request queue) and <span class="code">CreateTenantModal</span> (approval).</p>
+
+    <h3>Adjacent tooling</h3>
+    <div class="kv-grid">
+      <div class="k">Reconciliation/Index</div>
+      <div>CHEFS-vs-Unity submission-count audit tool. Plain <span class="code">[Authorize]</span>, no specific policy — inconsistent with the rest of this module (§09).</div>
+      <div class="k">EndpointManagement/Endpoints</div>
+      <div>CRUD UI for the <span class="code">DynamicUrl</span> entity (§05).</div>
+      <div class="k">HttpApi</div>
+      <div><span class="code">TenantController</span>, and a hand-written <span class="code">OnboardingRequestController</span> at <span class="code">api/onboarding-requests</span> (rather than an auto-generated ABP dynamic proxy).</div>
+    </div>
+  </section>
+
+  <!-- ============ 09 KNOWN ROUGH EDGES ============ -->
+  <section id="edges">
+    <div class="sec-head"><span class="sec-num">09</span><h2>Known rough edges</h2></div>
+    <p class="lede">Worth knowing before you touch this code.</p>
+    <div class="rowlist">
+      <div class="row"><div class="k"><span class="tag warn">Real risk</span></div><div class="v"><p><strong>Connection-string password desync, three layers deep.</strong> The Postgres role's password is never <span class="code">ALTER</span>'d if the role already exists (§03); <span class="code">UpdateConnectionStringsAsync</span> only rewrites the encrypted DB row and never touches Postgres; and Metabase's own database record is never refreshed with a new password on a re-enqueued/retried registration (no <span class="code">PUT /api/database/{id}</span> exists in <span class="code">MetabaseApiClient</span> at all). A password change made through the UI can silently fail to propagate to either system that actually needs it, with no error until something tries to connect.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Real risk</span></div><div class="v"><p><strong>Tenant deletion leaves orphaned resources.</strong> <span class="code">DeleteAsync</span> removes only the ABP <span class="code">Tenant</span> row — no Postgres database/role cleanup, no Metabase deregistration. Compounds the licence-plate uniqueness check (§03), which only looks at currently-existing tenants, not orphaned roles from a deleted one.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">Unenforced</span></div><div class="v"><p><span class="code">Tenants.ManageFeatures</span>/<span class="code">ManageEndpoints</span> are declared but not found wired to any <span class="code">[Authorize]</span> in this module — reserved/scaffold constants, not active gates.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">Unused capability</span></div><div class="v"><p><span class="code">DynamicUrl.TenantId</span> supports per-tenant endpoint overrides in the schema; every actual call site passes <span class="code">tenantSpecific: false</span> today — global-only in practice.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Inconsistent</span></div><div class="v"><p>The Reconciliation page uses a plain <span class="code">[Authorize]</span> with no specific policy — every other page in this module names an explicit permission or IT role.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">By design</span></div><div class="v"><p><span class="code">PostTenantCreationStepStatus.Failure</span> is reserved for a future step reporting a handled non-exception failure — unreachable today since the one step (Metabase) either succeeds or throws.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Missing</span></div><div class="v"><p>No UI to retry a failed post-creation step — an operator must manually re-enqueue a <span class="code">PostTenantCreationStepArgs</span> directly. A "retry" action reachable from the status detail dialog (§07) would be a natural addition, now that step failures are visible in the UI at all.</p></div></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Source: <span class="mono">documentation/tenant-management/*.md</span></span>
+    <span>Generated with Claude Code</span>
+  </footer>
+
+</div>

@@ -26,6 +26,14 @@ public class MetabaseApiClient(
     // rather than surfacing a transient conflict as a permanent failure.
     private const int MaxGraphUpdateAttempts = 3;
 
+    // Right after POST /api/database creates a connection, Metabase validates/establishes it
+    // asynchronously in the background - calling sync_schema or rescan_values immediately after
+    // can transiently 422 ("Looks like your Password is incorrect") even though the connection is
+    // actually fine, simply because Metabase's own internal check hasn't settled yet. That status
+    // code isn't one ResilientHttpRequest's Polly pipeline retries (only 429/5xx), so retry it here
+    // (same immediate-retry approach as UpdateGraphWithRetryAsync below - no artificial delay).
+    private const int MaxDatabaseSyncAttempts = 3;
+
     public async Task<int> FindOrCreateDatabaseAsync(string name, string host, int port, string dbName, string username, string password, bool ssl, CancellationToken cancellationToken = default)
     {
         var existingId = await FindIdByNameAsync("/api/database", name, cancellationToken);
@@ -46,10 +54,26 @@ public class MetabaseApiClient(
     }
 
     public Task SyncDatabaseSchemaAsync(int databaseId, CancellationToken cancellationToken = default) =>
-        PostAsync($"/api/database/{databaseId}/sync_schema", new { }, cancellationToken);
+        PostWithRetryAsync($"/api/database/{databaseId}/sync_schema", cancellationToken);
 
     public Task RescanDatabaseValuesAsync(int databaseId, CancellationToken cancellationToken = default) =>
-        PostAsync($"/api/database/{databaseId}/rescan_values", new { }, cancellationToken);
+        PostWithRetryAsync($"/api/database/{databaseId}/rescan_values", cancellationToken);
+
+    private async Task PostWithRetryAsync(string path, CancellationToken cancellationToken)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                await PostVoidAsync(path, new { }, cancellationToken);
+                return;
+            }
+            catch (IntegrationServiceException) when (attempt < MaxDatabaseSyncAttempts)
+            {
+                // Loop around and retry immediately - see the comment on MaxDatabaseSyncAttempts.
+            }
+        }
+    }
 
     public async Task<int> FindOrCreateGroupAsync(string name, CancellationToken cancellationToken = default)
     {
@@ -80,13 +104,42 @@ public class MetabaseApiClient(
             return;
         }
 
-        await PostAsync("/api/permissions/membership", new { group_id = groupId, user_id = userId }, cancellationToken);
+        try
+        {
+            await PostVoidAsync("/api/permissions/membership", new { group_id = groupId, user_id = userId }, cancellationToken);
+        }
+        catch (IntegrationServiceException)
+        {
+            // The pre-check above is inherently racy (e.g. a concurrent/retried registration
+            // adding the same membership between our check and this POST) and Metabase surfaces
+            // a duplicate membership as a raw 500 (a DB unique-constraint violation), not a clean
+            // 409 - so status code alone can't tell "already a member" apart from a real failure.
+            // Re-checking membership after the POST fails is the reliable signal: if the user is
+            // a member now, by whatever path, the desired end state is already achieved.
+            if (!await IsGroupMemberAsync(groupId, userId, cancellationToken))
+            {
+                throw;
+            }
+        }
     }
 
     private async Task<bool> IsGroupMemberAsync(int groupId, int userId, CancellationToken cancellationToken)
     {
-        var memberships = await GetAsync("/api/permissions/membership", cancellationToken);
-        var groupMembers = memberships[groupId.ToString(CultureInfo.InvariantCulture)] as JArray;
+        var membershipsToken = await ReadJsonTokenAsync(
+            await GetRawAsync("/api/permissions/membership", cancellationToken), "/api/permissions/membership");
+
+        // /api/permissions/membership normally returns an object keyed by group id
+        // ({"<groupId>": [...members...]}), but - like /api/permissions/group and /api/collection
+        // (see the comment on FindIdByNameAsync) - Metabase can return a raw JSON array instead
+        // (observed for a brand-new group with no memberships yet: []). GetAsync's hard cast to
+        // JObject throws on that shape, so read the raw token and handle both here.
+        var groupMembers = membershipsToken switch
+        {
+            JObject membershipsByGroup => membershipsByGroup[groupId.ToString(CultureInfo.InvariantCulture)] as JArray,
+            JArray flatMemberships => flatMemberships,
+            _ => null
+        };
+
         return groupMembers?.Any(m => m.Value<int>("user_id") == userId) ?? false;
     }
 
@@ -186,6 +239,21 @@ public class MetabaseApiClient(
         var response = await resilientHttpRequest.HttpAsync(
             HttpMethod.Post, $"{baseUrl}{path}", body, extraHeaders: BuildHeaders(), cancellationToken: cancellationToken);
         return await ReadJsonAsync(response, path);
+    }
+
+    // For POST calls whose response body the caller doesn't need (only whether it succeeded).
+    // Some of Metabase's write endpoints - like /api/permissions/membership - return a raw JSON
+    // array in the response body rather than an object (the same list-endpoint inconsistency
+    // documented on FindIdByNameAsync, just showing up on a POST response instead of a GET). Since
+    // these callers only care about success/failure, read via ReadJsonTokenAsync (which accepts
+    // either shape and still throws on a non-success status) instead of PostAsync's hard JObject
+    // cast, and discard the parsed body entirely.
+    private async Task PostVoidAsync(string path, object body, CancellationToken cancellationToken)
+    {
+        var baseUrl = await GetBaseUrlAsync();
+        var response = await resilientHttpRequest.HttpAsync(
+            HttpMethod.Post, $"{baseUrl}{path}", body, extraHeaders: BuildHeaders(), cancellationToken: cancellationToken);
+        await ReadJsonTokenAsync(response, path);
     }
 
     private async Task<HttpResponseMessage> PutRawAsync(string path, object body, CancellationToken cancellationToken)
