@@ -504,6 +504,24 @@
         return result.isConfirmed;
     }
 
+    function buildTemplateAppliedMessage(attachmentCount) {
+        if (attachmentCount === 0) {
+            return 'Template applied successfully. No attachments will be included.';
+        }
+
+        const plural = attachmentCount === 1 ? '' : 's';
+        return `Template applied successfully. ${attachmentCount} template attachment${plural} will be included when the email is sent.`;
+    }
+
+    async function showTemplateAppliedConfirmation(attachmentCount) {
+        await Swal.fire({
+            title: 'Template Applied',
+            text: buildTemplateAppliedMessage(attachmentCount),
+            icon: 'success',
+            confirmButtonText: 'OK'
+        });
+    }
+
     async function getApplicationDetails(applicationId) {
         if (!applicationDetailsCache.has(applicationId)) {
             applicationDetailsCache.set(applicationId, $.ajax({
@@ -656,7 +674,7 @@
         }
 
         if (currentStep === 1) {
-            await loadAttachments(fields.id);
+            const attachments = await loadAttachments(fields.id);
             setEmailFromValue(fields.sendFrom || masterState.emailFrom);
             $('#EmailSubject').val(fields.subject);
             $('#EmailTemplateName').val(fields.name);
@@ -669,6 +687,7 @@
             };
             updateRecipientSummary(fields.id);
             showStepOneErrors(validateState(masterState, false));
+            await showTemplateAppliedConfirmation(attachments.length);
             return true;
         }
 
@@ -692,7 +711,7 @@
             attachmentBytes: 0,
             preparationError: ''
         };
-        await loadAttachments(fields.id);
+        const attachments = await loadAttachments(fields.id);
         nextState.attachmentBytes = getSelectedAttachmentBytes(fields.id);
         applicationStates.set(selectedApplicationId, nextState);
         writeVisibleEditor(nextState);
@@ -701,6 +720,7 @@
             showStepTwoErrors(errors);
         }
         updateAllValidations();
+        await showTemplateAppliedConfirmation(attachments.length);
         return true;
     }
 
