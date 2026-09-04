@@ -87,10 +87,20 @@ Generates queries for root-level field extraction:
 
 #### Checkbox Group
 **Data Structure**: `{"key": "Field10", "value": "[{\"key\":\"check1\",\"value\":false},{\"key\":\"check2\",\"value\":true}]"}`
-**Processing**: 
-- Parses JSON array from stored string
-- Extracts individual checkbox values by key
-- Returns boolean values for each checkbox option
+**Processing**:
+- Casts the stored string with `Reporting.safe_to_jsonb(...)` and guards on `jsonb_typeof(...) = 'array'`
+- Only when that guard passes does it parse the array and extract the option matching the second segment of the DataPath
+- Anything else — NULL, `''`, or a non-array value — yields `NULL` for that column
+
+```sql
+CASE WHEN jsonb_typeof("Reporting".safe_to_jsonb(<stored value>)) = 'array'
+     THEN (SELECT (checkbox_elem->>'value')::BOOLEAN
+           FROM jsonb_array_elements("Reporting".safe_to_jsonb(<stored value>)) AS checkbox_elem
+           WHERE checkbox_elem->>'key' = '<option key>')
+     ELSE NULL END
+```
+
+> **Why the guard exists (AB#33799).** A checkbox-group field saved with zero selections could persist an empty string rather than null. A bare `::jsonb` cast on that value raised `invalid input syntax for type json` and broke the *entire* generated view, not just the one column. The guard makes a bad value a NULL cell instead of a dead view.
 
 #### Radio Group
 **Data Structure**: `{"key": "Field12", "value": "Radio1"}`
@@ -191,5 +201,8 @@ SELECT "Reporting".get_worksheet_data('correlation-id', 'report-map-id');
 - **v1.2**: Added checkbox group support
 - **v1.3**: Fixed radio field handling to return text values
 - **v1.4**: Enhanced error handling and NULL type consistency
-- **v1.5**: Increased currency precision from `DECIMAL(10,2)` to `DECIMAL(18,2)` (tenant migration `20251125234153_UpdateViewGenCurrencyPrecision`)
-- **v1.6**: Locale-formatted currency values are normalized by stripping commas and whitespace before numeric validation, so values such as `1,470.07` are persisted instead of becoming `NULL`. Paired with the `WorksheetFieldSchemaParser` mixed-DataGrid fix, which now emits mapping rows for statically-defined columns on mixed (dynamic + static) grids so the SQL function actually receives mappings to project. This version also calls `Reporting.safe_to_jsonb(...)` for safe JSONB casting. Deployed via tenant migration `20260416000002_AddSafeToJsonbAndGuardDataGridLateral`, which applies `safe_to_jsonb.sql` first and then `get_worksheet_data.sql` in the correct dependency order.
+- **v1.5**: Increased currency precision from `DECIMAL(10,2)` to `DECIMAL(18,2)`.
+- **v1.6**: Locale-formatted currency values are normalized by stripping commas and whitespace before numeric validation, so values such as `1,470.07` are persisted instead of becoming `NULL`. Paired with the `WorksheetFieldSchemaParser` mixed-DataGrid fix, which now emits mapping rows for statically-defined columns on mixed (dynamic + static) grids so the SQL function actually receives mappings to project. This version also introduced `Reporting.safe_to_jsonb(...)` for safe JSONB casting.
+- **v1.7** *(AB#33799 / AB#33877, Aug 2026)*: Hardened checkbox-group extraction. A stored value that is null, `''`, or otherwise not a JSON array now resolves to `NULL` for that column instead of raising `invalid input syntax for type json` and breaking the whole view. Shipped in two steps — an initial `~ '^\[.*\]$'` regex guard, then replaced on CodeQL feedback with `jsonb_typeof("Reporting".safe_to_jsonb(...)) = 'array'`, which is what the current file contains. Deployed by tenant migration `20260806201536_AB33799_HardenCheckboxGroupReportingViews` (re-runs this script and `get_consolidated_worksheet_data.sql`; `CREATE OR REPLACE` makes it idempotent), with a companion one-off data backfill in `20260806202244_AB33799_FixCheckboxGroupEmptyValues` that rewrites the already-persisted empty-string values to JSON `null`.
+
+> **Migration references.** Earlier versions of this document cited per-feature migrations (`20251125234153_UpdateViewGenCurrencyPrecision`, `20260416000002_AddSafeToJsonbAndGuardDataGridLateral`). Those were squashed into `20260721203242_Initial` and no longer exist. The `Initial` migration deploys the current state of every script in `Scripts/`; only the two AB#33799 migrations above post-date it.

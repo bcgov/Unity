@@ -113,7 +113,13 @@ For each unique DataGrid and for root fields, generates a UNION ALL pair (legacy
 | `number` | NUMERIC | Numeric regex validation → cast, or NULL |
 | `currency` | DECIMAL(18,2) | Numeric regex validation → cast, or NULL |
 | `option` / `checkbox` | BOOLEAN | `true/t/1/yes` → true, `false/f/0/no` → false, else NULL |
+| *(any other type)* | TEXT | Default `ELSE` branch — `->>` text extraction, cast to TEXT |
 | *(type conflict fallback)* | TEXT | All values cast to TEXT with type-aware formatting |
+
+Two things follow from that default branch, both differing from the worksheet functions:
+
+- **No date/time typing.** There is no `datetime` branch and no call to `Reporting.safe_to_timestamp` / `safe_to_date` anywhere in this function — date fields land in the view as `TEXT`. Only `get_worksheet_data` and `get_consolidated_worksheet_data` emit `TIMESTAMP` columns.
+- **The type match is case-sensitive.** `column_type := row_data->>'Type'` is used as-is, so the `WHEN 'textfield', 'textarea', 'email', 'select', 'phoneNumber'` list matches the CHEFS type string exactly. A type differing only in case falls through to the TEXT default. (`get_consolidated_formversion_data` differs here — it applies `lower(COALESCE(row_data->>'Type', 'text'))` first and matches on `'phonenumber'`.)
 
 ### Type conflict TEXT fallback
 

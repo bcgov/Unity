@@ -79,6 +79,8 @@ The `<field_key>` value is resolved using the following priority:
 3. **DataPath** (`row_data->>'DataPath'`) — used if PropertyName is also empty
 4. **ColumnName** — final fallback
 
+> **In practice tier 1 never fires.** The `MapRow` class serialised into `Mapping.Rows` has no `Key` property (it carries `Label`, `PropertyName`, `Type`, `ColumnName`, `Path`, `DataPath`, `Id`, `TypePath`, `VersionLabel`, `WorksheetName`, `SourceOrder`), so `row_data->>'Key'` is always NULL for mappings written by the current application. The effective resolution starts at **PropertyName**. The `Key` branch is retained for older hand-edited or imported mapping JSON.
+
 ---
 
 ## Core Processing Logic
