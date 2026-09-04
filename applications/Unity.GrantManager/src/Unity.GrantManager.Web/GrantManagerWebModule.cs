@@ -711,6 +711,7 @@ public class GrantManagerWebModule : AbpModule
         });
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();
+        app.UseMiddleware<OnboardingRedirectMiddleware>();
         app.UseConfiguredEndpoints(endpoints =>
         {
             endpoints.MapMetrics().RequireAuthorization(Unity.GrantManager.Web.Identity.Policy.PolicyRegistrant.MetricsAccessPolicy);
