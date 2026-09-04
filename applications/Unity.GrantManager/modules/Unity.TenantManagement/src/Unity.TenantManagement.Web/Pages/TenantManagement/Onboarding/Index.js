@@ -83,12 +83,13 @@
         }).join('');
     }
 
-    // ─── Super Users DataGrid email extraction ───────────────────────────────
+    // ─── Program Managers DataGrid email extraction ──────────────────────────
 
-    // Formio/CHEFS "Super Users" fields are submitted as a DataGrid: one row per super
-    // user, with columns such as name/email/title. The email column's key varies per
-    // worksheet (e.g. "s03_SuperUserEmail"), so it's matched by name rather than a fixed
-    // key — mirrors SuperUsersValidationStep.ParseEmails on the server.
+    // Formio/CHEFS "Program Managers" fields are submitted as a DataGrid: one row per
+    // program manager, with columns such as name/email/title. The email column's key varies
+    // per worksheet (e.g. "s03_SuperUserEmail" on forms authored before this terminology
+    // changed), so it's matched by name rather than a fixed key — mirrors
+    // ProgramManagersValidationStep.ParseEmails on the server.
     // Returns null when `raw` isn't a DataGrid value at all (legacy plain-text field).
     function _extractDataGridEmails(raw) {
         if (!raw) return null;
@@ -127,7 +128,7 @@
         }));
     }
 
-    function _buildSuperUsersPreview(data) {
+    function _buildProgramManagersPreview(data) {
         const emails = _extractDataGridEmails(data);
         if (emails === null) {
             return data ? $('<span>').text(data) : _buildMutedPlaceholder();
@@ -360,7 +361,7 @@
 
         const tenantNameFieldKey  = $('#create-tenant-tenant-name-field').val() || null;
         const displayNameFieldKey = $('#create-tenant-display-name-field').val() || null;
-        const superUsersFieldKey  = $('#create-tenant-super-users-field').val() || null;
+        const programManagersFieldKey  = $('#create-tenant-program-managers-field').val() || null;
         const branchFieldKey      = $('#create-tenant-branch-field').val() || null;
         const featuresFieldKey    = $('#create-tenant-features-field').val() || null;
         const ministryFieldKey    = $('#create-tenant-ministry-field').val() || null;
@@ -370,7 +371,7 @@
         const params = new URLSearchParams();
         if (tenantNameFieldKey)  params.append('tenantNameFieldKey',  tenantNameFieldKey);
         if (displayNameFieldKey) params.append('displayNameFieldKey', displayNameFieldKey);
-        if (superUsersFieldKey)  params.append('superUsersFieldKey',  superUsersFieldKey);
+        if (programManagersFieldKey)  params.append('programManagersFieldKey',  programManagersFieldKey);
         if (branchFieldKey)      params.append('branchFieldKey',      branchFieldKey);
         if (featuresFieldKey)    params.append('featuresFieldKey',    featuresFieldKey);
         if (ministryFieldKey)    params.append('ministryFieldKey',    ministryFieldKey);
@@ -394,7 +395,7 @@
 
             const tenantNameFieldKey  = $('#create-tenant-tenant-name-field').val() || null;
             const displayNameFieldKey = $('#create-tenant-display-name-field').val() || null;
-            const superUsersFieldKey  = $('#create-tenant-super-users-field').val() || null;
+            const programManagersFieldKey  = $('#create-tenant-program-managers-field').val() || null;
             const branchFieldKey      = $('#create-tenant-branch-field').val() || null;
             const featuresFieldKey    = $('#create-tenant-features-field').val() || null;
             const ministryFieldKey    = $('#create-tenant-ministry-field').val() || null;
@@ -407,7 +408,7 @@
             abp.ajax({
                 url: abp.appPath + 'api/onboarding-requests/' + applicationId + '/create-tenant',
                 type: 'POST',
-                data: JSON.stringify({ tenantNameFieldKey, displayNameFieldKey, superUsersFieldKey, branchFieldKey, featuresFieldKey, ministryFieldKey, divisionFieldKey, programAreaFieldKey, metabaseUserEmails, metabaseNewDefaultUserEmails, metabaseRemovedDefaultUserEmails }),
+                data: JSON.stringify({ tenantNameFieldKey, displayNameFieldKey, programManagersFieldKey, branchFieldKey, featuresFieldKey, ministryFieldKey, divisionFieldKey, programAreaFieldKey, metabaseUserEmails, metabaseNewDefaultUserEmails, metabaseRemovedDefaultUserEmails }),
                 contentType: 'application/json'
             }).done(function () {
                 abp.notify.success(l('OnboardingModal:CreateSuccess'));
@@ -446,8 +447,8 @@
             _updateFieldPreview('create-tenant-display-name-field', 'create-tenant-display-name-value');
             _triggerValidation(applicationId);
         });
-        $('#create-tenant-super-users-field').on('change', function () {
-            _updateFieldPreview('create-tenant-super-users-field', 'create-tenant-super-users-value', _buildSuperUsersPreview);
+        $('#create-tenant-program-managers-field').on('change', function () {
+            _updateFieldPreview('create-tenant-program-managers-field', 'create-tenant-program-managers-value', _buildProgramManagersPreview);
             _triggerValidation(applicationId);
         });
     }
@@ -477,7 +478,7 @@
             _renderMappingDropdown('create-tenant-features-field',    schema.columns, FEATURES_CANONICALS,      schema.featuresFieldKey);
             _renderMappingDropdown('create-tenant-tenant-name-field', schema.columns, TENANT_NAME_CANONICALS,   schema.tenantNameFieldKey);
             _renderMappingDropdown('create-tenant-display-name-field', schema.columns, DISPLAY_NAME_CANONICALS, schema.displayNameFieldKey);
-            _renderMappingDropdown('create-tenant-super-users-field', schema.columns, SUPER_USERS_CANONICALS,   schema.superUsersFieldKey);
+            _renderMappingDropdown('create-tenant-program-managers-field', schema.columns, PROGRAM_MANAGERS_CANONICALS,   schema.programManagersFieldKey);
             _updateFieldPreview('create-tenant-ministry-field',    'create-tenant-ministry-value');
             _updateFieldPreview('create-tenant-division-field',    'create-tenant-division-value');
             _updateFieldPreview('create-tenant-branch-field',      'create-tenant-branch-value');
@@ -485,7 +486,7 @@
             _updateFieldPreview('create-tenant-features-field',    'create-tenant-features-value', _buildCheckboxBadgesPreview);
             _updateFieldPreview('create-tenant-tenant-name-field', 'create-tenant-tenant-name-value');
             _updateFieldPreview('create-tenant-display-name-field', 'create-tenant-display-name-value');
-            _updateFieldPreview('create-tenant-super-users-field', 'create-tenant-super-users-value', _buildSuperUsersPreview);
+            _updateFieldPreview('create-tenant-program-managers-field', 'create-tenant-program-managers-value', _buildProgramManagersPreview);
             $('#create-tenant-field-mapping').show();
             _wireCreateTenantMappingHandlers(applicationId);
             _triggerValidation(applicationId);
@@ -634,7 +635,7 @@
 
     const TENANT_NAME_CANONICALS  = ['name', 'tenant name', 'organization name', 'company name', 'program name', 'applicant name', 'tenant abbreviation'];
     const DISPLAY_NAME_CANONICALS = ['display name', 'tenant display name', 'organization display name', 'public name'];
-    const SUPER_USERS_CANONICALS  = ['super user', 'super users', 'admin email', 'program manager', 'manager email', 'administrator', 'user email'];
+    const PROGRAM_MANAGERS_CANONICALS  = ['super user', 'super users', 'admin email', 'program manager', 'manager email', 'administrator', 'user email'];
     const MINISTRY_CANONICALS     = ['ministry', 'ministry name', 'government ministry', 'responsible ministry'];
     const DIVISION_CANONICALS     = ['division', 'ministry division', 'division name', 'responsible division'];
     const BRANCH_CANONICALS       = ['branch', 'division branch', 'ministry branch', 'business branch'];

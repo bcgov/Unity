@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Unity.Modules.Shared.Permissions;
+using Unity.Modules.Shared.PostTenantCreation;
 using Unity.TenantManagement.Abstractions;
 using Unity.TenantManagement.Application;
 using Unity.TenantManagement.Application.Contracts;
@@ -31,7 +32,8 @@ public class TenantAppService(
     ILocalEventBus localEventBus,
     IUnitOfWorkManager unitOfWorkManager,
     ITenantConnectionStringBuilder tenantConnectionStringBuilder,
-    IStringEncryptionService stringEncryptionService) : TenantManagementAppServiceBase, ITenantAppService
+    IStringEncryptionService stringEncryptionService,
+    IEnumerable<IPostTenantCreationStep> postTenantCreationSteps) : TenantManagementAppServiceBase, ITenantAppService
 {
     private IIdentityUserRepository IdentityUserRepository => LazyServiceProvider.LazyGetRequiredService<IIdentityUserRepository>();
 
@@ -190,6 +192,11 @@ public class TenantAppService(
             tenant.ExtraProperties[ExtraPropBranch] = input.Branch ?? string.Empty;
             tenant.ExtraProperties[ExtraPropDescription] = input.Description ?? string.Empty;
             tenant.ExtraProperties[ExtraPropCasClientCode] = input.CasClientCode ?? string.Empty;
+
+            // Seed a "Waiting" status for every registered post-tenant-creation step (e.g.
+            // Metabase sync) so the Tenants screen shows a status immediately, before the
+            // (deferred, background-queued) PostTenantCreationSequenceJob has had a chance to run.
+            tenant.SeedPostTenantCreationSections(postTenantCreationSteps);
 
             await tenantRepository.InsertAsync(tenant);
 

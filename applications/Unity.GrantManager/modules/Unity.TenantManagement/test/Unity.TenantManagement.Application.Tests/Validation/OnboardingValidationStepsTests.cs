@@ -9,18 +9,18 @@ using Xunit;
 
 namespace Unity.TenantManagement.Validation;
 
-public class SuperUsersValidationStepTests
+public class ProgramManagersValidationStepTests
 {
-    private static OnboardingRequestDto RequestWithSuperUsers(string superUsers) =>
-        new() { SuperUsers = superUsers };
+    private static OnboardingRequestDto RequestWithProgramManagers(string programManagers) =>
+        new() { ProgramManagers = programManagers };
 
     [Fact]
     public async Task ValidateAsync_NoEmailsParsed_ReturnsFailure()
     {
         var lookup = Substitute.For<IOnboardingUserLookup>();
-        var step = new SuperUsersValidationStep(lookup);
+        var step = new ProgramManagersValidationStep(lookup);
 
-        var result = await step.ValidateAsync(RequestWithSuperUsers("not an email"));
+        var result = await step.ValidateAsync(RequestWithProgramManagers("not an email"));
 
         result.IsValid.ShouldBeFalse();
         await lookup.DidNotReceive().FindUserGuidByEmailAsync(Arg.Any<string>());
@@ -32,9 +32,9 @@ public class SuperUsersValidationStepTests
         var lookup = Substitute.For<IOnboardingUserLookup>();
         lookup.FindUserGuidByEmailAsync("first@example.com").Returns((string)null);
         lookup.FindUserGuidByEmailAsync("second@example.com").Returns("guid-123");
-        var step = new SuperUsersValidationStep(lookup);
+        var step = new ProgramManagersValidationStep(lookup);
 
-        var result = await step.ValidateAsync(RequestWithSuperUsers("first@example.com; second@example.com"));
+        var result = await step.ValidateAsync(RequestWithProgramManagers("first@example.com; second@example.com"));
 
         result.IsValid.ShouldBeTrue();
     }
@@ -44,9 +44,9 @@ public class SuperUsersValidationStepTests
     {
         var lookup = Substitute.For<IOnboardingUserLookup>();
         lookup.FindUserGuidByEmailAsync(Arg.Any<string>()).Returns((string)null);
-        var step = new SuperUsersValidationStep(lookup);
+        var step = new ProgramManagersValidationStep(lookup);
 
-        var result = await step.ValidateAsync(RequestWithSuperUsers("first@example.com,second@example.com"));
+        var result = await step.ValidateAsync(RequestWithProgramManagers("first@example.com,second@example.com"));
 
         result.IsValid.ShouldBeFalse();
         result.Issue.ShouldNotBeNullOrEmpty();
@@ -59,7 +59,7 @@ public class SuperUsersValidationStepTests
     [InlineData(" a@example.com , not-an-email , b@example.com ", new[] { "a@example.com", "b@example.com" })]
     public void ParseEmails_HandlesDelimitersAndDropsNonEmailTokens(string input, string[] expected)
     {
-        var result = SuperUsersValidationStep.ParseEmails(input);
+        var result = ProgramManagersValidationStep.ParseEmails(input);
 
         result.ShouldBe(expected);
     }
@@ -88,7 +88,7 @@ public class SuperUsersValidationStepTests
         }
         """;
 
-        var result = SuperUsersValidationStep.ParseEmails(dataGridJson);
+        var result = ProgramManagersValidationStep.ParseEmails(dataGridJson);
 
         result.ShouldBe(["kingsley.shacklebolt@gov.bc.ca", "m.mcgonagall@hogwarts.ac.uk"]);
     }
@@ -104,7 +104,7 @@ public class SuperUsersValidationStepTests
         }
         """;
 
-        var result = SuperUsersValidationStep.ParseEmails(dataGridJson);
+        var result = ProgramManagersValidationStep.ParseEmails(dataGridJson);
 
         result.ShouldBeEmpty();
     }
