@@ -18,8 +18,7 @@ LANGUAGE plpgsql
 ## Purpose
 
 - Generates a multi-version UNION ALL query covering worksheet data from all form versions for a given form
-- Reads version IDs and labels from the mapping's `Metadata.Info` dictionary
-- Reads worksheet link IDs from the same metadata (`ws_{versionId}_{worksheetId}` keys)
+- Reads version IDs and labels from the mapping's `Metadata.Info` dictionary (`formversion_*` keys only)
 - Applies **version gating** — fields for specific versions produce NULLs in queries for other versions
 - Supports both root fields and DataGrid fields per worksheet per version
 - Implemented as a CTE-based approach (like `get_worksheet_data`), not imperative PL/pgSQL loops
@@ -51,9 +50,18 @@ WHERE rcm."Id" = report_map_id
   AND kv.key LIKE 'formversion_%'
 ```
 
-### Worksheet links
+### How worksheet instances are scoped to a version
 
-Worksheet link IDs are stored keyed as `ws_{versionId}_{worksheetId}` → worksheet display info. These are used to scope worksheet instance queries to specific versions.
+Each generated fragment scopes instances with the version ID from `version_info` plus the worksheet name from the mapping:
+
+```sql
+FROM "Flex"."WorksheetInstances" wi
+LEFT JOIN "Flex"."Worksheets" w ON wi."WorksheetId" = w."Id"
+WHERE wi."WorksheetCorrelationId" = '<version_id>'
+  AND w."Name" = '<worksheet_name>'
+```
+
+> The mapping metadata also contains `ws_{versionId}_{worksheetId}` keys, written by `ConsolidatedWorksheetFieldsProvider`. **This function does not read them** — they exist solely for change detection in the application layer (`DetectChangesAsync`). The only metadata keys the SQL consumes are `formversion_*`.
 
 ---
 
@@ -144,8 +152,10 @@ Same as `get_worksheet_data`:
 | `number` | NUMERIC | Numeric validated |
 | `date` | TIMESTAMP | Date validated |
 | `checkbox` | BOOLEAN | True/false value list |
-| `checkboxgroup` | BOOLEAN per option | JSON array parsed, individual option extracted |
+| `checkboxgroup` | BOOLEAN per option | `jsonb_typeof(safe_to_jsonb(value)) = 'array'` guard, then the matching option is extracted; anything else yields NULL |
 | `radio` | TEXT | Selected option value |
+
+The checkbox-group guard was added by AB#33799 (tenant migration `20260806201536_AB33799_HardenCheckboxGroupReportingViews`, which re-runs both worksheet scripts) — see [get_worksheet_data_specification.md](get_worksheet_data_specification.md#checkbox-group) for the full rationale.
 
 ---
 

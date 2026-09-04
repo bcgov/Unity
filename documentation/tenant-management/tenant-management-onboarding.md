@@ -6,6 +6,22 @@ Onboarding is IT Operations' path to creating a tenant: instead of IT Administra
 
 There is no `OnboardingRequest` table. An **onboarding request is a `Unity.GrantManager` `Application`** (the exact same entity type behind ordinary grant applications) whose `ApplicationForm.Category == "Onboarding"`. A CHEFS form is authored with that category, submitted through the normal intake pipeline, and the resulting `Application` — plus its Flex `WorksheetInstance` data (arbitrary JSONB custom fields) — is what the Onboarding screens read and act on. Zero new persistence was built for this feature; it's the intake/Flex machinery, repurposed.
 
+## The onboarding status workflow
+
+Because an onboarding request is an ordinary `Application`, it also has an ordinary workflow state machine — but a much smaller one. `OnboardingApplicationManager` (`src/Unity.GrantManager.Domain/Applications/`) declares its own Stateless configuration, entirely separate from `ApplicationManager`'s grant workflow, and `GrantApplicationAppService.GetActions`/`TriggerAction` route to it whenever the `Unity.Onboarding` feature (`SpecializationConsts.Onboarding`) is enabled for the current tenant. Every action it returns is marked `IsAuthorized = true` — the Onboarding surface is already gated to the `ITOperations` role, so there is no per-action permission layer on top.
+
+|From|Permitted actions|
+|---|---|
+|`SUBMITTED`|`Approve` → `GRANT_APPROVED`, `Deny` → `GRANT_NOT_APPROVED`, `Defer` → `DEFER`|
+|`GRANT_APPROVED`|`Close` → `CLOSED`, `Defer` → `DEFER`|
+|`GRANT_NOT_APPROVED`|`Close` → `CLOSED`, `Defer` → `DEFER`|
+|`CLOSED`|`Defer` → `DEFER`|
+|`DEFER`|`Submit` → `SUBMITTED`, `Approve` → `GRANT_APPROVED`, `Deny` → `GRANT_NOT_APPROVED`, `Close` → `CLOSED`|
+
+Defer is deliberately symmetric: any onboarding state can be deferred, and a deferred request can be returned to any other state. `Submit` exists in this workflow only as the way back out of `DEFER` to `SUBMITTED` — the intake pipeline creates requests directly in `SUBMITTED`, it never fires the trigger.
+
+Note that the "Create Tenant" button in the request queue is enabled only for rows whose status is `Approved` (`Onboarding/Index.js`), so the `CloseApplicationAsync` call at the end of `CreateTenantAsync` (step 7 below) always fires from `GRANT_APPROVED`.
+
 ## The seam: `IOnboardingApplicationProvider`
 
 Defined in `Unity.TenantManagement.Application.Contracts`, implemented in the **host**:
@@ -66,6 +82,12 @@ Because step 4 is the exact same call the "New Tenant" modal makes, every downst
 - **`OnboardingPageModel`** — shared abstract base (sets `ObjectMapperContext`).
 
 Exposed over HTTP by a hand-written `OnboardingRequestController` (`api/onboarding-requests`) — see [tenant-management-application-services.md](tenant-management-application-services.md#ionboardingrequestappservice--onboardingrequestappservice) for the route table.
+
+### Navigation on an Onboarding tenant
+
+An Onboarding tenant has no applications list: `GrantManagerMenuContributor` hides the Applications, Applicants, and Dashboard menu items behind `ExcludeWhenSpecializations(SpecializationConsts.Onboarding)` and shows the Onboarding queue instead. But an onboarding request is still an `Application`, so opening one lands on the ordinary `GrantApplications/Details` page, whose breadcrumb back button (`#goBack`, in `ApplicationBreadcrumbWidget/Default.js`) navigates to the hardcoded `/GrantApplications`.
+
+`OnboardingRedirectMiddleware` (`Unity.GrantManager.Web/Middleware/`) is what makes that land correctly: it intercepts `GET /GrantApplications` and redirects to `/TenantManagement/Onboarding` when the Onboarding specialization is enabled. **It must stay registered in `GrantManagerWebModule.OnApplicationInitialization`** — without it, the back button drops users on an applications list their tenant is not meant to have. It has been lost once already, in a merge that conflicted over the same few pipeline lines.
 
 ## Why IT Operations, specifically
 
