@@ -112,11 +112,17 @@ public class NotificationsDataSeedContributor(ITemplateVariablesRepository templ
             var existingSenderAddress = await emailAddressConfigurationsRepository.GetListAsync(configuration =>
                 configuration.EmailType == "Sender" &&
                 configuration.EmailAddress.ToUpper() == normalizedDefaultFromAddress.ToUpper());
-            var existingDefaultSender = await emailAddressConfigurationsRepository.GetListAsync(configuration =>
-                configuration.EmailType == "Sender" && configuration.IsDefault);
+            var existingDefaultConfigurations = await emailAddressConfigurationsRepository.GetListAsync(
+                configuration => configuration.IsDefault);
 
             if (existingSenderAddress.Count == 0)
             {
+                foreach (var existingDefaultConfiguration in existingDefaultConfigurations)
+                {
+                    existingDefaultConfiguration.IsDefault = false;
+                    await emailAddressConfigurationsRepository.UpdateAsync(existingDefaultConfiguration, autoSave: true);
+                }
+
                 await emailAddressConfigurationsRepository.InsertAsync(
                     new EmailAddressConfiguration(
                         Guid.NewGuid(),
@@ -126,8 +132,14 @@ public class NotificationsDataSeedContributor(ITemplateVariablesRepository templ
                         isDefault: true),
                     autoSave: true);
             }
-            else if (existingDefaultSender.Count == 0)
+            else if (!existingSenderAddress.Any(configuration => configuration.IsDefault))
             {
+                foreach (var existingDefaultConfiguration in existingDefaultConfigurations)
+                {
+                    existingDefaultConfiguration.IsDefault = false;
+                    await emailAddressConfigurationsRepository.UpdateAsync(existingDefaultConfiguration, autoSave: true);
+                }
+
                 var copiedConfiguration = existingSenderAddress.First();
                 copiedConfiguration.IsActive = true;
                 copiedConfiguration.IsDefault = true;
