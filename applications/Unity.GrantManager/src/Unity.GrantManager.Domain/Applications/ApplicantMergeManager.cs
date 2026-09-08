@@ -38,11 +38,6 @@ public class ApplicantMergeManager(
 
         EnsureApplicantsAvailable(principal, secondary);
 
-        if (!values.IsComposedFrom(principal!, secondary!))
-        {
-            throw new BusinessException(GrantManagerDomainErrorCodes.ApplicantMergeInvalidSelection);
-        }
-
         if (selectedSupplierId != principal!.SupplierId && selectedSupplierId != secondary!.SupplierId)
         {
             throw new BusinessException(GrantManagerDomainErrorCodes.ApplicantMergeInvalidSupplier);
