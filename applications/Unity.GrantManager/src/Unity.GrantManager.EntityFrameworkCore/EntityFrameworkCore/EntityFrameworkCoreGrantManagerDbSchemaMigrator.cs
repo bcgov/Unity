@@ -108,6 +108,8 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
                     await ReconcileMigrationHistoryAsync(tenantDb, TenantInitialMigrationId);
                 }
 
+                await ClearDuplicateDefaultEmailConfigurationsAsync(tenantDb);
+
                 // Run migrations as admin against the tenant database
                 await MigrateAndLogAsync(tenantDb, $"tenant:{tenant.Name}");
 
@@ -198,6 +200,41 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
             contextName,
             pendingMigrations.Length == 0 ? "NoPendingMigrations" : "AppliedMigrations",
             finalMigrations.Length == 0 ? "none" : string.Join(",", finalMigrations));
+    }
+
+    private static async Task ClearDuplicateDefaultEmailConfigurationsAsync(DatabaseFacade database)
+    {
+        await database.ExecuteSqlRawAsync("""
+            DO $$
+            BEGIN
+                IF to_regclass('"Notifications"."EmailAddressConfigurations"') IS NOT NULL THEN
+                    WITH ranked_defaults AS
+                    (
+                        SELECT
+                            "Id",
+                            ROW_NUMBER() OVER
+                            (
+                                PARTITION BY "TenantId"
+                                ORDER BY
+                                    CASE
+                                        WHEN "EmailType" = 'Sender' AND "IsActive" = true THEN 0
+                                        WHEN "EmailType" = 'Sender' THEN 1
+                                        WHEN "IsActive" = true THEN 2
+                                        ELSE 3
+                                    END,
+                                    "Id"
+                            ) AS row_number
+                        FROM "Notifications"."EmailAddressConfigurations"
+                        WHERE "IsDefault" = true
+                    )
+                    UPDATE "Notifications"."EmailAddressConfigurations" AS configuration
+                    SET "IsDefault" = false
+                    FROM ranked_defaults
+                    WHERE configuration."Id" = ranked_defaults."Id"
+                      AND ranked_defaults.row_number > 1;
+                END IF;
+            END $$;
+            """);
     }
 
     private static async Task ReconcileMigrationHistoryAsync(DatabaseFacade database, string initialMigrationId)

@@ -14,7 +14,15 @@ public interface IPostTenantCreationStep
     /// <summary>Determines execution order relative to other steps (ascending).</summary>
     int Order { get; }
 
-    /// <summary>Short, human-readable name used in logging.</summary>
+    /// <summary>
+    /// Stable, machine-readable identifier for this step (e.g. "MetabaseSync"). Used as the key
+    /// for the step's persisted status entry (see <c>TenantPostCreationSectionsExtensions</c>) -
+    /// unlike <see cref="StepName"/>, this must not change once shipped, since it is what
+    /// correlates a status entry already stored on a tenant with this step on later runs.
+    /// </summary>
+    string Key { get; }
+
+    /// <summary>Short, human-readable name used in logging and shown to admins in the UI.</summary>
     string StepName { get; }
 
     /// <summary>

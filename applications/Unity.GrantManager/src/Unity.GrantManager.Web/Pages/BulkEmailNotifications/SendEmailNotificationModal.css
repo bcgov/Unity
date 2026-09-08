@@ -11,6 +11,16 @@
     width: 60%;
 }
 
+/* The Status field in the summary is disabled, so the wrapper receives the hover and displays
+   the complete status through its title even when the visible input text is truncated. */
+#sendEmailNotificationSummaryModal .send-email-status-tooltip {
+    width: 100%;
+}
+
+#sendEmailNotificationSummaryModal .send-email-status-tooltip input:disabled {
+    pointer-events: none;
+}
+
 /* ---- Two-column layout: compressed application list on the left, draft editor on the right ---- */
 
 #sendEmailNotificationModal .modal-dialog {

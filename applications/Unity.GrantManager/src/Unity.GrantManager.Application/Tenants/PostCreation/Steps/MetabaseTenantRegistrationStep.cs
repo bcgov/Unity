@@ -64,6 +64,8 @@ public class MetabaseTenantRegistrationStep(
 
     public int Order => 1;
 
+    public string Key => "MetabaseSync";
+
     public string StepName => "Metabase Tenant Registration";
 
     // A Metabase outage shouldn't block other post-creation steps from running.

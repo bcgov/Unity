@@ -93,6 +93,20 @@ public class EmailConsumer(
             {
                 response = await emailNotificationService.SendEmailNotification(emailLog);
             }
+            catch (MissingEmailAttachmentsException attachmentEx)
+            {
+                logger.LogError(
+                    attachmentEx,
+                    "Email {EmailId} has missing attachments. Marking as a non-retryable failure.",
+                    emailLog.Id);
+
+                emailLog.Status = EmailStatus.Failed;
+                emailLog.ChesResponse = string.Empty;
+                emailLog.ChesStatus = string.Empty;
+                emailLog.ChesHttpStatusCode = null;
+                await SaveEmailLogWithRetryAsync(emailLog, uow);
+                return;
+            }
             catch (AmazonS3Exception s3Ex)
             {
                 logger.LogError(

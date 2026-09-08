@@ -102,6 +102,8 @@ function initializeDraftEmailsWidget() {
     let activeTemplateId = null; // Track if a template has been applied to the current draft
     let originalTemplateState = { name: '', id: '' }; // Baseline template for discard restore
     let activeTemplateAttachmentCount = 0; // Track how many attachments were copied from the active template
+    let templateAttachmentError = null;
+    const TEMPLATE_ATTACHMENT_ERROR_TOAST_LIFE_MS = 10000; // Missing S3 attachments need more read time than the default 5s toast
     let isApplicationEmailContext = true; // Flag to track if we're in application email or template preview context
     let cachedTemplates = null; // Cache templates globally
     let scheduleState = {
@@ -235,15 +237,28 @@ function initializeDraftEmailsWidget() {
             validClass: 'field-validation-valid',
             highlight: function (element, errorClass, validClass) {
                 $(element).addClass('input-validation-error').removeClass(validClass);
+                if (element.id === 'EmailFrom') {
+                    $(element).nextAll('.select2-container').first()
+                        .find('.select2-selection--single')
+                        .addClass('input-validation-error');
+                }
             },
             unhighlight: function (element, errorClass, validClass) {
                 $(element).removeClass('input-validation-error').addClass(validClass);
+                if (element.id === 'EmailFrom') {
+                    $(element).nextAll('.select2-container').first()
+                        .find('.select2-selection--single')
+                        .removeClass('input-validation-error');
+                }
             },
             errorPlacement: function (error, element) {
-                // Create or update error span after the element
-                let errorSpan = element.siblings('.field-validation-error');
+                const select2Container = element.nextAll('.select2-container').first();
+                const validationTarget = element.attr('id') === 'EmailFrom' && select2Container.length
+                    ? select2Container
+                    : element;
+                let errorSpan = validationTarget.siblings('.field-validation-error').first();
                 if (errorSpan.length === 0) {
-                    errorSpan = $('<span class="field-validation-error"></span>').insertAfter(element);
+                    errorSpan = $('<span class="field-validation-error"></span>').insertAfter(validationTarget);
                 }
                 errorSpan.text(error.text());
             }
@@ -282,6 +297,29 @@ function initializeDraftEmailsWidget() {
         }
     }
 
+    function setEmailFromAddress(address) {
+        const normalizedAddress = typeof address === 'string' ? address.trim() : '';
+        if (!normalizedAddress) {
+            UIElements.inputEmailFrom.val(null).trigger('change');
+            return;
+        }
+
+        const matchingOption = UIElements.inputEmailFrom.find('option').filter(function () {
+            return ($(this).val() || '').trim().toLowerCase() === normalizedAddress.toLowerCase();
+        }).first();
+
+        if (matchingOption.length) {
+            UIElements.inputEmailFrom.val(matchingOption.val()).trigger('change');
+            return;
+        }
+
+        $('<option>')
+            .val(normalizedAddress)
+            .text(normalizedAddress)
+            .appendTo(UIElements.inputEmailFrom);
+        UIElements.inputEmailFrom.val(normalizedAddress).trigger('change');
+    }
+
     function loadActiveSenderAddresses() {
         if (!UIElements.inputEmailFrom.length || typeof unity === 'undefined' ||
             !unity.notifications?.emailAddresses?.emailAddressConfigurations) {
@@ -289,20 +327,23 @@ function initializeDraftEmailsWidget() {
         }
 
         unity.notifications.emailAddresses.emailAddressConfigurations.getList().then(function (addresses) {
-            const activeSenders = addresses.filter(address => address.isActive && address.emailType === 'Sender');
+            const activeEmailAddresses = addresses.filter(address => address.isActive);
             const currentAddress = UIElements.inputEmailFrom.val() || UIElements.inputOriginalEmailFrom.val();
-            const selectedAddress = currentAddress || activeSenders[0]?.emailAddress || '';
+            const defaultAddress = activeEmailAddresses.find(address => address.isDefault)?.emailAddress || '';
+            const isNewEmail = !UIElements.inputEmailId.val();
+            const selectedAddress = isNewEmail ? defaultAddress : currentAddress || defaultAddress;
 
             UIElements.inputEmailFrom.find('option:not(:first)').remove();
-            activeSenders.forEach(address => {
+            activeEmailAddresses.forEach(address => {
                 $('<option>').val(address.emailAddress).text(address.emailAddress).appendTo(UIElements.inputEmailFrom);
             });
-            if (selectedAddress && !activeSenders.some(address => address.emailAddress === selectedAddress)) {
+            if (selectedAddress && !activeEmailAddresses.some(address => address.emailAddress === selectedAddress)) {
                 $('<option>').val(selectedAddress).text(selectedAddress).appendTo(UIElements.inputEmailFrom);
             }
-            UIElements.inputEmailFrom.val(selectedAddress).trigger('change');
-            UIElements.inputOriginalEmailFrom.val(selectedAddress);
-            defaultValues.emailFrom = selectedAddress;
+            setEmailFromAddress(selectedAddress);
+            const resolvedAddress = UIElements.inputEmailFrom.val() || '';
+            UIElements.inputOriginalEmailFrom.val(resolvedAddress);
+            defaultValues.emailFrom = resolvedAddress;
         }).catch(function (error) {
             console.warn('Failed to load active sender addresses:', error);
         });
@@ -331,8 +372,8 @@ function initializeDraftEmailsWidget() {
     }
 
     function enableEmail() {
-        UIElements.btnSend.prop('disabled', false);
-        UIElements.btnSendDropdown.prop('disabled', false);
+        UIElements.btnSend.prop('disabled', !!templateAttachmentError);
+        UIElements.btnSendDropdown.prop('disabled', !!templateAttachmentError);
         UIElements.btnSave.prop('disabled', false);
         UIElements.btnDiscard.prop('disabled', false);
         UIElements.inputEmailTo.prop('disabled', false);
@@ -770,10 +811,13 @@ function initializeDraftEmailsWidget() {
         activeTemplateId = null;
         originalTemplateState = { name: '', id: '' };
         activeTemplateAttachmentCount = 0;
+        templateAttachmentError = null;
         closeEmailFormUI();
     }
 
     function handleDiscardEmail() {
+        setTemplateAttachmentError(null);
+
         // If it's a new email draft, delete it and reset the form
         if (isNewEmailDraft && newDraftId) {
             $.ajax({
@@ -787,7 +831,7 @@ function initializeDraftEmailsWidget() {
                     UIElements.inputEmailTo.val('');
                     UIElements.inputEmailCC.val('');
                     UIElements.inputEmailBCC.val('');
-                    UIElements.inputEmailFrom.val('');
+                    setEmailFromAddress('');
                     UIElements.inputEmailSubject.val('');
                     UIElements.inputEmailBody.val('');
                     // Reset TinyMCE editor
@@ -827,7 +871,7 @@ function initializeDraftEmailsWidget() {
                     UIElements.inputEmailTo.val('');
                     UIElements.inputEmailCC.val('');
                     UIElements.inputEmailBCC.val('');
-                    UIElements.inputEmailFrom.val('');
+                    setEmailFromAddress('');
                     UIElements.inputEmailSubject.val('');
                     UIElements.inputEmailBody.val('');
                     // Reset TinyMCE editor
@@ -865,7 +909,7 @@ function initializeDraftEmailsWidget() {
                 UIElements.inputEmailTo.val(selectedEmailData.toAddress);
                 UIElements.inputEmailCC.val(selectedEmailData.cc?.replaceAll(',', '; ') ?? '');
                 UIElements.inputEmailBCC.val(selectedEmailData.bcc?.replaceAll(',', '; ') ?? '');
-                UIElements.inputEmailFrom.val(selectedEmailData.fromAddress);
+                setEmailFromAddress(selectedEmailData.fromAddress);
                 UIElements.inputEmailSubject.val(selectedEmailData.subject);
                 UIElements.inputEmailBody.val(refreshTodayDateSpans(selectedEmailData.body));
                 $('#EmailTemplateName').val(originalTemplateName);
@@ -888,7 +932,7 @@ function initializeDraftEmailsWidget() {
                 UIElements.inputEmailTo.val(UIElements.inputOriginalEmailTo.val());
                 UIElements.inputEmailCC.val(UIElements.inputOriginalEmailCC.val());
                 UIElements.inputEmailBCC.val(UIElements.inputOriginalEmailBCC.val());
-                UIElements.inputEmailFrom.val(UIElements.inputOriginalEmailFrom.val());
+                setEmailFromAddress(UIElements.inputOriginalEmailFrom.val());
                 UIElements.inputEmailSubject.val(UIElements.inputOriginalEmailSubject.val());
                 UIElements.inputEmailBody.val(UIElements.inputOriginalEmailBody.val());
                 $('#EmailTemplateName').val(originalTemplateState.name || '');
@@ -950,6 +994,18 @@ function initializeDraftEmailsWidget() {
         UIElements.templateSelectionDropdown.val('');
     }
 
+    async function validateTemplateAttachments(templateId) {
+        try {
+            await $.ajax({
+                url: `/api/form-notifications/email-template/${encodeURIComponent(templateId)}/validate-attachments`,
+                type: 'GET'
+            });
+        } catch (error) {
+            error.isTemplateAttachmentValidationError = true;
+            throw error;
+        }
+    }
+
     async function copyTemplateAttachments(templateId, emailLogId) {
         try {
             const response = await $.ajax({
@@ -959,23 +1015,42 @@ function initializeDraftEmailsWidget() {
                 contentType: 'application/json'
             });
             return response?.attachmentCount || 0;
-        } catch (e) {
-            console.warn('Failed to copy template attachments:', e);
-            return 0;
+        } catch (error) {
+            error.isTemplateAttachmentError = true;
+            throw error;
         }
     }
 
-    async function deleteOriginAttachments(emailLogId) {
-        try {
-            const response = await $.ajax({
-                url: `/api/form-notifications/email-log/${emailLogId}/origin-attachments`,
-                type: 'DELETE'
-            });
-            return response?.attachmentCount || 0;
-        } catch (e) {
-            console.warn('Failed to delete origin attachments:', e);
-            return 0;
+    function getAttachmentErrorMessage(error, fallbackMessage) {
+        const responseMessage = error?.responseJSON?.error?.message
+            || error?.responseJSON?.message;
+        if (responseMessage) {
+            return responseMessage;
         }
+
+        if (typeof error?.responseText === 'string' && error.responseText.trim()) {
+            try {
+                const parsedResponse = JSON.parse(error.responseText);
+                const parsedMessage = parsedResponse?.error?.message || parsedResponse?.message;
+                if (parsedMessage) {
+                    return parsedMessage;
+                }
+            } catch {
+                const plainText = error.responseText.trim();
+                if (plainText.startsWith('One or more email attachments cannot be found:')
+                    || plainText.startsWith('This template contains attachments that cannot be found:')) {
+                    return plainText;
+                }
+            }
+        }
+
+        return fallbackMessage;
+    }
+
+    function setTemplateAttachmentError(message) {
+        templateAttachmentError = message || null;
+        UIElements.btnSend.prop('disabled', !!templateAttachmentError);
+        UIElements.btnSendDropdown.prop('disabled', !!templateAttachmentError);
     }
 
     function populateTemplatesSelectOptions($select, templates) {
@@ -1262,14 +1337,6 @@ function initializeDraftEmailsWidget() {
             return false;
         }
 
-        if (activeTemplateAttachmentCount > 0) {
-            await deleteOriginAttachments(newDraftId);
-            activeTemplateAttachmentCount = 0;
-            if (emailAttachmentsTable) {
-                emailAttachmentsTable.ajax.reload();
-            }
-        }
-
         return true;
     }
 
@@ -1286,6 +1353,7 @@ function initializeDraftEmailsWidget() {
 
         const attachmentCount = await copyTemplateAttachments(selectedTemplateId, draftId);
         activeTemplateAttachmentCount = attachmentCount;
+        setTemplateAttachmentError(null);
 
         if (emailAttachmentsTable) {
             emailAttachmentsTable.ajax.reload();
@@ -1319,6 +1387,8 @@ function initializeDraftEmailsWidget() {
                 return;
             }
 
+            await validateTemplateAttachments(selectedTemplateId);
+
             console.log('Selected template:', selectedTemplate);
 
             const { subject, body: initialBody, sendFrom, name: templateName } = extractTemplateValues(selectedTemplate, useUpperCase);
@@ -1346,7 +1416,15 @@ function initializeDraftEmailsWidget() {
             console.error('Failed to load template - Full error:', e);
             console.error('Response text:', e.responseText);
             console.error('Status:', e.status);
-            abp.notify.error('Failed to load template. Please try again.');
+            const message = getAttachmentErrorMessage(e, 'Failed to load template. Please try again.');
+            if (e.isTemplateAttachmentValidationError) {
+                abp.notify.error(message, null, { life: TEMPLATE_ATTACHMENT_ERROR_TOAST_LIFE_MS });
+            } else if (e.isTemplateAttachmentError) {
+                setTemplateAttachmentError(message);
+                abp.notify.error(message, null, { life: TEMPLATE_ATTACHMENT_ERROR_TOAST_LIFE_MS });
+            } else {
+                abp.notify.error(message);
+            }
         }
     }
 
@@ -1375,6 +1453,9 @@ function initializeDraftEmailsWidget() {
     async function handleNewEmail(fromTemplate = false, templateSubject = '', templateBody = '', templateFrom = '', templateName = '', templateId = '') {
         // Set context flag - if loaded from template, it's not application email context
         isApplicationEmailContext = !fromTemplate;
+        if (!fromTemplate) {
+            setTemplateAttachmentError(null);
+        }
 
         // Update body class for CSS visibility control
         if (isApplicationEmailContext) {
@@ -1412,7 +1493,7 @@ function initializeDraftEmailsWidget() {
 
         // Show modal FIRST so element is in DOM
         UIElements.inputEmailSubject.val(templateSubject);
-        UIElements.inputEmailFrom.val(templateFrom || defaultValues.emailFrom);
+        setEmailFromAddress(templateFrom || defaultValues.emailFrom);
         showModalEmail();
 
         // Then initialize TinyMCE
@@ -1566,9 +1647,11 @@ function initializeDraftEmailsWidget() {
             if (isNotificationEmail) {
                 PubSub.publish('notification_email_sent');
             }
-        }).fail(function () {
+        }).fail(function (error) {
             hideConfirmation();
-            abp.notify.error('An error ocurred your email could not be sent.');
+            abp.notify.error(getAttachmentErrorMessage(
+                error,
+                'An error occurred and your email could not be sent.'));
         });
     }
 
@@ -1754,7 +1837,12 @@ function initializeDraftEmailsWidget() {
         if (isValid && allErrors.length === 0) return true;
 
         // Collect jQuery validator errors
-        const formErrors = errorList.map(err => normalizeErrorMessage(err.message));
+        const formErrors = errorList.map(err => {
+            if (err.element?.name === 'EmailFrom' && /^This field is required\.?$/i.test(err.message)) {
+                return 'The From field is required.';
+            }
+            return normalizeErrorMessage(err.message);
+        });
         formErrors.forEach(err => {
             if (!allErrors.includes(err)) allErrors.push(err);
         });
@@ -1801,6 +1889,12 @@ function initializeDraftEmailsWidget() {
     }
 
     function handleSendEmail(e) {
+        if (templateAttachmentError) {
+            e?.preventDefault();
+            abp.notify.error(templateAttachmentError, null, { life: TEMPLATE_ATTACHMENT_ERROR_TOAST_LIFE_MS });
+            return false;
+        }
+
         // Check if the form is valid
         if (validateEmailForm(e)) {
             showConfirmation(); // Show confirmation if the form is valid
@@ -2024,23 +2118,13 @@ function initializeDraftEmailsWidget() {
         return result.isConfirmed;
     }
 
-    async function clearPreviousAttachments(currentEmailId) {
-        if (currentEmailId) {
-            await deleteOriginAttachments(currentEmailId);
-            activeTemplateAttachmentCount = 0;
-            if (emailAttachmentsTable) {
-                emailAttachmentsTable.ajax.reload();
-            }
-        }
-    }
-
     async function populateEmailFields(fields, body, templateRecipients) {
         UIElements.inputEmailSubject.val(fields.subject);
         if (body) {
             editorInstance.setContent(body);
         }
         UIElements.inputEmailBody.val(body || '');
-        UIElements.inputEmailFrom.val(fields.sendFrom || defaultValues.emailFrom);
+        setEmailFromAddress(fields.sendFrom || defaultValues.emailFrom);
         if (templateRecipients) {
             UIElements.inputEmailTo.val(templateRecipients).trigger('change');
         }
@@ -2050,27 +2134,26 @@ function initializeDraftEmailsWidget() {
     async function applyTemplateToEmail(template) {
         try {
             const currentEmailId = UIElements.inputEmailId.val();
+            const fields = extractTemplateFields(template);
+
+            await validateTemplateAttachments(fields.id);
 
             if (!await showTemplateConfirmation()) {
                 return;
             }
 
-            await clearPreviousAttachments(currentEmailId);
-
-            const fields = extractTemplateFields(template);
             let body = fields.body;
             body = await processTemplateBody(body);
 
             const templateRecipients = await resolveTemplateRecipientEmailsFromApi(template, fields.id);
+            const attachmentCount = await copyTemplateAttachments(fields.id, currentEmailId);
             await populateEmailFields(fields, body, templateRecipients);
 
             activeTemplateId = fields.id;
-            activeTemplateAttachmentCount = 0;
+            activeTemplateAttachmentCount = attachmentCount;
+            setTemplateAttachmentError(null);
             updateSelectedTemplateLabel(fields.name, fields.id);
             handleDraftChange();
-
-            const attachmentCount = await copyTemplateAttachments(fields.id, currentEmailId);
-            activeTemplateAttachmentCount = attachmentCount;
 
             if (emailAttachmentsTable) {
                 emailAttachmentsTable.ajax.reload();
@@ -2080,7 +2163,15 @@ function initializeDraftEmailsWidget() {
             await showSuccessNotification(message);
         } catch (e) {
             console.error('Failed to apply template:', e);
-            abp.notify.error('Failed to apply template. Please try again.');
+            const message = getAttachmentErrorMessage(e, 'Failed to apply template. Please try again.');
+            if (e.isTemplateAttachmentValidationError) {
+                abp.notify.error(message, null, { life: TEMPLATE_ATTACHMENT_ERROR_TOAST_LIFE_MS });
+            } else if (e.isTemplateAttachmentError) {
+                setTemplateAttachmentError(message);
+                abp.notify.error(message, null, { life: TEMPLATE_ATTACHMENT_ERROR_TOAST_LIFE_MS });
+            } else {
+                abp.notify.error(message);
+            }
         }
     }
 
@@ -2165,6 +2256,7 @@ function initializeDraftEmailsWidget() {
 
     PubSub.subscribe('email_selected', (msg, data) => {
         console.log("EMAIL SELECTED EVENT FIRED", data);
+        templateAttachmentError = null;
 
         // Set application context (editing existing emails, not templates)
         isApplicationEmailContext = true;
@@ -2187,7 +2279,7 @@ function initializeDraftEmailsWidget() {
         }
 
         const selectedRecordTemplateName = resolveEmailRecordTemplateName(data);
-        activeTemplateId = data?.templateId || data?.emailTemplateId || data?.TemplateId || data?.EmailTemplateId || activeTemplateId;
+        activeTemplateId = data?.templateId || data?.emailTemplateId || data?.TemplateId || data?.EmailTemplateId || null;
         originalTemplateState = {
             name: selectedRecordTemplateName,
             id: (activeTemplateId || '').toString()
@@ -2260,7 +2352,7 @@ function initializeDraftEmailsWidget() {
         UIElements.inputEmailTo.val(data.toAddress);
         UIElements.inputEmailCC.val(data.cc?.replaceAll(',', '; ') ?? '');
         UIElements.inputEmailBCC.val(data.bcc?.replaceAll(',', '; ') ?? '');
-        UIElements.inputEmailFrom.val(data.fromAddress);
+        setEmailFromAddress(data.fromAddress);
         UIElements.inputEmailSubject.val(data.subject);
         const bodyContentWithRefresh = refreshTodayDateSpans(data.body);
         UIElements.inputEmailBody.val(bodyContentWithRefresh);
@@ -2454,7 +2546,7 @@ function initializeDraftEmailsWidget() {
             $('#btn-send-top').prop('disabled', true);
         } else {
             $('#email-attachment-size-error').hide();
-            $('#btn-send-top').prop('disabled', false);
+            $('#btn-send-top').prop('disabled', !!templateAttachmentError);
         }
     }
 

@@ -10,17 +10,17 @@ namespace Unity.TenantManagement.Validation;
 
 [RemoteService(false)]
 [ExposeServices(typeof(IOnboardingValidationStep))]
-public class SuperUsersValidationStep(IOnboardingUserLookup userLookup)
+public class ProgramManagersValidationStep(IOnboardingUserLookup userLookup)
     : IOnboardingValidationStep, ITransientDependency
 {
     public int Order => 20;
-    public string StepName => "Super Users";
+    public string StepName => "Program Managers";
 
     public async Task<OnboardingValidationStepResult> ValidateAsync(OnboardingRequestDto request)
     {
-        var emails = ParseEmails(request.SuperUsers);
+        var emails = ParseEmails(request.ProgramManagers);
         if (emails.Length == 0)
-            return OnboardingValidationStepResult.Failure("No super user email addresses specified.");
+            return OnboardingValidationStepResult.Failure("No program manager email addresses specified.");
 
         foreach (var email in emails)
         {
@@ -30,27 +30,28 @@ public class SuperUsersValidationStep(IOnboardingUserLookup userLookup)
         }
 
         return OnboardingValidationStepResult.Failure(
-            "None of the specified super user email addresses could be found in the directory.");
+            "None of the specified program manager email addresses could be found in the directory.");
     }
 
-    internal static string[] ParseEmails(string superUsers)
+    internal static string[] ParseEmails(string programManagers)
     {
-        var dataGridEmails = ParseDataGridEmails(superUsers);
+        var dataGridEmails = ParseDataGridEmails(programManagers);
         if (dataGridEmails.Length > 0)
             return dataGridEmails;
 
-        return [.. superUsers.Split([',', ';', '|'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Where(e => e.Contains('@'))];
+        return [.. programManagers.Split([',', ';', '|'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Where(e => e.Contains('@'))];
     }
 
-    // Formio/CHEFS "Super Users" fields are submitted as a DataGrid: one row per super user, with
-    // columns such as name/email/title. The email column's key varies per worksheet (e.g.
-    // "s03_SuperUserEmail"), so it's matched by name rather than a fixed key.
-    private static string[] ParseDataGridEmails(string superUsers)
+    // Formio/CHEFS "Program Managers" fields are submitted as a DataGrid: one row per program
+    // manager, with columns such as name/email/title. The email column's key varies per worksheet
+    // (e.g. "s03_SuperUserEmail" on forms authored before this terminology changed), so it's
+    // matched by name rather than a fixed key.
+    private static string[] ParseDataGridEmails(string programManagers)
     {
         DataGridRowsValue grid;
         try
         {
-            grid = JsonSerializer.Deserialize<DataGridRowsValue>(superUsers);
+            grid = JsonSerializer.Deserialize<DataGridRowsValue>(programManagers);
         }
         catch (JsonException)
         {

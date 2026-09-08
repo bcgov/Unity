@@ -257,13 +257,13 @@ public class OnboardingRequestAppService(
         return categories;
     }
 
-    public virtual async Task<OnboardingValidationResultDto> ValidateAsync(Guid id, string? tenantNameFieldKey, string? superUsersFieldKey, string? branchFieldKey = null, string? featuresFieldKey = null, string? ministryFieldKey = null, string? programAreaFieldKey = null, string? displayNameFieldKey = null, string? divisionFieldKey = null)
+    public virtual async Task<OnboardingValidationResultDto> ValidateAsync(Guid id, string? tenantNameFieldKey, string? programManagersFieldKey, string? branchFieldKey = null, string? featuresFieldKey = null, string? ministryFieldKey = null, string? programAreaFieldKey = null, string? displayNameFieldKey = null, string? divisionFieldKey = null)
     {
         var request = await GetAsync(id);
         if (request == null)
             return new OnboardingValidationResultDto { IsValid = false, Issues = ["Onboarding request not found."] };
 
-        await ResolveFieldMappings(request, tenantNameFieldKey, superUsersFieldKey, branchFieldKey, featuresFieldKey, ministryFieldKey, programAreaFieldKey, displayNameFieldKey, divisionFieldKey);
+        await ResolveFieldMappings(request, tenantNameFieldKey, programManagersFieldKey, branchFieldKey, featuresFieldKey, ministryFieldKey, programAreaFieldKey, displayNameFieldKey, divisionFieldKey);
 
         var issues = await RunValidationStepsAsync(request);
 
@@ -275,10 +275,10 @@ public class OnboardingRequestAppService(
         var request = await GetAsync(id)
             ?? throw new UserFriendlyException("Onboarding request not found.");
 
-        await ResolveFieldMappings(request, input?.TenantNameFieldKey, input?.SuperUsersFieldKey, input?.BranchFieldKey, input?.FeaturesFieldKey, input?.MinistryFieldKey, input?.ProgramAreaFieldKey, input?.DisplayNameFieldKey, input?.DivisionFieldKey);
+        await ResolveFieldMappings(request, input?.TenantNameFieldKey, input?.ProgramManagersFieldKey, input?.BranchFieldKey, input?.FeaturesFieldKey, input?.MinistryFieldKey, input?.ProgramAreaFieldKey, input?.DisplayNameFieldKey, input?.DivisionFieldKey);
 
         if (input != null)
-            await SaveFieldMappingAsync(input.TenantNameFieldKey, input.SuperUsersFieldKey, input.BranchFieldKey, input.FeaturesFieldKey, input.MinistryFieldKey, input.ProgramAreaFieldKey, input.DisplayNameFieldKey, input.DivisionFieldKey);
+            await SaveFieldMappingAsync(input.TenantNameFieldKey, input.ProgramManagersFieldKey, input.BranchFieldKey, input.FeaturesFieldKey, input.MinistryFieldKey, input.ProgramAreaFieldKey, input.DisplayNameFieldKey, input.DivisionFieldKey);
 
         // Re-validate server-side even if the client already called ValidateAsync — the client
         // cannot be trusted to have done so, and skipping this would let a duplicate tenant name
@@ -287,7 +287,7 @@ public class OnboardingRequestAppService(
         if (validationIssues.Count > 0)
             throw new UserFriendlyException(string.Join(" ", validationIssues));
 
-        var emails = SuperUsersValidationStep.ParseEmails(request.SuperUsers);
+        var emails = ProgramManagersValidationStep.ParseEmails(request.ProgramManagers);
 
         var userGuids = new List<string>();
         if (UserLookup is not null)
@@ -301,7 +301,7 @@ public class OnboardingRequestAppService(
         }
 
         if (userGuids.Count == 0)
-            throw new UserFriendlyException("No valid super users could be resolved. Cannot create tenant without at least one valid program manager.");
+            throw new UserFriendlyException("No valid program managers could be resolved. Cannot create tenant without at least one valid program manager.");
 
         var featureKeys = OnboardingFeatureMap.ResolveFeatureKeys(request.Features);
 
@@ -362,14 +362,14 @@ public class OnboardingRequestAppService(
     }
 
     private async Task ResolveFieldMappings(OnboardingRequestDto request,
-        string? tenantNameKey = null, string? superUsersKey = null,
+        string? tenantNameKey = null, string? programManagersKey = null,
         string? branchKey = null, string? featuresKey = null,
         string? ministryKey = null, string? programAreaKey = null,
         string? displayNameKey = null, string? divisionKey = null)
     {
         var saved = await ReadTenantMappingAsync();
         tenantNameKey ??= saved.TenantNameFieldKey;
-        superUsersKey ??= saved.SuperUsersFieldKey;
+        programManagersKey ??= saved.ProgramManagersFieldKey;
         branchKey ??= saved.BranchFieldKey;
         featuresKey ??= saved.FeaturesFieldKey;
         ministryKey ??= saved.MinistryFieldKey;
@@ -381,8 +381,8 @@ public class OnboardingRequestAppService(
             request.TenantName = tenantNameVal.ToString()!;
         if (!string.IsNullOrEmpty(displayNameKey) && request.Fields.TryGetValue(displayNameKey, out var displayNameVal) && displayNameVal is not null)
             request.DisplayName = displayNameVal.ToString()!;
-        if (!string.IsNullOrEmpty(superUsersKey) && request.Fields.TryGetValue(superUsersKey, out var superUsersVal) && superUsersVal is not null)
-            request.SuperUsers = superUsersVal.ToString()!;
+        if (!string.IsNullOrEmpty(programManagersKey) && request.Fields.TryGetValue(programManagersKey, out var programManagersVal) && programManagersVal is not null)
+            request.ProgramManagers = programManagersVal.ToString()!;
         if (!string.IsNullOrEmpty(branchKey) && request.Fields.TryGetValue(branchKey, out var branchVal) && branchVal is not null)
             request.Branch = branchVal.ToString()!;
         if (!string.IsNullOrEmpty(featuresKey) && request.Fields.TryGetValue(featuresKey, out var featuresVal) && featuresVal is not null)
@@ -395,13 +395,13 @@ public class OnboardingRequestAppService(
             request.ProgramAreaName = programAreaVal.ToString()!;
     }
 
-    private async Task SaveFieldMappingAsync(string? tenantNameKey, string? superUsersKey, string? branchKey, string? featuresKey, string? ministryKey, string? programAreaKey, string? displayNameKey, string? divisionKey)
+    private async Task SaveFieldMappingAsync(string? tenantNameKey, string? programManagersKey, string? branchKey, string? featuresKey, string? ministryKey, string? programAreaKey, string? displayNameKey, string? divisionKey)
     {
         var userId = CurrentUser.Id?.ToString();
         if (string.IsNullOrEmpty(userId)) return;
         await _settingManager.SetAsync(OnboardingColumnConfigSettings.TenantNameFieldKey, tenantNameKey, UserProvider, userId);
         await _settingManager.SetAsync(OnboardingColumnConfigSettings.DisplayNameFieldKey, displayNameKey, UserProvider, userId);
-        await _settingManager.SetAsync(OnboardingColumnConfigSettings.SuperUsersFieldKey, superUsersKey, UserProvider, userId);
+        await _settingManager.SetAsync(OnboardingColumnConfigSettings.ProgramManagersFieldKey, programManagersKey, UserProvider, userId);
         await _settingManager.SetAsync(OnboardingColumnConfigSettings.BranchFieldKey, branchKey, UserProvider, userId);
         await _settingManager.SetAsync(OnboardingColumnConfigSettings.FeaturesFieldKey, featuresKey, UserProvider, userId);
         await _settingManager.SetAsync(OnboardingColumnConfigSettings.MinistryFieldKey, ministryKey, UserProvider, userId);
@@ -412,13 +412,13 @@ public class OnboardingRequestAppService(
     private async Task<OnboardingColumnSchemaDto> ReadTenantMappingAsync()
     {
         var userId = CurrentUser.Id?.ToString();
-        string? tenantNameKey = null, displayNameKey = null, superUsersKey = null, branchKey = null, featuresKey = null, ministryKey = null, divisionKey = null, programAreaKey = null;
+        string? tenantNameKey = null, displayNameKey = null, programManagersKey = null, branchKey = null, featuresKey = null, ministryKey = null, divisionKey = null, programAreaKey = null;
 
         if (!string.IsNullOrEmpty(userId))
         {
             tenantNameKey  = await _settingManager.GetOrNullAsync(OnboardingColumnConfigSettings.TenantNameFieldKey,  UserProvider, userId);
             displayNameKey = await _settingManager.GetOrNullAsync(OnboardingColumnConfigSettings.DisplayNameFieldKey, UserProvider, userId);
-            superUsersKey  = await _settingManager.GetOrNullAsync(OnboardingColumnConfigSettings.SuperUsersFieldKey,  UserProvider, userId);
+            programManagersKey  = await _settingManager.GetOrNullAsync(OnboardingColumnConfigSettings.ProgramManagersFieldKey,  UserProvider, userId);
             branchKey      = await _settingManager.GetOrNullAsync(OnboardingColumnConfigSettings.BranchFieldKey,      UserProvider, userId);
             featuresKey    = await _settingManager.GetOrNullAsync(OnboardingColumnConfigSettings.FeaturesFieldKey,    UserProvider, userId);
             ministryKey    = await _settingManager.GetOrNullAsync(OnboardingColumnConfigSettings.MinistryFieldKey,    UserProvider, userId);
@@ -428,7 +428,7 @@ public class OnboardingRequestAppService(
 
         tenantNameKey  ??= await _settingManager.GetOrNullGlobalAsync(OnboardingColumnConfigSettings.TenantNameFieldKey);
         displayNameKey ??= await _settingManager.GetOrNullGlobalAsync(OnboardingColumnConfigSettings.DisplayNameFieldKey);
-        superUsersKey  ??= await _settingManager.GetOrNullGlobalAsync(OnboardingColumnConfigSettings.SuperUsersFieldKey);
+        programManagersKey  ??= await _settingManager.GetOrNullGlobalAsync(OnboardingColumnConfigSettings.ProgramManagersFieldKey);
         branchKey      ??= await _settingManager.GetOrNullGlobalAsync(OnboardingColumnConfigSettings.BranchFieldKey);
         featuresKey    ??= await _settingManager.GetOrNullGlobalAsync(OnboardingColumnConfigSettings.FeaturesFieldKey);
         ministryKey    ??= await _settingManager.GetOrNullGlobalAsync(OnboardingColumnConfigSettings.MinistryFieldKey);
@@ -439,7 +439,7 @@ public class OnboardingRequestAppService(
         {
             TenantNameFieldKey  = tenantNameKey,
             DisplayNameFieldKey = displayNameKey,
-            SuperUsersFieldKey  = superUsersKey,
+            ProgramManagersFieldKey  = programManagersKey,
             BranchFieldKey      = branchKey,
             FeaturesFieldKey    = featuresKey,
             MinistryFieldKey    = ministryKey,
@@ -587,8 +587,8 @@ public class OnboardingRequestAppService(
             dto.TenantName = tn.ToString()!;
         if (!string.IsNullOrEmpty(mapping.DisplayNameFieldKey) && dto.Fields.TryGetValue(mapping.DisplayNameFieldKey, out var dn) && dn != null)
             dto.DisplayName = dn.ToString()!;
-        if (!string.IsNullOrEmpty(mapping.SuperUsersFieldKey) && dto.Fields.TryGetValue(mapping.SuperUsersFieldKey, out var su) && su != null)
-            dto.SuperUsers = su.ToString()!;
+        if (!string.IsNullOrEmpty(mapping.ProgramManagersFieldKey) && dto.Fields.TryGetValue(mapping.ProgramManagersFieldKey, out var su) && su != null)
+            dto.ProgramManagers = su.ToString()!;
         if (!string.IsNullOrEmpty(mapping.BranchFieldKey) && dto.Fields.TryGetValue(mapping.BranchFieldKey, out var br) && br != null)
             dto.Branch = br.ToString()!;
         if (!string.IsNullOrEmpty(mapping.FeaturesFieldKey) && dto.Fields.TryGetValue(mapping.FeaturesFieldKey, out var ft) && ft != null)

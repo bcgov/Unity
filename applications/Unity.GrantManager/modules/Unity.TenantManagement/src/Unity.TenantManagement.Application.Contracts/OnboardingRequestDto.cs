@@ -15,7 +15,7 @@ public class OnboardingRequestDto
     public string ProgramAreaDescription { get; set; } = string.Empty;
     public string Contacts { get; set; } = string.Empty;
     public string Features { get; set; } = string.Empty;
-    public string SuperUsers { get; set; } = string.Empty;
+    public string ProgramManagers { get; set; } = string.Empty;
     public string ExecutiveDirector { get; set; } = string.Empty;
     public string Branch { get; set; } = string.Empty;
     public string Ministry { get; set; } = string.Empty;

@@ -121,7 +121,8 @@
 .applicant-contacts-widget .primary-readonly dd {
     font-size: var(--bc-font-size-base);
     margin-bottom: 0;
-    word-break: break-word;
+    word-break: normal;
+        overflow-wrap: anywhere;
 }
 
 .applicant-contacts-widget .table-card {

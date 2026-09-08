@@ -10,13 +10,14 @@ public class EmailAddressConfiguration : AuditedAggregateRoot<Guid>, IMultiTenan
     {
     }
 
-    public EmailAddressConfiguration(Guid id, string emailAddress, string emailType, string description)
+    public EmailAddressConfiguration(Guid id, string emailAddress, string emailType, string description, bool isDefault = false)
         : base(id)
     {
         EmailAddress = emailAddress;
         EmailType = emailType;
         Description = description;
         IsActive = true;
+        IsDefault = isDefault;
     }
 
     public Guid? TenantId { get; protected set; }
@@ -24,4 +25,5 @@ public class EmailAddressConfiguration : AuditedAggregateRoot<Guid>, IMultiTenan
     public string EmailType { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public bool IsActive { get; set; }
+    public bool IsDefault { get; set; }
 }

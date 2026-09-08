@@ -24,6 +24,7 @@ Evaluate if a branch is ready for PR against ABP architecture, policy, and CI ex
 3. Check mapping, DTO boundaries, localization, and permissions.
 4. Check migration context correctness when EF changes exist.
 5. Confirm test coverage and CI command readiness.
+6. Check documentation freshness: look up each changed path in `documentation/README.md` and confirm the docs it lists are still accurate. Report a stale doc as a non-blocking improvement unless the change contradicts a documented workflow, permission gate, or API contract — those block.
 
 ## Output Format
 
@@ -39,3 +40,4 @@ Evaluate if a branch is ready for PR against ABP architecture, policy, and CI ex
 - Require `dotnet build Unity.GrantManager.sln --no-restore` and `dotnet test Unity.GrantManager.sln --no-build` readiness.
 - Enforce ABP module layering rules from `.github/skills/unity-module-structure/SKILL.md`.
 - Enforce Mapperly, localization, and permissions conventions.
+- Never propose new documentation files for undocumented areas; `documentation/README.md` lists those gaps as deliberate.

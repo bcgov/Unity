@@ -1,0 +1,663 @@
+<title>Auto-Generated Reporting Views</title>
+<meta name="description" content="Handover for Unity Portal's deprecated auto/dynamic reporting-view path — what generates it, what it persists, why it is being retired, and the two-phase plan to remove it.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --paper:#F5F3EB;
+    --paper-raised:#EEEADB;
+    --ink:#20242B;
+    --ink-soft:#5B6472;
+    --line:#D9D3BF;
+    --accent:#2C6E68;
+    --accent-strong:#1B4B47;
+    --accent-soft:#DCEAE6;
+    --warn:#A85D2E;
+    --warn-soft:#F1E1D0;
+    --good:#3D7A3D;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#12161A;
+      --paper-raised:#1A2024;
+      --ink:#E9E6DC;
+      --ink-soft:#98A2AB;
+      --line:#2B333A;
+      --accent:#63C4B9;
+      --accent-strong:#8AD8CE;
+      --accent-soft:#17302C;
+      --warn:#E0975A;
+      --warn-soft:#2E2013;
+      --good:#7BC47B;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#12161A;
+    --paper-raised:#1A2024;
+    --ink:#E9E6DC;
+    --ink-soft:#98A2AB;
+    --line:#2B333A;
+    --accent:#63C4B9;
+    --accent-strong:#8AD8CE;
+    --accent-soft:#17302C;
+    --warn:#E0975A;
+    --warn-soft:#2E2013;
+    --good:#7BC47B;
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Source Serif 4', Georgia, 'Times New Roman', serif;
+    font-size:16px;
+    line-height:1.55;
+  }
+  .sheet{
+    max-width:960px;
+    margin:0 auto;
+    padding:56px 40px 90px;
+  }
+  h1,h2,h3,h4{
+    font-family:'Big Shoulders Display', 'Archivo Black', Impact, sans-serif;
+    text-transform:uppercase;
+    letter-spacing:0.01em;
+    text-wrap:balance;
+    color:var(--ink);
+    margin:0;
+  }
+  .mono{ font-family:'JetBrains Mono', ui-monospace, Consolas, monospace; }
+  code, .code{
+    font-family:'JetBrains Mono', ui-monospace, Consolas, monospace;
+    font-size:0.85em;
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:0.05em 0.4em;
+    color:var(--accent-strong);
+    white-space:nowrap;
+  }
+  p{ margin:0 0 0.9em; max-width:68ch; }
+  p:last-child{ margin-bottom:0; }
+  a{ color:var(--accent-strong); }
+  ul{ margin:0; padding-left:1.2em; }
+  li{ margin-bottom:0.4em; }
+  strong{ color:var(--ink); }
+
+  /* ---------- Header ---------- */
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--accent-strong);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .eyebrow::before{ content:""; width:22px; height:1px; background:var(--accent-strong); }
+  h1.title{ font-size:clamp(40px, 7vw, 76px); line-height:0.92; font-weight:800; }
+  .subtitle{ max-width:60ch; font-size:19px; color:var(--ink-soft); margin-top:16px; }
+  .meta-row{
+    margin-top:26px;
+    padding-top:18px;
+    border-top:1px solid var(--line);
+    display:flex;
+    flex-wrap:wrap;
+    gap:22px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .meta-row b{ color:var(--ink); font-weight:600; }
+
+  /* ---------- TOC ---------- */
+  .toc{
+    margin-top:22px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    padding-top:18px;
+    border-top:1px solid var(--line);
+  }
+  .toc a{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    text-decoration:none;
+    color:var(--ink-soft);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:6px 12px;
+    background:var(--paper-raised);
+    transition:color .15s, border-color .15s;
+  }
+  .toc a:hover{ color:var(--accent-strong); border-color:var(--accent); }
+  .toc a b{ color:var(--accent-strong); font-weight:600; margin-right:4px; }
+
+  /* ---------- Fact strip ---------- */
+  .facts{
+    margin-top:40px;
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+  }
+  .fact{ padding:16px 18px; border-left:1px solid var(--line); }
+  .fact:first-child{ border-left:none; }
+  .fact .num{ font-family:'Big Shoulders Display', sans-serif; font-weight:700; font-size:34px; line-height:1; color:var(--accent-strong); }
+  .fact .lbl{ margin-top:6px; font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.04em; text-transform:uppercase; color:var(--ink-soft); }
+
+  /* ---------- Sections ---------- */
+  section{ margin-top:64px; scroll-margin-top:24px; }
+  .sec-head{ display:flex; align-items:baseline; gap:14px; margin-bottom:8px; }
+  .sec-num{ font-family:'JetBrains Mono', monospace; font-size:13px; color:var(--ink-soft); }
+  h2{ font-size:26px; font-weight:700; }
+  h3{
+    font-size:16px;
+    font-weight:700;
+    text-transform:none;
+    font-family:'JetBrains Mono', monospace;
+    letter-spacing:0.01em;
+    color:var(--accent-strong);
+    margin-top:32px;
+    margin-bottom:12px;
+    padding-bottom:6px;
+    border-bottom:1px solid var(--line);
+  }
+  section > .lede{ color:var(--ink-soft); font-size:15.5px; max-width:72ch; margin-bottom:20px; }
+  .note{ font-size:14px; color:var(--ink-soft); }
+
+  /* ---------- Pipeline ---------- */
+  .pipeline{ display:grid; grid-template-columns:repeat(3, 1fr); gap:0; border:1px solid var(--line); border-radius:2px; overflow:hidden; }
+  .pipe-step{ padding:20px 20px 22px; border-left:1px solid var(--line); position:relative; }
+  .pipe-step:first-child{ border-left:none; }
+  .pipe-step::after{
+    content:"→"; position:absolute; right:-13px; top:50%; transform:translateY(-50%);
+    color:var(--accent); font-size:20px; font-weight:600; background:var(--paper); width:24px; text-align:center; z-index:1;
+  }
+  .pipe-step:last-child::after{ content:""; }
+  .pipe-kicker{ font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:8px; }
+  .pipe-tracks{ display:flex; flex-direction:column; gap:6px; }
+  .pipe-tracks .code{ white-space:normal; }
+  .track-label{ font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.03em; margin-top:2px; }
+
+  /* ---------- Chips ---------- */
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chip{ font-family:'JetBrains Mono', monospace; font-size:12px; padding:6px 11px; border:1px solid var(--line); border-radius:999px; color:var(--ink-soft); background:var(--paper-raised); }
+  .chip.on{ border-color:var(--accent); color:var(--accent-strong); background:var(--accent-soft); }
+
+  /* ---------- Data table (generic) ---------- */
+  table.data{ width:100%; border-collapse:collapse; font-size:14px; }
+  table.data th{
+    text-align:left; font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.04em; text-transform:uppercase;
+    color:var(--ink-soft); border-bottom:1px solid var(--line); padding:0 10px 8px 0; font-weight:500;
+  }
+  table.data td{ padding:9px 10px 9px 0; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.data tr:last-child td{ border-bottom:none; }
+  table.data .yes{ color:var(--good); font-weight:700; }
+  table.data .no{ color:var(--ink-soft); opacity:0.5; }
+  .table-scroll{ overflow-x:auto; }
+
+  /* ---------- kv grid ---------- */
+  .kv-grid{ display:grid; grid-template-columns:1fr 1.6fr; gap:0; border:1px solid var(--line); }
+  .kv-grid > div{ padding:14px 18px; border-top:1px solid var(--line); font-size:14.5px; }
+  .kv-grid > div:nth-child(-n+2){ border-top:none; }
+  .kv-grid .k{ font-family:'JetBrains Mono', monospace; font-size:12.5px; color:var(--ink-soft); background:var(--paper-raised); }
+
+  /* ---------- Rowlist (entity trees, API groups, invariants) ---------- */
+  .rowlist{ display:flex; flex-direction:column; border-top:1px solid var(--line); }
+  .rowlist .row{ display:grid; grid-template-columns:210px 1fr; gap:20px; padding:13px 0; border-bottom:1px solid var(--line); }
+  .rowlist .row .k{ font-family:'JetBrains Mono', monospace; font-size:13px; font-weight:600; color:var(--accent-strong); line-height:1.4; }
+  .rowlist .row .k .sub{ display:block; font-weight:400; color:var(--ink-soft); font-size:11px; margin-top:2px; text-transform:none; }
+  .rowlist .row .v{ font-size:14.5px; }
+  .rowlist .row .v p{ margin:0; }
+  .rowlist .row .v .methods{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .rowlist .row .v .methods span{
+    font-family:'JetBrains Mono', monospace; font-size:11px; background:var(--paper-raised); border:1px solid var(--line);
+    border-radius:3px; padding:2px 6px; color:var(--ink-soft);
+  }
+
+  /* ---------- Tag badges (rough edges, tech debt) ---------- */
+  .tag{
+    font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.03em; text-transform:uppercase;
+    border-radius:3px; padding:3px 8px; height:fit-content; white-space:nowrap; display:inline-block;
+  }
+  .tag.warn{ color:var(--warn); background:var(--warn-soft); }
+  .tag.accent{ color:var(--accent-strong); background:var(--accent-soft); }
+  .tag.roadmap{ color:var(--accent-strong); background:transparent; border:1px dashed var(--accent); }
+
+  .schematic{
+    font-family:'JetBrains Mono', monospace; font-size:13px; color:var(--ink-soft);
+    background:var(--paper-raised); border:1px solid var(--line); border-radius:3px; padding:10px 14px; margin-bottom:14px; overflow-x:auto; white-space:pre;
+  }
+
+  /* ---------- Footer ---------- */
+  footer{
+    margin-top:70px; padding-top:22px; border-top:1px solid var(--line);
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px;
+    font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--ink-soft);
+  }
+
+  @media (max-width:640px){
+    .sheet{ padding:36px 20px 60px; }
+    .facts{ grid-template-columns:repeat(2,1fr); }
+    .fact:nth-child(3){ border-left:none; }
+    .pipeline{ grid-template-columns:1fr; }
+    .pipe-step::after{ content:"↓"; right:auto; left:16px; top:auto; bottom:-13px; transform:none; }
+    .pipe-step{ border-left:none; border-top:1px solid var(--line); }
+    .pipe-step:first-child{ border-top:none; }
+    .kv-grid{ grid-template-columns:1fr; }
+    .kv-grid .k{ border-bottom:none; padding-bottom:4px; }
+    .rowlist .row{ grid-template-columns:1fr; gap:6px; }
+  }
+</style>
+<style>
+  .banner{
+    margin-top:34px; border:1px solid var(--warn); border-left-width:4px; border-radius:3px;
+    background:var(--warn-soft); padding:16px 20px;
+  }
+  .banner .kicker{
+    font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.12em; text-transform:uppercase;
+    color:var(--warn); margin-bottom:6px;
+  }
+  .banner p{ margin:0; max-width:74ch; }
+  .phase{ border:1px solid var(--line); border-radius:2px; margin-bottom:22px; }
+  .phase-head{
+    display:flex; align-items:baseline; gap:12px; padding:14px 18px; border-bottom:1px solid var(--line);
+    background:var(--paper-raised);
+  }
+  .phase-head .n{ font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--ink-soft); }
+  .phase-head h4{ font-size:18px; font-weight:700; }
+  .phase-head .gate{ margin-left:auto; }
+  .phase-body{ padding:16px 18px; }
+  .phase-body > :last-child{ margin-bottom:0; }
+</style>
+
+<div class="sheet">
+
+  <header>
+    <div class="eyebrow">Module Handover · Unity Portal · 2 of 2</div>
+    <h1 class="title">Auto-Generated Views</h1>
+    <p class="subtitle">The reporting path that came first: publish a worksheet, a scoresheet, or sync a CHEFS form version, and a database view appears — no configuration, no owner, every column <span class="code">TEXT</span>. It works, it is still in production, and it is being retired. This page is the complete account of what it does and how to take it out in two phases without breaking a single Metabase report before the reporting team is ready.</p>
+    <div class="meta-row">
+      <span><b>Status</b> <span class="mono">deprecated — removal planned</span></span>
+      <span><b>Replaced by</b> <span class="mono">reporting-configuration-handover.html</span></span>
+      <span><b>Gate for phase 2</b> <span class="mono">reporting team sign-off</span></span>
+    </div>
+    <nav class="toc">
+      <a href="#pattern"><b>01</b>The pattern</a>
+      <a href="#generators"><b>02</b>The three generators</a>
+      <a href="#state"><b>03</b>Persisted state</a>
+      <a href="#procedure"><b>04</b>The procedure</a>
+      <a href="#ops"><b>05</b>Sync tooling</a>
+      <a href="#why"><b>06</b>Why it is going away</a>
+      <a href="#phase1"><b>07</b>Phase 1 — stop generating</a>
+      <a href="#phase2"><b>08</b>Phase 2 — remove the data</a>
+      <a href="#sequencing"><b>09</b>Sequencing &amp; gates</a>
+    </nav>
+  </header>
+
+  <div class="facts">
+    <div class="fact"><div class="num">3</div><div class="lbl">Generators (form / worksheet / scoresheet)</div></div>
+    <div class="fact"><div class="num">6</div><div class="lbl">Tables carrying report columns</div></div>
+    <div class="fact"><div class="num">3</div><div class="lbl">Stored procedures to drop</div></div>
+    <div class="fact"><div class="num">2</div><div class="lbl">Removal phases</div></div>
+  </div>
+
+  <div class="banner">
+    <div class="kicker">Deprecated</div>
+    <p>Nothing here should be built on. New reporting surfaces go through the explicit <strong>Reporting Configuration</strong> path — see the companion handover page. This page exists so the removal can be done deliberately rather than discovered.</p>
+  </div>
+
+  <!-- ============ 01 THE PATTERN ============ -->
+  <section id="pattern">
+    <div class="sec-head"><span class="sec-num">01</span><h2>The pattern</h2></div>
+    <p class="lede">Three steps, all automatic, none of them involving a decision by a person.</p>
+
+    <div class="pipeline">
+      <div class="pipe-step">
+        <div class="pipe-kicker">On publish</div>
+        <div class="pipe-tracks">
+          <span class="code">ReportKeys | ReportColumns</span>
+          <span class="track-label">definition flattened to two pipe-delimited lists</span>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-kicker">On save / intake</div>
+        <div class="pipe-tracks">
+          <span class="code">ReportData (jsonb)</span>
+          <span class="track-label">instance answers flattened to { key: value }</span>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-kicker">Immediately after</div>
+        <div class="pipe-tracks">
+          <span class="code">generate_*s_view(id)</span>
+          <span class="track-label">one TEXT column per key, reading ReportData</span>
+        </div>
+      </div>
+    </div>
+    <p class="note" style="margin-top:16px;">Every entry point is gated on the per-tenant <span class="code">Unity.Reporting</span> feature (<span class="code">FeatureConsts.Reporting</span>). Nothing here runs for a tenant without it.</p>
+
+    <h3>Telling the two paths apart in a database</h3>
+    <div class="schematic">-- explicit views are exactly the ViewName values in the config table
+SELECT "ViewName" FROM "Reporting"."ReportColumnsMaps";
+
+-- everything else under Reporting is an auto view (or an orphan)
+SELECT viewname FROM pg_views
+WHERE schemaname = 'Reporting'
+  AND (viewname LIKE 'Form-%' OR viewname LIKE 'Worksheet-%' OR viewname LIKE 'Scoresheet-%');</div>
+    <p class="note">The naming conventions are the tell: auto views are <span class="code">Form-…</span>, <span class="code">Worksheet-…</span>, <span class="code">Scoresheet-…</span>, mixed-case with hyphens. Explicit views are lowercase with underscores.</p>
+  </section>
+
+  <!-- ============ 02 GENERATORS ============ -->
+  <section id="generators">
+    <div class="sec-head"><span class="sec-num">02</span><h2>The three generators</h2></div>
+    <p class="lede">Same shape, three sources, two different async mechanisms — Flex uses a local event, GrantManager uses an ABP background job.</p>
+
+    <div class="table-scroll">
+      <table class="data">
+        <thead><tr><th>Source</th><th>Entry point</th><th>Fields generator</th><th>View trigger</th><th>Procedure</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>CHEFS form version</td>
+            <td class="code">ApplicationFormVersionAppService<br>.UpdateOrCreateApplicationFormVersion</td>
+            <td class="code">ReportingFieldsGeneratorService</td>
+            <td>Background job <span class="code">SubmissionsDynamicViewGeneratorHandler</span>, 1s delay</td>
+            <td class="code">generate_submissions_view</td>
+          </tr>
+          <tr>
+            <td>Flex worksheet</td>
+            <td class="code">WorksheetAppService.PublishAsync</td>
+            <td class="code">WorksheetReportingFieldsGeneratorService</td>
+            <td>Local event <span class="code">WorksheetsDynamicViewGeneratorEto</span></td>
+            <td class="code">generate_worksheets_view</td>
+          </tr>
+          <tr>
+            <td>Flex scoresheet</td>
+            <td class="code">ScoresheetAppService.PublishScoresheetAsync</td>
+            <td class="code">ScoresheetReportingFieldsGeneratorService</td>
+            <td>Local event <span class="code">ScoresheetsDynamicViewGeneratorEto</span></td>
+            <td class="code">generate_scoresheets_view</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="rowlist" style="margin-top:24px;">
+      <div class="row"><div class="k">Form versions<span class="sub">once only</span></div><div class="v"><p>The call site is guarded by <span class="code">string.IsNullOrEmpty(applicationFormVersion.ReportViewName)</span> — so a form version that already has a view <strong>never</strong> refreshes its keys or its view, even after a CHEFS schema re-sync. It is also the only one of the three that raises a Teams notification on failure.</p></div></div>
+      <div class="row"><div class="k">Worksheets &amp; scoresheets<span class="sub">every publish</span></div><div class="v"><p>Published via <span class="code">ILocalEventBus.PublishAsync(..., onUnitOfWorkComplete: true)</span>. Both handlers wrap everything in a <span class="code">try/catch</span> that only logs — a failed view generation is completely invisible to the user who pressed Publish.</p></div></div>
+    </div>
+
+    <h3>View names</h3>
+    <table class="data">
+      <tbody>
+        <tr><td>Form version</td><td class="code">Form-{ApplicationFormName}-V{Version}</td><td class="note">e.g. <span class="code">Form-Community Grants-V3</span></td></tr>
+        <tr><td>Worksheet</td><td class="code">Worksheet-{Worksheet.Name}</td><td class="note">e.g. <span class="code">Worksheet-project_budget-v2</span></td></tr>
+        <tr><td>Scoresheet</td><td class="code">Scoresheet-{Scoresheet.Name}</td><td class="note">e.g. <span class="code">Scoresheet-standard_review</span></td></tr>
+      </tbody>
+    </table>
+    <p class="note" style="margin-top:12px;">Used verbatim as PostgreSQL identifiers — mixed case, hyphens, and for forms, spaces. This is the root of the sharpest rough edge in §06.</p>
+  </section>
+
+  <!-- ============ 03 STATE ============ -->
+  <section id="state">
+    <div class="sec-head"><span class="sec-num">03</span><h2>Persisted state</h2></div>
+    <p class="lede">Six columns of configuration across three definition tables, and three JSONB snapshot columns across three instance tables. This is exactly what Phase 2 removes.</p>
+
+    <h3>Definition columns — <span class="code">text NOT NULL</span></h3>
+    <div class="table-scroll">
+      <table class="data">
+        <thead><tr><th>Table</th><th>Schema</th><th>Columns</th><th>Written by</th></tr></thead>
+        <tbody>
+          <tr><td class="code">ApplicationFormVersion</td><td class="code">public</td><td class="code">ReportKeys, ReportColumns, ReportViewName</td><td class="code">ReportingFieldsGeneratorService</td></tr>
+          <tr><td class="code">Worksheets</td><td class="code">Flex</td><td class="code">ReportKeys, ReportColumns, ReportViewName</td><td class="code">WorksheetReportingFieldsGeneratorService</td></tr>
+          <tr><td class="code">Scoresheets</td><td class="code">Flex</td><td class="code">ReportKeys, ReportColumns, ReportViewName</td><td class="code">ScoresheetReportingFieldsGeneratorService</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:14px;"><span class="code">ReportKeys</span> and <span class="code">ReportColumns</span> are two parallel <span class="code">|</span>-delimited lists (<span class="code">ReportingConsts.ReportFieldDelimiter</span>). Index <em>i</em> of one is the JSON lookup key; index <em>i</em> of the other is the resulting SQL identifier. On the Flex side the contract is <span class="code">IReportableEntity&lt;T&gt;</span> with its <span class="code">SetReportingFields(keys, columns, viewName)</span> method.</p>
+
+    <div class="kv-grid" style="margin-top:18px;">
+      <div class="k">CHEFS key extraction</div>
+      <div>From <span class="code">AvailableChefsFields</span>. Types <span class="code">simplebuttonadvanced</span>, <span class="code">datagrid</span>, and <span class="code">hidden</span> are excluded outright; <span class="code">simplecheckboxes</span> and <span class="code">simplecheckboxadvanced</span> expand to one key per option value. Columns are the same keys truncated at 63 characters.</div>
+      <div class="k">Flex key extraction</div>
+      <div>Per field via <span class="code">ReportingFieldsGeneratorFactory</span> — <span class="code">CheckboxGroupReportingFieldsGenerator</span> and <span class="code">DataGridReportingFieldsGenerator</span> expand into several keys; everything else goes through the default generator.</div>
+    </div>
+
+    <h3>Instance columns — <span class="code">jsonb NOT NULL DEFAULT '{}'</span></h3>
+    <div class="table-scroll">
+      <table class="data">
+        <thead><tr><th>Table</th><th>Schema</th><th>Written by</th></tr></thead>
+        <tbody>
+          <tr><td class="code">ApplicationFormSubmissions</td><td class="code">public</td><td><span class="code">GenerateReportDataHandler</span> on <span class="code">ApplicationProcessEvent</span> (intake)</td></tr>
+          <tr><td class="code">WorksheetInstances</td><td class="code">Flex</td><td><span class="code">WorksheetsManager</span> on save → <span class="code">WorksheetsReportingDataGeneratorService</span></td></tr>
+          <tr><td class="code">ScoresheetInstances</td><td class="code">Flex</td><td><span class="code">ScoresheetsManager</span> on answer save → <span class="code">ScoresheetsReportingDataGeneratorService</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:14px;">The generators seed the dictionary with every report key mapped to <span class="code">null</span> and then overwrite the ones that have values, so the JSON shape stays stable across instances. The scoresheet generator additionally writes a <span class="code">TotalScore</span> entry. Both Flex generators swallow every exception and log — report data never blocks intake or assessment, which is also why it can silently drift.</p>
+  </section>
+
+  <!-- ============ 04 PROCEDURE ============ -->
+  <section id="procedure">
+    <div class="sec-head"><span class="sec-num">04</span><h2>The procedure</h2></div>
+    <p class="lede">One 58-line procedure, copied three times. The only differences are the definition table, the instance table, and which passthrough columns survive.</p>
+
+    <div class="schematic">SELECT "ReportViewName", "ReportColumns", "ReportKeys"
+  INTO view_name, view_columns, view_keys
+  FROM "Flex"."Worksheets" WHERE "Id" = table_a_id;
+
+column_names := string_to_array(view_columns, '|');
+key_names    := string_to_array(view_keys,    '|');
+
+-- one clause per key
+select_clause := ... format(
+  'COALESCE((SELECT value::TEXT FROM jsonb_each_text("ReportData")
+             WHERE key = %L LIMIT 1), '''') AS %I',
+  key_names[i], column_names[i]);
+
+EXECUTE format('DROP VIEW IF EXISTS %I', view_name);          -- note: not schema-qualified
+EXECUTE format('CREATE VIEW "Reporting".%I AS SELECT ... %s FROM (...) AS subquery', ...);</div>
+
+    <div class="table-scroll" style="margin-top:20px;">
+      <table class="data">
+        <thead><tr><th>Procedure</th><th>Definition table</th><th>Instance table (filter)</th><th>Passthrough columns</th></tr></thead>
+        <tbody>
+          <tr><td class="code">generate_submissions_view</td><td class="code">public.ApplicationFormVersion</td><td class="code">ApplicationFormSubmissions<br>(ApplicationFormVersionId)</td><td class="code">Id, ApplicationId</td></tr>
+          <tr><td class="code">generate_worksheets_view</td><td class="code">Flex.Worksheets</td><td class="code">Flex.WorksheetInstances<br>(WorksheetId)</td><td class="code">Id, CorrelationId, CorrelationProvider</td></tr>
+          <tr><td class="code">generate_scoresheets_view</td><td class="code">Flex.Scoresheets</td><td class="code">Flex.ScoresheetInstances<br>(ScoresheetId)</td><td class="code">Id, CorrelationId, CorrelationProvider, TotalScore</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note" style="margin-top:14px;"><span class="code">TotalScore</span> — <span class="code">COALESCE(("ReportData"-&gt;&gt;'TotalScore')::integer, 0)</span> — is the only non-<span class="code">TEXT</span> column any of the three produces. All three also build a <span class="code">column_definitions</span> variable that is never used: dead code, carried through every copy.</p>
+  </section>
+
+  <!-- ============ 05 OPS ============ -->
+  <section id="ops">
+    <div class="sec-head"><span class="sec-num">05</span><h2>Sync tooling</h2></div>
+    <p class="lede">Because generation fails silently, three IT-Admin services exist to repair the drift. No UI — they are reachable only through ABP's auto-generated API. Each takes an optional <span class="code">tenantId</span> and otherwise loops every tenant, re-checking the <span class="code">Unity.Reporting</span> feature per tenant.</p>
+
+    <div class="rowlist">
+      <div class="row"><div class="k">FormsReportSyncServiceAppService<span class="sub">SyncFormVersionFields · SyncFormSubmissionData</span></div><div class="v"><p>Form versions with an empty <span class="code">ReportViewName</span>; submissions whose <span class="code">ReportData</span> is empty or <span class="code">{}</span>, processed 25 at a time in their own units of work. Its <span class="code">GenerateFormVersionFields</span> already carries a <span class="code">// Deprecated - to be removed once new reporting is fully rolled out</span> comment.</p></div></div>
+      <div class="row"><div class="k">WorksheetReportingFieldsSyncAppService<span class="sub">SyncFields · SyncData</span></div><div class="v"><p>Published worksheets with an empty <span class="code">ReportViewName</span>; <span class="code">ReportData</span> for <em>every</em> worksheet instance, unconditionally.</p></div></div>
+      <div class="row"><div class="k">ScoresheetReportingFieldsSyncAppService<span class="sub">SyncQuestions · SyncAnswers</span></div><div class="v"><p>The scoresheet equivalent.</p></div></div>
+    </div>
+    <p class="note" style="margin-top:14px;">All three are <span class="code">[Authorize(IdentityConsts.ITAdminPolicyName)]</span>. All three disappear in Phase 1.</p>
+  </section>
+
+  <!-- ============ 06 WHY ============ -->
+  <section id="why">
+    <div class="sec-head"><span class="sec-num">06</span><h2>Why it is going away</h2></div>
+    <p class="lede">These are structural, not incidental. Each one is already solved on the explicit path.</p>
+    <div class="rowlist">
+      <div class="row"><div class="k"><span class="tag warn">Real risk</span></div><div class="v"><p><strong>View names are not valid bare identifiers.</strong> <span class="code">ReportColumnsMapRepository.IsValidPostgreSqlIdentifier</span> accepts only <span class="code">^[a-zA-Z_][a-zA-Z0-9_]*$</span>, and <span class="code">AssignRoleToAllViewsAsync</span> validates <em>every</em> name it reads back from <span class="code">pg_views</span> before interpolating it into a <span class="code">GRANT</span>. Hyphenated auto view names fail that check, so "assign role to all views" throws part-way through and leaves the rest of the schema ungranted. This is the one rough edge that actively damages the <em>other</em> path.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Real risk</span></div><div class="v"><p><strong>Column names are truncated but not de-duplicated.</strong> Keys are cut at 63 characters with nothing done about collisions — two long CHEFS keys sharing a 63-character prefix produce two identically named columns and the <span class="code">CREATE VIEW</span> fails outright.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Latent</span></div><div class="v"><p><strong>Unqualified <span class="code">DROP VIEW</span>.</strong> The drop resolves through <span class="code">search_path</span> while the create is explicitly <span class="code">"Reporting".%I</span>. If <span class="code">Reporting</span> is not on the search path, the drop silently misses and the create then fails on the existing view.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">Design</span></div><div class="v"><p><strong>Everything is <span class="code">TEXT</span>.</strong> Numbers, dates, currency, booleans all arrive as strings, so every Metabase model has to cast. The explicit path emits real <span class="code">NUMERIC</span> / <span class="code">DECIMAL(18,2)</span> / <span class="code">TIMESTAMP</span> / <span class="code">BOOLEAN</span> via the <span class="code">safe_to_*</span> helpers.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">Design</span></div><div class="v"><p><strong>Failures are silent.</strong> All three handlers catch <span class="code">Exception</span> and log; only the submissions handler notifies Teams. There is no <span class="code">ViewStatus</span> equivalent and nothing surfaces in the UI, so a tenant can sit with a stale or missing view indefinitely — which is why §05 exists at all.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">Design</span></div><div class="v"><p><strong>Form-version views never refresh.</strong> The <span class="code">ReportViewName</span>-empty guard means a re-synced CHEFS schema does not update <span class="code">ReportKeys</span>, so fields added to a form version never appear in its view.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">Design</span></div><div class="v"><p><strong><span class="code">ReportData</span> is a second copy of the answers.</strong> It duplicates data already in <span class="code">Submission</span>, <span class="code">WorksheetInstances.CurrentValue</span>, and <span class="code">Flex.Answers</span>, and drifts from them whenever generation fails.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">Missing</span></div><div class="v"><p><strong>No cross-version story.</strong> One view per form version means a multi-version report is assembled by hand in Metabase. The <span class="code">*_consolidated</span> providers exist precisely to solve this.</p></div></div>
+    </div>
+  </section>
+
+  <!-- ============ 07 PHASE 1 ============ -->
+  <section id="phase1">
+    <div class="sec-head"><span class="sec-num">07</span><h2>Phase 1 — stop generating</h2></div>
+    <p class="lede">Goal: no new auto views, no new <span class="code">Report*</span> values. Existing views and columns stay exactly where they are, so every current Metabase report keeps working untouched. This phase is blocked on nothing and can ship immediately.</p>
+
+    <div class="phase">
+      <div class="phase-head"><span class="n">1.1</span><h4>Cut the three call sites</h4><span class="gate tag accent">code</span></div>
+      <div class="phase-body">
+        <div class="rowlist">
+          <div class="row"><div class="k">WorksheetAppService<span class="sub">PublishAsync</span></div><div class="v"><p>Drop the <span class="code">GenerateAndSet(worksheet)</span> call and the <span class="code">IReportingFieldsGeneratorService&lt;Worksheet&gt;</span> dependency.</p></div></div>
+          <div class="row"><div class="k">ScoresheetAppService<span class="sub">PublishScoresheetAsync</span></div><div class="v"><p>Same, for <span class="code">IReportingFieldsGeneratorService&lt;Scoresheet&gt;</span>.</p></div></div>
+          <div class="row"><div class="k">ApplicationFormVersionAppService<span class="sub">UpdateOrCreateApplicationFormVersion</span></div><div class="v"><p>Drop the <span class="code">GenerateAndSetAsync(...)</span> block — already commented "should be deprecated with new reporting configuration at some point" — and its dependency.</p></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-head"><span class="n">1.2</span><h4>Delete the generation code</h4><span class="gate tag accent">code</span></div>
+      <div class="phase-body">
+        <div class="table-scroll">
+          <table class="data">
+            <thead><tr><th>Project / folder</th><th>Delete</th></tr></thead>
+            <tbody>
+              <tr><td class="code">Unity.Flex.Application/Reporting/</td><td><span class="code">WorksheetsDynamicViewGeneratorEto</span>, <span class="code">…Handler</span>, <span class="code">ScoresheetsDynamicViewGeneratorEto</span>, <span class="code">…Handler</span>, <span class="code">DynamicViewGeneratorEto</span>, <span class="code">IReportableEntity</span>, <span class="code">ReportingExtensions</span>, both <span class="code">*ReportingFieldsSyncAppService</span></td></tr>
+              <tr><td class="code">…/Reporting/FieldGenerators/</td><td>whole folder — interfaces, factory, both services, <span class="code">CustomFieldGenerators/</span>, <span class="code">QuestionFieldGenerators/</span></td></tr>
+              <tr><td class="code">…/Reporting/DataGenerators/</td><td>whole folder — factories, base service, <span class="code">AnswerGenerators/</span>, <span class="code">CustomFieldValueGenerators/</span></td></tr>
+              <tr><td class="code">Unity.Flex.Application.Contracts/Reporting/</td><td><span class="code">IWorksheetReportingFieldsSyncAppService</span>, <span class="code">IScoresheetReportingFieldsSyncAppService</span></td></tr>
+              <tr><td class="code">Unity.GrantManager.Application/Reporting/</td><td><span class="code">SubmissionsDynamicViewGeneratorHandler</span> + <span class="code">…Args</span>, <span class="code">FieldGenerators/</span>, <span class="code">DataGenerators/</span>, <span class="code">FormsReportSyncServiceAppService</span></td></tr>
+              <tr><td class="code">Unity.GrantManager.Application.Contracts/Reporting/</td><td><span class="code">IFormsReportSyncServiceAppService</span></td></tr>
+              <tr><td class="code">Unity.GrantManager.Application/Intakes/Handlers/</td><td><span class="code">GenerateReportDataHandler</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="banner" style="margin-top:18px;">
+          <div class="kicker">Do not delete</div>
+          <p>The <span class="code">Reporting/Configuration/</span> folders in both projects — <span class="code">WorksheetsMetadataService</span>, <span class="code">ScoresheetsMetadataService</span>, the two field schema parsers, and <span class="code">FormMetadataService</span> — belong to the <strong>explicit</strong> path. They are what the three field providers call to read metadata. They share a parent folder with the code above and nothing else.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-head"><span class="n">1.3</span><h4>Untangle the AI scoresheet contract</h4><span class="gate tag warn">coupled</span></div>
+      <div class="phase-body">
+        <p><span class="code">FormScoresheetOperationExecutor</span> reads and round-trips <span class="code">ReportColumns</span>, <span class="code">ReportKeys</span>, and <span class="code">ReportViewName</span> through the AI payload, and <span class="code">AIProviderPayloadValidator</span> <em>requires</em> all three to be present on a scoresheet payload. <span class="code">FormScoresheetResponse</span> and the seeded prompt in <span class="code">AIPromptDataSeeder</span> carry them too.</p>
+        <p>Either keep passing empty strings through, or — better — strip the three properties from the AI contract, the validator, the response DTO, and the seeded prompt together. Changing the seeded prompt affects tenants that already hold prompt rows, so plan a data update alongside the code change.</p>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-head"><span class="n">1.4</span><h4>Trim the DTOs, keep the columns</h4><span class="gate tag accent">code</span></div>
+      <div class="phase-body">
+        <p>Drop the three properties from <span class="code">CreateWorksheetDto</span>, <span class="code">WorksheetDto</span>, <span class="code">ApplicationFormVersionDto</span>, and the two Mapperly profiles — nothing in the Razor pages or JavaScript reads them (verified by search).</p>
+        <p><strong>Leave the database columns and the entity properties in place.</strong> With <span class="code">IReportableEntity&lt;T&gt;</span> gone, <span class="code">SetReportingFields</span> disappears and the columns become plain persisted state, frozen at their last generated values. That is deliberate: it keeps every existing view queryable while the reporting team migrates.</p>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-head"><span class="n">1.5</span><h4>Verify</h4><span class="gate tag accent">test</span></div>
+      <div class="phase-body">
+        <p>On a tenant with the <span class="code">Unity.Reporting</span> feature enabled: publish a worksheet, publish a scoresheet, and re-sync a CHEFS form version. Then confirm no new <span class="code">ReportKeys</span>/<span class="code">ReportViewName</span> values were written, <span class="code">pg_views</span> under <span class="code">Reporting</span> is unchanged before and after, and no <span class="code">generate_*s_view</span> call appears in the logs.</p>
+      </div>
+    </div>
+
+    <p class="note">Phase 1 drops no views, no columns, and no stored procedures. It is fully reversible by reverting the commit.</p>
+  </section>
+
+  <!-- ============ 08 PHASE 2 ============ -->
+  <section id="phase2">
+    <div class="sec-head"><span class="sec-num">08</span><h2>Phase 2 — remove the data</h2></div>
+
+    <div class="banner">
+      <div class="kicker">Hard gate</div>
+      <p>Do not start until the reporting team confirms <em>in writing</em> that no Metabase model, question, or dashboard — and no external consumer — references any <span class="code">Form-*</span>, <span class="code">Worksheet-*</span>, or <span class="code">Scoresheet-*</span> view. Inventory them per tenant with the queries in §01 first, and take a database backup: <span class="code">DROP COLUMN</span> on <span class="code">ReportData</span> is irreversible.</p>
+    </div>
+
+    <h3 style="margin-top:34px;">Prerequisite already verified</h3>
+    <p>None of <span class="code">get_formversion_data</span>, <span class="code">get_consolidated_formversion_data</span>, <span class="code">get_worksheet_data</span>, <span class="code">get_consolidated_worksheet_data</span>, or <span class="code">get_scoresheet_data</span> reads <span class="code">ReportData</span>, <span class="code">ReportKeys</span>, <span class="code">ReportColumns</span>, or <span class="code">ReportViewName</span>. They read source data directly:</p>
+    <div class="kv-grid">
+      <div class="k">formversion · consolidated</div><div><span class="code">public."ApplicationFormSubmissions"."Submission"</span></div>
+      <div class="k">worksheet · consolidated</div><div><span class="code">Flex."WorksheetInstances"."CurrentValue"</span> joined to <span class="code">Flex."Worksheets"</span></div>
+      <div class="k">scoresheet</div><div><span class="code">Flex."ScoresheetInstances"</span> → <span class="code">Assessments</span> → <span class="code">Applications</span>; values from <span class="code">Flex."Answers"</span>; total from <span class="code">calculate_scoresheet_total_score</span></div>
+    </div>
+    <p class="note" style="margin-top:12px;">So dropping these columns cannot break an explicitly configured view.</p>
+
+    <h3>One tenant migration, in this order</h3>
+
+    <div class="phase">
+      <div class="phase-head"><span class="n">2.1</span><h4>Drop the auto views</h4></div>
+      <div class="phase-body">
+        <p>Generated names are not predictable from the migration alone, so drop them by pattern in a <span class="code">DO</span> block iterating the <span class="code">pg_views</span> list from §01, using <span class="code">EXECUTE format('DROP VIEW IF EXISTS %I.%I', ...)</span>.</p>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-head"><span class="n">2.2</span><h4>Drop the stored procedures</h4></div>
+      <div class="phase-body">
+        <div class="schematic">DROP PROCEDURE IF EXISTS "Reporting".generate_submissions_view(uuid);
+DROP PROCEDURE IF EXISTS "Reporting".generate_worksheets_view(uuid);
+DROP PROCEDURE IF EXISTS "Reporting".generate_scoresheets_view(uuid);</div>
+        <p>Then delete the three <span class="code">Scripts/*.sql</span> files, their <span class="code">&lt;EmbeddedResource&gt;</span> entries in <span class="code">Unity.GrantManager.EntityFrameworkCore.csproj</span>, and their <span class="code">RunEmbeddedScript</span> lines in <span class="code">20260721203242_Initial.cs</span>.</p>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-head"><span class="n">2.3</span><h4>Drop the definition columns</h4></div>
+      <div class="phase-body">
+        <div class="schematic">ALTER TABLE "Flex"."Worksheets"             DROP COLUMN "ReportKeys", DROP COLUMN "ReportColumns", DROP COLUMN "ReportViewName";
+ALTER TABLE "Flex"."Scoresheets"            DROP COLUMN "ReportKeys", DROP COLUMN "ReportColumns", DROP COLUMN "ReportViewName";
+ALTER TABLE public."ApplicationFormVersion" DROP COLUMN "ReportKeys", DROP COLUMN "ReportColumns", DROP COLUMN "ReportViewName";</div>
+        <p>Remove the matching properties from <span class="code">Worksheet</span>, <span class="code">Scoresheet</span>, and <span class="code">ApplicationFormVersion</span>.</p>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-head"><span class="n">2.4</span><h4>Drop the instance data columns</h4><span class="gate tag warn">irreversible</span></div>
+      <div class="phase-body">
+        <div class="schematic">ALTER TABLE "Flex"."WorksheetInstances"         DROP COLUMN "ReportData";
+ALTER TABLE "Flex"."ScoresheetInstances"        DROP COLUMN "ReportData";
+ALTER TABLE public."ApplicationFormSubmissions" DROP COLUMN "ReportData";</div>
+        <p>Remove <span class="code">WorksheetInstance.ReportData</span> + <span class="code">SetReportingData</span>, <span class="code">ScoresheetInstance.ReportData</span> + <span class="code">SetReportingData</span>, <span class="code">ApplicationFormSubmission.ReportData</span>, <span class="code">CreateWorksheetInstanceDto.ReportData</span>, and <span class="code">WorksheetInstanceReportDto</span>. <span class="code">DataGridWriteService.GenerateReportDataForNewRowAsync</span> in <span class="code">Unity.Flex.Web</span> also writes <span class="code">ReportData</span> for new data-grid rows and goes with them.</p>
+        <p class="note"><span class="code">ScoresheetInstances.ReportData</span> also carries the <span class="code">TotalScore</span> entry the auto scoresheet view exposes. The explicit path computes the total independently from <span class="code">Flex.Answers</span> via <span class="code">calculate_scoresheet_total_score</span>, so no scoring capability is lost — but confirm nothing else reads <span class="code">ReportData-&gt;&gt;'TotalScore'</span> before dropping.</p>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-head"><span class="n">2.5</span><h4>Regenerate and verify</h4></div>
+      <div class="phase-body">
+        <p>Add the migration against the tenant context explicitly (<span class="code">--context GrantTenantDbContext --output-dir Migrations/TenantMigrations</span>).</p>
+        <p>After it runs, <span class="code">SELECT viewname FROM pg_views WHERE schemaname = 'Reporting'</span> should return exactly the <span class="code">ViewName</span> set from <span class="code">Reporting."ReportColumnsMaps"</span>. Then run "assign role to all views" for the tenant — with no hyphenated names left it should complete without throwing, closing the cross-path rough edge in §06.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 09 SEQUENCING ============ -->
+  <section id="sequencing">
+    <div class="sec-head"><span class="sec-num">09</span><h2>Sequencing &amp; gates</h2></div>
+    <div class="table-scroll">
+      <table class="data">
+        <thead><tr><th></th><th>Phase 1 — stop generating</th><th>Phase 2 — remove the data</th></tr></thead>
+        <tbody>
+          <tr><td>Blocked on</td><td class="yes">nothing — can ship immediately</td><td>reporting team's Metabase migration complete</td></tr>
+          <tr><td>Removes</td><td>generation code and its call sites</td><td>views, procedures, and all six tables' report columns</td></tr>
+          <tr><td>Existing Metabase reports</td><td class="yes">keep working (views frozen)</td><td>break unless already re-pointed</td></tr>
+          <tr><td>Reversible</td><td class="yes">yes — revert the commit</td><td class="no">no — data loss</td></tr>
+          <tr><td>Tenant migration</td><td class="no">not needed</td><td class="yes">required</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:20px;">The gap between the phases is the point. Phase 1 freezes the surface without changing it, which turns "migrate every Metabase report" from a coordinated cutover into work the reporting team can do at its own pace against a target that has stopped moving.</p>
+  </section>
+
+  <footer>
+    <span>Source: <span class="mono">documentation/reporting/reporting-auto-generated-views.md</span></span>
+    <span>Generated with Claude Code</span>
+  </footer>
+
+</div>

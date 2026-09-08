@@ -112,16 +112,38 @@ public class NotificationsDataSeedContributor(ITemplateVariablesRepository templ
             var existingSenderAddress = await emailAddressConfigurationsRepository.GetListAsync(configuration =>
                 configuration.EmailType == "Sender" &&
                 configuration.EmailAddress.ToUpper() == normalizedDefaultFromAddress.ToUpper());
+            var existingDefaultConfigurations = await emailAddressConfigurationsRepository.GetListAsync(
+                configuration => configuration.IsDefault);
 
             if (existingSenderAddress.Count == 0)
             {
+                foreach (var existingDefaultConfiguration in existingDefaultConfigurations)
+                {
+                    existingDefaultConfiguration.IsDefault = false;
+                    await emailAddressConfigurationsRepository.UpdateAsync(existingDefaultConfiguration, autoSave: true);
+                }
+
                 await emailAddressConfigurationsRepository.InsertAsync(
                     new EmailAddressConfiguration(
                         Guid.NewGuid(),
                         normalizedDefaultFromAddress,
                         "Sender",
-                        "Default sender address"),
+                        "Default sender address",
+                        isDefault: true),
                     autoSave: true);
+            }
+            else if (!existingSenderAddress.Any(configuration => configuration.IsDefault))
+            {
+                foreach (var existingDefaultConfiguration in existingDefaultConfigurations)
+                {
+                    existingDefaultConfiguration.IsDefault = false;
+                    await emailAddressConfigurationsRepository.UpdateAsync(existingDefaultConfiguration, autoSave: true);
+                }
+
+                var copiedConfiguration = existingSenderAddress.First();
+                copiedConfiguration.IsActive = true;
+                copiedConfiguration.IsDefault = true;
+                await emailAddressConfigurationsRepository.UpdateAsync(copiedConfiguration, autoSave: true);
             }
         }
     }

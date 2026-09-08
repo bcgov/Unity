@@ -49,7 +49,8 @@ namespace Unity.GrantManager.Integrations
             if (string.IsNullOrEmpty(env) || env.StartsWith("dev", StringComparison.OrdinalIgnoreCase))
                 return devUrl;
             if (env.StartsWith("test", StringComparison.OrdinalIgnoreCase) ||
-                env.Equals("uat", StringComparison.OrdinalIgnoreCase))
+                env.Equals("uat", StringComparison.OrdinalIgnoreCase) ||
+                env.Equals("staging", StringComparison.OrdinalIgnoreCase))
                 return testUrl;
             return prodUrl;
         }

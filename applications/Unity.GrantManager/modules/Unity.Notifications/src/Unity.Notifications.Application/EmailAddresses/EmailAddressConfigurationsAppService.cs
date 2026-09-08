@@ -2,12 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Net.Mail;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Unity.GrantManager.Notifications;
+using Unity.Notifications.Emails;
 using Unity.Notifications.Templates;
-using Unity.Notifications.Settings;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
@@ -21,7 +20,7 @@ namespace Unity.Notifications.EmailAddresses;
 public class EmailAddressConfigurationsAppService(
     IEmailAddressConfigurationsRepository repository,
     ITemplatesRepository templatesRepository,
-    IRepository<ScheduledNotification, Guid> scheduledNotificationRepository) : ApplicationService, IEmailAddressConfigurationsAppService
+    IEmailLogsRepository emailLogsRepository) : ApplicationService, IEmailAddressConfigurationsAppService
 {
     private static readonly string[] AllowedTypes =
     ["Sender", "ReplyTo", "NoReply", "Inbound", "Support", "Other"];
@@ -29,10 +28,18 @@ public class EmailAddressConfigurationsAppService(
     public async Task<EmailAddressConfigurationDto> CreateAsync(EmailAddressConfigurationDto input)
     {
         Validate(input);
-        await EnsureUniqueAsync(input.EmailAddress, input.EmailType, null);
+        var emailType = NormalizeEmailType(input.EmailType);
+        await EnsureUniqueAsync(input.EmailAddress, emailType, null);
+        var existing = await repository.GetListAsync();
+        var isDefault = input.IsDefault || existing.All(configuration => !configuration.IsDefault);
+        EnsureDefaultIsActive(isDefault, input.IsActive);
+        if (isDefault)
+        {
+            await ClearDefaultsAsync(existing);
+        }
 
         var entity = await repository.InsertAsync(new EmailAddressConfiguration(
-            GuidGenerator.Create(), NormalizeAddress(input.EmailAddress), input.EmailType, input.Description.Trim()));
+            GuidGenerator.Create(), NormalizeAddress(input.EmailAddress), emailType, input.Description.Trim(), isDefault));
         entity.IsActive = input.IsActive;
         await repository.UpdateAsync(entity, true);
 
@@ -42,13 +49,35 @@ public class EmailAddressConfigurationsAppService(
     public async Task<EmailAddressConfigurationDto> UpdateAsync(EmailAddressConfigurationDto input)
     {
         Validate(input);
-        await EnsureUniqueAsync(input.EmailAddress, input.EmailType, input.Id);
+        var emailType = NormalizeEmailType(input.EmailType);
+        await EnsureUniqueAsync(input.EmailAddress, emailType, input.Id);
 
         var entity = await repository.GetAsync(input.Id, true);
+        EnsureDefaultIsActive(input.IsDefault, input.IsActive);
+        if (entity.IsDefault && !input.IsDefault)
+        {
+            throw new BusinessException("Unity.Notifications:DefaultEmailAddressRequired", "The default email address cannot be unselected.");
+        }
+        if (entity.IsDefault && !input.IsActive)
+        {
+            throw new BusinessException("Unity.Notifications:DefaultEmailAddressRequired", "The default email address cannot be inactivated.");
+        }
+
+        var existing = await repository.GetListAsync();
+        if (!input.IsDefault && existing.Where(configuration => configuration.Id != entity.Id).All(configuration => !configuration.IsDefault))
+        {
+            throw new BusinessException("Unity.Notifications:DefaultEmailAddressRequired", "There must always be one default email address.");
+        }
+        if (input.IsDefault)
+        {
+            await ClearDefaultsAsync(existing.Where(configuration => configuration.Id != entity.Id));
+        }
+
         entity.EmailAddress = NormalizeAddress(input.EmailAddress);
-        entity.EmailType = input.EmailType;
+        entity.EmailType = emailType;
         entity.Description = input.Description.Trim();
         entity.IsActive = input.IsActive;
+        entity.IsDefault = input.IsDefault;
         await repository.UpdateAsync(entity, true);
 
         return await ToDtoAsync(entity);
@@ -57,11 +86,15 @@ public class EmailAddressConfigurationsAppService(
     public async Task DeleteAsync(Guid id)
     {
         var entity = await repository.GetAsync(id);
+        if (entity.IsDefault)
+        {
+            throw new BusinessException("Unity.Notifications:DefaultEmailAddressRequired", "The default email address cannot be deleted.");
+        }
         if (await IsInUseAsync(entity))
         {
             throw new BusinessException(
                 "Unity.Notifications:EmailAddressInUse",
-                "This email address must first be removed from the associated configuration before it can be deleted.");
+                "This email address is used by an email template or email history and cannot be deleted.");
         }
 
         await repository.DeleteAsync(id, true);
@@ -98,6 +131,23 @@ public class EmailAddressConfigurationsAppService(
         }
     }
 
+    private static void EnsureDefaultIsActive(bool isDefault, bool isActive)
+    {
+        if (isDefault && !isActive)
+        {
+            throw new BusinessException("Unity.Notifications:DefaultEmailAddressRequired", "The default email address must be active.");
+        }
+    }
+
+    private async Task ClearDefaultsAsync(IEnumerable<EmailAddressConfiguration> configurations)
+    {
+        foreach (var configuration in configurations.Where(configuration => configuration.IsDefault))
+        {
+            configuration.IsDefault = false;
+            await repository.UpdateAsync(configuration, true);
+        }
+    }
+
     private async Task EnsureUniqueAsync(string address, string emailType, Guid? excludedId)
     {
         var normalizedAddress = NormalizeAddress(address);
@@ -122,14 +172,14 @@ public class EmailAddressConfigurationsAppService(
             return true;
         }
 
-        var scheduledNotifications = await scheduledNotificationRepository.GetListAsync();
-        if (scheduledNotifications.Any(notification =>
-            string.Equals(NormalizeAddress(notification.RecipientIdentifier ?? string.Empty), address, StringComparison.OrdinalIgnoreCase)))
+        var emailLogs = await emailLogsRepository.GetListAsync(emailLog =>
+            emailLog.FromAddress.ToLower() == address);
+        if (emailLogs.Count > 0)
         {
             return true;
         }
 
-        return string.Equals(entity.EmailType, "Sender", StringComparison.OrdinalIgnoreCase) && entity.IsActive;
+        return false;
     }
 
     private async Task<EmailAddressConfigurationDto> ToDtoAsync(EmailAddressConfiguration entity)
@@ -141,9 +191,13 @@ public class EmailAddressConfigurationsAppService(
             EmailType = entity.EmailType,
             Description = entity.Description,
             IsActive = entity.IsActive,
+            IsDefault = entity.IsDefault,
             IsInUse = await IsInUseAsync(entity)
         };
     }
 
     private static string NormalizeAddress(string address) => address.Trim().ToLowerInvariant();
+
+    private static string NormalizeEmailType(string emailType) =>
+        AllowedTypes.First(type => string.Equals(type, emailType, StringComparison.OrdinalIgnoreCase));
 }

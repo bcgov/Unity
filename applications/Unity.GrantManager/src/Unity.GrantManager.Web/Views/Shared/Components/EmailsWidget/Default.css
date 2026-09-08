@@ -500,7 +500,8 @@
     line-height: normal;
     text-align: center;
     word-wrap: break-word;
-    word-break: break-word;
+    word-break: normal;
+        overflow-wrap: anywhere;
 }
 
 .emails-widget-scope #btn-cancel-email {

@@ -18,15 +18,26 @@ public class OnboardingApplicationManager(
     {
         sm.Configure(GrantApplicationState.SUBMITTED)
             .Permit(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED)
-            .Permit(GrantApplicationAction.Deny, GrantApplicationState.GRANT_NOT_APPROVED);
+            .Permit(GrantApplicationAction.Deny, GrantApplicationState.GRANT_NOT_APPROVED)
+            .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER);
 
         sm.Configure(GrantApplicationState.GRANT_APPROVED)
-            .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED);
+            .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED)
+            .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER);
 
         sm.Configure(GrantApplicationState.GRANT_NOT_APPROVED)
-            .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED);
+            .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED)
+            .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER);
 
-        sm.Configure(GrantApplicationState.CLOSED);
+        sm.Configure(GrantApplicationState.CLOSED)
+            .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER);
+
+        // Defer is reversible from every onboarding state: it must be able to return to any of them.
+        sm.Configure(GrantApplicationState.DEFER)
+            .Permit(GrantApplicationAction.Submit, GrantApplicationState.SUBMITTED)
+            .Permit(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED)
+            .Permit(GrantApplicationAction.Deny, GrantApplicationState.GRANT_NOT_APPROVED)
+            .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED);
     }
 
     public async Task<List<ApplicationActionResultItem>> GetActions(Guid applicationId)

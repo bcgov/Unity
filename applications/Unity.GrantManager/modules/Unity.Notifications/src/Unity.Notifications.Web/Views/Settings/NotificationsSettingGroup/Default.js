@@ -30,6 +30,7 @@ $(function () {
     let templatesDataTable = null;
     let originalFormValues = {};
     let attachmentChangesPending = false;
+    let defaultSendFromAddress = '';
 
     function init() {
         $('#email-attachments-section').hide();
@@ -48,12 +49,13 @@ $(function () {
         unity.notifications.emailAddresses.emailAddressConfigurations.getList().then(function (addresses) {
             const $sendFrom = $('#sendFrom');
             const currentAddress = $sendFrom.val() || '';
-            const activeSenders = addresses.filter(address => address.isActive && address.emailType === 'Sender');
+            const activeEmailAddresses = addresses.filter(address => address.isActive);
             $sendFrom.empty().append('<option value=""></option>');
-            activeSenders.forEach(address => {
+            activeEmailAddresses.forEach(address => {
                 $('<option>').val(address.emailAddress).text(address.emailAddress).appendTo($sendFrom);
             });
-            setSendFromValue(currentAddress || activeSenders[0]?.emailAddress || '');
+            defaultSendFromAddress = activeEmailAddresses.find(address => address.isDefault)?.emailAddress || '';
+            setSendFromValue(currentAddress || defaultSendFromAddress || activeEmailAddresses[0]?.emailAddress || '');
         });
     }
 
@@ -72,7 +74,7 @@ $(function () {
 
     function setSendFromValue(value) {
         const $sendFrom = $('#sendFrom');
-        const selectedAddress = value || '';
+        const selectedAddress = value || defaultSendFromAddress || '';
         const hasSelectedAddress = $sendFrom.find('option').toArray().some(function (option) {
             return option.value === selectedAddress;
         });
@@ -101,6 +103,7 @@ $(function () {
                 { title: 'Email Address', data: 'emailAddress' },
                 { title: 'Email Type', data: 'emailType', render: formatEmailType },
                 { title: 'Description', data: 'description', defaultContent: '' },
+                { title: 'Default', data: 'isDefault', render: data => data ? 'Yes' : 'No' },
                 { title: 'Status', data: 'isActive', render: data => data ? 'Active' : 'Inactive' },
                 {
                     title: 'Actions', data: null, width: '48px', className: 'text-center', orderable: false,
@@ -113,7 +116,7 @@ $(function () {
                                 <button class="btn fullWidth edit-email-address" style="margin:10px" type="button" data-id="${row.id}">
                                     <i class="fl fl-edit"></i><span>Edit</span>
                                 </button>
-                                <button class="btn fullWidth delete-email-address" style="margin:10px" type="button" data-id="${row.id}" data-in-use="${row.isInUse}">
+                                <button class="btn fullWidth delete-email-address" style="margin:10px" type="button" data-id="${row.id}" data-in-use="${row.isInUse}" data-is-default="${row.isDefault}">
                                     <i class="fl fl-delete"></i><span>Delete</span>
                                 </button>
                             </div>
@@ -129,6 +132,10 @@ $(function () {
         });
         $table.on('click', '.delete-email-address', function () {
             const row = $table.DataTable().row($(this).closest('tr')).data();
+            if (row.isDefault) {
+                abp.notify.error('The default email address cannot be deleted. Select another email address as the default first.');
+                return;
+            }
             if (row.isInUse) {
                 abp.notify.error('This email address must first be removed from the associated configuration before it can be deleted.');
                 return;
@@ -139,6 +146,31 @@ $(function () {
         });
         $('#AddEmailAddress').on('click', function () { showEmailAddressModal(null); });
     }
+
+    function positionEmailAddressDropdown(dropdown) {
+        const $dropdown = $(dropdown);
+        const $content = $dropdown.find('.dropdown-content');
+        if (!$content.length) return;
+
+        const rect = dropdown.getBoundingClientRect();
+        const wasVisible = $content.is(':visible');
+        if (!wasVisible) $content.css({ display: 'block', visibility: 'hidden' });
+
+        const left = Math.max(0, rect.right - $content.outerWidth());
+        $content.css({ left: `${left}px`, top: `${rect.bottom}px`, right: 'auto' });
+
+        if (!wasVisible) $content.css({ display: '', visibility: '' });
+    }
+
+    $(document).on('mouseenter.emailAddressDropdown', '#EmailAddressesTable .dropdown', function () {
+        positionEmailAddressDropdown(this);
+    });
+
+    $(window).on('resize.emailAddressDropdown scroll.emailAddressDropdown', function () {
+        $('#EmailAddressesTable .dropdown:has(.dropdown-content:visible)').each(function () {
+            positionEmailAddressDropdown(this);
+        });
+    });
 
     function formatEmailType(data) {
         return { Sender: 'Sender Address', ReplyTo: 'Reply-to Address', NoReply: 'No-reply Address', Inbound: 'Inbound Address', Support: 'Support Address', Other: 'Other' }[data] || data;
@@ -151,13 +183,16 @@ $(function () {
     function showEmailAddressModal(address) {
         const id = 'emailAddressModal';
         $(`#${id}`).remove();
-        const item = address || { emailAddress: '', emailType: 'Sender', description: '', isActive: true };
-        $('body').append(`<div class="modal fade" id="${id}" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">${address ? 'Edit' : 'Add'} Email Address</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><form id="configuredEmailForm"><div class="modal-body"><label class="form-label" for="configuredEmailAddress">Email Address</label><input id="configuredEmailAddress" name="configuredEmailAddress" class="email-input from-input form-control" type="text" value="${escapeHtml(item.emailAddress)}" required><label class="form-label mt-3" for="configuredEmailType">Email Type</label><select id="configuredEmailType" class="form-select"><option value="Sender">Sender Address</option><option value="ReplyTo">Reply-to Address</option><option value="NoReply">No-reply Address</option><option value="Inbound">Inbound Address</option><option value="Support">Support Address</option><option value="Other">Other</option></select><label class="form-label mt-3" for="configuredEmailDescription">Description</label><textarea id="configuredEmailDescription" class="form-control">${escapeHtml(item.description)}</textarea><div class="form-check mt-3"><input id="configuredEmailActive" class="form-check-input" type="checkbox" ${item.isActive ? 'checked' : ''}><label class="form-check-label" for="configuredEmailActive">Active</label></div></div><div class="modal-footer"><button type="submit" class="btn btn-primary" id="saveConfiguredEmail">Save</button><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button></div></form></div></div></div>`);
+        const item = address || { emailAddress: '', emailType: 'Sender', description: '', isActive: true, isDefault: false };
+        const activeDisabled = item.isDefault ? 'disabled' : '';
+        $('body').append(`<div class="modal fade" id="${id}" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">${address ? 'Edit' : 'Add'} Email Address</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><form id="configuredEmailForm"><div class="modal-body"><label class="form-label" for="configuredEmailAddress">Email Address</label><input id="configuredEmailAddress" name="configuredEmailAddress" class="email-input from-input form-control" type="text" value="${escapeHtml(item.emailAddress)}" required><label class="form-label mt-3" for="configuredEmailType">Email Type</label><select id="configuredEmailType" class="form-select"><option value="Sender">Sender Address</option><option value="ReplyTo">Reply-to Address</option><option value="NoReply">No-reply Address</option><option value="Inbound">Inbound Address</option><option value="Support">Support Address</option><option value="Other">Other</option></select><label class="form-label mt-3" for="configuredEmailDescription">Description</label><textarea id="configuredEmailDescription" class="form-control">${escapeHtml(item.description)}</textarea><div class="form-check mt-3"><input id="configuredEmailDefault" class="form-check-input" type="checkbox" ${item.isDefault ? 'checked' : ''}><label class="form-check-label" for="configuredEmailDefault">Default</label></div><div class="form-check mt-3"><input id="configuredEmailActive" class="form-check-input" type="checkbox" ${item.isActive ? 'checked' : ''} ${activeDisabled}><label class="form-check-label" for="configuredEmailActive">Active</label></div></div><div class="modal-footer"><button type="submit" class="btn btn-primary" id="saveConfiguredEmail">Save</button><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button></div></form></div></div></div>`);
         $('#configuredEmailType').val(item.emailType);
         const modal = new bootstrap.Modal(document.getElementById(id));
         modal.show();
         const $emailForm = $('#configuredEmailForm');
         const emailInput = $('#configuredEmailAddress');
+        const $defaultInput = $('#configuredEmailDefault');
+        const $activeInput = $('#configuredEmailActive');
         $.validator.addMethod('configuredEmail', function (value, element) {
             return this.optional(element) || validateEmail(value.trim());
         }, 'Enter a valid email address.');
@@ -189,15 +224,45 @@ $(function () {
                 errorSpan.text(error.text());
             }
         });
+        $defaultInput.on('change', function () {
+            if (!$(this).prop('checked') && address?.isDefault) {
+                $(this).prop('checked', true);
+                abp.notify.error('There must always be one default email address. Select another email address as the default to change it.');
+                return;
+            }
+            if ($(this).prop('checked')) $activeInput.prop('checked', true);
+        });
         $emailForm.on('submit', function (event) {
             event.preventDefault();
             if (!$emailForm.valid()) {
                 return;
             }
 
-            const input = { id: address?.id, emailAddress: emailInput.val().trim(), emailType: $('#configuredEmailType').val(), description: $('#configuredEmailDescription').val(), isActive: $('#configuredEmailActive').prop('checked') };
-            const request = address ? unity.notifications.emailAddresses.emailAddressConfigurations.update(input) : unity.notifications.emailAddresses.emailAddressConfigurations.create(input);
-            request.then(() => { modal.hide(); $('#EmailAddressesTable').DataTable().ajax.reload(); loadActiveEmailAddresses(); }).catch(error => abp.notify.error(error.message || 'Unable to save email address.'));
+            const isDefault = $defaultInput.prop('checked');
+            const isActive = $activeInput.prop('checked');
+            if (isDefault && !isActive) {
+                abp.notify.error('The default email address must be active.');
+                return;
+            }
+            const save = function () {
+                const input = { id: address?.id, emailAddress: emailInput.val().trim(), emailType: $('#configuredEmailType').val(), description: $('#configuredEmailDescription').val(), isActive, isDefault };
+                const request = address ? unity.notifications.emailAddresses.emailAddressConfigurations.update(input) : unity.notifications.emailAddresses.emailAddressConfigurations.create(input);
+                request.then(() => { modal.hide(); $('#EmailAddressesTable').DataTable().ajax.reload(); loadActiveEmailAddresses(); }).catch(error => abp.notify.error(error.message || 'Unable to save email address.'));
+            };
+            if (address && !address.isDefault && isDefault) {
+                Swal.fire({
+                    title: 'Change default email address?',
+                    text: 'This will change the previous default email address to this email address.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'OK',
+                    cancelButtonText: 'Cancel'
+                }).then(result => {
+                    if (result.isConfirmed) save();
+                });
+                return;
+            }
+            save();
         });
     }
 

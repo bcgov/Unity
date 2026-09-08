@@ -3510,6 +3510,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTime?>("LastModificationTime")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("LastModificationTime");
@@ -3525,6 +3528,11 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasKey("Id");
 
                     b.HasIndex("TenantId", "EmailAddress", "EmailType")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_EmailAddressConfigurations_TenantId_IsDefault")
+                        .HasFilter("\"IsDefault\" = true")
                         .IsUnique();
 
                     b.ToTable("EmailAddressConfigurations", "Notifications");

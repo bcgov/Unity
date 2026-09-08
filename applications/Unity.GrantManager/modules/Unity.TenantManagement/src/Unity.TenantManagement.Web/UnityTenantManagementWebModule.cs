@@ -59,7 +59,12 @@ public class UnityTenantManagementWebModule : AbpModule
         Configure<RazorPagesOptions>(options =>
         {
             options.Conventions.AuthorizePage("/TenantManagement/Tenants/Index", TenantManagementPermissions.Policies.TenantsOrITOps);
-            options.Conventions.AuthorizePage("/TenantManagement/Tenants/CreateModal", TenantManagementPermissions.Tenants.Create);
+            // IT Operations creates tenants through the Onboarding approval flow (a separate page/
+            // controller - see OnboardingRequestAppService.CreateTenantAsync), not this direct
+            // "New Tenant" modal, so this page is IT Administrator only. Gating just the toolbar
+            // button (below) would only hide it from view - this also blocks navigating straight
+            // to the page URL.
+            options.Conventions.AuthorizePage("/TenantManagement/Tenants/CreateModal", IdentityConsts.ITAdminPolicyName);
             options.Conventions.AuthorizePage("/TenantManagement/Tenants/EditModal", TenantManagementPermissions.Tenants.Update);
             options.Conventions.AuthorizePage("/TenantManagement/Tenants/AssignManagerModal", TenantManagementPermissions.Tenants.Create);
             options.Conventions.AuthorizePage("/TenantManagement/Tenants/ConfigurationModal", TenantManagementPermissions.Policies.TenantsOrITOps);
@@ -75,7 +80,7 @@ public class UnityTenantManagementWebModule : AbpModule
                         LocalizableString.Create<AbpTenantManagementResource>("NewTenant"),
                         icon: " fl fl-add-to",
                         name: "CreateTenant",
-                        requiredPolicyName: TenantManagementPermissions.Tenants.Create,
+                        requiredPolicyName: IdentityConsts.ITAdminPolicyName,
                         type: Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Button.AbpButtonType.Light
                     );
                 }

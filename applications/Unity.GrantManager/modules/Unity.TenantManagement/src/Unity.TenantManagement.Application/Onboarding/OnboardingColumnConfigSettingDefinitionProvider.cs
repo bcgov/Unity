@@ -14,7 +14,7 @@ public class OnboardingColumnConfigSettingDefinitionProvider : SettingDefinition
         context.Add(
             OnboardingDef(OnboardingColumnConfigSettings.TenantNameFieldKey),
             OnboardingDef(OnboardingColumnConfigSettings.DisplayNameFieldKey),
-            OnboardingDef(OnboardingColumnConfigSettings.SuperUsersFieldKey),
+            OnboardingDef(OnboardingColumnConfigSettings.ProgramManagersFieldKey),
             OnboardingDef(OnboardingColumnConfigSettings.BranchFieldKey),
             OnboardingDef(OnboardingColumnConfigSettings.FeaturesFieldKey),
             OnboardingDef(OnboardingColumnConfigSettings.MinistryFieldKey),

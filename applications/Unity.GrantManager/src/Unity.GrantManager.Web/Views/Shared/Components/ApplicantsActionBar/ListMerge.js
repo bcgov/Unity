@@ -61,13 +61,13 @@
                     <td>
                         <label class="d-flex align-items-center w-100 mb-0">
                             <input type="radio" name="${f.radioName}" value="a" checked class="me-2">
-                            <span style="overflow-wrap:break-word;word-break:break-word;">${aVal}</span>
+                            <span style="overflow-wrap:anywhere;word-break:normal;">${aVal}</span>
                         </label>
                     </td>
                     <td>
                         <label class="d-flex align-items-center w-100 mb-0">
                             <input type="radio" name="${f.radioName}" value="b" class="me-2">
-                            <span style="overflow-wrap:break-word;word-break:break-word;">${bVal}</span>
+                            <span style="overflow-wrap:anywhere;word-break:normal;">${bVal}</span>
                         </label>
                     </td>
                 </tr>`);

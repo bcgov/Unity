@@ -17,6 +17,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Where those files and this one overlap, prefer the more specific ones under `applications/Unity.GrantManager/.github/`.
 
+## Documentation
+
+`documentation/` holds prose docs for four areas: Flex, Tenant Management (incl. Onboarding), Reporting, and the Applicant Portal integration. **`documentation/README.md` is a source-path → doc index** — use it to find out whether the code you touched is documented.
+
+Before finishing a change, look up the paths you edited in that index and fix anything your change made **false** (a renamed class, a changed state machine or ordered sequence, a removed endpoint, a roadmap item you actually fixed). The bar is *"is anything here now wrong?"* — not *"should I write up what I did?"*. Most changes need no doc edit; doc updates that are needed go in the same commit as the code.
+
+Do not create documentation for areas that have none — `documentation/README.md` lists the deliberately undocumented modules, and filling those gaps is its own ticket. Full guidance is in `applications/Unity.GrantManager/.claude/rules/documentation.md`, which loads automatically when you edit a documented area.
+
 ## Build & Test
 
 All commands run from `applications/Unity.GrantManager/`:

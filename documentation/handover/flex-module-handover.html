@@ -1,0 +1,977 @@
+<title>Unity.Flex</title>
+<meta name="description" content="Complete technical handover of Unity Portal's dynamic worksheet and scoresheet engine — architecture, domain model, APIs, integration, and UI in one page.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --paper:#F5F3EB;
+    --paper-raised:#EEEADB;
+    --ink:#20242B;
+    --ink-soft:#5B6472;
+    --line:#D9D3BF;
+    --accent:#2C6E68;
+    --accent-strong:#1B4B47;
+    --accent-soft:#DCEAE6;
+    --warn:#A85D2E;
+    --warn-soft:#F1E1D0;
+    --good:#3D7A3D;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#12161A;
+      --paper-raised:#1A2024;
+      --ink:#E9E6DC;
+      --ink-soft:#98A2AB;
+      --line:#2B333A;
+      --accent:#63C4B9;
+      --accent-strong:#8AD8CE;
+      --accent-soft:#17302C;
+      --warn:#E0975A;
+      --warn-soft:#2E2013;
+      --good:#7BC47B;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#12161A;
+    --paper-raised:#1A2024;
+    --ink:#E9E6DC;
+    --ink-soft:#98A2AB;
+    --line:#2B333A;
+    --accent:#63C4B9;
+    --accent-strong:#8AD8CE;
+    --accent-soft:#17302C;
+    --warn:#E0975A;
+    --warn-soft:#2E2013;
+    --good:#7BC47B;
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Source Serif 4', Georgia, 'Times New Roman', serif;
+    font-size:16px;
+    line-height:1.55;
+  }
+  .sheet{
+    max-width:960px;
+    margin:0 auto;
+    padding:56px 40px 90px;
+  }
+  h1,h2,h3,h4{
+    font-family:'Big Shoulders Display', 'Archivo Black', Impact, sans-serif;
+    text-transform:uppercase;
+    letter-spacing:0.01em;
+    text-wrap:balance;
+    color:var(--ink);
+    margin:0;
+  }
+  .mono{ font-family:'JetBrains Mono', ui-monospace, Consolas, monospace; }
+  code, .code{
+    font-family:'JetBrains Mono', ui-monospace, Consolas, monospace;
+    font-size:0.85em;
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:0.05em 0.4em;
+    color:var(--accent-strong);
+    white-space:nowrap;
+  }
+  p{ margin:0 0 0.9em; max-width:68ch; }
+  p:last-child{ margin-bottom:0; }
+  a{ color:var(--accent-strong); }
+  ul{ margin:0; padding-left:1.2em; }
+  li{ margin-bottom:0.4em; }
+  strong{ color:var(--ink); }
+
+  /* ---------- Header ---------- */
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--accent-strong);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .eyebrow::before{ content:""; width:22px; height:1px; background:var(--accent-strong); }
+  h1.title{ font-size:clamp(44px, 8vw, 84px); line-height:0.92; font-weight:800; }
+  .subtitle{ max-width:60ch; font-size:19px; color:var(--ink-soft); margin-top:16px; }
+  .meta-row{
+    margin-top:26px;
+    padding-top:18px;
+    border-top:1px solid var(--line);
+    display:flex;
+    flex-wrap:wrap;
+    gap:22px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .meta-row b{ color:var(--ink); font-weight:600; }
+
+  /* ---------- TOC ---------- */
+  .toc{
+    margin-top:22px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    padding-top:18px;
+    border-top:1px solid var(--line);
+  }
+  .toc a{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    text-decoration:none;
+    color:var(--ink-soft);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:6px 12px;
+    background:var(--paper-raised);
+    transition:color .15s, border-color .15s;
+  }
+  .toc a:hover{ color:var(--accent-strong); border-color:var(--accent); }
+  .toc a b{ color:var(--accent-strong); font-weight:600; margin-right:4px; }
+
+  /* ---------- Fact strip ---------- */
+  .facts{
+    margin-top:40px;
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+  }
+  .fact{ padding:16px 18px; border-left:1px solid var(--line); }
+  .fact:first-child{ border-left:none; }
+  .fact .num{ font-family:'Big Shoulders Display', sans-serif; font-weight:700; font-size:34px; line-height:1; color:var(--accent-strong); }
+  .fact .lbl{ margin-top:6px; font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.04em; text-transform:uppercase; color:var(--ink-soft); }
+
+  /* ---------- Sections ---------- */
+  section{ margin-top:64px; scroll-margin-top:24px; }
+  .sec-head{ display:flex; align-items:baseline; gap:14px; margin-bottom:8px; }
+  .sec-num{ font-family:'JetBrains Mono', monospace; font-size:13px; color:var(--ink-soft); }
+  h2{ font-size:26px; font-weight:700; }
+  h3{
+    font-size:16px;
+    font-weight:700;
+    text-transform:none;
+    font-family:'JetBrains Mono', monospace;
+    letter-spacing:0.01em;
+    color:var(--accent-strong);
+    margin-top:32px;
+    margin-bottom:12px;
+    padding-bottom:6px;
+    border-bottom:1px solid var(--line);
+  }
+  section > .lede{ color:var(--ink-soft); font-size:15.5px; max-width:72ch; margin-bottom:20px; }
+  .note{ font-size:14px; color:var(--ink-soft); }
+
+  /* ---------- Pipeline ---------- */
+  .pipeline{ display:grid; grid-template-columns:repeat(3, 1fr); gap:0; border:1px solid var(--line); border-radius:2px; overflow:hidden; }
+  .pipe-step{ padding:20px 20px 22px; border-left:1px solid var(--line); position:relative; }
+  .pipe-step:first-child{ border-left:none; }
+  .pipe-step::after{
+    content:"→"; position:absolute; right:-13px; top:50%; transform:translateY(-50%);
+    color:var(--accent); font-size:20px; font-weight:600; background:var(--paper); width:24px; text-align:center; z-index:1;
+  }
+  .pipe-step:last-child::after{ content:""; }
+  .pipe-kicker{ font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:8px; }
+  .pipe-tracks{ display:flex; flex-direction:column; gap:6px; }
+  .pipe-tracks .code{ white-space:normal; }
+  .track-label{ font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.03em; margin-top:2px; }
+
+  /* ---------- Diagram ---------- */
+  figure{ margin:0; }
+  .diagram-frame{ border:1px solid var(--line); border-radius:2px; padding:18px 20px 8px; background:var(--paper-raised); }
+  svg.diagram{ width:100%; height:auto; display:block; color:var(--ink); }
+  svg.diagram .accent{ color:var(--accent); }
+  svg.diagram text{ font-family:'JetBrains Mono', monospace; fill:currentColor; }
+  figcaption{ font-size:13px; color:var(--ink-soft); margin-top:12px; max-width:72ch; }
+
+  /* ---------- Chips ---------- */
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chip{ font-family:'JetBrains Mono', monospace; font-size:12px; padding:6px 11px; border:1px solid var(--line); border-radius:999px; color:var(--ink-soft); background:var(--paper-raised); }
+  .chip.on{ border-color:var(--accent); color:var(--accent-strong); background:var(--accent-soft); }
+
+  /* ---------- Data table (generic) ---------- */
+  table.data{ width:100%; border-collapse:collapse; font-size:14px; }
+  table.data th{
+    text-align:left; font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.04em; text-transform:uppercase;
+    color:var(--ink-soft); border-bottom:1px solid var(--line); padding:0 10px 8px 0; font-weight:500;
+  }
+  table.data td{ padding:9px 10px 9px 0; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.data tr:last-child td{ border-bottom:none; }
+  table.data .yes{ color:var(--good); font-weight:700; }
+  table.data .no{ color:var(--ink-soft); opacity:0.5; }
+  .table-scroll{ overflow-x:auto; }
+
+  /* ---------- kv grid ---------- */
+  .kv-grid{ display:grid; grid-template-columns:1fr 1.6fr; gap:0; border:1px solid var(--line); }
+  .kv-grid > div{ padding:14px 18px; border-top:1px solid var(--line); font-size:14.5px; }
+  .kv-grid > div:nth-child(-n+2){ border-top:none; }
+  .kv-grid .k{ font-family:'JetBrains Mono', monospace; font-size:12.5px; color:var(--ink-soft); background:var(--paper-raised); }
+
+  /* ---------- Rowlist (entity trees, API groups, invariants) ---------- */
+  .rowlist{ display:flex; flex-direction:column; border-top:1px solid var(--line); }
+  .rowlist .row{ display:grid; grid-template-columns:210px 1fr; gap:20px; padding:13px 0; border-bottom:1px solid var(--line); }
+  .rowlist .row .k{ font-family:'JetBrains Mono', monospace; font-size:13px; font-weight:600; color:var(--accent-strong); line-height:1.4; }
+  .rowlist .row .k .sub{ display:block; font-weight:400; color:var(--ink-soft); font-size:11px; margin-top:2px; text-transform:none; }
+  .rowlist .row .v{ font-size:14.5px; }
+  .rowlist .row .v p{ margin:0; }
+  .rowlist .row .v .methods{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .rowlist .row .v .methods span{
+    font-family:'JetBrains Mono', monospace; font-size:11px; background:var(--paper-raised); border:1px solid var(--line);
+    border-radius:3px; padding:2px 6px; color:var(--ink-soft);
+  }
+
+  /* ---------- Tag badges (rough edges, tech debt) ---------- */
+  .tag{
+    font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.03em; text-transform:uppercase;
+    border-radius:3px; padding:3px 8px; height:fit-content; white-space:nowrap; display:inline-block;
+  }
+  .tag.warn{ color:var(--warn); background:var(--warn-soft); }
+  .tag.accent{ color:var(--accent-strong); background:var(--accent-soft); }
+  .tag.roadmap{ color:var(--accent-strong); background:transparent; border:1px dashed var(--accent); }
+
+  /* ---------- Roadmap section (dashed = tentative, not built) ---------- */
+  .roadmap-banner{
+    display:flex; align-items:center; gap:12px; margin-bottom:22px;
+    padding:12px 16px; border:1px dashed var(--accent); border-radius:3px;
+    background:var(--accent-soft); font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--accent-strong);
+  }
+  section#roadmap .rowlist .row{ border-bottom-style:dashed; }
+  section#roadmap .schematic{ border-style:dashed; }
+  .option-num{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:22px; height:22px; border:1px dashed var(--accent); border-radius:50%;
+    font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--accent-strong); flex-shrink:0;
+  }
+
+  .schematic{
+    font-family:'JetBrains Mono', monospace; font-size:13px; color:var(--ink-soft);
+    background:var(--paper-raised); border:1px solid var(--line); border-radius:3px; padding:10px 14px; margin-bottom:14px; overflow-x:auto; white-space:pre;
+  }
+
+  /* ---------- Footer ---------- */
+  footer{
+    margin-top:70px; padding-top:22px; border-top:1px solid var(--line);
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px;
+    font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--ink-soft);
+  }
+
+  @media (max-width:640px){
+    .sheet{ padding:36px 20px 60px; }
+    .facts{ grid-template-columns:repeat(2,1fr); }
+    .fact:nth-child(3){ border-left:none; }
+    .pipeline{ grid-template-columns:1fr; }
+    .pipe-step::after{ content:"↓"; right:auto; left:16px; top:auto; bottom:-13px; transform:none; }
+    .pipe-step{ border-left:none; border-top:1px solid var(--line); }
+    .pipe-step:first-child{ border-top:none; }
+    .kv-grid{ grid-template-columns:1fr; }
+    .kv-grid .k{ border-bottom:none; padding-bottom:4px; }
+    .rowlist .row{ grid-template-columns:1fr; gap:6px; }
+  }
+</style>
+
+<div class="sheet">
+
+  <header>
+    <div class="eyebrow">Module Handover · Unity Portal</div>
+    <h1 class="title">Unity.Flex</h1>
+    <p class="subtitle">The engine behind every custom intake field and assessor scoring form in the system — defined by program staff at runtime, stored as JSON, rendered without a deployment. This page is the complete reference: architecture, domain model, APIs, cross-module integration, and UI in one place.</p>
+    <div class="meta-row">
+      <span><b>Path</b> <span class="mono">applications/Unity.GrantManager/modules/Unity.Flex</span></span>
+      <span><b>Feature flag</b> <span class="mono">Unity.Flex</span></span>
+      <span><b>Tenant schema</b> <span class="mono">Flex</span></span>
+    </div>
+    <nav class="toc">
+      <a href="#pattern"><b>01</b>The pattern</a>
+      <a href="#architecture"><b>02</b>Module architecture</a>
+      <a href="#domain"><b>03</b>Domain model</a>
+      <a href="#types"><b>04</b>Field &amp; question types</a>
+      <a href="#styling"><b>05</b>Styling &amp; classification</a>
+      <a href="#datagrid"><b>06</b>DataGrid fields</a>
+      <a href="#schema"><b>07</b>Database schema</a>
+      <a href="#services"><b>08</b>Application services</a>
+      <a href="#integration"><b>09</b>Host integration</a>
+      <a href="#ui"><b>10</b>Web UI</a>
+      <a href="#edges"><b>11</b>Known rough edges</a>
+      <a href="#roadmap"><b>12</b>Roadmap</a>
+    </nav>
+  </header>
+
+  <div class="facts">
+    <div class="fact"><div class="num">11</div><div class="lbl">Tables, schema Flex</div></div>
+    <div class="fact"><div class="num">jsonb</div><div class="lbl">Field defs &amp; values</div></div>
+    <div class="fact"><div class="num">5</div><div class="lbl">Aggregate roots</div></div>
+    <div class="fact"><div class="num">0</div><div class="lbl">Dedicated permissions</div></div>
+  </div>
+
+  <!-- ============ 01 THE PATTERN ============ -->
+  <section id="pattern">
+    <div class="sec-head"><span class="sec-num">01</span><h2>The pattern</h2></div>
+    <p class="lede">Grant programs need custom intake questions and custom assessor scoring criteria, and those requirements change per-program and over time. Without Flex, every new question or scoring criterion would mean a code change, a migration, and a deployment. Unity.Flex turns "define a form field" and "define a scoring question" into an admin-configurable, runtime action: a program admin builds a <strong>Worksheet</strong> (custom data-collection form) or a <strong>Scoresheet</strong> (assessment/scoring form) through a UI, publishes it, and the rest of the system renders and stores data against it — no code change required.</p>
+
+    <p>It does this with a deliberately generic, reusable pattern that shows up twice in the module:</p>
+
+    <div class="pipeline">
+      <div class="pipe-step">
+        <div class="pipe-kicker">01 · Definition</div>
+        <div class="pipe-tracks">
+          <span class="code">Worksheet</span>
+          <span class="track-label">→ WorksheetSection → CustomField</span>
+          <span class="code" style="margin-top:8px">Scoresheet</span>
+          <span class="track-label">→ ScoresheetSection → Question</span>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-kicker">02 · Instance</div>
+        <div class="pipe-tracks">
+          <span class="code">WorksheetInstance</span>
+          <span class="track-label">one per target record</span>
+          <span class="code" style="margin-top:8px">ScoresheetInstance</span>
+          <span class="track-label">one per assessor, per record</span>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-kicker">03 · Value</div>
+        <div class="pipe-tracks">
+          <span class="code">CustomFieldValue</span>
+          <span class="track-label">jsonb, keyed by field</span>
+          <span class="code" style="margin-top:8px">Answer</span>
+          <span class="track-label">jsonb, keyed by question</span>
+        </div>
+      </div>
+    </div>
+    <p class="note" style="margin-top:16px;">Both definitions and values live as JSON, not fixed columns — new fields ship without a migration. A generic <span class="code">(CorrelationId, CorrelationProvider)</span> pair — not a foreign key — attaches an instance to whatever record owns it, so Flex never depends on the host module's schema.</p>
+
+    <h3>Glossary</h3>
+    <table class="data">
+      <tbody>
+        <tr><td class="code">Worksheet</td><td>Admin-defined custom data-collection form template (e.g. "Project Details"). Made of sections and fields.</td></tr>
+        <tr><td class="code">WorksheetSection</td><td>Named, ordered group of fields within a Worksheet.</td></tr>
+        <tr><td class="code">CustomField</td><td>One field definition (text, number, dropdown, etc.) within a section.</td></tr>
+        <tr><td class="code">WorksheetLink</td><td>Attaches a Worksheet template to a specific UI location on an external entity (e.g. the Project Info tab of an Application).</td></tr>
+        <tr><td class="code">WorksheetInstance</td><td>One filled-in occurrence of a Worksheet, tied to a specific target record (e.g. one Application).</td></tr>
+        <tr><td class="code">CustomFieldValue</td><td>One field's value within a WorksheetInstance.</td></tr>
+        <tr><td class="code">Scoresheet</td><td>Admin-defined assessment/scoring form template (e.g. "Standard Assessment Scoresheet"). Made of sections and questions.</td></tr>
+        <tr><td class="code">ScoresheetSection</td><td>Named, ordered group of questions within a Scoresheet.</td></tr>
+        <tr><td class="code">Question</td><td>One scoreable question within a section.</td></tr>
+        <tr><td class="code">ScoresheetInstance</td><td>One assessor's completed response to a Scoresheet, tied to a specific assessment.</td></tr>
+        <tr><td class="code">Answer</td><td>One question's answer within a ScoresheetInstance.</td></tr>
+        <tr><td class="code">UI Anchor</td><td>A named slot on the host application's UI (Project Info, Applicant Info, Assessment Info, Funding Agreement Info, Payment Info, Custom Tab, Preview) that a worksheet can be mounted to.</td></tr>
+        <tr><td class="code">Correlation</td><td>A generic (CorrelationId, CorrelationProvider) pair used instead of a hard foreign key, so Flex entities can attach to any external entity type without Flex depending on that module.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ============ 02 MODULE ARCHITECTURE ============ -->
+  <section id="architecture">
+    <div class="sec-head"><span class="sec-num">02</span><h2>Module architecture</h2></div>
+    <p class="lede">Unity.Flex is a self-contained ABP module (its own solution file, <span class="code">Unity.Flex.abpsln</span>) referenced by the host <span class="code">Unity.GrantManager</span> solution — never the reverse. It follows the standard ABP layering used across this codebase.</p>
+
+    <div class="schematic">Unity.Flex.Shared                    (field/question enums, Definitions, Values, ChefsToUnityTypes — no ABP dependency)
+        ↑
+Unity.Flex.Application.Contracts     (DTOs, app service interfaces)
+        ↑
+Unity.Flex.Application               (entities, domain services, EF Core, app services, controllers, event handlers, reporting generators)
+        ↑
+Unity.Flex.Web                       (Razor Pages admin builder + ViewComponents runtime widgets)</div>
+
+    <p><span class="code">Unity.GrantManager.Application</span> / <span class="code">.Domain</span> depend on <span class="code">Unity.Flex.Application.Contracts</span> (and, for the ETO-publishing side, <span class="code">Unity.Flex.Shared</span>) to talk to Flex — never the reverse. The two modules are decoupled at runtime through <strong>ABP local events</strong> rather than direct app-service calls (see §08).</p>
+
+    <p class="note">Other modules that reference Flex types (seen in test-bin output): <span class="code">Unity.Notifications</span>, <span class="code">Unity.Payments</span>, <span class="code">Unity.Reporting</span>.</p>
+
+    <h3>Feature flag, not permission</h3>
+    <p>Unity.Flex has <strong>no dedicated ABP permission definitions of its own</strong> (<span class="code">FlexMenus.cs</span> is an empty stub). Access is entirely delegated to the host application — see §10 for the full breakdown. In short: a tenant can be switched off Flex entirely via the <span class="code">Unity.Flex</span> tenant feature; the host module falls back to a legacy, hardcoded scoresheet mechanism when it is disabled (see §09).</p>
+  </section>
+
+  <!-- ============ 03 DOMAIN MODEL ============ -->
+  <section id="domain">
+    <div class="sec-head"><span class="sec-num">03</span><h2>Domain model</h2></div>
+    <p class="lede">Two parallel sub-systems share one architectural pattern — definition → instance → value — implemented independently for worksheets and scoresheets.</p>
+
+    <figure>
+      <div class="diagram-frame">
+        <svg class="diagram" viewBox="0 0 560 320" role="img" aria-label="Entity relationship sketch: Worksheet has many WorksheetSections which have many CustomFields; WorksheetInstance connects to Worksheet by correlation, not foreign key, and has many CustomFieldValues which reference CustomField by id only. Scoresheet has many ScoresheetSections which have many Questions; ScoresheetInstance connects to Scoresheet by a direct foreign key, and has many Answers which reference Question with a real, navigable property.">
+          <defs>
+            <marker id="arrow2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path>
+            </marker>
+          </defs>
+
+          <!-- worksheet track: template row -->
+          <text x="10" y="18" font-size="11" font-weight="600" class="accent">WORKSHEET TRACK</text>
+          <rect x="10" y="28" width="140" height="40" rx="2" fill="none" stroke="currentColor"></rect>
+          <text x="20" y="52" font-size="11">Worksheet</text>
+          <line x1="150" y1="48" x2="190" y2="48" stroke="currentColor" marker-end="url(#arrow2)"></line>
+          <rect x="190" y="28" width="150" height="40" rx="2" fill="none" stroke="currentColor"></rect>
+          <text x="200" y="52" font-size="11">WorksheetSection</text>
+          <line x1="340" y1="48" x2="380" y2="48" stroke="currentColor" marker-end="url(#arrow2)"></line>
+          <rect x="380" y="28" width="130" height="40" rx="2" fill="none" stroke="currentColor"></rect>
+          <text x="390" y="52" font-size="11">CustomField</text>
+
+          <!-- worksheet track: instance row -->
+          <line x1="80" y1="68" x2="80" y2="108" stroke="currentColor" stroke-dasharray="3,3" marker-end="url(#arrow2)"></line>
+          <text x="88" y="92" font-size="9.5" opacity="0.75">correlation, not FK</text>
+          <rect x="10" y="108" width="150" height="40" rx="2" fill="none" class="accent" stroke="currentColor" stroke-width="1.5"></rect>
+          <text x="20" y="132" font-size="11" class="accent">WorksheetInstance</text>
+          <line x1="160" y1="128" x2="200" y2="128" stroke="currentColor" marker-end="url(#arrow2)"></line>
+          <rect x="200" y="108" width="150" height="40" rx="2" fill="none" stroke="currentColor"></rect>
+          <text x="210" y="132" font-size="11">CustomFieldValue</text>
+          <line x1="350" y1="118" x2="404" y2="69" stroke="currentColor" stroke-dasharray="2,3" opacity="0.75" marker-end="url(#arrow2)"></line>
+          <text x="352" y="98" font-size="9" opacity="0.75">id only, no nav.</text>
+
+          <!-- scoresheet track: template row -->
+          <text x="10" y="178" font-size="11" font-weight="600" class="accent">SCORESHEET TRACK</text>
+          <rect x="10" y="188" width="140" height="40" rx="2" fill="none" stroke="currentColor"></rect>
+          <text x="20" y="212" font-size="11">Scoresheet</text>
+          <line x1="150" y1="208" x2="190" y2="208" stroke="currentColor" marker-end="url(#arrow2)"></line>
+          <rect x="190" y="188" width="150" height="40" rx="2" fill="none" stroke="currentColor"></rect>
+          <text x="200" y="212" font-size="11">ScoresheetSection</text>
+          <line x1="340" y1="208" x2="380" y2="208" stroke="currentColor" marker-end="url(#arrow2)"></line>
+          <rect x="380" y="188" width="130" height="40" rx="2" fill="none" stroke="currentColor"></rect>
+          <text x="390" y="212" font-size="11">Question</text>
+
+          <!-- scoresheet track: instance row -->
+          <line x1="80" y1="228" x2="80" y2="268" stroke="currentColor" marker-end="url(#arrow2)"></line>
+          <text x="88" y="252" font-size="9.5" opacity="0.75">direct FK</text>
+          <rect x="10" y="268" width="150" height="40" rx="2" fill="none" class="accent" stroke="currentColor" stroke-width="1.5"></rect>
+          <text x="20" y="292" font-size="11" class="accent">ScoresheetInstance</text>
+          <line x1="160" y1="288" x2="200" y2="288" stroke="currentColor" marker-end="url(#arrow2)"></line>
+          <rect x="200" y="268" width="150" height="40" rx="2" fill="none" stroke="currentColor"></rect>
+          <text x="210" y="292" font-size="11">Answer</text>
+          <line x1="350" y1="278" x2="404" y2="229" stroke="currentColor" opacity="0.85" marker-end="url(#arrow2)"></line>
+          <text x="352" y="258" font-size="9" opacity="0.85">Answer.Question, real nav.</text>
+        </svg>
+      </div>
+      <figcaption>Both tracks run definition → instance → value, but wire the last hop differently: a <span class="code">CustomFieldValue</span> references its <span class="code">CustomField</span> by id only (dashed, no navigation property), while an <span class="code">Answer</span> carries a real, navigable <span class="code">Answer.Question</span> property (solid) — a small asymmetry worth knowing before writing queries against either side. Likewise, a <span class="code">WorksheetInstance</span> attaches to its <span class="code">Worksheet</span> only by correlation, while a <span class="code">ScoresheetInstance</span> has a direct foreign key back to its <span class="code">Scoresheet</span>.</figcaption>
+    </figure>
+
+    <h3>Aggregate roots</h3>
+    <table class="data">
+      <thead><tr><th>Aggregate root</th><th>Base type</th><th>Owns</th></tr></thead>
+      <tbody>
+        <tr><td class="code">Worksheet</td><td class="mono">FullAuditedAggregateRoot&lt;Guid&gt;</td><td><span class="code">Sections</span> (→ <span class="code">CustomField</span>s)</td></tr>
+        <tr><td class="code">WorksheetLink</td><td class="mono">AuditedAggregateRoot&lt;Guid&gt;</td><td>— (attaches a Worksheet to a UI anchor on an external entity)</td></tr>
+        <tr><td class="code">WorksheetInstance</td><td class="mono">FullAuditedAggregateRoot&lt;Guid&gt;</td><td><span class="code">CustomFieldValue</span>s</td></tr>
+        <tr><td class="code">Scoresheet</td><td class="mono">FullAuditedAggregateRoot&lt;Guid&gt;</td><td><span class="code">Sections</span> (→ <span class="code">Question</span>s), <span class="code">Instances</span></td></tr>
+        <tr><td class="code">ScoresheetInstance</td><td class="mono">FullAuditedAggregateRoot&lt;Guid&gt;</td><td><span class="code">Answer</span>s</td></tr>
+      </tbody>
+    </table>
+    <p class="note" style="margin-top:12px;">Child entities (<span class="code">WorksheetSection</span>, <span class="code">CustomField</span>, <span class="code">CustomFieldValue</span>, <span class="code">ScoresheetSection</span>, <span class="code">Question</span>, <span class="code">Answer</span>) are owned via conventional EF <span class="code">HasMany</span>/<span class="code">HasForeignKey</span> — not true EF owned-entity ownership. <span class="code">CustomFieldValue</span> is only <span class="code">AuditedEntity</span> (no soft delete); every other entity is full-audited, plus standard ABP <span class="code">ExtraProperties</span>/<span class="code">ConcurrencyStamp</span>, and all implement <span class="code">IMultiTenant</span>.</p>
+
+    <h3>Worksheet template tree</h3>
+    <div class="schematic">Worksheet 1─* WorksheetSection 1─* CustomField</div>
+    <div class="rowlist">
+      <div class="row"><div class="k">Worksheet<span class="sub">Domain/Worksheets/Worksheet.cs</span></div><div class="v"><p>Named, versioned, publishable/archivable form template.</p></div></div>
+      <div class="row"><div class="k">WorksheetSection<span class="sub">Domain/Worksheets/WorksheetSection.cs</span></div><div class="v"><p>Named, ordered group of fields.</p></div></div>
+      <div class="row"><div class="k">CustomField<span class="sub">Domain/Worksheets/CustomField.cs</span></div><div class="v"><p>One field: name/key/label/type/order/enabled + a JSON <span class="code">Definition</span> describing type-specific config (options, required-ness, etc.).</p></div></div>
+    </div>
+    <p style="margin-top:14px;"><strong>In-memory invariants enforced by the aggregate (not DB constraints):</strong></p>
+    <ul>
+      <li><span class="code">Worksheet.SetTitle</span> throws <span class="code">UserFriendlyException("Blank titles are not allowed")</span> on empty title.</li>
+      <li><span class="code">Worksheet.AddSection</span> throws <span class="code">UserFriendlyException("Section names must be unique")</span> on a duplicate section name within the worksheet.</li>
+      <li><span class="code">WorksheetSection.AddField</span> / <span class="code">CustomField.SetKey</span> throw on a duplicate field <span class="code">Name</span> — checked across the <strong>whole worksheet</strong>, not just the owning section.</li>
+      <li><span class="code">CustomField.Name</span> is auto-derived: <span class="code">custom_&lt;worksheetname&gt;_&lt;key&gt;</span> (<span class="code">CustomField.ConfigureName</span>). This is the stable machine name used for JSON lookups, and the naming convention that <span class="code">WorksheetsManager.CreateWorksheetDataByFields</span> parses back apart (splitting on <span class="code">_</span>) when bulk-creating instances from a flat field list.</li>
+      <li><span class="code">Order</span> (uint, 1-based) is assigned automatically on add, append-only. No reorder validation at the domain layer — resequencing is an app-service concern (<span class="code">ResequenceSectionsAsync</span>, <span class="code">ResequenceCustomFieldsAsync</span>).</li>
+    </ul>
+
+    <h3>Worksheet instance tree &amp; correlation</h3>
+    <div class="schematic">WorksheetInstance 1─* CustomFieldValue</div>
+    <div class="rowlist">
+      <div class="row"><div class="k">WorksheetInstance<span class="sub">Domain/WorksheetInstances/WorksheetInstance.cs</span></div><div class="v"><p>One filled instance of a Worksheet. Holds a rolled-up <span class="code">CurrentValue</span> JSON blob plus the individual <span class="code">CustomFieldValue</span>s. <span class="code">AddValue(customFieldId, currentValue)</span> appends a new value.</p></div></div>
+      <div class="row"><div class="k">CustomFieldValue<span class="sub">Domain/WorksheetInstances/CustomFieldValue.cs</span></div><div class="v"><p>One field's value, JSON-typed, tied to <span class="code">CustomFieldId</span> by <strong>ID only</strong> (no navigation property — a child of one aggregate referencing another aggregate's descendant by ID, per the "reference other aggregates by ID" DDD convention used throughout this codebase).</p></div></div>
+    </div>
+    <p style="margin-top:14px;">Both <span class="code">WorksheetInstance</span> and <span class="code">WorksheetLink</span> implement <span class="code">ICorrelationEntity</span> (<span class="code">Unity.Modules.Shared.Correlation</span>), giving them a generic <span class="code">(CorrelationId, CorrelationProvider)</span> pair instead of a hard foreign key:</p>
+    <ul>
+      <li><span class="code">WorksheetLink.CorrelationId/CorrelationProvider</span> + <span class="code">UiAnchor</span> + <span class="code">Order</span> + <span class="code">WorksheetId</span> define <strong>where</strong> and <strong>how many times</strong> a worksheet template is mounted onto a target entity.</li>
+      <li><span class="code">WorksheetInstance.CorrelationId/CorrelationProvider</span> identifies the target record the filled-in data belongs to (e.g. the Application itself).</li>
+      <li><span class="code">WorksheetInstance.WorksheetCorrelationId/WorksheetCorrelationProvider</span> additionally correlates back to the <em>link</em> that placed the worksheet — distinguishing "which mounting of the worksheet is this instance for."</li>
+      <li><span class="code">WorksheetInstance.UiAnchor</span> records which named UI slot the instance belongs to.</li>
+    </ul>
+    <p class="note">UI anchor constants live on the host side, not in Flex itself — see §09.</p>
+
+    <h3>Scoresheet template tree</h3>
+    <div class="schematic">Scoresheet 1─* ScoresheetSection 1─* Question</div>
+    <div class="rowlist">
+      <div class="row"><div class="k">Scoresheet<span class="sub">Domain/Scoresheets/Scoresheet.cs</span></div><div class="v"><p>Named/titled, versioned, publishable, ordered. Also has a <strong>direct</strong> <span class="code">Instances</span> navigation collection (unlike Worksheet, which only relates to its instances via correlation).</p></div></div>
+      <div class="row"><div class="k">ScoresheetSection<span class="sub">Domain/Scoresheets/ScoresheetSection.cs</span></div><div class="v"><p>Named, ordered group of questions.</p></div></div>
+      <div class="row"><div class="k">Question<span class="sub">Domain/Scoresheets/Question.cs</span></div><div class="v"><p>Name/label/description/type/order/enabled + JSON <span class="code">Definition</span>.</p></div></div>
+    </div>
+    <p style="margin-top:14px;">Same duplicate-name guards as Worksheet: section names unique per scoresheet (case-insensitive), question names unique across the whole scoresheet. <strong>Inconsistency worth knowing:</strong> <span class="code">Scoresheet.UpdateSectionName</span> throws a namespaced, localizable <span class="code">BusinessException(ErrorConsts.DuplicateSectionName)</span>, while most of the equivalent Worksheet guards (and other Scoresheet guards) throw a plain <span class="code">UserFriendlyException</span> with a hardcoded English string. <span class="code">ErrorConsts.DuplicateFieldName</span> is defined but not observed in use anywhere in the domain layer.</p>
+
+    <h3>Scoresheet instance tree</h3>
+    <div class="schematic">ScoresheetInstance 1─* Answer</div>
+    <div class="rowlist">
+      <div class="row"><div class="k">ScoresheetInstance<span class="sub">Domain/ScoresheetInstances/ScoresheetInstance.cs</span></div><div class="v"><p>One assessor's completed scoresheet. <span class="code">CorrelationId/CorrelationProvider</span> ties it to one external assessment record. Holds a rolled-up serialized <span class="code">Value</span> plus the individual <span class="code">Answer</span>s. Direct <span class="code">ScoresheetId</span> FK to its parent <span class="code">Scoresheet</span> — no correlation indirection needed here, unlike worksheets.</p></div></div>
+      <div class="row"><div class="k">Answer<span class="sub">Domain/ScoresheetInstances/Answer.cs</span></div><div class="v"><p>One question's answer, JSON <span class="code">CurrentValue</span>, versioned. FKs to <span class="code">Question</span> via <span class="code">QuestionId</span> <strong>with</strong> a real navigation property (<span class="code">Answer.Question</span>) — unlike <span class="code">CustomFieldValue → CustomField</span>, which is ID-only.</p></div></div>
+    </div>
+
+    <h3>Required-answer validation</h3>
+    <p><span class="code">ScoresheetsManager.ValidateScoresheetAnswersAsync(instance, scoresheet)</span> (static) walks every <span class="code">Question</span> in every section; for each <span class="code">Question.IsRequired()</span> (read out of the type-specific <span class="code">Definition</span> JSON via <span class="code">DefinitionResolver.ResolveIsRequired</span>), it checks a matching <span class="code">Answer</span> exists and <span class="code">IsProvided()</span> (non-null/non-empty via <span class="code">ValueResolver.Resolve</span>). Returns human-readable errors like <span class="code">"{sectionOrder+1}.{questionOrder+1}: {label} (required)"</span>.</p>
+
+    <h3>Cloning and versioning</h3>
+    <p><span class="code">SheetParserFunctions</span> (<span class="code">Domain/Utils/SheetParserFunctions.cs</span>) provides <span class="code">SplitSheetNameAndVersion(name)</span> (splits <span class="code">"myform-v3"</span> into <span class="code">["myform", "-v3"]</span>) and <span class="code">RemoveTrailingNumbers(input)</span>. Used by <span class="code">WorksheetsManager.CloneWorksheetAsync</span> to compute the next version name when cloning (<span class="code">myform-v1</span> → <span class="code">myform-v2</span>), duplicating every section and field with fresh GUIDs.</p>
+
+    <h3>Runtime data pipeline — WorksheetsManager</h3>
+    <p><span class="code">WorksheetsManager</span> (<span class="code">Domain/Services/WorksheetsManager.cs</span>) implements the "fill a worksheet instance from raw field data" pipeline:</p>
+    <ul>
+      <li><strong><span class="code">PersistWorksheetData</span></strong> — handles an event with a flat dictionary of field values, resolves the target <span class="code">WorksheetInstance</span>/<span class="code">Worksheet</span> by correlation or name, converts each raw value via <span class="code">ValueConverter.Convert</span> per field's <span class="code">CustomFieldType</span>, rolls the values into the instance's <span class="code">CurrentValue</span> JSON, and optionally triggers reporting-data generation if the Reporting feature is enabled.</li>
+      <li><strong><span class="code">CreateWorksheetDataByFields</span></strong> — bulk-creates new <span class="code">WorksheetInstance</span>s from a flat field-value list keyed by the <span class="code">custom_&lt;worksheet&gt;_&lt;field&gt;</span> naming convention, guarding against duplicate instance creation.</li>
+    </ul>
+    <p class="note">This is the mechanism by which an external form submission (a CHEFS intake form — see §09) populates a Flex worksheet instance.</p>
+
+    <h3>Settings and error codes</h3>
+    <ul>
+      <li><span class="code">FlexSettingDefinitionProvider</span> defines <strong>no settings</strong> — an empty override. <span class="code">FlexSettings</span> only exposes <span class="code">GroupName = "Flex"</span>. Placeholder/scaffold, not currently used.</li>
+      <li><span class="code">FlexErrorCodes</span> is intentionally empty. The only real structured errors are in <span class="code">Domain/Exceptions/ErrorConsts.cs</span>: <span class="code">DuplicateSectionName</span> and <span class="code">DuplicateFieldName</span>, and only <span class="code">DuplicateSectionName</span> is actually thrown.</li>
+      <li><span class="code">PrivateSetterContractResolver</span>, <span class="code">WorksheetContractResolver</span>, <span class="code">ScoresheetContractResolver</span> (<span class="code">Domain/Settings/</span>) are Newtonsoft <span class="code">IContractResolver</span>s that let entities with private setters serialize/deserialize directly — needed because nearly every property on these entities is <span class="code">private set</span>. These back JSON import/export of whole Worksheet/Scoresheet aggregates (see §08).</li>
+    </ul>
+  </section>
+
+  <!-- ============ 04 FIELD & QUESTION TYPES ============ -->
+  <section id="types">
+    <div class="sec-head"><span class="sec-num">04</span><h2>Field &amp; question types</h2></div>
+    <p class="lede"><span class="code">CustomFieldType</span> (<span class="code">Unity.Flex.Shared/Worksheets/Enums/CustomFieldType.cs</span>) has 16 values including <span class="code">Undefined</span>. <span class="code">QuestionType</span> (<span class="code">Unity.Flex.Shared/Scoresheets/Enums/QuestionType.cs</span>) is a <strong>deliberate subset reusing the same numeric values</strong> — scoresheet questions only support 5 of the 15 usable worksheet field types. Sharing numeric values lets conversion code (<span class="code">ValueConverter</span>/<span class="code">ValueResolver</span>) work against either enum interchangeably.</p>
+
+    <div class="table-scroll">
+      <table class="data">
+        <thead><tr><th>Type</th><th>Worksheet field</th><th>Scoresheet question</th></tr></thead>
+        <tbody>
+          <tr><td class="code">Numeric / Number</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+          <tr><td class="code">Text</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+          <tr><td class="code">YesNo</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+          <tr><td class="code">SelectList</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+          <tr><td class="code">TextArea</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+          <tr><td class="code">Date</td><td class="yes">✓</td><td class="no">—</td></tr>
+          <tr><td class="code">DateTime</td><td class="yes">✓</td><td class="no">—</td></tr>
+          <tr><td class="code">Currency</td><td class="yes">✓</td><td class="no">—</td></tr>
+          <tr><td class="code">Email</td><td class="yes">✓</td><td class="no">—</td></tr>
+          <tr><td class="code">Phone</td><td class="yes">✓</td><td class="no">—</td></tr>
+          <tr><td class="code">Radio</td><td class="yes">✓</td><td class="no">—</td></tr>
+          <tr><td class="code">Checkbox</td><td class="yes">✓</td><td class="no">—</td></tr>
+          <tr><td class="code">CheckboxGroup</td><td class="yes">✓</td><td class="no">—</td></tr>
+          <tr><td class="code">BCAddress</td><td class="yes">✓</td><td class="no">—</td></tr>
+          <tr><td class="code">DataGrid</td><td class="yes">✓</td><td class="no">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Definition &amp; value classes</h3>
+    <p>Each field/question type has a matching pair of classes:</p>
+    <ul>
+      <li><strong><span class="code">*Definition</span></strong> (<span class="code">Worksheets/Definitions/</span>) — the type-specific <em>configuration</em> shape: <span class="code">TextDefinition</span>, <span class="code">NumericDefinition</span>, <span class="code">CurrencyDefinition</span>, <span class="code">DateDefinition</span>, <span class="code">DateTimeDefinition</span>, <span class="code">EmailDefinition</span>, <span class="code">PhoneDefinition</span>, <span class="code">RadioDefinition</span> (+<span class="code">RadioOption</span>), <span class="code">CheckboxDefinition</span>, <span class="code">CheckboxGroupDefinition</span> (+<span class="code">CheckboxGroupDefinitionOption</span>), <span class="code">SelectListDefinition</span> (+<span class="code">SelectListOption</span>), <span class="code">QuestionSelectListDefinition</span> (+<span class="code">QuestionSelectListOption</span>, scoresheet-specific), <span class="code">BCAddressDefinition</span>, <span class="code">TextAreaDefinition</span>, <span class="code">DataGridDefinition</span>, <span class="code">YesNoDefinition</span>/<span class="code">QuestionYesNoDefinition</span>. All implement <span class="code">ICustomFieldFormat</span>. <span class="code">DefinitionResolver</span> resolves/serializes the right definition type for a given <span class="code">CustomFieldType</span>/<span class="code">QuestionType</span>.</li>
+      <li><strong><span class="code">*Value</span></strong> (<span class="code">Worksheets/Values/</span>) — the type-specific <em>stored value</em> shape: <span class="code">TextValue</span>, <span class="code">NumericValue</span>, <span class="code">CurrencyValue</span>, <span class="code">DataGridValue</span>, <span class="code">CheckboxGroupValue</span> (+<span class="code">CheckboxGroupValueOption</span>), <span class="code">BCAddressValue</span> (+<span class="code">BCAddressLocationValue</span>), etc. All extend <span class="code">CustomValueBase</span>, used by <span class="code">ValueConverter</span>/<span class="code">ValueResolver</span> for typed (de)serialization of the JSON-stored field/answer values.</li>
+    </ul>
+
+    <h3>Validation constraints per type</h3>
+    <p>Beyond the base presentation properties (§05), several types carry their own min/max/length constraints. Coverage is uneven — some are enforced as native HTML attributes, one pair is defined but never rendered anywhere.</p>
+    <div class="table-scroll">
+      <table class="data">
+        <thead><tr><th>Type</th><th>Constraint properties</th><th>Enforced how</th></tr></thead>
+        <tbody>
+          <tr><td class="code">Text</td><td class="mono">MinLength, MaxLength (uint)</td><td>Both → native <span class="code">minlength</span>/<span class="code">maxlength</span> attributes (<span class="code">DefaultFieldWidget</span>).</td></tr>
+          <tr><td class="code">TextArea</td><td class="mono">MinLength, MaxLength, Rows</td><td><span class="code">MaxLength</span> → native <span class="code">maxlength</span>; <span class="code">Rows</span> → native <span class="code">rows</span>. <strong><span class="code">MinLength</span> captured but never rendered.</strong></td></tr>
+          <tr><td class="code">Numeric</td><td class="mono">Min, Max (long)</td><td>Native <span class="code">min</span>/<span class="code">max</span> attributes via <span class="code">DefinitionResolver.ResolveMin/Max</span>.</td></tr>
+          <tr><td class="code">Currency</td><td class="mono">Min, Max (decimal), Format</td><td>Input is <span class="code">type="text"</span>, so <span class="code">Min</span>/<span class="code">Max</span> render only as <span class="code">data-min</span>/<span class="code">data-max</span> — client-side JS, not native validation. <span class="code">Format</span> not observed applied.</td></tr>
+          <tr><td class="code">Date / DateTime</td><td class="mono">Min, Max (DateTime), Format</td><td><strong>Not enforced anywhere</strong> — <span class="code">DefinitionResolver</span> has no case for <span class="code">DateDefinition</span>, and <span class="code">DateWidget</span> doesn't read these at all. Dead properties.</td></tr>
+          <tr><td class="code">Radio / CheckboxGroup / SelectList</td><td class="mono">Options list</td><td>Constrains choices to the option list via the rendered control.</td></tr>
+          <tr><td class="code">QuestionSelectList</td><td class="mono">Options with NumericValue</td><td>Not a constraint — a score contributed per option, consumed by scoresheet <span class="code">TotalScore</span> calculation.</td></tr>
+          <tr><td class="code">QuestionYesNo</td><td class="mono">YesValue, NoValue</td><td>Same idea — scoring weights, not a constraint.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 05 STYLING & CLASSIFICATION ============ -->
+  <section id="styling">
+    <div class="sec-head"><span class="sec-num">05</span><h2>Styling &amp; classification</h2></div>
+    <p class="lede">Every <span class="code">CustomFieldDefinition</span> also carries presentation and governance properties independent of data type. Coverage of these is uneven: some are fully wired end to end, some are captured but have no builder UI, and one is captured but never enforced at all.</p>
+
+    <h3>The base properties</h3>
+    <div class="table-scroll">
+      <table class="data">
+        <thead><tr><th>Property</th><th>Default</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td class="code">Required</td><td class="mono">false</td><td>Feeds required-field / required-answer validation.</td></tr>
+          <tr><td class="code">IsHidden</td><td class="mono">false</td><td>Renders the field's wrapper <span class="code">hidden</span>.</td></tr>
+          <tr><td class="code">HideLabel</td><td class="mono">false</td><td>Suppresses the <span class="code">&lt;label&gt;</span> entirely.</td></tr>
+          <tr><td class="code">IsDisabled</td><td class="mono">false</td><td>Renders the field's <span class="code">&lt;fieldset&gt;</span> <span class="code">disabled</span>.</td></tr>
+          <tr><td class="code">LabelPosition</td><td class="mono">"Top"</td><td>Only <span class="code">Top</span>/<span class="code">Left</span> wired in the builder, though the property is free-form.</td></tr>
+          <tr><td class="code">Style</td><td class="mono">null</td><td>Inline CSS on the field's <strong>wrapper <span class="code">&lt;div&gt;</span></strong> — not the control itself.</td></tr>
+          <tr><td class="code">CssClass</td><td class="mono">null</td><td>Extra class(es) appended to the wrapper <span class="code">&lt;div&gt;</span>.</td></tr>
+          <tr><td class="code">LabelStyle</td><td class="mono">null</td><td>Inline CSS on the <span class="code">&lt;label&gt;</span>.</td></tr>
+          <tr><td class="code">LabelCssClass</td><td class="mono">null</td><td>Extra class(es) on the <span class="code">&lt;label&gt;</span>.</td></tr>
+          <tr><td class="code">SecurityClassification</td><td class="mono">null</td><td><span class="code">ProtectedA</span>/<span class="code">B</span>/<span class="code">C</span>, or unset — see below.</td></tr>
+          <tr><td class="code">Placeholder</td><td class="mono">null</td><td>Only rendered by widgets for text-like types.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Where it's set — the builder UI</h3>
+    <p><span class="code">UpsertCustomFieldModal.cshtml</span>/<span class="code">.cshtml.cs</span> is the admin UI, split across two tabs:</p>
+    <ul>
+      <li><strong>Display tab</strong> — Key, Label, a <strong>Label Position</strong> toggle (Top/Left), the Type dropdown, a Placeholder input (text-like types only), and the type-specific definition editor.</li>
+      <li><strong>Attributes tab</strong> — <em>Security</em> (Classification Level dropdown, with a live tooltip — see below), <em>Visibility</em> (IsHidden/HideLabel/IsDisabled checkboxes), <em>Label</em> (Inline Style + CSS Class text inputs).</li>
+    </ul>
+    <p class="note"><strong>Gap:</strong> the Label section only exposes <span class="code">LabelStyle</span>/<span class="code">LabelCssClass</span>. There is <strong>no builder UI for the base <span class="code">Style</span>/<span class="code">CssClass</span></strong> — rendering fully supports them, but today they can only be set by hand-editing exported/imported worksheet JSON. Wiring two inputs into the Attributes tab is the smallest next step; the plumbing already exists end to end otherwise.</p>
+
+    <h3>Where it's applied — rendering</h3>
+    <p>All of it is applied in exactly <strong>one place</strong>, uniformly across every field type, before control passes to the type-specific widget: <span class="code">_WorksheetSections.cshtml</span>.</p>
+    <div class="schematic">&lt;div class="worksheet_field {label-left|label-top}{fieldDef.CssClass}"
+     hidden="{fieldDef.IsHidden}" style="{fieldDef.Style}"&gt;
+
+  &lt;label class="field-label {fieldDef.LabelCssClass}" style="{fieldDef.LabelStyle}"&gt;{field.Label}&lt;/label&gt;  &lt;!-- unless HideLabel --&gt;
+
+  &lt;fieldset disabled="{fieldDef.IsDisabled}"&gt;
+    &lt;!-- type-specific widget renders the control here --&gt;
+  &lt;/fieldset&gt;
+&lt;/div&gt;</div>
+    <p class="note">Deliberate separation, not an oversight: styling lives on the shared wrapper; none of the ~13 per-type widgets re-read <span class="code">Style</span>/<span class="code">CssClass</span>/<span class="code">LabelPosition</span> themselves. One consequence: custom CSS targeting the bare control has to reach through the wrapper (e.g. <span class="code">.worksheet_field.my-class input</span>), not style it directly.</p>
+
+    <h3>Security classification — Protected A/B/C</h3>
+    <p>The three levels mirror the BC Government's real information classification standard, with explanatory tooltip copy baked into <span class="code">UpsertCustomFieldModal.js</span>:</p>
+    <div class="rowlist">
+      <div class="row"><div class="k">ProtectedA<span class="sub">Low Sensitivity</span></div><div class="v"><p>"If compromised, could cause limited or moderate injury to an individual or organisation — e.g. an exact salary figure or home address."</p></div></div>
+      <div class="row"><div class="k">ProtectedB<span class="sub">Medium Sensitivity</span></div><div class="v"><p>"Could cause serious injury if disclosed — e.g. Social Insurance Numbers, employment equity data, or personal health records."</p></div></div>
+      <div class="row"><div class="k">ProtectedC<span class="sub">High Sensitivity</span></div><div class="v"><p>"The most sensitive level — disclosure could cause extremely grave injury."</p></div></div>
+    </div>
+    <p style="margin-top:14px;"><strong>This is presentation metadata only — it is not enforced anywhere.</strong> Confirmed across the whole solution: <span class="code">SecurityClassification</span> appears in exactly three places — the definition property, the builder modal, and the modal's tooltip script. It is not checked by any app service or permission, not displayed anywhere at runtime, and not factored into reporting/export data.</p>
+    <p class="note">This is exactly the "sensitivity tier" concept proposed in §12 Roadmap as a way to fit ABP's compile-time permission model to runtime-created fields — except it doesn't need to be designed, it already exists. Only the enforcement layer is missing.</p>
+  </section>
+
+  <!-- ============ 06 DATAGRID FIELDS ============ -->
+  <section id="datagrid">
+    <div class="sec-head"><span class="sec-num">06</span><h2>DataGrid fields</h2></div>
+    <p class="lede"><span class="code">CustomFieldType.DataGrid</span> — a repeating-row grid — is by far the most complex of the fifteen field types: its own column-population modes, a full CRUD editing surface, auto-sum, and reporting handling distinct from every other type. It earns its own section.</p>
+
+    <h3>Column population: three modes</h3>
+    <p>A grid's columns come from up to two independent sources, controlled by <span class="code">DataGridDefinition.Dynamic</span> (bool) and <span class="code">DataGridDefinition.Columns</span> (admin-declared <span class="code">Name</span>/<span class="code">Type</span> pairs).</p>
+    <div class="rowlist">
+      <div class="row"><div class="k">Explicit<span class="sub">Dynamic = false</span></div><div class="v"><p>The admin declares <span class="code">Columns</span> up front in the builder, each name unique and validated. <strong>The only mode where a new row can be manually added</strong> at runtime.</p></div></div>
+      <div class="row"><div class="k">Dynamic<span class="sub">Dynamic = true</span></div><div class="v"><p>Columns are not admin-declared. At CHEFS-intake-mapping time, <span class="code">DynamicDataBuilder.BuildDataGrid</span> walks the live CHEFS form schema, finds the matching <span class="code">datagrid</span> component, and builds the <strong>value's own column list</strong> (<span class="code">DataGridValue.Columns</span> — distinct from <span class="code">DataGridDefinition.Columns</span>) alongside the submitted row data.</p></div></div>
+      <div class="row"><div class="k">Combination<span class="sub">both at once</span></div><div class="v"><p>A dynamic grid can <em>also</em> carry explicit <span class="code">DataGridDefinition.Columns</span>. Both the runtime widget and the reporting-metadata parser merge the two: dynamic/CHEFS columns emit first in CHEFS's own order, explicit columns are appended for any key not already present — <strong>dynamic wins on collision</strong>.</p></div></div>
+    </div>
+
+    <h3>Rendering, editing &amp; auto-sum</h3>
+    <ul>
+      <li><strong>Editing is universal</strong> — <span class="code">AllowEdit</span> is always <span class="code">true</span>. Every row is editable via <span class="code">EditDataRowModal</span>, backed by <span class="code">DataGridReadService</span> (loads current values) and <span class="code">DataGridWriteService</span> (full CRUD: add first row — creating a <span class="code">WorksheetInstance</span> if none exists — add row, update row, delete row; every write re-syncs the parent instance).</li>
+      <li><strong>Adding a new row is restricted</strong> — only offered when the grid is <em>not</em> dynamic (<span class="code">GenerateAvailableTableOptions(!Dynamic)</span>). A CHEFS-driven column set isn't something a user can safely append an arbitrary row to. Export is always available.</li>
+      <li><strong>Supported column types</strong> — a curated subset: Text, TextArea, Currency, Numeric, Date, DateTime, YesNo, Checkbox, Phone, Email. Formatting (display / storage / input) is type-aware, including browser-timezone correction for DateTime and culture-aware currency formatting.</li>
+      <li><strong>Auto-sum</strong> — <span class="code">SummaryOption</span> (None/Above/Below) controls a summary row. Only <strong>Numeric</strong> and <strong>Currency</strong> columns are summable, each getting a <span class="code">Total: {ColumnName}</span> field computed by <span class="code">SumCells</span> (decimal sum, strips <span class="code">$</span>/<span class="code">,</span>, clamped at <span class="code">decimal.MaxValue</span> rather than overflowing).</li>
+    </ul>
+
+    <h3>Reporting: dynamic columns are treated differently</h3>
+    <p>In <span class="code">DataGridReportDataGenerator</span>, explicit and dynamic columns diverge:</p>
+    <ul>
+      <li><strong>Explicit columns</strong> become individual, named report fields — <span class="code">{fieldKey}-{columnName}</span>, same as any other field.</li>
+      <li><strong>Dynamic columns</strong> (in the value but not in <span class="code">DataGridDefinition.Columns</span>) are <strong>not</strong> exploded into individual fields — they're collapsed into one combined JSON blob field, <span class="code">{fieldKey}-DynamicColumns</span>. A variable, CHEFS-driven column set can't map onto fixed SQL columns.</li>
+    </ul>
+    <p class="note">Full detail, including the reporting-metadata resolution path: <span class="code">documentation/flex/flex-datagrid.md</span>.</p>
+  </section>
+
+  <!-- ============ 07 DATABASE SCHEMA ============ -->
+  <section id="schema">
+    <div class="sec-head"><span class="sec-num">07</span><h2>Database schema</h2></div>
+    <p class="lede">Both Worksheets and Scoresheets tables live in <strong>schema <span class="code">Flex</span></strong>, inside the <strong>tenant</strong> database (<span class="code">FlexDbProperties.ConnectionStringName = "Tenant"</span> → <span class="code">GrantTenantDbContext</span>). No table prefix.</p>
+
+    <div class="table-scroll">
+      <table class="data">
+        <thead><tr><th>Table (schema Flex)</th><th>Role</th><th>Notable columns</th></tr></thead>
+        <tbody>
+          <tr><td class="code">Worksheets</td><td>Form template</td><td class="mono">ReportKeys, ReportViewName (text)</td></tr>
+          <tr><td class="code">WorksheetSections</td><td>Ordered field groups</td><td class="mono">Definition jsonb</td></tr>
+          <tr><td class="code">CustomFields</td><td>One field definition</td><td class="mono">Name = custom_&lt;worksheet&gt;_&lt;key&gt;, Definition jsonb</td></tr>
+          <tr><td class="code">WorksheetLinks</td><td>Mounts a worksheet to a UI anchor</td><td class="mono">CorrelationId/Provider, UiAnchor, Order</td></tr>
+          <tr><td class="code">WorksheetInstances</td><td>One filled worksheet</td><td class="mono">CurrentValue jsonb, ReportData jsonb</td></tr>
+          <tr><td class="code">CustomFieldValues</td><td>One field's value</td><td class="mono">CurrentValue jsonb — no soft delete</td></tr>
+          <tr><td class="code">Scoresheets</td><td>Scoring template</td><td class="mono">ReportColumns, ReportKeys text</td></tr>
+          <tr><td class="code">ScoresheetSections</td><td>Ordered question groups</td><td class="mono">Definition jsonb</td></tr>
+          <tr><td class="code">Questions</td><td>One scoreable question</td><td class="mono">Definition jsonb</td></tr>
+          <tr><td class="code">ScoresheetInstances</td><td>One assessor's response</td><td class="mono">Value text, ReportData jsonb</td></tr>
+          <tr><td class="code">Answers</td><td>One question's answer</td><td class="mono">CurrentValue jsonb, full audit + soft delete</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Design notes</h3>
+    <ul>
+      <li><strong>Schema-per-row / EAV-style design:</strong> both field <em>definitions</em> (shape/validation rules) and field <em>values</em> are stored as flexible <span class="code">jsonb</span> rather than fixed relational columns — the mechanism that makes the whole system dynamic without per-form schema migrations.</li>
+      <li><strong>Multi-tenant:</strong> every entity implements <span class="code">IMultiTenant</span> (nullable <span class="code">TenantId</span>) — standard ABP row-level tenant filtering.</li>
+      <li><strong>Reporting support:</strong> <span class="code">Worksheet</span> and <span class="code">Scoresheet</span> implement <span class="code">IReportableEntity&lt;T&gt;</span> and carry <span class="code">ReportColumns</span>/<span class="code">ReportKeys</span>/<span class="code">ReportViewName</span> text columns, backing a generated-SQL-view mechanism that flattens the dynamic JSON into queryable columns — see §08 and <span class="code">documentation/reporting/</span>.</li>
+      <li><strong>No additional unique indexes/constraints</strong> beyond primary keys were found — duplicate-name prevention is purely an application/domain-layer invariant, not DB-enforced.</li>
+    </ul>
+  </section>
+
+  <!-- ============ 06 APPLICATION SERVICES ============ -->
+  <section id="services">
+    <div class="sec-head"><span class="sec-num">08</span><h2>Application services &amp; APIs</h2></div>
+    <p class="lede">Worksheet and scoresheet app services live in <span class="code">Unity.Flex.Application.Contracts</span> (interfaces/DTOs) and <span class="code">Unity.Flex.Application</span> (implementations, controllers, handlers).</p>
+
+    <h3>Worksheets — Unity.Flex.Application.Contracts/Worksheets/</h3>
+    <div class="rowlist">
+      <div class="row"><div class="k">IWorksheetAppService</div><div class="v"><div class="methods"><span>GetAsync</span><span>GetListAsync</span><span>GetListByCorrelationAsync</span><span>GetListByCorrelationAnchorAsync</span><span>CreateAsync</span><span>CreateSectionAsync</span><span>EditAsync</span><span>CloneAsync</span><span>PublishAsync</span><span>ArchiveAsync</span><span>DeleteAsync</span><span>GetLinkedFormsAsync</span><span>ResequenceSectionsAsync</span><span>ExistsAsync</span><span>ExportWorksheet</span><span>ImportWorksheetAsync</span></div></div></div>
+      <div class="row"><div class="k">IWorksheetListAppService</div><div class="v"><p>Lightweight read-only lookups returning <span class="code">WorksheetBasicDto</span>.</p><div class="methods"><span>GetAsync</span><span>GetListByCorrelationAsync</span><span>GetListAsync</span></div></div></div>
+      <div class="row"><div class="k">IWorksheetSectionAppService</div><div class="v"><div class="methods"><span>CreateCustomFieldAsync</span><span>ResequenceCustomFieldsAsync</span><span>GetAsync</span><span>EditAsync</span><span>DeleteAsync</span></div></div></div>
+      <div class="row"><div class="k">ICustomFieldAppService</div><div class="v"><div class="methods"><span>GetAsync</span><span>EditAsync</span><span>DeleteAsync</span><span>MoveToSectionAsync</span></div></div></div>
+      <div class="row"><div class="k">ICustomFieldValueAppService<span class="sub">WorksheetInstances/</span></div><div class="v"><p>Public <span class="code">GetAsync</span>; internal-only (<span class="code">[RemoteService(false)]</span>, not exposed over HTTP):</p><div class="methods"><span>ExplicitSetAsync</span><span>ExplicitAddAsync</span><span>SyncWorksheetInstanceValueAsync</span></div></div></div>
+      <div class="row"><div class="k">IWorksheetLinkAppService<span class="sub">WorksheetLinks/</span></div><div class="v"><p>Links a worksheet to an external entity via <span class="code">(correlationId, correlationProvider)</span>.</p><div class="methods"><span>UpdateWorksheetLinksAsync</span><span>GetListByCorrelationAsync</span><span>GetListByWorksheetAsync</span></div></div></div>
+    </div>
+
+    <h3>Scoresheets — Unity.Flex.Application.Contracts/Scoresheets/</h3>
+    <div class="rowlist">
+      <div class="row"><div class="k">IScoresheetAppService</div><div class="v"><div class="methods"><span>CreateAsync</span><span>CreateQuestionInHighestOrderSectionAsync</span><span>CreateSectionAsync</span><span>DeleteAsync</span><span>CloneScoresheetAsync</span><span>GetAsync</span><span>GetListAsync</span><span>GetAllPublishedScoresheetsAsync</span><span>SaveOrder</span><span>SaveScoresheetOrder</span><span>UpdateAsync</span><span>GetNumericQuestionIdsAsync</span><span>GetYesNoQuestionsAsync</span><span>GetSelectListQuestionsAsync</span><span>ValidateChangeableScoresheet</span><span>PublishScoresheetAsync</span><span>ArchiveAsync</span><span>ExportScoresheet</span><span>ImportScoresheetAsync</span></div></div></div>
+      <div class="row"><div class="k">IQuestionAppService</div><div class="v"><div class="methods"><span>GetAsync</span><span>UpdateAsync</span><span>DeleteAsync</span></div></div></div>
+      <div class="row"><div class="k">ISectionAppService</div><div class="v"><div class="methods"><span>GetAsync</span><span>UpdateAsync</span><span>DeleteAsync</span></div></div></div>
+      <div class="row"><div class="k">IScoresheetInstanceAppService</div><div class="v"><div class="methods"><span>CreateAsync</span><span>GetByCorrelationAsync</span><span>ValidateAnswersAsync</span></div></div></div>
+    </div>
+
+    <h3>Controllers</h3>
+    <p>Thin MVC controllers under <span class="code">Unity.Flex.Application/Controllers/</span>, used only for file-upload/download operations that don't fit a typical DTO-in/DTO-out app service call:</p>
+    <ul>
+      <li><strong><span class="code">WorksheetController</span></strong> — <span class="code">/api/app/worksheet</span>: <span class="code">GET export/{worksheetId}</span>, <span class="code">POST import</span> (JSON file upload).</li>
+      <li><strong><span class="code">ScoresheetController</span></strong> — <span class="code">/api/app/scoresheet</span>: same pattern.</li>
+      <li><span class="code">FlexController</span> / <span class="code">FlexAppService</span> — shared abstract base classes wiring the <span class="code">FlexResource</span> localization resource; not endpoints themselves.</li>
+    </ul>
+
+    <h3>Command/handler pattern</h3>
+    <p>Flex is driven by <strong>ABP local events</strong> (<span class="code">ILocalEventHandler&lt;TEto&gt;</span>, <span class="code">ITransientDependency</span>), not direct app-service-to-app-service calls from the host module. The host module publishes an ETO via <span class="code">ILocalEventBus</span>; Flex's own handler performs the actual write. In-process, synchronous-within-request — used purely as a decoupling seam between <span class="code">Unity.GrantManager</span> and <span class="code">Unity.Flex</span>.</p>
+
+    <div class="table-scroll">
+      <table class="data">
+        <thead><tr><th>Handler</th><th>Triggered by (ETO)</th><th>Does</th><th>Published from</th></tr></thead>
+        <tbody>
+          <tr><td class="code">CreateScoresheetInstanceHandler</td><td class="code">CreateScoresheetInstanceEto</td><td>Calls <span class="code">IScoresheetInstanceAppService.CreateAsync</span></td><td><span class="code">GrantApplicationAppService</span>, when an application's form has a ScoresheetId and Flex is enabled — creation &amp; resubmission</td></tr>
+          <tr><td class="code">CreateWorksheetInstanceByFieldValuesHandler</td><td class="code">CreateWorksheetInstanceByFieldValuesEto</td><td>Calls <span class="code">WorksheetsManager.CreateWorksheetDataByFields</span>; if collection required, also <span class="code">worksheetInstance.CollectAsync</span></td><td><span class="code">CustomFieldsIntakeSubmissionMapper</span>, on CHEFS intake submission</td></tr>
+          <tr><td class="code">PersistWorksheetInstanceValuesHandler</td><td class="code">PersistWorksheetIntanceValuesEto</td><td>Delegates to <span class="code">WorksheetsManager.PersistWorksheetData</span></td><td><span class="code">GrantApplicationAppService</span>, custom field save from UI</td></tr>
+          <tr><td class="code">PersistScoresheetInstanceHandler</td><td class="code">PersistScoresheetInstanceEto</td><td>Loads instance via repository directly, finds/creates matching Answer, converts + saves <span class="tag warn" style="margin-left:4px;">tech debt</span></td><td>—</td></tr>
+          <tr><td class="code">PersistScoresheetSectionInstanceHandler</td><td class="code">PersistScoresheetSectionInstanceEto</td><td>Delegates to <span class="code">ScoresheetsManager.PersistScoresheetData</span></td><td><span class="code">AssessmentScoresheetService</span>, assessor save + AI-answer copy</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note" style="margin-top:12px;"><span class="code">CreateWorksheetInstanceByFieldValuesHandler</span> falls back to <span class="code">eventData.TenantId</span> when <span class="code">ICurrentTenant.Id</span> is null, needed for background-job contexts with no ambient HTTP tenant. Almost every publish site on the host side is gated by <span class="code">IFeatureChecker.IsEnabledAsync("Unity.Flex")</span> first.</p>
+
+    <h3>Reporting integration</h3>
+    <p>Two parallel pipelines: one for <strong>field metadata</strong>, one for <strong>instance data</strong>.</p>
+    <ul>
+      <li><strong>Field generators</strong> (<span class="code">Reporting/FieldGenerators/</span>) — <span class="code">IReportingFieldsGenerator</span> / <span class="code">ReportingFieldsGenerator</span> / <span class="code">ReportingFieldsGeneratorFactory</span>, with per-type generators (<span class="code">CheckboxGroupReportingFieldsGenerator</span>, <span class="code">DataGridReportingFieldsGenerator</span>, <span class="code">DefaultReportingFieldsGenerator</span> for worksheets; <span class="code">QuestionsReportingGenerator</span>, <span class="code">DefaultFieldsGenerator</span> for scoresheets). <span class="code">WorksheetReportingFieldsGeneratorService</span> / <span class="code">ScoresheetReportingFieldsGeneratorService</span> compute flattened "report keys" (one per section/field/checkbox-option), stored on the entity as <span class="code">ReportKeys</span> / <span class="code">ReportViewName</span>.</li>
+      <li><strong>Data generators</strong> (<span class="code">Reporting/DataGenerators/</span>) — <span class="code">ScoresheetsReportingDataGeneratorService.GenerateAndSet(Scoresheet, ScoresheetInstance)</span> builds a keyed dictionary matching each report key to an <span class="code">Answer</span>, converts values via <span class="code">ScoresheetsReportingDataGeneratorFactory</span>, computes <span class="code">TotalScore</span> (summing Number/YesNo/SelectList questions), and serializes onto <span class="code">instanceValue.SetReportingData(json)</span>. Wrapped in a blanket try/catch — a failure just logs and skips; report data can be regenerated later. <span class="code">WorksheetsReportingDataGeneratorService</span>/<span class="code">Factory</span> follow the equivalent pattern for <span class="code">CustomFieldValue</span>s.</li>
+      <li><strong>Dynamic DB views</strong> — <span class="code">WorksheetsDynamicViewGeneratorHandler</span> / <span class="code">ScoresheetsDynamicViewGeneratorHandler</span> call a Postgres stored procedure directly via raw SQL (<span class="code">CALL "Reporting".generate_worksheets_view(@worksheetId)</span>) to materialize a queryable SQL view per published worksheet/scoresheet. This is how Flex's dynamic/JSON-shaped data becomes something <span class="code">Unity.Reporting</span> can query relationally.</li>
+      <li><strong>Sync app services</strong> (ops tooling) — <span class="code">IWorksheetReportingFieldsSyncAppService</span> (<span class="code">SyncFields</span>, <span class="code">SyncData</span>) and <span class="code">IScoresheetReportingFieldsSyncAppService</span> (<span class="code">SyncQuestions</span>, <span class="code">SyncAnswers</span>), both <span class="code">[Authorize(ITAdminPolicyName)]</span>. Iterate all tenants and backfill missing report keys/data — not part of the live request path.</li>
+    </ul>
+    <div class="roadmap-banner">PLANNED DIRECTION: auto-generation of dynamic views (one per published worksheet/scoresheet, via <span class="code">generate_worksheets_view()</span>) is scheduled to be removed. Reporting views are planned to move to explicit reporting configuration instead — a view exists where someone has configured one, not automatically for every publish. Stated project direction, not yet implemented.</div>
+
+    <h3>Import / export</h3>
+    <p><span class="code">WorksheetImportDto</span>/<span class="code">ExportWorksheetDto</span> and <span class="code">ScoresheetImportDto</span>/<span class="code">ExportScoresheetDto</span> define JSON import/export of an entire worksheet or scoresheet template — sections, fields/questions, and their definitions. The domain-layer contract resolvers (above) make this possible despite nearly every entity property being <span class="code">private set</span>. Exposed over HTTP via the export/import controller endpoints, and in the admin builder UI's clone/publish workflow.</p>
+  </section>
+
+  <!-- ============ 07 HOST INTEGRATION ============ -->
+  <section id="integration">
+    <div class="sec-head"><span class="sec-num">09</span><h2>Host integration</h2></div>
+    <p class="lede">All integration points below are gated by the ABP tenant feature <span class="code">"Unity.Flex"</span>, checked on the host side before publishing any Flex-related local event.</p>
+
+    <figure>
+      <div class="diagram-frame">
+        <svg class="diagram" viewBox="0 0 680 300" role="img" aria-label="Three host-side triggers — CHEFS intake submission, application create or resubmit, and an assessor saving a scoresheet — each publish a local event that a Flex event handler consumes and writes into Flex tenant data, which then feeds a generated reporting view; a dashed line shows subtotal scores read back into the assessment flow.">
+          <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path>
+            </marker>
+          </defs>
+
+          <rect x="10" y="14" width="180" height="50" rx="2" fill="none" stroke="currentColor" stroke-width="1"></rect>
+          <text x="24" y="34" font-size="12.5" font-weight="600">CHEFS intake</text>
+          <text x="24" y="50" font-size="12.5" font-weight="600">submission</text>
+
+          <rect x="10" y="94" width="180" height="50" rx="2" fill="none" stroke="currentColor" stroke-width="1"></rect>
+          <text x="24" y="114" font-size="12.5" font-weight="600">Application</text>
+          <text x="24" y="130" font-size="12.5" font-weight="600">create / resubmit</text>
+
+          <rect x="10" y="174" width="180" height="50" rx="2" fill="none" stroke="currentColor" stroke-width="1"></rect>
+          <text x="24" y="194" font-size="12.5" font-weight="600">Assessor saves</text>
+          <text x="24" y="210" font-size="12.5" font-weight="600">scoresheet section</text>
+
+          <rect x="290" y="94" width="170" height="50" rx="2" fill="none" class="accent" stroke="currentColor" stroke-width="1.5"></rect>
+          <text x="304" y="114" font-size="12.5" font-weight="600" class="accent">Flex local-event</text>
+          <text x="304" y="130" font-size="12.5" font-weight="600" class="accent">handlers</text>
+
+          <rect x="500" y="94" width="170" height="50" rx="2" fill="none" stroke="currentColor" stroke-width="1"></rect>
+          <text x="514" y="114" font-size="12.5" font-weight="600">Flex tenant data</text>
+          <text x="514" y="130" font-size="11" fill="currentColor" opacity="0.65">schema "Flex"</text>
+
+          <rect x="500" y="220" width="170" height="50" rx="2" fill="none" stroke="currentColor" stroke-width="1"></rect>
+          <text x="514" y="240" font-size="12.5" font-weight="600">Reporting schema</text>
+          <text x="514" y="256" font-size="11" fill="currentColor" opacity="0.65">generated SQL view</text>
+
+          <polyline points="190,39 240,39 240,111 290,111" fill="none" stroke="currentColor" stroke-width="1" marker-end="url(#arrow)"></polyline>
+          <text x="196" y="30" font-size="10">CreateWorksheetInstanceByFieldValuesEto</text>
+
+          <line x1="190" y1="119" x2="290" y2="119" stroke="currentColor" stroke-width="1" marker-end="url(#arrow)"></line>
+          <text x="196" y="85" font-size="10">CreateScoresheetInstanceEto</text>
+
+          <polyline points="190,199 240,199 240,127 290,127" fill="none" stroke="currentColor" stroke-width="1" marker-end="url(#arrow)"></polyline>
+          <text x="196" y="219" font-size="10">PersistScoresheetSectionInstanceEto</text>
+
+          <line x1="460" y1="119" x2="500" y2="119" stroke="currentColor" stroke-width="1.5" class="accent" marker-end="url(#arrow)"></line>
+          <text x="463" y="85" font-size="10" class="accent">writes jsonb</text>
+
+          <line x1="585" y1="144" x2="585" y2="220" stroke="currentColor" stroke-width="1" marker-end="url(#arrow)"></line>
+          <text x="595" y="185" font-size="10">generate_worksheets_view()</text>
+
+          <polyline points="290,140 250,140 250,199 190,199" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="3,3" opacity="0.75" marker-end="url(#arrow)"></polyline>
+          <text x="253" y="160" font-size="10" opacity="0.75">subtotal read-back</text>
+        </svg>
+      </div>
+      <figcaption>Three host-side triggers publish local events (ETOs); Flex's own handlers own every write. When the assessor's <span class="code">AssessmentScoresheetService</span> needs subtotals back, it calls Flex's app services directly — the one legitimate cross-module read. Turning the <span class="code">Unity.Flex</span> feature off drops the assessment flow back to a legacy, hardcoded scoresheet table.</figcaption>
+    </figure>
+
+    <h3>Intake → Worksheet</h3>
+    <p><span class="code">Unity.GrantManager.Domain/Intakes/CustomFieldsIntakeSubmissionMapper.cs</span> (<span class="code">[IntegrationService]</span>, <span class="code">DomainService</span>), method <span class="code">MapAndPersistCustomFields(applicationId, formVersionId, formSubmission, formVersionSubmissionHeaderMapping)</span>:</p>
+    <ul>
+      <li>Parses a CHEFS form submission's JSON and pulls out fields whose config key is prefixed <span class="code">custom_</span> (format <span class="code">custom_&lt;worksheetname&gt;.&lt;type&gt;</span>).</li>
+      <li>Resolves each field's <span class="code">CustomFieldType</span> from the suffix.</li>
+      <li>Publishes <span class="code">CreateWorksheetInstanceByFieldValuesEto</span> with <span class="code">SheetCorrelationId = formVersionId</span>, <span class="code">InstanceCorrelationId = applicationId</span>, and the extracted custom fields.</li>
+    </ul>
+
+    <h3>Application → Scoresheet instance creation</h3>
+    <p><span class="code">GrantApplicationAppService.cs</span> — at two call sites (creation, resubmission/status-change), checks <span class="code">form.ScoresheetId != null &amp;&amp; Unity.Flex enabled</span>, then publishes <span class="code">CreateScoresheetInstanceEto</span>. Every application tied to a form with a configured scoresheet gets a <span class="code">ScoresheetInstance</span> seeded automatically.</p>
+
+    <h3>Application custom field persistence (per UI anchor)</h3>
+    <p>Same file — <span class="code">ExtractCustomFieldsForWorksheet(dto.CustomFields, worksheetId)</span> splits incoming field values per worksheet; <span class="code">PublishCustomFieldUpdatesAsync(applicationId, uiAnchor, customFieldDto)</span> publishes <span class="code">PersistWorksheetIntanceValuesEto</span>. Invoked once per UI anchor, so a single <span class="code">GrantApplication</span> can carry several independent worksheet instances — one per tab/section of the detail UI. Both a legacy single <span class="code">WorksheetId</span> field and a newer <span class="code">WorksheetIds</span> list are supported for backward compatibility.</p>
+
+    <h3>Assessment → Scoresheet scoring</h3>
+    <p><span class="code">AssessmentScoresheetService.cs</span> (<span class="code">IAssessmentScoresheetService</span>, <span class="code">ITransientDependency</span>) injects <span class="code">IScoresheetInstanceAppService</span> and <span class="code">IScoresheetAppService</span> directly — a legitimate cross-module app-service call (the "don't call another app service" rule applies within a module, not across modules). Responsibilities:</p>
+    <ul>
+      <li>Computing sub-totals from Flex scoresheet answers: <span class="code">GetSelectListAnswerSubtotal</span>, <span class="code">GetYesNoAnswerSubtotal</span>, <span class="code">GetNumericAnswerSubtotal</span>.</li>
+      <li>Validating scoresheet completeness before allowing <span class="code">AssessmentAction.Complete</span>.</li>
+      <li><span class="code">IsScoresheetNotLinkedToFormAsync</span> — checks <span class="code">applicationForm.ScoresheetId == null</span>.</li>
+      <li><span class="code">CopyAiAnswersToAssessmentAsync</span> — copies AI-suggested scoresheet answers into a new assessment's Flex scoresheet instance.</li>
+    </ul>
+    <p class="note"><strong>Fallback when Flex is disabled:</strong> the service falls back to <span class="code">IsUsingDefaultScoresheet = true</span>, using a legacy, hardcoded <span class="code">ApplicationScoresheetAnswers</span> table. Flex scoresheets are a pluggable replacement for an older built-in scoresheet mechanism, not the only possible one.</p>
+
+    <h3>UI anchors</h3>
+    <p>Constants live on the <strong>host</strong> side: <span class="code">Unity.GrantManager.Domain.Shared/Flex/FlexConsts.cs</span>.</p>
+    <div class="chips">
+      <span class="chip on">ProjectInfoUiAnchor</span>
+      <span class="chip on">ApplicantInfoUiAnchor</span>
+      <span class="chip on">FundingAgreementInfoUiAnchor</span>
+      <span class="chip on">AssessmentInfoUiAnchor</span>
+      <span class="chip on">PaymentInfoUiAnchor</span>
+      <span class="chip">CustomTab</span>
+      <span class="chip">Preview</span>
+    </div>
+  </section>
+
+  <!-- ============ 08 WEB UI ============ -->
+  <section id="ui">
+    <div class="sec-head"><span class="sec-num">10</span><h2>Web UI</h2></div>
+    <p class="lede">Two distinct surfaces: an <strong>admin/config side</strong> for building worksheets and scoresheets, and a <strong>runtime/fill-in side</strong> for rendering and capturing instance data.</p>
+
+    <h3>Admin/config side</h3>
+    <p><span class="code">Unity.Flex.Web/Pages/</span>:</p>
+    <ul>
+      <li><strong><span class="code">WorksheetConfiguration/Index.cshtml(.cs)</span></strong> + modals <span class="code">UpsertWorksheetModal</span>, <span class="code">UpsertSectionModal</span>, <span class="code">UpsertCustomFieldModal</span>, <span class="code">CloneWorksheetModal</span>, <span class="code">PublishWorksheetModal</span> — builder UI for worksheets → sections → fields, including drag/reorder, JSON export/import, and the publish/archive lifecycle.</li>
+      <li><strong><span class="code">ScoresheetConfiguration/Index.cshtml(.cs)</span></strong> + modals <span class="code">ScoresheetModal</span>, <span class="code">SectionModal</span>, <span class="code">QuestionModal</span>, <span class="code">CloneScoresheetModal</span>, <span class="code">PublishScoresheetModal</span> — equivalent builder for scoresheets → sections → questions.</li>
+      <li><span class="code">Components/DataGrid/</span> (<span class="code">DataGridReadService</span>, <span class="code">DataGridWriteService</span>, <span class="code">EditDataRowModal</span>) — supports the <span class="code">DataGrid</span> custom-field type (a repeating-row grid field).</li>
+    </ul>
+    <p>These Razor Pages are hosted <strong>inside</strong> the main app's Configuration Management screen, not as a standalone area: <span class="code">Unity.GrantManager.Web/Pages/ConfigurationManagement/Index.cshtml</span> embeds them. <span class="code">ConfigurationManagement/Index.cshtml.cs</span> requires <span class="code">UnitySettingManagementPermissions.UserInterface</span> and computes per-section visibility — <span class="code">ShowCustomFields</span> and <span class="code">ShowScoresheets</span> both resolve to <span class="code">featureChecker.IsEnabledAsync("Unity.Flex")</span>.</p>
+
+    <h3>Runtime/fill-in side</h3>
+    <p>A large library of paired Razor <strong>ViewComponents</strong> under <span class="code">Views/Shared/Components/</span>, one pair per field/question type — <strong>definition widgets</strong> (used in the builder to configure a field's constraints) and <strong>value widgets</strong> (used to render/capture an instance's value). Per type: Text, TextArea, Numeric, Currency, Date, DateTime (via a generic <span class="code">DefaultFieldWidget</span>), Checkbox, CheckboxGroup, Radio, SelectList, YesNo, DataGrid, BCAddress — plus <span class="code">CustomFieldDefinitionWidget</span> / <span class="code">QuestionDefinitionWidget</span> as type-dispatching wrappers.</p>
+    <p><strong>Composite components:</strong></p>
+    <ul>
+      <li><span class="code">WorksheetWidget</span> / <span class="code">WorksheetInstanceWidget</span> — renders a full worksheet's sections/fields bound to a <span class="code">WorksheetInstance</span>.</li>
+      <li><span class="code">WorksheetListWidget</span> — lists the worksheets mounted at a given UI anchor.</li>
+      <li><span class="code">WorksheetConfiguration</span> / <span class="code">ScoresheetConfiguration</span> ViewComponents — embed the builder into a host page.</li>
+      <li><span class="code">Scoresheet</span> component (<span class="code">Scoresheet.js</span>/<span class="code">.css</span>) — the assessor-facing scoring UI.</li>
+      <li><span class="code">CustomTabWidget</span> — renders a Flex worksheet as a fully custom application tab.</li>
+    </ul>
+
+    <h3>Permissions and feature gating</h3>
+    <p>No <span class="code">FlexPermissionDefinitionProvider</span> exists — <span class="code">FlexMenus.cs</span> is an empty stub with no menu items registered.</p>
+    <div class="kv-grid">
+      <div class="k">Builder screens</div>
+      <div>Host permission <span class="code">UnitySettingManagementPermissions.UserInterface</span></div>
+      <div class="k">Custom Fields / Scoresheets sections</div>
+      <div>ABP tenant feature <span class="code">Unity.Flex</span> — <span class="mono">IFeatureChecker.IsEnabledAsync</span></div>
+      <div class="k">Reporting sync endpoints</div>
+      <div><span class="code">[Authorize(ITAdminPolicyName)]</span> — ops/backfill tooling only</div>
+      <div class="k">Everything else in Flex</div>
+      <div>No explicit <span class="code">[Authorize]</span> — relies on the caller already having checked the relevant host permission</div>
+    </div>
+  </section>
+
+  <!-- ============ 09 KNOWN ROUGH EDGES ============ -->
+  <section id="edges">
+    <div class="sec-head"><span class="sec-num">11</span><h2>Known rough edges</h2></div>
+    <p class="lede">Worth knowing before you touch this code.</p>
+    <div class="rowlist">
+      <div class="row"><div class="k"><span class="tag warn">Inconsistent</span></div><div class="v"><p>Most duplicate-name guards throw a plain <span class="code">UserFriendlyException</span> with a hardcoded English string; only <span class="code">Scoresheet.UpdateSectionName</span> uses the namespaced, localizable <span class="code">BusinessException(ErrorConsts.DuplicateSectionName)</span> pattern the rest of the codebase favors.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Tech debt</span></div><div class="v"><p><span class="code">PersistScoresheetInstanceHandler</span> writes through <span class="code">IScoresheetInstanceRepository</span> directly instead of an app service — flagged in-code with a "swap over to app service use instead" comment.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Unused</span></div><div class="v"><p><span class="code">FlexSettingDefinitionProvider</span> and <span class="code">FlexErrorCodes</span> are both empty scaffolds. <span class="code">ErrorConsts.DuplicateFieldName</span> is defined but never thrown.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">By design</span></div><div class="v"><p>Reporting-data generation is wrapped in a blanket try/catch — a failure just logs and skips. Report data can be regenerated later; it never blocks intake or assessment.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">By design</span></div><div class="v"><p>No unique DB indexes beyond primary keys — duplicate-name prevention (section names, field names) is an in-memory aggregate rule only, never DB-enforced.</p></div></div>
+    </div>
+  </section>
+
+  <!-- ============ 10 ROADMAP ============ -->
+  <section id="roadmap">
+    <div class="sec-head"><span class="sec-num">12</span><h2>Roadmap: permission-aware definitions</h2></div>
+    <div class="roadmap-banner">STATUS — ASPIRATIONAL, NOT STARTED. Dashed lines and borders on this page mark proposed, not-yet-built ideas.</div>
+
+    <p class="lede">Today, Flex has no permission model of its own (§10). A worksheet or scoresheet is visible to anyone who can see its UI anchor's tab, gated only by two coarse, all-or-nothing switches — the host page's builder permission, and the <span class="code">Unity.Flex</span> tenant feature flag. The grand vision is to make permission-awareness a <strong>first-class part of the definition itself</strong>: a program admin building a worksheet could attach a permission requirement directly to a section or field — the same way they already set its type, label, or required-ness — and have rendering widgets and app services respect it automatically.</p>
+
+    <h3>This isn't a green-field problem</h3>
+    <p>Two pieces of prior art already in this codebase solve adjacent problems, and are the natural starting point rather than inventing a parallel mechanism.</p>
+
+    <div class="rowlist">
+      <div class="row"><div class="k">ABP permissions<span class="sub">used everywhere else in this codebase</span></div><div class="v"><p>Every other module gates access through <span class="code">[Authorize(PermissionName)]</span> on app services and <span class="code">IPermissionChecker.IsGrantedAsync(permissionName)</span>, with permissions declared in a <span class="code">*PermissionDefinitionProvider</span>. Flex is the odd one out — no <span class="code">FlexPermissionDefinitionProvider</span> exists anywhere in the module.</p></div></div>
+      <div class="row"><div class="k">The Zone system<span class="sub">Unity.GrantManager.Domain/Zones, Web/TagHelpers/Zone</span></div><div class="v"><p>The host app already solves a close cousin of this problem for its own hardcoded UI. The Application Details page is built from named <strong>tabs</strong> and <strong>zones</strong>, each toggleable per form by an admin (<span class="code">ZoneManager</span>, <span class="code">ZoneManagementAppService</span>, stored as a JSON <span class="code">ZoneGroupDefinition</span> setting). A <span class="code">&lt;zone&gt;</span>/<span class="code">&lt;zone-fieldset&gt;</span> Razor tag helper gates rendering with three layered, independent checks — see below.</p></div></div>
+    </div>
+
+    <h3>The Zone tag helper's three-layer check</h3>
+    <table class="data">
+      <thead><tr><th>Check</th><th>Source</th><th>Answers</th></tr></thead>
+      <tbody>
+        <tr><td>Feature</td><td class="code">IFeatureChecker.IsEnabledAsync(FeatureRequirement)</td><td>Is this capability on for the tenant at all?</td></tr>
+        <tr><td>Zone toggle</td><td class="code">IZoneChecker.IsEnabledAsync(ZoneRequirement, formId)</td><td>Has an admin enabled this tab/zone for this form?</td></tr>
+        <tr><td>Permission</td><td class="code">IPermissionChecker.IsGrantedAsync(PermissionRequirement)</td><td>Does this user have the ABP permission to see it?</td></tr>
+      </tbody>
+    </table>
+    <p class="note" style="margin-top:12px;"><span class="code">ZoneRequirementType</span> (<span class="code">Full</span>, <span class="code">ToggleOnly</span>, <span class="code">PermissionOnly</span>) lets a zone opt out of the toggle or permission check independently. The tag helper also separates <strong>read</strong> from <strong>update</strong>: a <span class="code">&lt;zone-fieldset&gt;</span> renders <span class="code">disabled</span> when <span class="code">UpdatePermissionRequirement</span> fails even though <span class="code">PermissionRequirement</span> (read) passed — a visible-but-locked state. This is exactly the shape of problem Flex will eventually have, solved once already in this codebase.</p>
+
+    <h3>What "leveraging the zone system" could mean</h3>
+    <p class="note">Roughly in order of how much new machinery each requires — listed to show the range, not to pick a winner.</p>
+    <div class="rowlist">
+      <div class="row"><div class="k"><span class="option-num">1</span></div><div class="v"><p><strong>Copy the pattern, not the code.</strong> Give <span class="code">WorksheetSection</span>/<span class="code">CustomField</span> (and the scoresheet equivalents) optional <span class="code">ReadPermission</span>/<span class="code">UpdatePermission</span> properties, and have the runtime widgets run the same three-layer check inline via <span class="code">IPermissionChecker</span>. Lowest coupling, but duplicates the Zone logic.</p></div></div>
+      <div class="row"><div class="k"><span class="option-num">2</span></div><div class="v"><p><strong>Register Flex sections as real zones.</strong> Each published <span class="code">WorksheetSection</span> registers an entry in the form's <span class="code">ZoneGroupDefinition</span>, so the existing <span class="code">ZoneManagementAppService</span> admin screen and <span class="code">&lt;zone&gt;</span> tag helper drive Flex visibility too — one governance surface instead of two. Requires bridging Flex's per-instance correlation model with the Zone system's per-form model.</p></div></div>
+      <div class="row"><div class="k"><span class="option-num">3</span></div><div class="v"><p><strong>Make the Zone system correlation-aware.</strong> Extend <span class="code">IZoneChecker</span>/<span class="code">ZoneManager</span> to scope by <span class="code">(correlationId, correlationProvider)</span> the way <span class="code">WorksheetInstance</span> already does, rather than only by form id — letting one mechanism cover both the host's hardcoded tabs and Flex's dynamic content.</p></div></div>
+    </div>
+
+    <h3>A head start that already exists: <span class="code">SecurityClassification</span></h3>
+    <p>Worth flagging before the open questions below, because it changes the shape of the problem: every field definition already carries a <span class="code">SecurityClassification</span> property (<span class="code">ProtectedA</span>/<span class="code">B</span>/<span class="code">C</span>, mirroring the real BC Government classification standard), and the builder already has a UI for setting it, complete with explanatory tooltips — see §05. <strong>It is currently presentation metadata only, read by nothing.</strong> This is precisely the "sensitivity tier" concept the first open question below reasons toward from scratch — except it doesn't need to be designed, it needs to be <em>wired up</em>: a real enforcement layer is the missing piece, not the tiering concept itself.</p>
+
+    <h3>Open design questions</h3>
+    <div class="rowlist">
+      <div class="row"><div class="k"><span class="tag roadmap">Open</span></div><div class="v"><p><strong>Static permissions vs. runtime-created definitions.</strong> ABP permissions are declared at compile time; worksheets/sections/fields are created at runtime by an admin. "One ABP permission per field" doesn't fit that model. The existing <span class="code">SecurityClassification</span> tiers are the natural fit: map each of <span class="code">ProtectedA</span>/<span class="code">B</span>/<span class="code">C</span> (plus "none") to a real, statically-declared ABP permission, and enforcement becomes "does this user hold the permission for this field's tier" rather than minting a permission per field.</p></div></div>
+      <div class="row"><div class="k"><span class="tag roadmap">Open</span></div><div class="v"><p><strong>Server-side enforcement, not just UI hiding.</strong> Per this codebase's own security rules: never rely solely on UI-level permission hiding. Whatever gets attached to a definition must also be checked in the app services that read/write instance data — not only in the rendering widgets — or the API stays an unguarded backdoor around a UI-only restriction.</p></div></div>
+      <div class="row"><div class="k"><span class="tag roadmap">Open</span></div><div class="v"><p><strong>Read/write split.</strong> Mirror the Zone tag helper's read vs. update distinction — a field being visible to a role doesn't mean that role can edit it.</p></div></div>
+      <div class="row"><div class="k"><span class="tag roadmap">Open</span></div><div class="v"><p><strong>Backward compatibility.</strong> Every worksheet/scoresheet published today has nothing attached to any section or field. Absent-permission must keep meaning "visible/editable to anyone with existing host-level access" — additive, not a breaking migration.</p></div></div>
+      <div class="row"><div class="k"><span class="tag roadmap">Open</span></div><div class="v"><p><strong>Admin UX.</strong> The builder screens need a permission (or sensitivity-tier) picker per section/field. Exposing the full ABP permission tree would be overwhelming; a curated, Flex-scoped list is likely necessary.</p></div></div>
+      <div class="row"><div class="k"><span class="tag roadmap">Open</span></div><div class="v"><p><strong>Reporting implications.</strong> The reporting pipeline currently flattens all answers/values uniformly. A permission-gated field needs a story for whether restricted data flows into shared reports at all — downstream of <span class="code">Unity.Reporting</span> and Metabase, not just the Flex UI.</p></div></div>
+    </div>
+
+    <h3>Suggested next step</h3>
+    <p>Before writing code: a short spike comparing option 1 against option 2 against a small number of real worksheets/scoresheets in use today, to see whether form-level granularity (what Zones give today) is actually sufficient, or whether section/field-level granularity is a hard requirement. That answer determines which option is worth pursuing.</p>
+  </section>
+
+  <footer>
+    <span>Source: <span class="mono">documentation/flex/*.md</span></span>
+    <span>Generated with Claude Code</span>
+  </footer>
+
+</div>

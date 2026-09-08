@@ -1,0 +1,654 @@
+<title>Unity.Reporting</title>
+<meta name="description" content="Complete technical handover of Unity Portal's explicit reporting-view path — the five correlation providers, column-name pipeline, view generation, role assignment, and the admin UI that drives it all.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --paper:#F5F3EB;
+    --paper-raised:#EEEADB;
+    --ink:#20242B;
+    --ink-soft:#5B6472;
+    --line:#D9D3BF;
+    --accent:#2C6E68;
+    --accent-strong:#1B4B47;
+    --accent-soft:#DCEAE6;
+    --warn:#A85D2E;
+    --warn-soft:#F1E1D0;
+    --good:#3D7A3D;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#12161A;
+      --paper-raised:#1A2024;
+      --ink:#E9E6DC;
+      --ink-soft:#98A2AB;
+      --line:#2B333A;
+      --accent:#63C4B9;
+      --accent-strong:#8AD8CE;
+      --accent-soft:#17302C;
+      --warn:#E0975A;
+      --warn-soft:#2E2013;
+      --good:#7BC47B;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#12161A;
+    --paper-raised:#1A2024;
+    --ink:#E9E6DC;
+    --ink-soft:#98A2AB;
+    --line:#2B333A;
+    --accent:#63C4B9;
+    --accent-strong:#8AD8CE;
+    --accent-soft:#17302C;
+    --warn:#E0975A;
+    --warn-soft:#2E2013;
+    --good:#7BC47B;
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Source Serif 4', Georgia, 'Times New Roman', serif;
+    font-size:16px;
+    line-height:1.55;
+  }
+  .sheet{
+    max-width:960px;
+    margin:0 auto;
+    padding:56px 40px 90px;
+  }
+  h1,h2,h3,h4{
+    font-family:'Big Shoulders Display', 'Archivo Black', Impact, sans-serif;
+    text-transform:uppercase;
+    letter-spacing:0.01em;
+    text-wrap:balance;
+    color:var(--ink);
+    margin:0;
+  }
+  .mono{ font-family:'JetBrains Mono', ui-monospace, Consolas, monospace; }
+  code, .code{
+    font-family:'JetBrains Mono', ui-monospace, Consolas, monospace;
+    font-size:0.85em;
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:0.05em 0.4em;
+    color:var(--accent-strong);
+    white-space:nowrap;
+  }
+  p{ margin:0 0 0.9em; max-width:68ch; }
+  p:last-child{ margin-bottom:0; }
+  a{ color:var(--accent-strong); }
+  ul{ margin:0; padding-left:1.2em; }
+  li{ margin-bottom:0.4em; }
+  strong{ color:var(--ink); }
+
+  /* ---------- Header ---------- */
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--accent-strong);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .eyebrow::before{ content:""; width:22px; height:1px; background:var(--accent-strong); }
+  h1.title{ font-size:clamp(40px, 7vw, 76px); line-height:0.92; font-weight:800; }
+  .subtitle{ max-width:60ch; font-size:19px; color:var(--ink-soft); margin-top:16px; }
+  .meta-row{
+    margin-top:26px;
+    padding-top:18px;
+    border-top:1px solid var(--line);
+    display:flex;
+    flex-wrap:wrap;
+    gap:22px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .meta-row b{ color:var(--ink); font-weight:600; }
+
+  /* ---------- TOC ---------- */
+  .toc{
+    margin-top:22px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    padding-top:18px;
+    border-top:1px solid var(--line);
+  }
+  .toc a{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    text-decoration:none;
+    color:var(--ink-soft);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:6px 12px;
+    background:var(--paper-raised);
+    transition:color .15s, border-color .15s;
+  }
+  .toc a:hover{ color:var(--accent-strong); border-color:var(--accent); }
+  .toc a b{ color:var(--accent-strong); font-weight:600; margin-right:4px; }
+
+  /* ---------- Fact strip ---------- */
+  .facts{
+    margin-top:40px;
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+  }
+  .fact{ padding:16px 18px; border-left:1px solid var(--line); }
+  .fact:first-child{ border-left:none; }
+  .fact .num{ font-family:'Big Shoulders Display', sans-serif; font-weight:700; font-size:34px; line-height:1; color:var(--accent-strong); }
+  .fact .lbl{ margin-top:6px; font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.04em; text-transform:uppercase; color:var(--ink-soft); }
+
+  /* ---------- Sections ---------- */
+  section{ margin-top:64px; scroll-margin-top:24px; }
+  .sec-head{ display:flex; align-items:baseline; gap:14px; margin-bottom:8px; }
+  .sec-num{ font-family:'JetBrains Mono', monospace; font-size:13px; color:var(--ink-soft); }
+  h2{ font-size:26px; font-weight:700; }
+  h3{
+    font-size:16px;
+    font-weight:700;
+    text-transform:none;
+    font-family:'JetBrains Mono', monospace;
+    letter-spacing:0.01em;
+    color:var(--accent-strong);
+    margin-top:32px;
+    margin-bottom:12px;
+    padding-bottom:6px;
+    border-bottom:1px solid var(--line);
+  }
+  section > .lede{ color:var(--ink-soft); font-size:15.5px; max-width:72ch; margin-bottom:20px; }
+  .note{ font-size:14px; color:var(--ink-soft); }
+
+  /* ---------- Pipeline ---------- */
+  .pipeline{ display:grid; grid-template-columns:repeat(3, 1fr); gap:0; border:1px solid var(--line); border-radius:2px; overflow:hidden; }
+  .pipe-step{ padding:20px 20px 22px; border-left:1px solid var(--line); position:relative; }
+  .pipe-step:first-child{ border-left:none; }
+  .pipe-step::after{
+    content:"→"; position:absolute; right:-13px; top:50%; transform:translateY(-50%);
+    color:var(--accent); font-size:20px; font-weight:600; background:var(--paper); width:24px; text-align:center; z-index:1;
+  }
+  .pipe-step:last-child::after{ content:""; }
+  .pipe-kicker{ font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:8px; }
+  .pipe-tracks{ display:flex; flex-direction:column; gap:6px; }
+  .pipe-tracks .code{ white-space:normal; }
+  .track-label{ font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.03em; margin-top:2px; }
+
+  /* ---------- Chips ---------- */
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chip{ font-family:'JetBrains Mono', monospace; font-size:12px; padding:6px 11px; border:1px solid var(--line); border-radius:999px; color:var(--ink-soft); background:var(--paper-raised); }
+  .chip.on{ border-color:var(--accent); color:var(--accent-strong); background:var(--accent-soft); }
+
+  /* ---------- Data table (generic) ---------- */
+  table.data{ width:100%; border-collapse:collapse; font-size:14px; }
+  table.data th{
+    text-align:left; font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.04em; text-transform:uppercase;
+    color:var(--ink-soft); border-bottom:1px solid var(--line); padding:0 10px 8px 0; font-weight:500;
+  }
+  table.data td{ padding:9px 10px 9px 0; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.data tr:last-child td{ border-bottom:none; }
+  table.data .yes{ color:var(--good); font-weight:700; }
+  table.data .no{ color:var(--ink-soft); opacity:0.5; }
+  .table-scroll{ overflow-x:auto; }
+
+  /* ---------- kv grid ---------- */
+  .kv-grid{ display:grid; grid-template-columns:1fr 1.6fr; gap:0; border:1px solid var(--line); }
+  .kv-grid > div{ padding:14px 18px; border-top:1px solid var(--line); font-size:14.5px; }
+  .kv-grid > div:nth-child(-n+2){ border-top:none; }
+  .kv-grid .k{ font-family:'JetBrains Mono', monospace; font-size:12.5px; color:var(--ink-soft); background:var(--paper-raised); }
+
+  /* ---------- Rowlist (entity trees, API groups, invariants) ---------- */
+  .rowlist{ display:flex; flex-direction:column; border-top:1px solid var(--line); }
+  .rowlist .row{ display:grid; grid-template-columns:210px 1fr; gap:20px; padding:13px 0; border-bottom:1px solid var(--line); }
+  .rowlist .row .k{ font-family:'JetBrains Mono', monospace; font-size:13px; font-weight:600; color:var(--accent-strong); line-height:1.4; }
+  .rowlist .row .k .sub{ display:block; font-weight:400; color:var(--ink-soft); font-size:11px; margin-top:2px; text-transform:none; }
+  .rowlist .row .v{ font-size:14.5px; }
+  .rowlist .row .v p{ margin:0; }
+  .rowlist .row .v .methods{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .rowlist .row .v .methods span{
+    font-family:'JetBrains Mono', monospace; font-size:11px; background:var(--paper-raised); border:1px solid var(--line);
+    border-radius:3px; padding:2px 6px; color:var(--ink-soft);
+  }
+
+  /* ---------- Tag badges (rough edges, tech debt) ---------- */
+  .tag{
+    font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.03em; text-transform:uppercase;
+    border-radius:3px; padding:3px 8px; height:fit-content; white-space:nowrap; display:inline-block;
+  }
+  .tag.warn{ color:var(--warn); background:var(--warn-soft); }
+  .tag.accent{ color:var(--accent-strong); background:var(--accent-soft); }
+  .tag.roadmap{ color:var(--accent-strong); background:transparent; border:1px dashed var(--accent); }
+
+  .schematic{
+    font-family:'JetBrains Mono', monospace; font-size:13px; color:var(--ink-soft);
+    background:var(--paper-raised); border:1px solid var(--line); border-radius:3px; padding:10px 14px; margin-bottom:14px; overflow-x:auto; white-space:pre;
+  }
+
+  /* ---------- Footer ---------- */
+  footer{
+    margin-top:70px; padding-top:22px; border-top:1px solid var(--line);
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px;
+    font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--ink-soft);
+  }
+
+  @media (max-width:640px){
+    .sheet{ padding:36px 20px 60px; }
+    .facts{ grid-template-columns:repeat(2,1fr); }
+    .fact:nth-child(3){ border-left:none; }
+    .pipeline{ grid-template-columns:1fr; }
+    .pipe-step::after{ content:"↓"; right:auto; left:16px; top:auto; bottom:-13px; transform:none; }
+    .pipe-step{ border-left:none; border-top:1px solid var(--line); }
+    .pipe-step:first-child{ border-top:none; }
+    .kv-grid{ grid-template-columns:1fr; }
+    .kv-grid .k{ border-bottom:none; padding-bottom:4px; }
+    .rowlist .row{ grid-template-columns:1fr; gap:6px; }
+  }
+</style>
+
+<div class="sheet">
+
+  <header>
+    <div class="eyebrow">Module Handover · Unity Portal · 1 of 2</div>
+    <h1 class="title">Unity.Reporting</h1>
+    <p class="subtitle">The explicit path: an administrator decides a reporting view should exist, maps every source field to a column by hand, and presses Generate. One row in <span class="code">ReportColumnsMaps</span> is the whole contract — five providers feed it, five stored procedures consume it. This is the go-forward system; its predecessor is documented in the companion page.</p>
+    <div class="meta-row">
+      <span><b>Path</b> <span class="mono">applications/Unity.GrantManager/modules/Unity.Reporting</span></span>
+      <span><b>Config store</b> <span class="mono">Reporting."ReportColumnsMaps"</span></span>
+      <span><b>Companion</b> <span class="mono">reporting-auto-views-handover.html</span></span>
+    </div>
+    <nav class="toc">
+      <a href="#pattern"><b>01</b>The pattern</a>
+      <a href="#architecture"><b>02</b>Module architecture</a>
+      <a href="#providers"><b>03</b>The five providers</a>
+      <a href="#columns"><b>04</b>Fields &amp; column names</a>
+      <a href="#generation"><b>05</b>View generation</a>
+      <a href="#roles"><b>06</b>Roles &amp; DB access</a>
+      <a href="#ui"><b>07</b>Web UI</a>
+      <a href="#changes"><b>08</b>Change detection</a>
+      <a href="#edges"><b>09</b>Known rough edges</a>
+    </nav>
+  </header>
+
+  <div class="facts">
+    <div class="fact"><div class="num">5</div><div class="lbl">Correlation providers</div></div>
+    <div class="fact"><div class="num">1</div><div class="lbl">Config table (jsonb mapping)</div></div>
+    <div class="fact"><div class="num">10</div><div class="lbl">SQL objects: 5 procs + 5 data fns</div></div>
+    <div class="fact"><div class="num">2</div><div class="lbl">Background jobs: generate, grant</div></div>
+  </div>
+
+  <!-- ============ 01 THE PATTERN ============ -->
+  <section id="pattern">
+    <div class="sec-head"><span class="sec-num">01</span><h2>The pattern</h2></div>
+    <p class="lede">Unity Portal stores form submissions, worksheet answers, and scoresheet answers as JSON. SQL cannot filter or aggregate on a field inside a JSON blob without knowing the schema. This module is how that schema gets declared — once, by a person, per reporting surface — and turned into an ordinary PostgreSQL view of flat, typed, named columns that Metabase (or Power BI, or anything else with a Postgres driver) can query without knowing anything about Unity.</p>
+
+    <div class="pipeline">
+      <div class="pipe-step">
+        <div class="pipe-kicker">Declare</div>
+        <div class="pipe-tracks">
+          <span class="code">ReportColumnsMap.Mapping</span>
+          <span class="track-label">one MapRow per field: path, type, column name</span>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-kicker">Generate</div>
+        <div class="pipe-tracks">
+          <span class="code">generate_*_view(correlationId)</span>
+          <span class="track-label">background job → stored procedure → CREATE VIEW</span>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-kicker">Grant</div>
+        <div class="pipe-tracks">
+          <span class="code">AssignViewRoleBackgroundJob</span>
+          <span class="track-label">GRANT SELECT to the tenant's reporting role</span>
+        </div>
+      </div>
+    </div>
+    <p class="note" style="margin-top:16px;">Nothing in the loop is implicit. A view exists only because someone saved a configuration and pressed Generate — which is the entire point of the design, and the difference from the path it replaces.</p>
+
+    <h3>Glossary</h3>
+    <table class="data">
+      <tbody>
+        <tr><td class="code">Correlation</td><td>The pair <span class="code">(CorrelationId, CorrelationProvider)</span> that identifies one reporting surface. Unique per mapping — one configuration, one view.</td></tr>
+        <tr><td class="code">Provider</td><td>One of five <span class="code">IFieldsProvider</span> implementations. Knows how to read field metadata from its source system and how to detect that the source has changed since the mapping was saved.</td></tr>
+        <tr><td class="code">MapRow</td><td>One field-to-column mapping: <span class="code">Label</span>, <span class="code">PropertyName</span>, <span class="code">Type</span>, <span class="code">Path</span>, <span class="code">DataPath</span>, <span class="code">TypePath</span>, <span class="code">ColumnName</span>, <span class="code">SourceOrder</span>, plus <span class="code">VersionLabel</span>/<span class="code">WorksheetName</span> where relevant.</td></tr>
+        <tr><td class="code">Path vs DataPath</td><td><span class="code">Path</span> is the full key breadcrumb including container ancestors — the stable identity key for matching rows across saves. <span class="code">DataPath</span> strips containers that don't exist in the actual JSON (panels, tabs, columns, fieldsets) and is what the SQL navigates. The UI column labelled "Path" shows <span class="code">DataPath</span>.</td></tr>
+        <tr><td class="code">Consolidated</td><td>A provider whose CorrelationId is the Form ID rather than a version ID, producing one view that spans every version of the form.</td></tr>
+        <tr><td class="code">View role</td><td>A real PostgreSQL role, per tenant, granted <span class="code">SELECT</span> on generated views. Stored as the tenant-scoped setting <span class="code">GrantManager.Reporting.TenantViewRole</span>.</td></tr>
+        <tr><td class="code">(DK1), (DK2)…</td><td>Uniqueness stamps a provider applies when two source fields resolve to the same key chain. Surfaced in the UI as a "duplicate keys" warning for an administrator to resolve.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ============ 02 MODULE ARCHITECTURE ============ -->
+  <section id="architecture">
+    <div class="sec-head"><span class="sec-num">02</span><h2>Module architecture</h2></div>
+    <p class="lede">A conventional ABP module, with one deliberate compression: the domain entity, its repository, and the EF Core context all live inside <span class="code">Unity.Reporting.Application</span> rather than in separate <span class="code">.Domain</span> / <span class="code">.EntityFrameworkCore</span> projects.</p>
+
+    <div class="schematic">Unity.Reporting.Domain.Shared          Providers, ViewStatus, RoleStatus, ReportingSettings, localization
+        ↑
+Unity.Reporting.Application.Contracts  DTOs, IReportMappingService, ITenantViewRoleAppService, ReportingPermissions
+        ↑
+Unity.Reporting.Application            ReportMappingService, ReportMappingUtils, TenantViewRoleAppService,
+                                       Configuration/FieldsProviders/ (5), BackgroundJobs/ (2),
+                                       Domain/Configuration/ReportColumnsMap, EntityFrameworkCore/
+        ↑
+Unity.Reporting.Web                    ReportingConfiguration view component + controller,
+                                       ReportingConfigurationViewStatus, DatabaseInfoModal</div>
+
+    <h3>The one table</h3>
+    <div class="kv-grid">
+      <div class="k">Reporting."ReportColumnsMaps"</div>
+      <div><span class="code">AuditedEntity&lt;Guid&gt;</span>, <span class="code">IMultiTenant</span>. Owned by <span class="code">ReportingDbContext</span>, mapped tenant-side.</div>
+      <div class="k">CorrelationId + CorrelationProvider</div>
+      <div>Identifies the surface. <span class="code">CreateAsync</span> rejects a second mapping for the same pair.</div>
+      <div class="k">Mapping</div>
+      <div><span class="code">jsonb</span>. Serialized <span class="code">{ Rows: MapRow[], Metadata: { Info, Description } }</span>.</div>
+      <div class="k">ViewName</div>
+      <div>Lowercased, ≤63 chars. Also the uniqueness key across the whole schema.</div>
+      <div class="k">ViewStatus</div>
+      <div><span class="code">GENERATING</span> → <span class="code">SUCCESS</span> | <span class="code">FAILED</span>. Polled by a status widget.</div>
+      <div class="k">RoleStatus</div>
+      <div><span class="code">NOTASSIGNED</span> by default. Present on the entity; the grant itself is driven by the background job, not by this field.</div>
+    </div>
+
+    <h3>Permissions</h3>
+    <div class="rowlist">
+      <div class="row"><div class="k">Reporting.Configuration<span class="sub">ReportingPermissions.Configuration.Default</span></div><div class="v"><p>Class-level <span class="code">[Authorize]</span> on <span class="code">ReportMappingService</span>. Also gates the tab's visibility, alongside the <span class="code">Unity.Reporting</span> feature.</p></div></div>
+      <div class="row"><div class="k">Reporting.Configuration.Update</div><div class="v"><p><span class="code">CreateAsync</span>, <span class="code">UpdateAsync</span>, <span class="code">GenerateViewAsync</span>, <span class="code">GenerateColumnNames</span>.</p></div></div>
+      <div class="row"><div class="k">Reporting.Configuration.Delete</div><div class="v"><p><span class="code">DeleteAsync</span> — removes the mapping and drops its view.</p></div></div>
+      <div class="row"><div class="k">IT Admin<span class="sub">IdentityConsts.ITAdminPermissionName</span></div><div class="v"><p><span class="code">TenantViewRoleAppService</span> in its entirety — role configuration is an operations concern, not a form-configuration one.</p></div></div>
+    </div>
+  </section>
+
+  <!-- ============ 03 PROVIDERS ============ -->
+  <section id="providers">
+    <div class="sec-head"><span class="sec-num">03</span><h2>The five providers</h2></div>
+    <p class="lede">Each implements <span class="code">IFieldsProvider</span> and registers itself under a lowercase string key. <span class="code">ReportMappingService</span> resolves them into a dictionary at call time and throws <span class="code">ArgumentException</span> for anything unrecognised. Note which ones correlate on a <em>version</em> and which on a <em>form</em> — getting this wrong is the most common source of "no mapping found" errors.</p>
+
+    <div class="table-scroll">
+      <table class="data">
+        <thead><tr><th>Provider</th><th>CorrelationId</th><th>Source</th><th>Default column name from</th><th>Change detection</th></tr></thead>
+        <tbody>
+          <tr><td class="code">formversion</td><td>Form Version ID</td><td>CHEFS form version schema via <span class="code">IFormMetadataService</span></td><td class="code">Key</td><td class="no">none — versions are immutable</td></tr>
+          <tr><td class="code">formversion_consolidated</td><td>Form ID</td><td>All versions of a form, merged</td><td class="code">Label</td><td>version added / removed</td></tr>
+          <tr><td class="code">worksheet</td><td>Form Version ID</td><td>Flex worksheets linked to that version</td><td class="code">Label</td><td>worksheet linked / unlinked</td></tr>
+          <tr><td class="code">worksheet_consolidated</td><td>Form ID</td><td>Worksheets across all versions, merged</td><td class="code">Label</td><td>version, and worksheet within version</td></tr>
+          <tr><td class="code">scoresheet</td><td>Form ID</td><td>The scoresheet linked to the form</td><td class="code">Label</td><td>form's scoresheet reassigned</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="note" style="margin-top:14px;"><strong>Only <span class="code">formversion</span> uses the field Key.</strong> The check is an exact case-insensitive match on the string <span class="code">"formversion"</span>, so <span class="code">formversion_consolidated</span> deliberately does <em>not</em> match and falls through to Label. Server (<span class="code">ReportMappingUtils.GetDefaultColumnNameSource</span>) and client (<span class="code">getDefaultColumnNameSource</span> in <span class="code">Default.js</span>) implement this identically, with no Key↔Label fallback in either — so an unsaved table and a saved configuration always agree.</p>
+
+    <h3>How consolidated merging works</h3>
+    <p>Fields from each version are matched on the triple <span class="code">(Label, Path, Type)</span>:</p>
+    <table class="data">
+      <thead><tr><th>Situation</th><th>Result</th><th>VersionLabel</th></tr></thead>
+      <tbody>
+        <tr><td>Identical across <em>all</em> versions</td><td>One merged row</td><td class="no">blank</td></tr>
+        <tr><td>Identical in <em>some</em> versions</td><td>One row for that match</td><td><span class="code">v1, v3</span></td></tr>
+        <tr><td>Same Label+Path, different Type</td><td>One row <em>per distinct type</em></td><td>versions carrying that type</td></tr>
+      </tbody>
+    </table>
+    <p class="note" style="margin-top:12px;">The version bookkeeping lives in <span class="code">Mapping.Metadata.Info</span> as <span class="code">formversion_{versionId}</span> and (for consolidated worksheets) <span class="code">ws_{versionId}_{worksheetId}</span> keys, written at save time. <span class="code">DetectChangesAsync</span> diffs those stored keys against live state — see §08.</p>
+  </section>
+
+  <!-- ============ 04 COLUMNS ============ -->
+  <section id="columns">
+    <div class="sec-head"><span class="sec-num">04</span><h2>Fields &amp; column names</h2></div>
+    <p class="lede">A column name has to survive PostgreSQL's identifier rules, stay unique within the view, and — critically — stay <em>stable</em> once a Metabase report depends on it. The pipeline is built around that last constraint.</p>
+
+    <h3>Sanitisation, in order</h3>
+    <div class="schematic">1  spaces and hyphens → underscore
+2  drop anything that isn't a letter, digit, or underscore
+3  collapse repeated underscores
+4  trim leading/trailing underscores
+5  if nothing is left → "col"
+6  if it starts with a digit → prefix "col_"
+7  truncate to 60 chars, then trim a trailing underscore
+8  lowercase
+9  on collision, append _1, _2, … (suffix length is reserved during truncation)</div>
+    <p class="note">Null or whitespace input short-circuits to <span class="code">col_1</span>. The 60-character ceiling leaves room inside PostgreSQL's 63-character identifier limit for the uniqueness suffix.</p>
+
+    <h3>Three-tier priority on save</h3>
+    <div class="rowlist">
+      <div class="row"><div class="k">1 · User-provided</div><div class="v"><p>A name the administrator typed in this save operation. Always wins.</p></div></div>
+      <div class="row"><div class="k">2 · Existing</div><div class="v"><p>The name already persisted for that field <span class="code">Path</span>. This is what makes established mappings immune to a provider changing its defaults.</p></div></div>
+      <div class="row"><div class="k">3 · Auto-generated</div><div class="v"><p>Only for fields not covered by 1 or 2 — i.e. genuinely new fields discovered since the last save.</p></div></div>
+    </div>
+
+    <h3>Validation (client and server both enforce)</h3>
+    <div class="chips" style="margin-bottom:14px;">
+      <span class="chip on">≤ 60 characters</span>
+      <span class="chip on">starts with letter or underscore</span>
+      <span class="chip on">letters, digits, underscores only</span>
+      <span class="chip on">not a PostgreSQL reserved word</span>
+      <span class="chip on">unique within the configuration</span>
+    </div>
+    <p><span class="code">ValidateMappingFields</span> has one asymmetry worth knowing: duplicate <em>keys</em> alone and duplicate <em>paths</em> alone each only log a warning; the <span class="code">ArgumentException</span> is thrown when both are true simultaneously. Duplicate <em>column names</em> and non-conforming names always throw.</p>
+
+    <h3>The table's columns</h3>
+    <div class="table-scroll">
+      <table class="data">
+        <thead><tr><th>Column</th><th>Editable</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Worksheet Name</td><td class="no">no</td><td>Leftmost, worksheet providers only. Includes the version suffix, e.g. <span class="code">grant_application-v2</span>.</td></tr>
+          <tr><td>Label / Property Name / Type</td><td class="no">no</td><td>Header text changes per provider — CHEFS / Worksheet / Scoresheet.</td></tr>
+          <tr><td>Path</td><td class="no">no</td><td>Displays <span class="code">DataPath</span>. Containers stripped; <span class="code">datagrid</span> segments kept because they are in the JSON.</td></tr>
+          <tr><td>Report Column</td><td class="yes">yes</td><td>The PostgreSQL column name. The only editable cell.</td></tr>
+          <tr><td>Type Path</td><td class="no">no</td><td>Same hierarchy in component types — tells the SQL when it needs <span class="code">jsonb_array_elements</span>.</td></tr>
+          <tr><td>Version Label</td><td class="no">no</td><td>Consolidated providers only.</td></tr>
+          <tr><td>Source Order</td><td class="no">no</td><td>Hidden by default. 1-based provider order; the default sort for worksheet providers.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note" style="margin-top:12px;">Worksheet ordering is deterministic: worksheet name A–Z, then section order, then field layout order, then checkbox-option order, then data-grid column order (CHEFS-extracted dynamic columns first, then statically-defined ones). Mappings saved before <span class="code">WorksheetName</span>/<span class="code">SourceOrder</span> existed are backfilled from live provider metadata on load, matched by <span class="code">Path</span> — no re-save required. A <span class="code">SourceOrder</span> of 0 doubles as the "missing" sentinel, since providers always number from 1.</p>
+  </section>
+
+  <!-- ============ 05 GENERATION ============ -->
+  <section id="generation">
+    <div class="sec-head"><span class="sec-num">05</span><h2>View generation</h2></div>
+    <p class="lede">Saving a configuration writes a row. Generating a view is a separate, explicit act — asynchronous, status-tracked, and safe to repeat.</p>
+
+    <div class="schematic">GenerateViewAsync(correlationId, provider, viewName)
+   ├─ resolve provider                          → ArgumentException if unknown
+   ├─ normalise viewName to lowercase
+   ├─ IsViewNameAvailableAsync(name, correlation) → ArgumentException if owned by another correlation
+   ├─ map.ViewName = name; map.ViewStatus = GENERATING; save
+   └─ enqueue GenerateViewBackgroundJobArgs { correlationId, provider, tenantId, originalViewName }  (1s delay)
+
+GenerateViewBackgroundJob (in tenant context)
+   ├─ find map by correlation                   → warn + return if gone
+   ├─ if originalViewName differs → drop the old view (failure only warns; generation continues)
+   ├─ repository.GenerateViewAsync → CALL "Reporting".generate_*_view(correlationId)
+   ├─ ViewStatus = SUCCESS
+   └─ enqueue AssignViewRoleBackgroundJobArgs { viewName, tenantId }
+   catch → ViewStatus = FAILED, logged</div>
+
+    <h3>Provider → procedure → data function</h3>
+    <div class="table-scroll">
+      <table class="data">
+        <thead><tr><th>Provider</th><th>Procedure</th><th>SELECT built by</th></tr></thead>
+        <tbody>
+          <tr><td class="code">formversion</td><td class="code">generate_formversion_view</td><td class="code">get_formversion_data</td></tr>
+          <tr><td class="code">formversion_consolidated</td><td class="code">generate_consolidated_formversion_view</td><td class="code">get_consolidated_formversion_data</td></tr>
+          <tr><td class="code">worksheet</td><td class="code">generate_worksheet_view</td><td class="code">get_worksheet_data</td></tr>
+          <tr><td class="code">worksheet_consolidated</td><td class="code">generate_consolidated_worksheet_view</td><td class="code">get_consolidated_worksheet_data</td></tr>
+          <tr><td class="code">scoresheet</td><td class="code">generate_scoresheet_view</td><td class="code">get_scoresheet_data</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="margin-top:14px;">Each procedure reads its mapping row out of <span class="code">Reporting."ReportColumnsMaps"</span>, raises if the mapping or its <span class="code">Rows</span> array is missing, asks the data function for a complete <span class="code">SELECT</span> statement, then <span class="code">DROP VIEW IF EXISTS "Reporting".{name}</span> followed by <span class="code">CREATE VIEW "Reporting".{name} AS {statement}</span> — both schema-qualified.</p>
+
+    <h3>Where the values actually come from</h3>
+    <div class="kv-grid">
+      <div class="k">formversion<br>formversion_consolidated</div>
+      <div><span class="code">public."ApplicationFormSubmissions"."Submission"</span> — raw CHEFS JSON, with both the legacy and the current <span class="code">submission-&gt;submission</span> shapes handled as a UNION.</div>
+      <div class="k">worksheet<br>worksheet_consolidated</div>
+      <div><span class="code">Flex."WorksheetInstances"."CurrentValue"</span> joined to <span class="code">Flex."Worksheets"</span>, with <span class="code">CROSS JOIN LATERAL</span> over <span class="code">jsonb_array_elements</span> for data grids.</div>
+      <div class="k">scoresheet</div>
+      <div><span class="code">Flex."ScoresheetInstances"</span> → <span class="code">Assessments</span> → <span class="code">Applications</span>; field values from <span class="code">Flex."Answers"</span>/<span class="code">"Questions"</span> (one correlated subquery per field), plus <span class="code">total_score</span> from <span class="code">calculate_scoresheet_total_score</span>.</div>
+    </div>
+    <p class="note" style="margin-top:14px;"><strong>None of these read a pre-flattened snapshot.</strong> The views query source tables directly, which is why the deprecated path's <span class="code">ReportData</span> columns can be dropped without touching a single explicitly configured view.</p>
+
+    <h3>Typing — not uniform across providers</h3>
+    <p>Columns are emitted with real types driven by the field's <span class="code">Type</span> / <span class="code">TypePath</span>. But the three families diverge, and it is easy to assume otherwise:</p>
+    <div class="table-scroll">
+      <table class="data">
+        <thead><tr><th></th><th>Worksheet providers</th><th>Submission providers</th><th>Scoresheet</th></tr></thead>
+        <tbody>
+          <tr><td>Types emitted</td><td class="code">TEXT · NUMERIC · DECIMAL(18,2) · TIMESTAMP · BOOLEAN</td><td class="code">TEXT · NUMERIC · DECIMAL(18,2) · BOOLEAN</td><td class="code">TEXT · NUMERIC · BOOLEAN</td></tr>
+          <tr><td>Date / time</td><td class="yes"><span class="code">safe_to_date</span> / <span class="code">safe_to_timestamp</span></td><td class="no">no branch — lands as TEXT</td><td class="no">no branch — lands as TEXT</td></tr>
+          <tr><td><span class="code">safe_to_jsonb</span> guard</td><td class="yes">yes — checkbox groups</td><td class="no">no</td><td class="no">no</td></tr>
+          <tr><td>Type-conflict fallback</td><td class="no">n/a</td><td><span class="code">formversion</span> only — column falls back to TEXT</td><td class="yes">yes — TEXT</td></tr>
+          <tr><td>Type-string matching</td><td>lowercased</td><td><span class="code">formversion</span> case-sensitive; consolidated lowercased</td><td>lowercased</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note" style="margin-top:14px;">The <span class="code">safe_to_*</span> helpers exist for all providers but are called only by the two worksheet functions; where they are used, an unparseable value becomes <span class="code">NULL</span> rather than failing the whole view. Currency is the one type handled identically everywhere: locale commas stripped, then <span class="code">DECIMAL(18,2)</span>.</p>
+
+    <h3>Two availability checks</h3>
+    <div class="rowlist">
+      <div class="row"><div class="k">Global<span class="sub">IsViewNameAvailableAsync(name)</span></div><div class="v"><p>True when no view of that name exists in <span class="code">pg_views</span> under <span class="code">Reporting</span>. Used for name suggestions before anything is saved.</p></div></div>
+      <div class="row"><div class="k">Correlation-aware<span class="sub">IsViewNameAvailableAsync(name, id, provider)</span></div><div class="v"><p>True when no <em>mapping</em> claims the name, or the claiming mapping is this same correlation. This is what lets a view be regenerated under its own name without a false conflict.</p></div></div>
+    </div>
+
+    <h3>Delete</h3>
+    <p><span class="code">DeleteAsync</span> drops the view first (a failure here is logged and downgraded to a warning message on the result) and then removes the mapping row unconditionally. Deleting a configuration is therefore always successful from the user's point of view, even if the database view survives — worth knowing when a name later appears "taken".</p>
+  </section>
+
+  <!-- ============ 06 ROLES ============ -->
+  <section id="roles">
+    <div class="sec-head"><span class="sec-num">06</span><h2>Roles &amp; database access</h2></div>
+    <p class="lede">A generated view is invisible to Metabase until a database role can read it. Role assignment is per tenant, stored as an ABP setting, and applied by the second background job.</p>
+
+    <div class="kv-grid">
+      <div class="k">GrantManager.Reporting.TenantViewRole</div>
+      <div>Tenant-scoped (<span class="code">"T"</span>) setting naming the PostgreSQL role. The current mechanism.</div>
+      <div class="k">GrantManager.Reporting.ViewRole</div>
+      <div>Host-level. <strong>Deprecated</strong> — kept for backward compatibility only, with no fallback from the tenant setting to it.</div>
+    </div>
+
+    <h3>AssignViewRoleBackgroundJob</h3>
+    <p>Runs inside <span class="code">currentTenant.Change(args.TenantId)</span>. Reads the setting; if it is empty, logs a warning and returns. Verifies the role exists in <span class="code">pg_roles</span>; if not, logs a warning and returns. Then grants <span class="code">SELECT</span> on <strong>one</strong> view when <span class="code">args.ViewName</span> is set — the automatic path after a successful generation — or on <strong>every</strong> view in the <span class="code">Reporting</span> schema when it is not.</p>
+
+    <h3>TenantViewRoleAppService</h3>
+    <div class="rowlist">
+      <div class="row"><div class="k">GetAsync</div><div class="v"><p>Returns the saved role, or infers one: <span class="code">{LicencePlate}_readonly</span> from the tenant's <span class="code">LicencePlate</span> extra property, falling back to <span class="code">{tenantname}_readonly</span> when there is no licence plate at all. An explicitly saved role always wins — which is how legacy tenants with non-conforming role names keep working. Also reports live existence of both the read-write and read-only roles.</p></div></div>
+      <div class="row"><div class="k">UpdateAsync</div><div class="v"><p>Saves the setting, but only after <span class="code">EnsureRoleExistsAsync</span> confirms the role is real — otherwise <span class="code">UserFriendlyException</span>.</p></div></div>
+      <div class="row"><div class="k">AssignRoleToViewsAsync</div><div class="v"><p>Queues the all-views job. It re-checks role existence first <em>deliberately</em>: the background job's own check only logs and silently no-ops, so without this the queue call would report success for a role that doesn't exist.</p></div></div>
+      <div class="row"><div class="k">GetTenantDatabaseInfoAsync</div><div class="v"><p>Backs the <strong>View DB Info</strong> modal — database roles, role memberships, and every view currently in the <span class="code">Reporting</span> schema. Catches and logs on failure, returning empty lists so the UI still renders.</p></div></div>
+    </div>
+
+    <div class="rowlist" style="margin-top:24px;">
+      <div class="row"><div class="k"><span class="tag warn">Cross-path</span></div><div class="v"><p><strong>The all-views grant can throw on a database that still holds legacy views.</strong> <span class="code">AssignRoleToAllViewsAsync</span> validates every name it reads back from <span class="code">pg_views</span> against <span class="code">^[a-zA-Z_][a-zA-Z0-9_]*$</span> before interpolating it into the <span class="code">GRANT</span> — a deliberate injection guard, since quoted PostgreSQL identifiers can contain quotes and semicolons. The deprecated path's view names (<span class="code">Form-…</span>, <span class="code">Worksheet-…</span>, <span class="code">Scoresheet-…</span>) contain hyphens and fail that check, so the loop throws part-way through and leaves the remaining grants unapplied. See the companion handover page.</p></div></div>
+    </div>
+  </section>
+
+  <!-- ============ 07 UI ============ -->
+  <section id="ui">
+    <div class="sec-head"><span class="sec-num">07</span><h2>Web UI</h2></div>
+    <p class="lede">There is no page of its own. The whole feature is a view component rendered as the <strong>Reporting Configuration</strong> tab of the form configuration screen, <span class="code">Pages/ApplicationForms/Mapping.cshtml</span>, gated on both the <span class="code">Unity.Reporting</span> feature and the <span class="code">Reporting.Configuration</span> permission.</p>
+
+    <h3>Provider selection</h3>
+    <p>The view component defaults to <span class="code">formversion_consolidated</span> when no provider is passed. The toolbar is a three-way toggle with a mode sub-toggle:</p>
+    <table class="data">
+      <thead><tr><th>Toggle</th><th>Mode</th><th>Provider</th><th>CorrelationId</th></tr></thead>
+      <tbody>
+        <tr><td>Submissions</td><td>Consolidated <em>(default)</em></td><td class="code">formversion_consolidated</td><td>Form ID</td></tr>
+        <tr><td>Submissions</td><td>Per Version</td><td class="code">formversion</td><td>Selected version ID</td></tr>
+        <tr><td>Worksheets</td><td>Consolidated</td><td class="code">worksheet_consolidated</td><td>Form ID</td></tr>
+        <tr><td>Worksheets</td><td>Per Version</td><td class="code">worksheet</td><td>Selected version ID</td></tr>
+        <tr><td>Scoresheets</td><td>—</td><td class="code">scoresheet</td><td>Form ID</td></tr>
+      </tbody>
+    </table>
+    <p class="note" style="margin-top:12px;">The version dropdown is visible only for <span class="code">formversion</span>; for that provider the first available version is selected when none is supplied.</p>
+
+    <h3>Actions</h3>
+    <div class="rowlist">
+      <div class="row"><div class="k">Save</div><div class="v"><p>Create or update. The Generate View and Delete buttons only appear once a configuration exists.</p></div></div>
+      <div class="row"><div class="k">Generate View</div><div class="v"><p>Modal with live view-name availability and format validation, then queues generation. A status widget polls <span class="code">ViewName</span>/<span class="code">ViewStatus</span>.</p></div></div>
+      <div class="row"><div class="k">Delete</div><div class="v"><p>Confirmation modal listing what goes: the configuration, and the database view if one exists.</p></div></div>
+      <div class="row"><div class="k">Undo</div><div class="v"><p>Reverts unsaved table edits to the last loaded state.</p></div></div>
+      <div class="row"><div class="k">Generate unique column names</div><div class="v"><p>Re-runs the sanitisation and uniquing pipeline across every row.</p></div></div>
+      <div class="row"><div class="k">Export / Import / Edit JSON</div><div class="v"><p>Export downloads <span class="code">column-mapping-{provider}-{correlationId}.json</span>. Import validates that each entry has <span class="code">propertyName</span> and <span class="code">columnName</span>. Edit opens an inline JSON editor. All three act on the in-memory table — nothing persists until Save.</p></div></div>
+      <div class="row"><div class="k">Edit description</div><div class="v"><p>Sets <span class="code">Mapping.Metadata.Description</span>, max 500 characters.</p></div></div>
+    </div>
+
+    <h3>Inline warnings</h3>
+    <div class="rowlist">
+      <div class="row"><div class="k">Duplicate keys</div><div class="v"><p>Raised when a row's <span class="code">Path</span>/<span class="code">DataPath</span> carries a <span class="code">(DKn)</span> stamp, <em>or</em> when two rows literally share a path. Detected server-side by the view component on both the saved-mapping and fresh-metadata paths.</p></div></div>
+      <div class="row"><div class="k">Dynamic columns</div><div class="v"><p>Raised when a row has key <span class="code">dynamic_columns</span> — a data grid whose columns are populated from CHEFS at runtime, so the mapping cannot know them all up front.</p></div></div>
+    </div>
+
+    <h3>Endpoints — <span class="code">/ReportingConfiguration</span></h3>
+    <div class="table-scroll">
+      <table class="data">
+        <tbody>
+          <tr><td class="code">GET Refresh</td><td>Re-render for a different provider/version</td></tr>
+          <tr><td class="code">GET GetConfiguration</td><td>Load a saved mapping, with <span class="code">DetectedChanges</span></td></tr>
+          <tr><td class="code">GET Exists</td><td>Does a mapping exist for this correlation</td></tr>
+          <tr><td class="code">GET GetFieldsMetadata</td><td>Live field list from the provider</td></tr>
+          <tr><td class="code">POST Create / Update</td><td>Persist the mapping</td></tr>
+          <tr><td class="code">GET IsViewNameAvailable</td><td>Global or correlation-aware</td></tr>
+          <tr><td class="code">POST GenerateView</td><td>Queue generation</td></tr>
+          <tr><td class="code">POST GenerateColumnNames</td><td>Sanitised, unique names for a key→label map</td></tr>
+          <tr><td class="code">GET GetViewPreviewData</td><td>Sample rows from the generated view</td></tr>
+          <tr><td class="code">DELETE Delete</td><td>Remove mapping and drop view</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 08 CHANGE DETECTION ============ -->
+  <section id="changes">
+    <div class="sec-head"><span class="sec-num">08</span><h2>Change detection</h2></div>
+    <p class="lede">A mapping is a snapshot of a source schema. The source can move underneath it — a version is published, a worksheet is unlinked, a form's scoresheet is swapped. <span class="code">DetectChangesAsync</span> is how the administrator finds out.</p>
+
+    <p>On load, the provider compares live source state against the <span class="code">Mapping.Metadata.Info</span> keys stored at the last save, and returns a human-readable description string. It lands on <span class="code">ReportColumnsMapDto.DetectedChanges</span> and the UI renders it as an alert. It is advisory — nothing is auto-applied.</p>
+
+    <div class="table-scroll">
+      <table class="data">
+        <thead><tr><th>Provider</th><th>Stored metadata keys</th><th>Compared against</th></tr></thead>
+        <tbody>
+          <tr><td class="code">formversion</td><td class="no">—</td><td>Always returns null. Form versions are immutable by design.</td></tr>
+          <tr><td class="code">formversion_consolidated</td><td class="code">formversion_{versionId}</td><td>Current list of form versions that have fields</td></tr>
+          <tr><td class="code">worksheet</td><td class="code">worksheet_{worksheetId}</td><td>Current worksheet links for the form version</td></tr>
+          <tr><td class="code">worksheet_consolidated</td><td><span class="code">formversion_{versionId}</span> + <span class="code">ws_{versionId}_{worksheetId}</span></td><td>Worksheet links across all versions</td></tr>
+          <tr><td class="code">scoresheet</td><td class="code">scoresheet_{scoresheetId}</td><td>The form's current scoresheet assignment</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 09 EDGES ============ -->
+  <section id="edges">
+    <div class="sec-head"><span class="sec-num">09</span><h2>Known rough edges</h2></div>
+    <p class="lede">Worth knowing before you touch this code.</p>
+    <div class="rowlist">
+      <div class="row"><div class="k"><span class="tag warn">Real risk</span></div><div class="v"><p><strong>The all-views grant aborts on a legacy view name.</strong> Covered in §06 — one hyphenated auto-generated view in the schema is enough to make "assign role to all views" throw, silently leaving later views ungranted. Removing the deprecated path fixes this permanently.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Silent</span></div><div class="v"><p><span class="code">AssignViewRoleBackgroundJob</span> returns quietly when no role is configured or the role does not exist. <span class="code">TenantViewRoleAppService</span> guards the two paths a user can reach, but a generation-triggered grant has no such guard — a view can be <span class="code">SUCCESS</span> and still unreadable by Metabase.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">Asymmetric</span></div><div class="v"><p>Duplicate keys and duplicate paths each only warn; only the two together throw. Deliberate — providers legitimately produce repeated keys across worksheets — but it means a save can succeed with warnings an administrator never sees.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">Confusing</span></div><div class="v"><p>The UI column labelled <strong>Path</strong> shows <span class="code">DataPath</span>, not <span class="code">Path</span>. The real <span class="code">Path</span> is the row-identity key and is never displayed. This trips people up when reading a mapping JSON export against the screen.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">Partial cleanup</span></div><div class="v"><p><span class="code">DeleteAsync</span> and the rename path both downgrade a failed <span class="code">DROP VIEW</span> to a warning. A view can outlive the mapping that created it, after which its name reads as "available" to the correlation-aware check but conflicts on the actual <span class="code">CREATE</span>.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">Unwired</span></div><div class="v"><p><span class="code">ReportColumnsMap.RoleStatus</span> exists on the entity and defaults to <span class="code">NOTASSIGNED</span>, but the grant jobs never write it — role state is only observable in the logs and the DB Info modal.</p></div></div>
+      <div class="row"><div class="k"><span class="tag roadmap">Next</span></div><div class="v"><p>Retire the auto-generated path (companion page) so that every view under <span class="code">Reporting</span> is one this module knows about. At that point <span class="code">pg_views</span> and <span class="code">ReportColumnsMaps</span> become the same set, and orphan detection becomes a one-line query.</p></div></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Source: <span class="mono">documentation/reporting/*.md</span></span>
+    <span>Generated with Claude Code</span>
+  </footer>
+
+</div>
