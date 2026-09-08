@@ -108,10 +108,10 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
                     await ReconcileMigrationHistoryAsync(tenantDb, TenantInitialMigrationId);
                 }
 
-                await ClearDuplicateDefaultEmailConfigurationsAsync(tenantDb);
-
                 // Run migrations as admin against the tenant database
                 await MigrateAndLogAsync(tenantDb, $"tenant:{tenant.Name}");
+
+                await ClearDuplicateDefaultEmailConfigurationsAsync(tenantDb);
 
                 // Grant table and sequence privileges after migrations have created all objects
                 await GrantTablePrivilegesAsync(adminTenantConnectionString, roleName);
@@ -207,7 +207,13 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
         await database.ExecuteSqlRawAsync("""
             DO $$
             BEGIN
-                IF to_regclass('"Notifications"."EmailAddressConfigurations"') IS NOT NULL THEN
+                IF to_regclass('"Notifications"."EmailAddressConfigurations"') IS NOT NULL
+                    AND EXISTS (
+                        SELECT 1 FROM information_schema.columns
+                        WHERE table_schema = 'Notifications'
+                          AND table_name = 'EmailAddressConfigurations'
+                          AND column_name = 'IsDefault'
+                    ) THEN
                     WITH ranked_defaults AS
                     (
                         SELECT
