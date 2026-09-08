@@ -62,7 +62,12 @@ jobs:
           sudo mv oc /usr/local/bin
 
       - name: Connect to OpenShift API
-        run: oc login --token=$OC_AUTH_TOKEN --server=$OC_CLUSTER
+        run: |
+          for i in 1 2 3; do
+            oc login --token=$OC_AUTH_TOKEN --server=$OC_CLUSTER --request-timeout=30s && break
+            echo "oc login attempt $i failed, retrying in 30s..."
+            sleep 30
+          done
 
       - name: Launch Cypress Job
         id: launch
