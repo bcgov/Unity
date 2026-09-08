@@ -146,6 +146,10 @@ jobs:
       run: |
         for i in 1 2 3; do
           oc login --token=$OC_TOOLS_TOKEN --server=$OC_CLUSTER --request-timeout=30s && break
+          if [ "$i" -eq 3 ]; then
+            echo "oc login failed after 3 attempts" >&2
+            exit 1
+          fi
           echo "oc login attempt $i failed, retrying in 30s..."
           sleep 30
         done
@@ -160,6 +164,10 @@ jobs:
       run: |
         for i in 1 2 3; do
           oc login --token=$OC_TARGET_TOKEN --server=$OC_CLUSTER --request-timeout=30s && break
+          if [ "$i" -eq 3 ]; then
+            echo "oc login failed after 3 attempts" >&2
+            exit 1
+          fi
           echo "oc login attempt $i failed, retrying in 30s..."
           sleep 30
         done
