@@ -1,7 +1,3 @@
-using System;
-using System.Linq;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -10,6 +6,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Npgsql;
+using System;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Unity.GrantManager.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Security.Encryption;
@@ -207,7 +207,28 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
         await database.ExecuteSqlRawAsync("""
             DO $$
             BEGIN
-                IF to_regclass('"Notifications"."EmailAddressConfigurations"') IS NOT NULL THEN
+                IF to_regclass('"Notifications"."EmailAddressConfigurations"') IS NOT NULL
+                    AND EXISTS (
+                        SELECT 1
+                        FROM information_schema.columns
+                        WHERE table_schema = 'Notifications'
+                            AND table_name = 'EmailAddressConfigurations'
+                            AND column_name = 'IsDefault'
+                    )
+                    AND EXISTS (
+                        SELECT 1
+                        FROM information_schema.columns
+                        WHERE table_schema = 'Notifications'
+                            AND table_name = 'EmailAddressConfigurations'
+                            AND column_name = 'EmailType'
+                    )
+                    AND EXISTS (
+                        SELECT 1
+                        FROM information_schema.columns
+                        WHERE table_schema = 'Notifications'
+                            AND table_name = 'EmailAddressConfigurations'
+                            AND column_name = 'IsActive'
+                    ) THEN
                     WITH ranked_defaults AS
                     (
                         SELECT
