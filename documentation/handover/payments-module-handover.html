@@ -1,0 +1,698 @@
+<title>Unity.Payments</title>
+<meta name="description" content="Complete technical handover of Unity Portal's payments module — the multi-level approval state machine, the CAS invoice and reconciliation loop, suppliers and sites, FSB spreadsheet notifications, and the known rough edges in one page.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --paper:#F5F3EB;
+    --paper-raised:#EEEADB;
+    --ink:#20242B;
+    --ink-soft:#5B6472;
+    --line:#D9D3BF;
+    --accent:#2C6E68;
+    --accent-strong:#1B4B47;
+    --accent-soft:#DCEAE6;
+    --warn:#A85D2E;
+    --warn-soft:#F1E1D0;
+    --good:#3D7A3D;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#12161A;
+      --paper-raised:#1A2024;
+      --ink:#E9E6DC;
+      --ink-soft:#98A2AB;
+      --line:#2B333A;
+      --accent:#63C4B9;
+      --accent-strong:#8AD8CE;
+      --accent-soft:#17302C;
+      --warn:#E0975A;
+      --warn-soft:#2E2013;
+      --good:#7BC47B;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#12161A;
+    --paper-raised:#1A2024;
+    --ink:#E9E6DC;
+    --ink-soft:#98A2AB;
+    --line:#2B333A;
+    --accent:#63C4B9;
+    --accent-strong:#8AD8CE;
+    --accent-soft:#17302C;
+    --warn:#E0975A;
+    --warn-soft:#2E2013;
+    --good:#7BC47B;
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Source Serif 4', Georgia, 'Times New Roman', serif;
+    font-size:16px;
+    line-height:1.55;
+  }
+  .sheet{
+    max-width:960px;
+    margin:0 auto;
+    padding:56px 40px 90px;
+  }
+  h1,h2,h3,h4{
+    font-family:'Big Shoulders Display', 'Archivo Black', Impact, sans-serif;
+    text-transform:uppercase;
+    letter-spacing:0.01em;
+    text-wrap:balance;
+    color:var(--ink);
+    margin:0;
+  }
+  .mono{ font-family:'JetBrains Mono', ui-monospace, Consolas, monospace; }
+  code, .code{
+    font-family:'JetBrains Mono', ui-monospace, Consolas, monospace;
+    font-size:0.85em;
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:0.05em 0.4em;
+    color:var(--accent-strong);
+    white-space:nowrap;
+  }
+  p{ margin:0 0 0.9em; max-width:68ch; }
+  p:last-child{ margin-bottom:0; }
+  a{ color:var(--accent-strong); }
+  ul{ margin:0; padding-left:1.2em; }
+  li{ margin-bottom:0.4em; }
+  strong{ color:var(--ink); }
+
+  /* ---------- Header ---------- */
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--accent-strong);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .eyebrow::before{ content:""; width:22px; height:1px; background:var(--accent-strong); }
+  h1.title{ font-size:clamp(40px, 7vw, 76px); line-height:0.92; font-weight:800; }
+  .subtitle{ max-width:60ch; font-size:19px; color:var(--ink-soft); margin-top:16px; }
+  .meta-row{
+    margin-top:26px;
+    padding-top:18px;
+    border-top:1px solid var(--line);
+    display:flex;
+    flex-wrap:wrap;
+    gap:22px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .meta-row b{ color:var(--ink); font-weight:600; }
+
+  /* ---------- TOC ---------- */
+  .toc{
+    margin-top:22px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    padding-top:18px;
+    border-top:1px solid var(--line);
+  }
+  .toc a{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    text-decoration:none;
+    color:var(--ink-soft);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:6px 12px;
+    background:var(--paper-raised);
+    transition:color .15s, border-color .15s;
+  }
+  .toc a:hover{ color:var(--accent-strong); border-color:var(--accent); }
+  .toc a:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .toc a b{ color:var(--accent-strong); font-weight:600; margin-right:4px; }
+
+  /* ---------- Fact strip ---------- */
+  .facts{
+    margin-top:40px;
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+  }
+  .fact{ padding:16px 18px; border-left:1px solid var(--line); }
+  .fact:first-child{ border-left:none; }
+  .fact .num{ font-family:'Big Shoulders Display', sans-serif; font-weight:700; font-size:34px; line-height:1; color:var(--accent-strong); font-variant-numeric:tabular-nums; }
+  .fact .lbl{ margin-top:6px; font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.04em; text-transform:uppercase; color:var(--ink-soft); }
+
+  /* ---------- Sections ---------- */
+  section{ margin-top:64px; scroll-margin-top:24px; }
+  .sec-head{ display:flex; align-items:baseline; gap:14px; margin-bottom:8px; }
+  .sec-num{ font-family:'JetBrains Mono', monospace; font-size:13px; color:var(--ink-soft); }
+  h2{ font-size:26px; font-weight:700; }
+  h3{
+    font-size:16px;
+    font-weight:700;
+    text-transform:none;
+    font-family:'JetBrains Mono', monospace;
+    letter-spacing:0.01em;
+    color:var(--accent-strong);
+    margin-top:32px;
+    margin-bottom:12px;
+    padding-bottom:6px;
+    border-bottom:1px solid var(--line);
+  }
+  section > .lede{ color:var(--ink-soft); font-size:15.5px; max-width:72ch; margin-bottom:20px; }
+  .note{ font-size:14px; color:var(--ink-soft); }
+
+  /* ---------- Pipeline ---------- */
+  .pipeline{ display:grid; grid-template-columns:repeat(3, 1fr); gap:0; border:1px solid var(--line); border-radius:2px; overflow:hidden; }
+  .pipe-step{ padding:20px 20px 22px; border-left:1px solid var(--line); position:relative; }
+  .pipe-step:first-child{ border-left:none; }
+  .pipe-step::after{
+    content:"→"; position:absolute; right:-13px; top:50%; transform:translateY(-50%);
+    color:var(--accent); font-size:20px; font-weight:600; background:var(--paper); width:24px; text-align:center; z-index:1;
+  }
+  .pipe-step:last-child::after{ content:""; }
+  .pipe-kicker{ font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:8px; }
+  .pipe-tracks{ display:flex; flex-direction:column; gap:6px; }
+  .pipe-tracks .code{ white-space:normal; }
+  .track-label{ font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.03em; margin-top:2px; }
+
+  /* ---------- Chips ---------- */
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chip{ font-family:'JetBrains Mono', monospace; font-size:12px; padding:6px 11px; border:1px solid var(--line); border-radius:999px; color:var(--ink-soft); background:var(--paper-raised); }
+  .chip.on{ border-color:var(--accent); color:var(--accent-strong); background:var(--accent-soft); }
+
+  /* ---------- Data table (generic) ---------- */
+  table.data{ width:100%; border-collapse:collapse; font-size:14px; }
+  table.data th{
+    text-align:left; font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.04em; text-transform:uppercase;
+    color:var(--ink-soft); border-bottom:1px solid var(--line); padding:0 10px 8px 0; font-weight:500;
+  }
+  table.data td{ padding:9px 10px 9px 0; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.data tr:last-child td{ border-bottom:none; }
+  table.data .yes{ color:var(--good); font-weight:700; }
+  table.data .no{ color:var(--ink-soft); opacity:0.5; }
+  .table-scroll{ overflow-x:auto; }
+
+  /* ---------- kv grid ---------- */
+  .kv-grid{ display:grid; grid-template-columns:1fr 1.6fr; gap:0; border:1px solid var(--line); }
+  .kv-grid > div{ padding:14px 18px; border-top:1px solid var(--line); font-size:14.5px; }
+  .kv-grid > div:nth-child(-n+2){ border-top:none; }
+  .kv-grid .k{ font-family:'JetBrains Mono', monospace; font-size:12.5px; color:var(--ink-soft); background:var(--paper-raised); }
+
+  /* ---------- Rowlist ---------- */
+  .rowlist{ display:flex; flex-direction:column; border-top:1px solid var(--line); }
+  .rowlist .row{ display:grid; grid-template-columns:210px 1fr; gap:20px; padding:13px 0; border-bottom:1px solid var(--line); }
+  .rowlist .row .k{ font-family:'JetBrains Mono', monospace; font-size:13px; font-weight:600; color:var(--accent-strong); line-height:1.4; }
+  .rowlist .row .k .sub{ display:block; font-weight:400; color:var(--ink-soft); font-size:11px; margin-top:2px; text-transform:none; }
+  .rowlist .row .v{ font-size:14.5px; }
+  .rowlist .row .v p{ margin:0; }
+  .rowlist .row .v .methods{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .rowlist .row .v .methods span{
+    font-family:'JetBrains Mono', monospace; font-size:11px; background:var(--paper-raised); border:1px solid var(--line);
+    border-radius:3px; padding:2px 6px; color:var(--ink-soft);
+  }
+
+  /* ---------- Tag badges ---------- */
+  .tag{
+    font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.03em; text-transform:uppercase;
+    border-radius:3px; padding:3px 8px; height:fit-content; white-space:nowrap; display:inline-block;
+  }
+  .tag.warn{ color:var(--warn); background:var(--warn-soft); }
+  .tag.accent{ color:var(--accent-strong); background:var(--accent-soft); }
+  .tag.roadmap{ color:var(--accent-strong); background:transparent; border:1px dashed var(--accent); }
+
+  .schematic{
+    font-family:'JetBrains Mono', monospace; font-size:13px; color:var(--ink-soft);
+    background:var(--paper-raised); border:1px solid var(--line); border-radius:3px; padding:10px 14px; margin-bottom:14px; overflow-x:auto; white-space:pre;
+  }
+
+  /* ---------- Approval ladder (payments-specific) ---------- */
+  .ladder{ border:1px solid var(--line); border-radius:2px; overflow:hidden; }
+  .rung{
+    display:grid; grid-template-columns:130px 1fr 150px;
+    border-top:1px solid var(--line); align-items:stretch;
+  }
+  .rung:first-child{ border-top:none; }
+  .rung .state{
+    font-family:'JetBrains Mono', monospace; font-size:12.5px; font-weight:600;
+    color:var(--accent-strong); background:var(--paper-raised);
+    padding:14px 16px; border-right:1px solid var(--line);
+    display:flex; align-items:center;
+  }
+  .rung .flow{ padding:12px 16px; display:flex; flex-direction:column; gap:7px; justify-content:center; }
+  .rung .gate{
+    padding:12px 16px; border-left:1px solid var(--line);
+    font-family:'JetBrains Mono', monospace; font-size:10.5px; letter-spacing:0.03em;
+    color:var(--ink-soft); display:flex; align-items:center; text-transform:uppercase;
+  }
+  .move{ display:flex; align-items:baseline; gap:8px; font-size:13.5px; flex-wrap:wrap; }
+  .move .trig{
+    font-family:'JetBrains Mono', monospace; font-size:11.5px; font-weight:600;
+    padding:2px 7px; border-radius:3px; background:var(--accent-soft); color:var(--accent-strong);
+  }
+  .move.down .trig{ background:var(--warn-soft); color:var(--warn); }
+  .move .arw{ color:var(--ink-soft); }
+  .move .dest{ font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--ink); }
+  .move .cond{ font-size:12px; color:var(--ink-soft); font-style:italic; }
+
+  /* ---------- Footer ---------- */
+  footer{
+    margin-top:70px; padding-top:22px; border-top:1px solid var(--line);
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px;
+    font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--ink-soft);
+  }
+
+  @media (max-width:640px){
+    .sheet{ padding:36px 20px 60px; }
+    .facts{ grid-template-columns:repeat(2,1fr); }
+    .fact:nth-child(3){ border-left:none; }
+    .pipeline{ grid-template-columns:1fr; }
+    .pipe-step::after{ content:"↓"; right:auto; left:16px; top:auto; bottom:-13px; transform:none; }
+    .pipe-step{ border-left:none; border-top:1px solid var(--line); }
+    .pipe-step:first-child{ border-top:none; }
+    .kv-grid{ grid-template-columns:1fr; }
+    .kv-grid .k{ border-bottom:none; padding-bottom:4px; }
+    .rowlist .row{ grid-template-columns:1fr; gap:6px; }
+    .rung{ grid-template-columns:1fr; }
+    .rung .state{ border-right:none; border-bottom:1px solid var(--line); }
+    .rung .gate{ border-left:none; border-top:1px solid var(--line); }
+  }
+</style>
+
+<div class="sheet">
+
+  <header>
+    <div class="eyebrow">Module Handover · Unity Portal</div>
+    <h1 class="title">Unity.Payments</h1>
+    <p class="subtitle">A grant is only real when the money moves. This module turns an approved application into a payment request, walks it up a three-level expense-approval ladder where the state machine is also the permission gate, and then either posts an AP invoice to CAS or hands the batch to Financial Services Branch as a spreadsheet. This page is the complete reference: the ladder, the CAS loop, the supplier mirror, and the rough edges.</p>
+    <div class="meta-row">
+      <span><b>Path</b> <span class="mono">applications/Unity.GrantManager/modules/Unity.Payments</span></span>
+      <span><b>Schema</b> <span class="mono">Payments.* in the tenant DB</span></span>
+      <span><b>Transport</b> <span class="mono">RabbitMQ → CAS ORDS · CHES for FSB</span></span>
+    </div>
+    <nav class="toc">
+      <a href="#shape"><b>01</b>The shape of a payment</a>
+      <a href="#ladder"><b>02</b>The approval ladder</a>
+      <a href="#domain"><b>03</b>Domain model &amp; schema</a>
+      <a href="#cas"><b>04</b>The CAS loop</a>
+      <a href="#suppliers"><b>05</b>Suppliers &amp; sites</a>
+      <a href="#fsb"><b>06</b>FSB &amp; failure email</a>
+      <a href="#ui"><b>07</b>Features, permissions &amp; UI</a>
+      <a href="#edges"><b>08</b>Known rough edges</a>
+    </nav>
+  </header>
+
+  <div class="facts">
+    <div class="fact"><div class="num">14</div><div class="lbl">PaymentRequestStatus values</div></div>
+    <div class="fact"><div class="num">3</div><div class="lbl">Expense approval levels — the third is conditional</div></div>
+    <div class="fact"><div class="num">20</div><div class="lbl">Columns in the FSB spreadsheet</div></div>
+    <div class="fact"><div class="num">2</div><div class="lbl">Nightly Quartz jobs</div></div>
+  </div>
+
+  <!-- ============ 01 SHAPE ============ -->
+  <section id="shape">
+    <div class="sec-head"><span class="sec-num">01</span><h2>The shape of a payment</h2></div>
+    <p class="lede">Once an application is <span class="code">GRANT_APPROVED</span> with an approved amount, staff decide how much of that envelope to pay now, the amount is signed off one to three times, and only then does anything leave Unity. Approving the last level never calls CAS on the request thread — it enqueues.</p>
+
+    <div class="pipeline">
+      <div class="pipe-step">
+        <div class="pipe-kicker">01 · Request</div>
+        <div class="pipe-tracks">
+          <span class="code">PaymentRequestAppService.CreateAsync</span>
+          <span class="track-label">batch name, reference no, L1 + L2 approval slots</span>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-kicker">02 · Approve</div>
+        <div class="pipe-tracks">
+          <span class="code">PaymentsManager.TriggerAction</span>
+          <span class="track-label">Stateless machine · permission-guarded transitions</span>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-kicker">03 · Settle</div>
+        <div class="pipe-tracks">
+          <span class="code">InvoiceConsumer → CAS</span>
+          <span class="track-label">or FSB spreadsheet when the form prevents payment</span>
+        </div>
+      </div>
+    </div>
+
+    <h3>How much is left to pay</h3>
+    <p>The default amount on a new payment is the <strong>remaining</strong> amount, and grants are frequently paid in instalments across a parent/child application hierarchy that shares one envelope. <span class="code">PaymentRequestPageHelperService.GetRemainingAmountAsync</span> computes it as:</p>
+    <div class="schematic">remaining = ApprovedAmount
+          − Σ payments on this application
+          − Σ payments on every linked child application
+
+where "payments" excludes L1/L2/L3-declined, Cancelled,
+and anything whose CAS InvoiceStatus is Cancelled, NotFound or Error</div>
+    <p>A parent/child group gets one shared ceiling stamped onto every row, and the whole calculation is redone server-side on POST — so a form left open while someone else spends the envelope cannot over-commit it.</p>
+
+    <h3>Identity of a payment</h3>
+    <p>Every payment created in one submission shares a <strong>batch</strong>. The numbers are generated per batch from the tenant's <span class="code">PaymentIdPrefix</span> and a per-year sequence:</p>
+    <div class="schematic">BatchName       {prefix}_UNITY_BATCH_{max(BatchNumber) + 1}
+ReferenceNumber {prefix}-{year}-{seq:D4}                    ← unique index; the UI's "Payment ID"
+InvoiceNumber   {prefix}-{year}-{applicationRefNo}-{seq:D4} ← what CAS sees</div>
+
+    <h3>Two entry points that skip the ladder entirely</h3>
+    <div class="rowlist">
+      <div class="row"><div class="k">Historical payments<span class="sub">CreateHistoricalAsync</span></div><div class="v"><p>Money paid before Unity, recorded so history and rollups are complete. Constructed straight into <span class="code">HistoricalPayment</span> with <span class="code">InvoiceStatus</span> and <span class="code">PaymentStatus</span> both <span class="code">"Paid"</span>, and <strong>no expense approvals at all</strong>. Never sent to CAS. The only transition available is <span class="code">Cancel</span>.</p></div></div>
+      <div class="row"><div class="k">FSB route<span class="sub">form.PreventPayment</span></div><div class="v"><p>Programs not permitted to submit directly to CAS run the same ladder, but the final <span class="code">Submit</span> lands on <span class="code">FSB</span> with <span class="code">InvoiceStatus = SentToAccountsPayable</span> instead of queueing an invoice. The batch is emailed to Financial Services Branch as an <span class="code">.xlsx</span> — see §06.</p></div></div>
+    </div>
+  </section>
+
+  <!-- ============ 02 LADDER ============ -->
+  <section id="ladder">
+    <div class="sec-head"><span class="sec-num">02</span><h2>The approval ladder</h2></div>
+    <p class="lede">Transitions are declared with the <strong>Stateless</strong> library in <span class="code">PaymentsManager.ConfigureWorkflow</span>, and every one is wrapped in <span class="code">PermitIfAsync(… HasPermissionAsync(…))</span>. So the same object answers both questions at once: is this transition legal from here, and is <em>this user</em> allowed to make it. A user without the permission does not see a forbidden action — the transition simply is not permitted.</p>
+
+    <div class="ladder">
+      <div class="rung">
+        <div class="state">L1Pending</div>
+        <div class="flow">
+          <div class="move"><span class="trig">L1Approve</span><span class="arw">→</span><span class="dest">L2Pending</span></div>
+          <div class="move down"><span class="trig">L1Decline</span><span class="arw">→</span><span class="dest">L1Declined</span></div>
+          <div class="move down"><span class="trig">Cancel</span><span class="arw">→</span><span class="dest">Cancelled</span></div>
+        </div>
+        <div class="gate">L1ApproveOrDecline<br>CancelPayment</div>
+      </div>
+      <div class="rung">
+        <div class="state">L1Declined</div>
+        <div class="flow">
+          <div class="move"><span class="trig">L1Approve</span><span class="arw">→</span><span class="dest">L2Pending</span><span class="cond">see §08 — this path throws</span></div>
+        </div>
+        <div class="gate">L1ApproveOrDecline</div>
+      </div>
+      <div class="rung">
+        <div class="state">L2Pending</div>
+        <div class="flow">
+          <div class="move"><span class="trig">L2Approve</span><span class="arw">→</span><span class="dest">L3Pending</span><span class="cond">amount &gt; threshold</span></div>
+          <div class="move"><span class="trig">Submit</span><span class="arw">→</span><span class="dest">Submitted / FSB</span><span class="cond">amount ≤ threshold, skips L3</span></div>
+          <div class="move down"><span class="trig">L2Decline</span><span class="arw">→</span><span class="dest">L2Declined</span></div>
+          <div class="move down"><span class="trig">Cancel</span><span class="arw">→</span><span class="dest">Cancelled</span></div>
+        </div>
+        <div class="gate">L2ApproveOrDecline<br>CancelPayment</div>
+      </div>
+      <div class="rung">
+        <div class="state">L2Declined</div>
+        <div class="flow">
+          <div class="move"><span class="trig">L2Approve</span><span class="arw">→</span><span class="dest">L3Pending</span></div>
+          <div class="move"><span class="trig">Submit</span><span class="arw">→</span><span class="dest">Submitted / FSB</span></div>
+        </div>
+        <div class="gate">L2ApproveOrDecline</div>
+      </div>
+      <div class="rung">
+        <div class="state">L3Pending</div>
+        <div class="flow">
+          <div class="move"><span class="trig">Submit</span><span class="arw">→</span><span class="dest">Submitted / FSB</span></div>
+          <div class="move down"><span class="trig">L3Decline</span><span class="arw">→</span><span class="dest">L3Declined</span></div>
+          <div class="move down"><span class="trig">Cancel</span><span class="arw">→</span><span class="dest">Cancelled</span></div>
+        </div>
+        <div class="gate">L3ApproveOrDecline<br>CancelPayment</div>
+      </div>
+      <div class="rung">
+        <div class="state">HistoricalPayment</div>
+        <div class="flow">
+          <div class="move down"><span class="trig">Cancel</span><span class="arw">→</span><span class="dest">Cancelled</span></div>
+        </div>
+        <div class="gate">CancelPayment</div>
+      </div>
+    </div>
+    <p class="note" style="margin-top:14px;">There is no transition out of <span class="code">L3Declined</span>. <span class="code">PaymentApprovalAction.L3Approve</span> exists in the enum but is never configured and never fired — <strong>the third-level approval is expressed as <span class="code">Submit</span></strong>, which is also why <span class="code">Submit</span> is permitted from two different states.</p>
+
+    <h3>The UI sends no trigger</h3>
+    <p>The approval modal posts <span class="code">{ PaymentRequestId, IsApprove, Note }</span> per payment. <span class="code">DetermineTriggerActionAsync</span> works out which trigger applies from the payment's current status <em>and the caller's own permissions</em> — which is why a user holding several approval permissions always acts at the lowest level the payment is sitting at:</p>
+    <div class="schematic">has L1 permission  and status ∈ {L1Pending, L1Declined}   →  IsApprove ? L1Approve : L1Decline
+has L2 permission  and status ∈ {L2Pending, L2Declined}   →  !IsApprove          → L2Decline
+                                                             amount > threshold  → L2Approve   (routes to L3)
+                                                             otherwise           → Submit      (skips L3)
+has L3 permission  and status ∈ {L3Pending, L3Declined}   →  IsApprove ? Submit : L3Decline
+otherwise                                                 →  None — payment silently skipped</div>
+
+    <h3>Where the threshold comes from</h3>
+    <div class="kv-grid">
+      <div class="k">Both present</div>
+      <div><span class="code">min(form.PaymentApprovalThreshold, user.PaymentThreshold)</span> — the tighter of the two always wins.</div>
+      <div class="k">One present</div>
+      <div>That one.</div>
+      <div class="k">Neither</div>
+      <div><span class="code">0m</span> — which means <strong>every</strong> payment exceeds the threshold and every payment needs L3.</div>
+      <div class="k">Lookup threw</div>
+      <div>Logged as a warning, threshold left null, and the action falls through to <span class="code">Submit</span> — the payment <strong>skips L3</strong>. The failure mode is the opposite of the one above.</div>
+    </div>
+    <p class="note" style="margin-top:12px;">Form thresholds are set per application form; user thresholds are <span class="code">PaymentThreshold</span> rows created lazily for anyone holding the <span class="code">l2_approver</span> role.</p>
+
+    <h3>Separation of duties · AB#26693</h3>
+    <p>The same person may not approve at L1 and then again at L2. <span class="code">UpdateStatusAsync</span> enforces it twice: once up front across the whole batch — if any payment being approved is in <span class="code">L2Pending</span> with the current user as its Level 1 decision-maker, the entire call throws before anything changes — and again per payment inside <span class="code">CanPerformLevel2ActionAsync</span>. The modal also carries <span class="code">PreviousL1Approver</span> so affected rows can be flagged before submitting.</p>
+
+    <h3>The Level 3 slot does not exist until it has to</h3>
+    <p>Payments are created with Level 1 and Level 2 approval rows only. The Level 3 row is inserted — or deleted — by the approval modal's page model while it renders, based on whether the amount crosses the threshold. That write happens during a <span class="code">GET</span>; see §08.</p>
+
+    <h3>The machine gates, the ladder decides</h3>
+    <p><span class="code">TriggerAction</span> runs the workflow against a <em>local copy</em> of the status purely to validate the transition, then computes the real destination with a separate <span class="code">if/else</span> ladder and applies that to the entity. <span class="code">Submit</span> is where the two most visibly differ — the machine always says <span class="code">Submitted</span>, the ladder may choose <span class="code">FSB</span>:</p>
+    <div class="schematic">bool preventPayment = await GetFormPreventPaymentStatusByApplicationId(paymentRequest.CorrelationId);
+
+if (preventPayment) { statusChangedTo = FSB;
+                      paymentRequest.SetInvoiceStatus(SentToAccountsPayable); }
+else                { statusChangedTo = Submitted;
+                      await casPaymentRequestCoordinator.AddPaymentRequestsToInvoiceQueue(paymentRequest); }</div>
+
+    <h3>Cancellation</h3>
+    <p>Eligible only from <span class="code">HistoricalPayment</span>, <span class="code">L1Pending</span>, <span class="code">L2Pending</span> and <span class="code">L3Pending</span> — <strong>a payment already submitted to CAS cannot be cancelled in Unity</strong>. Cancelling stamps <span class="code">CancelledOn</span>, <span class="code">CancelledById</span> and <span class="code">CancelledBy</span>, and for a historical payment additionally sets <span class="code">InvoiceStatus = Cancelled</span> and <span class="code">PaymentStatus = "Not Paid"</span> so the rollup stops counting it as paid.</p>
+  </section>
+
+  <!-- ============ 03 DOMAIN ============ -->
+  <section id="domain">
+    <div class="sec-head"><span class="sec-num">03</span><h2>Domain model &amp; schema</h2></div>
+    <p class="lede">Every entity implements <span class="code">IMultiTenant</span>; ABP's automatic filter does the isolation and nothing in this module filters <span class="code">TenantId</span> by hand. The tables live in the <span class="code">Payments</span> schema of the per-tenant database, with an empty table prefix.</p>
+
+    <h3>The layout is not like the other modules</h3>
+    <p>There are <strong>no <span class="code">.Domain</span>, <span class="code">.Domain.Shared</span> or <span class="code">.EntityFrameworkCore</span> projects</strong>. The domain model lives in <span class="code">Unity.Payments.Application/Domain/</span> and persistence in <span class="code">Unity.Payments.Application/EntityFrameworkCore/</span>, so nothing structurally stops a domain type depending on an application service — and <span class="code">InvoiceManager</span>, a <span class="code">DomainService</span>, already injects <span class="code">PaymentConfigurationAppService</span> directly.</p>
+    <div class="schematic">Shared                localization (PaymentsResource), PaymentsPermissions, HtmlTable
+   ↑
+Application.Contracts DTOs, I*AppService, enums, CAS wire types, CasPaymentRequestStatus codes
+   ↑
+Application           Domain/ · EntityFrameworkCore/ · Integrations/ · PaymentRequests/
+                      Suppliers/ · PaymentTags/ · Handlers/ · Permissions/
+                      ── references Unity.GrantManager AND Unity.Notifications ──
+   ↑
+Web                   Razor Pages, PaymentInfo / SupplierInfo / PaymentActionBar widgets</div>
+    <p class="note">The coupling runs <strong>both ways</strong>: this module references host types (<span class="code">IApplicationRepository</span>, <span class="code">IApplicationLinksService</span>, <span class="code">IEndpointManagementAppService</span>) and the host references payments types (<span class="code">PaymentThreshold</span>, <span class="code">AccountCoding</span>, <span class="code">IPaymentRequestAppService</span>, <span class="code">PaymentGroup</span>). Payments and the core GrantManager application are mutually coupled, not cleanly separable.</p>
+
+    <h3>Two DbContexts over the same tables</h3>
+    <p><span class="code">PaymentsDbContext</span> is real and registered, its connection-string name is <span class="code">"Tenant"</span>, and the module's custom repositories derive from it. <span class="code">GrantTenantDbContext</span> <em>also</em> calls <span class="code">ConfigurePayments()</span> — and that is the context migrations come from. The module ships none of its own; schema changes are added as <strong>tenant</strong> migrations.</p>
+
+    <h3>Core entities</h3>
+    <div class="rowlist">
+      <div class="row"><div class="k">PaymentRequest<span class="sub">FullAuditedAggregateRoot&lt;Guid&gt;</span></div><div class="v"><p>The aggregate root. Amount, payee/supplier/site snapshot, batch, <span class="code">Status</span>, the CAS response fields, expense approvals, tags, note, FSB tracking, cancellation tracking. State changes only through fluent <span class="code">Set*</span> methods. <span class="code">IsApproved</span> is computed as <em>all approvals approved</em> — which is vacuously true for a historical payment, since it has none.</p></div></div>
+      <div class="row"><div class="k">ExpenseApproval</div><div class="v"><p>One approval slot: <span class="code">Type</span> (Level1/2/3) and <span class="code">Status</span> (Requested/Approved/Declined). <span class="code">DecisionUserId</span> and <span class="code">DecisionDate</span> are <strong>write-once</strong> — the setters throw once set, and a test asserts it on purpose. That is deliberate, and it is also what breaks re-approval after a decline (§08).</p></div></div>
+      <div class="row"><div class="k">Supplier<span class="sub">+ Site</span></div><div class="v"><p>A mirror of CAS master data. CAS addresses a payment by <strong>supplier number plus site code</strong>, so both are required. Supplier updates go through value objects (<span class="code">SupplierBasicInfo</span>, <span class="code">ProviderInfo</span>, <span class="code">SupplierStatus</span>, <span class="code">CasMetadata</span>, <span class="code">MailingAddress</span>); <span class="code">Site</span> exposes public setters and two static comparison helpers used by the sync path.</p></div></div>
+      <div class="row"><div class="k">AccountCoding</div><div class="v"><p>Five GL segments with exact lengths enforced on create and update — <span class="code">MinistryClient</span> 3, <span class="code">Responsibility</span> 5, <span class="code">ServiceLine</span> 5, <span class="code">Stob</span> 4, <span class="code">ProjectNumber</span> 7, the last three alphanumeric-only. Formatted for CAS with a fixed postfix.</p><div class="methods"><span>039.15006.10120.5185.1500000.000000.0000</span></div></div></div>
+      <div class="row"><div class="k">PaymentConfiguration</div><div class="v"><p>The tenant's <span class="code">PaymentIdPrefix</span> and default account coding. One row per tenant <em>in practice</em> — every read takes <span class="code">GetListAsync()[0]</span> or <span class="code">FirstOrDefaultAsync()</span>, and nothing enforces the cardinality.</p></div></div>
+      <div class="row"><div class="k">PaymentThreshold</div><div class="v"><p><span class="code">UserId</span> → <span class="code">Threshold</span>. Rows are created lazily by the host when the L2-approver settings screen is opened, so a user who has never appeared there has no row and contributes no threshold.</p></div></div>
+      <div class="row"><div class="k">PaymentTag</div><div class="v"><p>A join between a payment and the host's global <span class="code">Tag</span> — the same tag table the applications list uses, which is why <span class="code">ConfigurePayments()</span> re-declares the host's <span class="code">Tag</span> mapping so the FK resolves from either context.</p></div></div>
+    </div>
+
+    <h3>Two status families, moving independently</h3>
+    <p><span class="code">Status</span> is Unity's state. <span class="code">InvoiceStatus</span> and <span class="code">PaymentStatus</span> are CAS's, stored as <strong>free strings</strong> from a constants class, not an enum. A payment is routinely <span class="code">Submitted</span> in Unity and <span class="code">Never Validated</span> in CAS at the same time.</p>
+    <div class="table-scroll">
+    <table class="data">
+      <thead><tr><th>Life-cycle step</th><th>Status</th><th>InvoiceStatus</th><th>PaymentStatus</th></tr></thead>
+      <tbody>
+        <tr><td>Created</td><td class="code">L1Pending</td><td class="no">—</td><td class="no">—</td></tr>
+        <tr><td>L2 approved, over threshold</td><td class="code">L3Pending</td><td class="no">—</td><td class="no">—</td></tr>
+        <tr><td>Final approval</td><td class="code">Submitted</td><td class="no">—</td><td class="no">—</td></tr>
+        <tr><td>Invoice POSTed</td><td class="code">Submitted</td><td class="code">SentToCas</td><td class="no">—</td></tr>
+        <tr><td>First reconciliation</td><td class="code">Submitted</td><td class="code">Never Validated</td><td class="no">—</td></tr>
+        <tr><td>CAS validates</td><td class="code">Submitted</td><td class="code">Validated</td><td class="code">Not Paid</td></tr>
+        <tr><td>CAS pays</td><td class="code">Submitted</td><td class="code">Validated</td><td class="yes">Fully Paid</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="note" style="margin-top:12px;"><strong><span class="code">Status</span> is never advanced to <span class="code">Paid</span> by reconciliation.</strong> The rollup counts a payment as paid when <span class="code">PaymentStatus</span> trims and upper-cases to <span class="code">FULLY PAID</span>, or when <span class="code">Status</span> is <span class="code">HistoricalPayment</span> — nothing else.</p>
+  </section>
+
+  <!-- ============ 04 CAS ============ -->
+  <section id="cas">
+    <div class="sec-head"><span class="sec-num">04</span><h2>The CAS loop</h2></div>
+    <p class="lede">CAS is the province's Corporate Accounting System. Unity uses its ORDS REST API for invoices, invoice status, and supplier master data. The base URL is a <span class="code">DynamicUrl</span> row (<span class="code">PAYMENT_API_BASE</span>) resolved through the host's <span class="code">IEndpointManagementAppService</span> — configuration in data, not a constant.</p>
+
+    <h3>Authentication is per tenant</h3>
+    <div class="schematic">casClientCode = tenant.ExtraProperties["CasClientCode"]     → UserFriendlyException if absent
+casClientId   = ICasClientCodeLookupService.GetClientIdByCasClientCodeAsync(casClientCode)
+clientSecret  = configuration["CAS_API_KEY_{CASCLIENTCODE}"]
+token         = POST {casBaseUrl}/oauth/token  → cached in IDistributedCache&lt;TokenValidationResponse, string&gt;</div>
+    <p>The tenant's <span class="code">CasClientCode</span> is set through Tenant Management. A tenant without one cannot pay — the token service throws before any request is made.</p>
+
+    <h3>Invoice creation</h3>
+    <div class="rowlist">
+      <div class="row"><div class="k">Enqueue<span class="sub">CasPaymentRequestCoordinator</span></div><div class="v"><p>An <span class="code">InvoiceMessages</span> envelope with a <strong>10-minute TTL</strong>, carrying the payment id, invoice number, supplier number, site number and tenant id. Exceptions here are caught and logged — a broker outage does not roll back the approval, but it does leave the payment at <span class="code">Submitted</span> with nothing scheduled to retry it (§08).</p></div></div>
+      <div class="row"><div class="k">Consume<span class="sub">InvoiceConsumer</span></div><div class="v"><p>Tenant context and audit scope are established by the shared <span class="code">QueueConsumerHandler</span> before <span class="code">ConsumeAsync</span> runs, so the consumer only guards against empty invoice numbers and empty tenant ids.</p></div></div>
+      <div class="row"><div class="k">Build &amp; POST<span class="sub">InvoiceService</span></div><div class="v"><p><span class="code">POST {base}/cfs/apinvoice/</span>. Returns <strong>null and silently skips the send</strong> when the site, its supplier, the supplier number, or the account distribution code is missing.</p><div class="methods"><span>payGroup: GEN EFT | GEN CHQ</span><span>dates: dd-MMM-yyyy, Pacific</span><span>one invoice line, full amount</span></div></div></div>
+      <div class="row"><div class="k">Record<span class="sub">InvoiceManager</span></div><div class="v"><p>Three attempts, each in a fresh unit of work, catching concurrency exceptions with a 75 ms pause. Skips early if <span class="code">InvoiceStatus</span> is already <span class="code">SentToCas</span> — the idempotency guard against a double-consume. Writes <span class="code">SentToCas</span> or <span class="code">Error</span> plus the HTTP status and response body.</p></div></div>
+    </div>
+    <p class="note" style="margin-top:14px;">Invoice dates are computed in <strong>Pacific time, not UTC</strong>, and deliberately so — the code carries the comment that CAS rejects future-dated invoices. <span class="code">PaymentAdviceComments</span> is the payment description capped at 50 characters, falling back to <span class="code">"{TenantName} - Grant Payment"</span>; <span class="code">QualifiedReceiver</span> is the Level 1 approver's name capped at 150.</p>
+
+    <h3>Reconciliation</h3>
+    <p>A nightly <span class="code">[DisallowConcurrentExecution]</span> Quartz worker sweeps <strong>every tenant</strong> and enqueues a re-check for each payment in a re-check status. Staff can also trigger it for selected rows with <strong>Check Status</strong> on the list page — same message, same consumer.</p>
+    <div class="chips">
+      <span class="chip on">ServiceUnavailable</span>
+      <span class="chip on">SentToCas</span>
+      <span class="chip on">NotFound</span>
+      <span class="chip on">SentToAccountsPayable</span>
+      <span class="chip on">Never Validated</span>
+    </div>
+    <p class="note" style="margin-top:12px;">Those are the five <span class="code">InvoiceStatus</span> values that put a payment back in the queue. Note <span class="code">SentToAccountsPayable</span> is among them — <strong>FSB payments are polled against CAS nightly</strong> and will keep returning <span class="code">NotFound</span> until Financial Services Branch keys them in.</p>
+    <p>The consumer GETs <span class="code">cfs/apinvoice/{invoiceNumber}/{supplierNumber}/{siteNumber}</span> and, if any invoice status came back, writes status, payment status, payment number and date onto the payment inside its own transactional unit of work. Two quirks: a failed-but-answered response stamps the <em>HTTP status code string</em> into <span class="code">InvoiceStatus</span> (that is where <span class="code">ServiceUnavailable</span> comes from), and a payment already at <span class="code">NotFound</span> that comes back <span class="code">NotFound</span> again is rewritten to the literal <span class="code">"NotFound2"</span> — a human signal, read by nothing.</p>
+
+    <h3>How failures surface</h3>
+    <p><span class="code">ApplyErrorSummary</span> copies <span class="code">CasResponse</span> into the DTO whenever it is present and not <span class="code">"SUCCEEDED"</span>, which renders as a clickable CAS Response cell opening the full text. Separately, anything at <span class="code">ServiceUnavailable</span> or <span class="code">Error</span> modified in the last 24 hours goes into the nightly failure summary email — see §06.</p>
+  </section>
+
+  <!-- ============ 05 SUPPLIERS ============ -->
+  <section id="suppliers">
+    <div class="sec-head"><span class="sec-num">05</span><h2>Suppliers &amp; sites</h2></div>
+    <p class="lede">Unity never invents a payee. Supplier and site rows are a mirror of CAS, refreshed opportunistically whenever staff touch supplier information — including a live comparison on every render of the supplier widget's site list.</p>
+
+    <div class="schematic">SupplierService          GET cfs/supplier/{number}  or  cfs/supplier/{bn9}/businessnumber
+        ↓ publishes UpsertSupplierEto (local event bus)
+UpsertSupplierHandler    upsert Supplier · dedupe + upsert Sites · resolve default PaymentGroup
+        ↓ publishes ApplicantSupplierEto
+SupplierCreatedHandler   link supplier to applicant · delete or tombstone sites CAS dropped
+   (host)</div>
+
+    <h3>What the sync protects</h3>
+    <div class="rowlist">
+      <div class="row"><div class="k">Bank accounts are masked<span class="sub">at the parse boundary</span></div><div class="v"><p><span class="code">GetSiteEto</span> stores <span class="code">****1234</span> — all but the last four characters replaced. The unmasked account number never enters the Unity database.</p></div></div>
+      <div class="row"><div class="k">Empty supplier number rejected</div><div class="v"><p>A CAS response with a blank <span class="code">suppliernumber</span> raises <span class="code">UserFriendlyException</span> rather than creating a nameless payee.</p></div></div>
+      <div class="row"><div class="k">Duplicates collapsed twice</div><div class="v"><p>Incoming site ETOs are deduplicated by site code because <em>CAS can return duplicates</em>, and <span class="code">SiteAppService.InsertAsync</span> independently checks for an existing site with the same number under the same supplier and updates instead.</p></div></div>
+      <div class="row"><div class="k">No-op writes skipped</div><div class="v"><p><span class="code">Site.SiteMatchesSiteDto</span> compares every field; an unchanged site is not written at all, so the audit trail is not filled with empty updates.</p></div></div>
+      <div class="row"><div class="k">Referenced sites are tombstoned, not deleted<span class="sub">MarkDeletedInUse</span></div><div class="v"><p>When CAS stops returning a site, the host checks whether any application uses it as <span class="code">DefaultSiteId</span> or any payment references it. If so the site is flagged rather than removed, and a later CAS refresh that returns it again clears the flag.</p></div></div>
+    </div>
+
+    <h3>Default site and pay group</h3>
+    <p>The default site lives on the <strong>application</strong>, not the applicant — different applications from the same applicant can be paid to different sites. A payment cannot be created without one. Pay group has three inputs: the application form's <span class="code">DefaultPaymentGroup</span> when a site is created, a manual override from the widget, and any CAS refresh, which rewrites the site wholesale.</p>
+    <p>Clearing an applicant's supplier <strong>cascades</strong>: <span class="code">ClearApplicantSupplierAsync</span> nulls <span class="code">Applicant.SupplierId</span> and then clears <span class="code">DefaultSiteId</span> on every one of that applicant's applications, because those sites belonged to the supplier being unlinked.</p>
+    <p class="note">An <strong>EFT site with no bank account blocks payment creation</strong> — the create modal reports it as a row-level error and disables the fields.</p>
+  </section>
+
+  <!-- ============ 06 FSB ============ -->
+  <section id="fsb">
+    <div class="sec-head"><span class="sec-num">06</span><h2>FSB &amp; failure email</h2></div>
+    <p class="lede">Payments never talks to CHES. It publishes an <span class="code">EmailNotificationEvent</span> on the local event bus and the Notifications module owns everything after that. Two kinds of message originate here, plus a status event the host can turn into a third.</p>
+
+    <div class="kv-grid">
+      <div class="k">SendFsbNotification</div>
+      <div>Fired when payments enter <span class="code">FSB</span> during an approval batch. <strong>One email per batch name</strong>, subject <em>is</em> the batch name, with a 20-column <span class="code">.xlsx</span> attached. Recipients: the <strong>FSB-AP</strong> email group.</div>
+      <div class="k">SendFailedSummary</div>
+      <div>Nightly, per tenant. An HTML table of payments that failed at CAS in the last 24 hours. Recipients: the union of every registered <span class="code">IEmailRecipientStrategy</span> — currently the <strong>Payments</strong> email group.</div>
+      <div class="k">PaymentStatusChangedEvent</div>
+      <div>Published on create, on any real status change, and on cancel. The host's <span class="code">ScheduledNotificationEventHandler</span> may match it to a configured notification and email the applicant. Payments neither knows nor cares whether one exists.</div>
+    </div>
+
+    <h3>Two strategies, one of which hides from the interface</h3>
+    <p><span class="code">PaymentsEmailGroupStrategy</span> implements <span class="code">IEmailRecipientStrategy</span> and is registered as a singleton, so it is picked up by the <span class="code">IEnumerable&lt;IEmailRecipientStrategy&gt;</span> injection the failure summary uses. <span class="code">FsbApEmailGroupStrategy</span> is the same shape but <strong>deliberately does not implement the interface</strong> — its own comment says so — precisely so the FSB-AP group is never swept into unrelated notifications.</p>
+    <p class="note">Both resolve group → members → identity emails, and treat a missing group, an empty group, or a member without an address as a logged warning that simply yields fewer recipients. <strong>No recipients means no email is sent at all</strong>, and only a warning records it.</p>
+
+    <h3>The round trip that stamps the payment</h3>
+    <p>A payment is only marked as notified once CHES actually accepted the message — not when the email was queued:</p>
+    <div class="schematic">FsbPaymentNotifier ──▶ EmailNotificationEvent (SendFsbNotification)
+                            ↓
+       EmailNotificationHandler   writes EmailLog, uploads the xlsx to S3,
+                                  stores payment ids on EmailLog.PaymentRequestIds
+                            ↓
+       RabbitMQ → EmailConsumer → CHES
+                            ↓  only on a success status code
+                       FsbEmailSentEto { EmailLogId, PaymentRequestIds, SentDate, TenantId }
+                            ↓
+       FsbEmailSentEventHandler   SetFsbNotificationEmailLog(...)
+                                  → FsbApNotified = "Yes"</div>
+    <p><span class="code">FsbApNotified</span> is a column on the Payments list, so staff can see at a glance which FSB payments have genuinely reached AP.</p>
+
+    <h3>Resilience is deliberate here</h3>
+    <p>An email failure must never undo an approval. The notifier call in <span class="code">UpdateStatusAsync</span> is wrapped and its exceptions logged and dropped; inside the notifier, a failure on one batch is logged and the remaining batches still send; inside a batch, a row that throws while being assembled is skipped, and only a batch that yields <em>no</em> rows is abandoned. Approver and requester names are resolved with a single batched identity query per batch, not one per row.</p>
+  </section>
+
+  <!-- ============ 07 UI ============ -->
+  <section id="ui">
+    <div class="sec-head"><span class="sec-num">07</span><h2>Features, permissions &amp; UI</h2></div>
+
+    <h3>One feature, off by default</h3>
+    <p><span class="code">Unity.Payments</span> gates the module four ways: <span class="code">[RequiresFeature]</span> on every app service, a check in the menu contributor, an empty view model from both widgets, and <span class="code">.RequireFeatures(...)</span> on every granular permission.</p>
+
+    <h3>The Payments list</h3>
+    <p>A ~1,400-line DataTable and the module's main screen. Three things about it are worth knowing before you change it:</p>
+    <div class="rowlist">
+      <div class="row"><div class="k">requestedFields<span class="sub">the client shapes the query</span></div><div class="v"><p>The visible column list is sent with the request, and the query manager uses it to decide what to <span class="code">Include</span> and what to hydrate — site, account coding, tags, expense approvals, requester and applicant details are each loaded only if a column asks for them. An <em>empty</em> list means include everything.</p></div></div>
+      <div class="row"><div class="k">Date-bounded by default<span class="sub">last 6 months</span></div><div class="v"><p>The quick-range selection persists in <span class="code">localStorage</span> and is converted from Vancouver local dates to a UTC range, with the "to" date extended to the end of the local day. With no server-side paging (§08), this filter is the only thing bounding the query.</p></div></div>
+      <div class="row"><div class="k">Selections travel by cache key<span class="sub">5-minute TTL</span></div><div class="v"><p>Payment ids would blow the URL length limit, so bulk actions write the id list to the distributed cache under <span class="code">BulkAction:PaymentRequestIds:{guid}</span> and open the modal with the key. An expired key produces "The session has expired. Please select payment requests and try again."</p></div></div>
+    </div>
+    <p class="note" style="margin-top:14px;">Toolbar: <strong>Check Status</strong>, <strong>Approve</strong>, <strong>Decline</strong>, <strong>Cancel</strong> (permission-gated, exactly one row, with a confirm), <strong>History</strong>, <strong>Filter</strong>, saved views, and CSV export. Users can save named views; <em>Reset to Default View</em> restores the default columns, sort, filters and date range.</p>
+
+    <h3>Where payments appear outside this module</h3>
+    <div class="kv-grid">
+      <div class="k">Application detail</div>
+      <div>The <strong>PaymentInfo</strong> widget (requested / recommended / approved amounts, the paid-and-pending rollup, remaining) and the <strong>SupplierInfo</strong> widget. PaymentInfo also hosts Flex custom fields anchored at <span class="code">PaymentInfoUiAnchor</span>.</div>
+      <div class="k">Applicant profile</div>
+      <div>The applicant payment summary and list, and the payment section of the applicant-portal profile endpoint.</div>
+      <div class="k">Form configuration</div>
+      <div>Per-form account coding, approval threshold, <span class="code">Payable</span>, <span class="code">PreventPayment</span>, form hierarchy, parent form and default pay group — the switches that decide how the ladder behaves for that program.</div>
+      <div class="k">Settings</div>
+      <div>Tenant payment configuration, account coding CRUD, L2 approver thresholds, and the two cron expressions.</div>
+    </div>
+
+    <h3>Permissions</h3>
+    <div class="chips">
+      <span class="chip on">Payments.L1ApproveOrDecline</span>
+      <span class="chip on">.L2ApproveOrDecline</span>
+      <span class="chip on">.L3ApproveOrDecline</span>
+      <span class="chip on">.RequestPayment</span>
+      <span class="chip on">.AddHistoricalPayment</span>
+      <span class="chip on">.CancelPayment</span>
+      <span class="chip on">.AccountCodingOverride</span>
+      <span class="chip">.EditFormPaymentConfiguration</span>
+      <span class="chip">Payment.Summary</span>
+      <span class="chip on">Payment.Supplier.Update</span>
+      <span class="chip">Payment.PaymentList</span>
+      <span class="chip on">Payment.Tags.Create / .Delete</span>
+      <span class="chip on">SettingManagement.ConfigurePayments</span>
+    </div>
+    <p class="note" style="margin-top:12px;">Filled chips are enforced by an <span class="code">[Authorize]</span> or a state-machine guard; outlined ones gate UI visibility only. Two declared constants — <span class="code">Payments.Decline</span> and <span class="code">Payments.EditSupplierInfo</span> — are never registered or checked at all (§08).</p>
+  </section>
+
+  <!-- ============ 08 EDGES ============ -->
+  <section id="edges">
+    <div class="sec-head"><span class="sec-num">08</span><h2>Known rough edges</h2></div>
+    <p class="lede">This module moves money, so the ordering below is by real-world risk rather than tidiness. The first item is a genuine defect; several others are behaviours that are correct but surprising.</p>
+    <div class="rowlist">
+      <div class="row"><div class="k"><span class="tag warn">Real risk</span></div><div class="v"><p><strong>Re-approving a declined payment throws, and the exception is swallowed.</strong> The state machine permits <span class="code">L1Declined → L1Approve → L2Pending</span>, but <span class="code">ExpenseApproval.DecisionUserId</span> is write-once and declining already stamped it. The later <span class="code">.Approve()</span> throws <span class="code">InvalidOperationException</span>, the batch loop catches and logs it, and the payment silently stays declined — simply absent from the returned list. Either the transition should not be offered, or the entity needs an explicit reset.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Real risk</span></div><div class="v"><p><strong>Batch and sequence numbers are racy.</strong> <span class="code">GetBatchSetupAsync</span> reads the max batch number and next sequence, then assigns <span class="code">seq + i</span> across the loop. Two concurrent submissions read the same values. The unique index on <span class="code">ReferenceNumber</span> turns the collision into an insert failure rather than a duplicate — but it surfaces as a rethrown exception mid-batch, with earlier payments already inserted.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Real risk</span></div><div class="v"><p><strong>Enqueue failures are silent and unrecoverable.</strong> <span class="code">AddPaymentRequestsToInvoiceQueue</span> catches and logs everything. A broker outage leaves the payment at <span class="code">Submitted</span> with <em>no</em> <span class="code">InvoiceStatus</span> — and reconciliation only picks up payments that already have a re-check status, so nothing will ever retry it.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Performance</span></div><div class="v"><p><strong><span class="code">GetListAsync</span> does no server-side paging.</strong> <span class="code">MaxMaxResultCount</span> is set to <span class="code">int.MaxValue</span>, skip and take are ignored, the count query is commented out, and the total is the length of the materialised list. Only the six-month default date filter bounds it — and the user can widen that.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Performance</span></div><div class="v"><p><strong>Both number generators load the whole table.</strong> <span class="code">GetMaxBatchNumberAsync</span> materialises every payment request to compute a max; <span class="code">GetNextSequenceNumberAsync</span> does the same, then filters to the current year in memory and parses a sequence out of the most recent reference number. Both are O(n) on a table that only grows, and both run on every payment creation.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Silent</span></div><div class="v"><p><strong>Per-payment exceptions vanish in batch updates.</strong> <span class="code">UpdateStatusAsync</span> wraps each payment in a catch-and-log. A payment that fails to transition is omitted from the result with no error shown — the modal reports success for the ones that worked. This is what hides the first item on this list.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Surprising</span></div><div class="v"><p><strong>The approval modal writes to the database during a GET.</strong> <span class="code">UpdateExpenseApprovalsAsync</span> inserts or deletes the Level 3 approval row while <em>rendering</em>, so opening and closing the modal without approving anything mutates the payment. The threshold decision it makes there is also re-derived independently when the approval is actually submitted.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Confirm intent</span></div><div class="v"><p><strong>Global exception details are enabled from this module.</strong> <span class="code">PaymentsApplicationModule</span> sets <span class="code">SendExceptionsDetailsToClients = true</span>. <span class="code">AbpExceptionHandlingOptions</span> is application-wide, not per-module, so this affects every endpoint in the product.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Confirm intent</span></div><div class="v"><p><strong>Two anonymous page conventions.</strong> <span class="code">AllowAnonymousToPage("/Payments/Index")</span> is inert — no such page exists in this module. <span class="code">AllowAnonymousToPage("/PaymentConfigurations/Index")</span> is not: that page reads the tenant payment configuration with no authorization attribute of its own, relying on the <span class="code">ConfigurePayments</span> check on the screen that links to it.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">Architecture</span></div><div class="v"><p><strong>The machine validates but does not decide.</strong> <span class="code">TriggerAction</span> uses the state machine only as a gate, then computes the destination with a parallel <span class="code">if/else</span> ladder. The two can drift. <span class="code">ConfigureWorkflow</span> also calls <span class="code">Configure</span> more than once for <span class="code">L1Pending</span>, <span class="code">L2Pending</span> and <span class="code">L2Declined</span>, spreading one state's transitions across separate blocks — legal in Stateless, hard to read as a table.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">Dead code</span></div><div class="v"><p><span class="code">PaymentsState</span>, <span class="code">PaymentApprovalSubState</span>, <span class="code">PaymentsAction</span> and the payments copy of <span class="code">FinalDecisionStates</span> are a complete parallel status model that was never adopted. <span class="code">PaymentApprovalAction.L3Approve</span>, <span class="code">Payments.Decline</span> and <span class="code">Payments.EditSupplierInfo</span> are declared and never used. <span class="code">CasClientOptions</span> is bound from configuration and never read. <span class="code">Supplier.SIN</span> is mapped and persisted but never populated from CAS. <span class="code">PaymentRequestDto</span> carries an <span class="code">explicit operator</span> whose body is <span class="code">throw new NotImplementedException()</span>.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">Naming</span></div><div class="v"><p><span class="code">PaymentQueueService</span> sits in the Payments module but declares <span class="code">namespace Unity.Notifications.Integrations.RabbitMQ</span>. <span class="code">Domain/UserPaymentThresholds/IPaymentConfigurationRepository.cs</span> declares <span class="code">IPaymentThresholdRepository</span>. The error key <span class="code">…InvalidAccountCodingFiled</span> is misspelled in both the constants and the localization file. The Payments menu item's display name is a hard-coded string, so it does not localize.</p></div></div>
+      <div class="row"><div class="k"><span class="tag roadmap">Convention drift</span></div><div class="v"><p>The repo's own C# rules require <span class="code">GuidGenerator.Create()</span> and <span class="code">Clock.Now</span>. This module uses <span class="code">Guid.NewGuid()</span> and <span class="code">DateTime.UtcNow</span> throughout — <span class="code">PaymentsManager.CancelPaymentAsync</span> is the lone exception. <span class="code">PaymentRequest.PaymentTags</span> is also explicitly set to <span class="code">null</span> in both public constructors, so the collection is null on a freshly created aggregate.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Coverage</span></div><div class="v"><p>There is no <span class="code">Domain.Tests</span> or <span class="code">EntityFrameworkCore.Tests</span> project. Covered: entity construction, the write-once approval semantics, rollups, repository queries, account coding validation. <strong>Untested: the entire state machine, level selection and separation of duties, threshold resolution, the CAS clients and consumers, the supplier sync, the FSB notifier, and parent/child amount validation</strong> — which is most of what carries risk.</p></div></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Source: <span class="mono">documentation/payments/*.md</span></span>
+    <span>Generated with Claude Code</span>
+  </footer>
+
+</div>
