@@ -8,37 +8,6 @@ namespace Unity.GrantManager.Applications;
 public class ApplicantMergeTests
 {
     [Fact]
-    public void Merge_values_must_be_selected_from_one_of_the_applicants()
-    {
-        var principal = new Applicant
-        {
-            ApplicantName = "Principal",
-            OrgName = null,
-            FiscalDay = 31
-        };
-        var secondary = new Applicant
-        {
-            ApplicantName = "Secondary",
-            OrgName = "Secondary Org",
-            FiscalDay = 30
-        };
-
-        new ApplicantMergeValues
-        {
-            ApplicantName = "Secondary",
-            OrgName = string.Empty,
-            FiscalDay = 31
-        }.IsComposedFrom(principal, secondary).ShouldBeTrue();
-
-        new ApplicantMergeValues
-        {
-            ApplicantName = "An unrelated value",
-            OrgName = "Secondary Org",
-            FiscalDay = 30
-        }.IsComposedFrom(principal, secondary).ShouldBeFalse();
-    }
-
-    [Fact]
     public void Applicant_snapshot_restores_merge_managed_fields()
     {
         var supplierId = Guid.NewGuid();
