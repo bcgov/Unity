@@ -1,0 +1,623 @@
+<title>Unity.AI</title>
+<meta name="description" content="Complete technical handover of Unity Portal's AI module — the six generation operations, the four-gate authorization stack, the Azure OpenAI runtime and its retry-and-validate loop, versioned prompts as data, and the known rough edges in one page.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --paper:#F5F3EB;
+    --paper-raised:#EEEADB;
+    --ink:#20242B;
+    --ink-soft:#5B6472;
+    --line:#D9D3BF;
+    --accent:#2C6E68;
+    --accent-strong:#1B4B47;
+    --accent-soft:#DCEAE6;
+    --warn:#A85D2E;
+    --warn-soft:#F1E1D0;
+    --good:#3D7A3D;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#12161A;
+      --paper-raised:#1A2024;
+      --ink:#E9E6DC;
+      --ink-soft:#98A2AB;
+      --line:#2B333A;
+      --accent:#63C4B9;
+      --accent-strong:#8AD8CE;
+      --accent-soft:#17302C;
+      --warn:#E0975A;
+      --warn-soft:#2E2013;
+      --good:#7BC47B;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#12161A;
+    --paper-raised:#1A2024;
+    --ink:#E9E6DC;
+    --ink-soft:#98A2AB;
+    --line:#2B333A;
+    --accent:#63C4B9;
+    --accent-strong:#8AD8CE;
+    --accent-soft:#17302C;
+    --warn:#E0975A;
+    --warn-soft:#2E2013;
+    --good:#7BC47B;
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Source Serif 4', Georgia, 'Times New Roman', serif;
+    font-size:16px;
+    line-height:1.55;
+  }
+  .sheet{
+    max-width:960px;
+    margin:0 auto;
+    padding:56px 40px 90px;
+  }
+  h1,h2,h3,h4{
+    font-family:'Big Shoulders Display', 'Archivo Black', Impact, sans-serif;
+    text-transform:uppercase;
+    letter-spacing:0.01em;
+    text-wrap:balance;
+    color:var(--ink);
+    margin:0;
+  }
+  .mono{ font-family:'JetBrains Mono', ui-monospace, Consolas, monospace; }
+  code, .code{
+    font-family:'JetBrains Mono', ui-monospace, Consolas, monospace;
+    font-size:0.85em;
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:0.05em 0.4em;
+    color:var(--accent-strong);
+    white-space:nowrap;
+  }
+  p{ margin:0 0 0.9em; max-width:68ch; }
+  p:last-child{ margin-bottom:0; }
+  a{ color:var(--accent-strong); }
+  ul{ margin:0; padding-left:1.2em; }
+  li{ margin-bottom:0.4em; }
+  strong{ color:var(--ink); }
+
+  /* ---------- Header ---------- */
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--accent-strong);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .eyebrow::before{ content:""; width:22px; height:1px; background:var(--accent-strong); }
+  h1.title{ font-size:clamp(40px, 7vw, 76px); line-height:0.92; font-weight:800; }
+  .subtitle{ max-width:60ch; font-size:19px; color:var(--ink-soft); margin-top:16px; }
+  .meta-row{
+    margin-top:26px;
+    padding-top:18px;
+    border-top:1px solid var(--line);
+    display:flex;
+    flex-wrap:wrap;
+    gap:22px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .meta-row b{ color:var(--ink); font-weight:600; }
+
+  /* ---------- TOC ---------- */
+  .toc{
+    margin-top:22px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    padding-top:18px;
+    border-top:1px solid var(--line);
+  }
+  .toc a{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    text-decoration:none;
+    color:var(--ink-soft);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:6px 12px;
+    background:var(--paper-raised);
+    transition:color .15s, border-color .15s;
+  }
+  .toc a:hover{ color:var(--accent-strong); border-color:var(--accent); }
+  .toc a:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .toc a b{ color:var(--accent-strong); font-weight:600; margin-right:4px; }
+
+  /* ---------- Fact strip ---------- */
+  .facts{
+    margin-top:40px;
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+  }
+  .fact{ padding:16px 18px; border-left:1px solid var(--line); }
+  .fact:first-child{ border-left:none; }
+  .fact .num{ font-family:'Big Shoulders Display', sans-serif; font-weight:700; font-size:34px; line-height:1; color:var(--accent-strong); font-variant-numeric:tabular-nums; }
+  .fact .lbl{ margin-top:6px; font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.04em; text-transform:uppercase; color:var(--ink-soft); }
+
+  /* ---------- Sections ---------- */
+  section{ margin-top:64px; scroll-margin-top:24px; }
+  .sec-head{ display:flex; align-items:baseline; gap:14px; margin-bottom:8px; }
+  .sec-num{ font-family:'JetBrains Mono', monospace; font-size:13px; color:var(--ink-soft); }
+  h2{ font-size:26px; font-weight:700; }
+  h3{
+    font-size:16px;
+    font-weight:700;
+    text-transform:none;
+    font-family:'JetBrains Mono', monospace;
+    letter-spacing:0.01em;
+    color:var(--accent-strong);
+    margin-top:32px;
+    margin-bottom:12px;
+    padding-bottom:6px;
+    border-bottom:1px solid var(--line);
+  }
+  section > .lede{ color:var(--ink-soft); font-size:15.5px; max-width:72ch; margin-bottom:20px; }
+  .note{ font-size:14px; color:var(--ink-soft); }
+
+  /* ---------- Pipeline ---------- */
+  .pipeline{ display:grid; grid-template-columns:repeat(3, 1fr); gap:0; border:1px solid var(--line); border-radius:2px; overflow:hidden; }
+  .pipe-step{ padding:20px 20px 22px; border-left:1px solid var(--line); position:relative; }
+  .pipe-step:first-child{ border-left:none; }
+  .pipe-step::after{
+    content:"→"; position:absolute; right:-13px; top:50%; transform:translateY(-50%);
+    color:var(--accent); font-size:20px; font-weight:600; background:var(--paper); width:24px; text-align:center; z-index:1;
+  }
+  .pipe-step:last-child::after{ content:""; }
+  .pipe-kicker{ font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:8px; }
+  .pipe-tracks{ display:flex; flex-direction:column; gap:6px; }
+  .pipe-tracks .code{ white-space:normal; }
+  .track-label{ font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.03em; margin-top:2px; }
+
+  /* ---------- Chips ---------- */
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chip{ font-family:'JetBrains Mono', monospace; font-size:12px; padding:6px 11px; border:1px solid var(--line); border-radius:999px; color:var(--ink-soft); background:var(--paper-raised); }
+  .chip.on{ border-color:var(--accent); color:var(--accent-strong); background:var(--accent-soft); }
+
+  /* ---------- Data table (generic) ---------- */
+  table.data{ width:100%; border-collapse:collapse; font-size:14px; }
+  table.data th{
+    text-align:left; font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.04em; text-transform:uppercase;
+    color:var(--ink-soft); border-bottom:1px solid var(--line); padding:0 10px 8px 0; font-weight:500;
+  }
+  table.data td{ padding:9px 10px 9px 0; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.data tr:last-child td{ border-bottom:none; }
+  table.data .yes{ color:var(--good); font-weight:700; }
+  table.data .no{ color:var(--ink-soft); opacity:0.5; }
+  .table-scroll{ overflow-x:auto; }
+
+  /* ---------- kv grid ---------- */
+  .kv-grid{ display:grid; grid-template-columns:1fr 1.6fr; gap:0; border:1px solid var(--line); }
+  .kv-grid > div{ padding:14px 18px; border-top:1px solid var(--line); font-size:14.5px; }
+  .kv-grid > div:nth-child(-n+2){ border-top:none; }
+  .kv-grid .k{ font-family:'JetBrains Mono', monospace; font-size:12.5px; color:var(--ink-soft); background:var(--paper-raised); }
+
+  /* ---------- Rowlist ---------- */
+  .rowlist{ display:flex; flex-direction:column; border-top:1px solid var(--line); }
+  .rowlist .row{ display:grid; grid-template-columns:210px 1fr; gap:20px; padding:13px 0; border-bottom:1px solid var(--line); }
+  .rowlist .row .k{ font-family:'JetBrains Mono', monospace; font-size:13px; font-weight:600; color:var(--accent-strong); line-height:1.4; }
+  .rowlist .row .k .sub{ display:block; font-weight:400; color:var(--ink-soft); font-size:11px; margin-top:2px; text-transform:none; }
+  .rowlist .row .v{ font-size:14.5px; }
+  .rowlist .row .v p{ margin:0; }
+  .rowlist .row .v .methods{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .rowlist .row .v .methods span{
+    font-family:'JetBrains Mono', monospace; font-size:11px; background:var(--paper-raised); border:1px solid var(--line);
+    border-radius:3px; padding:2px 6px; color:var(--ink-soft);
+  }
+
+  /* ---------- Tag badges ---------- */
+  .tag{
+    font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.03em; text-transform:uppercase;
+    border-radius:3px; padding:3px 8px; height:fit-content; white-space:nowrap; display:inline-block;
+  }
+  .tag.warn{ color:var(--warn); background:var(--warn-soft); }
+  .tag.accent{ color:var(--accent-strong); background:var(--accent-soft); }
+  .tag.roadmap{ color:var(--accent-strong); background:transparent; border:1px dashed var(--accent); }
+
+  .schematic{
+    font-family:'JetBrains Mono', monospace; font-size:13px; color:var(--ink-soft);
+    background:var(--paper-raised); border:1px solid var(--line); border-radius:3px; padding:10px 14px; margin-bottom:14px; overflow-x:auto; white-space:pre;
+  }
+
+  /* ---------- Gate stack (AI-specific) ---------- */
+  .gates{ border:1px solid var(--line); border-radius:2px; overflow:hidden; }
+  .gate-row{
+    display:grid; grid-template-columns:44px 200px 1fr 1fr;
+    border-top:1px solid var(--line); align-items:stretch;
+  }
+  .gate-row:first-child{ border-top:none; }
+  .gate-row.head{ background:var(--paper-raised); }
+  .gate-row.head > div{
+    font-family:'JetBrains Mono', monospace; font-size:10.5px; letter-spacing:0.05em;
+    text-transform:uppercase; color:var(--ink-soft); padding:10px 14px;
+  }
+  .gate-n{
+    font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:600;
+    color:var(--accent-strong); background:var(--paper-raised);
+    display:flex; align-items:center; justify-content:center;
+    border-right:1px solid var(--line);
+  }
+  .gate-row.head .gate-n{ background:transparent; color:var(--ink-soft); font-weight:400; }
+  .gate-what{
+    padding:13px 14px; border-right:1px solid var(--line);
+    font-family:'JetBrains Mono', monospace; font-size:12.5px; font-weight:600; color:var(--accent-strong);
+    display:flex; align-items:center;
+  }
+  .gate-scope{
+    padding:13px 14px; border-right:1px solid var(--line);
+    font-size:13.5px; display:flex; align-items:center; color:var(--ink-soft);
+  }
+  .gate-fail{ padding:13px 14px; font-size:13.5px; display:flex; align-items:center; }
+  .gate-fail b{ font-weight:600; }
+
+  /* ---------- Footer ---------- */
+  footer{
+    margin-top:70px; padding-top:22px; border-top:1px solid var(--line);
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px;
+    font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--ink-soft);
+  }
+
+  @media (max-width:640px){
+    .sheet{ padding:36px 20px 60px; }
+    .facts{ grid-template-columns:repeat(2,1fr); }
+    .fact:nth-child(3){ border-left:none; }
+    .pipeline{ grid-template-columns:1fr; }
+    .pipe-step::after{ content:"↓"; right:auto; left:16px; top:auto; bottom:-13px; transform:none; }
+    .pipe-step{ border-left:none; border-top:1px solid var(--line); }
+    .pipe-step:first-child{ border-top:none; }
+    .kv-grid{ grid-template-columns:1fr; }
+    .kv-grid .k{ border-bottom:none; padding-bottom:4px; }
+    .rowlist .row{ grid-template-columns:1fr; gap:6px; }
+    .gate-row{ grid-template-columns:44px 1fr; }
+    .gate-row.head{ display:none; }
+    .gate-n{ grid-row:span 3; }
+    .gate-what, .gate-scope{ border-right:none; }
+    .gate-scope, .gate-fail{ padding-top:0; }
+  }
+</style>
+
+<div class="sheet">
+
+  <header>
+    <div class="eyebrow">Module Handover · Unity Portal</div>
+    <h1 class="title">Unity.AI</h1>
+    <p class="subtitle">Six named operations against an Azure OpenAI deployment, every one of them queued behind four independent gates, retried three times against a shape validator, and delivered as a draft a human still has to accept. What model to call, how many tokens it may spend, and the exact prompt text are database rows — not code. This page is the complete reference.</p>
+    <div class="meta-row">
+      <span><b>Path</b> <span class="mono">applications/Unity.GrantManager/modules/Unity.AI</span></span>
+      <span><b>Schema</b> <span class="mono">AI.* in BOTH databases</span></span>
+      <span><b>Provider</b> <span class="mono">Azure OpenAI · key auth</span></span>
+    </div>
+    <nav class="toc">
+      <a href="#operations"><b>01</b>Six operations</a>
+      <a href="#gates"><b>02</b>The gate stack</a>
+      <a href="#config"><b>03</b>Config as data</a>
+      <a href="#pipeline"><b>04</b>The pipeline</a>
+      <a href="#runtime"><b>05</b>Calling the model</a>
+      <a href="#prompts"><b>06</b>Prompts</a>
+      <a href="#results"><b>07</b>Where results land</a>
+      <a href="#edges"><b>08</b>Known rough edges</a>
+    </nav>
+  </header>
+
+  <div class="facts">
+    <div class="fact"><div class="num">6</div><div class="lbl">Named operations</div></div>
+    <div class="fact"><div class="num">7</div><div class="lbl">Tenant features, all default off</div></div>
+    <div class="fact"><div class="num">3</div><div class="lbl">Attempts per call, no backoff</div></div>
+    <div class="fact"><div class="num">2</div><div class="lbl">AI schemas, in two databases</div></div>
+  </div>
+
+  <!-- ============ 01 OPERATIONS ============ -->
+  <section id="operations">
+    <div class="sec-head"><span class="sec-num">01</span><h2>Six operations</h2></div>
+    <p class="lede">Grant assessment is reading — a submission, a scoresheet to fill in, and a dozen attached PDFs, read the same way by different assessors at different speeds. This module produces the first draft. Three operations act on an <strong>application</strong>; three act on an <strong>application form version</strong>, generating the configuration artefacts programs otherwise hand-build.</p>
+
+    <div class="table-scroll">
+    <table class="data">
+      <thead><tr><th>Operation type</th><th>Reads</th><th>Produces</th><th>Tokens</th><th>Form version</th></tr></thead>
+      <tbody>
+        <tr><td class="code">attachment-summary</td><td>Attachment bytes, text-extracted in-process</td><td>A summary on each attachment</td><td>2000</td><td class="no">—</td></tr>
+        <tr><td class="code">application-analysis</td><td>Submission + form schema + attachment summaries</td><td class="code">Application.AIAnalysis</td><td>4000</td><td class="no">—</td></tr>
+        <tr><td class="code">application-scoring</td><td>Submission + summaries + scoresheet schema</td><td class="code">AI.ApplicationScoresheetAnswers</td><td>8000</td><td class="no">—</td></tr>
+        <tr><td class="code">form-mapping</td><td>CHEFS fields + Unity fields + existing mapping</td><td>A <span class="code">GenerationReview</span> payload</td><td>2000</td><td class="yes">required</td></tr>
+        <tr><td class="code">form-worksheet</td><td>Form schema + mapping model + existing worksheets</td><td>A draft Flex worksheet</td><td>4000</td><td class="yes">required</td></tr>
+        <tr><td class="code">form-scoresheet</td><td>Form schema + mapping model</td><td>A draft Flex scoresheet</td><td>8000</td><td class="yes">required</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3>The line the module holds</h3>
+    <p><strong>AI output is a draft.</strong> Application scoring lands as a separate <em>AI assessment</em> sitting beside the human ones, never as somebody's score. The three form-generation operations write a <span class="code">GenerationReview</span> that a person must complete or discard — nothing the model produces reaches an application form on its own. Summaries and analysis surface behind a legal disclaimer the user acknowledges before AI is switched on at all.</p>
+
+    <p class="note">Token budgets above are the seeded <span class="code">AIOperation.CompletionTokens</span> values, and they encode how much output each operation is expected to produce — scoring and scoresheet generation get four times the budget of a mapping suggestion.</p>
+  </section>
+
+  <!-- ============ 02 GATES ============ -->
+  <section id="gates">
+    <div class="sec-head"><span class="sec-num">02</span><h2>The gate stack</h2></div>
+    <p class="lede">AI is the most heavily gated area of the product, and the four gates are not interchangeable — they answer four different questions, are administered by four different people, and fail in four different ways. Anyone debugging "why did nothing happen?" is almost always looking at one of these.</p>
+
+    <div class="gates">
+      <div class="gate-row head">
+        <div></div><div>Gate</div><div>Answers</div><div>On failure</div>
+      </div>
+      <div class="gate-row">
+        <div class="gate-n">01</div>
+        <div class="gate-what">Feature</div>
+        <div class="gate-scope">Has this tenant bought the capability?</div>
+        <div class="gate-fail"><span><span class="code">AIFeatureGuard</span> throws a localized <b>UserFriendlyException</b>; permissions also disappear from the UI</span></div>
+      </div>
+      <div class="gate-row">
+        <div class="gate-n">02</div>
+        <div class="gate-what">Tenant setting</div>
+        <div class="gate-scope">Has the tenant turned it on?</div>
+        <div class="gate-fail"><span>Automatic pipeline <b>returns silently</b>; per-form toggles are not rendered</span></div>
+      </div>
+      <div class="gate-row">
+        <div class="gate-n">03</div>
+        <div class="gate-what">Permission</div>
+        <div class="gate-scope">May <em>this user</em> do it?</div>
+        <div class="gate-fail"><span><span class="code">CheckPolicyAsync</span> throws — <b>403</b>. View and Generate are separate permissions</span></div>
+      </div>
+      <div class="gate-row">
+        <div class="gate-n">04</div>
+        <div class="gate-what">Form flag</div>
+        <div class="gate-scope">Does <em>this program</em> want it?</div>
+        <div class="gate-fail"><span>Automatic run skipped; Generate button not rendered</span></div>
+      </div>
+    </div>
+
+    <h3>Seven features, three settings, fourteen permissions</h3>
+    <div class="chips">
+      <span class="chip on">Unity.AI.AttachmentSummaries</span>
+      <span class="chip on">Unity.AI.ApplicationAnalysis</span>
+      <span class="chip on">Unity.AI.Scoring</span>
+      <span class="chip on">Unity.AI.FormMapping</span>
+      <span class="chip on">Unity.AI.FormWorksheet</span>
+      <span class="chip on">Unity.AI.FormScoresheet</span>
+      <span class="chip on">Unity.AIReporting</span>
+    </div>
+    <p class="note" style="margin-top:12px;">All default <span class="code">"false"</span>. Every <span class="code">AIPermissions</span> entry carries <span class="code">.RequireFeatures(...)</span> for its matching feature, so turning a feature off also removes its permissions from the role editor. <span class="code">SettingManagement.ConfigureAI</span> uses an <span class="code">AnyFeaturePermissionStateProvider</span> across all seven — it appears when any one is on.</p>
+
+    <div class="kv-grid" style="margin-top:18px;">
+      <div class="k">AutomaticGenerationEnabled</div>
+      <div>The intake pipeline may fire on its own. Required <em>together with</em> the form's <span class="code">AutomaticallyGenerateAIAnalysis</span> flag.</div>
+      <div class="k">ManualGenerationEnabled</div>
+      <div>Staff may trigger generation by hand. Pairs with the form's <span class="code">ManuallyInitiateAIAnalysis</span> flag.</div>
+      <div class="k">ReportingEnabled</div>
+      <div>The AI Reporting page is reachable — feature <em>and</em> setting, <strong>or</strong> the <span class="code">ITAdmin</span> role as an override.</div>
+    </div>
+
+    <p style="margin-top:16px;">Permissions come in <strong>View / Generate pairs</strong> per operation, Generate nested under View. That split is load-bearing on the application detail page: the tab and existing results are gated by View, the button only by Generate — so somebody can read an analysis produced automatically at intake without being able to regenerate it.</p>
+
+    <p class="note"><strong>Prompt administration sits outside all of this.</strong> <span class="code">AIPromptAppService</span> is gated by the <span class="code">ITOperations</span> <em>role</em>, not by an AI permission or feature, and the menu item is hidden entirely when the Onboarding specialization is enabled.</p>
+  </section>
+
+  <!-- ============ 03 CONFIG ============ -->
+  <section id="config">
+    <div class="sec-head"><span class="sec-num">03</span><h2>Config as data</h2></div>
+    <p class="lede">Only the endpoint and the API key come from configuration. Which model an operation calls, how many completion tokens it may spend, whether it fans out sequentially or in parallel, and the exact system and user prompt text are all rows.</p>
+
+    <div class="schematic">AIOperation ────────▶ AIModel ────────▶ Azure OpenAI
+  Name (= prompt family)  Name (= DEPLOYMENT name)   Azure:OpenAI:Endpoint
+  AIModelId               Provider ("OpenAI")        Azure:OpenAI:ApiKey
+  ExecutionMode           IsActive
+  CompletionTokens        SettingsJson {
+  IsActive                  MaxOutputTokenCountSupported,
+      │                     Temperature }
+      ▼
+AIPrompt  (Name + VersionNumber, optionally TenantId)
+  SystemPrompt · UserPrompt · MetadataJson · IsActive</div>
+
+    <h3>Seeded, and corrective</h3>
+    <table class="data">
+      <thead><tr><th>Model</th><th>Max-output-tokens supported</th><th>Temperature</th></tr></thead>
+      <tbody>
+        <tr><td class="code">gpt-4o-mini</td><td class="yes">yes</td><td>0.3</td></tr>
+        <tr><td class="code">gpt-5-mini</td><td class="no">no</td><td class="no">—</td></tr>
+        <tr><td class="code">gpt-5-nano</td><td class="no">no</td><td class="no">—</td></tr>
+      </tbody>
+    </table>
+    <p class="note" style="margin-top:12px;">All six operations bind to <span class="code">gpt-5-mini</span>. Those two model settings exist because newer families reject the parameters older ones require — when <span class="code">MaxOutputTokenCountSupported</span> is false the option is <em>not sent at all</em> rather than defaulted, and the same for a null temperature. <strong>The model name is also the Azure deployment name</strong>: the factory passes it straight to <span class="code">GetChatClient(...)</span>.</p>
+    <p class="note">All three seeders skip tenant contexts and are <strong>corrective</strong> — an existing model or operation row has its provider, active flag, settings, model binding, execution mode and token budget overwritten on every run. There is no admin UI for models or operations; changes made directly in the database are reverted at the next migration run.</p>
+
+    <h3>Two AI schemas, in two databases</h3>
+    <p>The single most surprising fact about AI persistence. <span class="code">ConfigureAI()</span> is called on <strong><span class="code">GrantManagerDbContext</span></strong> — the host context — while the tenant context declares its own <span class="code">AI</span> tables explicitly.</p>
+    <table class="data">
+      <thead><tr><th>Database</th><th>Schema <span class="code">AI</span> holds</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Host</strong></td><td class="code">AIModels · AIOperations · AIPrompts · AIRequests</td></tr>
+        <tr><td><strong>Tenant</strong></td><td class="code">GenerationReviews · ApplicationScoresheetAnswers</td></tr>
+      </tbody>
+    </table>
+    <p class="note" style="margin-top:12px;">Two consequences worth carrying: <span class="code">AIPrompt</span> implements <span class="code">IMultiTenant</span> but lives in the <em>host</em> database, so every read path disables ABP's tenant filter and re-applies tenancy by hand — automatic isolation protects nothing here. And <span class="code">AIRequests</span> references applications that live in a different database, so no foreign key exists or can. Schema changes split accordingly: model/operation/prompt/request are <strong>host</strong> migrations, reviews and scoresheet answers are <strong>tenant</strong> migrations.</p>
+  </section>
+
+  <!-- ============ 04 PIPELINE ============ -->
+  <section id="pipeline">
+    <div class="sec-head"><span class="sec-num">04</span><h2>The pipeline</h2></div>
+    <p class="lede">Every operation travels the same path, and nothing calls the model on a request thread. <span class="code">AIGenerationAppService.SubmitAsync</span> is the single funnel every typed route converges on — the source comment says so: <em>"All generation routes converge here so authorization, feature, and form-version rules stay consistent."</em></p>
+
+    <div class="pipeline">
+      <div class="pipe-step">
+        <div class="pipe-kicker">01 · Submit</div>
+        <div class="pipe-tracks">
+          <span class="code">AIGenerationAppService.SubmitAsync</span>
+          <span class="track-label">feature guard · form-version guard · CheckPolicy</span>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-kicker">02 · Queue</div>
+        <div class="pipe-tracks">
+          <span class="code">ApplicationGenerationQueue</span>
+          <span class="track-label">lock · dedupe · prerequisites · rate limit · enqueue</span>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-kicker">03 · Execute</div>
+        <div class="pipe-tracks">
+          <span class="code">AIGenerationBackgroundJob → executor</span>
+          <span class="track-label">tenant scope · Running → Completed/Failed</span>
+        </div>
+      </div>
+    </div>
+
+    <h3>The lock covers the dedupe check</h3>
+    <div class="schematic">var requestLock = distributedLockProvider.CreateLock(
+    $"ai-generation:{tenantId}:{request.ApplicationId}:{persistedOperation.Id}");
+
+using (await requestLock.AcquireAsync())
+{
+    if (existing Queued|Running request) return;   // silently idempotent
+    await validateInput();                         // prerequisites
+    await aiRateLimiter.EnsureAsync(currentUser.Id);
+    // insert AIGenerationRequest (Queued), then enqueue the job
+}</div>
+    <p>The comment in the source is explicit about why the lock spans the check — <em>"so each tenant/application/operation queues only once."</em> Without it two clicks a millisecond apart both see no active request and both enqueue. Note the ordering: prerequisites are validated <strong>before</strong> the rate limit, so a request that was going to be rejected anyway never costs the user their cooldown.</p>
+
+    <div class="rowlist">
+      <div class="row"><div class="k">Prerequisites<span class="sub">per operation</span></div><div class="v"><p>Attachment summary needs at least one attachment; analysis needs a non-empty submission; scoring needs a scoresheet <em>with fields</em>; the three form operations need the form version to exist and <strong>no Active review</strong>. Each throws its own localized message.</p></div></div>
+      <div class="row"><div class="k">Rate limit<span class="sub">per user, distributed</span></div><div class="v"><p>A cooldown in the distributed cache at <span class="code">ai-generation:cooldown:{userId}</span>, read-modify-written under its own distributed lock. Length comes from <span class="code">Azure:Generation:CooldownSeconds</span>, which <strong>must</strong> be configured — the getter throws otherwise. Stamped only <em>after a successful run</em>, so a failure does not cost the next attempt. A null user (background/system) bypasses it entirely, by design.</p></div></div>
+      <div class="row"><div class="k">Short units of work<span class="sub">requiresNew, non-transactional</span></div><div class="v"><p>Every status transition and every result save opens its own brief UoW. The helper explains why: holding the <span class="code">Application</span> aggregate loaded across a slow model call reliably produced <span class="code">AbpDbConcurrencyException</span> when unrelated parts of it changed concurrently.</p></div></div>
+      <div class="row"><div class="k">Executor registry<span class="sub">SingleOrDefault</span></div><div class="v"><p>Six <span class="code">IAIGenerationOperationExecutor</span> implementations resolved from DI by exact operation type. Two executors claiming the same type is a startup-time bug that surfaces as a runtime throw.</p></div></div>
+    </div>
+
+    <h3>Automatic, at intake</h3>
+    <p><span class="code">QueueApplicationAIPipelineOnProcessHandler</span> short-circuits in order on the tenant setting, the form flag, then all three intake features being off. Otherwise it queues attachment summary, analysis and scoring — each in its own <span class="code">try</span>/<span class="code">catch</span>, throwing only if no feature was enabled or every enabled stage failed to queue. The handler then catches anything that escapes, so a failed AI pipeline never fails intake.</p>
+    <p class="note">They are queued as <strong>three peers, not a chain</strong> — even though analysis and scoring both consume attachment summaries as input. See §08.</p>
+  </section>
+
+  <!-- ============ 05 RUNTIME ============ -->
+  <section id="runtime">
+    <div class="sec-head"><span class="sec-num">05</span><h2>Calling the model</h2></div>
+    <p class="lede">The provider is <strong>Azure OpenAI</strong> with key auth, one deployment per call. The <span class="code">Provider</span> string stored on the model and checked by the transport is nevertheless <span class="code">"OpenAI"</span> — it names the model family, not the hosting service.</p>
+
+    <div class="schematic">new AzureOpenAIClient(settings.Endpoint, new ApiKeyCredential(settings.ApiKey), new AzureOpenAIClientOptions())
+    .GetChatClient(settings.DeploymentName)</div>
+
+    <h3>A 200 is not success</h3>
+    <p>The model is asked for JSON, and JSON from a language model is not trustworthy. Every call is wrapped in up to <strong>three attempts</strong>, and an attempt that returns HTTP 200 still fails if the payload does not validate against the operation's expected shape.</p>
+    <div class="schematic">for attempt in 1..3
+    result = await transport(...)
+
+    if Success:
+        validation = validator(result.Content)      // per-operation shape check
+        if valid  → return
+        else      → downgrade to InvalidOutput, log the reason, retry
+
+    if PermanentFailure → return immediately        // no point retrying a 401
+    if attempt &lt; 3      → loop (no delay)</div>
+
+    <table class="data">
+      <thead><tr><th>Situation</th><th>Outcome</th></tr></thead>
+      <tbody>
+        <tr><td>Non-empty model output</td><td class="code">Success</td></tr>
+        <tr><td>HTTP 200, empty output</td><td class="code">InvalidOutput</td></tr>
+        <tr><td>408 · 429 · 5xx</td><td class="code">TransientFailure</td></tr>
+        <tr><td>Any other HTTP status</td><td class="code">PermanentFailure</td></tr>
+        <tr><td>Bad configuration <span class="code">InvalidOperationException</span></td><td class="code">PermanentFailure</td></tr>
+        <tr><td>Unsupported provider name</td><td class="code">PermanentFailure</td></tr>
+      </tbody>
+    </table>
+    <p class="note" style="margin-top:12px;"><span class="code">AIResponseJson.CleanJsonResponse</span> strips markdown fencing before parsing, because models return fenced JSON regardless of instructions. <span class="code">OperationCanceledException</span> is always rethrown, never mapped.</p>
+
+    <h3>Two defensive touches worth keeping</h3>
+    <div class="rowlist">
+      <div class="row"><div class="k">Temperature fallback<span class="sub">one retry, on 400</span></div><div class="v"><p>Newer model families reject <span class="code">temperature</span> outright. Rather than encode a model-family table, the transport inspects a 400 body for "temperature" plus one of <em>unsupported / not supported / not allowed / invalid</em>, and if it matches, retries once without the parameter. Anything else rethrows.</p></div></div>
+      <div class="row"><div class="k">Output read twice over</div><div class="v"><p>First the SDK's typed <span class="code">completion.Content[i].Text</span> parts; if that yields nothing, the raw body is parsed for <span class="code">choices[0].message.content</span> in both its string and array-of-parts forms. An empty output is then logged with finish reason and the full token usage including <span class="code">reasoning_tokens</span> — which is what makes a truncation or a reasoning blowout diagnosable after the fact.</p></div></div>
+    </div>
+
+    <h3>Text extraction is local</h3>
+    <p>No document-intelligence service. PDFs via <span class="code">PdfPig</span>, Office formats via <span class="code">NPOI</span> and raw OpenXML, dispatched by extension and falling back to content type.</p>
+    <div class="chips">
+      <span class="chip on">.pdf</span><span class="chip on">.docx</span><span class="chip on">.xls / .xlsx</span>
+      <span class="chip on">.pptx</span><span class="chip on">.txt / .csv / .json / .xml</span>
+      <span class="chip">.doc — returns empty</span>
+    </div>
+    <p class="note" style="margin-top:12px;">Hard caps guard the token budget: <strong>50,000 characters</strong> overall, 10 Excel sheets, 2,000 rows per sheet, 2,000 docx paragraphs, 200 PowerPoint slides. Any extraction failure returns an empty string, which the summary service treats as "could not extract".</p>
+  </section>
+
+  <!-- ============ 06 PROMPTS ============ -->
+  <section id="prompts">
+    <div class="sec-head"><span class="sec-num">06</span><h2>Prompts</h2></div>
+    <p class="lede">A prompt family is an <span class="code">AIPrompt.Name</span> equal to an operation name; versions are integers rendered as <span class="code">v{n}</span>; <span class="code">(TenantId, Name, VersionNumber)</span> is unique. Seeded globally at v0–v2 for the three application operations and v2 for the three form operations, so an older result can be reproduced by pinning a version.</p>
+
+    <h3>A tenant prompt wins outright</h3>
+    <div class="schematic">selected = tenant's newest ACTIVE prompt in this family
+selected ??= global (TenantId == null) newest ACTIVE prompt in this family</div>
+    <p>If the tenant has <em>any</em> active prompt in the family, the global rows are not considered at all — including when the global family has a higher version number. A tenant that once saved a tweak to <span class="code">ApplicationScoring</span> stops receiving every subsequent global improvement, with nothing in the UI indicating the divergence.</p>
+
+    <h3>Rendering, and how it fails</h3>
+    <p>The system prompt is sent verbatim; the user prompt is a template of <span class="code">{{TOKEN}}</span> placeholders. Each operation supplies its own set — <span class="code">SCHEMA</span>, <span class="code">DATA</span>, <span class="code">ATTACHMENTS</span>, <span class="code">ATTACHMENT</span>, <span class="code">SECTION</span>, <span class="code">RESPONSE</span>/<span class="code">OUTPUT</span> (aliases of each other) — and any named section in the prompt's <span class="code">MetadataJson</span> becomes a placeholder too, which is how the form-generation prompts keep large reusable rule blocks tenant-editable but out of the template.</p>
+    <p><strong>An unresolved placeholder throws.</strong> Rendering scans the template first and fails loudly rather than sending a literal <span class="code">{{FOO}}</span>. That maps to <span class="code">PermanentFailure</span>, so a broken prompt fails immediately instead of burning three attempts — but nothing validates a prompt when it is <em>saved</em>, so the error appears on the next generation rather than on the form.</p>
+
+    <h3>Scoring gets an extra layer</h3>
+    <p>Scoresheet question ids are GUIDs. Before the section reaches the prompt, <span class="code">BuildAliasedApplicationScoringSection</span> swaps them for short tokens and returns a map the parser uses to translate answers back. Each field is projected with its <span class="code">options</span> and <span class="code">allowed_answers</span> for <span class="code">SelectList</span> questions — which is what constrains the model to a valid option rather than free text. If the response template builds to <span class="code">"{}"</span>, the operation logs a warning and <strong>returns without calling the model</strong>.</p>
+  </section>
+
+  <!-- ============ 07 RESULTS ============ -->
+  <section id="results">
+    <div class="sec-head"><span class="sec-num">07</span><h2>Where results land</h2></div>
+    <p class="lede">Executors return a <span class="code">bool</span>: <strong>true</strong> stamps the user's cooldown, <strong>false</strong> completes the request without charging them — used when the executor decided there was nothing to do.</p>
+
+    <div class="rowlist">
+      <div class="row"><div class="k">application-analysis</div><div class="v"><p>Written to <span class="code">Application.AIAnalysis</span> in a fresh short unit of work. <strong>The only operation that throws on provider failure</strong>, so the only one where a failed model call marks the request <span class="code">Failed</span> and shows the user an error.</p></div></div>
+      <div class="row"><div class="k">application-scoring</div><div class="v"><p>Upserted into <span class="code">AI.ApplicationScoresheetAnswers</span> — one row per application, whole answer set as <span class="code">jsonb</span>. Its own doc comment records why it moved off the Application aggregate: <em>"so the Applications table stays legible to report builders, and so AI output is not written back onto the Application aggregate."</em> Then publishes <span class="code">ApplicationAIScoringGeneratedEvent</span>, which creates an <strong>AI assessment alongside the human ones</strong>.</p></div></div>
+      <div class="row"><div class="k">attachment-summary</div><div class="v"><p>Persisted per attachment, fanning out over the operation's <span class="code">AIExecutionMode</span>. Failure and empty-extraction both persist a sentinel string as the summary — see §08.</p></div></div>
+      <div class="row"><div class="k">form-mapping</div><div class="v"><p>A <span class="code">GenerationReview</span> payload of pending suggestions. Passes alternate by sequence: <span class="code">isFinalMapping = Sequence &gt; 1 &amp;&amp; Sequence % 2 == 0</span>, and a final pass additionally classifies which suggestions leave the existing mapping unchanged.</p></div></div>
+      <div class="row"><div class="k">form-worksheet<span class="sub">and form-scoresheet</span></div><div class="v"><p>A draft Flex worksheet or scoresheet plus a review. The worksheet is written under a <strong>canonical name derived from the form version id</strong>, which is what makes the operation idempotent — a second run finds the existing suggestion and leaves it alone rather than duplicating it.</p></div></div>
+    </div>
+
+    <h3>The review is a lock</h3>
+    <p>An <span class="code">Active</span> <span class="code">GenerationReview</span> — keyed <span class="code">(Operation, ContextId, Sequence)</span>, status <span class="code">Active</span> / <span class="code">Completed</span> / <span class="code">Discarded</span> — blocks another run of that operation for that form version. The prerequisite validator refuses to queue it, and the executor re-checks and returns <span class="code">false</span> if one appeared in the meantime. This is the mechanism that keeps AI out of form configuration: nothing the model produces reaches an application form until a person completes the review.</p>
+
+    <h3>The guided mapping workflow</h3>
+    <div class="schematic">GenerateInitialMapping → ReviewInitialMapping
+    → GenerateWorksheets → ReviewWorksheets → PublishAssignWorksheets
+    → GenerateFinalMapping → ReviewFinalMapping → Completed</div>
+    <p class="note">Map what you can, generate worksheets for what you cannot, publish and assign them, then map again now that the new custom fields exist. The step names are localization keys in <span class="code">AILocalizationKeys</span>; the odd/even sequence rule above is what implements the two mapping passes.</p>
+  </section>
+
+  <!-- ============ 08 EDGES ============ -->
+  <section id="edges">
+    <div class="sec-head"><span class="sec-num">08</span><h2>Known rough edges</h2></div>
+    <p class="lede">This module is newer and far better covered by tests than most of the codebase, so this list is shorter on outright defects and longer on <em>correct but surprising</em>. Ordered by real-world risk.</p>
+    <div class="rowlist">
+      <div class="row"><div class="k"><span class="tag warn">Real risk</span></div><div class="v"><p><strong>Failures are persisted as content.</strong> Four of six operations turn a provider failure into a <em>successful</em> result carrying a failure message, which is then stored as output: an attachment summary reading <span class="code">"AI analysis not available for this attachment (x)."</span>, an empty scoring answer set, a <span class="code">"{}"</span> worksheet. The request is marked <span class="code">Completed</span>, the cooldown is charged, and a later reader cannot tell "the model was down" from "the model said this". Only application analysis throws.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Real risk</span></div><div class="v"><p><strong>A partly failed scoring run is saved as if complete.</strong> <span class="code">ProcessSectionAsync</span> catches per-section exceptions and returns an empty dictionary. The merge produces an answer set silently missing those sections, upserts it over any previous complete run, and fires the event that creates an AI assessment from a partial scoresheet.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Real risk</span></div><div class="v"><p><strong>The intake pipeline is three peers, not a chain.</strong> Attachment summary, analysis and scoring are queued as independent jobs with nothing ordering them — yet analysis and scoring both consume attachment summaries as input. On a first intake they typically read no summaries at all, and the prompt renders with an empty attachments block.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Performance</span></div><div class="v"><p><strong>The retry loop has no backoff.</strong> Three attempts back to back with no delay and no jitter, including after a <strong>429</strong>. <span class="code">AIExecutionMode.Parallel</span> compounds it: <span class="code">Task.WhenAll</span> over every section with <em>no concurrency cap</em>, so a twenty-section scoresheet issues twenty simultaneous calls, each of which may retry three times.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Multi-pod</span></div><div class="v"><p><strong>Config caching is per-pod and holds the API key.</strong> The fully resolved settings — including <span class="code">ApiKey</span> — sit in <span class="code">IMemoryCache</span> for five minutes under a predictable key, with no invalidation on write. Activating a prompt version or switching an operation's model applies at a different moment on every replica.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Security</span></div><div class="v"><p><strong>Tenant isolation for prompts is manual.</strong> <span class="code">AIPrompt</span> is <span class="code">IMultiTenant</span> but lives in the host database, so every read disables ABP's filter to allow the global fallback and re-imposes tenancy in LINQ or in <span class="code">EnsureReadAccess</span>/<span class="code">EnsureMutationAccess</span>. Any new query over <span class="code">AIPrompt</span> must repeat the pattern; a missed check is a cross-tenant read of prompt text.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Confirm intent</span></div><div class="v"><p><strong>Prompt file logging writes applicant data to local disk.</strong> When <span class="code">Azure:Logging:EnablePromptFileLog</span> is on, the full rendered prompt — submission data, extracted attachment text — and the raw provider response are appended to <span class="code">{BaseDirectory}/logs/ai-prompts-*.log</span> on every operation. Off by default; worth a deliberate decision before enabling anywhere holding real applications.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Silent</span></div><div class="v"><p><strong><span class="code">IsAvailableAsync</span> only checks that a key is configured.</strong> It reads <span class="code">Azure:OpenAI:ApiKey</span> and returns true. A wrong key, an unreachable endpoint, a missing operation row or an inactive model all still report available.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Silent</span></div><div class="v"><p><strong>Form scoresheet does not check its outcome.</strong> Every other operation branches on <span class="code">result.Outcome</span> before using the content; <span class="code">GenerateFormScoresheetAsync</span> returns the cleaned content of a failure response as if it were a scoresheet, relying entirely on the caller noticing <span class="code">FailureReason</span>. Its worksheet sibling returns <span class="code">"{}"</span> in the same situation.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Silent</span></div><div class="v"><p><strong>Duplicate submissions return quietly</strong>, with no way for the caller to distinguish "queued" from "already running". And <span class="code">MarkRunning</span>/<span class="code">MarkCompleted</span> both clear <span class="code">FailureReason</span>, so a retried request loses the record of why it failed last time — the only trace is the log.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">Hard-coded</span></div><div class="v"><p><strong>The provider is fixed in three places</strong> despite <span class="code">AIModel.Provider</span> being a column: the resolver returns the constant, the resolver rejects anything else, and the transport rejects it again. Three framings collide in one call path — an <span class="code">AzureOpenAIClient</span>, a provider string of <span class="code">"OpenAI"</span>, and an <span class="code">Azure:OpenAI:</span> config section. <strong>Deployment name must equal model name</strong>; there is no way to point a model row at a differently named deployment.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">Dead code</span></div><div class="v"><p><strong>Seven resolver accessors production never calls</strong> — four exercised only by tests, three by nothing. Five are unusable without an explicit model name anyway: <span class="code">ResolveModelAsync</span> returns null for a blank name, so they throw <span class="code">"AI model is not configured."</span> regardless of setup. Also unreferenced: the <span class="code">PromptType</span> enum, which is not even a property of <span class="code">AIPrompt</span>.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">Ergonomics</span></div><div class="v"><p><strong>Prompt text lives in a 973-line C# seeder</strong> of <span class="code">const string</span> bodies — editing a seeded prompt means a code change, a build and a deploy, with unreadable diffs. The runtime already supports versioned rows, so the seeder is the only reason prompt text is compiled in. Meanwhile <span class="code">GetListAsync</span> loads every prompt row and pages in memory, and models and operations have no admin UI at all.</p></div></div>
+      <div class="row"><div class="k"><span class="tag roadmap">Convention drift</span></div><div class="v"><p><span class="code">Guid.CreateVersion7()</span> instead of <span class="code">GuidGenerator</span> in the prompt service and both seeders; <span class="code">DateTime.UtcNow</span> instead of <span class="code">Clock</span> throughout. Two naming schemes for the same six things (<span class="code">application-scoring</span> vs <span class="code">ApplicationScoring</span>) bridged by a definition record and re-exported by a key helper. <span class="code">Unity.AI.Domain.Shared</span> builds <span class="code">Unity.AI.Shared.csproj</span>. The permission provider sits in Application.Contracts, unlike every other module. And <span class="code">AIGenerationStatusDto</span> returns its payload twice — nested and flattened.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">Coverage</span></div><div class="v"><p><strong>Unusually good, and worth preserving.</strong> Config resolution, prompt resolution and rendering, response validation, the outcome model, queue/job/registry/status, rate limiting, seeders, input building and execution mode all have suites. Thinner: the transport itself (temperature fallback, response extraction, status→outcome mapping), text extraction across formats, and the six executors end to end.</p></div></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Source: <span class="mono">documentation/ai/*.md</span></span>
+    <span>Generated with Claude Code</span>
+  </footer>
+
+</div>
