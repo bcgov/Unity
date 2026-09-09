@@ -266,6 +266,10 @@ table.dataTable {
     position: relative;
 }
 
+    .unity-input-group:has(.unity-input-prepend) .form-label {
+        margin-bottom: 0;
+    }
+
     .unity-input-group .unity-input-prepend {
         position: absolute;
         margin-top: 32px;

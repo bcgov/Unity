@@ -39,7 +39,7 @@ This document provides comprehensive step-by-step instructions for implementing 
 -  **Complex project structure** - Handles modular ABP architecture
 -  **Coverage control** - Explicit coverage disabling capability
 -  **PR analysis** - Early detection in pull requests
--  **Build integration** - Custom .NET 9.0 build process
+-  **Build integration** - Custom .NET build process
 -  **Debugging capability** - Full GitHub Actions logs available
 
 **Automatic Analysis Limitations for Unity:**
