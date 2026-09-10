@@ -110,7 +110,13 @@
         const val = dateStatusSelect2Ready && $ !== undefined
             ? $('#dateApplicationStatus').val()
             : Array.from(document.getElementById('dateApplicationStatus')?.selectedOptions ?? []).map(opt => opt.value);
-        return (Array.isArray(val) ? val : val ? [val] : []).filter(Boolean);
+        let values = [];
+        if (Array.isArray(val)) {
+            values = val;
+        } else if (val) {
+            values = [val];
+        }
+        return values.filter(Boolean);
     }
 
     function setSelectedDateStatuses(values) {
