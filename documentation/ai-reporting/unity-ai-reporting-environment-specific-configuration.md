@@ -17,7 +17,7 @@ Non-sensitive config (deployment names, model versions, database port) is hardco
 
 | Variable | Purpose | Example |
 |----------|---------|---------|
-| `AZURE_OPENAI_ENDPOINT` | Azure OpenAI service endpoint | `https://d837ad-dev-econ-llm-east.openai.azure.com/` |
+| `AZURE_OPENAI_ENDPOINT` | Azure OpenAI service endpoint | `https://your-azure-openai-resource.openai.azure.com/` |
 | `AZURE_OPENAI_API_KEY` | Azure OpenAI API key | Environment-specific key |
 | `JWT_SECRET` | JWT signing secret (64+ chars) | `openssl rand -base64 64` |
 | `DB_PASSWORD` | PostgreSQL password | Environment-specific password |
@@ -26,7 +26,7 @@ Non-sensitive config (deployment names, model versions, database port) is hardco
 
 | Variable | Purpose | Example Values |
 |----------|---------|----------------|
-| `MB_URL` | Metabase instance base URL | `https://dev-unity-reporting.apps.silver.devops.gov.bc.ca` |
+| `MB_URL` | Metabase instance base URL | `https://your-metabase-instance.example.com` |
 | `MB_MAP_REGION_UUID` | Metabase UUID for the Regional Districts boundary layer | Differs per Metabase instance |
 | `ORIGIN_URL` | Comma-separated allowed iframe parent origins | `https://dev.example.com` |
 | `FLASK_ENV` | Flask environment mode | `development`, `production` |
@@ -104,10 +104,10 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: dev-unity-ai-secrets
-  namespace: d18498-dev
+  namespace: <namespace>-dev
 type: Opaque
 stringData:
-  AZURE_OPENAI_ENDPOINT: "https://d837ad-dev-econ-llm-east.openai.azure.com/"
+  AZURE_OPENAI_ENDPOINT: "https://your-azure-openai-resource.openai.azure.com/"
   AZURE_OPENAI_API_KEY: "your-dev-api-key"
   JWT_SECRET: "your-64-char-jwt-secret"
   DB_PASSWORD: "your-dev-db-password"
@@ -120,7 +120,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: dev-unity-ai-tenant-config
-  namespace: d18498-dev
+  namespace: <namespace>-dev
 type: Opaque
 stringData:
   tenant_config.json: |
@@ -147,10 +147,10 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: dev-unity-ai-reporting
-  namespace: d18498-dev
+  namespace: <namespace>-dev
 data:
   FLASK_ENV: "development"
-  MB_URL: "https://dev-unity-reporting.apps.silver.devops.gov.bc.ca"
+  MB_URL: "https://your-metabase-instance.example.com"
   MB_MAP_REGION_UUID: "your-regional-districts-uuid"
   ORIGIN_URL: "https://dev-grants.example.com"
   DB_HOST: "dev-unity-ai-postgres"
@@ -163,11 +163,11 @@ data:
 ## GitOps Repository Structure
 
 ```
-tenant-gitops-d18498/manifests/uai/overlays/
-├── dev/     # d18498-dev namespace
-├── test/    # d18498-test namespace
-├── uat/     # d18498-test namespace (shares test namespace)
-└── prod/    # d18498-prod namespace
+tenant-gitops-<namespace>/manifests/uai/overlays/
+├── dev/     # <namespace>-dev namespace
+├── test/    # <namespace>-test namespace
+├── uat/     # <namespace>-test namespace (shares test namespace)
+└── prod/    # <namespace>-prod namespace
 ```
 
 ---

@@ -39,7 +39,7 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiZGV2LXVzZXItMTIzIi...
 
 ### 2. Token Generation
 
-**PowerShell Script:** `unity-ai-reporting-verify-QueryTokenURL.ps1`
+A development token generator script, maintained in the private GitOps repository, builds test tokens for local and OpenShift testing.
 
 **Process:**
 1. Reads JWT_SECRET from applications/.env file
@@ -47,24 +47,6 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiZGV2LXVzZXItMTIzIi...
 3. Builds payload with user details and timestamps
 4. Signs with HMAC-SHA256 using JWT_SECRET from .env
 5. Outputs URLs for both local and OpenShift testing
-
-**Usage:**
-```powershell
-# Run from applications folder
-.\documentation\unity-ai-reporting-verify-QueryTokenURL.ps1 -UserId 'user@gov.bc.ca'
-
-# Run from documentation folder  
-.\unity-ai-reporting-verify-QueryTokenURL.ps1 -UserId 'user@gov.bc.ca'
-
-# Admin user token  
-.\unity-ai-reporting-verify-QueryTokenURL.ps1 -UserId 'admin@gov.bc.ca' -IsAdmin $true
-
-# Custom parameters
-.\unity-ai-reporting-verify-QueryTokenURL.ps1 -UserId "test-user" -Tenant "demo" -ExpiresInMinutes 120
-
-# Quick testing with 1-minute expiration
-.\unity-ai-reporting-verify-QueryTokenURL.ps1 -UserId "test-user" -ExpiresInMinutes 1
-```
 
 **Security:** The script automatically reads the JWT_SECRET from your .env file, ensuring consistency with your application configuration without hardcoding secrets.
 
@@ -267,12 +249,8 @@ checkAdmin<{ is_admin: boolean; user_id: string }>()
 5. **Admin features** - controlled by `is_it_admin` flag
 
 **Multi-User Scenarios:**
-```powershell
-# Different users get separate data spaces
-.\documentation\unity-ai-reporting-verify-QueryTokenURL.ps1 -UserId "alice@gov.bc.ca"
-.\documentation\unity-ai-reporting-verify-QueryTokenURL.ps1 -UserId "bob@gov.bc.ca"  
-.\documentation\unity-ai-reporting-verify-QueryTokenURL.ps1 -UserId "admin@gov.bc.ca" -IsAdmin $true
-```
+
+Generating tokens for different `user_id` values (e.g. two regular users and an admin) demonstrates that each gets a separate data space.
 
 Each `user_id` creates a completely separate workspace with their own chat history, feedback, and access permissions. The application treats this as a proper multi-tenant system where users are fully isolated from each other's data.
 
@@ -285,7 +263,7 @@ Each `user_id` creates a completely separate workspace with their own chat histo
 - **Database:** Local PostgreSQL container
 
 ### OpenShift Development
-- **URL:** `https://dev-unity-ai-reporting-d18498-dev.apps.silver.devops.gov.bc.ca/?token=...`
+- **URL:** `https://dev-unity-ai-reporting-<namespace>-dev.apps.<cluster>.devops.gov.bc.ca/?token=...`
 - **JWT_SECRET:** Same as local (environment variable)
 - **Backend:** Gunicorn production server
 - **Database:** OpenShift PostgreSQL
@@ -338,20 +316,19 @@ JSON.parse(atob('eyJ1c2VyX2lkIjoi...'.split('.')[1]))
 **Backend Testing:**
 ```bash
 # Health check
-curl https://dev-unity-ai-reporting-d18498-dev.apps.silver.devops.gov.bc.ca/health
+curl https://dev-unity-ai-reporting-<namespace>-dev.apps.<cluster>.devops.gov.bc.ca/health
 
 # Token validation
 curl -H "Authorization: Bearer YOUR_TOKEN" \
-     -X POST https://dev-unity-ai-reporting-d18498-dev.apps.silver.devops.gov.bc.ca/api/validate-token
+     -X POST https://dev-unity-ai-reporting-<namespace>-dev.apps.<cluster>.devops.gov.bc.ca/api/validate-token
 ```
 
 ## Files Referenced
 
-- `documentation/unity-ai-reporting-verify-QueryTokenURL.ps1` - Token generation script (reads from .env)
-- `applications/.env` - Environment configuration with JWT_SECRET (required by PowerShell script)
+- `applications/.env` - Environment configuration with JWT_SECRET (required by the token generation script)
 - `Unity.AI.Reporting.Frontend/src/app/services/auth.service.ts` - Frontend authentication logic
 - `Unity.AI.Reporting.Frontend/src/app/guards/auth.guard.ts` - Route protection
 - `Unity.AI.Reporting.Backend/src/auth.py` - Backend JWT validation
 - `Unity.AI.Reporting.Backend/src/api.py` - Authentication endpoints
 
-**Note:** The PowerShell script requires the `applications/.env` file to be present and properly configured with `JWT_SECRET`. The script will automatically locate this file whether run from the applications or documentation folder.
+**Note:** The development token generation script is maintained in the private GitOps repository and requires the `applications/.env` file (with `JWT_SECRET` set) to be present alongside it.
