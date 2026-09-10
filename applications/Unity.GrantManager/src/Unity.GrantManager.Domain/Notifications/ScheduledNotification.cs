@@ -13,6 +13,8 @@ namespace Unity.GrantManager.Notifications
 
         public Guid? ApplicationStatusId { get; set; }
 
+        public string? ApplicationStatusIds { get; set; }
+
         public string? ApplicationStatus { get; set; }
 
         public string TriggerType { get; set; } = string.Empty; // Date or Event

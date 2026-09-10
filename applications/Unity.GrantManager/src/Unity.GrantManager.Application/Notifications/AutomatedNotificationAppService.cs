@@ -24,6 +24,7 @@ namespace Unity.GrantManager.Notifications
                 IsActive = input.IsActive,
                 EventType = input.EventType,
                 ApplicationStatusId = input.ApplicationStatusId,
+                ApplicationStatusIds = input.ApplicationStatusIds,
                 ApplicationStatus = input.ApplicationStatus,
                 DateField = input.DateField,
                 RecipientCategory = input.RecipientCategory,
@@ -44,6 +45,7 @@ namespace Unity.GrantManager.Notifications
                 IsActive = entity.IsActive,
                 EventType = entity.EventType,
                 ApplicationStatusId = entity.ApplicationStatusId,
+                ApplicationStatusIds = entity.ApplicationStatusIds,
                 ApplicationStatus = entity.ApplicationStatus,
                 DateField = entity.DateField
             };
@@ -76,6 +78,7 @@ namespace Unity.GrantManager.Notifications
                 IsActive = e.IsActive,
                 EventType = e.EventType,
                 ApplicationStatusId = e.ApplicationStatusId,
+                ApplicationStatusIds = e.ApplicationStatusIds,
                 ApplicationStatus = e.ApplicationStatus,
                 DateField = e.DateField,
                 RecipientCategory = e.RecipientCategory,
@@ -112,6 +115,7 @@ namespace Unity.GrantManager.Notifications
                 IsActive = e.IsActive,
                 EventType = e.EventType,
                 ApplicationStatusId = e.ApplicationStatusId,
+                ApplicationStatusIds = e.ApplicationStatusIds,
                 ApplicationStatus = e.ApplicationStatus,
                 DateField = e.DateField,
                 RecipientCategory = e.RecipientCategory,
@@ -131,6 +135,7 @@ namespace Unity.GrantManager.Notifications
             e.IsActive = input.IsActive;
             e.EventType = input.EventType;
             e.ApplicationStatusId = input.ApplicationStatusId;
+            e.ApplicationStatusIds = input.ApplicationStatusIds;
             e.ApplicationStatus = input.ApplicationStatus;
             e.DateField = input.DateField;
             e.RecipientCategory = input.RecipientCategory;
@@ -150,6 +155,7 @@ namespace Unity.GrantManager.Notifications
                 IsActive = e.IsActive,
                 EventType = e.EventType,
                 ApplicationStatusId = e.ApplicationStatusId,
+                ApplicationStatusIds = e.ApplicationStatusIds,
                 ApplicationStatus = e.ApplicationStatus,
                 DateField = e.DateField
             };
