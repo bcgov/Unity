@@ -1,22 +1,26 @@
-# Prompt the user to optionally login to OpenShift
-Write-Host "Do you want to log in to OpenShift now? (y/n)" -ForegroundColor Green
-$loginResponse = Read-Host
-if ($loginResponse -match '^(y|yes)$') {
-    try {
-        oc login --web --server=https://api.silver.devops.gov.bc.ca:6443
-    }
-    catch {
-        Write-Host "Login failed. Please check your connection and credentials." -ForegroundColor Red
-        exit 1
-    }
-}
-
 # Prompt user for environment selection
 $validEnvironments = @("dev", "test", "prod")
 do {
     Write-Host "Enter environment (dev, test, prod)" -ForegroundColor Green
     $environment = Read-Host
 } while (-not ($validEnvironments -contains $environment))
+
+# Use the Gold OpenShift cluster only
+$platform = "gold"
+$server = "https://api.gold.devops.gov.bc.ca:6443"
+
+# Prompt the user to optionally login to OpenShift
+Write-Host "Do you want to log in to OpenShift now? (y/n)" -ForegroundColor Green
+$loginResponse = Read-Host
+if ($loginResponse -match '^(y|yes)$') {
+    try {
+        oc login --web --server=$server
+    }
+    catch {
+        Write-Host "Login failed. Please check your connection and credentials." -ForegroundColor Red
+        exit 1
+    }
+}
 
 
 # Define cluster mappings
@@ -37,8 +41,9 @@ if ($environment -eq 'prod') {
 }
 
 
-# Configuration parameters (dynamically updated based on environment)
-$NameSpace = "d18498-$environment"  # OpenShift project namespace
+# Configuration parameters for the Gold OpenShift cluster
+$namespacePrefix = "ce395f"
+$NameSpace = "$namespacePrefix-$environment"  # OpenShift project namespace
 $ClusterName = "$cluster-crunchy-postgres"
 $LocalPort = 5436
 $RemotePort = 5432

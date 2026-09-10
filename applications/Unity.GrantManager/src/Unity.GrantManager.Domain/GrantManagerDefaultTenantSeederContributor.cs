@@ -83,7 +83,7 @@ namespace Unity.GrantManager
                     // "Unity.Onboarding" = SpecializationConsts.Onboarding; "T" = TenantFeatureValueProvider.ProviderName
                     await _featureManager.SetAsync(
                         "Unity.Onboarding",
-                        "true",
+                        "True",
                         "T",
                         newTenant.Id.ToString());
                 }

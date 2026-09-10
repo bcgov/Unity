@@ -21,6 +21,7 @@ public class ApplicantSummaryDto
     public string? UnityApplicantId { get; set; }
     public string? FiscalDay { get; set; }
     public string? FiscalMonth { get; set; }
+    public DateOnly? FiscalYearEnd { get; set; }
     public string? ElectoralDistrict { get; set; }
     public bool IsDuplicated { get; set; }
 }

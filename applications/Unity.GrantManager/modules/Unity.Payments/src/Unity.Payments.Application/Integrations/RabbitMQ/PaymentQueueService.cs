@@ -19,15 +19,13 @@ public class PaymentQueueService : ApplicationService
         _reconcilePaymentQueueProducer = reconcilePaymentQueueProducer;
     }
 
-    public Task SendPaymentToInvoiceQueueAsync(InvoiceMessages message)
+    public async Task SendPaymentToInvoiceQueueAsync(InvoiceMessages message)
     {
-        _invoiceQueueProducer.PublishMessage(message);
-        return Task.CompletedTask;
+        await _invoiceQueueProducer.PublishMessageAsync(message);
     }
 
-    public Task SendPaymentToReconciliationQueueAsync(ReconcilePaymentMessages message)
+    public async Task SendPaymentToReconciliationQueueAsync(ReconcilePaymentMessages message)
     {
-        _reconcilePaymentQueueProducer.PublishMessage(message);
-        return Task.CompletedTask;
+        await _reconcilePaymentQueueProducer.PublishMessageAsync(message);
     }
 }

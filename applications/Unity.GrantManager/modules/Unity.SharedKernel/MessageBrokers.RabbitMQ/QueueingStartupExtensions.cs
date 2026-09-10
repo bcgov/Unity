@@ -12,7 +12,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
         public static void ConfigureRabbitMQ(this IServiceCollection services)
         {
             var configuration = services.GetConfiguration();
-            services.TryAddSingleton<IAsyncConnectionFactory>(provider =>
+            services.TryAddSingleton<IConnectionFactory>(provider =>
             {
                 var factory = new ConnectionFactory
                 {
@@ -21,10 +21,10 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                     HostName = configuration.GetValue<string>("RabbitMQ:HostName") ?? "",
                     VirtualHost = configuration.GetValue<string>("RabbitMQ:VirtualHost") ?? "/",
                     Port = configuration.GetValue<int>("RabbitMQ:Port"),
-                    DispatchConsumersAsync = true,
                     AutomaticRecoveryEnabled = true,
-                    // Configure the amount of concurrent consumers within one host
-                    ConsumerDispatchConcurrency = QueueingConstants.MAX_RABBIT_CONCURRENT_CONSUMERS,
+                    // Configure the amount of concurrent consumers within one host.
+                    // Consumers are dispatched asynchronously by default in the v7 client.
+                    ConsumerDispatchConcurrency = (ushort)QueueingConstants.MAX_RABBIT_CONCURRENT_CONSUMERS,
                 };
                 return factory;
             });

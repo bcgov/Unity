@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
     inputs:
       base_url:
-        description: "Override baseUrl (e.g. https://feature-branch.apps.silver.devops.gov.bc.ca/)"
+        description: "Override baseUrl (e.g. https://feature-branch.apps.gold.devops.gov.bc.ca/)"
         required: false
         type: string
 
@@ -31,4 +31,5 @@ jobs:
       env_name: dev
       cypress_config_key: CYPRESS_CONFIG_DEV
       base_url: ${{ inputs.base_url || '' }}
+      git_ref: ${{ github.event.workflow_run.head_sha || github.sha }}
     secrets: inherit

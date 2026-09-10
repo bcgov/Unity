@@ -18,6 +18,12 @@ public class ApplicationFormConfigWidgetViewModel
     public SuffixConfigType? SuffixType { get; set; }
     public List<SelectListItem> SuffixTypes { get; set; } = [];
 
+    public string RenewalLinkUri { get; set; } = string.Empty;
+    public string RenewalLinkTitle { get; set; } = string.Empty;
+    public bool RenewalLinkPublished { get; set; }
+    public string ApplicantMessage { get; set; } = string.Empty;
+    public List<RelatedLinkItemViewModel> RelatedLinks { get; set; } = [];
+
     public static List<SelectListItem> FormatOptionsList(Dictionary<string, string> optionsList)
     {
         List<SelectListItem> optionsFormattedList = new();
@@ -29,3 +35,4 @@ public class ApplicationFormConfigWidgetViewModel
     }
 
 }
+

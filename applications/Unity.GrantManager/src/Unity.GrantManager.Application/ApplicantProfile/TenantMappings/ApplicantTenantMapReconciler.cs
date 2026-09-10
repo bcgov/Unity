@@ -10,6 +10,7 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.TenantManagement;
+using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.ApplicantProfile;
 
@@ -22,6 +23,7 @@ public class ApplicantTenantMapReconciler(
     ITenantRepository tenantRepository,
     IRepository<ApplicantTenantMap, Guid> applicantTenantMapRepository,
     IRepository<ApplicationFormSubmission, Guid> applicationFormSubmissionRepository,
+    IUnitOfWorkManager unitOfWorkManager,
     ILogger<ApplicantTenantMapReconciler> logger)
     : IApplicantTenantMapReconciler, ITransientDependency
 {
@@ -41,6 +43,7 @@ public class ApplicantTenantMapReconciler(
                 logger.LogDebug("Collecting submissions from tenant: {TenantName}", tenant.Name);
 
                 using (currentTenant.Change(tenant.Id))
+                using (var unitOfWork = unitOfWorkManager.Begin(requiresNew: true))
                 {
                     var submissionQueryable = await applicationFormSubmissionRepository.GetQueryableAsync();
                     var distinctOidcSubs = await submissionQueryable
@@ -48,6 +51,8 @@ public class ApplicantTenantMapReconciler(
                         .Select(s => s.OidcSub)
                         .Distinct()
                         .ToListAsync();
+
+                    await unitOfWork.CompleteAsync();
 
                     foreach (var oidcSub in distinctOidcSubs)
                     {
@@ -78,6 +83,7 @@ public class ApplicantTenantMapReconciler(
         int totalMappingsUpdated = 0;
 
         using (currentTenant.Change(null))
+        using (var unitOfWork = unitOfWorkManager.Begin(requiresNew: true))
         {
             var allSubUsernames = desiredMappings.Select(m => m.SubUsername).Distinct().ToList();
 
@@ -113,6 +119,8 @@ public class ApplicantTenantMapReconciler(
                         subUsername, tenantName);
                 }
             }
+
+            await unitOfWork.CompleteAsync();
         }
 
         logger.LogInformation("ApplicantTenantMap reconciliation completed. Created: {Created}, Updated: {Updated}",

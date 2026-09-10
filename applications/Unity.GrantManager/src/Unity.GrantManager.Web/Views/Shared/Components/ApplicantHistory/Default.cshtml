@@ -1,13 +1,27 @@
 @using Unity.GrantManager.Web.Views.Shared.Components.ApplicantHistory
+@using Unity.Modules.Shared
+@using Volo.Abp.Authorization.Permissions
+
+@inject IPermissionChecker PermissionChecker
 
 @model ApplicantHistoryViewModel
 
 @{
     Layout = null;
+    var permissionCheck = await PermissionChecker.IsGrantedAsync([
+        UnitySelector.ApplicantManagement.History.FundingHistory.Update,
+        UnitySelector.ApplicantManagement.History.AuditHistory.Update,
+        UnitySelector.ApplicantManagement.History.IssueHistory.Update,
+        UnitySelector.ApplicantManagement.History.ReportsHistory.Update,
+    ]);
+
+    var hasSavePermission = permissionCheck.Result.Values.Any(x => x == PermissionGrantResult.Granted);
 }
 
 <div class="applicant-history-widget applicant-info-container px-1 pb-2 mb-4">
 
+    @if (hasSavePermission)
+    {
     <div class="save-button-container">
         <abp-button text="Save"
                     id="saveApplicantHistoryBtn"
@@ -17,11 +31,15 @@
                     button-type="Primary"
                     disabled="true" />
     </div>
+    }
 
     <form id="ApplicantHistoryNotesForm" autocomplete="off">
         <input type="hidden" id="ApplicantHistory_ApplicantId" value="@Model.ApplicantId" />
 
         @* ── Funding History ── *@
+        <zone-fieldset id="@UnitySelector.ApplicantManagement.History.FundingHistory.Default" zone-type="PermissionOnly"
+            permission-requirement="@UnitySelector.ApplicantManagement.History.Default"
+            update-permission-requirement="@UnitySelector.ApplicantManagement.History.FundingHistory.Update">
         <section class="history-section">
             <div class="pb-1 pt-2">
                 <h6 class="fw-bold mb-0">Funding History</h6>
@@ -30,23 +48,27 @@
                 <span class="history-section__subtitle">Previous Funding History</span>
             </div>
             <div class="history-section__toolbar">
-                <input type="search" id="funding-history-search" class="tbl-search" placeholder="Search" />
+                <input type="search" id="funding-history-search" class="tbl-search" placeholder="Search" aria-label="Search Funding History" />
                 <div id="fundingHistoryDynamicButtons" class="dynamic-buttons-div button-gap-1"></div>
             </div>
             <abp-table id="FundingHistoryTable" hoverable-rows="true" class="w-100"></abp-table>
 
             <div class="mt-3">
-                <label class="form-label fw-bold">Previous Funding Notes</label>
+                <label class="form-label fw-bold" for="FundingHistoryComments">Previous Funding Notes</label>
                 <br/>
-                <label class="form-label">Additional Comments</label>
+                <label class="form-label" for="FundingHistoryComments">Additional Comments</label>
                 <textarea id="FundingHistoryComments"
                           name="FundingHistoryComments"
                           class="form-control"
                           rows="4">@Model.FundingHistoryComments</textarea>
             </div>
         </section>
+        </zone-fieldset>
 
         @* ── Issue Tracking ── *@
+        <zone-fieldset id="@UnitySelector.ApplicantManagement.History.IssueHistory.Default" zone-type="PermissionOnly"
+            permission-requirement="@UnitySelector.ApplicantManagement.History.Default"
+            update-permission-requirement="@UnitySelector.ApplicantManagement.History.IssueHistory.Update">
         <section class="history-section">
             <div class="pb-1 pt-2">
                 <h6 class="fw-bold mb-0">Issue Tracking</h6>
@@ -55,45 +77,53 @@
                 <span class="history-section__subtitle">Previous Issues</span>
             </div>
             <div class="history-section__toolbar">
-                <input type="search" id="issue-tracking-search" class="tbl-search" placeholder="Search" />
+                <input type="search" id="issue-tracking-search" class="tbl-search" placeholder="Search" aria-label="Search Issue Tracking" />
                 <div id="issueTrackingDynamicButtons" class="dynamic-buttons-div button-gap-1"></div>
             </div>
             <abp-table id="IssueTrackingTable" hoverable-rows="true" class="w-100"></abp-table>
 
             <div class="mt-3">
-                <label class="form-label fw-bold">Issue Notes</label>
+                <label class="form-label fw-bold" for="IssueTrackingComments">Issue Notes</label>
                 <br/>
-                <label class="form-label">Additional Comments</label>
+                <label class="form-label" for="IssueTrackingComments">Additional Comments</label>
                 <textarea id="IssueTrackingComments"
                           name="IssueTrackingComments"
                           class="form-control"
                           rows="4">@Model.IssueTrackingComments</textarea>
             </div>
         </section>
+        </zone-fieldset>
 
         @* ── Audit History ── *@
+        <zone-fieldset id="@UnitySelector.ApplicantManagement.History.AuditHistory.Default" zone-type="PermissionOnly"
+            permission-requirement="@UnitySelector.ApplicantManagement.History.Default"
+            update-permission-requirement="@UnitySelector.ApplicantManagement.History.AuditHistory.Update">
         <section class="history-section">
             <div class="pb-1 pt-2">
                 <h6 class="fw-bold mb-0">Audit History</h6>
             </div>
             <div class="history-section__toolbar">
-                <input type="search" id="audit-history-search" class="tbl-search" placeholder="Search" />
+                <input type="search" id="audit-history-search" class="tbl-search" placeholder="Search" aria-label="Search Audit History" />
                 <div id="auditHistoryDynamicButtons" class="dynamic-buttons-div button-gap-1"></div>
             </div>
             <abp-table id="AuditHistoryTable" hoverable-rows="true" class="w-100"></abp-table>
 
             <div class="mt-3">
-                <label class="form-label fw-bold">Audit History Notes</label>
+                <label class="form-label fw-bold" for="AuditComments">Audit History Notes</label>
                 <br/>
-                <label class="form-label">Additional Comments</label>
+                <label class="form-label" for="AuditComments">Additional Comments</label>
                 <textarea id="AuditComments"
                           name="AuditComments"
                           class="form-control"
                           rows="4">@Model.AuditComments</textarea>
             </div>
         </section>
+        </zone-fieldset>
 
         @* ── Reports History ── *@
+        <zone-fieldset id="@UnitySelector.ApplicantManagement.History.ReportsHistory.Default" zone-type="PermissionOnly"
+            permission-requirement="@UnitySelector.ApplicantManagement.History.Default"
+            update-permission-requirement="@UnitySelector.ApplicantManagement.History.ReportsHistory.Update">
         <section class="history-section">
             <div class="pb-1 pt-2">
                 <h6 class="fw-bold mb-0">Reports History</h6>
@@ -102,7 +132,7 @@
                 <span class="history-section__subtitle">Reports Notes</span>
             </div>
             <div class="history-section__toolbar">
-                <input type="search" id="reports-history-search" class="tbl-search" placeholder="Search" />
+                <input type="search" id="reports-history-search" class="tbl-search" placeholder="Search" aria-label="Search Reports History" />
                 <div id="reportsHistoryDynamicButtons" class="dynamic-buttons-div button-gap-1"></div>
             </div>
             <abp-table id="ReportsHistoryTable" hoverable-rows="true" class="w-100"></abp-table>
@@ -117,5 +147,6 @@
                           rows="4">@Model.ReportsComments</textarea>
             </div>
         </section>
+        </zone-fieldset>
     </form>
 </div>

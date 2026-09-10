@@ -38,11 +38,14 @@ namespace Unity.Flex.Domain.Services
                 .GroupBy(s => s.FieldId)
                 .ToList();
 
-            if (groups.Count == valueFields.Count) return valueFields; // no grouping required            
-
             var list = new List<ValueFieldContainer>();
 
-            // collect the value fields if known and store and transform to required values         
+            // Always route through JoinFieldValues, even for a single posted value. A checkbox-group
+            // field with exactly one box checked still needs JSON-array encoding (JoinFieldValues
+            // dispatches to ConvertCheckboxGroupMultiValues for that type); skipping it here previously
+            // left the raw single checkbox value (e.g. "true") stored instead of a JSON array, which
+            // the reporting views can't jsonb_array_elements() over. JoinFieldValues already returns the
+            // raw single value unchanged for every other field type.
             foreach (var group in groups)
             {
                 var fieldId = group.First().FieldId;
@@ -56,11 +59,7 @@ namespace Unity.Flex.Domain.Services
                     FieldId = fieldId,
                     FieldName = fieldName,
                     UiAnchor = uiAnchor,
-                    Value = values.Count > 1 ?
-                              group.Select(s => s.Value)
-                                .ToList()
-                                .JoinFieldValues(fieldId, worksheet, additionalIdentifiers)
-                            : values[0]
+                    Value = values.JoinFieldValues(fieldId, worksheet, additionalIdentifiers)
                 });
             }
 

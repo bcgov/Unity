@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:abp.io)",
+      "Bash(abp help *)",
+      "Bash(abp add-package *)",
+      "Bash(abp install-libs *)"
+    ]
+  }
+}

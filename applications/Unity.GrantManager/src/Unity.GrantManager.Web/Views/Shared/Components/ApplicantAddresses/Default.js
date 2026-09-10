@@ -6,6 +6,22 @@ $(function () {
     const nullPlaceholder = '—';
     let addressesTable = null;
     let zoneForm = null;
+    const PHYSICAL_ADDRESS_FIELDS = new Set([
+        'PrimaryPhysicalAddress.Street',
+        'PrimaryPhysicalAddress.Street2',
+        'PrimaryPhysicalAddress.Unit',
+        'PrimaryPhysicalAddress.City',
+        'PrimaryPhysicalAddress.Province',
+        'PrimaryPhysicalAddress.PostalCode'
+    ]);
+    const MAILING_ADDRESS_FIELDS = new Set([
+        'PrimaryMailingAddress.Street',
+        'PrimaryMailingAddress.Street2',
+        'PrimaryMailingAddress.Unit',
+        'PrimaryMailingAddress.City',
+        'PrimaryMailingAddress.Province',
+        'PrimaryMailingAddress.PostalCode'
+    ]);
 
 
     function renderTableLink(data, row) {
@@ -143,19 +159,19 @@ $(function () {
     function buildSavePayload(zoneFormInstance, $form) {
         const modifiedFields = Array.from(zoneFormInstance.modifiedFields ?? []);
 
-        const physicalDirty = modifiedFields.some((field) => field.startsWith('PrimaryPhysicalAddress.'));
-        const mailingDirty = modifiedFields.some((field) => field.startsWith('PrimaryMailingAddress.'));
+        const physicalModified = modifiedFields.filter((field) => PHYSICAL_ADDRESS_FIELDS.has(field));
+        const mailingModified = modifiedFields.filter((field) => MAILING_ADDRESS_FIELDS.has(field));
 
         const payload = {};
 
-        if (physicalDirty) {
+        if (physicalModified.length > 0) {
             const addressId = $('#ApplicantAddresses_PrimaryPhysicalAddressId').val();
             if (!isGuidEmpty(addressId)) {
                 payload.primaryPhysicalAddress = buildAddressPayload(addressId, 'PrimaryPhysicalAddress', $form);
             }
         }
 
-        if (mailingDirty) {
+        if (mailingModified.length > 0) {
             const addressId = $('#ApplicantAddresses_PrimaryMailingAddressId').val();
             if (!isGuidEmpty(addressId)) {
                 payload.primaryMailingAddress = buildAddressPayload(addressId, 'PrimaryMailingAddress', $form);

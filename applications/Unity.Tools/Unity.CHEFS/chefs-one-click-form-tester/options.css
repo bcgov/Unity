@@ -1,0 +1,38 @@
+:root { font-family: Arial, Helvetica, sans-serif; color: #1f2933; background: #f5f7fa; }
+body { margin: 0; }
+main { max-width: 980px; margin: 32px auto; padding: 24px; background: white; border: 1px solid #d1d5db; border-radius: 8px; }
+h1, h2 { color: #003366; }
+h2 { margin-top: 0; font-size: 20px; }
+section { margin-top: 26px; padding-top: 22px; border-top: 1px solid #d1d5db; }
+label { display: block; margin-top: 18px; font-weight: 700; }
+textarea, input[type="number"], input[type="text"], select { box-sizing: border-box; width: 100%; margin-top: 6px; padding: 9px; border: 1px solid #9ca3af; border-radius: 4px; background: white; }
+.folder-picker-row { display: flex; align-items: stretch; gap: 10px; }
+.folder-picker-row input { flex: 1 1 auto; min-width: 0; }
+.folder-picker-row button { flex: 0 0 auto; margin-top: 6px; }
+.checkbox-row { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.checkbox-row input { width: auto; }
+.hint { margin-top: 5px; color: #5f6b76; font-size: 13px; }
+.actions, .rule-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+.rule-toolbar .inline-label { margin: 0 0 0 auto; }
+.rule-toolbar select { width: auto; min-width: 120px; margin: 0; }
+button { border: 1px solid #003366; border-radius: 5px; background: #003366; color: white; padding: 10px 18px; font-weight: 700; cursor: pointer; }
+button.secondary { background: white; color: #003366; }
+button.danger { border-color: #b91c1c; background: white; color: #b91c1c; padding: 7px 11px; }
+button:focus, input:focus, select:focus, textarea:focus { outline: 3px solid rgba(26, 90, 150, 0.25); outline-offset: 1px; }
+.table-wrap { overflow-x: auto; margin-top: 14px; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 9px; border: 1px solid #d1d5db; text-align: left; vertical-align: middle; }
+th { background: #eef3f8; color: #003366; }
+td.enabled-cell, td.remove-cell { width: 84px; text-align: center; }
+td input[type="checkbox"] { width: 20px; height: 20px; }
+td input[type="text"] { margin: 0; min-width: 210px; }
+.empty-row td { color: #5f6b76; text-align: center; font-style: italic; }
+.message { min-height: 22px; margin-top: 10px; font-weight: 600; }
+.message.error { color: #b91c1c; }
+.message.success, #savedMessage { color: #166534; }
+code { padding: 1px 4px; background: #eef2f7; border-radius: 3px; }
+@media (max-width: 700px) {
+  main { margin: 0; border-radius: 0; }
+  .rule-toolbar .inline-label { margin-left: 0; }
+  .folder-picker-row { align-items: stretch; }
+}

@@ -16,6 +16,7 @@ internal static class PolicyRegistrant
     // when cookie-stamped permission claims were dropped in favour of IPermissionChecker).
     private static readonly string[] ITAdminOrITOperationsRoles =
         [IdentityConsts.ITAdminRoleName, IdentityConsts.ITOperationsRoleName];
+    internal const string MetricsAccessPolicy = "MetricsAccess";
 
     internal static void Register(ServiceConfigurationContext context)
     {
@@ -24,6 +25,10 @@ internal static class PolicyRegistrant
         // (Redis-cached). Only policies that need to check a Keycloak-issued role claim
         // (IsInRole) need explicit registration here.
         var authorizationBuilder = context.Services.AddAuthorizationBuilder();
+
+        // Metrics endpoint — allow only loopback / RFC-1918 (cluster-internal) callers
+        authorizationBuilder.AddPolicy(MetricsAccessPolicy,
+            policy => policy.AddRequirements(new InternalNetworkRequirement()));
 
         // IT Administrator / IT Operations role policies
         authorizationBuilder.AddPolicy(IdentityConsts.ITAdminPolicyName,
@@ -63,19 +68,24 @@ internal static class PolicyRegistrant
                 ITAdminOrITOperationsRoles, TenantManagementPermissions.Tenants.Create)));
 
         // ITAdmin-only: Tenant delete/connection-string management and Identity user
-        // creation/lookup - previously covered by the removed admin claim stamp.
+        // lookup - previously covered by the removed admin claim stamp.
         authorizationBuilder.AddPolicy(TenantManagementPermissions.Tenants.Delete,
             policy => policy.AddRequirements(new RoleOrPermissionRequirement(
                 [IdentityConsts.ITAdminRoleName], TenantManagementPermissions.Tenants.Delete)));
         authorizationBuilder.AddPolicy(TenantManagementPermissions.Tenants.ManageConnectionStrings,
             policy => policy.AddRequirements(new RoleOrPermissionRequirement(
                 [IdentityConsts.ITAdminRoleName], TenantManagementPermissions.Tenants.ManageConnectionStrings)));
-        authorizationBuilder.AddPolicy(IdentityPermissions.Users.Create,
-            policy => policy.AddRequirements(new RoleOrPermissionRequirement(
-                [IdentityConsts.ITAdminRoleName], IdentityPermissions.Users.Create)));
         authorizationBuilder.AddPolicy(IdentityPermissions.UserLookup.Default,
             policy => policy.AddRequirements(new RoleOrPermissionRequirement(
                 [IdentityConsts.ITAdminRoleName], IdentityPermissions.UserLookup.Default)));
+
+        // ITAdmin or ITOperations: Identity user creation/import - UserImportAppService is
+        // also invoked internally (via TenantCreatedEventHandler/TenantManagerAssignmentEventHandler)
+        // to import the Program Manager(s) during ITOperations-driven tenant onboarding, so it can't
+        // be ITAdmin-only like the other host-scoped policies above without breaking that flow.
+        authorizationBuilder.AddPolicy(IdentityPermissions.Users.Create,
+            policy => policy.AddRequirements(new RoleOrPermissionRequirement(
+                ITAdminOrITOperationsRoles, IdentityPermissions.Users.Create)));
     }
 }
 

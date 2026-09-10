@@ -46,6 +46,9 @@ public class ApplicantSummaryViewModel
     [SelectItems(nameof(ApplicantInfoViewModel.FiscalDayList))]
     public string? FiscalDay { get; set; }
 
+    [Display(Name = "ApplicantInfoView:ApplicantInfo.FiscalYearEnd")]
+    public DateOnly? FiscalYearEnd { get; set; }
+
 
     [Display(Name = "ApplicantInfoView:ApplicantInfo.Sector")]
     [SelectItems(nameof(ApplicantInfoViewModel.ApplicationSectorsList))]

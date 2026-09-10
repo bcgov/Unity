@@ -544,5 +544,220 @@ namespace Unity.Flex.Reporting
             result.ShouldNotBeNull();
             result.ShouldContain(c => c.Key == "dynamic_columns");
         }
+
+        [Fact]
+        public async Task ParseDataGridField_WithMultipleStaticColumns_ShouldPreserveDefinitionOrder()
+        {
+            // Arrange
+            using var uow = _unitOfWorkManager.Begin();
+
+            var worksheet = new Worksheet(Guid.NewGuid(), "TestWorksheet", "Test Worksheet");
+            var section = new WorksheetSection(Guid.NewGuid(), "TestSection");
+            worksheet.Sections.Add(section);
+
+            await _worksheetRepository.InsertAsync(worksheet, true);
+            await uow.SaveChangesAsync();
+
+            // Columns defined in a deliberately non-alphabetical order
+            var field = new CustomField(Guid.NewGuid(), "testDataGrid", "TestWorksheet", "Test DataGrid",
+                CustomFieldType.DataGrid,
+                @"{""dynamic"": false, ""columns"": [
+                    {""name"": ""zebra"", ""type"": ""Text""},
+                    {""name"": ""apple"", ""type"": ""Text""},
+                    {""name"": ""mango"", ""type"": ""Text""}
+                ], ""summaryOption"": ""None""}");
+            section.AddField(field);
+            await uow.SaveChangesAsync();
+
+            worksheet = await _worksheetRepository.GetAsync(worksheet.Id);
+
+            // Act
+            var result = WorksheetFieldSchemaParser.ParseField(field, worksheet);
+
+            // Assert — rows must appear in the order the columns are defined on the grid, not sorted
+            result.ShouldNotBeNull();
+            result.Select(c => c.Key).ShouldBe(["zebra", "apple", "mango"]);
+        }
+
+        [Fact]
+        public async Task ParseDataGridField_WithDynamicAndStaticColumns_ShouldEmitDynamicColumnsBeforeStaticColumns()
+        {
+            // Arrange
+            using var uow = _unitOfWorkManager.Begin();
+
+            var worksheet = new Worksheet(Guid.NewGuid(), "TestWorksheet", "Test Worksheet");
+            var section = new WorksheetSection(Guid.NewGuid(), "TestSection");
+            worksheet.Sections.Add(section);
+
+            await _worksheetRepository.InsertAsync(worksheet, true);
+            await uow.SaveChangesAsync();
+
+            var field = new CustomField(Guid.NewGuid(), "testDataGrid", "TestWorksheet", "Test DataGrid",
+                CustomFieldType.DataGrid,
+                @"{""dynamic"": true, ""columns"": [
+                    {""name"": ""staticB"", ""type"": ""Text""},
+                    {""name"": ""staticA"", ""type"": ""Text""}
+                ], ""summaryOption"": ""None""}");
+            section.AddField(field);
+            await uow.SaveChangesAsync();
+
+            worksheet = await _worksheetRepository.GetAsync(worksheet.Id);
+
+            var submissionHeaderMapping = $@"{{""{field.Name}.DataGrid"": ""chefsGrid""}}";
+
+            var formSchema = @"{
+                ""components"": [
+                    {
+                        ""key"": ""chefsGrid"",
+                        ""type"": ""datagrid"",
+                        ""components"": [
+                            { ""key"": ""dynamicB"", ""label"": ""Dynamic B"", ""type"": ""textfield"" },
+                            { ""key"": ""dynamicA"", ""label"": ""Dynamic A"", ""type"": ""textfield"" }
+                        ]
+                    }
+                ]
+            }";
+
+            // Act
+            var result = WorksheetFieldSchemaParser.ParseField(field, worksheet, formSchema, submissionHeaderMapping);
+
+            // Assert — CHEFS-extracted dynamic columns keep their own order and come first, followed by
+            // the statically-defined columns (not covered by the dynamic extraction) in their own order
+            result.ShouldNotBeNull();
+            result.Select(c => c.Key).ShouldBe(["dynamicB", "dynamicA", "staticB", "staticA"]);
+        }
+
+        [Fact]
+        public async Task ParseCheckboxGroupField_WithMultipleOptions_ShouldPreserveDefinitionOrder()
+        {
+            // Arrange
+            using var uow = _unitOfWorkManager.Begin();
+
+            var worksheet = new Worksheet(Guid.NewGuid(), "TestWorksheet", "Test Worksheet");
+            var section = new WorksheetSection(Guid.NewGuid(), "TestSection");
+            worksheet.Sections.Add(section);
+
+            await _worksheetRepository.InsertAsync(worksheet, true);
+            await uow.SaveChangesAsync();
+
+            // Options defined in a deliberately non-alphabetical order
+            var field = new CustomField(Guid.NewGuid(), "testCheckboxGroup", "TestWorksheet", "Test Checkbox Group",
+                CustomFieldType.CheckboxGroup,
+                @"{""options"": [
+                    {""key"": ""rural"", ""value"": false, ""label"": ""Rural""},
+                    {""key"": ""urban"", ""value"": false, ""label"": ""Urban""},
+                    {""key"": ""remote"", ""value"": false, ""label"": ""Remote""}
+                ]}");
+            section.AddField(field);
+            await uow.SaveChangesAsync();
+
+            worksheet = await _worksheetRepository.GetAsync(worksheet.Id);
+
+            // Act
+            var result = WorksheetFieldSchemaParser.ParseField(field, worksheet);
+
+            // Assert — rows must appear in the order the options are defined on the field, not sorted
+            result.ShouldNotBeNull();
+            result.Select(c => c.Key).ShouldBe(["rural", "urban", "remote"]);
+        }
+
+        [Fact]
+        public async Task ParseCheckboxGroupField_WithNoOptions_ShouldReturnSimpleComponent()
+        {
+            // Arrange
+            using var uow = _unitOfWorkManager.Begin();
+
+            var worksheet = new Worksheet(Guid.NewGuid(), "TestWorksheet", "Test Worksheet");
+            var section = new WorksheetSection(Guid.NewGuid(), "TestSection");
+            worksheet.Sections.Add(section);
+
+            await _worksheetRepository.InsertAsync(worksheet, true);
+            await uow.SaveChangesAsync();
+
+            var field = new CustomField(Guid.NewGuid(), "testCheckboxGroup", "TestWorksheet", "Test Checkbox Group",
+                CustomFieldType.CheckboxGroup,
+                @"{""options"": []}");
+            section.AddField(field);
+            await uow.SaveChangesAsync();
+
+            worksheet = await _worksheetRepository.GetAsync(worksheet.Id);
+
+            // Act
+            var result = WorksheetFieldSchemaParser.ParseField(field, worksheet);
+
+            // Assert
+            result.ShouldNotBeNull();
+            result.Count.ShouldBe(1);
+
+            var component = result.First();
+            component.Id.ShouldBe(field.Id.ToString());
+            component.Key.ShouldBe("testCheckboxGroup");
+            component.Type.ShouldBe("CheckboxGroup");
+        }
+
+        [Fact]
+        public async Task ParseWorksheet_WithFieldsOutOfInsertionOrder_ShouldEmitFieldsByOrderProperty()
+        {
+            // Arrange
+            using var uow = _unitOfWorkManager.Begin();
+
+            var worksheet = new Worksheet(Guid.NewGuid(), "TestWorksheet", "Test Worksheet");
+            var section = new WorksheetSection(Guid.NewGuid(), "TestSection");
+            worksheet.Sections.Add(section);
+
+            await _worksheetRepository.InsertAsync(worksheet, true);
+            await uow.SaveChangesAsync();
+
+            // Added to the section in A, B, C order, but Order is deliberately assigned out of sequence
+            // (B=1, C=2, A=3) so the test fails if ParseWorksheet ever falls back to collection/insertion
+            // order instead of sorting by the field's Order property.
+            section.Fields.Add(new CustomField(Guid.NewGuid(), "fieldA", "TestWorksheet", "Field A", CustomFieldType.Text, (string?)null).SetOrder(3));
+            section.Fields.Add(new CustomField(Guid.NewGuid(), "fieldB", "TestWorksheet", "Field B", CustomFieldType.Text, (string?)null).SetOrder(1));
+            section.Fields.Add(new CustomField(Guid.NewGuid(), "fieldC", "TestWorksheet", "Field C", CustomFieldType.Text, (string?)null).SetOrder(2));
+            await uow.SaveChangesAsync();
+
+            worksheet = await _worksheetRepository.GetAsync(worksheet.Id);
+
+            // Act
+            var result = WorksheetFieldSchemaParser.ParseWorksheet(worksheet);
+
+            // Assert — fields must appear in Order order (B, C, A), not the order they were added
+            result.ShouldNotBeNull();
+            result.Select(c => c.Key).ShouldBe(["fieldB", "fieldC", "fieldA"]);
+        }
+
+        [Fact]
+        public async Task ParseWorksheet_WithSectionsOutOfInsertionOrder_ShouldEmitSectionsByOrderProperty()
+        {
+            // Arrange
+            using var uow = _unitOfWorkManager.Begin();
+
+            var worksheet = new Worksheet(Guid.NewGuid(), "TestWorksheet", "Test Worksheet");
+
+            var sectionA = new WorksheetSection(Guid.NewGuid(), "SectionA");
+            var sectionB = new WorksheetSection(Guid.NewGuid(), "SectionB");
+
+            // Added to the worksheet in A, B order, but Order is deliberately reversed (A=2, B=1) so the
+            // test fails if ParseWorksheet ever falls back to collection/insertion order instead of
+            // sorting sections by their Order property.
+            worksheet.Sections.Add(sectionA.SetOrder(2));
+            worksheet.Sections.Add(sectionB.SetOrder(1));
+
+            sectionA.Fields.Add(new CustomField(Guid.NewGuid(), "fieldInA", "TestWorksheet", "Field In A", CustomFieldType.Text, (string?)null).SetOrder(1));
+            sectionB.Fields.Add(new CustomField(Guid.NewGuid(), "fieldInB", "TestWorksheet", "Field In B", CustomFieldType.Text, (string?)null).SetOrder(1));
+
+            await _worksheetRepository.InsertAsync(worksheet, true);
+            await uow.SaveChangesAsync();
+
+            worksheet = await _worksheetRepository.GetAsync(worksheet.Id);
+
+            // Act
+            var result = WorksheetFieldSchemaParser.ParseWorksheet(worksheet);
+
+            // Assert — Section B's field (Order 1) must come before Section A's field (Order 2), even
+            // though Section A was added to the worksheet first
+            result.ShouldNotBeNull();
+            result.Select(c => c.Key).ShouldBe(["fieldInB", "fieldInA"]);
+        }
     }
 }

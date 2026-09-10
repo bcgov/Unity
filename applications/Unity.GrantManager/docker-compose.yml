@@ -146,6 +146,27 @@ services:
     networks:
       - common-network
 
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./scripts/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./scripts/prometheus/alert-rules.yml:/etc/prometheus/alert-rules.yml:ro
+    depends_on:
+      - unity-grantmanager-web
+    networks:
+      - common-network
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./scripts/prometheus/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    networks:
+      - common-network
+
 volumes:
   postgres_data:
   redis_volume_data:

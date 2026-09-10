@@ -31,5 +31,11 @@ namespace Unity.Notifications.Repositories
             var dbSet = await GetDbSetAsync();
             return await dbSet.Where(x => x.EmailLogId == emailLogId && x.OriginTemplateId != null).ToListAsync();
         }
+
+        public async Task<bool> HasOtherReferencesAsync(string s3ObjectKey, Guid attachmentId)
+        {
+            var dbSet = await GetDbSetAsync();
+            return await dbSet.AnyAsync(x => x.S3ObjectKey == s3ObjectKey && x.Id != attachmentId);
+        }
     }
 }

@@ -47,5 +47,18 @@ namespace Unity.Reporting.Configuration
         /// A comma-separated value (e.g., "v1, v2") means the field appears in those versions but not all.
         /// </summary>
         public string? VersionLabel { get; set; } = null;
+
+        /// <summary>
+        /// The name of the worksheet this field belongs to (includes the version suffix, e.g. "grant_application-v2").
+        /// Populated only by the worksheet-based providers; null for scoresheet/formversion providers.
+        /// </summary>
+        public string? WorksheetName { get; set; } = null;
+
+        /// <summary>
+        /// The field's 1-based position in the provider's calculated overall field order (e.g., for worksheet
+        /// providers: Worksheet Name A-Z, then section order, then field layout order, then checkbox group
+        /// option / data grid column order). Assigned by the provider after all ordering is applied.
+        /// </summary>
+        public int SourceOrder { get; set; }
     }
 }

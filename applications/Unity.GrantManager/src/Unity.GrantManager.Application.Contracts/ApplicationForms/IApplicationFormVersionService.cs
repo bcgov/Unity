@@ -1,6 +1,7 @@
-﻿using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Threading.Tasks;
+using Unity.GrantManager.ApplicationForms.Mapping;
 using Unity.GrantManager.Forms;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -22,5 +23,18 @@ namespace Unity.GrantManager.ApplicationForms
         Task<ApplicationFormVersionDto?> GetByChefsFormVersionId(Guid chefsFormVersionId);
         Task<int> GetFormVersionByApplicationIdAsync(Guid applicationId);
         Task DeleteWorkSheetMappingByFormName(string formName, Guid formVersionId);
+        Task<ApplicationFormMappingDto> GenerateMappingAsync(Guid id);
+        Task<AiWorksheetReviewDto?> GetPendingAiWorksheetAsync(Guid formVersionId);
+        Task CreateAiWorksheetDraftAsync(Guid formVersionId, CreateAiWorksheetDraftDto input);
+        Task DiscardAiWorksheetSuggestionsAsync(Guid formVersionId);
+        Task<AiScoresheetReviewDto?> GetPendingAiScoresheetAsync(Guid formVersionId);
+        Task CreateAiScoresheetDraftAsync(Guid formVersionId, CreateAiScoresheetDraftDto input);
+        Task DiscardAiScoresheetSuggestionsAsync(Guid formVersionId);
+        Task<FormMappingReviewDto> GetMappingReviewAsync(Guid formVersionId);
+        Task<AcceptMappingSuggestionsResultDto> AcceptMappingSuggestionsAsync(Guid formVersionId, AcceptMappingSuggestionsDto input);
+        Task DiscardMappingSuggestionsAsync(Guid formVersionId);
+        Task SetMappingReviewPhaseAsync(Guid formVersionId, FormMappingReviewPhase phase);
+        Task FinalizeMappingReviewAsync(Guid formVersionId);
+        Task ResetAiFlowAsync(Guid formVersionId);
     }
 }

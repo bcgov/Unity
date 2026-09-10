@@ -1,0 +1,682 @@
+<title>Unity.Notifications</title>
+<meta name="description" content="Complete technical handover of Unity Portal's notifications module — the email pipeline from event to CHES, S3 attachments, scheduled notifications, SignalR realtime messaging and logs, and the known rough edges in one page.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --paper:#F5F3EB;
+    --paper-raised:#EEEADB;
+    --ink:#20242B;
+    --ink-soft:#5B6472;
+    --line:#D9D3BF;
+    --accent:#2C6E68;
+    --accent-strong:#1B4B47;
+    --accent-soft:#DCEAE6;
+    --warn:#A85D2E;
+    --warn-soft:#F1E1D0;
+    --good:#3D7A3D;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#12161A;
+      --paper-raised:#1A2024;
+      --ink:#E9E6DC;
+      --ink-soft:#98A2AB;
+      --line:#2B333A;
+      --accent:#63C4B9;
+      --accent-strong:#8AD8CE;
+      --accent-soft:#17302C;
+      --warn:#E0975A;
+      --warn-soft:#2E2013;
+      --good:#7BC47B;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#12161A;
+    --paper-raised:#1A2024;
+    --ink:#E9E6DC;
+    --ink-soft:#98A2AB;
+    --line:#2B333A;
+    --accent:#63C4B9;
+    --accent-strong:#8AD8CE;
+    --accent-soft:#17302C;
+    --warn:#E0975A;
+    --warn-soft:#2E2013;
+    --good:#7BC47B;
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Source Serif 4', Georgia, 'Times New Roman', serif;
+    font-size:16px;
+    line-height:1.55;
+  }
+  .sheet{
+    max-width:960px;
+    margin:0 auto;
+    padding:56px 40px 90px;
+  }
+  h1,h2,h3,h4{
+    font-family:'Big Shoulders Display', 'Archivo Black', Impact, sans-serif;
+    text-transform:uppercase;
+    letter-spacing:0.01em;
+    text-wrap:balance;
+    color:var(--ink);
+    margin:0;
+  }
+  .mono{ font-family:'JetBrains Mono', ui-monospace, Consolas, monospace; }
+  code, .code{
+    font-family:'JetBrains Mono', ui-monospace, Consolas, monospace;
+    font-size:0.85em;
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:0.05em 0.4em;
+    color:var(--accent-strong);
+    white-space:nowrap;
+  }
+  p{ margin:0 0 0.9em; max-width:68ch; }
+  p:last-child{ margin-bottom:0; }
+  a{ color:var(--accent-strong); }
+  ul{ margin:0; padding-left:1.2em; }
+  li{ margin-bottom:0.4em; }
+  strong{ color:var(--ink); }
+
+  /* ---------- Header ---------- */
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--accent-strong);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .eyebrow::before{ content:""; width:22px; height:1px; background:var(--accent-strong); }
+  h1.title{ font-size:clamp(40px, 7vw, 76px); line-height:0.92; font-weight:800; }
+  .subtitle{ max-width:60ch; font-size:19px; color:var(--ink-soft); margin-top:16px; }
+  .meta-row{
+    margin-top:26px;
+    padding-top:18px;
+    border-top:1px solid var(--line);
+    display:flex;
+    flex-wrap:wrap;
+    gap:22px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .meta-row b{ color:var(--ink); font-weight:600; }
+
+  /* ---------- TOC ---------- */
+  .toc{
+    margin-top:22px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    padding-top:18px;
+    border-top:1px solid var(--line);
+  }
+  .toc a{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    text-decoration:none;
+    color:var(--ink-soft);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:6px 12px;
+    background:var(--paper-raised);
+    transition:color .15s, border-color .15s;
+  }
+  .toc a:hover{ color:var(--accent-strong); border-color:var(--accent); }
+  .toc a b{ color:var(--accent-strong); font-weight:600; margin-right:4px; }
+
+  /* ---------- Fact strip ---------- */
+  .facts{
+    margin-top:40px;
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+  }
+  .fact{ padding:16px 18px; border-left:1px solid var(--line); }
+  .fact:first-child{ border-left:none; }
+  .fact .num{ font-family:'Big Shoulders Display', sans-serif; font-weight:700; font-size:34px; line-height:1; color:var(--accent-strong); }
+  .fact .lbl{ margin-top:6px; font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.04em; text-transform:uppercase; color:var(--ink-soft); }
+
+  /* ---------- Sections ---------- */
+  section{ margin-top:64px; scroll-margin-top:24px; }
+  .sec-head{ display:flex; align-items:baseline; gap:14px; margin-bottom:8px; }
+  .sec-num{ font-family:'JetBrains Mono', monospace; font-size:13px; color:var(--ink-soft); }
+  h2{ font-size:26px; font-weight:700; }
+  h3{
+    font-size:16px;
+    font-weight:700;
+    text-transform:none;
+    font-family:'JetBrains Mono', monospace;
+    letter-spacing:0.01em;
+    color:var(--accent-strong);
+    margin-top:32px;
+    margin-bottom:12px;
+    padding-bottom:6px;
+    border-bottom:1px solid var(--line);
+  }
+  section > .lede{ color:var(--ink-soft); font-size:15.5px; max-width:72ch; margin-bottom:20px; }
+  .note{ font-size:14px; color:var(--ink-soft); }
+
+  /* ---------- Pipeline ---------- */
+  .pipeline{ display:grid; grid-template-columns:repeat(3, 1fr); gap:0; border:1px solid var(--line); border-radius:2px; overflow:hidden; }
+  .pipe-step{ padding:20px 20px 22px; border-left:1px solid var(--line); position:relative; }
+  .pipe-step:first-child{ border-left:none; }
+  .pipe-step::after{
+    content:"→"; position:absolute; right:-13px; top:50%; transform:translateY(-50%);
+    color:var(--accent); font-size:20px; font-weight:600; background:var(--paper); width:24px; text-align:center; z-index:1;
+  }
+  .pipe-step:last-child::after{ content:""; }
+  .pipe-kicker{ font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:8px; }
+  .pipe-tracks{ display:flex; flex-direction:column; gap:6px; }
+  .pipe-tracks .code{ white-space:normal; }
+  .track-label{ font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.03em; margin-top:2px; }
+
+  /* ---------- Chips ---------- */
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chip{ font-family:'JetBrains Mono', monospace; font-size:12px; padding:6px 11px; border:1px solid var(--line); border-radius:999px; color:var(--ink-soft); background:var(--paper-raised); }
+  .chip.on{ border-color:var(--accent); color:var(--accent-strong); background:var(--accent-soft); }
+
+  /* ---------- Data table (generic) ---------- */
+  table.data{ width:100%; border-collapse:collapse; font-size:14px; }
+  table.data th{
+    text-align:left; font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.04em; text-transform:uppercase;
+    color:var(--ink-soft); border-bottom:1px solid var(--line); padding:0 10px 8px 0; font-weight:500;
+  }
+  table.data td{ padding:9px 10px 9px 0; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.data tr:last-child td{ border-bottom:none; }
+  table.data .yes{ color:var(--good); font-weight:700; }
+  table.data .no{ color:var(--ink-soft); opacity:0.5; }
+  .table-scroll{ overflow-x:auto; }
+
+  /* ---------- kv grid ---------- */
+  .kv-grid{ display:grid; grid-template-columns:1fr 1.6fr; gap:0; border:1px solid var(--line); }
+  .kv-grid > div{ padding:14px 18px; border-top:1px solid var(--line); font-size:14.5px; }
+  .kv-grid > div:nth-child(-n+2){ border-top:none; }
+  .kv-grid .k{ font-family:'JetBrains Mono', monospace; font-size:12.5px; color:var(--ink-soft); background:var(--paper-raised); }
+
+  /* ---------- Rowlist (entity trees, API groups, invariants) ---------- */
+  .rowlist{ display:flex; flex-direction:column; border-top:1px solid var(--line); }
+  .rowlist .row{ display:grid; grid-template-columns:210px 1fr; gap:20px; padding:13px 0; border-bottom:1px solid var(--line); }
+  .rowlist .row .k{ font-family:'JetBrains Mono', monospace; font-size:13px; font-weight:600; color:var(--accent-strong); line-height:1.4; }
+  .rowlist .row .k .sub{ display:block; font-weight:400; color:var(--ink-soft); font-size:11px; margin-top:2px; text-transform:none; }
+  .rowlist .row .v{ font-size:14.5px; }
+  .rowlist .row .v p{ margin:0; }
+  .rowlist .row .v .methods{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .rowlist .row .v .methods span{
+    font-family:'JetBrains Mono', monospace; font-size:11px; background:var(--paper-raised); border:1px solid var(--line);
+    border-radius:3px; padding:2px 6px; color:var(--ink-soft);
+  }
+
+  /* ---------- Tag badges (rough edges, tech debt) ---------- */
+  .tag{
+    font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.03em; text-transform:uppercase;
+    border-radius:3px; padding:3px 8px; height:fit-content; white-space:nowrap; display:inline-block;
+  }
+  .tag.warn{ color:var(--warn); background:var(--warn-soft); }
+  .tag.accent{ color:var(--accent-strong); background:var(--accent-soft); }
+  .tag.roadmap{ color:var(--accent-strong); background:transparent; border:1px dashed var(--accent); }
+
+  .schematic{
+    font-family:'JetBrains Mono', monospace; font-size:13px; color:var(--ink-soft);
+    background:var(--paper-raised); border:1px solid var(--line); border-radius:3px; padding:10px 14px; margin-bottom:14px; overflow-x:auto; white-space:pre;
+  }
+
+  /* ---------- Footer ---------- */
+  footer{
+    margin-top:70px; padding-top:22px; border-top:1px solid var(--line);
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px;
+    font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--ink-soft);
+  }
+
+  @media (max-width:640px){
+    .sheet{ padding:36px 20px 60px; }
+    .facts{ grid-template-columns:repeat(2,1fr); }
+    .fact:nth-child(3){ border-left:none; }
+    .pipeline{ grid-template-columns:1fr; }
+    .pipe-step::after{ content:"↓"; right:auto; left:16px; top:auto; bottom:-13px; transform:none; }
+    .pipe-step{ border-left:none; border-top:1px solid var(--line); }
+    .pipe-step:first-child{ border-top:none; }
+    .kv-grid{ grid-template-columns:1fr; }
+    .kv-grid .k{ border-bottom:none; padding-bottom:4px; }
+    .rowlist .row{ grid-template-columns:1fr; gap:6px; }
+  }
+</style>
+
+<div class="sheet">
+
+  <header>
+    <div class="eyebrow">Module Handover · Unity Portal</div>
+    <h1 class="title">Unity.Notifications</h1>
+    <p class="subtitle">Nothing calls CHES from a request thread. Every email Unity sends is a database row first, a queue message second, and an API call third — and that row is the audit record, the retry token, and the thing the UI lists. This page is the complete reference: the send pipeline, S3 attachments, scheduled notifications, the SignalR half, and the rough edges.</p>
+    <div class="meta-row">
+      <span><b>Path</b> <span class="mono">applications/Unity.GrantManager/modules/Unity.Notifications</span></span>
+      <span><b>Schema</b> <span class="mono">Notifications.* in the tenant DB</span></span>
+      <span><b>Transport</b> <span class="mono">RabbitMQ → CHES · SignalR/Redis</span></span>
+    </div>
+    <nav class="toc">
+      <a href="#pattern"><b>01</b>The pattern</a>
+      <a href="#architecture"><b>02</b>Two halves, one module</a>
+      <a href="#domain"><b>03</b>Domain model &amp; schema</a>
+      <a href="#pipeline"><b>04</b>The send pipeline</a>
+      <a href="#attachments"><b>05</b>Attachments</a>
+      <a href="#scheduled"><b>06</b>Scheduled notifications</a>
+      <a href="#realtime"><b>07</b>Realtime &amp; logs</a>
+      <a href="#ui"><b>08</b>Features, permissions &amp; UI</a>
+      <a href="#edges"><b>09</b>Known rough edges</a>
+    </nav>
+  </header>
+
+  <div class="facts">
+    <div class="fact"><div class="num">4</div><div class="lbl">Stages from publish to CHES</div></div>
+    <div class="fact"><div class="num">7</div><div class="lbl">EmailStatus values — strings, not an enum</div></div>
+    <div class="fact"><div class="num">10</div><div class="lbl">Hard-coded consumer retry limit</div></div>
+    <div class="fact"><div class="num">2</div><div class="lbl">Tenant features gating the two halves</div></div>
+  </div>
+
+  <!-- ============ 01 THE PATTERN ============ -->
+  <section id="pattern">
+    <div class="sec-head"><span class="sec-num">01</span><h2>The pattern</h2></div>
+    <p class="lede">Unity has to talk to people outside the browser session — applicants receiving decisions and reminders, staff receiving payment and failure summaries, operators pushing a maintenance banner into a live browser. This module owns all of it. Whatever the trigger, an email always travels the same four stages, and the <span class="code">EmailLog</span> row created at stage two is what every later stage reads and writes.</p>
+
+    <div class="pipeline">
+      <div class="pipe-step">
+        <div class="pipe-kicker">01 · Publish</div>
+        <div class="pipe-tracks">
+          <span class="code">EmailNotificationEvent</span>
+          <span class="track-label">local event bus · EmailAction says which kind</span>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-kicker">02 · Materialise</div>
+        <div class="pipe-tracks">
+          <span class="code">EmailNotificationHandler</span>
+          <span class="track-label">own transactional UoW · writes the EmailLog</span>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-kicker">03 · Queue → 04 · Send</div>
+        <div class="pipe-tracks">
+          <span class="code">EmailQueueService → EmailConsumer</span>
+          <span class="track-label">RabbitMQ, then CHES; response written back</span>
+        </div>
+      </div>
+    </div>
+
+    <p style="margin-top:18px;">Three orderings inside stage two are load-bearing and worth preserving if you touch that file:</p>
+    <div class="rowlist">
+      <div class="row"><div class="k">Validate twice<span class="sub">before mutating, before committing</span></div><div class="v"><p>The first attachment check fails a send of an existing draft <em>before</em> any S3 object is copied. The second fails <em>before</em> the unit of work commits, so a missing object rolls back the transition out of <span class="code">Draft</span> and the user can re-upload.</p></div></div>
+      <div class="row"><div class="k">Own unit of work<span class="sub">requiresNew: true</span></div><div class="v"><p>The log row and its attachment rows commit or roll back as one, independently of whatever transaction the publisher was in.</p></div></div>
+      <div class="row"><div class="k">Queue after commit<span class="sub">outside CompleteAsync</span></div><div class="v"><p>The consumer can never dequeue a message whose <span class="code">EmailLog</span> row is not yet visible to it.</p></div></div>
+    </div>
+
+    <h3>The one path that skips all of it</h3>
+    <p><span class="code">ExceptionLogAppService</span> calls <span class="code">SendEmailNotification</span> directly for exception alerts — no log row, no queue. <span class="code">SendCommentNotification</span> does the same for @-mention emails, rendering an embedded <span class="code">CommentNotification.cshtml</span> resource by string replacement rather than through <span class="code">EmailTemplate</span>.</p>
+  </section>
+
+  <!-- ============ 02 ARCHITECTURE ============ -->
+  <section id="architecture">
+    <div class="sec-head"><span class="sec-num">02</span><h2>Two halves, one module</h2></div>
+    <p class="lede">Read this as two modules that happen to be co-located. They share a project set, a database schema, and a feature-flag family — and no code paths at all.</p>
+
+    <div class="kv-grid">
+      <div class="k">Email half</div>
+      <div>Compose, template, schedule, queue, send via <strong>CHES</strong>, retry, audit. Attachments in S3. Gated by the <span class="code">Unity.Notifications</span> feature and the <span class="code">Notifications.*</span> permissions.</div>
+      <div class="k">Realtime half</div>
+      <div>A SignalR hub tracking who is online, delivering operator-to-user and operator-to-tenant messages, persisting every delivery as a <span class="code">NotificationLog</span>. Gated by the <span class="code">Unity.Notifications.DirectMessaging</span> feature and the <span class="code">ITOperations</span> <em>role</em> — not by any module permission.</div>
+    </div>
+
+    <h3>Dependency direction</h3>
+    <div class="schematic">Domain.Shared         enums, feature consts, NotificationsResource localization
+   ↑
+Domain                entities, repository interfaces, setting definitions,
+                      NotificationReadStateManager, seed contributors
+   ↑
+Application.Contracts DTOs, app service interfaces, NotificationsPermissions
+   ↑
+Application           managers/services, CHES client, RabbitMQ producer + consumer,
+                      S3 attachment service, the local event handler
+                      ── references Unity.GrantManager (see below) ──
+   ↑
+EntityFrameworkCore   ConfigureNotifications() model extension + custom repositories
+   ↑
+Web                   Razor Pages, NotificationHub, presence tracker,
+                      UnityMessagingController, menus, settings view component</div>
+
+    <h3>The module defines the plumbing; the host defines <em>when</em></h3>
+    <p><span class="code">Unity.Notifications.Application</span> knows how to build, queue and send. It does not know that grant applications exist. That knowledge lives in the host, which publishes the events:</p>
+    <table class="data">
+      <thead><tr><th>Host component</th><th>Trigger</th></tr></thead>
+      <tbody>
+        <tr><td class="code">Notifications/EmailAppService</td><td>A user clicks Send or Save Draft in the application email widget</td></tr>
+        <tr><td class="code">GrantApplications/BulkEmailNotificationAppService</td><td>A user sends a batch of per-application drafts</td></tr>
+        <tr><td class="code">Events/ScheduledNotificationEventHandler</td><td>An <span class="code">ApplicationChangedEvent</span> or <span class="code">PaymentStatusChangedEvent</span> matches a configured event-based notification</td></tr>
+        <tr><td class="code">Events/DateBasedScheduledNotificationJob</td><td>A nightly Quartz job finds applications whose configured date field has passed</td></tr>
+        <tr><td class="code">Logs/ExceptionLogAppService</td><td>A new, not-recently-seen exception is logged</td></tr>
+        <tr><td class="code">Unity.Payments · FsbPaymentNotifier</td><td>Payments reach FSB status, or a payment batch fails</td></tr>
+      </tbody>
+    </table>
+    <p class="note" style="margin-top:14px;"><strong>The exception to that rule</strong> — <span class="code">EmailNotificationHandler</span> lives in <span class="code">Unity.Notifications.Application/Events/</span> but declares <span class="code">namespace Unity.GrantManager.Events</span> and injects <span class="code">IRepository&lt;ScheduledNotification, Guid&gt;</span>, a host entity. Unlike Flex and TenantManagement, this module cannot be used without the host. See §09.</p>
+
+    <h3>External dependencies</h3>
+    <div class="rowlist">
+      <div class="row"><div class="k">CHES<span class="sub">Common Hosted Email Service</span></div><div class="v"><p>The only way mail leaves Unity — there is no SMTP anywhere. Base URLs come from <span class="code">DynamicUrl</span> rows (<span class="code">NOTIFICATION_API_BASE</span>, <span class="code">NOTIFICATION_AUTH</span>) resolved through the host's <span class="code">IEndpointManagementAppService</span>, so they are configuration, not constants.</p><div class="methods"><span>POST /email</span><span>GET /status?msgId=</span><span>DELETE /cancel/{id}</span></div></div></div>
+      <div class="row"><div class="k">RabbitMQ</div><div class="v"><p>Decouples send from request, and carries the retry. <span class="code">EmailQueueService</span> produces, <span class="code">EmailConsumer</span> consumes. TTL 10 minutes first pass, 20 on retry.</p></div></div>
+      <div class="row"><div class="k">S3</div><div class="v"><p>Attachment bodies. Path-style addressing, <span class="code">ForcePathStyle = true</span>, no AWS region — an S3-compatible store, not AWS proper.</p></div></div>
+      <div class="row"><div class="k">Redis</div><div class="v"><p>SignalR backplane so realtime messages cross pods. Standard or Sentinel; channel prefix defaults to <span class="code">unity:signalr</span>. Note it carries <em>messages</em>, not presence — see §07.</p></div></div>
+      <div class="row"><div class="k">Keycloak / IDIR</div><div class="v"><p>Resolving sender and recipient display names and email addresses for email groups, message senders, and the tenant roster.</p></div></div>
+    </div>
+  </section>
+
+  <!-- ============ 03 DOMAIN MODEL ============ -->
+  <section id="domain">
+    <div class="sec-head"><span class="sec-num">03</span><h2>Domain model &amp; schema</h2></div>
+    <p class="lede">Every entity implements <span class="code">IMultiTenant</span>. No query in this module filters <span class="code">TenantId</span> by hand — ABP's automatic filter does the isolation, and the few places that step outside it do so deliberately via <span class="code">ICurrentTenant.Change</span>.</p>
+
+    <h3>Two DbContexts, one of which is the real one</h3>
+    <p><span class="code">NotificationsEntityFrameworkCoreModule</span> registers a <span class="code">NotificationsDbContext</span>, but at runtime the tables are created and queried through the host's <span class="code">GrantTenantDbContext</span>, which calls the same <span class="code">modelBuilder.ConfigureNotifications()</span> extension from its own <span class="code">OnModelCreating</span>. Tenant migrations carry the notification tables; the module's own context is a scaffold that keeps the module self-describing. Schema <span class="code">Notifications</span>, empty table prefix.</p>
+
+    <h3>Core entities</h3>
+    <div class="rowlist">
+      <div class="row"><div class="k">EmailLog<span class="sub">AuditedAggregateRoot&lt;Guid&gt;</span></div><div class="v"><p>One outbound message, and the unit of work for the whole pipeline. Addresses are comma-joined strings, not collections. Holds the rendered body, the CHES response/status/<span class="code">msgId</span>, the retry count, and links to an application, an applicant, and optionally a <span class="code">ScheduledNotification</span>.</p></div></div>
+      <div class="row"><div class="k">EmailLogAttachment</div><div class="v"><p>Metadata for one S3 object. <span class="code">EmailLogId</span> <em>or</em> <span class="code">TemplateId</span> is set. <span class="code">OriginTemplateId</span> records that the row was copied from a template — which is what makes template re-application replaceable. Cascade-delete FKs to both parents; indexed on <span class="code">S3ObjectKey</span> to support the shared-object reference check.</p></div></div>
+      <div class="row"><div class="k">EmailTemplate<span class="sub">the only soft-deleted entity</span></div><div class="v"><p>Tenant-scoped name, subject, HTML and text body, send-from, recipient category/identifier. Can own attachments. Body tokens are <span class="code">{{token}}</span> placeholders.</p></div></div>
+      <div class="row"><div class="k">EmailAddressConfiguration</div><div class="v"><p>An allowlisted address with a type. Two indexes matter: <span class="code">(TenantId, EmailAddress, EmailType)</span> unique, and a <strong>filtered unique index on <span class="code">TenantId</span> where <span class="code">"IsDefault" = true</span></strong> — at most one default per tenant enforced by Postgres, not just by service code.</p></div></div>
+      <div class="row"><div class="k">EmailGroup<span class="sub">+ EmailGroupUser</span></div><div class="v"><p>A named list of internal users. <span class="code">FSB-AP</span> and <span class="code">Payments</span> are seeded per tenant. A group referenced by an active scheduled notification cannot be deleted — but it <em>can</em> be renamed, which silently breaks the link (§09).</p></div></div>
+      <div class="row"><div class="k">NotificationLog</div><div class="v"><p>The durable record behind the Notification Logs page. Three enums stored as strings, <span class="code">PayloadJson</span> as Postgres <span class="code">jsonb</span>, indexes on <span class="code">(TenantId, CreationTime)</span>, <span class="code">(NotificationType, CreationTime)</span> and <span class="code">CorrelationId</span>.</p></div></div>
+      <div class="row"><div class="k">NotificationReadState</div><div class="v"><p>One row per (tenant, user) holding <span class="code">LastReadAt</span>. Its manager is the module's only domain service, and it deliberately swallows <span class="code">AbpDbConcurrencyException</span> — two tabs advancing the same watermark is expected, and losing one write is harmless.</p></div></div>
+    </div>
+
+    <h3>The EmailStatus lifecycle</h3>
+    <p><span class="code">EmailStatus</span> is a static class of <strong>string constants</strong>, not an enum — stored as free text with no length or check constraint.</p>
+    <div class="schematic">  InitializeDraft
+  ───────────────►  Draft ──(SendCustom)──►  Initialized  ─────►  Sent      (CHES 2xx)
+                                             or Scheduled  ├────►  Failed    (CHES error · retries
+                                                  │        │                  exhausted · missing
+                                                  │        │                  attachments)
+                                                  └────────┴────►  Cancelled (user cancels a
+                                                                              non-Sent email)</div>
+    <p class="note"><span class="code">Created</span> is the seventh constant and is never assigned anywhere.</p>
+
+    <h3>Settings</h3>
+    <table class="data">
+      <thead><tr><th>Key</th><th>Default</th><th>Actually read by</th></tr></thead>
+      <tbody>
+        <tr><td class="code">Mailing.DefaultFromAddress</td><td class="code">NoReply.Unity@gov.bc.ca</td><td>Seeded as the default <span class="code">Sender</span> address; read directly by both scheduled-notification triggers and the email widget</td></tr>
+        <tr><td class="code">Mailing.EmailMaxRetryAttempts</td><td class="code">3</td><td class="no">Nothing — the consumer uses its own hard-coded 10 (§09)</td></tr>
+        <tr><td class="code">Mailing.EnableEmailDelay</td><td class="code">false</td><td>The "schedule this email" control on the per-application widget</td></tr>
+      </tbody>
+    </table>
+    <p class="note" style="margin-top:12px;">Seeding runs <strong>per tenant only</strong>: 23 <span class="code">TemplateVariable</span> rows, the two email groups, and the default sender address. A separate contributor writes <span class="code">EnableEmailDelay = false</span> explicitly so existing tenants get the default on deploy rather than relying on the runtime fallback.</p>
+  </section>
+
+  <!-- ============ 04 PIPELINE ============ -->
+  <section id="pipeline">
+    <div class="sec-head"><span class="sec-num">04</span><h2>The send pipeline</h2></div>
+    <p class="lede">Stage detail. The most consequential logic in the module is <span class="code">EmailConsumer.ProcessEmailAsync</span>'s failure classification — it decides what gets another attempt and what is dead on arrival.</p>
+
+    <h3>Which EmailActions are actually routed</h3>
+    <table class="data">
+      <thead><tr><th>EmailAction</th><th>Handler</th><th>Queued?</th></tr></thead>
+      <tbody>
+        <tr><td class="code">SendCustom · SendEventDriven · SendDateDriven</td><td>HandleSendCustomEmail</td><td class="yes">yes</td></tr>
+        <tr><td class="code">SaveDraft</td><td>HandleSaveDraftAndReturnNull</td><td class="no">no — returns null deliberately</td></tr>
+        <tr><td class="code">SendFailedSummary</td><td>HandleFailedSummary</td><td class="yes">yes</td></tr>
+        <tr><td class="code">SendFsbNotification</td><td>HandleFsbNotification</td><td class="yes">yes</td></tr>
+        <tr><td class="code">Retry · SendByTemplateId · SendApproval · SendDecline</td><td class="no">none — falls through to null</td><td class="no">silent no-op</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Failure classification in the consumer</h3>
+    <div class="table-scroll">
+    <table class="data">
+      <thead><tr><th>Failure</th><th>Status</th><th>Retried?</th></tr></thead>
+      <tbody>
+        <tr><td>RetryAttempts &gt; 10</td><td class="code">Failed</td><td class="no">no — give up</td></tr>
+        <tr><td class="code">MissingEmailAttachmentsException</td><td class="code">Failed</td><td class="no">no — a missing object stays missing</td></tr>
+        <tr><td class="code">AmazonS3Exception</td><td class="code">Failed</td><td class="yes">yes — transient storage</td></tr>
+        <tr><td>Any other send exception</td><td class="code">Failed</td><td class="yes">yes</td></tr>
+        <tr><td>CHES 429 · 500 · 502 · 503 · 504</td><td>as returned</td><td class="yes">yes</td></tr>
+        <tr><td>Any other CHES status</td><td><span class="code">Sent</span> (2xx) or <span class="code">Failed</span></td><td class="no">no</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="note" style="margin-top:12px;">Status is set to <span class="code">Failed</span> <em>before</em> a retry is scheduled, so a message mid-retry reads as Failed in the UI until an attempt succeeds.</p>
+
+    <h3>Three defensive details in UpdateEmailLogStatus</h3>
+    <div class="rowlist">
+      <div class="row"><div class="k">Scheduled is preserved</div><div class="v"><p>A scheduled email whose <span class="code">SendOnDateTime</span> has not passed keeps status <span class="code">Scheduled</span> regardless of the response. CHES has accepted it for later delivery; flipping it to <span class="code">Sent</span> would be a lie. Only once the send time passes does the response decide.</p></div></div>
+      <div class="row"><div class="k">The Date header is untrusted</div><div class="v"><p><span class="code">SanitizeResponseDateTime</span> rejects a CHES <span class="code">Date</span> header more than 5 minutes in the future or 15 in the past and substitutes <span class="code">UtcNow</span> — an external system's clock treated as input, not fact.</p></div></div>
+      <div class="row"><div class="k">Payments get told</div><div class="v"><p>A successful send with non-empty <span class="code">PaymentRequestIds</span> publishes <span class="code">FsbEmailSentEto</span> back on the local bus so <span class="code">Unity.Payments</span> can mark those requests notified.</p></div></div>
+    </div>
+
+    <h3>Building the CHES message object</h3>
+    <p><span class="code">cc</span> and <span class="code">bcc</span> are included only when present — CHES wants arrays, never null. <span class="code">templateName</span> is stored on the log but <strong>deliberately excluded</strong> from the payload: it is not part of the CHES <span class="code">MessageObject</span> schema. A scheduled send adds <span class="code">delayTS</span> as Unix milliseconds.</p>
+
+    <h3>Cancelling a scheduled email — the careful path</h3>
+    <p>Deleting a scheduled email that already has a <span class="code">ChesMsgId</span> first asks CHES for the real state rather than assuming:</p>
+    <table class="data">
+      <thead><tr><th>CHES status</th><th>What Unity does</th></tr></thead>
+      <tbody>
+        <tr><td class="code">completed / accepted</td><td>Already out. Mark the log <span class="code">Sent</span>, persist, and refuse the delete with a user-friendly error.</td></tr>
+        <tr><td class="code">pending</td><td>Still queued at CHES. Call <span class="code">CancelEmailAsync</span> to withdraw it; a failed cancel throws rather than deleting a row for a message that will still arrive.</td></tr>
+        <tr><td>anything else</td><td>Record the status and proceed with deletion.</td></tr>
+        <tr><td>unexpected exception</td><td>"Unable to verify the status of the scheduled email." Refusing to delete blind is the safe default.</td></tr>
+      </tbody>
+    </table>
+    <p class="note" style="margin-top:12px;"><strong>Its softer sibling doesn't do this.</strong> <span class="code">CancelEmailLogAsync</span> just sets <span class="code">Status = Cancelled</span> without calling CHES — so cancelling a scheduled email through that path leaves the message queued at CHES to be delivered anyway.</p>
+  </section>
+
+  <!-- ============ 05 ATTACHMENTS ============ -->
+  <section id="attachments">
+    <div class="sec-head"><span class="sec-num">05</span><h2>Attachments</h2></div>
+    <p class="lede">Bytes in S3, metadata in <span class="code">Notifications."EmailLogAttachments"</span>. Metadata is the source of truth; orphaned bytes are an accepted cost.</p>
+
+    <div class="schematic">Email/Attachments/{tenantId|host}/{emailLogId}/{attachmentGuid}/{fileName}   ← user uploads
+Email/FSB-AP-Payments/{tenantId|host}/{emailLogId}/{fileName}                ← generated FSB spreadsheets</div>
+    <p>The user path interposes a fresh <span class="code">Guid</span> per upload, so two files with the same name never collide and every copy of a template attachment gets its own object.</p>
+
+    <h3>A considered asymmetry on missing users</h3>
+    <div class="kv-grid">
+      <div class="k">UploadAttachmentAsync</div>
+      <div>Reached from the event handler, which runs for schedule- and system-triggered emails. A null <span class="code">ICurrentUser.Id</span> becomes <span class="code">Guid.Empty</span> — there genuinely may be no interactive user, and the caller already sends without the attachment on any failure.</div>
+      <div class="k">UploadUserAttachmentAsync</div>
+      <div>Reached from an authenticated HTTP upload. A null id <strong>throws</strong> <span class="code">AbpAuthorizationException</span> — attributing a user-uploaded file to <span class="code">Guid.Empty</span> would look like a valid, specific user rather than an error.</div>
+    </div>
+
+    <h3>Copy vs. replace</h3>
+    <div class="rowlist">
+      <div class="row"><div class="k">CopyTemplateAttachments<span class="sub">additive</span></div><div class="v"><p>Deduplicates by <strong><span class="code">(FileName, FileSize, ContentType)</span> among rows whose <span class="code">OriginTemplateId</span> matches</strong> — not by <span class="code">S3ObjectKey</span>. Every copy gets a brand-new key, so a key-based check would never match and a re-run would duplicate everything.</p></div></div>
+      <div class="row"><div class="k">ReplaceTemplateAttachments<span class="sub">ordering is the point</span></div><div class="v"><p>Validate every source exists → copy all to fresh email-owned objects → <em>only then</em> delete the previous template-origin rows. Manually uploaded draft attachments have no <span class="code">OriginTemplateId</span> and are left untouched.</p></div></div>
+      <div class="row"><div class="k">On any copy failure</div><div class="v"><p><span class="code">DeleteCopiedObjectsBestEffortAsync</span> removes the objects already written, then rethrows — a partial copy never leaks storage.</p></div></div>
+    </div>
+
+    <h3>Four validation points, four different races</h3>
+    <div class="chips">
+      <span class="chip on">EmailAppService.SendAsync — HTTP boundary</span>
+      <span class="chip on">Handler — before mutating</span>
+      <span class="chip on">Handler — before committing</span>
+      <span class="chip on">QueueEmailAsync — before the broker</span>
+      <span class="chip on">Send time — non-retryable failure</span>
+    </div>
+    <p style="margin-top:14px;">Existence is checked with <span class="code">GetObjectMetadataAsync</span> (a HEAD, not a GET), and <span class="code">IsMissingObject</span> treats 404, <span class="code">NoSuchKey</span> and <span class="code">NotFound</span> alike because S3-compatible stores disagree on which they return. All missing files surface in one <span class="code">MissingEmailAttachmentsException</span>, worded differently for a template than for an email.</p>
+
+    <h3>Deletion is reference-aware</h3>
+    <p>Ask whether any other metadata row points at the same object → delete the row (a missing row is success) → if others still reference it, stop → otherwise delete the object, and <strong>if that fails, log and do not rethrow</strong>. The invariant, stated in the source: <em>the database must never retain a key merely because best-effort storage cleanup failed; a leaked object is safer than deleting one another attachment still needs.</em></p>
+
+    <p class="note"><strong>The permission is not the control on upload.</strong> <span class="code">EmailLogAttachmentAppService.UploadAsync</span> is <span class="code">[RemoteService(false)]</span> because it takes raw filename/content/type with none of the allowlist, size or content-type checks <span class="code">AttachmentController</span> enforces. Exposing it would let a caller holding a legitimate <span class="code">Email.Send</span> permission bypass validation entirely.</p>
+  </section>
+
+  <!-- ============ 06 SCHEDULED ============ -->
+  <section id="scheduled">
+    <div class="sec-head"><span class="sec-num">06</span><h2>Scheduled notifications</h2></div>
+    <p class="lede">"Scheduled notification" here means a <em>configuration</em>, not a queued message: when applications on form X reach status Y — or when date field Z passes — render template T and send it to recipients R. All of it lives in the host; both triggers converge on publishing an <span class="code">EmailNotificationEvent</span>.</p>
+
+    <div class="pipeline">
+      <div class="pipe-step">
+        <div class="pipe-kicker">Trigger A · Event</div>
+        <div class="pipe-tracks">
+          <span class="code">ScheduledNotificationEventHandler</span>
+          <span class="track-label">ApplicationChangedEvent · PaymentStatusChangedEvent</span>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-kicker">Converges on</div>
+        <div class="pipe-tracks">
+          <span class="code">ScheduledNotificationHelper</span>
+          <span class="track-label">token render + recipient resolution → publish</span>
+        </div>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-kicker">Trigger B · Date</div>
+        <div class="pipe-tracks">
+          <span class="code">DateBasedScheduledNotificationJob</span>
+          <span class="track-label">nightly Quartz, default 0 0 2 * * ?</span>
+        </div>
+      </div>
+    </div>
+
+    <h3>Recipient resolution</h3>
+    <div class="kv-grid">
+      <div class="k">Internal</div>
+      <div><span class="code">RecipientIdentifier</span> is a comma-separated list of email group <strong>names</strong>. Groups → members → identity emails, accumulated into a case-insensitive set. A missing group, an empty group, or a failed user lookup each log a warning and skip rather than failing the batch.</div>
+      <div class="k">External</div>
+      <div>Two recognized literals: <span class="code">ApplicationContact</span> → <span class="code">ApplicantAgent.Email</span>, and <span class="code">SigningAuthority</span> → <span class="code">Application.SigningAuthorityEmail</span>. Anything else logs and skips.</div>
+    </div>
+    <p class="note" style="margin-top:12px;">Zero resolvable addresses means nothing is published at all — no <span class="code">EmailLog</span> row is ever created, so the silence is invisible outside the logs.</p>
+
+    <h3>Token substitution</h3>
+    <p>A compile-time <span class="code">[GeneratedRegex(@"\{\{(\w+)\}\}")]</span> replaces tokens against a hand-written dictionary built from the application and applicant agent. <strong>Unknown tokens are left in place</strong> — a typo renders as literal <span class="code">{{typo}}</span> rather than a blank. Navigation-property access is wrapped in try/catch because the entity may have been loaded without details.</p>
+    <p class="note">The seeded <span class="code">TemplateVariable.MapTo</span> column documents intent but is <em>not</em> what resolves the value — the dictionary is. Adding a variable takes two edits: a seed row and a dictionary entry.</p>
+
+    <h3>Duplicate suppression, and its two gaps</h3>
+    <p><span class="code">ScheduledNotificationTracking</span> is the ledger, keyed by <span class="code">(ApplicationId, ScheduledNotificationId, DateField)</span> — which is why one application can be notified separately for its due date and its contract date. Two consequences:</p>
+    <ul>
+      <li>A tracking row is created when the event is <strong>published</strong>, not when the email is sent. A later permanent pipeline failure still reads as "notified", and the job will never retry it.</li>
+      <li>Rows are inserted in one batch at the end of each tenant's run, so a crash mid-run loses the whole batch and those applications are notified again next time.</li>
+    </ul>
+    <p class="note">The date job is written explicitly to avoid N+1: one application query across all forms, one tracking query, one template load, one applicant-agent load, and one batched insert at the end.</p>
+  </section>
+
+  <!-- ============ 07 REALTIME ============ -->
+  <section id="realtime">
+    <div class="sec-head"><span class="sec-num">07</span><h2>Realtime &amp; logs</h2></div>
+    <p class="lede">The second half. A SignalR hub at <span class="code">/signalr/notifications</span>, a per-pod presence tracker, and a durable log of every delivery. The feature check runs at connect time — a disabled tenant gets <span class="code">Context.Abort()</span>, not merely a hidden menu item.</p>
+
+    <h3>Groups, and what they mean</h3>
+    <div class="schematic">user:{userId}            every connection joins its own
+tenant:{tenantId}        joined when a tenant is in context
+ops:notification-logs    joined only by ITOperations users</div>
+    <p>These same strings are persisted as <span class="code">NotificationLog.DeliveryTarget</span>, so a log row records exactly which group the message was pushed to.</p>
+
+    <h3>Hub surface</h3>
+    <div class="table-scroll">
+    <table class="data">
+      <thead><tr><th>Method</th><th>Authorization</th><th>Behaviour</th></tr></thead>
+      <tbody>
+        <tr><td class="code">GetUnreadMessagesAsync</td><td>any connected user</td><td>Up to 50 messages after the caller's <span class="code">LastReadAt</span>, addressed to them or tenant-wide</td></tr>
+        <tr><td class="code">GetConversationHistoryAsync</td><td>any connected user</td><td>Up to 100 — tenant broadcasts, or the two-way thread with one peer</td></tr>
+        <tr><td class="code">SendPeerMessageAsync</td><td>any connected user</td><td>User to user, within the tenant</td></tr>
+        <tr><td class="code">SendTenantMessageAsync</td><td>any connected user</td><td>Broadcast to the caller's whole tenant</td></tr>
+        <tr><td class="code">GetOnlineUsersAsync</td><td><strong>ITOperations</strong></td><td>Raw presence across tenants; throws <span class="code">HubException</span> otherwise</td></tr>
+        <tr><td class="code">SendDirectMessageAsync</td><td><strong>ITOperations</strong></td><td>The operator-to-user path</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="note" style="margin-top:12px;">Cross-tenant safety on peer messages needs no manual <span class="code">TenantId</span> check: ABP's automatic filter applies to the repository lookup, so a user outside the current tenant comes back null even when the Guid is valid. Adding a comparison would be redundant.</p>
+
+    <h3>Presence is per-pod</h3>
+    <p><span class="code">NotificationPresenceTracker</span> is a singleton holding <span class="code">ConcurrentDictionary</span>s keyed <span class="code">{tenantId|host}:{userId}</span>. The Redis backplane fans out <em>messages</em> across pods — it does not carry presence. With more than one replica the online list shows only the users connected to the pod that served the request, and the operator cannot tell what they are missing.</p>
+    <p><span class="code">UnityMessagingController</span> partly compensates: it lists each tenant's <strong>full roster</strong> and derives "last activity" from the ABP <strong>audit log</strong> rather than from presence, so offline users still get a meaningful last-seen. Its <span class="code">IsOnline</span> flag has the same blind spot.</p>
+
+    <h3>The two API-key endpoints</h3>
+    <p><span class="code">message-tenant-api</span> and <span class="code">message-all-tenants-api</span> are <span class="code">[AllowAnonymous]</span> at the ASP.NET level and authenticate themselves, so an external operations tool can push a maintenance banner without an interactive login:</p>
+    <div class="rowlist">
+      <div class="row"><div class="k">Constant-time compare</div><div class="v"><p>The header key is compared to the decrypted tenant token with <span class="code">CryptographicOperations.FixedTimeEquals</span> over UTF-8 bytes — the comparison does not leak key material through timing.</p></div></div>
+      <div class="row"><div class="k">Feature re-checked inside the target</div><div class="v"><p><span class="code">message-tenant-api</span> re-enters the target tenant's context to verify <span class="code">DirectMessaging</span> before sending, and returns 403 if it is off. The broadcast endpoint authenticates against the default grant program tenant's key and skips every tenant with the feature disabled, returning the list it actually delivered to.</p></div></div>
+    </div>
+  </section>
+
+  <!-- ============ 08 UI ============ -->
+  <section id="ui">
+    <div class="sec-head"><span class="sec-num">08</span><h2>Features, permissions &amp; UI</h2></div>
+
+    <h3>Two features, both defaulting to off</h3>
+    <div class="kv-grid">
+      <div class="k">Unity.Notifications</div>
+      <div>Everything email. The handler short-circuits, the main menu item hides, the settings tab hides, and every scheduled-notification trigger checks it first.</div>
+      <div class="k">Unity.Notifications.DirectMessaging</div>
+      <div>The realtime half only. The hub aborts the connection, and the Unity Messaging page, menu item and controller endpoints all require it.</div>
+    </div>
+
+    <h3>Pages</h3>
+    <table class="data">
+      <thead><tr><th>Page</th><th>What it is</th><th>Authorization</th></tr></thead>
+      <tbody>
+        <tr><td class="code">Notifications/Index</td><td>Notification List — every <span class="code">EmailLog</span> in a date window, client-side DataTable, Open/Filter/Export</td><td class="code">NotificationList.View</td></tr>
+        <tr><td class="code">NotificationLogs/Index</td><td>The realtime delivery log, server-side paged, live-updating over SignalR</td><td class="code">ITOperations</td></tr>
+        <tr><td class="code">UnityMessaging/Index</td><td>Operator console — who is online, and the send forms</td><td><span class="code">ITOperations</span> + feature</td></tr>
+      </tbody>
+    </table>
+    <p class="note" style="margin-top:12px;">The Notification List runs client-side deliberately, mirroring the Applications list: the service returns every row in the window and DataTables pages in the browser, bounded by a 6-month default. Only <span class="code">EmailLog</span>-backed columns are sortable, allowlisted so client input never reaches the dynamic-LINQ ordering raw.</p>
+
+    <h3>Where users actually compose email</h3>
+    <p>Not here. The per-application composer, the form-level scheduled-notification table, and the bulk send button are all <strong>host-side</strong> widgets under <span class="code">src/Unity.GrantManager.Web/</span>. This module owns the list views and the operations tooling.</p>
+    <p>The settings tab is also bigger than it looks: two saved settings, but ~2,500 lines of JS behind them administering <strong>email templates, template attachments, email address configurations, and internal email groups</strong> — none of which has a page of its own.</p>
+
+    <h3>Permission groups</h3>
+    <div class="chips">
+      <span class="chip on">Notifications.Email.Send</span>
+      <span class="chip on">.SendBulk</span>
+      <span class="chip">.DeleteDraft</span>
+      <span class="chip">.CancelScheduled</span>
+      <span class="chip">.Schedule</span>
+      <span class="chip on">Notifications.Form.Tab</span>
+      <span class="chip on">.Schedule.Create</span>
+      <span class="chip">.Schedule.Cancel</span>
+      <span class="chip on">Notifications.NotificationList.View</span>
+      <span class="chip on">SettingManagement.Notifications</span>
+    </div>
+    <p class="note" style="margin-top:12px;">Filled chips are enforced by an <span class="code">[Authorize]</span> somewhere; outlined ones gate UI visibility only. Note <span class="code">Settings</span> is grafted onto ABP's <strong>SettingManagement</strong> group, not the Notifications group.</p>
+  </section>
+
+  <!-- ============ 09 KNOWN ROUGH EDGES ============ -->
+  <section id="edges">
+    <div class="sec-head"><span class="sec-num">09</span><h2>Known rough edges</h2></div>
+    <p class="lede">This module carries more accumulated scaffolding than most — an unfinished subscription model, a Teams integration that was disabled rather than removed, and two halves built at different times to different standards. Ordered by real-world risk.</p>
+    <div class="rowlist">
+      <div class="row"><div class="k"><span class="tag warn">Real risk</span></div><div class="v"><p><strong>Retry backoff is an in-process <span class="code">Task.Delay</span>.</strong> Five minutes × attempt number, awaited inside the consumer's own unit of work — holding a database connection and transaction open for up to 55 minutes on the tenth attempt. The delay is process-local, so a pod restart loses the retry entirely and the row stays <span class="code">Failed</span> with nothing queued to revive it. On later attempts it also exceeds the message's own 20-minute TTL.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Real risk</span></div><div class="v"><p><strong>The configured retry limit is not the one that applies.</strong> The settings tab exposes <em>Maximum Email Retry Attempts</em>; nothing reads it. <span class="code">EmailConsumer</span> uses its own <span class="code">const int maxRetries = 10</span>. Lowering the setting changes nothing — a control that appears to work and does not.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Real risk</span></div><div class="v"><p><strong>Hard-coded −7 timezone offset.</strong> <span class="code">NormalizeToUtc</span> treats an <span class="code">Unspecified</span> send time as BC's <em>permanent</em> daylight offset — legislated but not adopted. From November to March the province is still PST (−8), so an email scheduled for 9:00 AM in January is delivered at 8:00. The host's <span class="code">NotificationListAppService</span> does it correctly with <span class="code">TimeZoneInfo</span>; the two should agree.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Performance</span></div><div class="v"><p><strong><span class="code">GetPendingEmailsCountAsync</span> loads every email log.</strong> It builds an expression, then compiles and applies it <em>in memory</em> — materialising the tenant's entire email history to produce one integer, on a schedule, from the health-check worker.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Multi-pod</span></div><div class="v"><p><strong>Presence is in-process memory behind a Redis backplane.</strong> Messages cross pods; presence does not. Invisible at one replica, a partial view at more.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">Declared, never written</span></div><div class="v"><p><strong>Log types and channels for pipelines that don't exist.</strong> Ten <span class="code">NotificationLogType</span> values and four channels; only <span class="code">SignalRDirectMessage</span>/<span class="code">SignalR</span> are ever written. The Logs page offers all of them as filters, so an operator can filter to <span class="code">DbException</span> and always get nothing. Meanwhile the exception path that <em>does</em> exist writes to a separate table and never touches <span class="code">NotificationLog</span>.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">Dead scaffolding</span></div><div class="v"><p><strong>The subscription/trigger model is mapped but unused.</strong> <span class="code">Trigger</span>, <span class="code">TriggerSubscription</span>, <span class="code">Subscriber</span>, <span class="code">SubscriptionGroup</span>, <span class="code">SubscriptionGroupSubscription</span> — entities, FKs, and tables in the initial migration; zero references. Superseded by <span class="code">ScheduledNotification</span>. Removing them is a migration, so it needs a decision rather than a passing cleanup.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">Dead scaffolding</span></div><div class="v"><p><strong>A duplicate <span class="code">DynamicUrl</span> stack nothing registers</strong> — entity, repository interface, repository, and a second <span class="code">GrantManagerDbContext</span>, all self-referential and never wired up. It shares a class name with the host's real context, so a careless <span class="code">using</span> could bind to the wrong type.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Silent</span></div><div class="v"><p><strong>The Teams integration is disabled, not removed.</strong> <span class="code">PostToNotificationsChannelAsync</span> has a fully commented-out body. Everything upstream still runs — reading the card template off disk, building the MessageCard JSON, looking up a channel URL — and the result is discarded. Two live callers (CHES errors, CHEFS form-publish events) believe they are alerting someone.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Silent</span></div><div class="v"><p><strong>Renaming an email group breaks its scheduled notifications.</strong> The link is by <em>name</em>. Deletion is guarded; renaming is not. Every notification pointing at the old name resolves to zero recipients, logs a warning, and publishes nothing.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">Silent no-op</span></div><div class="v"><p><span class="code">EmailAction.Retry</span>, <span class="code">SendByTemplateId</span>, <span class="code">SendApproval</span> and <span class="code">SendDecline</span> are declared, unrouted, and never published. A future caller reaching for <span class="code">SendApproval</span> because the name fits gets nothing, silently — a <span class="code">default:</span> branch that logged would at least make it visible.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">Dead columns</span></div><div class="v"><p><span class="code">EmailLog.AssessmentId</span> and <span class="code">ApplicantId</span> are never assigned. The list service reads <span class="code">ApplicantId</span> with a fallback, so only the fallback branch is ever taken; <span class="code">AssessmentId</span> has no reader at all.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Confirm intent</span></div><div class="v"><p><span class="code">[AllowAnonymous]</span> sits on the <em>interface</em> declarations of <span class="code">IEmailGroupsAppService.GetListAsync</span> and <span class="code">IEmailGroupUsersAppService.GetEmailGroupUsersByGroupIdAsync</span>, overriding the class-level <span class="code">[Authorize]</span>. Whether anonymous access to the tenant's internal email-group roster is intended is worth confirming.</p></div></div>
+      <div class="row"><div class="k"><span class="tag roadmap">Architecture</span></div><div class="v"><p><strong>The handler lives in the wrong module.</strong> <span class="code">EmailNotificationHandler</span> sits in the Notifications project but declares a <span class="code">Unity.GrantManager.Events</span> namespace and injects a host entity, so this module cannot stand alone the way Flex and TenantManagement can. An <span class="code">IScheduledNotificationLookup</span> contract defined here and implemented in the host would apply the same inversion those modules already use.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Coverage</span></div><div class="v"><p><span class="code">EmailAttachmentServiceTests</span> is the only file with tests. Status transitions, retry classification, CHES response parsing and scheduled-send cancellation — the module's highest-risk logic — have none.</p></div></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Source: <span class="mono">documentation/notifications/*.md</span></span>
+    <span>Generated with Claude Code</span>
+  </footer>
+
+</div>

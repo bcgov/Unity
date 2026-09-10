@@ -5,11 +5,12 @@
 @if (Model.OtherLanguages.Any())
 {
     <div class="dropdown">
-        <a class="nav-link dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <a class="nav-link dropdown-toggle" href="#" role="button" id="languageSwitchDropdownMenuLink" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+           onkeydown="if(event.key==='Enter'){event.preventDefault();this.click();}else if(event.key===' '){event.preventDefault();if(!event.repeat){this.click();}}">
             @Model.CurrentLanguage.DisplayName
         </a>
 
-        <div class="dropdown-menu dropdown-menu-end border-0 shadow-sm" aria-labelledby="dropdownMenuLink">
+        <div class="dropdown-menu dropdown-menu-end border-0 shadow-sm" aria-labelledby="languageSwitchDropdownMenuLink">
             @foreach (var language in Model.OtherLanguages)
             {
                 <a class="dropdown-item" href="~/Abp/Languages/Switch?culture=@(language.CultureName)&uiCulture=@(language.UiCultureName)&returnUrl=@(System.Net.WebUtility.UrlEncode(Context.Request.GetEncodedPathAndQuery()))">@language.DisplayName</a>

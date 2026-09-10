@@ -21,7 +21,7 @@ But on your local system you still need to replace the tokens. These json files 
 cypress.dev.env.json
 
 {
-  "webapp.url": "https://dev-unity.apps.silver.devops.gov.bc.ca/",
+  "webapp.url": "https://dev-unity.apps.gold.devops.gov.bc.ca/",
   "reporting.url": "{{reporting.url}}",
   "test1username": REQUIRED
   "test1password": REQUIRED
@@ -35,7 +35,7 @@ cypress.dev.env.json
 cypress.dev2.env.json
 
 {
-  "webapp.url": "https://dev2-unity.apps.silver.devops.gov.bc.ca/",,
+  "webapp.url": "https://dev2-unity.apps.gold.devops.gov.bc.ca/",,
   "reporting.url": "{{reporting.url}}",
   "test1username": REQUIRED
   "test1password": REQUIRED
@@ -49,7 +49,7 @@ cypress.dev2.env.json
 cypress.test.env.json
 
 {
-  "webapp.url": "https://test-unity.apps.silver.devops.gov.bc.ca/",
+  "webapp.url": "https://test-unity.apps.gold.devops.gov.bc.ca/",
   "reporting.url": "{{reporting.url}}",
   "test1username": REQUIRED
   "test1password": REQUIRED
@@ -63,7 +63,7 @@ cypress.test.env.json
 cypress.uat.env.json
 
 {
-  "webapp.url": "https://uat-unity.apps.silver.devops.gov.bc.ca/",
+  "webapp.url": "https://uat-unity.apps.gold.devops.gov.bc.ca/",
   "reporting.url": "{{reporting.url}}",
   "test1username": REQUIRED
   "test1password": REQUIRED
@@ -77,7 +77,7 @@ cypress.uat.env.json
 cypress.prod.env.json
 
 {
-  "webapp.url": "https://prod-unity.apps.silver.devops.gov.bc.ca/",
+  "webapp.url": "https://prod-unity.apps.gold.devops.gov.bc.ca/",
   "reporting.url": "{{reporting.url}}",
   "test1username": REQUIRED
   "test1password": REQUIRED

@@ -42,7 +42,7 @@ function calculateDatagridColumnSum(table, columnIndex) {
     let total = 0;
     table.column(columnIndex).data().each(function (value) {
         // Remove currency symbols and commas for numeric check
-        let cleanedValue = value.replace(/[^\d.-]/g, '');
+        let cleanedValue = value.replaceAll(/[^\d.-]/g, '');
         if (isDatagridCellNumeric(cleanedValue)) {
             total += Number.parseFloat(cleanedValue);
         }

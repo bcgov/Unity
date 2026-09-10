@@ -1,8 +1,11 @@
 using System;
+
 namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
-public class GenerateApplicationAnalysisBackgroundJobArgs
+
+public sealed class GenerateApplicationAnalysisBackgroundJobArgs
 {
     public Guid ApplicationId { get; set; }
+    public Guid OperationId { get; set; }
     public Guid? TenantId { get; set; }
     public Guid? RequestedByUserId { get; set; }
     public string? PromptVersion { get; set; }

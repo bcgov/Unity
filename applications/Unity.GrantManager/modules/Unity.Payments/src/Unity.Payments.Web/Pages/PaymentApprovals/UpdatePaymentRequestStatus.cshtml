@@ -39,7 +39,7 @@
             @if (ViewData["Error"] != null)
             {
                 <div class="alert alert-warning" role="alert">
-                    <i class="fa fa-exclamation-triangle"></i> @ViewData["Error"]
+                    <i class="fa-solid fa-triangle-exclamation"></i> @ViewData["Error"]
                 </div>
             }
             else
@@ -48,11 +48,11 @@
                     <abp-card-body class="pb-0 mb-0">
                         <abp-row class="m-0 p-1">
                             <abp-column size="_4">
-                                <label for="@Model.PaymentGroupings?.Count" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:NumberPayment"]</label>
+                                <label for="ApplicationCount" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:NumberPayment"]</label>
                                 <input type="text" class="form-control" id="ApplicationCount" value="@(Model.PaymentGroupings?.Sum(g => g.Items.Count) ?? 0)" disabled />
                             </abp-column>
                             <abp-column size="_4">
-                                <label for="@Model.TotalAmount" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:TotalAmount"]</label>
+                                <label for="UpdateTotalAmount" class="form-label unt-form-label-primary">@L["ApplicationPaymentRequest:TotalAmount"]</label>
                                 <input type="text" class="form-control totalAmount unity-currency-input" id="UpdateTotalAmount" value="@Model.TotalAmount" disabled />
                             </abp-column>
                             <abp-column size="_4">
@@ -105,7 +105,7 @@
                                                 </div>
                                                 <div class="flex-shrink-1">
                                                     <abp-button onclick='removeApplicationPaymentApproval("@Model.PaymentGroupings[k].Items[i].Id" + "_container", @Model.PaymentGroupings[k].GroupId)'
-                                                                size="Small" icon-type="Other" class="m-0 p-0 remove-single-payment" icon="fa fa-times"
+                                                                size="Small" icon-type="Other" class="m-0 p-0 remove-single-payment" icon="fa-solid fa-xmark"
                                                                 data-parameter="@Model.PaymentGroupings[k].Items[i].CorrelationId" />
                                                 </div>
                                             </abp-column>
@@ -142,13 +142,13 @@
                                         <div class="flex-fill">
                                             @if (Model.PaymentGroupings[k].Items.Any(x => !x.IsValid))
                                             {
-                                                <span class="fa fa-ban fa-solid payment-status-transition-ban"></span>
+                                                <span class="fa-solid fa-ban payment-status-transition-ban"></span>
                                             }
                                             else
                                             {
-                                                <span class="fa fa-chevron-right fa-solid payment-status-transition-arrow"></span>
-                                                <span class="fa fa-chevron-right fa-solid payment-status-transition-arrow"></span>
-                                                <span class="fa fa-chevron-right fa-solid payment-status-transition-arrow"></span>
+                                                <span class="fa-solid fa-chevron-right payment-status-transition-arrow"></span>
+                                                <span class="fa-solid fa-chevron-right payment-status-transition-arrow"></span>
+                                                <span class="fa-solid fa-chevron-right payment-status-transition-arrow"></span>
                                             }
                                         </div>
                                         <div class="flex-fill">

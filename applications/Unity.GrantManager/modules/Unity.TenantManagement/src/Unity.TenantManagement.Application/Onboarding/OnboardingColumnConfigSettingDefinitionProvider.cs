@@ -13,10 +13,12 @@ public class OnboardingColumnConfigSettingDefinitionProvider : SettingDefinition
     {
         context.Add(
             OnboardingDef(OnboardingColumnConfigSettings.TenantNameFieldKey),
-            OnboardingDef(OnboardingColumnConfigSettings.SuperUsersFieldKey),
+            OnboardingDef(OnboardingColumnConfigSettings.DisplayNameFieldKey),
+            OnboardingDef(OnboardingColumnConfigSettings.ProgramManagersFieldKey),
             OnboardingDef(OnboardingColumnConfigSettings.BranchFieldKey),
             OnboardingDef(OnboardingColumnConfigSettings.FeaturesFieldKey),
             OnboardingDef(OnboardingColumnConfigSettings.MinistryFieldKey),
+            OnboardingDef(OnboardingColumnConfigSettings.DivisionFieldKey),
             OnboardingDef(OnboardingColumnConfigSettings.ProgramAreaFieldKey)
         );
     }

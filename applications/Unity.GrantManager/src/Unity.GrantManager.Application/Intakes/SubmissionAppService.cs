@@ -211,8 +211,25 @@ public class SubmissionAppService(
             );
 
             var contentString = response.Content != null ? await response.Content.ReadAsStringAsync() : "[]";
-            var submissions = JsonSerializer.Deserialize<List<FormSubmissionSummaryDto>>(
-                                  contentString,
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning(
+                    "CHEFS submissions request failed for form {FormGuid}. Status: {StatusCode}.",
+                    formGuid,
+                    response.StatusCode);
+                return;
+            }
+
+            using var document = JsonDocument.Parse(contentString);
+            if (document.RootElement.ValueKind != JsonValueKind.Array)
+            {
+                Logger.LogWarning(
+                    "CHEFS submissions response for form {FormGuid} was not a JSON array.",
+                    formGuid);
+                return;
+            }
+
+            var submissions = document.RootElement.Deserialize<List<FormSubmissionSummaryDto>>(
                                   serializerOptions) ?? [];
 
             foreach (var s in submissions)
@@ -223,6 +240,13 @@ public class SubmissionAppService(
             }
 
             chefsSubmissions.AddRange(submissions);
+        }
+        catch (JsonException ex)
+        {
+            Logger.LogWarning(
+                ex,
+                "CHEFS submissions response for form {FormGuid} was not valid JSON.",
+                formGuid);
         }
         catch (Exception ex)
         {

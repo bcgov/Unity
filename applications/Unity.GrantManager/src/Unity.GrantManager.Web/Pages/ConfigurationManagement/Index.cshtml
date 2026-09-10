@@ -116,6 +116,10 @@
                 <input type="hidden" id="AccountCodingId" value="@Model.AccountCodingId" />
 
                 <div class="container-fluid px-0">
+                    <div class="unity-page-titlebar">
+                        <h4 class="m-0">Payments</h4>
+                    </div>
+
                     <nav aria-label="Payment Tabs">
                         <div class="nav nav-tabs" id="payments-nav-tab" role="tablist">
                             @if (Model.ShowPaymentAccountCoding)
@@ -144,7 +148,7 @@
                                         <h4>Account Codes</h4>
                                     </div>
                                     <div class="filter-search-action-bar_search-wrapper">
-                                        <input type="search" id="search-data-table" placeholder="Search" class="tbl-search">
+                                        <input type="search" id="search-data-table" placeholder="Search" aria-label="Search" class="tbl-search">
                                     </div>
                                     <div class="btn-group" id="app_custom_buttons"></div>
                                     <div id="dynamicButtonContainerId" class="dynamic-buttons-div button-gap-1"></div>
@@ -166,7 +170,7 @@
                                 </abp-row>
                                 <abp-row>
                                     <abp-column size="_12" class="p-3">
-                                        <span class="form-label">Payment ID Prefix</span>
+                                        <label for="payment-id-prefix" class="form-label">Payment ID Prefix</label>
                                         <input id="payment-id-prefix-original" type="hidden" value="@Model.PaymentIdPrefix">
                                         <input id="payment-id-prefix" maxlength="5" type="text" value="@Model.PaymentIdPrefix" class="valid form-control">
                                     </abp-column>
@@ -215,7 +219,7 @@
         <!-- Scoresheets -->
         @if (Model.ShowScoresheets)
         {
-            <div id="scoresheets-div" class="config-section input-area card mb-3 config-management hide">                
+            <div id="scoresheets-div" class="config-section input-area card mb-3 config-management hide">
                 @await Component.InvokeAsync(typeof(ScoresheetConfigurationViewComponent))
             </div>
         }

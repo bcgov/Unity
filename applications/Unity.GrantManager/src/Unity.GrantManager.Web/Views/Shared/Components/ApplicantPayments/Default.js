@@ -229,6 +229,7 @@ $(function () {
             actionButtons,
             serverSideEnabled: false,
             pagingEnabled: true,
+            persistSearchState: false,
             reorderEnabled: true,
             languageSetValues: {},
             dataTableName: 'ApplicantPaymentRequestListTable',

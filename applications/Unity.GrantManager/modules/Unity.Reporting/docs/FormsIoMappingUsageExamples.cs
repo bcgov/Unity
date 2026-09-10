@@ -80,12 +80,10 @@ string result = await columnsMappingService.GenerateViewAsync(
 bool viewExists = await columnsMappingService.ViewExistsAsync("my_form_view");
 
 // Get view data with pagination
-var request = new ViewDataRequest 
+var request = new ViewDataRequest
 {
     Skip = 0,
-    Take = 100,
-    Filter = "column_name IS NOT NULL", // Optional SQL WHERE clause
-    OrderBy = "column_name ASC" // Optional SQL ORDER BY clause
+    Take = 100
 };
 
 ViewDataResult data = await columnsMappingService.GetViewDataAsync("my_form_view", request);

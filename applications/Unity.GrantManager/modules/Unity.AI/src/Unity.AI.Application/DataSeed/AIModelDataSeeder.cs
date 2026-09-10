@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
@@ -14,9 +15,9 @@ public class AIModelDataSeeder(
 {
     private static readonly BuiltInModelDefinition[] BuiltInModels =
     [
-        new("Gpt4oMini", true, 0.3d),
-        new("Gpt5Mini", false, null),
-        new("Gpt5Nano", false, null)
+        new("gpt-4o-mini", "OpenAI", true, 0.3d),
+        new("gpt-5-mini", "OpenAI", false, null),
+        new("gpt-5-nano", "OpenAI", false, null)
     ];
 
     public async Task SeedAsync(DataSeedContext context)
@@ -40,9 +41,11 @@ public class AIModelDataSeeder(
             Temperature = definition.Temperature
         };
 
-        var existing = await modelRepository.FirstOrDefaultAsync(model => model.Name == definition.Name);
+        var existing = (await modelRepository.GetListAsync(model =>
+            model.Name == definition.Name)).SingleOrDefault();
         if (existing != null)
         {
+            existing.Provider = definition.Provider;
             existing.IsActive = true;
             existing.SettingsJson = JsonSerializer.Serialize(settings);
             await modelRepository.UpdateAsync(existing, autoSave: true);
@@ -50,7 +53,7 @@ public class AIModelDataSeeder(
         }
 
         await modelRepository.InsertAsync(
-            new AIModel(Guid.CreateVersion7(), definition.Name)
+            new AIModel(Guid.CreateVersion7(), definition.Name, definition.Provider)
             {
                 IsActive = true,
                 SettingsJson = JsonSerializer.Serialize(settings)
@@ -60,6 +63,7 @@ public class AIModelDataSeeder(
 
     private sealed record BuiltInModelDefinition(
         string Name,
+        string Provider,
         bool MaxOutputTokenCountSupported,
         double? Temperature);
 }

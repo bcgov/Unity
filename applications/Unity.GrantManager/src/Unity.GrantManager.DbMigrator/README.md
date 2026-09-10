@@ -41,10 +41,20 @@ Because the file is optional, its absence is not an error — omit it entirely i
 
 ## Running the Migrator
 
+The DbMigrator enables EF Core command logging by default so the migration plan,
+SQL command execution, and final migration state are visible in container logs.
+Sensitive data logging is not supported by the DbMigrator.
+
 Once you've configured your connection strings via `appsettings.secrets.json` (or environment variables), you can run the migrator:
 
 ```bash
 dotnet run
 ```
+
+Migration history flattening is disabled by default. To reconcile databases that still
+contain migration ids from the removed migration set, run the migrator once with
+`Database__FlattenMigrations=true` (or set `Database:FlattenMigrations` to `true` in
+`appsettings.secrets.json`). Do not leave this enabled for normal migration runs: it
+deletes migration history rows that were added after the flattened `Initial` migration.
 
 Or run it from Visual Studio by setting `Unity.GrantManager.DbMigrator` as the startup project.

@@ -11,9 +11,10 @@
         id="answer-number-@Model.QuestionId" 
         name="Answer-Number-@Model.QuestionId" 
         value="@Model.Answer" 
-        data-original-value="@Model.Answer" 
+        data-original-value="@Model.Answer"
         data-is-human-confirmed="@Model.IsHumanConfirmed.ToString().ToLower()"
-        oninput="handleInputChange('@Model.QuestionId','answer-number-'); markAsHumanConfirmed(this)" 
+        data-original-is-human-confirmed="@Model.IsHumanConfirmed.ToString().ToLower()"
+        oninput="handleInputChange('@Model.QuestionId','answer-number-'); markAsHumanConfirmed(this)"
         />
     
      @if (!Model.IsHumanConfirmed && Model.Answer.HasValue)

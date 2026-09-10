@@ -64,6 +64,7 @@ $(function () {
             getFiscalMonthColumn(columnIndex++),
             getBusinessNumberColumn(columnIndex++),
             getFiscalDayColumn(columnIndex++),
+            getFiscalYearEndColumn(columnIndex),
             getStartedOperatingDateColumn(columnIndex++),
             getIsDuplicatedColumn(columnIndex++),            
             getCreationTimeColumn(columnIndex++),
@@ -342,6 +343,18 @@ $(function () {
             render: function (data) {
                 return data ?? '';
             },
+            index: columnIndex
+        }
+    }
+
+    function getFiscalYearEndColumn(columnIndex) {
+        return {
+            title: 'Fiscal Year End',
+            data: 'fiscalYearEnd',
+            name: 'fiscalYearEnd',
+            className: 'data-table-header text-nowrap',
+            visible: false,
+            render: DataTable.render.date('YYYY-MM-DD', currentCultureName),
             index: columnIndex
         }
     }
@@ -650,8 +663,16 @@ $(function () {
     });
 
     // For savedStates
-    $('.grp-savedStates').text('Save View');
+    // Initialize button styling
     $('.grp-savedStates').closest('.btn-group').addClass('cstm-save-view');
+
+    // Update button text based
+    function updateSavedStatesButtonText() {
+        $('.grp-savedStates').text('Save View');
+    }
+
+    dataTable.on('stateRestore-change', updateSavedStatesButtonText);
+    updateSavedStatesButtonText();
 
     // Subscribe to refresh events
     PubSub.subscribe('refresh_applicant_list', (msg, data) => {

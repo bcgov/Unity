@@ -47,8 +47,8 @@
 
   <!-- Package References -->
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="10.0.3" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.3">
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="10.0.10" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.10">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>
         runtime;
@@ -61,21 +61,26 @@
     </PackageReference>
     <PackageReference Include="MiniProfiler.AspNetCore.Mvc" Version="4.5.4" />
     <PackageReference Include="MiniProfiler.EntityFrameworkCore" Version="4.5.4" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageReference Include="Npgsql" Version="10.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="Npgsql" Version="10.0.3" />
     <PackageReference Include="Riok.Mapperly" Version="4.3.1" />
-    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
-    <PackageReference Include="Serilog.Settings.Configuration" Version="9.0.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageReference Include="Serilog.Settings.Configuration" Version="10.0.1" />
     <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
 
-    <PackageReference Include="Volo.Abp.AspNetCore.Authentication.OpenIdConnect" Version="10.3.0" />
-    <PackageReference Include="Volo.Abp.AspNetCore.Serilog" Version="10.3.0" />
-    <PackageReference Include="Volo.Abp.Autofac" Version="10.3.0" />
-    <PackageReference Include="Volo.Abp.BlobStoring" Version="10.3.0" />
-    <PackageReference Include="Volo.Abp.Http.Client.IdentityModel.Web" Version="10.3.0" />
-    <PackageReference Include="Volo.Abp.Mapperly" Version="10.3.0" />
-    <PackageReference Include="Volo.Abp.SettingManagement.Web" Version="10.3.0" />
-    <PackageReference Include="Volo.Abp.Swashbuckle" Version="10.3.0" />
+    <PackageReference Include="Volo.Abp.AspNetCore.Authentication.OpenIdConnect" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.AspNetCore.Serilog" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.Autofac" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.BlobStoring" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.Http.Client.IdentityModel.Web" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.Mapperly" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.SettingManagement.Web" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.Swashbuckle" Version="10.5.0" />
+    <PackageReference Include="prometheus-net.AspNetCore" Version="8.2.1" />
+
+    <!-- Override transitive Swashbuckle.AspNetCore to ensure Microsoft.OpenApi >= 2.7.5 (fixes GHSA-v5pm-xwqc-g5wc).
+         Remove this once Volo.Abp.Swashbuckle depends on Swashbuckle.AspNetCore >= 10.2.3 transitively. -->
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
   </ItemGroup>
 
   <!-- Static Assets Copy -->

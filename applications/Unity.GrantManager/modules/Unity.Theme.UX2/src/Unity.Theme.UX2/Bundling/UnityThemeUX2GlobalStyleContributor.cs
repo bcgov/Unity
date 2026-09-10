@@ -23,10 +23,12 @@ public class UnityThemeUX2GlobalStyleContributor : BundleContributor
         context.Files.AddIfNotContains("/libs/datatables.net-staterestore-dt/css/stateRestore.dataTables.min.css");
         context.Files.AddIfNotContains("/libs/tributejs/dist/tribute.css");
 
-        // Add assets for "/themes/ux2/fonts/**/*"
-        context.Files.AddRange([
-            "/themes/ux2/fonts/icons/Segoe-Fluent-Icons.ttf",
-            "/themes/ux2/fonts/icons/Segoe-MDL2-Assets.ttf",
-        ]);
+        // ABP's own FontAwesomeStyleContributor adds the v4 compatibility shims
+        // alongside all.css. Every rule in that file is scoped ".fa.fa-x", and no
+        // element in this app carries the bare "fa" class any more (AB#33942), so
+        // the shims can no longer match anything. Base bundle contributors run
+        // before this one, so the file is present by the time we remove it.
+        context.Files.RemoveAll(f =>
+            f.FileName == "/libs/@fortawesome/fontawesome-free/css/v4-shims.css");
     }
 }

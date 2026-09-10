@@ -1,3 +1,15 @@
+/* Print only. Bootstrap 5 sizes headings with calc(... + vw), so printed output
+   would otherwise vary with the width of the window it was opened from. Pin them
+   to the fixed sizes Bootstrap 4 used, leaving the on-screen preview alone. */
+@media print {
+    h1, .h1 { font-size: 2.5rem; }
+    h2, .h2 { font-size: 2rem; }
+    h3, .h3 { font-size: 1.75rem; }
+    h4, .h4 { font-size: 1.5rem; }
+    h5, .h5 { font-size: 1.25rem; }
+    h6, .h6 { font-size: 1rem; }
+}
+
 .unity-user-initials {
     display: none !important;
 }

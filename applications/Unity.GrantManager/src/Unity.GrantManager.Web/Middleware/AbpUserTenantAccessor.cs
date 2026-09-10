@@ -21,5 +21,10 @@ namespace Unity.GrantManager.Web.Middleware
         {
             return SharedKernel.Utilities.AbpUserTenantAccessor.GetCurrentTenantId(serviceProvider);
         }
+
+        public static Guid? GetCurrentUserId(IServiceProvider serviceProvider)
+        {
+            return SharedKernel.Utilities.AbpUserTenantAccessor.GetCurrentUserId(serviceProvider);
+        }
     }
 }

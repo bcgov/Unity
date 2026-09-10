@@ -164,7 +164,10 @@ describe("Unity Login and check data from CHEFS", () => {
   // Enabling this makes cy.get / cy.contains pierce shadow DOM consistently across envs.
   before(() => {
     Cypress.config("includeShadowDom", true);
-    loginIfNeeded({ timeout: 20000 });
+  });
+
+  beforeEach(() => {
+    loginIfNeeded({ timeout: 60000 });
   });
 
   it("Switch to Default Grants Program if available", () => {

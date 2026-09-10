@@ -7,6 +7,7 @@ namespace Unity.GrantManager.History
 {
     public interface IHistoryAppService : IApplicationService
     {
+        Task<List<HistoryDto>> GetEntityPropertyChangesAsync(GetEntityPropertyChangesInput input, Dictionary<string, string>? lookupDictionary = null);
         Task<List<HistoryDto>> GetHistoryList(string? entityId, string filterPropertyName, Dictionary<string, string>? lookupDictionary);
         Task<string> LookupUserName(Guid auditLogId);
     }

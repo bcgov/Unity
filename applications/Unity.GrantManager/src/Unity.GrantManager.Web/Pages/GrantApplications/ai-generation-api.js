@@ -2,7 +2,9 @@
     function request(url, type, data = null, contentType = null) {
         const options = { url, type };
         if (data !== null) {
-            options.data = data;
+            options.data = contentType === 'application/json' && typeof data !== 'string'
+                ? JSON.stringify(data)
+                : data;
         }
         if (contentType) {
             options.contentType = contentType;
@@ -28,8 +30,30 @@
             return request(
                 '/api/app/ai/generation/attachment-summary',
                 'POST',
-                JSON.stringify(input),
+                {
+                    applicationId: input.applicationId,
+                    attachmentIds: input.attachmentIds || [],
+                    promptVersion: input.promptVersion || null,
+                },
                 'application/json'
+            );
+        },
+        queueFormMapping(applicationId, applicationFormVersionId) {
+            return request(
+                `/api/app/ai/generation/form-mapping?applicationId=${encodeURIComponent(applicationId)}&applicationFormVersionId=${encodeURIComponent(applicationFormVersionId)}`,
+                'POST'
+            );
+        },
+        queueFormWorksheet(applicationId, applicationFormVersionId) {
+            return request(
+                `/api/app/ai/generation/form-worksheet?applicationId=${encodeURIComponent(applicationId)}&applicationFormVersionId=${encodeURIComponent(applicationFormVersionId)}`,
+                'POST'
+            );
+        },
+        queueFormScoresheet(applicationId, applicationFormVersionId) {
+            return request(
+                `/api/app/ai/generation/form-scoresheet?applicationId=${encodeURIComponent(applicationId)}&applicationFormVersionId=${encodeURIComponent(applicationFormVersionId)}`,
+                'POST'
             );
         },
         getStatus(applicationId, operationType) {

@@ -27,7 +27,7 @@ namespace Unity.Payments.Integrations.Cas
     {
         protected new ILogger Logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
         private const string CFS_SUPPLIER = "cfs/supplier";
-        private readonly Task<string> casBaseApiTask;
+        private readonly Lazy<Task<string>> casBaseApiTask;
         private readonly ILocalEventBus localEventBus;
         private readonly IResilientHttpRequest resilientHttpRequest;
         private readonly ICasTokenService iTokenService;
@@ -42,8 +42,8 @@ namespace Unity.Payments.Integrations.Cas
             this.resilientHttpRequest = resilientHttpRequest;
             this.iTokenService = iTokenService;
 
-            // Initialize the base API URL once during construction
-            casBaseApiTask = InitializeBaseApiAsync(endpointManagementAppService);
+            // Defer the database-backed lookup until the service is actually used.
+            casBaseApiTask = new(() => InitializeBaseApiAsync(endpointManagementAppService));
         }
 
         private static async Task<string> InitializeBaseApiAsync(IEndpointManagementAppService endpointManagementAppService)
@@ -218,7 +218,7 @@ namespace Unity.Payments.Integrations.Cas
         {
             if (!string.IsNullOrEmpty(supplierNumber))
             {
-                var casBaseApi = await casBaseApiTask;
+                var casBaseApi = await casBaseApiTask.Value;
                 var resource = $"{casBaseApi}/{CFS_SUPPLIER}/{supplierNumber}";
                 return await GetCasSupplierInformationByResourceAsync(resource);
             }
@@ -232,7 +232,7 @@ namespace Unity.Payments.Integrations.Cas
         {
             if (!string.IsNullOrEmpty(bn9))
             {
-                var casBaseApi = await casBaseApiTask;
+                var casBaseApi = await casBaseApiTask.Value;
                 var resource = $"{casBaseApi}/{CFS_SUPPLIER}/{bn9}/businessnumber";
                 return await GetCasSupplierInformationByResourceAsync(resource);
             }

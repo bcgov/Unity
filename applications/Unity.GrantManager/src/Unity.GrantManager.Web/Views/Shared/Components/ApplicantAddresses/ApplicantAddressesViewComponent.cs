@@ -18,7 +18,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
         RefreshUrl = "Widget/ApplicantAddresses/Refresh",
         ScriptTypes = new[] { typeof(ApplicantAddressesScriptBundleContributor) },
         StyleTypes = new[] { typeof(ApplicantAddressesStyleBundleContributor) },
-        AutoInitialize = true)]
+        AutoInitialize = true,
+        RequiredPolicies = new [] { UnitySelector.ApplicantManagement.Addresses.Default })]
     public class ApplicantAddressesViewComponent : AbpViewComponent
     {
         private readonly IApplicantAddressRepository _applicantAddressRepository;
@@ -61,10 +62,12 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
                 }
             }
 
+            var canUpdateAddresses = await _permissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Addresses.Update);
+
             var viewModel = new ApplicantAddressesViewModel
             {
                 ApplicantId = applicantId,
-                CanEditAddress = await _permissionChecker.IsGrantedAsync(UnitySelector.Applicant.Location.Update),
+                CanEditAddresses = canUpdateAddresses,
                 Addresses = orderedAddresses
                     .Select(a => new ApplicantAddressItemDto
                     {

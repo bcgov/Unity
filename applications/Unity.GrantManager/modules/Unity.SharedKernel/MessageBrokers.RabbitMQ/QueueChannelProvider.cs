@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Constants;
@@ -14,14 +15,14 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
     {
         private readonly IChannelProvider _channelProvider;
         private readonly ILogger<PooledQueueChannelProvider<TQueueMessage>> _logger;
-        private readonly ConcurrentQueue<IModel> _channelPool = new();
+        private readonly ConcurrentQueue<IChannel> _channelPool = new();
         private readonly SemaphoreSlim _channelSemaphore = new(MaxChannels, MaxChannels);
         private readonly Timer _cleanupTimer;
         private readonly string _queueName = typeof(TQueueMessage).Name;
 
         private volatile bool _disposed;
         private volatile bool _queueDeclared;
-        private readonly object _queueDeclareLock = new();
+        private readonly SemaphoreSlim _queueDeclareLock = new(1, 1);
 
         private const int MaxChannels = 5000;
         private readonly TimeSpan _channelWaitTimeout = TimeSpan.FromSeconds(10);
@@ -37,11 +38,11 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                 TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
         }
 
-        public IModel GetChannel()
+        public async Task<IChannel> GetChannelAsync()
         {
             ObjectDisposedException.ThrowIf(_disposed, nameof(PooledQueueChannelProvider<TQueueMessage>));
 
-            if (!_channelSemaphore.Wait(_channelWaitTimeout))
+            if (!await _channelSemaphore.WaitAsync(_channelWaitTimeout))
             {
                 throw new TimeoutException(
                     $"Unable to acquire a channel for queue {_queueName} within {_channelWaitTimeout.TotalSeconds} seconds.");
@@ -59,8 +60,8 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                 }
 
                 // Create new channel
-                var channel = _channelProvider.GetChannel() ?? throw new InvalidOperationException("Channel cannot be null.");
-                EnsureQueueDeclared(channel);
+                var channel = await _channelProvider.GetChannelAsync() ?? throw new InvalidOperationException("Channel cannot be null.");
+                await EnsureQueueDeclaredAsync(channel);
                 return channel;
             }
             catch
@@ -70,7 +71,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
             }
         }
 
-        public void ReturnChannel(IModel channel)
+        public void ReturnChannel(IChannel channel)
         {
             if (channel?.IsOpen == true && !_disposed)
             {
@@ -92,28 +93,30 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
             }
         }
 
-        private void EnsureQueueDeclared(IModel channel)
+        private async Task EnsureQueueDeclaredAsync(IChannel channel)
         {
             if (_queueDeclared) return;
 
-            lock (_queueDeclareLock)
+            await _queueDeclareLock.WaitAsync();
+            try
             {
                 if (_queueDeclared) return;
 
-                try
-                {
-                    DeclareQueue(channel);
-                    _queueDeclared = true;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Failed to declare queue {QueueName}", _queueName);
-                    throw new InvalidOperationException($"Failed to declare queue '{_queueName}'. See inner exception for details.", ex);
-                }
+                await DeclareQueueAsync(channel);
+                _queueDeclared = true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to declare queue {QueueName}", _queueName);
+                throw new InvalidOperationException($"Failed to declare queue '{_queueName}'. See inner exception for details.", ex);
+            }
+            finally
+            {
+                _queueDeclareLock.Release();
             }
         }
 
-        private void DeclareQueue(IModel channel)
+        private async Task DeclareQueueAsync(IChannel channel)
         {
             try
             {
@@ -121,24 +124,24 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                 var dlqName = $"{_queueName}{QueueingConstants.DeadletterAddition}";
 
                 // Ensure DLX exchange exists
-                channel.ExchangeDeclare(dlxName, ExchangeType.Direct, durable: true);
+                await channel.ExchangeDeclareAsync(dlxName, ExchangeType.Direct, durable: true, autoDelete: false, arguments: null);
 
                 // Ensure DLQ exists and is bound to DLX
-                channel.QueueDeclare(dlqName, durable: true, exclusive: false, autoDelete: false,
-                    arguments: new Dictionary<string, object>
+                await channel.QueueDeclareAsync(dlqName, durable: true, exclusive: false, autoDelete: false,
+                    arguments: new Dictionary<string, object?>
                     {
                         { "x-queue-type", "quorum" },
                         { "x-overflow", "reject-publish" }
                     });
-                channel.QueueBind(dlqName, dlxName, dlqName);
+                await channel.QueueBindAsync(dlqName, dlxName, dlqName, arguments: null);
 
                 // Declare main queue with DLX args
-                channel.QueueDeclare(
+                await channel.QueueDeclareAsync(
                     _queueName,
                     durable: true,
                     exclusive: false,
                     autoDelete: false,
-                    arguments: new Dictionary<string, object>
+                    arguments: new Dictionary<string, object?>
                     {
                         { "x-queue-type", "quorum" },
                         { "x-overflow", "reject-publish" },
@@ -148,11 +151,11 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                         { "x-delivery-limit", 10 }
                     });
 
-                BindToExchange(channel);
+                await BindToExchangeAsync(channel);
             }
             catch (global::RabbitMQ.Client.Exceptions.OperationInterruptedException ex)
             {
-                if (ex.ShutdownReason.ReplyCode == 406 &&
+                if (ex.ShutdownReason?.ReplyCode == 406 &&
                     ex.ShutdownReason.ReplyText.Contains("inequivalent arg"))
                 {
                     _logger.LogWarning(
@@ -160,7 +163,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                         "Queue {QueueName} exists with incompatible config. Using existing queue in compatibility mode.",
                         _queueName);
 
-                    BindToExchange(channel);
+                    await BindToExchangeAsync(channel);
                 }
                 else
                 {
@@ -169,20 +172,19 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
             }
         }
 
-        private void BindToExchange(IModel channel)
+        private async Task BindToExchangeAsync(IChannel channel)
         {
             var mainExchange = $"{_queueName}.exchange";
-            channel.ExchangeDeclare(mainExchange, ExchangeType.Direct, durable: true);
-            channel.QueueBind(_queueName, mainExchange, _queueName);
+            await channel.ExchangeDeclareAsync(mainExchange, ExchangeType.Direct, durable: true, autoDelete: false, arguments: null);
+            await channel.QueueBindAsync(_queueName, mainExchange, _queueName, arguments: null);
         }
 
-        private void DisposeChannel(IModel channel)
+        private void DisposeChannel(IChannel channel)
         {
             if (channel == null) return;
 
             try
             {
-                if (channel.IsOpen) channel.Close();
                 channel.Dispose();
             }
             catch (Exception ex)
@@ -195,7 +197,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
         {
             if (_disposed) return;
 
-            var channels = new List<IModel>();
+            var channels = new List<IChannel>();
             while (_channelPool.TryDequeue(out var channel))
                 channels.Add(channel);
 
@@ -231,6 +233,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                 DisposeChannel(channel);
 
             _channelSemaphore.Dispose();
+            _queueDeclareLock.Dispose();
         }
 
         public string QueueName => _queueName;

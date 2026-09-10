@@ -46,14 +46,23 @@ namespace Unity.Reporting.Configuration.FieldsProviders
                 mapMetadata.Info[worksheetKey] = $"{worksheetTitle} ({worksheetName}) - ID: {link.WorksheetId}";
             }
 
+            // Default sort order: Worksheet Name (A-Z), then section order, then field layout order within
+            // each section. Each worksheet's components are already emitted in section/field order by
+            // WorksheetFieldSchemaParser.ParseWorksheet, so a stable sort on WorksheetName alone preserves
+            // that ordering as the tie-breaker.
             FieldPathTypeDto[] convertedMetadata = [.. worksheetMetadata.SelectMany(s => s.Components)
                 .Select(ConvertToFieldPathType)
                 .Where(x => x != null)
-                .Select(x => x!)];
+                .Select(x => x!)
+                .OrderBy(x => x.WorksheetName, StringComparer.OrdinalIgnoreCase)];
 
             // Mirror submission behaviour: stamp within-version duplicate DataPaths with (DK1), (DK2), …
             // so that each row is distinguishable and the Duplicate Keys warning is triggered.
             WorksheetFieldsUtils.UniqueifyDataPaths(convertedMetadata);
+
+            // Stamp each field with its 1-based position in the final order as SourceOrder, which drives
+            // the report-config-table's default sort.
+            FieldOrderingUtils.AssignSourceOrder(convertedMetadata);
 
             return new FieldPathMetaMapDto() { Fields = convertedMetadata, Metadata = mapMetadata };
         }
@@ -76,7 +85,8 @@ namespace Unity.Reporting.Configuration.FieldsProviders
                 Key = metadataItem.Key,
                 Label = metadataItem.Label,
                 TypePath = metadataItem.TypePath,
-                DataPath = metadataItem.DataPath
+                DataPath = metadataItem.DataPath,
+                WorksheetName = metadataItem.WorksheetName
             };
         }
 

@@ -37,6 +37,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantsActionBar
               .AddIfNotContains("/Views/Shared/Components/ApplicantsActionBar/Default.js");
             context.Files
               .AddIfNotContains("/Views/Shared/Components/ApplicantsActionBar/ListMerge.js");
+            context.Files
+              .AddIfNotContains("/Views/Shared/Components/ApplicantsActionBar/ListUnmerge.js");
         }
     }
 }

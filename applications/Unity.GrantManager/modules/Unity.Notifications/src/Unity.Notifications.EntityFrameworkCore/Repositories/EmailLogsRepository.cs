@@ -29,6 +29,12 @@ namespace Unity.Notifications.Repositories
             return await dbSet.Where(x => x.ApplicationId == applicationId).ToListAsync();
         }
 
+        public async Task<List<EmailLog>> GetByApplicationIdsAndStatusAsync(List<Guid> applicationIds, string status)
+        {
+            var dbSet = await GetDbSetAsync();
+            return await dbSet.Where(x => applicationIds.Contains(x.ApplicationId) && x.Status == status).ToListAsync();
+        }
+
         public override async Task<IQueryable<EmailLog>> WithDetailsAsync()
         {
             // Uses the extension method defined above

@@ -14,6 +14,7 @@
               name="Answer-Textarea-@Model.QuestionId"
               data-original-value="@Model.Answer"
               data-is-human-confirmed="@Model.IsHumanConfirmed.ToString().ToLower()"
+              data-original-is-human-confirmed="@Model.IsHumanConfirmed.ToString().ToLower()"
               oninput="handleInputChange('@Model.QuestionId','answer-textarea-'); markAsHumanConfirmed(this)">@Model.Answer</textarea>
     @if (!Model.IsHumanConfirmed && !string.IsNullOrEmpty(Model.Answer))
     {

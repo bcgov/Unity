@@ -103,7 +103,8 @@
          */
         _size() {
             let scrollBody = this.s.scrollBody;
-            if (!scrollBody.length || !scrollBody.is(':visible')) return;
+            if (!scrollBody.length || !scrollBody.is(':visible')
+                || !scrollBody[0] || typeof scrollBody[0].getBoundingClientRect !== 'function') return;
 
             // 1. Where does the scroll body start in the viewport?
             let scrollBodyRect = scrollBody[0].getBoundingClientRect();

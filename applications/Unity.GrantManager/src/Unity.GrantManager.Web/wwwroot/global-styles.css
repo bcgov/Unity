@@ -1,5 +1,15 @@
 /* Your Global Styles */
 
+.field-validation-error {
+    display: block;
+    color: #dc3545;
+    font-size: 0.875rem;
+}
+
+.input-validation-error {
+    border-color: #dc3545 !important;
+}
+
 :root {
     --lpx-brand: #FCBA19;
     --lpx-primary: #003366;
@@ -90,4 +100,14 @@ inner-menu-item .lpx-menu-item-link:hover {
 .unity-badge-warning {
     color: var(--lpx-danger);
     border-color: var(--lpx-danger);
+}
+
+/* Constrain pre elements to prevent page horizontal scrolling */
+pre {
+    max-width: 100%;
+    overflow-x: auto;
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+    line-height: 1.5;
 }

@@ -40,9 +40,11 @@ $(function () {
             // OPEN and DELETE buttons are only visible when exactly 1 applicant is selected
             $('#openApplicant').addClass('action-bar-btn-unavailable');
             $('#deleteApplicant').addClass('action-bar-btn-unavailable');
+            $('#unmergeApplicants').addClass('action-bar-btn-unavailable');
             if (selectedApplicantIds.length === 1) {
                 $('#openApplicant').removeClass('action-bar-btn-unavailable');
                 $('#deleteApplicant').removeClass('action-bar-btn-unavailable');
+                $('#unmergeApplicants').removeClass('action-bar-btn-unavailable');
             }
         }
 
@@ -68,6 +70,12 @@ $(function () {
                 a: selectedApplicants[0],
                 b: selectedApplicants[1]
             });
+        }
+    });
+
+    $('#unmergeApplicants').on('click', () => {
+        if (selectedApplicants.length === 1) {
+            PubSub.publish('open_applicant_unmerge', selectedApplicants[0]);
         }
     });
 

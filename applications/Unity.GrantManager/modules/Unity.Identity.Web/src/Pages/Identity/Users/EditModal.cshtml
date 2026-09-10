@@ -22,8 +22,8 @@
             <abp-tabs name="create-user-modal-tabs">
                 <abp-tab title="@L["UserInformations"].Value">
                     <div class="mt-3" >
-                        <input asp-for="UserInfo.Id" />
-                        <input asp-for="UserInfo.ConcurrencyStamp" />
+                        <input type="hidden" asp-for="UserInfo.Id" />
+                        <input type="hidden" asp-for="UserInfo.ConcurrencyStamp" />
                         <abp-input disabled readonly="true" asp-for="UserInfo.UserName" />
                         <abp-input disabled readonly="true" asp-for="UserInfo.Name" />
                         <abp-input disabled readonly="true" asp-for="UserInfo.Surname" />

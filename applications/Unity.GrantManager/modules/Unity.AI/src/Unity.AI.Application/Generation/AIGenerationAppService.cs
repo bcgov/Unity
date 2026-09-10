@@ -1,18 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using Unity.AI.Automation;
 using Unity.AI.Features;
 using Unity.AI.Localization;
 using Unity.AI.Operations;
 using Unity.AI.Permissions;
-using Unity.AI.RateLimit;
 using Unity.AI.Settings;
-using Unity.GrantManager.Attachments;
-using Unity.GrantManager.GrantApplications;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp;
 using Volo.Abp.Features;
@@ -21,63 +15,101 @@ namespace Unity.AI.Generation;
 
 [Route("api/app/ai/generation")]
 public class AIGenerationAppService(
-    IApplicationAIGenerationQueue aiGenerationQueue,
-    IAIGenerationStatusAppService aiGenerationStatusAppService,
-    IAIRateLimiter aiRateLimiter,
+    IApplicationGenerationQueue aiGenerationQueue,
+    IAIGenerationStatusReader aiGenerationStatusReader,
     AIFeatureGuard featureGuard,
     ICurrentTenant currentTenant)
     : AIAppService, IAIGenerationAppService
 {
-    private const string ApplicationAnalysisOperationType = "application-analysis";
-    private const string AttachmentSummaryOperationType = "attachment-summary";
-    private const string ApplicationScoringOperationType = "application-scoring";
+    [Authorize]
+    [HttpPost("submit")]
+    public virtual async Task SubmitAsync(string operationType, AIGenerationSubmissionDto request)
+    {
+        // All generation routes converge here so authorization, feature, and form-version rules stay consistent.
+        var operation = AIGenerationOperations.Get(operationType);
+        await featureGuard.EnsureEnabledAsync(operation.FeatureName, operation.DisabledLocalizationKey);
+
+        if (operation.RequiresFormVersion && request.ApplicationFormVersionId is null)
+        {
+            throw new UserFriendlyException($"AI operation '{operationType}' requires an application form version.");
+        }
+
+        await CheckPolicyAsync(operation.GeneratePermission);
+        await aiGenerationQueue.QueueAsync(operationType, request, currentTenant.Id);
+    }
 
     [Authorize(AIPermissions.Analysis.GenerateAttachmentSummaries)]
     [HttpPost("attachment-summary")]
-    public virtual async Task<List<AttachmentSummaryResultDto>> GenerateAttachmentSummariesAsync(GenerateAttachmentSummariesInputDto input)
+    public virtual async Task GenerateApplicationAttachmentSummariesAsync(AttachmentSummaryGenerationRequestDto request)
     {
-        await featureGuard.EnsureEnabledAsync(
-            AIFeatures.AttachmentSummaries,
-            AILocalizationKeys.AttachmentSummariesDisabled);
-
-        if (input.AttachmentIds.Count == 0)
-        {
-            return [];
-        }
-
-        await aiGenerationQueue.QueueAttachmentSummaryAsync(
-            input.ApplicationId,
-            currentTenant.Id,
-            input.PromptVersion,
-            input.AttachmentIds);
-
-        return input.AttachmentIds
-            .Select(_ => new AttachmentSummaryResultDto { Completed = false })
-            .ToList();
+        await SubmitAsync(
+            AIGenerationOperations.AttachmentSummary,
+            new AIGenerationSubmissionDto
+            {
+                ApplicationId = request.ApplicationId,
+                AttachmentIds = request.AttachmentIds,
+                PromptVersion = request.PromptVersion
+            });
     }
 
     [Authorize(AIPermissions.Analysis.GenerateApplicationAnalysis)]
     [HttpPost("application-analysis")]
-    public virtual async Task<ApplicationAnalysisResultDto> GenerateApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null)
+    public virtual async Task GenerateApplicationAnalysisAsync(Guid applicationId, string? promptVersion = null)
     {
-        await featureGuard.EnsureEnabledAsync(
-            AIFeatures.ApplicationAnalysis,
-            AILocalizationKeys.ApplicationAnalysisDisabled);
-
-        await aiGenerationQueue.QueueApplicationAnalysisAsync(applicationId, currentTenant.Id, promptVersion);
-        return new ApplicationAnalysisResultDto { Completed = false };
+        await SubmitAsync(
+            AIGenerationOperations.ApplicationAnalysis,
+            new AIGenerationSubmissionDto { ApplicationId = applicationId, PromptVersion = promptVersion });
     }
 
     [Authorize(AIPermissions.Analysis.GenerateScoring)]
     [HttpPost("application-scoring")]
-    public virtual async Task<ApplicationScoringResultDto> GenerateApplicationScoringAsync(Guid applicationId, string? promptVersion = null)
+    public virtual async Task GenerateApplicationScoringAsync(Guid applicationId, string? promptVersion = null)
     {
-        await featureGuard.EnsureEnabledAsync(
-            AIFeatures.Scoring,
-            AILocalizationKeys.ScoringDisabled);
+        await SubmitAsync(
+            AIGenerationOperations.ApplicationScoring,
+            new AIGenerationSubmissionDto { ApplicationId = applicationId, PromptVersion = promptVersion });
+    }
 
-        await aiGenerationQueue.QueueApplicationScoringAsync(applicationId, currentTenant.Id, promptVersion);
-        return new ApplicationScoringResultDto { Completed = false };
+    [Authorize(AIPermissions.Analysis.GenerateFormMapping)]
+    [HttpPost("form-mapping")]
+    public virtual async Task GenerateFormMappingAsync(Guid applicationId, Guid applicationFormVersionId, string? promptVersion = null)
+    {
+        await SubmitAsync(
+            AIGenerationOperations.FormMapping,
+            new AIGenerationSubmissionDto
+            {
+                ApplicationId = applicationId,
+                ApplicationFormVersionId = applicationFormVersionId,
+                PromptVersion = promptVersion
+            });
+    }
+
+    [Authorize(AIPermissions.Analysis.GenerateFormWorksheet)]
+    [HttpPost("form-worksheet")]
+    public virtual async Task GenerateFormWorksheetAsync(Guid applicationId, Guid applicationFormVersionId, string? promptVersion = null)
+    {
+        await SubmitAsync(
+            AIGenerationOperations.FormWorksheet,
+            new AIGenerationSubmissionDto
+            {
+                ApplicationId = applicationId,
+                ApplicationFormVersionId = applicationFormVersionId,
+                PromptVersion = promptVersion
+            });
+    }
+
+    [Authorize(AIPermissions.Analysis.GenerateFormScoresheet)]
+    [HttpPost("form-scoresheet")]
+    public virtual async Task GenerateFormScoresheetAsync(Guid applicationId, Guid applicationFormVersionId, string? promptVersion = null)
+    {
+        await SubmitAsync(
+            AIGenerationOperations.FormScoresheet,
+            new AIGenerationSubmissionDto
+            {
+                ApplicationId = applicationId,
+                ApplicationFormVersionId = applicationFormVersionId,
+                PromptVersion = promptVersion
+            });
     }
 
     [Authorize]
@@ -86,50 +118,45 @@ public class AIGenerationAppService(
     {
         await EnsureStatusAccessAsync(operationType);
 
-        var request = await aiGenerationStatusAppService.GetLatestAsync(applicationId, operationType, currentTenant.Id);
-        var state = await aiRateLimiter.GetStateAsync();
+        var request = await aiGenerationStatusReader.GetLatestAsync(applicationId, operationType, currentTenant.Id);
+        if (request == null)
+        {
+            return new AIGenerationStatusDto();
+        }
 
         return new AIGenerationStatusDto
         {
-            GenerationRequest = request == null
-                ? null
-                : new AIGenerationStatusRequestDto
-                {
-                    Id = request.Id,
-                    ApplicationId = request.ApplicationId,
-                    OperationId = request.OperationId,
-                    OperationType = operationType,
-                    Status = request.Status.ToString(),
-                    StartedAt = request.StartedAt,
-                    CompletedAt = request.CompletedAt,
-                    FailureReason = request.FailureReason,
-                    IsActive = request.IsActive
-                },
-            FailureReason = request?.FailureReason,
-            IsGenerating = state.IsGenerating,
-            RetryAfterSeconds = state.RetryAfterSeconds
+            GenerationRequest = new AIGenerationRequestDto
+            {
+                Id = request.Id,
+                ApplicationId = request.ApplicationId,
+                OperationId = request.OperationId,
+                OperationType = operationType,
+                Status = request.Status.ToString(),
+                StartedAt = request.StartedAt,
+                CompletedAt = request.CompletedAt,
+                FailureReason = request.FailureReason,
+                IsActive = request.IsActive
+            },
+            Id = request.Id,
+            ApplicationId = request.ApplicationId,
+            OperationId = request.OperationId,
+            OperationType = operationType,
+            Status = request.Status.ToString(),
+            StartedAt = request.StartedAt,
+            CompletedAt = request.CompletedAt,
+            FailureReason = request.FailureReason,
+            IsActive = request.IsActive
         };
     }
 
     private async Task EnsureStatusAccessAsync(string operationType)
     {
-        var permission = operationType switch
+        if (!AIGenerationOperations.TryGet(operationType, out var operation))
         {
-            ApplicationAnalysisOperationType => AIPermissions.Analysis.ViewApplicationAnalysis,
-            AttachmentSummaryOperationType => AIPermissions.Analysis.ViewAttachmentSummary,
-            ApplicationScoringOperationType => AIPermissions.Analysis.ViewScoringResult,
-            AIGenerationRequestKeyHelper.PipelineOperationType => null,
-            _ => throw new UserFriendlyException($"Unsupported AI generation operation type: {operationType}")
-        };
-
-        if (permission is null)
-        {
-            await CheckPolicyAsync(AIPermissions.Analysis.ViewApplicationAnalysis);
-            await CheckPolicyAsync(AIPermissions.Analysis.ViewAttachmentSummary);
-            await CheckPolicyAsync(AIPermissions.Analysis.ViewScoringResult);
-            return;
+            throw new UserFriendlyException($"Unsupported AI generation operation type: {operationType}");
         }
 
-        await CheckPolicyAsync(permission);
+        await CheckPolicyAsync(operation!.ViewPermission);
     }
 }

@@ -108,6 +108,6 @@ form label.error {
 }
 
 /* Hide calendar icon in input groups */
-.input-group-text:has(i.fa-calendar) {
+.input-group-text:has(i.fa-calendar-days) {
     display: none !important;
 }

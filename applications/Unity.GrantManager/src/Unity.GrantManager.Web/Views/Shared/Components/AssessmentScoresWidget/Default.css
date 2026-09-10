@@ -54,10 +54,53 @@ input {
     margin-top: 0;
 }
 
+#assessmentScoresWidgetArea .save-button-container {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    position: sticky;
+    top: 0;
+    padding: 8px 24px 8px 0;
+    z-index: 999;
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+#assessmentScoresWidgetArea .save-button-container .floating-save-btn {
+    position: static;
+}
+
+#scoresheetSaveAllBtn:disabled {
+    --bs-btn-disabled-bg: #255A90;
+    --bs-btn-disabled-color: #ffffff;
+}
+
+#scoresheetDiscardAllBtn:disabled {
+    --bs-btn-disabled-color: #6c757d;
+}
+
+#assessment-scoresheet .accordion-button.section-unsaved {
+    color: #FF0909;
+}
+
+#assessment-scoresheet .preview-btn.section-unsaved:not(.collapsed) {
+    color: #FF0909;
+    background-color: #FEEAEA;
+}
+
+#assessment-scoresheet .accordion-button.question-unsaved {
+    color: #FF0909;
+}
+
+#assessment-scoresheet .accordion-button.question-unsaved:not(.collapsed) {
+    color: #FF0909;
+    background-color: #FEEAEA;
+}
+
 /* AI-generated answer styling (blue text) */
 .ai-generated-answer {
     color: #0066cc !important;
-    background-color: rgba(0, 102, 204, 0.05);
+    background-color: #eaf2fc;
     border: 1px solid rgba(0, 102, 204, 0.2);
 }
 
@@ -96,11 +139,11 @@ input {
 .ai-citation {
     margin-top: 4px;
     padding: 6px 8px;
-    background-color: rgba(0, 102, 204, 0.08);
+    background-color: #eaf2fc;
     border-left: 3px solid #0066cc;
     border-radius: 0 4px 4px 0;
     font-size: 0.8rem;
-    color: #004080;
+    color: #003366;
     line-height: 1.3;
 }
 
@@ -141,7 +184,7 @@ input {
     align-items: center;
     padding: 2px 8px;
     background-color: #f3c736;
-    color: white;
+    color: #212529;
     border-radius: 4px;
     font-size: 0.75rem;
     font-weight: 600;

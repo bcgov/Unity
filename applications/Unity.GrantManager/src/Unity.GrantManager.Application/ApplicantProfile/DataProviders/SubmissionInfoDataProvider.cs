@@ -66,26 +66,59 @@ namespace Unity.GrantManager.ApplicantProfile
                         submission.CreationTime,
                         submission.Submission,
                         application.ReferenceNo,
+                        application.EligibleForRenewal,
                         FormName = form.ApplicationFormName ?? string.Empty,
+                        form.ExternalLinksConfig,
                         Status = application.ExternalStatusVisibility
                             ? status.NotifiedStatus ?? status.ExternalStatus
-                            : status.ExternalStatus
+                            : status.ExternalStatus,
                     }).ToListAsync();
 
-                dto.Submissions.AddRange(results.Select(s => new SubmissionInfoItemDto
+                // ExternalLinksConfig is a JSON-mapped complex property; filtering its nested links as
+                // part of the join requires an APPLY operation that the SQLite test provider does not
+                // support, so the form's external links are resolved in-memory below instead of within
+                // the query.
+                dto.Submissions.AddRange(results.Select(s =>
                 {
-                    Id = s.Id,
-                    LinkId = s.LinkId,
-                    ReceivedTime = s.CreationTime,
-                    SubmissionTime = ResolveSubmissionTime(s.Submission, s.CreationTime),
-                    ReferenceNo = s.ReferenceNo,
-                    Type = s.FormName,
-                    Status = s.Status
+                    var renewalLinkEntity = s.EligibleForRenewal ? s.ExternalLinksConfig.Links
+                        .Where(x => x.Published && x.ExternalLinkType == ExternalLinkType.Renewal)
+                        .FirstOrDefault() : null;
+
+                    var renewalLink = renewalLinkEntity is null ? null : ToExternalLinkDto(renewalLinkEntity);
+
+                    var relatedLinks = s.ExternalLinksConfig.Links
+                        .Where(x => x.Published && x.ExternalLinkType == ExternalLinkType.Related)
+                        .OrderBy(x => x.Order == -1 ? int.MaxValue : x.Order) // Links without an order default to -1
+                        .Select(ToExternalLinkDto)
+                        .ToList();
+
+                    return new SubmissionInfoItemDto
+                    {
+                        Id = s.Id,
+                        LinkId = s.LinkId,
+                        ReceivedTime = s.CreationTime,
+                        SubmissionTime = ResolveSubmissionTime(s.Submission, s.CreationTime),
+                        ReferenceNo = s.ReferenceNo,
+                        Type = s.FormName,
+                        Status = s.Status,
+                        RenewalLink = renewalLink,
+                        RelatedLinks = relatedLinks,
+                        EligibleForRenewal = s.EligibleForRenewal,
+                        ApplicantMessage = renewalLinkEntity is null ? string.Empty : s.ExternalLinksConfig.ApplicantMessage
+                    };
                 }));
             }
 
             return dto;
         }
+
+        private static ExternalLinkDto ToExternalLinkDto(ExternalLink link) => new()
+        {
+            Uri = link.Uri,
+            Order = link.Order,
+            Title = link.Title,
+            Description = link.Description
+        };
 
         /// <summary>
         /// Derives the CHEFS form view URL from the INTAKE_API_BASE dynamic URL setting.

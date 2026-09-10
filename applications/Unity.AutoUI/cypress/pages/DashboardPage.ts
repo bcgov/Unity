@@ -114,7 +114,7 @@ export class DashboardPage extends BasePage {
     this.getElement(this.chartSelectors.applicationStatusChart)
       .invoke("text")
       .then((text) => {
-        const number = parseInt(text, 10);
+        const number = Number.parseInt(text, 10);
         expect(number).to.be.gt(0);
       });
   }
@@ -126,7 +126,7 @@ export class DashboardPage extends BasePage {
     this.getElement(this.chartSelectors.economicRegionChart)
       .invoke("text")
       .then((text) => {
-        const number = parseInt(text, 10);
+        const number = Number.parseInt(text, 10);
         expect(number).to.be.gt(0);
       });
   }
@@ -138,7 +138,7 @@ export class DashboardPage extends BasePage {
     this.getElement(this.chartSelectors.applicationAssigneeChart)
       .invoke("text")
       .then((text) => {
-        const number = parseInt(text, 10);
+        const number = Number.parseInt(text, 10);
         expect(number).to.be.gt(0);
       });
   }
@@ -150,7 +150,7 @@ export class DashboardPage extends BasePage {
     this.getElement(this.chartSelectors.subsectorRequestedAmountChart)
       .invoke("text")
       .then((text) => {
-        const amount = parseFloat(text.replace("$", ""));
+        const amount = Number.parseFloat(text.replace("$", ""));
         expect(amount).to.be.gt(0);
       });
   }
@@ -171,7 +171,7 @@ export class DashboardPage extends BasePage {
   getChartValue(chartSelector: string): Cypress.Chainable<number> {
     return this.getElement(chartSelector)
       .invoke("text")
-      .then((text) => parseInt(text, 10));
+      .then((text) => Number.parseInt(text, 10));
   }
 
   /**
@@ -180,6 +180,6 @@ export class DashboardPage extends BasePage {
   getChartCurrencyValue(chartSelector: string): Cypress.Chainable<number> {
     return this.getElement(chartSelector)
       .invoke("text")
-      .then((text) => parseFloat(text.replace("$", "")));
+      .then((text) => Number.parseFloat(text.replace("$", "")));
   }
 }

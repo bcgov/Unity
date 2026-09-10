@@ -18,6 +18,13 @@ namespace Unity.GrantManager.GrantsPortal;
 
 public class AddressEditHandlerTests
 {
+    /// <summary>
+    /// Election picks the most recently created remaining address of a type, so only the
+    /// relative order of these matters — they are named for the role they play.
+    /// </summary>
+    private static readonly DateTime Older = new(2023, 1, 1, 10, 0, 0, DateTimeKind.Utc);
+    private static readonly DateTime Newer = new(2023, 6, 15, 14, 30, 0, DateTimeKind.Utc);
+
     private readonly IApplicantAddressRepository _addressRepository;
     private readonly AddressEditHandler _handler;
 
@@ -30,6 +37,7 @@ public class AddressEditHandlerTests
 
         _handler = new AddressEditHandler(
             _addressRepository,
+            new ApplicantAddressManager(_addressRepository),
             NullLogger<AddressEditHandler>.Instance);
     }
 
@@ -132,13 +140,10 @@ public class AddressEditHandlerTests
     #region Address type mapping
 
     [Theory]
+    // The full mapping table (casing, every member, unrecognised and numeric values) is covered
+    // by AddressTypeMapperTests. These two only prove the handler routes the payload value
+    // through the mapper at all, and that an absent value still reaches the fallback.
     [InlineData("MAILING", AddressType.MailingAddress)]
-    [InlineData("mailing", AddressType.MailingAddress)]
-    [InlineData("PHYSICAL", AddressType.PhysicalAddress)]
-    [InlineData("physical", AddressType.PhysicalAddress)]
-    [InlineData("BUSINESS", AddressType.BusinessAddress)]
-    [InlineData("business", AddressType.BusinessAddress)]
-    [InlineData("UNKNOWN", AddressType.PhysicalAddress)]
     [InlineData(null, AddressType.PhysicalAddress)]
     public async Task HandleAsync_ShouldMapAddressTypeCorrectly(string? addressType, AddressType expected)
     {
@@ -208,35 +213,6 @@ public class AddressEditHandlerTests
     #region Primary tracking
 
     [Fact]
-    public async Task HandleAsync_WhenIsPrimaryTrue_ShouldPromoteAndDemoteSiblings()
-    {
-        // Arrange
-        var addressId = Guid.NewGuid();
-        var siblingId = Guid.NewGuid();
-        var applicantId = Guid.NewGuid();
-
-        var address = WithId(new ApplicantAddress { ApplicantId = applicantId }, addressId);
-        var sibling = WithId(new ApplicantAddress { ApplicantId = applicantId }, siblingId);
-        sibling.SetProperty(AddressExtraPropertyNames.IsPrimary, true);
-
-        _addressRepository.GetAsync(addressId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
-            .Returns(address);
-        _addressRepository.GetAsync(siblingId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
-            .Returns(sibling);
-        _addressRepository.FindByApplicantIdAsync(applicantId)
-            .Returns(new List<ApplicantAddress> { address, sibling });
-
-        var payload = CreatePayload(addressId: addressId);
-
-        // Act
-        await _handler.HandleAsync(payload);
-
-        // Assert
-        address.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary).ShouldBeTrue();
-        sibling.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary).ShouldBeFalse();
-    }
-
-    [Fact]
     public async Task HandleAsync_WhenIsPrimaryFalse_ShouldClearIsPrimary()
     {
         // Arrange
@@ -294,8 +270,13 @@ public class AddressEditHandlerTests
         var applicantId = Guid.NewGuid();
 
         var address = WithId(new ApplicantAddress { ApplicantId = applicantId }, addressId);
-        var sibling = WithId(new ApplicantAddress { ApplicantId = applicantId }, siblingWithoutProp);
-        // sibling does NOT have isPrimary property
+
+        // The sibling must share the type the payload edits the address INTO (MAILING), otherwise
+        // it is excluded by type scoping and never reaches the isPrimary check under test here.
+        // It deliberately has no isPrimary property at all.
+        var sibling = WithId(
+            new ApplicantAddress { ApplicantId = applicantId, AddressType = AddressType.MailingAddress },
+            siblingWithoutProp);
 
         _addressRepository.GetAsync(addressId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(address);
@@ -309,6 +290,152 @@ public class AddressEditHandlerTests
 
         // Assert — sibling should not have been fetched for update
         await _addressRepository.DidNotReceive().GetAsync(siblingWithoutProp, Arg.Any<bool>(), Arg.Any<CancellationToken>());
+    }
+
+    #endregion
+
+    #region Primary scoped per address type
+
+    private static JObject CreateAddressData(string addressType, bool isPrimary) => JObject.FromObject(new
+    {
+        street = "123 Main St",
+        city = "Victoria",
+        province = "BC",
+        postalCode = "V8W 1A1",
+        country = "Canada",
+        addressType,
+        isPrimary
+    });
+
+    private ApplicantAddress StubAddress(Guid applicantId, AddressType addressType, bool isPrimary, DateTime? creationTime = null)
+    {
+        var id = Guid.NewGuid();
+        var address = WithId(new ApplicantAddress { ApplicantId = applicantId, AddressType = addressType }, id);
+
+        if (creationTime.HasValue)
+        {
+            address.CreationTime = creationTime.Value;
+        }
+
+        if (isPrimary)
+        {
+            address.SetProperty(AddressExtraPropertyNames.IsPrimary, true);
+        }
+
+        _addressRepository.GetAsync(id, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(address);
+        return address;
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenIsPrimaryTrue_ShouldPromoteAndDemoteOnlySameTypeSiblings()
+    {
+        var applicantId = Guid.NewGuid();
+
+        var address = StubAddress(applicantId, AddressType.MailingAddress, isPrimary: false);
+        var mailingSibling = StubAddress(applicantId, AddressType.MailingAddress, isPrimary: true);
+        var physicalSibling = StubAddress(applicantId, AddressType.PhysicalAddress, isPrimary: true);
+
+        _addressRepository.FindByApplicantIdAsync(applicantId)
+            .Returns([address, mailingSibling, physicalSibling]);
+
+        var payload = CreatePayload(
+            addressId: address.Id,
+            data: CreateAddressData("MAILING", isPrimary: true));
+
+        await _handler.HandleAsync(payload);
+
+        // The edited address is promoted, its same-type sibling is demoted, and the primary
+        // of the other type keeps its flag because exclusivity is scoped to the type group.
+        address.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary).ShouldBeTrue();
+        mailingSibling.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary).ShouldBeFalse();
+        physicalSibling.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary).ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenPrimaryAddressChangesType_ShouldElectNewPrimaryInPreviousType()
+    {
+        var applicantId = Guid.NewGuid();
+
+        var address = StubAddress(applicantId, AddressType.PhysicalAddress, isPrimary: true);
+        var olderPhysical = StubAddress(applicantId, AddressType.PhysicalAddress, isPrimary: false, creationTime: Older);
+        var newerPhysical = StubAddress(applicantId, AddressType.PhysicalAddress, isPrimary: false, creationTime: Newer);
+
+        _addressRepository.FindByApplicantIdAsync(applicantId)
+            .Returns([address, olderPhysical, newerPhysical]);
+
+        var payload = CreatePayload(
+            addressId: address.Id,
+            data: CreateAddressData("MAILING", isPrimary: true));
+
+        await _handler.HandleAsync(payload);
+
+        address.AddressType.ShouldBe(AddressType.MailingAddress);
+        address.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary).ShouldBeTrue();
+        newerPhysical.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary).ShouldBeTrue();
+        olderPhysical.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary).ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenPrimaryAddressChangesType_ShouldDemoteExistingPrimaryInNewType()
+    {
+        var applicantId = Guid.NewGuid();
+
+        var address = StubAddress(applicantId, AddressType.PhysicalAddress, isPrimary: true);
+        var mailingPrimary = StubAddress(applicantId, AddressType.MailingAddress, isPrimary: true);
+
+        _addressRepository.FindByApplicantIdAsync(applicantId)
+            .Returns([address, mailingPrimary]);
+
+        var payload = CreatePayload(
+            addressId: address.Id,
+            data: CreateAddressData("MAILING", isPrimary: true));
+
+        await _handler.HandleAsync(payload);
+
+        address.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary).ShouldBeTrue();
+        mailingPrimary.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary).ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenNonPrimaryAddressChangesType_ShouldNotElectInPreviousType()
+    {
+        var applicantId = Guid.NewGuid();
+
+        var address = StubAddress(applicantId, AddressType.PhysicalAddress, isPrimary: false);
+        var otherPhysical = StubAddress(applicantId, AddressType.PhysicalAddress, isPrimary: false);
+
+        _addressRepository.FindByApplicantIdAsync(applicantId)
+            .Returns([address, otherPhysical]);
+
+        var payload = CreatePayload(
+            addressId: address.Id,
+            data: CreateAddressData("BUSINESS", isPrimary: false));
+
+        await _handler.HandleAsync(payload);
+
+        address.AddressType.ShouldBe(AddressType.BusinessAddress);
+        otherPhysical.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary).ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task HandleAsync_WhenPrimaryAddressKeepsItsType_ShouldNotElectAnotherPrimaryInThatType()
+    {
+        var applicantId = Guid.NewGuid();
+
+        var address = StubAddress(applicantId, AddressType.MailingAddress, isPrimary: true);
+        var otherMailing = StubAddress(applicantId, AddressType.MailingAddress, isPrimary: false);
+
+        _addressRepository.FindByApplicantIdAsync(applicantId)
+            .Returns([address, otherMailing]);
+
+        var payload = CreatePayload(
+            addressId: address.Id,
+            data: CreateAddressData("MAILING", isPrimary: true));
+
+        await _handler.HandleAsync(payload);
+
+        address.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary).ShouldBeTrue();
+        otherMailing.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary).ShouldBeFalse();
     }
 
     #endregion

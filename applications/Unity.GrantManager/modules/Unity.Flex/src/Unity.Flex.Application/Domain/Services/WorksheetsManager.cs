@@ -82,9 +82,16 @@ namespace Unity.Flex.Domain.Services
             foreach (var field in instance.Values)
             {
                 var fieldDefinition = fieldDefinitions.Find(s => s.Id == field.CustomFieldId);
-                if (fieldDefinition != null)
-                    instanceCurrentValue.Values.Add(new FieldInstanceValue(fieldDefinition.Key,
-                        JsonNode.Parse(field.CurrentValue)?["value"]?.ToString() ?? string.Empty));
+                if (fieldDefinition == null) continue;
+
+                // A missing key and an explicit JSON null both parse to a null JsonNode here;
+                // omit the entry rather than coercing it to "" so downstream reporting views
+                // (which treat a missing key as NULL) don't have to parse "" as JSON.
+                var value = JsonNode.Parse(field.CurrentValue)?["value"];
+                if (value != null)
+                {
+                    instanceCurrentValue.Values.Add(new FieldInstanceValue(fieldDefinition.Key, value.ToString()));
+                }
             }
 
             instance.SetValue(JsonSerializer.Serialize(instanceCurrentValue));

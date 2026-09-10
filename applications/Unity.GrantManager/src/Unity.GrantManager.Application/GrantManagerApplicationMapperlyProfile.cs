@@ -129,6 +129,8 @@ public partial class ApplicationToGrantApplicationDtoMapper : MapperBase<Applica
     [MapperIgnoreTarget(nameof(GrantApplicationDto.PaymentInfo))]
     [MapperIgnoreTarget(nameof(GrantApplicationDto.AIAnalysisData))]
     [MapperIgnoreTarget(nameof(GrantApplicationDto.Owner))]
+    [MapperIgnoreTarget(nameof(GrantApplicationDto.ExternalStatus))]
+    [MapperIgnoreTarget(nameof(GrantApplicationDto.PublishedStatus))]
     public override partial GrantApplicationDto Map(Application source);
 
     [MapperIgnoreTarget(nameof(GrantApplicationDto.RowCount))]
@@ -170,6 +172,8 @@ public partial class ApplicationToGrantApplicationDtoMapper : MapperBase<Applica
     [MapperIgnoreTarget(nameof(GrantApplicationDto.PaymentInfo))]
     [MapperIgnoreTarget(nameof(GrantApplicationDto.AIAnalysisData))]
     [MapperIgnoreTarget(nameof(GrantApplicationDto.Owner))]
+    [MapperIgnoreTarget(nameof(GrantApplicationDto.ExternalStatus))]
+    [MapperIgnoreTarget(nameof(GrantApplicationDto.PublishedStatus))]
     public override partial void Map(Application source, GrantApplicationDto destination);
 
     [MapperIgnoreTarget(nameof(GrantApplicationApplicantDto.SiteId))]
@@ -182,6 +186,8 @@ public partial class ApplicationToGrantApplicationDtoMapper : MapperBase<Applica
     [MapperIgnoreTarget(nameof(ApplicationFormDto.ChefsFormVersionGuid))]
     [MapperIgnoreTarget(nameof(ApplicationFormDto.SubmissionHeaderMapping))]
     [MapperIgnoreTarget(nameof(ApplicationFormDto.ApiToken))]
+    [MapperIgnoreTarget(nameof(ApplicationFormDto.ExternalLinks))]
+    [MapperIgnoreTarget(nameof(ApplicationFormDto.ApplicantMessage))]
     private partial ApplicationFormDto ToDto(ApplicationForm source);
 
     private static string ResolveFiscalDay(Applicant src) => src.FiscalDay?.ToString() ?? string.Empty;
@@ -345,11 +351,15 @@ public partial class ApplicationFormToDtoMapper : MapperBase<ApplicationForm, Ap
     [MapperIgnoreTarget(nameof(ApplicationFormDto.ChefsFormVersionGuid))]
     [MapperIgnoreTarget(nameof(ApplicationFormDto.SubmissionHeaderMapping))]
     [MapperIgnoreTarget(nameof(ApplicationFormDto.ApiToken))]
+    [MapperIgnoreTarget(nameof(ApplicationFormDto.ExternalLinks))]
+    [MapperIgnoreTarget(nameof(ApplicationFormDto.ApplicantMessage))]
     public override partial ApplicationFormDto Map(ApplicationForm source);
 
     [MapperIgnoreTarget(nameof(ApplicationFormDto.ChefsFormVersionGuid))]
     [MapperIgnoreTarget(nameof(ApplicationFormDto.SubmissionHeaderMapping))]
     [MapperIgnoreTarget(nameof(ApplicationFormDto.ApiToken))]
+    [MapperIgnoreTarget(nameof(ApplicationFormDto.ExternalLinks))]
+    [MapperIgnoreTarget(nameof(ApplicationFormDto.ApplicantMessage))]
     public override partial void Map(ApplicationForm source, ApplicationFormDto destination);
 }
 [Mapper]
@@ -366,6 +376,7 @@ public partial class ApplicationFormDtoToEntityMapper : MapperBase<ApplicationFo
     [MapperIgnoreTarget(nameof(ApplicationForm.ParentFormId))]
     [MapperIgnoreTarget(nameof(ApplicationForm.IsDeleted))]
     [MapperIgnoreTarget(nameof(ApplicationForm.PaymentApprovalThreshold))]
+    [MapperIgnoreTarget(nameof(ApplicationForm.ExternalLinksConfig))]
     public override partial ApplicationForm Map(ApplicationFormDto source);
 
     [MapperIgnoreTarget(nameof(ApplicationForm.DeleterId))]
@@ -379,6 +390,7 @@ public partial class ApplicationFormDtoToEntityMapper : MapperBase<ApplicationFo
     [MapperIgnoreTarget(nameof(ApplicationForm.ParentFormId))]
     [MapperIgnoreTarget(nameof(ApplicationForm.IsDeleted))]
     [MapperIgnoreTarget(nameof(ApplicationForm.PaymentApprovalThreshold))]
+    [MapperIgnoreTarget(nameof(ApplicationForm.ExternalLinksConfig))]
     public override partial void Map(ApplicationFormDto source, ApplicationForm destination);
 }
 [Mapper] public partial class ApplicationFormVersionToDtoMapper : MapperBase<ApplicationFormVersion, ApplicationFormVersionDto> { public override partial ApplicationFormVersionDto Map(ApplicationFormVersion source); public override partial void Map(ApplicationFormVersion source, ApplicationFormVersionDto destination); }
@@ -481,6 +493,7 @@ public partial class CreateUpdateApplicationFormDtoToEntityMapper : MapperBase<C
     [MapperIgnoreTarget(nameof(ApplicationForm.Prefix))]
     [MapperIgnoreTarget(nameof(ApplicationForm.SuffixType))]
     [MapperIgnoreTarget(nameof(ApplicationForm.ElectoralDistrictAddressType))]
+    [MapperIgnoreTarget(nameof(ApplicationForm.ExternalLinksConfig))]
     public override partial ApplicationForm Map(CreateUpdateApplicationFormDto source);
 
     [MapperIgnoreTarget(nameof(ApplicationForm.AvailableChefsFields))]
@@ -508,6 +521,7 @@ public partial class CreateUpdateApplicationFormDtoToEntityMapper : MapperBase<C
     [MapperIgnoreTarget(nameof(ApplicationForm.Prefix))]
     [MapperIgnoreTarget(nameof(ApplicationForm.SuffixType))]
     [MapperIgnoreTarget(nameof(ApplicationForm.ElectoralDistrictAddressType))]
+    [MapperIgnoreTarget(nameof(ApplicationForm.ExternalLinksConfig))]
     public override partial void Map(CreateUpdateApplicationFormDto source, ApplicationForm destination);
 }
 [Mapper]

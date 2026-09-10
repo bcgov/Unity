@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.Modules.Shared;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
@@ -13,7 +14,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantHistory
         RefreshUrl = "Widget/ApplicantHistory/Refresh",
         ScriptTypes = new[] { typeof(ApplicantHistoryScriptBundleContributor) },
         StyleTypes = new[] { typeof(ApplicantHistoryStyleBundleContributor) },
-        AutoInitialize = true)]
+        AutoInitialize = true,
+        RequiredPolicies = new [] { UnitySelector.ApplicantManagement.History.Default })]
     public class ApplicantHistoryViewComponent : AbpViewComponent
     {
         private readonly IApplicantRepository _applicantRepository;

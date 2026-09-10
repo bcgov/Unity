@@ -135,7 +135,7 @@ public class ApplicationManager : DomainService, IApplicationManager
             .SubstateOf(GrantApplicationState.RESOLVED)
             .Permit(GrantApplicationAction.Withdraw, GrantApplicationState.WITHDRAWN)
             .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED)
-            .PermitIf(GrantApplicationAction.Defer, GrantApplicationState.DEFER, () => HasPermission(GrantApplicationPermissions.Approvals.DeferAfterApproval))
+            .PermitIfAsync(GrantApplicationAction.Defer, GrantApplicationState.DEFER, () => HasPermissionAsync(GrantApplicationPermissions.Approvals.DeferAfterApproval))
             .PermitIf(GrantApplicationAction.Deny, GrantApplicationState.GRANT_NOT_APPROVED, () => isDirectApproval, DirectDenialDescription);
 
         stateMachine.Configure(GrantApplicationState.GRANT_NOT_APPROVED)
@@ -160,9 +160,9 @@ public class ApplicationManager : DomainService, IApplicationManager
         return isDirectApproval && stateMachine.State != targetState;
     }
 
-    private bool HasPermission(string permission)
+    private async Task<bool> HasPermissionAsync(string permission)
     {
-        return _permissionChecker.IsGrantedAsync(permission).Result;
+        return await _permissionChecker.IsGrantedAsync(permission);
     }
 
     public async Task<List<ApplicationActionResultItem>> GetActions(Guid applicationId)
@@ -178,7 +178,7 @@ public class ApplicationManager : DomainService, IApplicationManager
             });
 
         var allActions = Workflow.GetAllActions().Distinct().ToList();
-        var permittedActions = Workflow.GetPermittedActions().ToList();
+        var permittedActions = (await Workflow.GetPermittedActionsAsync()).ToList();
 
         var actionsList = allActions
             .Select(trigger =>
@@ -194,7 +194,7 @@ public class ApplicationManager : DomainService, IApplicationManager
         return actionsList;
     }
 
-    public bool IsActionAllowed(Application application, GrantApplicationAction triggerAction)
+    public async Task<bool> IsActionAllowed(Application application, GrantApplicationAction triggerAction)
     {
         var Workflow = new UnityWorkflow<GrantApplicationState, GrantApplicationAction>(
             () => application.ApplicationStatus.StatusCode,
@@ -203,7 +203,7 @@ public class ApplicationManager : DomainService, IApplicationManager
                 ConfigureWorkflow(sm, application.ApplicationForm.IsDirectApproval);
             });
 
-        return Workflow.GetPermittedActions().Contains(triggerAction);
+        return (await Workflow.GetPermittedActionsAsync()).Contains(triggerAction);
     }
 
     /// <summary>
@@ -326,7 +326,7 @@ public class ApplicationManager : DomainService, IApplicationManager
         using var uow = _unitOfWorkManager.Begin();
         var person = await _personRepository.FindAsync(assigneeId) ?? throw new BusinessException("Tenant User Missing!");
         var application = await _applicationRepository.GetAsync(applicationId, true);
-        IQueryable<ApplicationAssignment> queryableAssignment = _applicationAssignmentRepository.GetQueryableAsync().Result;
+        IQueryable<ApplicationAssignment> queryableAssignment = await _applicationAssignmentRepository.GetQueryableAsync();
         List<ApplicationAssignment> assignments = queryableAssignment
             .Where(a => a.ApplicationId.Equals(applicationId))
             .Where(b => b.AssigneeId.Equals(person.Id)).ToList();

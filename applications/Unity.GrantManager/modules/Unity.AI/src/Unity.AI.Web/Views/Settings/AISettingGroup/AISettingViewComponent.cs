@@ -21,7 +21,9 @@ public class AISettingViewComponent(ISettingProvider settingProvider) : AbpViewC
             AutomaticGenerationEnabled = await settingProvider.GetAsync<bool>(
                 AISettings.AutomaticGenerationEnabled, defaultValue: false),
             ManualGenerationEnabled = await settingProvider.GetAsync<bool>(
-                AISettings.ManualGenerationEnabled, defaultValue: false)
+                AISettings.ManualGenerationEnabled, defaultValue: false),
+            ReportingEnabled = await settingProvider.GetAsync<bool>(
+                AISettings.ReportingEnabled, defaultValue: false)
         };
 
         return View("~/Views/Settings/AISettingGroup/Default.cshtml", model);
@@ -31,6 +33,7 @@ public class AISettingViewComponent(ISettingProvider settingProvider) : AbpViewC
     {
         public override void ConfigureBundle(BundleConfigurationContext context)
         {
+            context.Files.Add("/Views/Shared/Scripts/AiLegalDisclaimer.js");
             context.Files.Add("/Views/Settings/AISettingGroup/Default.js");
         }
     }

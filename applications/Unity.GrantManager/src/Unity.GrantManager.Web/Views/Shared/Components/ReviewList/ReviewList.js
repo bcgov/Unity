@@ -20,12 +20,12 @@ const actionButtonLabelMap = {
     Complete: 'Complete Assessment'
 };
 
-const finalApplicationStates = [
+const finalApplicationStates = new Set([
     'GRANT_NOT_APPROVED',
     'GRANT_APPROVED',
     'CLOSED',
     'WITHDRAWN'
-];
+]);
 
 $(function () {
     const nullPlaceholder = '—';
@@ -379,7 +379,7 @@ async function getActionButtonConfigMap() {
 
 async function canCreateAssessment() {
     const applicationStatus = await getActionButtonConfigMap();
-    return !finalApplicationStates.includes(applicationStatus.statusCode);
+    return !finalApplicationStates.has(applicationStatus.statusCode);
 }
 
 async function updateCreateButtonState(dataTableContext) {
@@ -450,11 +450,11 @@ function unityWorkflowButtonText(dt, button, config) {
 }
 
 function cloneButtonText(dt, button, config) {
-    return '<span class="ai-button-content"><i class="unt-icon-sm fa-solid fa-wand-sparkles"></i><span>' + actionButtonLabelMap.Clone + '</span></span>';
+    return '<span class="ai-button-content"><i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i><span>' + actionButtonLabelMap.Clone + '</span></span>';
 }
 
 function generateAiButtonText(dt, button, config) {
-    return '<span class="ai-button-content"><i class="unt-icon-sm fa-solid fa-wand-sparkles"></i><span>Generate</span></span>';
+    return '<span class="ai-button-content"><i class="unt-icon-sm fa-solid fa-wand-magic-sparkles"></i><span>Generate</span></span>';
 }
 
 function unityWorkflowButtonAction(e, dt, button, config) {
@@ -553,13 +553,12 @@ function executeAssessmentAction(assessmentId, triggerAction) {
 }
 
 function createButtonInit(dt, button, config) {
-    let that = this;
     unity.grantManager.assessments.assessment.getCurrentUserAssessmentId(pageApplicationId, {})
-        .done(function (data) {
+        .done((data) => {
             if (data == null) {
-                that.enable();
+                this.enable();
             } else {
-                that.disable();
+                this.disable();
             }
         });
 }

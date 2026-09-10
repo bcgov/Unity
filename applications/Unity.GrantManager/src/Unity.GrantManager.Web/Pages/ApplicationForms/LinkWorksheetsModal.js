@@ -40,57 +40,30 @@
 
         if (!beingDragged.classList.contains('draggable-card')) return;
 
-        if (dragOver.classList.contains('single-target')
-            && event.target.childElementCount > 0) {
-            event.preventDefault();
+        if (dragOver.classList.contains('single-target')) {
+            if (event.target.childElementCount > 0) {
+                event.preventDefault();
+            } else {
+                dropToSingleTarget(event, null, 'published-form');
+            }
             return;
         }
 
-        if (dragOver.classList.contains('single-target')
-            && event.target.childElementCount == 0) {
-            dropToSingleTarget(event, null, 'published-form');
-            return;
-        }
+        if (!dragOver.classList.contains('multi-target')) return;
 
-        if (dragOver.classList.contains('multi-target')
-            && event.target.classList.contains('available-worksheets')) {
-            dropToAvailableWorksheets(event, 'published-form', null);
-            return;
-        }
+        const multiTargetHandlers = [
+            { className: 'available-worksheets', handler: dropToAvailableWorksheets, addClass: 'published-form', removeClass: null },
+            { className: 'custom-tabs-list', handler: dropToCustomTabs, addClass: null, removeClass: 'published-form' },
+            { className: 'assessment-info-list', handler: dropToAssessmentInfo, addClass: null, removeClass: 'published-form' },
+            { className: 'project-info-list', handler: dropToProjectInfo, addClass: null, removeClass: 'published-form' },
+            { className: 'applicant-info-list', handler: dropToApplicantInfo, addClass: null, removeClass: 'published-form' },
+            { className: 'payment-info-list', handler: dropToPaymentInfo, addClass: null, removeClass: 'published-form' },
+            { className: 'funding-agreement-info-list', handler: dropToFundingAgreementInfo, addClass: null, removeClass: 'published-form' }
+        ];
 
-        if (dragOver.classList.contains('multi-target')
-            && event.target.classList.contains('custom-tabs-list')) {
-            dropToCustomTabs(event, null, 'published-form');
-            return;
-        }
-
-        if (dragOver.classList.contains('multi-target')
-            && event.target.classList.contains('assessment-info-list')) {
-            dropToAssessmentInfo(event, null, 'published-form');
-            return;
-        }
-
-        if (dragOver.classList.contains('multi-target')
-            && event.target.classList.contains('project-info-list')) {
-            dropToProjectInfo(event, null, 'published-form');
-            return;
-        }
-
-        if (dragOver.classList.contains('multi-target')
-            && event.target.classList.contains('applicant-info-list')) {
-            dropToApplicantInfo(event, null, 'published-form');
-            return;
-        }
-
-        if (dragOver.classList.contains('multi-target')
-            && event.target.classList.contains('payment-info-list')) {
-            dropToPaymentInfo(event, null, 'published-form');
-            return;
-        }
-
-        if (dragOver.classList.contains('multi-target')
-            && event.target.classList.contains('funding-agreement-info-list')) {
-            dropToFundingAgreementInfo(event, null, 'published-form');
+        const match = multiTargetHandlers.find(m => event.target.classList.contains(m.className));
+        if (match) {
+            match.handler(event, match.addClass, match.removeClass);
         }
     });
 

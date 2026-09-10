@@ -2,6 +2,7 @@ $(function () {
     const l = abp.localization.getResource('Notifications');
     const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     let dt = $('#NotificationListTable');
+    let dataTable;
 
     const defaultQuickDateRange = 'last6months';
     const STORAGE_KEYS = {
@@ -23,6 +24,7 @@ $(function () {
 
     const listColumns = getColumns();
     const defaultVisibleColumns = [
+        'select',
         'submissionReferenceNo',
         'applicantName',
         'sentDateTime',
@@ -39,6 +41,36 @@ $(function () {
 
     let actionButtons = [
         {
+            text: l('NotificationList:Open'),
+            id: 'openNotification',
+            attr: { id: 'openNotification' },
+            className: 'custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable',
+            action: function () {
+                const selectedRows = dataTable.rows({ selected: true }).data().toArray();
+                if (selectedRows.length !== 1 || !selectedRows[0].applicationId) return;
+
+                $.get('/Notifications/EmailModal', {
+                    applicationId: selectedRows[0].applicationId,
+                    emailId: selectedRows[0].id
+                })
+                    .done(function (markup) {
+                        const modalMarkup = $('<div>').html(markup);
+                        const breadcrumb = modalMarkup.find('.breadcrumb-container').first();
+                        $('#notificationEmailModalBreadcrumb').empty().append(breadcrumb);
+                        $('#notificationEmailModalBody').empty().append(modalMarkup.contents());
+                        window.EmailsWidget?.reinitialize?.();
+                        const selectedEmailElement = document.getElementById('notificationSelectedEmail');
+                        if (selectedEmailElement?.textContent) {
+                            PubSub.publish('email_selected', JSON.parse(selectedEmailElement.textContent));
+                        }
+                        bootstrap.Modal.getOrCreateInstance(document.getElementById('notificationEmailModal')).show();
+                    })
+                    .fail(function () {
+                        abp.notify.error(l('NotificationList:EmailModalLoadFailed'));
+                    });
+            }
+        },
+        {
             text: l('Filter'),
             id: 'btn-toggle-filter',
             className: 'custom-table-btn flex-none btn btn-secondary',
@@ -53,7 +85,7 @@ $(function () {
         }
     ];
 
-    const notificationsTable = initializeDataTable({
+    dataTable = initializeDataTable({
         dt,
         defaultVisibleColumns,
         listColumns,
@@ -77,11 +109,29 @@ $(function () {
         fixedHeaders: true
     });
 
+    function updateOpenButtonState() {
+        const selectedRows = dataTable.rows({ selected: true }).data().toArray();
+        const canOpen = selectedRows.length === 1 && !!selectedRows[0].applicationId;
+        $('#openNotification').toggleClass('action-bar-btn-unavailable', !canOpen);
+    }
+
+    dataTable.on('select deselect draw', updateOpenButtonState);
+    updateOpenButtonState();
+
+    function handleNotificationEmailCompleted() {
+        const notificationEmailModal = document.getElementById('notificationEmailModal');
+        bootstrap.Modal.getOrCreateInstance(notificationEmailModal).hide();
+        dataTable.ajax.reload(null, false);
+    }
+
+    PubSub.subscribe('notification_email_sent', handleNotificationEmailCompleted);
+    PubSub.subscribe('notification_email_saved', handleNotificationEmailCompleted);
+
     UIElements.quickDateRange.on('change', handleQuickDateRangeChange);
     UIElements.inputFilter.on('change', handleInputFilterChange);
     // Reveal the Date From/To inputs together with the per-column filter row. filterRow.js emits
     // "filterRow-visibility" when the user flips the "Show Filter Row" toggle in the Filter popover.
-    notificationsTable.on('filterRow-visibility', function (e, visible) {
+    dataTable.on('filterRow-visibility', function (e, visible) {
         dateInputsForcedByFilter = visible;
         updateDateInputsVisibility();
     });
@@ -195,8 +245,9 @@ $(function () {
     // ============================ Columns ============================
 
     function getColumns() {
-        let columnIndex = 0;
+        let columnIndex = 1;
         const columns = [
+            getSelectColumn('Select Notification', 'id', 'notifications'),
             getNotificationIdColumn(columnIndex++),
             getSubmissionIdColumn(columnIndex++),
             getTextColumn(columnIndex++, l('NotificationList:ApplicantName'), 'applicantName'),

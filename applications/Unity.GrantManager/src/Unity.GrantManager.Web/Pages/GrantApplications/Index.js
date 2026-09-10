@@ -9,7 +9,7 @@ $(function () {
     const l = abp.localization.getResource('GrantManager');
     const defaultQuickDateRange = 'last6months';
     const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    const canViewApplicants = abp.auth.isGranted('GrantApplicationManagement.Applicants.ViewList');
+    const canViewApplicants = abp.auth.isGranted('Unity.GrantManager.ApplicantManagement.Applicant');
     const dtTextRenderer = $.fn.dataTable.render.text();
 
     let dt = $('#GrantApplicationsTable');
@@ -520,8 +520,16 @@ $(function () {
     });
 
     //For savedStates
-    $('.grp-savedStates').text('Save View');
+    // Initialize button styling
     $('.grp-savedStates').closest('.btn-group').addClass('cstm-save-view');
+
+    // Update button text based to Save Views
+    function updateSavedStatesButtonText() {
+        $('.grp-savedStates').text('Save View');
+    }
+
+    dataTable.on('stateRestore-change', updateSavedStatesButtonText);
+    updateSavedStatesButtonText();
 
     // Helper function to restore custom filters when loading table views.
     function restoreCustomFilters(filters) {
@@ -570,6 +578,8 @@ $(function () {
             getAssigneesColumn(columnIndex++),
             getStatusColumn(columnIndex++),
             getExternalStatusVisibilityColumn(columnIndex++),
+            getExternalStatusColumn(columnIndex++),
+            getPublishedStatusColumn(columnIndex++),
             getRequestedAmountColumn(columnIndex++),
             getApprovedAmountColumn(columnIndex++),
             getEconomicRegionColumn(columnIndex++),
@@ -800,6 +810,34 @@ $(function () {
                 return data ? 'Published' : 'Unpublished';
             },
             index: columnIndex
+        }
+    }
+
+    function getExternalStatusColumn(columnIndex) {
+        return {
+            title: l('ExternalStatus'),
+            data: 'externalStatus',
+            name: 'externalStatus',
+            className: 'data-table-header',
+            index: columnIndex,
+            render: function (data, type) {
+                const value = data ?? '';
+                return type === 'display' ? dtTextRenderer.display(value) : value;
+            }
+        }
+    }
+
+    function getPublishedStatusColumn(columnIndex) {
+        return {
+            title: l('PublishedStatus'),
+            data: 'publishedStatus',
+            name: 'publishedStatus',
+            className: 'data-table-header',
+            index: columnIndex,
+            render: function (data, type) {
+                const value = data ?? '';
+                return type === 'display' ? dtTextRenderer.display(value) : value;
+            }
         }
     }
 

@@ -1,9 +1,10 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Caching.Distributed;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.EntityFrameworkCore;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -14,7 +15,8 @@ namespace Unity.GrantManager.Integrations.Endpoints
 {
     public class EndpointManagementAppService(
         IRepository<DynamicUrl, Guid> repository,
-        IDistributedCache cache) :
+        IDistributedCache cache,
+        IUnitOfWorkManager unitOfWorkManager) :
         CrudAppService<
             DynamicUrl,
             DynamicUrlDto,
@@ -24,6 +26,7 @@ namespace Unity.GrantManager.Integrations.Endpoints
         IEndpointManagementAppService
     {
         private readonly IDistributedCache _cache = cache;
+        private readonly IUnitOfWorkManager _unitOfWorkManager = unitOfWorkManager;
         private const string CACHE_KEY_SET_PREFIX = "DynamicUrl:KeySet";
 
         private static string BuildCacheKey(string keyName, bool tenantSpecific, Guid? tenantId)
@@ -63,6 +66,29 @@ namespace Unity.GrantManager.Integrations.Endpoints
                 });
             }
         }
+        
+        [UnitOfWork]
+        [RemoteService(false)]
+        [AllowAnonymous]
+        public async Task<string> GetGitHubRepoUrlAsync()
+        {
+            var url = await GetUrlByKeyNameInternalAsync(DynamicUrlKeyNames.GITHUB_REPO, tenantSpecific: false);
+            if (string.IsNullOrWhiteSpace(url))
+                throw new UserFriendlyException("GitHub repo URL not configured.");
+            return url!;
+        }
+
+        [UnitOfWork]
+        [RemoteService(false)]
+        [AllowAnonymous]
+        public async Task<string> GetGitHubGraphQlUrlAsync()
+        {
+            var url = await GetUrlByKeyNameInternalAsync(DynamicUrlKeyNames.GITHUB_GRAPHQL, tenantSpecific: false);
+            if (string.IsNullOrWhiteSpace(url))
+                throw new UserFriendlyException("GitHub GraphQL URL not configured.");
+            return url!;
+        }
+
 
         [UnitOfWork]
         [RemoteService(false)]
@@ -100,20 +126,18 @@ namespace Unity.GrantManager.Integrations.Endpoints
             if (!string.IsNullOrEmpty(cached))
                 return cached;
 
-            DynamicUrl? dynamicUrl;
+            string? url;
             if (tenantSpecific)
             {
-                dynamicUrl = await Repository.FirstOrDefaultAsync(x => x.KeyName == keyName && x.TenantId == tenantId);
+                url = await GetUrlValueAsync(keyName, tenantId);
             }
             else
             {
                 using (CurrentTenant.Change(null))
                 {
-                    dynamicUrl = await Repository.FirstOrDefaultAsync(x => x.KeyName == keyName && x.TenantId == null);
+                    url = await GetUrlValueAsync(keyName, tenantId: null);
                 }
             }
-
-            var url = dynamicUrl?.Url;
 
             if (!string.IsNullOrWhiteSpace(url))
             {
@@ -129,6 +153,21 @@ namespace Unity.GrantManager.Integrations.Endpoints
                 await AddToKeySetAsync(cacheKey, tenantId);
             }
 
+            return url;
+        }
+
+        private async Task<string?> GetUrlValueAsync(string keyName, Guid? tenantId)
+        {
+            using var uow = _unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
+            var queryable = await Repository.GetQueryableAsync();
+
+            var url = await AsyncExecuter.FirstOrDefaultAsync(
+                queryable
+                    .AsNoTracking()
+                    .Where(x => x.KeyName == keyName && x.TenantId == tenantId)
+                    .Select(x => x.Url));
+
+            await uow.CompleteAsync();
             return url;
         }
 
@@ -165,5 +204,9 @@ namespace Unity.GrantManager.Integrations.Endpoints
             // Clear the key set itself
             await _cache.RemoveAsync(keySetKey);
         }
+
+        [RemoteService(false)]
+        public override Task DeleteAsync(Guid id)
+            => base.DeleteAsync(id);
     }
 }

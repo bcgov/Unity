@@ -6,11 +6,19 @@
         return applicationId;
     }
 
+    let hasReceivedInitialResponse = false;
+    let hasLoadedEmptyState = false;
+
     let responseCallback = function (result) {
         const normalizedResult = (result || []).map(item => ({
             ...item,
             templateName: resolveTemplateName(item)
         }));
+
+        if (!hasReceivedInitialResponse) {
+            hasReceivedInitialResponse = true;
+            hasLoadedEmptyState = normalizedResult.length === 0;
+        }
 
         if (result) {
             setTimeout(function () {
@@ -82,7 +90,8 @@
                     data: 'sentDateTime',
                     className: 'data-table-header',
                     width: '12%',
-                    render: function (data) {
+                    render: function (data, type, full) {
+                        if (full.sendOnDateTime) return '—';
                         return data ? luxon.DateTime.fromISO(data, {
                             locale: abp.localization.currentCulture.name,
                         }).toLocaleString({
@@ -153,16 +162,20 @@
                     width: '8%',
                     className: 'text-center',
                     render: function (data, _, full, meta) {
+                        // Only needed when the Scheduled Send column is shown, and only for
+                        // tables that started out empty (see hasLoadedEmptyState above).
+                        const addWidthClass = enableEmailDelay && hasLoadedEmptyState;
+
                         // Show delete button for drafts
                         if (data === 'Draft' && abp.auth.isGranted('Notifications.Email.DeleteDraft')) {
-                            return generateDeleteButtonContent(full, meta.row);
+                            return generateDeleteButtonContent(full, meta.row, addWidthClass);
                         }
                         // Show cancel button for scheduled sends that haven't passed yet
                         else if (full.sendOnDateTime && abp.auth.isGranted('Notifications.Email.CancelScheduled')) {
                             const sendOnDateTime = parseUtcDateTime(full.sendOnDateTime);
                             const now = luxon.DateTime.utc();
                             if (sendOnDateTime && sendOnDateTime > now) {
-                                return generateCancelScheduledButtonContent(full, meta.row);
+                                return generateCancelScheduledButtonContent(full, meta.row, addWidthClass);
                             }
                         }
                         return '';
@@ -173,8 +186,9 @@
         })
     );
 
-    function generateDeleteButtonContent(full, row) {
-        return `<button class="btn btn-delete-draft" type="button" onclick="deleteDraftEmail('${full.id}', '${row}')"><i class="fl fl-cancel"></i></button>`;
+    function generateDeleteButtonContent(full, row, addWidthClass) {
+        const widthClass = addWidthClass ? ' btn-w30' : '';
+        return `<button class="btn btn-delete-draft${widthClass}" type="button" onclick="deleteDraftEmail('${full.id}', '${row}')"><i class="fl fl-cancel"></i></button>`;
     }
 
 
@@ -217,7 +231,9 @@
     });
 
     PubSub.subscribe('refresh_application_emails', () => {
-        emailHistoryDataTable.ajax.reload();
+        emailHistoryDataTable.ajax.reload(() => {
+            emailHistoryDataTable.columns.adjust().draw();
+        }, false);
     });
 
     $('#emails-tab').on('click', function () {
@@ -273,8 +289,9 @@ function formatScheduledSendDateTimeUtcToPacific(value, type) {
         });
 }
 
-function generateCancelScheduledButtonContent(full, row) {
-    return `<button class="btn btn-delete-delayed" type="button" onclick="cancelScheduledEmail('${full.id}', '${row}')"><i class="fl fl-cancel"></i></button>`;
+function generateCancelScheduledButtonContent(full, row, addWidthClass) {
+    const widthClass = addWidthClass ? ' btn-w30' : '';
+    return `<button class="btn btn-delete-delayed${widthClass}" type="button" onclick="cancelScheduledEmail('${full.id}', '${row}')"><i class="fl fl-cancel"></i></button>`;
 }
 
 function cancelScheduledEmail(id, rowIndex) {

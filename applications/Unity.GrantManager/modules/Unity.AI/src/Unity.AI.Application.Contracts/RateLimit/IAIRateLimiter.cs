@@ -12,6 +12,12 @@ public interface IAIRateLimiter
     Task EnsureAsync();
 
     /// <summary>
+    /// Throws if the supplied user is still inside their AI generate cooldown window.
+    /// No-op when userId is null.
+    /// </summary>
+    Task EnsureAsync(Guid? userId);
+
+    /// <summary>
     /// Starts a fresh cooldown for the current user. No-op for callers without a user.
     /// </summary>
     Task StampAsync();

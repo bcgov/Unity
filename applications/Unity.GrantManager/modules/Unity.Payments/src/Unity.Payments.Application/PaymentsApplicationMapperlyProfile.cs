@@ -24,11 +24,15 @@ public partial class PaymentRequestToPaymentRequestDtoMapper : MapperBase<Paymen
     [MapperIgnoreTarget(nameof(PaymentRequestDto.ErrorSummary))]
     [MapperIgnoreTarget(nameof(PaymentRequestDto.AccountCodingDisplay))]
     [MapperIgnoreTarget(nameof(PaymentRequestDto.CreatorUser))]
+    [MapperIgnoreTarget(nameof(PaymentRequestDto.ApplicantId))]
+    [MapperIgnoreTarget(nameof(PaymentRequestDto.Category))]
     public override partial PaymentRequestDto Map(PaymentRequest source);
 
     [MapperIgnoreTarget(nameof(PaymentRequestDto.ErrorSummary))]
     [MapperIgnoreTarget(nameof(PaymentRequestDto.AccountCodingDisplay))]
     [MapperIgnoreTarget(nameof(PaymentRequestDto.CreatorUser))]
+    [MapperIgnoreTarget(nameof(PaymentRequestDto.ApplicantId))]
+    [MapperIgnoreTarget(nameof(PaymentRequestDto.Category))]
     public override partial void Map(PaymentRequest source, PaymentRequestDto destination);
 
     [MapperIgnoreTarget(nameof(ExpenseApprovalDto.DecisionUser))]

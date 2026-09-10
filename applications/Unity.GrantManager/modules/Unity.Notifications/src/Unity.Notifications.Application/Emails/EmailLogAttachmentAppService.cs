@@ -8,7 +8,6 @@ using Unity.Notifications.Permissions;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.Domain.Entities;
 using Volo.Abp.Users;
 
 namespace Unity.Notifications.Emails;
@@ -75,15 +74,7 @@ public class EmailLogAttachmentAppService(
 
         if (attachment.TemplateId.HasValue)
         {
-            await emailAttachmentService.DeleteFromS3Async(attachment.S3ObjectKey);
-            try
-            {
-                await emailLogAttachmentRepository.DeleteAsync(attachment, autoSave: true);
-            }
-            catch (EntityNotFoundException)
-            {
-                // Already deleted by another request.
-            }
+            await emailAttachmentService.DeleteAttachmentAsync(attachment);
             return;
         }
 
@@ -98,23 +89,7 @@ public class EmailLogAttachmentAppService(
             throw new UserFriendlyException("Attachments can only be deleted from draft emails.");
         }
 
-        try
-        {
-            await emailAttachmentService.DeleteFromS3Async(attachment.S3ObjectKey);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to delete S3 object {S3ObjectKey} for attachment {AttachmentId}", attachment.S3ObjectKey, id);
-        }
-
-        try
-        {
-            await emailLogAttachmentRepository.DeleteAsync(attachment, autoSave: true);
-        }
-        catch (EntityNotFoundException)
-        {
-            // Already deleted by another request.
-        }
+        await emailAttachmentService.DeleteAttachmentAsync(attachment);
     }
 
     public async Task<long> GetTotalFileSizeByEmailLogIdAsync(Guid? emailLogId, Guid? templateId)
@@ -122,6 +97,12 @@ public class EmailLogAttachmentAppService(
         return await emailAttachmentService.GetTotalFileSizeAsync(emailLogId, templateId);
     }
 
+    // Not exposed over HTTP: this method takes raw fileName/content/contentType with none of the
+    // allowlist/size/content-type validation AttachmentController enforces before calling it. It
+    // must only ever be reached in-process, via IEmailLogAttachmentUploadService, from a caller
+    // (AttachmentController) that has already run those checks - never directly by an HTTP client,
+    // which would bypass validation entirely despite still needing the Email.Send permission.
+    [RemoteService(false)]
     public async Task<EmailLogAttachmentDto> UploadAsync(Guid? emailLogId, Guid? templateId, Guid? tenantId, string fileName, byte[] content, string contentType)
     {
         var attachment = await emailAttachmentService.UploadUserAttachmentAsync(emailLogId, templateId, tenantId, fileName, content, contentType);

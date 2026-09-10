@@ -17,15 +17,15 @@ namespace Unity.GrantManager.GrantsPortal;
 /// </summary>
 public class GrantsPortalOutboxWorker : OutboxWorkerBase
 {
-    private readonly IAsyncConnectionFactory _connectionFactory;
+    private readonly IConnectionFactory _connectionFactory;
     private IConnection? _connection;
-    private IModel? _channel;
+    private IChannel? _channel;
 
     protected override string SourceName => GrantsPortalRabbitMqOptions.SourceName;
 
     public GrantsPortalOutboxWorker(
         IServiceProvider serviceProvider,
-        IAsyncConnectionFactory connectionFactory,
+        IConnectionFactory connectionFactory,
         IOptions<GrantsPortalRabbitMqOptions> options)
         : base(serviceProvider)
     {
@@ -46,11 +46,6 @@ public class GrantsPortalOutboxWorker : OutboxWorkerBase
             .Build();
     }
 
-    protected override void OnBeforePublishCycle()
-    {
-        EnsureChannel();
-    }
-
     protected override void OnPublishCycleError(Exception ex)
     {
         CleanupChannel();
@@ -58,33 +53,29 @@ public class GrantsPortalOutboxWorker : OutboxWorkerBase
 
     protected override async Task PublishMessageAsync(IServiceScope scope, OutboxMessage outboxMsg)
     {
+        await EnsureChannelAsync();
+
         var publisher = scope.ServiceProvider.GetRequiredService<GrantsPortalAcknowledgmentPublisher>();
 
-        publisher.Publish(
+        // Publisher confirmations are enabled on the channel, so PublishAsync awaits the
+        // broker confirmation and throws if the ack message is not confirmed.
+        await publisher.PublishAsync(
             _channel!,
             outboxMsg.OriginalMessageId,
             outboxMsg.CorrelationId,
             outboxMsg.AckStatus,
             outboxMsg.Details);
-
-        // Wait for broker to confirm
-        if (!_channel!.WaitForConfirms(TimeSpan.FromSeconds(5)))
-        {
-            throw new InvalidOperationException("Broker did not confirm ack publish");
-        }
-
-        await Task.CompletedTask;
     }
 
-    private void EnsureChannel()
+    private async Task EnsureChannelAsync()
     {
         if (_channel is { IsOpen: true }) return;
 
         CleanupChannel();
 
-        _connection = _connectionFactory.CreateConnection();
-        _channel = _connection.CreateModel();
-        _channel.ConfirmSelect();
+        _connection = await _connectionFactory.CreateConnectionAsync();
+        _channel = await _connection.CreateChannelAsync(
+            new CreateChannelOptions(publisherConfirmationsEnabled: true, publisherConfirmationTrackingEnabled: true));
 
         Logger.LogInformation("Outbox worker RabbitMQ channel established");
     }
@@ -93,9 +84,7 @@ public class GrantsPortalOutboxWorker : OutboxWorkerBase
     {
         try
         {
-            _channel?.Close();
             _channel?.Dispose();
-            _connection?.Close();
             _connection?.Dispose();
         }
         catch (Exception ex)

@@ -1,14 +1,15 @@
 using System;
+using System.Collections.Generic;
 
 namespace Unity.AI.Generation;
 
-public class AIGenerationRequestDto
+public sealed class AIGenerationSubmissionDto
 {
     public Guid ApplicationId { get; set; }
 
-    public Guid OperationId { get; set; }
+    public Guid? ApplicationFormVersionId { get; set; }
 
-    public string OperationType { get; set; } = string.Empty;
+    public List<Guid> AttachmentIds { get; set; } = [];
 
-    public string Status { get; set; } = string.Empty;
+    public string? PromptVersion { get; set; }
 }

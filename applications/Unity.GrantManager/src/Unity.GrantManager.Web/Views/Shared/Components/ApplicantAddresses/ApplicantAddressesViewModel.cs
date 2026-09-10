@@ -7,8 +7,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
     public class ApplicantAddressesViewModel
     {
         public Guid ApplicantId { get; set; }
-        public bool CanEditAddress { get; set; }
-        public bool CanSave => CanEditAddress && (PrimaryPhysicalAddress.IsEditable || PrimaryMailingAddress.IsEditable);
+        public bool CanEditAddresses { get; set; }
+        public bool CanSave => CanEditAddresses && (PrimaryPhysicalAddress.IsEditable || PrimaryMailingAddress.IsEditable);
         public ApplicantPrimaryAddressViewModel PrimaryPhysicalAddress { get; set; } = new();
         public ApplicantPrimaryAddressViewModel PrimaryMailingAddress { get; set; } = new();
         public List<ApplicantAddressItemDto> Addresses { get; set; } = new List<ApplicantAddressItemDto>();

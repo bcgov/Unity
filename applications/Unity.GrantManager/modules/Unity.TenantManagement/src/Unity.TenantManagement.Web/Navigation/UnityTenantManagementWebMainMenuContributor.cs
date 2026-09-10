@@ -19,7 +19,7 @@ public class AbpTenantManagementWebMainMenuContributor : IMenuContributor
 
         var l = context.GetLocalizer<AbpTenantManagementResource>();
 
-        var tenantManagementMenuItem = new ApplicationMenuItem(TenantManagementMenuNames.GroupName, l["Menu:TenantManagement"], icon: "fa fa-users");
+        var tenantManagementMenuItem = new ApplicationMenuItem(TenantManagementMenuNames.GroupName, l["Menu:TenantManagement"], icon: "fa-solid fa-users");
         administrationMenu.AddItem(tenantManagementMenuItem);
 
         await tenantManagementMenuItem.AddItemAsync(

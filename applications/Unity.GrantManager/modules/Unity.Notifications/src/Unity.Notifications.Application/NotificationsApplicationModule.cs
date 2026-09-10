@@ -13,6 +13,7 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Http.Client;
 using Unity.Modules.Shared.Http;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Volo.Abp.Identity;
 
 namespace Unity.Notifications;
 
@@ -23,7 +24,8 @@ namespace Unity.Notifications;
     typeof(AbpMapperlyModule),
     typeof(AbpBackgroundJobsModule),
     typeof(AbpBackgroundWorkersQuartzModule),
-    typeof(AbpHttpClientModule)
+    typeof(AbpHttpClientModule),
+    typeof(AbpIdentityDomainModule)
     )]
 public class NotificationsApplicationModule : AbpModule
 {

@@ -92,7 +92,7 @@ public class GrantManagerSettingDefinitionProvider : SettingDefinitionProvider
                 description,
                 isVisibleToClients: true,
                 isInherited: false,
-                isEncrypted: false).WithProviders(TenantSettingValueProvider.ProviderName)
+                isEncrypted: false).WithProviders(TenantSettingValueProvider.ProviderName, DefaultValueSettingValueProvider.ProviderName)
         );
     }
 

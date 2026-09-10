@@ -21,7 +21,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
     public class EmailsWidgetViewComponent(ISettingProvider settingProvider, IApplicationRepository applicationRepository, ITemplateService templateService) : AbpViewComponent
     {
        
-        public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Guid currentUserId)
+        public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Guid currentUserId, bool noDraftPreviewMode = false)
         {
             // Lookup the applicant contact
             Application application = await applicationRepository.WithBasicDetailsAsync(applicationId);
@@ -37,7 +37,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
                 CurrentUserId = currentUserId,
                 EmailTo = application?.ApplicantAgent?.Email ?? string.Empty,
                 EmailFrom = defaultFromAddress ?? "NoReply@gov.bc.ca",
-                EnableEmailDelay = enableEmailDelay
+                EnableEmailDelay = enableEmailDelay,
+                NoDraftPreviewMode = noDraftPreviewMode
             };
             await PopulateTemplates(model);
 
@@ -61,6 +62,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
         public override void ConfigureBundle(BundleConfigurationContext context)
         {
             context.Files.AddIfNotContains("/Views/Shared/Components/EmailsWidget/Default.css");
+            context.Files.AddIfNotContains("/libs/select2/dist/css/select2.min.css");
         }
     }
 
@@ -70,6 +72,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
         {
             context.Files.AddIfNotContains("/Views/Shared/Components/EmailsWidget/Default.js");
             context.Files.AddIfNotContains("/libs/pubsub-js/src/pubsub.js");
+            context.Files.AddIfNotContains("/libs/select2/dist/js/select2.full.min.js");
         }
     }
 }

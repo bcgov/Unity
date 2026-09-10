@@ -9,6 +9,7 @@ using Unity.Notifications.Emails;
 using Unity.Notifications.Events;
 using Unity.Notifications.Settings;
 using Unity.Notifications.Templates;
+using Unity.Payments.Events;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus;
@@ -34,7 +35,7 @@ namespace Unity.GrantManager.Events
         ICurrentTenant currentTenant,
         ScheduledNotificationHelper scheduledNotificationHelper,
         ILogger<ScheduledNotificationEventHandler> logger)
-        : ILocalEventHandler<ApplicationChangedEvent>, ITransientDependency
+        : ILocalEventHandler<ApplicationChangedEvent>, ILocalEventHandler<PaymentStatusChangedEvent>, ITransientDependency
     {
         public async Task HandleEventAsync(ApplicationChangedEvent eventData)
         {
@@ -58,6 +59,7 @@ namespace Unity.GrantManager.Events
                     n => n.FormId == application.ApplicationFormId
                       && n.TriggerType == "Event"
                       && n.IsActive
+                      && (n.Module == null || n.Module == "Application")
                       && n.ApplicationStatusId == application.ApplicationStatusId))
                     .ToList();
 
@@ -80,6 +82,53 @@ namespace Unity.GrantManager.Events
             catch (Exception ex)
             {
                 logger.LogError(ex, "ScheduledNotificationEventHandler: Error processing event for application {ApplicationId}.", eventData.ApplicationId);
+            }
+        }
+
+        public async Task HandleEventAsync(PaymentStatusChangedEvent eventData)
+        {
+            if (!await featureChecker.IsEnabledAsync("Unity.Notifications"))
+            {
+                return;
+            }
+
+            try
+            {
+                var application = await applicationRepository.GetAsync(eventData.ApplicationId, includeDetails: true);
+                if (application == null)
+                {
+                    logger.LogWarning("ScheduledNotificationEventHandler: Application {ApplicationId} not found for payment {PaymentRequestId}.",
+                        eventData.ApplicationId, eventData.PaymentRequestId);
+                    return;
+                }
+
+                var notifications = (await scheduledNotificationRepository.GetListAsync(
+                    n => n.FormId == application.ApplicationFormId
+                      && n.TriggerType == "Event"
+                      && n.IsActive
+                      && n.Module == "Payment"
+                      && n.EventType == eventData.Status.ToString()))
+                    .ToList();
+
+                if (notifications.Count == 0)
+                {
+                    return;
+                }
+
+                var defaultFromAddress = await settingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
+                string emailFrom = defaultFromAddress ?? "NoReply@gov.bc.ca";
+                var applicantAgent = await applicantAgentRepository.FirstOrDefaultAsync(a => a.ApplicationId == application.Id);
+
+                foreach (var notification in notifications)
+                {
+                    await ProcessNotificationAsync(notification, application, applicantAgent, emailFrom);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex,
+                    "ScheduledNotificationEventHandler: Error processing payment event for payment {PaymentRequestId}.",
+                    eventData.PaymentRequestId);
             }
         }
 

@@ -53,8 +53,6 @@ abp.widgets.ApplicantInfo = function ($wrapper) {
             widgetManager.refresh($wrapper, currentFilters);
         },
         setupEventHandlers: function () {
-            const self = this;
-
             // Unsubscribe from previous subscription if it exists
             // This prevents duplicate event handlers after widget refresh
             if (applicantInfoMergedSubscriptionToken) {
@@ -66,13 +64,13 @@ abp.widgets.ApplicantInfo = function ($wrapper) {
             applicantInfoMergedSubscriptionToken = PubSub.subscribe(
                 'applicant_info_merged',
                 () => {
-                    self.refresh();
+                    this.refresh();
                 }
             );
 
             // Save button handler
-            self.zoneForm.saveButton.on('click', async function () {
-                if (self.zoneForm.modifiedFields.has('ApplicantSummary.UnityApplicantId')) {
+            this.zoneForm.saveButton.on('click', async () => {
+                if (this.zoneForm.modifiedFields.has('ApplicantSummary.UnityApplicantId')) {
                     const newId = $('#ApplicantSummary_UnityApplicantId').val()?.trim();
                     const currentApplicantId = $('#ApplicantInfoViewApplicantId').val();
                     if (newId && currentApplicantId) {
@@ -89,26 +87,26 @@ abp.widgets.ApplicantInfo = function ($wrapper) {
                 }
 
                 let applicationId = document.getElementById('ApplicantInfo_ApplicationId').value;
-                let applicantInfoSubmission = self.getPartialUpdate();
-                self.zoneForm.setSaving(true);
+                let applicantInfoSubmission = this.getPartialUpdate();
+                this.zoneForm.setSaving(true);
                 try {
                     unity.grantManager.grantApplications.applicationApplicant
                         .updatePartialApplicantInfo(applicationId, applicantInfoSubmission)
-                        .done(function () {
+                        .done(() => {
                             abp.notify.success('The Applicant Info has been updated.');
-                            self.zoneForm.resetTracking();
+                            this.zoneForm.resetTracking();
                             PubSub.publish("refresh_detail_panel_summary");
                             PubSub.publish('applicant_info_updated', applicantInfoSubmission);
                         })
-                        .fail(function (error) {
+                        .fail((error) => {
                             abp.notify.error('Failed to update Applicant Info.');
                             console.log(error);
-                            self.zoneForm.setSaving(false);
+                            this.zoneForm.setSaving(false);
                         });
                 } catch (error) {
                     abp.notify.error('An unexpected error occurred.');
                     console.log(error);
-                    self.zoneForm.setSaving(false);
+                    this.zoneForm.setSaving(false);
                 }
             });
         },
@@ -205,7 +203,7 @@ abp.widgets.ApplicantInfo = function ($wrapper) {
             let fieldValue = input.value;
 
             if (inputElement.hasClass('unity-currency-input') || inputElement.hasClass('numeric-mask')) {
-                fieldValue = fieldValue.replace(/,/g, '');
+                fieldValue = fieldValue.replaceAll(',', '');
             }
 
             if (fieldName.startsWith('ApplicantInfo.')) {
@@ -369,73 +367,54 @@ function populateMergeModal(existing, newData) {
 
 // Helper function to handle merge button click
 async function executeMerge(existing, newData) {
-    const $activeWidget = $('[data-widget-name="ApplicantInfo"]');
-
     let selectedPrincipal = $('input[name="merge_ApplicantId"]:checked').val();
     let principalApplicantId = selectedPrincipal === 'existing' ? existing.ApplicantId : newData.ApplicantId;
     let nonPrincipalApplicantId = selectedPrincipal === 'existing' ? newData.ApplicantId : existing.ApplicantId;
-    let applicationId = $activeWidget.find('#ApplicantInfo_ApplicationId').val();
 
     if (!principalApplicantId) {
         return;
     }
 
     let mergedApplicantInfo = getMergedApplicantInfo(existing, newData);
-    mergedApplicantInfo.ApplicantId = principalApplicantId;
-
-    let formData = $activeWidget.find("#ApplicantInfoForm").serializeArray();
-    let ApplicantInfoObj = {};
-    let formVersionId = $activeWidget.find("#ApplicationFormVersionId").val();
-    let worksheetId = $activeWidget.find("#WorksheetId").val();
-
-    $.each(formData, function (_, input) {
-        if (typeof Flex === 'function' && Flex?.isCustomField(input)) {
-            Flex.includeCustomFieldObj(ApplicantInfoObj, input);
-        } else {
-            ApplicantInfoObj[input.name] = input.value;
-            if (ApplicantInfoObj[input.name] == '') {
-                ApplicantInfoObj[input.name] = null;
-            }
-        }
-    });
-
-    $activeWidget.find(`#ApplicantInfoForm input:checkbox`).each(function () {
-        ApplicantInfoObj[this.name] = (this.checked).toString();
-    });
-
-    if (typeof Flex === 'function') {
-        Flex?.setCustomFields(ApplicantInfoObj);
-    }
-
-    Object.assign(ApplicantInfoObj, mergedApplicantInfo);
-    Object.keys(ApplicantInfoObj).forEach(key => {
-        if (ApplicantInfoObj[key] === "") {
-            ApplicantInfoObj[key] = null;
-        }
-    });
-
-    ApplicantInfoObj['ApplicantSummary.OrgName'] = $activeWidget.find('#ApplicantSummary_OrgName').val();
-    ApplicantInfoObj['ApplicantSummary.OrgNumber'] = $activeWidget.find('#ApplicantSummary_OrgNumber').val();
-    ApplicantInfoObj['ApplicantSummary.OrgStatus'] = $activeWidget.find('#ApplicantSummary_OrgStatus').val();
-    ApplicantInfoObj['ApplicantSummary.BusinessNumber'] = $activeWidget.find('#ApplicantSummary_BusinessNumber').val();
-    ApplicantInfoObj['correlationId'] = formVersionId;
-    ApplicantInfoObj['worksheetId'] = worksheetId;
-    ApplicantInfoObj.ApplicantId = principalApplicantId;
-
-    await handleApplicantMerge(applicationId, principalApplicantId, nonPrincipalApplicantId, ApplicantInfoObj);
-
     const supplierSide = $('input[name="merge_SupplierId"]:checked').val();
     const selectedSupplierId = supplierSide === 'existing' ? (existing.SupplierId || null) : (newData.SupplierId || null);
+    const fiscalDay = mergedApplicantInfo.FiscalDay;
+
     await $.ajax({
-        url: '/api/app/applicant-supplier/handle-supplier-after-merge',
+        url: '/api/app/applicant-merge',
         method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({
-            principalId: principalApplicantId,
-            nonPrincipalId: nonPrincipalApplicantId,
-            selectedSupplierId: selectedSupplierId
+            principalApplicantId: principalApplicantId,
+            secondaryApplicantId: nonPrincipalApplicantId,
+            summary: {
+                applicantName: mergedApplicantInfo.ApplicantName ?? null,
+                unityApplicantId: mergedApplicantInfo.UnityApplicantId ?? null,
+                orgName: mergedApplicantInfo.OrgName ?? null,
+                orgNumber: mergedApplicantInfo.OrgNumber ?? null,
+                nonRegOrgName: mergedApplicantInfo.NonRegOrgName ?? null,
+                organizationType: mergedApplicantInfo.OrganizationType ?? null,
+                approxNumberOfEmployees: mergedApplicantInfo.ApproxNumberOfEmployees ?? null,
+                orgStatus: mergedApplicantInfo.OrgStatus ?? null,
+                indigenousOrgInd: mergedApplicantInfo.IndigenousOrgInd ?? null,
+                sector: mergedApplicantInfo.Sector ?? null,
+                subSector: mergedApplicantInfo.SubSector ?? null,
+                sectorSubSectorIndustryDesc: mergedApplicantInfo.SectorSubSectorIndustryDesc ?? null,
+                fiscalDay: fiscalDay === null || fiscalDay === undefined || fiscalDay === ''
+                    ? null
+                    : Number(fiscalDay),
+                fiscalMonth: mergedApplicantInfo.FiscalMonth ?? null
+            },
+            selectedSupplierId: selectedSupplierId,
+            source: 1
         })
     });
+
+    $('#saveApplicantInfoBtn').prop('disabled', true);
+    PubSub.publish('refresh_detail_panel_summary');
+    PubSub.publish('applicant_info_updated', mergedApplicantInfo);
+    PubSub.publish('applicant_info_merged');
+    abp.notify.success('The Applicant info has been updated.');
 }
 
 // Helper function to setup merge modal handlers
@@ -703,26 +682,12 @@ function calculateFiscalYearEnd($container) {
         return;
     }
 
-    const today = new Date();
-    const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    let year = todayDate.getFullYear();
-    const isValidMonthDay = (y) => {
-        const d = new Date(y, month - 1, day);
-        return d.getMonth() === month - 1 && d.getDate() === day;
-    };
+    const year = new Date().getFullYear();
+    const isValidMonthDay = new Date(year, month - 1, day).getMonth() === month - 1;
 
-    if (!isValidMonthDay(year)) {
+    if (!isValidMonthDay) {
         $yearEndField.val('');
         return;
-    }
-
-    const candidate = new Date(year, month - 1, day);
-    if (candidate < todayDate) {
-        year += 1;
-        if (!isValidMonthDay(year)) {
-            $yearEndField.val('');
-            return;
-        }
     }
 
     const mm = String(month).padStart(2, '0');
@@ -870,26 +835,6 @@ function getMergedApplicantInfo(existing, newData) {
     return merged;
 }
 
-async function handleApplicantMerge(applicationId, principalApplicantId, nonPrincipalApplicantId, ApplicantInfoObj) {
-    await setApplicantDuplicatedStatus(principalApplicantId, nonPrincipalApplicantId);
-    await transferApplicantApplications(principalApplicantId, nonPrincipalApplicantId);
-    await updateMergedApplicant(applicationId, ApplicantInfoObj);
-}
-
-function updateMergedApplicant(applicationId, appInfoObj) {
-    return unity.grantManager.grantApplications.grantApplication
-        .updateMergedApplicant(applicationId, appInfoObj)
-        .done(function () {
-            abp.notify.success(
-                'The Applicant info has been updated.'
-            );
-            $('#saveApplicantInfoBtn').prop('disabled', true);
-            PubSub.publish("refresh_detail_panel_summary");
-            PubSub.publish('applicant_info_updated', appInfoObj);
-            PubSub.publish('applicant_info_merged');
-        });
-}
-
 async function generateUnityApplicantIdBtn() {
     try {
         let nextUnityApplicantId = await unity.grantManager.applicants.applicant.getNextUnityApplicantId();
@@ -914,27 +859,4 @@ function enableApplicantInfoSaveBtn(inputText) {
     $('#saveApplicantInfoBtn').prop('disabled', false);
 }
 
-function setApplicantDuplicatedStatus(principalApplicantId, nonPrincipalApplicantId) {
-    return $.ajax({
-        url: '/api/app/applicant/set-duplicated',
-        type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({
-            principalApplicantId: principalApplicantId,
-            nonPrincipalApplicantId: nonPrincipalApplicantId
-        })
-    });
-}
-
-function transferApplicantApplications(principalApplicantId, nonPrincipalApplicantId) {
-    return $.ajax({
-        url: '/api/app/applicant/transfer-applicant-applications',
-        type: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({
-            principalApplicantId: principalApplicantId,
-            nonPrincipalApplicantId: nonPrincipalApplicantId
-        })
-    });
-}
 

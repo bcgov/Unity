@@ -85,6 +85,15 @@
                                 </div>
                                 <div id="eventOptions" class="hidden-section">
                                     <div class="mb-3">
+                                        <label for="moduleSelect" class="form-label">Module</label>
+                                        <select id="moduleSelect" class="form-select" required>
+                                            <option value=""></option>
+                                            <option value="Application">Application</option>
+                                            <option value="Payment">Payment</option>
+                                        </select>
+                                        <div class="invalid-feedback">Please select a module.</div>
+                                    </div>
+                                    <div class="mb-3">
                                         <label for="statusSelect" class="form-label">Application Status Trigger</label>
                                         <select id="statusSelect" class="form-select" required></select>
                                         <div class="invalid-feedback">Please select an application status.</div>
@@ -113,10 +122,26 @@
                                 <div class="template-preview-container">
                                     <div id="templatePreview" class="p-2 template-preview-text"></div>
                                 </div>
+                                <h6 id="templateAttachmentsLabel" class="form-label hidden-section">Attachments (<span id="templateAttachmentsCount">0</span>)</h6>
+                                <div id="template-attachments-section" class="template-attachments-section hidden-section">
+                                    <table id="TemplateAttachmentsTable" class="table table-striped attachments-table nowrap">
+                                        <thead>
+                                            <tr>
+                                                <th>Document Name</th>
+                                                <th>Date</th>
+                                                <th>Attached by</th>
+                                                <th>File Size</th>
+                                            </tr>
+                                        </thead>
+                                    </table>
+                                </div>
                             </div>
 
                         </div>
                     </form>
+                </div>
+                <div id="template-attachments-note" class="notification-info-note">
+                    <strong>Note:</strong> Email templates and attachments cannot be edited here. To make changes, update the selected template in <a id="templateConfigurationLink" href="/ConfigurationManagement">Configuration Management</a>.
                 </div>
                 <div class="notification-info-note">
                     <strong>Note:</strong> If Recipients are not found, then no email will be drafted or sent.

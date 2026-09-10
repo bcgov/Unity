@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.GrantManager.ApplicantProfile;
 using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Applications;
 using Volo.Abp.AspNetCore.Mvc;
@@ -29,6 +30,20 @@ public class ApplicationFormConfigWidget : AbpViewComponent
     {
         await Task.CompletedTask;
 
+        var externalLinks = applicationForm?.ExternalLinks ?? [];
+        var renewalLink = externalLinks.FirstOrDefault(x => x.ExternalLinkType == ExternalLinkType.Renewal);
+        var relatedLinks = externalLinks
+            .Where(x => x.ExternalLinkType == ExternalLinkType.Related)
+            .OrderBy(x => x.Order == -1 ? int.MaxValue : x.Order)
+            .Select(x => new RelatedLinkItemViewModel
+            {
+                Uri = x.Uri,
+                Title = x.Title,
+                Description = x.Description,
+                Published = x.Published
+            })
+            .ToList();
+
         var viewModel = new ApplicationFormConfigWidgetViewModel()
         {
             ConfigType = configType,
@@ -37,7 +52,12 @@ public class ApplicationFormConfigWidget : AbpViewComponent
             ElectoralDistrictAddressTypes = LoadElectoralAddressOptions(),
             Prefix = applicationForm?.Prefix,
             SuffixType = applicationForm?.SuffixType,
-            SuffixTypes = LoadSuffixOptions()
+            SuffixTypes = LoadSuffixOptions(),
+            RenewalLinkUri = renewalLink?.Uri ?? string.Empty,
+            RenewalLinkTitle = renewalLink?.Title ?? string.Empty,
+            RenewalLinkPublished = renewalLink?.Published ?? false,
+            ApplicantMessage = applicationForm?.ApplicantMessage ?? string.Empty,
+            RelatedLinks = relatedLinks
         };
 
         return View(viewModel);

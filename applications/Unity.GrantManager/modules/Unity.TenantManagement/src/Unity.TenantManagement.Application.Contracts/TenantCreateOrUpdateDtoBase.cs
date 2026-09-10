@@ -12,6 +12,7 @@ public abstract class TenantCreateOrUpdateDtoBase : ExtensibleObject
     [Display(Name = "TenantName")]
     public string Name { get; set; }
 
+    public string DisplayName { get; set; } = string.Empty;
     public string Division { get; set; } = string.Empty;
     public string Branch { get; set; }  = string.Empty;
     public string Description { get; set; } = string.Empty;

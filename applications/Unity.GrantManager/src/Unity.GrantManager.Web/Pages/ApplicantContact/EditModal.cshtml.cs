@@ -1,12 +1,15 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.ApplicantProfile;
+using Unity.Modules.Shared;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 
 namespace Unity.GrantManager.Web.Pages.ApplicantContact;
 
+[Authorize(UnitySelector.ApplicantManagement.Contacts.Update)]
 public class EditModal : AbpPageModel
 {
     private readonly IApplicantContactAppService _applicantContactAppService;

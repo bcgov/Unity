@@ -7,6 +7,8 @@ public class AIModel : AuditedAggregateRoot<Guid>
 {
     public string Name { get; set; } = default!;
 
+    public string Provider { get; set; } = default!;
+
     public bool IsActive { get; set; } = true;
 
     /// <summary>Free-form model settings stored as JSON for dynamic runtime options.</summary>
@@ -16,9 +18,10 @@ public class AIModel : AuditedAggregateRoot<Guid>
     {
     }
 
-    public AIModel(Guid id, string name)
+    public AIModel(Guid id, string name, string provider)
     {
         Id = id;
         Name = name;
+        Provider = provider;
     }
 }

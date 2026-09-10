@@ -46,5 +46,11 @@ namespace Unity.Flex.Reporting.Configuration
         /// The path to reach the data, this is a datacentric version of the Path, and could be the same
         /// </summary>
         public string DataPath { get; set; } = string.Empty;
+
+        /// <summary>
+        /// The name of the worksheet this component belongs to (includes the version suffix, e.g. "grant_application-v2").
+        /// Used to group and default-sort reporting configuration fields by worksheet.
+        /// </summary>
+        public string WorksheetName { get; set; } = string.Empty;
     }
 }

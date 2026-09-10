@@ -11,8 +11,9 @@
         id="answer-text-@Model.QuestionId" 
         name="Answer-Text-@Model.QuestionId" 
         value="@Model.Answer" 
-        data-original-value="@Model.Answer" 
+        data-original-value="@Model.Answer"
         data-is-human-confirmed="@Model.IsHumanConfirmed.ToString().ToLower()"
+        data-original-is-human-confirmed="@Model.IsHumanConfirmed.ToString().ToLower()"
         oninput="handleInputChange('@Model.QuestionId','answer-text-'); markAsHumanConfirmed(this)" />
         @if (!Model.IsHumanConfirmed && !string.IsNullOrEmpty(Model.Answer))
         {

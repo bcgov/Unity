@@ -194,7 +194,7 @@ $(function () {
                             if (!row.isActive) {
                                 return '<i data-toggle="tooltip" data-placement="top" title="' +
                                     l('ThisUserIsNotActiveMessage') +
-                                    '" class="fa fa-ban text-danger"></i> ' +
+                                    '" class="fa-solid fa-ban text-danger"></i> ' +
                                     '<span class="opc-65">' + row.userName + '</span>';
                             }
 

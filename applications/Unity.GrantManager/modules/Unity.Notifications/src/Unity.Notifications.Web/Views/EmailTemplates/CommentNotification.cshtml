@@ -1,0 +1,46 @@
+@model dynamic
+
+<!DOCTYPE html>
+<html lang='en' xmlns='http://www.w3.org/1999/xhtml' xmlns:v='urn:schemas-microsoft-com:vml' xmlns:o='urn:schemas-microsoft-com:office:office'>
+<head>
+    <meta charset="utf-8" />
+    <title>Comment Notification</title>
+</head>
+<body style='font-family: Arial, sans-serif;'>
+    <h3 style='color: #0a58ca;'>@Model.CurrentUserText mentioned you in a comment.</h3>
+    <table style='width: 100%; background-color: #f9f9f9; border-left: 3px solid #ccc;'>
+        <thead>
+            <tr>
+                <th style='display: none;'>Comment</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style='padding: 15px;'>
+                    <p>@Html.Raw(Model.CommentBody)</p>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <br />
+    <table style='background-color: #255a90;'>
+        <thead>
+            <tr>
+                <th style='display: none;'>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style='padding: 5px 10px; color: #fff; border: 1px solid #2d63c8'>
+                    <a href='@Model.CommentLink' target='_blank'
+                        style='display: inline-block;
+                        font-size: 14px;
+                        color: #fff;
+                        text-decoration: none;'>View Comment</a>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    <p style='font-size: 12px; color: #999;'>*Note - Please do not reply to this email as it is an automated notification.</p>
+</body>
+</html>

@@ -8,8 +8,6 @@ $(function () {
     const formatter = createNumberFormatter();
     
     const l = abp.localization.getResource('GrantManager');
-    toastr.options.positionClass = 'toast-top-center';
-
 
     const UIElements = {
         accountCodingDT: $('#AccountCodesDataTable'),
@@ -391,12 +389,12 @@ $(function () {
     function updatePaymentPrefix() {
         unity.payments.paymentConfigurations.paymentConfiguration.updatePaymentPrefix(UIElements.paymentPrefixInput.val())
         .done(function () {
-            toastr.success('Payment prefix updated successfully.');
+            abp.notify.success('Payment prefix updated successfully.');
             $('#payment-id-prefix-original').val(UIElements.paymentPrefixInput.val());
             checkEnableDiscard();
         })
         .fail(function () {
-            toastr.error('Failed to update payment prefix.');
+            abp.notify.error('Failed to update payment prefix.');
         });
     };
 
@@ -412,7 +410,7 @@ $(function () {
 
     function discardPaymentPrefix() {
         UIElements.paymentPrefixInput.val(UIElements.originalPaymentPrefix.val());
-        toastr.info('Payment prefix changes discarded.');
+        abp.notify.info('Payment prefix changes discarded.');
         checkEnableDiscard();
     };
 
@@ -427,10 +425,10 @@ function clearFilter() {
 function handleDefaultAccountCodeRadioClick(id) {
     $('#AccountCodingId').val(id); // Update the hidden input with the selected account code ID
     unity.payments.paymentConfigurations.paymentConfiguration.setDefaultAccountCode(id).done(function () {
-        toastr.success('Successfully set default account code. Reloading account codes.');
-        clearAccountCodesSearchAndReload();    
+        abp.notify.success('Successfully set default account code. Reloading account codes.');
+        clearAccountCodesSearchAndReload();
     }).fail(function () {
-        toastr.error('Failed to set default account code.');
+        abp.notify.error('Failed to set default account code.');
     });
 };
 

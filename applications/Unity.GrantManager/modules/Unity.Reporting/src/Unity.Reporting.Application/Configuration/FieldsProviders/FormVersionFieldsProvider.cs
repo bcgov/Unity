@@ -37,6 +37,10 @@ namespace Unity.Reporting.Configuration.FieldsProviders
                 .Where(x => x != null)
                 .Select(x => x!)];
 
+            // Stamp each field with its 1-based position in the source order as SourceOrder, which drives
+            // the report-config-table's default sort.
+            FieldOrderingUtils.AssignSourceOrder(convertedMetadata);
+
             return new FieldPathMetaMapDto() { Fields = convertedMetadata };
         }
 

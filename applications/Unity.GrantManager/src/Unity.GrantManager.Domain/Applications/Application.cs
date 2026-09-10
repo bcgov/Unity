@@ -144,8 +144,7 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public string? AIAnalysis { get; set; }
 
-    [Column(TypeName = "jsonb")]
-    public string? AIScoresheetAnswers { get; set; }
+    public bool EligibleForRenewal { get; set; }
 
     public bool IsInFinalDecisionState()
     {
@@ -194,6 +193,11 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
         DueDiligenceStatus = dueDiligenceStatus;
         RecommendedAmount = recommendedAmount ?? 0;
         DeclineRational = declineRational;
+    }
+
+    public void UpdateEligibleForRenewal(bool eligibleForRenewal)
+    {
+        EligibleForRenewal = eligibleForRenewal;
     }
 
     /// <summary>

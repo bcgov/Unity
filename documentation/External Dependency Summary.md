@@ -16,8 +16,8 @@
 | 10 | OrgBook | ORGBOOK_API_BASE | orgbook.gov.bc.ca/api | Business registry search |
 | 11 | CHEFS | INTAKE_API_BASE | submit.digital.gov.bc.ca/app/api/v1 | Form definitions + submissions |
 | 12 | Azure OpenAI | OpenAI:Endpoint + OpenAI:ApiKey (Vault) | Azure-hosted (per env) | AI: AttachmentSummary, ApplicationAnalysis, ApplicationScoring |
-| 13 | Reporting AI | REPORTING_AI | prod-unity-ai-reporting-d18498-prod.apps.silver.devops.gov.bc.ca | iFrame embed only — no backend HTTP call |
-| 14 | Matomo Analytics | ANALYTICS_MATOMO_BASE | {env}-analytics-matomo.apps.silver.devops.gov.bc.ca | Browser-side page tracking |
+| 13 | Reporting AI | REPORTING_AI | prod-unity-ai-reporting-d18498-prod.apps.gold.devops.gov.bc.ca | iFrame embed only — no backend HTTP call |
+| 14 | Matomo Analytics | ANALYTICS_MATOMO_BASE | {env}-analytics-matomo.apps.gold.devops.gov.bc.ca | Browser-side page tracking |
 | 15 | HashiCorp Vault | (platform / ExternalSecrets) | vault.developer.gov.bc.ca | All API keys, OAuth secrets, DB credentials |
 
 ## Unity Applicant Portal (UAP): 4 External Dependencies
@@ -26,7 +26,7 @@
 |---|---|---|---|---|
 | 1 | Keycloak / LoginProxy | KEYCLOAK__AUTHSERVERURL | loginproxy.gov.bc.ca/auth | OIDC token exchange + userinfo |
 | 2 | OrgBook | orgbookApiUrl | orgbook.gov.bc.ca/api | Business registry - direct browser calls |
-| 3 | Matomo Analytics | MATOMO__URL | {env}-analytics-matomo.apps.silver.devops.gov.bc.ca/ | Browser-side page tracking |
+| 3 | Matomo Analytics | MATOMO__URL | {env}-analytics-matomo.apps.gold.devops.gov.bc.ca/ | Browser-side page tracking |
 | 4 | Unity Grant Manager API | Plugins:UNITY:Configuration:BaseUrl | http://{env}-unity-grantmanager-web (in-cluster) | Profile/tenant reads (HTTP) + Contact/Address mutations (RabbitMQ) |
 
 ---

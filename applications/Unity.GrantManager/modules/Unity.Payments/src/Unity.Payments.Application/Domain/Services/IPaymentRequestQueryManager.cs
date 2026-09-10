@@ -13,7 +13,7 @@ namespace Unity.Payments.Domain.Services
         Task<long> GetPaymentRequestCountAsync();
         Task<PaymentRequest?> GetPaymentRequestByIdAsync(Guid paymentRequestId);
         Task<List<PaymentRequest>> GetPaymentRequestsByIdsAsync(List<Guid> paymentRequestIds, bool includeDetails = false);
-        Task<List<PaymentRequest>> GetPagedPaymentRequestsWithIncludesAsync(int skipCount, int maxResultCount, string sorting, IReadOnlyList<string>? requestedFields = null);
+        Task<List<PaymentRequest>> GetPagedPaymentRequestsWithIncludesAsync(int skipCount, int maxResultCount, string sorting, IReadOnlyList<string>? requestedFields = null, DateTime? requestedFromDate = null, DateTime? requestedToDate = null);
         Task<List<PaymentDetailsDto>> GetListByApplicationIdAsync(Guid applicationId);
         Task<List<PaymentDetailsDto>> GetListByApplicationIdsAsync(List<Guid> applicationIds);
         Task<List<PaymentDetailsDto>> GetListByPaymentIdsAsync(List<Guid> paymentIds);

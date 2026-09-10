@@ -192,6 +192,7 @@ if ($.fn.dataTable !== undefined && $.fn.dataTable.Api) {
  * @param {Function} [options.onStateSaveParams] - Hook for additional state save parameters
  * @param {Function} [options.onStateLoadParams] - Hook for additional state load parameters
  * @param {Function} [options.onStateLoaded] - Hook called after state is loaded
+ * @param {boolean} [options.persistSearchState=true] - Persist global, external, and column search values
  * @param {boolean} [options.fixedHeaders=false] - Enable fixed header with dynamically sized scrollable body
  * @returns {DataTable} Initialized DataTable API instance
  *
@@ -228,6 +229,7 @@ function initializeDataTable(options) {
         onStateSaveParams, //External hooks for save/load/loaded
         onStateLoadParams,
         onStateLoaded,
+        persistSearchState = true,
         fixedHeaders = false,
         lengthMenu = [25, 50, 75, 100, -1],
         deferRender = false,
@@ -351,11 +353,32 @@ function initializeDataTable(options) {
             if (typeof settings.oInit.onStateSaveParams === 'function') {
                 settings.oInit.onStateSaveParams(settings, data);
             }
+
+            if (!persistSearchState) {
+                clearDataTableSearchState(data);
+            }
         },
         stateLoadParams: function (settings, data) {
-            // Discard stale state when column count has changed so defaultVisibleColumns applies cleanly
-            if (data?.columns && data.columns.length !== settings.aoColumns.length) {
-                return false;
+            // Remap saved column state onto the live column list by name, rather than
+            // applying it positionally, so that state (including named "Saved Views")
+            // saved before columns were added/removed/reordered can still be loaded
+            // correctly. Always remapped (not just on a length mismatch) since a
+            // same-count reorder or rename would otherwise still be misapplied by
+            // position. Columns with no matching saved name fall back to the table's
+            // configured default visibility (defaultVisibleColumns).
+            if (data?.columns) {
+                const savedColumnsByName = new Map(
+                    data.columns.map(function (col) { return [col.name, col]; })
+                );
+                data.columns = settings.aoColumns.map(function (col) {
+                    const saved = savedColumnsByName.get(col.name);
+                    if (saved) return saved;
+                    return {
+                        name: col.name,
+                        visible: col.bVisible,
+                        search: { search: '', smart: true, regex: false, caseInsensitive: true, return: false }
+                    };
+                });
             }
 
             if (data?.externalSearch) {
@@ -378,6 +401,11 @@ function initializeDataTable(options) {
             // Call custom stateLoad hook if provided
             if (typeof settings.oInit.onStateLoadParams === 'function') {
                 settings.oInit.onStateLoadParams(settings, data);
+            }
+
+            if (!persistSearchState) {
+                clearDataTableSearchState(data);
+                $(settings.oInit.externalSearchInputId).val('');
             }
         },
         stateLoaded: function (settings, data) {
@@ -467,6 +495,32 @@ function initializeDataTable(options) {
     }
 
     return iDt;
+}
+
+/**
+ * Removes search values while leaving the rest of the saved DataTable state intact.
+ * This is applied during both state load and save so previously persisted searches
+ * are ignored and are replaced with clean state on the next draw.
+ * @param {Object} data - DataTables state object
+ */
+function clearDataTableSearchState(data) {
+    if (!data) {
+        return;
+    }
+
+    if (data.search) {
+        data.search.search = '';
+    }
+
+    data.externalSearch = '';
+
+    if (Array.isArray(data.columns)) {
+        data.columns.forEach(function (column) {
+            if (column.search) {
+                column.search.search = '';
+            }
+        });
+    }
 }
 
 

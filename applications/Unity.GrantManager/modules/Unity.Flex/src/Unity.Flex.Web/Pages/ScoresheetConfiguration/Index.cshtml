@@ -30,7 +30,7 @@
                         <h4><b>Scoresheets</b></h4>
                         <div class="d-flex justify-content-end m-3">
                             <form id="form" name="form" action="/uploader" enctype="multipart/form-data" method="post">
-                                <input id="scoresheet_import_upload" name="scoresheet_import_upload" type="file" size="1" onchange="importScoresheetFile('scoresheet_import_upload');" style="display: none" />
+                                <input id="scoresheet_import_upload" name="scoresheet_import_upload" type="file" size="1" onchange="importScoresheetFile('scoresheet_import_upload');" aria-label="Import Scoresheet" style="display: none" />
                                 <abp-button text="Import Scoresheet"
                                             id="scoresheet_import_upload_btn"
                                             icon-type="Other"

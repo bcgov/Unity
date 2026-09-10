@@ -2,16 +2,21 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Unity.Notifications.EmailAddresses;
 using Unity.Notifications.EmailGroups;
+using Unity.Notifications.Settings;
 using Unity.Notifications.Templates;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Settings;
 
 
 namespace Unity.Notifications;
 
 public class NotificationsDataSeedContributor(ITemplateVariablesRepository templateVariablesRepository,
-                                              IEmailGroupsRepository emailGroupsRepository) : IDataSeedContributor, ITransientDependency
+                                              IEmailGroupsRepository emailGroupsRepository,
+                                              IEmailAddressConfigurationsRepository emailAddressConfigurationsRepository,
+                                              ISettingProvider settingProvider) : IDataSeedContributor, ITransientDependency
 {
 
     public async Task SeedAsync(DataSeedContext context)
@@ -97,6 +102,49 @@ public class NotificationsDataSeedContributor(ITemplateVariablesRepository templ
         catch (Exception ex)
         {
             throw new InvalidOperationException($"Error seeding Notifications Data for Email Groups: {ex.Message}");
+        }
+
+        var defaultFromAddress = await settingProvider.GetOrNullAsync(
+            NotificationsSettings.Mailing.DefaultFromAddress);
+        if (!string.IsNullOrWhiteSpace(defaultFromAddress))
+        {
+            var normalizedDefaultFromAddress = defaultFromAddress.Trim();
+            var existingSenderAddress = await emailAddressConfigurationsRepository.GetListAsync(configuration =>
+                configuration.EmailType == "Sender" &&
+                configuration.EmailAddress.ToUpper() == normalizedDefaultFromAddress.ToUpper());
+            var existingDefaultConfigurations = await emailAddressConfigurationsRepository.GetListAsync(
+                configuration => configuration.IsDefault);
+
+            if (existingSenderAddress.Count == 0)
+            {
+                foreach (var existingDefaultConfiguration in existingDefaultConfigurations)
+                {
+                    existingDefaultConfiguration.IsDefault = false;
+                    await emailAddressConfigurationsRepository.UpdateAsync(existingDefaultConfiguration, autoSave: true);
+                }
+
+                await emailAddressConfigurationsRepository.InsertAsync(
+                    new EmailAddressConfiguration(
+                        Guid.NewGuid(),
+                        normalizedDefaultFromAddress,
+                        "Sender",
+                        "Default sender address",
+                        isDefault: true),
+                    autoSave: true);
+            }
+            else if (!existingSenderAddress.Any(configuration => configuration.IsDefault))
+            {
+                foreach (var existingDefaultConfiguration in existingDefaultConfigurations)
+                {
+                    existingDefaultConfiguration.IsDefault = false;
+                    await emailAddressConfigurationsRepository.UpdateAsync(existingDefaultConfiguration, autoSave: true);
+                }
+
+                var copiedConfiguration = existingSenderAddress.First();
+                copiedConfiguration.IsActive = true;
+                copiedConfiguration.IsDefault = true;
+                await emailAddressConfigurationsRepository.UpdateAsync(copiedConfiguration, autoSave: true);
+            }
         }
     }
 

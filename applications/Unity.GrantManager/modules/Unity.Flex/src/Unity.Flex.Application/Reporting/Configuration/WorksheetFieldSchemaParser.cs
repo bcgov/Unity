@@ -83,8 +83,9 @@ namespace Unity.Flex.Reporting.Configuration
 
             return [..worksheet.Sections
                 .Where(section => section.Fields != null)
-                .SelectMany(section => section.Fields)
-                .SelectMany(field => ParseField(field, worksheet, formSchema, submissionHeaderMapping))];                
+                .OrderBy(section => section.Order)
+                .SelectMany(section => section.Fields.OrderBy(field => field.Order))
+                .SelectMany(field => ParseField(field, worksheet, formSchema, submissionHeaderMapping))];
         }
 
         /// <summary>
@@ -134,7 +135,8 @@ namespace Unity.Flex.Reporting.Configuration
 
                     if (dynamicColumns != null && dynamicColumns.Count > 0)
                     {
-                        // We found dynamic columns in the CHEFS form schema; emit them first.
+                        // We found dynamic columns in the CHEFS form schema; emit them first, in the
+                        // order CHEFS returns them (which mirrors the form builder's column order).
                         // Any statically-defined columns on the DataGrid are merged in below.
                         foreach (var column in dynamicColumns)
                         {
@@ -150,9 +152,10 @@ namespace Unity.Flex.Reporting.Configuration
                                 Type = MapDataGridColumnType(column.Type),
                                 Path = $"{worksheetName}->{sectionName}->{dataGridName}->{columnKey}",
                                 TypePath = $"worksheet->section->datagrid->{MapDataGridColumnType(column.Type)}",
-                                DataPath = $"({worksheetName}){dataGridName}->{columnKey}"
+                                DataPath = $"({worksheetName}){dataGridName}->{columnKey}",
+                                WorksheetName = worksheet.Name
                             };
-                            
+
                             components.Add(component);
                         }
                     }
@@ -167,7 +170,8 @@ namespace Unity.Flex.Reporting.Configuration
                             Type = "Dynamic",
                             Path = $"{worksheetName}->{sectionName}->{dataGridName}->dynamic_columns",
                             TypePath = $"worksheet->section->datagrid->Dynamic",
-                            DataPath = $"({worksheetName}){dataGridName}->dynamic_columns"
+                            DataPath = $"({worksheetName}){dataGridName}->dynamic_columns",
+                            WorksheetName = worksheet.Name
                         };
                         
                         components.Add(dynamicComponent);
@@ -183,6 +187,10 @@ namespace Unity.Flex.Reporting.Configuration
                         components.Select(c => c.Key ?? string.Empty),
                         StringComparer.OrdinalIgnoreCase);
 
+                    // DataGridDefinition.Columns is deserialized straight from the JSON array, so list
+                    // order == author-defined column order. Combined with the dynamic columns above
+                    // (which are always emitted first), this becomes the tie-break row order when the
+                    // field expands into multiple rows.
                     foreach (var column in dataGridDefinition.Columns)
                     {
                         // Skip columns that were already emitted from the CHEFS extraction
@@ -201,7 +209,8 @@ namespace Unity.Flex.Reporting.Configuration
                             Type = MapDataGridColumnType(column.Type),
                             Path = $"{worksheetName}->{sectionName}->{dataGridName}->{column.Name}",
                             TypePath = $"worksheet->section->datagrid->{MapDataGridColumnType(column.Type)}",
-                            DataPath = $"({worksheetName}){dataGridName}->{column.Name}"
+                            DataPath = $"({worksheetName}){dataGridName}->{column.Name}",
+                            WorksheetName = worksheet.Name
                         };
 
                         components.Add(component);
@@ -275,7 +284,10 @@ namespace Unity.Flex.Reporting.Configuration
                 var worksheetName = SanitizeName(worksheet.Name);
                 var checkboxGroupName = SanitizeName(field.Key);
 
-                // Create a component for each option in the CheckboxGroup
+                // Create a component for each option in the CheckboxGroup, in the order the options
+                // are defined (CheckboxGroupDefinition.Options is deserialized straight from the JSON
+                // array, so list order == author-defined display order). Downstream sorting is stable,
+                // so this becomes the tie-break row order when the field expands into multiple rows.
                 foreach (var option in checkboxGroupDefinition.Options)
                 {
                     var optionKey = SanitizeName(option.Key);
@@ -288,7 +300,8 @@ namespace Unity.Flex.Reporting.Configuration
                         Type = "Checkbox", // Each option is essentially a checkbox
                         Path = $"{worksheetName}->{sectionName}->{checkboxGroupName}->{option.Key}",
                         TypePath = $"worksheet->section->checkboxgroup->Checkbox",
-                        DataPath = $"({worksheetName}){checkboxGroupName}->{option.Key}"
+                        DataPath = $"({worksheetName}){checkboxGroupName}->{option.Key}",
+                        WorksheetName = worksheet.Name
                     };
                     
                     components.Add(component);
@@ -355,7 +368,8 @@ namespace Unity.Flex.Reporting.Configuration
                 Type = field.Type.ToString(),
                 Path = $"{worksheetName}->{sectionName}->{fieldName}",
                 TypePath = $"worksheet->section->{field.Type.ToString().ToLowerInvariant()}",
-                DataPath = $"({worksheetName}){fieldName}"
+                DataPath = $"({worksheetName}){fieldName}",
+                WorksheetName = worksheet.Name
             };
         }
 

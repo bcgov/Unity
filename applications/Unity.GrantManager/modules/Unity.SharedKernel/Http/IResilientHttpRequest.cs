@@ -1,4 +1,5 @@
-﻿using System.Net.Http;
+﻿using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp;
@@ -18,6 +19,7 @@ namespace Unity.Modules.Shared.Http
             string? authToken = null,
             (string username, string password)? basicAuth = null,
             HttpCompletionOption completionOption = HttpCompletionOption.ResponseContentRead,
+            IReadOnlyDictionary<string, string>? extraHeaders = null,
             CancellationToken cancellationToken = default);
 
         /// <summary>
