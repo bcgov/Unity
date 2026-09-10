@@ -18,7 +18,7 @@ Ensure you're logged into the correct OpenShift cluster and namespace:
 # Check current login status
 oc whoami
 
-# Should return your username, e.g., daryl.todosichuk@gov.bc.ca
+# Should return your username
 ```
 
 ### 2. Configure Docker Registry Access
@@ -30,12 +30,12 @@ Login Docker to the OpenShift registry using your current session token:
 oc registry login
 
 # Alternative: Manual Docker login with token
-docker login -u unused -p "$(oc whoami -t)" image-registry.apps.silver.devops.gov.bc.ca
+docker login -u unused -p "$(oc whoami -t)" image-registry.apps.<cluster>.devops.gov.bc.ca
 ```
 
 **Expected Output:**
 ```
-Saved credentials for image-registry.apps.silver.devops.gov.bc.ca
+Saved credentials for image-registry.apps.<cluster>.devops.gov.bc.ca
 Login Succeeded
 ```
 
@@ -67,20 +67,20 @@ Tag the local image with the OpenShift registry path:
 ```bash
 # For dev environment
 docker tag unity-ai-reporting-frontend:latest \
-  image-registry.apps.silver.devops.gov.bc.ca/d18498-dev/unity-ai-reporting-frontend:latest
+  image-registry.apps.<cluster>.devops.gov.bc.ca/<namespace>-dev/unity-ai-reporting-frontend:latest
 
 # For test environment  
 docker tag unity-ai-reporting-frontend:latest \
-  image-registry.apps.silver.devops.gov.bc.ca/d18498-test/unity-ai-reporting-frontend:latest
+  image-registry.apps.<cluster>.devops.gov.bc.ca/<namespace>-test/unity-ai-reporting-frontend:latest
 
 # For prod environment
 docker tag unity-ai-reporting-frontend:latest \
-  image-registry.apps.silver.devops.gov.bc.ca/d18498-prod/unity-ai-reporting-frontend:latest
+  image-registry.apps.<cluster>.devops.gov.bc.ca/<namespace>-prod/unity-ai-reporting-frontend:latest
 ```
 
 **Registry Path Format:**
 ```
-image-registry.apps.silver.devops.gov.bc.ca/{namespace}/{image-name}:{tag}
+image-registry.apps.<cluster>.devops.gov.bc.ca/{namespace}/{image-name}:{tag}
 ```
 
 ### 5. Push Image to OpenShift Registry
@@ -89,16 +89,16 @@ Push the tagged image to the OpenShift internal registry:
 
 ```bash
 # Push to dev environment
-docker push image-registry.apps.silver.devops.gov.bc.ca/d18498-dev/unity-ai-reporting-frontend:latest
+docker push image-registry.apps.<cluster>.devops.gov.bc.ca/<namespace>-dev/unity-ai-reporting-frontend:latest
 
 # Push to other environments as needed
-docker push image-registry.apps.silver.devops.gov.bc.ca/d18498-test/unity-ai-reporting-frontend:latest
-docker push image-registry.apps.silver.devops.gov.bc.ca/d18498-prod/unity-ai-reporting-frontend:latest
+docker push image-registry.apps.<cluster>.devops.gov.bc.ca/<namespace>-test/unity-ai-reporting-frontend:latest
+docker push image-registry.apps.<cluster>.devops.gov.bc.ca/<namespace>-prod/unity-ai-reporting-frontend:latest
 ```
 
 **Expected Output:**
 ```
-The push refers to repository [image-registry.apps.silver.devops.gov.bc.ca/d18498-dev/unity-ai-reporting-frontend]
+The push refers to repository [image-registry.apps.<cluster>.devops.gov.bc.ca/<namespace>-dev/unity-ai-reporting-frontend]
 latest: digest: sha256:abc123... size: 856
 ```
 
@@ -108,13 +108,13 @@ Force the StatefulSet to pull and use the new image:
 
 ```bash
 # Restart the frontend StatefulSet
-oc -n d18498-dev rollout restart statefulset dev-unity-ai-frontend
+oc -n <namespace>-dev rollout restart statefulset dev-unity-ai-frontend
 
 # Monitor rollout status
-oc -n d18498-dev rollout status statefulset dev-unity-ai-frontend
+oc -n <namespace>-dev rollout status statefulset dev-unity-ai-frontend
 
 # Check pod status
-oc -n d18498-dev get pods -l app=unity-ai-frontend
+oc -n <namespace>-dev get pods -l app=unity-ai-frontend
 ```
 
 ### 7. Verify Deployment
@@ -123,10 +123,10 @@ Confirm the new image is running successfully:
 
 ```bash
 # Check pod logs for successful startup
-oc -n d18498-dev logs dev-unity-ai-frontend-0
+oc -n <namespace>-dev logs dev-unity-ai-frontend-0
 
 # Verify pod is running
-oc -n d18498-dev get pods -l app=unity-ai-frontend
+oc -n <namespace>-dev get pods -l app=unity-ai-frontend
 ```
 
 **Success Indicators:**
@@ -138,10 +138,10 @@ oc -n d18498-dev get pods -l app=unity-ai-frontend
 
 | Environment | Namespace | Registry Path |
 |-------------|-----------|---------------|
-| **Development** | `d18498-dev` | `image-registry.apps.silver.devops.gov.bc.ca/d18498-dev/` |
-| **Test** | `d18498-test` | `image-registry.apps.silver.devops.gov.bc.ca/d18498-test/` |
-| **UAT** | `d18498-uat` | `image-registry.apps.silver.devops.gov.bc.ca/d18498-uat/` |
-| **Production** | `d18498-prod` | `image-registry.apps.silver.devops.gov.bc.ca/d18498-prod/` |
+| **Development** | `<namespace>-dev` | `image-registry.apps.<cluster>.devops.gov.bc.ca/<namespace>-dev/` |
+| **Test** | `<namespace>-test` | `image-registry.apps.<cluster>.devops.gov.bc.ca/<namespace>-test/` |
+| **UAT** | `<namespace>-uat` | `image-registry.apps.<cluster>.devops.gov.bc.ca/<namespace>-uat/` |
+| **Production** | `<namespace>-prod` | `image-registry.apps.<cluster>.devops.gov.bc.ca/<namespace>-prod/` |
 
 ## Complete Example Workflow
 
@@ -161,18 +161,18 @@ docker build \
 
 # 3. Tag for OpenShift
 docker tag unity-ai-reporting-frontend:hotfix \
-  image-registry.apps.silver.devops.gov.bc.ca/d18498-dev/unity-ai-reporting-frontend:latest
+  image-registry.apps.<cluster>.devops.gov.bc.ca/<namespace>-dev/unity-ai-reporting-frontend:latest
 
 # 4. Push to registry
-docker push image-registry.apps.silver.devops.gov.bc.ca/d18498-dev/unity-ai-reporting-frontend:latest
+docker push image-registry.apps.<cluster>.devops.gov.bc.ca/<namespace>-dev/unity-ai-reporting-frontend:latest
 
 # 5. Deploy to OpenShift
-oc -n d18498-dev rollout restart statefulset dev-unity-ai-frontend
-oc -n d18498-dev rollout status statefulset dev-unity-ai-frontend
+oc -n <namespace>-dev rollout restart statefulset dev-unity-ai-frontend
+oc -n <namespace>-dev rollout status statefulset dev-unity-ai-frontend
 
 # 6. Verify success
-oc -n d18498-dev get pods -l app=unity-ai-frontend
-oc -n d18498-dev logs dev-unity-ai-frontend-0 --tail=20
+oc -n <namespace>-dev get pods -l app=unity-ai-frontend
+oc -n <namespace>-dev logs dev-unity-ai-frontend-0 --tail=20
 ```
 
 ## Troubleshooting
@@ -184,33 +184,33 @@ oc -n d18498-dev logs dev-unity-ai-frontend-0 --tail=20
 # Error: 401 Unauthorized
 # Solution: Re-authenticate
 oc registry login
-docker login -u unused -p "$(oc whoami -t)" image-registry.apps.silver.devops.gov.bc.ca
+docker login -u unused -p "$(oc whoami -t)" image-registry.apps.<cluster>.devops.gov.bc.ca
 ```
 
 **2. Registry Connection Issues**
 ```bash
 # Error: no such host
 # Solution: Use external registry hostname
-image-registry.apps.silver.devops.gov.bc.ca  # External 
+image-registry.apps.<cluster>.devops.gov.bc.ca  # External 
 image-registry.openshift-image-registry.svc  # Internal 
 ```
 
 **3. Pod Not Updating**
 ```bash
 # Force pod recreation
-oc -n d18498-dev delete pod dev-unity-ai-frontend-0
+oc -n <namespace>-dev delete pod dev-unity-ai-frontend-0
 
 # Check StatefulSet configuration
-oc -n d18498-dev describe statefulset dev-unity-ai-frontend
+oc -n <namespace>-dev describe statefulset dev-unity-ai-frontend
 ```
 
 **4. Image Pull Errors**
 ```bash
 # Verify image exists in registry
-oc -n d18498-dev get imagestream
+oc -n <namespace>-dev get imagestream
 
 # Check image pull policy
-oc -n d18498-dev get statefulset dev-unity-ai-frontend -o yaml | grep imagePullPolicy
+oc -n <namespace>-dev get statefulset dev-unity-ai-frontend -o yaml | grep imagePullPolicy
 ```
 
 ## Security Considerations

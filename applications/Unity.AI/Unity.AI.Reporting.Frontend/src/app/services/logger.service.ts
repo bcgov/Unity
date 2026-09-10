@@ -85,11 +85,6 @@ export class LoggerService {
         console.error(logMessage, ...params);
         break;
     }
-
-    // In production, you could send logs to a remote service here
-    if (environment.production && level >= LogLevel.Error) {
-      this.sendToRemoteService(level, message, params);
-    }
   }
 
   /**
@@ -103,24 +98,5 @@ export class LoggerService {
       case LogLevel.Error: return 'ERROR';
       default: return 'UNKNOWN';
     }
-  }
-
-  /**
-   * Send logs to remote monitoring service (placeholder)
-   * Implement this to send logs to your monitoring solution
-   */
-  private sendToRemoteService(level: LogLevel, message: string, params: any[]): void {
-    // TODO: Implement remote logging service integration
-    // Examples: Azure Application Insights, Sentry, LogRocket, etc.
-    //
-    // Example structure:
-    // {
-    //   timestamp: new Date().toISOString(),
-    //   level: this.getLevelName(level),
-    //   message: message,
-    //   data: params,
-    //   userAgent: navigator.userAgent,
-    //   url: window.location.href
-    // }
   }
 }
