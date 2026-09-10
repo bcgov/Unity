@@ -1,5 +1,114 @@
 # Changelog
 
+## 0.4.9 - build 2026.08.28.23
+
+Corrective release based on submitted TEST Import run `45DE20`.
+
+- Fixes page-bridge lookup when CHEFS exposes more than one live Form.io root and the first cached root does not own the rendered form.
+- Starts discovery at the exact rendered OrgBook wrapper, walks its Vue/Form.io ownership graph, and searches every bounded live root.
+- Ranks an exact wrapper-owning component ahead of same-key components from unrelated roots.
+- Executes the existing CHEFS/Form.io `triggerUpdate` → `itemsLoaded` → `selectOptions` → `setValue` lifecycle on the resolved OrgBook instance.
+- Adds PID-free root count, inspected component count, and wrapper-match diagnostics to OrgBook selection evidence.
+- Adds an executable multiple-root fixture that first caches the wrong form and proves the live OrgBook wrapper still resolves.
+
+## 0.4.8 - build 2026.08.28.22
+
+- Replaces OrgBook's primary synthetic Choices interaction with CHEFS's actual Form.io Select runtime lifecycle.
+- Calls `triggerUpdate('wonderful', true)` on the matching OrgBook instance and awaits `itemsLoaded`.
+- Requires `WONDERFUL FLOORING` to exist in Form.io `selectOptions` before selection.
+- Calls `setValue('WONDERFUL FLOORING')`, triggers change processing and retains the sustained rendered-state check.
+- Keeps synthetic Choices interaction only as a fallback.
+- Validates the component-configured HTTPS OrgBook endpoint before invoking the lifecycle.
+- Strengthens `FIELD-03` from CHEFS commit `f3f8731` and pinned Form.io 4.17.4 source evidence.
+
+## 0.4.7 - build 2026.08.28.21
+
+- Replaces the generic OrgBook query with the exact evidenced returned value `WONDERFUL FLOORING`.
+- Presses Enter directly after exact-value entry rather than requiring an enumerable result row or ArrowDown navigation.
+- Requires the restricted Form.io fallback to match and apply that same exact returned value.
+- Retains endpoint restriction, placeholder exclusion, PID-free diagnostics and sustained persistence verification.
+- Strengthens `FIELD-03` for the live v0.4.6 **No choices to choose from** state.
+
+## 0.4.6 - build 2026.08.28.20
+
+Corrective release based on submitted TEST Import run `010397` and the supplied OrgBook network response.
+
+- Confirms character-by-character input reaches the configured OrgBook endpoint and returns valid results.
+- Attempts ArrowDown/Enter selection even when the content-script DOM cannot enumerate the custom Choices result nodes.
+- Adds a page-context fallback restricted to the component-configured HTTPS `orgbook.gov.bc.ca/api/v3/search/autocomplete` endpoint.
+- Applies the first returned string value through the matching Form.io OrgBook instance when DOM and keyboard selection cannot persist.
+- Records only result count, selection method and persistence duration—not the selected business name.
+- Retains the placeholder exclusions and sustained selected-state requirement.
+- Strengthens `FIELD-03` coverage for the exact opaque-result-list failure in `010397`.
+
+## 0.4.5 - build 2026.08.28.19
+
+Corrective release based on submitted TEST Import run `C30A88` and the supplied live OrgBook placeholder DOM.
+
+- Opens the OrgBook Choices control with a normal click.
+- Clears the cloned search input and types the demonstrated `wonderful` query character by character with keyboard and input events.
+- Waits for non-placeholder remote results before choosing a result.
+- Uses the same human-equivalent input path for a selection retry.
+- Stops a remote no-result path before it can fall through to the hidden native select.
+- Excludes placeholder-like native options even when they have a non-empty value.
+- Retains the continuous 1.2-second selected-state persistence requirement.
+- Strengthens `FIELD-03` coverage for the exact 56-character placeholder false positive from `C30A88`.
+
+## 0.4.4 - build 2026.08.28.18
+
+Corrective release based on submitted TEST Import run `F55F2F` and the demonstrated OrgBook result list.
+
+- Replaces the unproven OrgBook query with the demonstrated `wonderful` query.
+- Selects the returned OrgBook item with a normal click instead of a synthetic multi-event pointer sequence.
+- Retains an ArrowDown/Enter retry against freshly returned results.
+- Requires selected Choices state to remain continuously present for 1.2 seconds before reporting success.
+- Allows later scans to retry when a transient OrgBook selection disappears.
+- Records explicit remote-selection success/failure and the persistence window without recording the selected business name.
+- Strengthens `FIELD-03` regression coverage for the exact false-positive observed in `F55F2F`.
+
+## 0.4.3 - build 2026.08.28.17
+
+Corrective release based on the stalled upload and unresponsive Stop Run shown in active run `01FEF0`.
+
+- Treats a filename row as pending while **Starting upload**, another pending message, or an incomplete visible progress indicator remains.
+- Uses the rendered file-drop path before the potentially blocking Form.io component upload API.
+- Applies one cumulative 20-second pending-upload deadline across passes.
+- Does not redispatch a timed-out pending upload through a second API path.
+- Records the timeout and releases the fill loop so later map and Edit Grid components can still be processed.
+- Rejects every pending page-bridge request when Stop Run is selected.
+- Makes upload polling and field handling propagate cancellation immediately.
+- Starts idempotent stopped-run finalization without waiting for the current field timeout.
+- Routes popup cancellation through a background fallback that finalizes an orphaned run when its page controller is unavailable after refresh or extension reload.
+- Requires popup stop acknowledgement and refreshes until the run leaves active state.
+- Adds `UPLOAD-01` and `STOP-01` regression coverage.
+
+## 0.4.2 - build 2026.08.28.16
+
+Corrective release based on antagonistic TEST run `BE27D7` and its attached form schema.
+
+- Treats OrgBook placeholder text as empty and performs a remote search before selecting a returned item.
+- Searches the BC Geocoder-backed Simple BC Address component and selects a returned address instead of leaving query text behind.
+- Requires map components to contain a selected feature or marker; search text alone is not accepted as completion.
+- Retains the existing CHEFS file-upload strategy for optional `simplefile` components.
+- Commits open Edit Grid rows only after their reachable nested fields have been processed.
+- Keeps an Edit Grid eligible for later row additions while its current row editor is open.
+- Excludes row Save, Cancel, Remove, Delete, Edit and close controls from real form-submit discovery.
+- Removes generic HTML `type="submit"` as sufficient proof of a CHEFS submit landmark; the Form.io submit wrapper or `data[submit]` identity is required.
+- Adds `FIELD-03` and `GRID-02` regression coverage for the exact failure modes in `BE27D7`.
+
+## 0.4.1 - build 2026.08.28.15
+
+Corrective release based on blocked UAT run `AC1EC1`.
+
+- Extracts unambiguous numeric minimums and maximums from rendered ranges such as `$0 to $5,000` when custom components omit usable Form.io metadata.
+- Recovers numeric bounds from rendered validation messages such as `cannot be greater than 5000`.
+- Keeps generated currency values inside the detected range instead of repeating an invalid default after validation repair.
+- Extracts calendar limits from rendered month-name ranges and `on or after` / `no later than` guidance.
+- Generates the evidenced project start and end dates inside April 1, 2027 through March 31, 2028.
+- Adds Flatpickr and rendered readonly-control date paths before retaining the Form.io bridge fallback.
+- Adds PID-free `DATE_VALUE_APPLIED` diagnostics with method and date bounds.
+- Adds `FIELD-02` regression coverage for the exact currency and date constraints from run `AC1EC1`.
+
 ## 0.4.0 - build 2026.07.23.14
 
 Dashboard release and round-009 readiness correction.

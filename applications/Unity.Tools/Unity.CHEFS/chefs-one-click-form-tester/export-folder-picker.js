@@ -38,10 +38,10 @@
         if (!delta || delta.id !== downloadId) {
           return;
         }
-        if (delta.state && delta.state.current === 'complete') {
+        if (delta.state?.current === 'complete') {
           finish();
-        } else if (delta.state && delta.state.current === 'interrupted') {
-          finish(new Error(delta.error && delta.error.current || 'The validation download was interrupted.'));
+        } else if (delta.state?.current === 'interrupted') {
+          finish(new Error(delta.error?.current || 'The validation download was interrupted.'));
         }
       };
       const timer = setTimeout(
@@ -50,7 +50,7 @@
       );
       downloads.onChanged.addListener(onChanged);
       downloads.search({ id: downloadId })
-        .then((items) => inspect(items && items[0]))
+        .then((items) => inspect(items?.[0]))
         .catch(finish);
     });
   }
@@ -61,7 +61,7 @@
         await directoryHandle.getFileHandle(probeName);
         return true;
       } catch (error) {
-        if (!error || error.name !== 'NotFoundError') {
+        if (error?.name !== 'NotFoundError') {
           throw error;
         }
       }
@@ -97,7 +97,7 @@
     const probeAttempts = options.probeAttempts || PROBE_VISIBILITY_ATTEMPTS;
     const timeoutMs = options.timeoutMs || PROBE_TIMEOUT_MS;
 
-    if (!directoryHandle || directoryHandle.kind !== 'directory') {
+    if (directoryHandle?.kind !== 'directory') {
       throw new Error('Select a folder directly inside Downloads.');
     }
 
@@ -142,7 +142,7 @@
     const options = dependencies || {};
     const showPicker = options.showDirectoryPicker || globalThis.showDirectoryPicker;
     if (typeof showPicker !== 'function') {
-      throw new Error('Folder selection is unavailable in this browser. Type a Downloads-relative folder instead.');
+      throw new TypeError('Folder selection is unavailable in this browser. Type a Downloads-relative folder instead.');
     }
     const directoryHandle = await showPicker({
       id: 'chefs-export-folder',
