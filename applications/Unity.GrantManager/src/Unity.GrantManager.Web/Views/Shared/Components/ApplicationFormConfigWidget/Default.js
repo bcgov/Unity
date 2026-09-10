@@ -98,7 +98,7 @@
             : l('ApplicationForms.Configuration:AddLink');
         addRelatedLinkButton.setAttribute('title', tooltipText);
         addRelatedLinkButton.dataset.bsOriginalTitle = tooltipText;
-        const tooltipInstance = window.bootstrap?.Tooltip.getInstance(addRelatedLinkButton);
+        const tooltipInstance = globalThis.bootstrap?.Tooltip.getInstance(addRelatedLinkButton);
         if (tooltipInstance) {
             tooltipInstance.setContent({ '.tooltip-inner': tooltipText });
         }

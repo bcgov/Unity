@@ -15,6 +15,13 @@
     padding-bottom: 20px;
 }
 
+.configuration-action-bar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #fff;
+}
+
 .unity-id-preview {
     background-color: #f8f9fa;
     border: 1px solid #dee2e6;
