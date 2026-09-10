@@ -61,7 +61,7 @@
           <label for="chartSelect">Chart</label>
           <select id="chartSelect"></select>
         </div>
-        <div id="chartUnavailable" class="chart-unavailable hidden" role="status"></div>
+        <output id="chartUnavailable" class="chart-unavailable hidden"></output>
         <svg id="chart" viewBox="0 0 900 430" role="img" aria-labelledby="chartTitle chartDescription"></svg>
         <p id="chartDescription" class="chart-description">Select a completed run to see results.</p>
       </article>
@@ -88,6 +88,6 @@
       </aside>
     </section>
   </main>
-  <script src="dashboard.js"></script>
+  <script type="module" src="dashboard.js"></script>
 </body>
 </html>

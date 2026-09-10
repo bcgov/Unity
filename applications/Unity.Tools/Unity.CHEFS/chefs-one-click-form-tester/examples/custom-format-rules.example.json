@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "exportedAt": "2026-07-22T16:20:00-07:00",
-  "extensionVersion": "0.4.0",
+  "extensionVersion": "0.4.9",
   "rules": [
     {
       "id": "irma-number",

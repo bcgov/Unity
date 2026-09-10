@@ -1,7 +1,7 @@
 # CHEFS One-Click Form Tester
 
-Version: 0.4.0  
-Build: 2026.07.23.14  
+Version: 0.4.9  
+Build: 2026.08.28.23  
 Browser: Google Chrome, Manifest V3
 
 ## Install or update
@@ -21,7 +21,55 @@ Browser: Google Chrome, Manifest V3
 4. Leave the form tab open while the run is active.
 5. After the run ends, select **Export Last Run**, unless automatic export is enabled.
 
-The engine repeatedly scans the rendered form, fills every reachable user-facing field, waits for conditional changes, creates repeating rows, uploads packaged synthetic attachments and submits after the current path stabilizes.
+The engine repeatedly scans the rendered form, fills every reachable user-facing field—including optional fields—waits for conditional changes, creates and commits repeating rows, uploads packaged synthetic attachments and submits after the current path stabilizes.
+
+## v0.4.9 multiple-root OrgBook resolution
+
+Run `45DE20` proved v0.4.8 never reached the native OrgBook lifecycle: the page bridge had cached a different Form.io root and reported that `orgbook` was absent. v0.4.9 begins at the exact rendered wrapper, discovers every bounded live Form.io root, ranks the component that owns that wrapper first, and records root/component lookup counts. It then runs the native lifecycle described below.
+
+## v0.4.8 native Form.io OrgBook lifecycle
+
+Source inspection of CHEFS commit `f3f8731` established that Business Name Search is a configured subclass of Form.io 4.17.4's stock Select component. v0.4.8 therefore uses that component directly: `triggerUpdate('wonderful', true)`, await `itemsLoaded`, confirm `WONDERFUL FLOORING` in `selectOptions`, call `setValue('WONDERFUL FLOORING')`, trigger normal change processing, and verify sustained rendered selection. Synthetic Choices input is now fallback-only.
+
+## v0.4.7 exact OrgBook value entry
+
+The live v0.4.6 screenshot showed `wonderful` present in the open OrgBook editor while the component rendered **No choices to choose from**. v0.4.7 follows the requested simpler interaction: it types the exact evidenced result `WONDERFUL FLOORING` and presses Enter directly. If the custom Choices UI does not commit the value, the restricted page-context fallback requests and applies that same exact returned value through the Form.io OrgBook instance. Placeholder exclusion and sustained selected-state verification remain mandatory.
+
+## v0.4.6 opaque OrgBook result-list correction
+
+Submitted run `010397` proved that v0.4.5 entered the full `wonderful` query on all three attempts, while the supplied network evidence proved OrgBook returned ten valid results. The content script nevertheless enumerated zero visible result nodes, so it never attempted selection.
+
+v0.4.6 first uses ArrowDown and Enter after the returned list has had time to load, matching normal keyboard selection without depending on the custom component's result DOM being enumerable. If that selection cannot persist, a page-context fallback reads only the matching component's configured HTTPS OrgBook autocomplete endpoint, chooses its first returned string value, and applies it through the actual Form.io OrgBook instance. The endpoint is restricted to `orgbook.gov.bc.ca/api/v3/search/autocomplete`, and the selected business name is not written to diagnostics. Every route still has to survive the continuous selected-state check.
+
+## v0.4.5 human-equivalent OrgBook selection
+
+Submitted run `C30A88` exposed why v0.4.4 could still count OrgBook as filled while leaving it blank. The reported 56-character value was exactly the text of the control's selected/deletable **Start typing to search BC Registered Businesses database** placeholder. When no remote result was detected, the runner fell through to the hidden native select and accepted that non-empty placeholder value.
+
+v0.4.5 opens OrgBook with a normal click, clears its cloned search input, types `wonderful` one character at a time, waits for non-placeholder remote results, and selects one of those results. The retry follows the same character-by-character path. A remote no-result condition now fails without invoking the native-select fallback, and placeholder-like native options are unusable even when their value is non-empty. Sustained selected-state verification remains required before the field counts as filled.
+
+## v0.4.4 persistent OrgBook selection
+
+Submitted run `F55F2F` proved that v0.4.3 corrected Simple BC Address, file upload, map selection, Edit Grid commit and real form submission, but it also exposed an OrgBook false positive: the runner logged success three times even though every later scan found the optional control empty.
+
+v0.4.4 uses the demonstrated `wonderful` search term, selects a returned result with a normal click, retries through the control's keyboard path when necessary, and requires the selected state to remain continuously present for 1.2 seconds. A transient Choices state is diagnosed as failed and remains eligible for a later pass instead of being counted as filled.
+
+## v0.4.3 bounded uploads and responsive Stop Run
+
+Run `01FEF0` showed a file row while the component still displayed **Starting upload**. The tester was waiting up to 90 seconds on the Form.io upload API before it could reach later components, and Stop Run only set a flag that the pending bridge request did not observe.
+
+v0.4.3 uses the rendered drop path first, does not count a filename as complete while upload progress remains visible, and applies one cumulative 20-second deadline to the pending file. A timed-out optional upload is recorded and releases the loop to process later fields; it is not redispatched through another upload path. Stop Run now rejects pending bridge work, exits upload polling, idempotently finalizes the run as stopped, and refreshes the popup to terminal state. The background also finalizes an orphaned stored run when a refresh or extension reload has removed its page controller.
+
+## v0.4.2 optional preconfigured components and Edit Grid correction
+
+Run `BE27D7` exposed that placeholder-backed OrgBook controls could be mistaken for completed values, Simple BC Address had no remote-result selection strategy, and map search text could be counted without a selected feature. This build searches and selects returned OrgBook and BC Address entries, requires a real map feature or marker, and retains the existing synthetic CHEFS file upload path.
+
+The same run left an Edit Grid row open and then selected its HTML `type="submit"` **Save** button instead of the real CHEFS submit component. v0.4.2 commits open Edit Grid rows after populating their nested fields and explicitly excludes row Save, Cancel, Remove, Delete, Edit and close actions from form-submit discovery.
+
+## v0.4.1 rendered constraint and custom date correction
+
+Run `AC1EC1` exposed two custom-component gaps. A currency component rendered an explicit `$0` to `$5,000` range without exposing a usable Form.io maximum, so the tester generated `$12,500` repeatedly. Two Flatpickr-backed `simpledatetime` fields were also unreachable through the available Form.io component lookup.
+
+v0.4.1 derives unambiguous numeric bounds from rendered ranges and validation messages before generating a value. It also derives calendar bounds from rendered month-name guidance, selects dates inside those bounds, and fills Flatpickr or rendered date controls before using the existing Form.io fallback. Generated diagnostics record the resolved numeric/date limits and the successful date application method without recording field values.
 
 ## v0.4.0 results dashboard and readiness correction
 
@@ -65,7 +113,7 @@ Batch launching is disabled by default. Open **Settings** and configure **Batch 
 
 The token, exact configured origin, Chrome host permission and existing environment protection must all pass. A production-like host is not made safe merely by adding it to the batch list. Before injecting the tester, the extension removes the launcher marker from browser history and retains only the cleaned form URL in queue records. The extension popup reports active, queued and completed items and provides **Stop Batch**.
 
-The launcher contains no extension ID. If the extension is absent, disabled or not loaded in the chosen Chrome profile, the form tabs simply open.
+The launcher contains no extension ID. If the extension is absent, disabled or not loaded in the chosen Chrome profile, the form tabs simply open. See the project-root `BATCH-REGRESSION.md` for setup, form-list editing and troubleshooting.
 
 ## v0.2.6 Select Export Folder
 
