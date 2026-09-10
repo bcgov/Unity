@@ -120,7 +120,7 @@
         uriInput.type = 'url';
         uriInput.className = 'form-control related-link-uri';
         uriInput.maxLength = 2048;
-        uriInput.placeholder = 'https://...';
+        uriInput.placeholder = 'https://';
         uriInput.setAttribute('aria-label', l('ApplicationForms.Configuration:RelatedLinkUrl'));
         uriInput.value = data.uri;
         const uriError = document.createElement('span');
