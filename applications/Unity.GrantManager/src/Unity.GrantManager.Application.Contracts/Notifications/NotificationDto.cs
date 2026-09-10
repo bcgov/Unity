@@ -14,6 +14,7 @@ namespace Unity.GrantManager.Notifications
         public bool IsActive { get; set; }
         public string? EventType { get; set; }
         public Guid? ApplicationStatusId { get; set; }
+        public string? ApplicationStatusIds { get; set; }
         public string? ApplicationStatus { get; set; }
         public string? DateField { get; set; }
         public string? RecipientCategory { get; set; }

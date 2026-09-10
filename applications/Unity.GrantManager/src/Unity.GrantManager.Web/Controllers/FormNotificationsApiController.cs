@@ -236,6 +236,7 @@ namespace Unity.GrantManager.Web.Controllers
                 DateType = e.DateField,
                 EventStatus = e.EventType ?? e.ApplicationStatus,
                 ApplicationStatusId = e.ApplicationStatusId,
+                ApplicationStatusIds = ParseStatusIds(e.ApplicationStatusIds),
                 RecipientCategory = e.RecipientCategory,
                 RecipientIdentifier = e.RecipientIdentifier,
                 CreatedAt = DateTime.UtcNow,
@@ -294,6 +295,7 @@ namespace Unity.GrantManager.Web.Controllers
                 IsActive = true,
                 EventType = input.Module == "Payment" ? input.EventStatus : null,
                 ApplicationStatusId = input.Module == "Application" ? input.ApplicationStatusId : null,
+                ApplicationStatusIds = input.TriggerType == "Date" ? SerializeStatusIds(input.ApplicationStatusIds) : null,
                 ApplicationStatus = statusLabel,
                 DateField = input.DateType,
                 RecipientCategory = input.RecipientCategory,
@@ -312,6 +314,7 @@ namespace Unity.GrantManager.Web.Controllers
                 DateType = created.DateField,
                 EventStatus = created.EventType ?? created.ApplicationStatus,
                 ApplicationStatusId = created.ApplicationStatusId,
+                ApplicationStatusIds = ParseStatusIds(created.ApplicationStatusIds),
                 RecipientCategory = created.RecipientCategory,
                 RecipientIdentifier = created.RecipientIdentifier,
                 CreatedAt = DateTime.UtcNow
@@ -413,6 +416,7 @@ namespace Unity.GrantManager.Web.Controllers
                 IsActive = true,
                 EventType = input.Module == "Payment" ? input.EventStatus : null,
                 ApplicationStatusId = input.Module == "Application" ? input.ApplicationStatusId : null,
+                ApplicationStatusIds = input.TriggerType == "Date" ? SerializeStatusIds(input.ApplicationStatusIds) : null,
                 ApplicationStatus = statusLabel,
                 DateField = input.DateType,
                 RecipientCategory = input.RecipientCategory,
@@ -431,6 +435,7 @@ namespace Unity.GrantManager.Web.Controllers
                 DateType = updated.DateField,
                 EventStatus = updated.EventType ?? updated.ApplicationStatus,
                 ApplicationStatusId = updated.ApplicationStatusId,
+                ApplicationStatusIds = ParseStatusIds(updated.ApplicationStatusIds),
                 RecipientCategory = updated.RecipientCategory,
                 RecipientIdentifier = updated.RecipientIdentifier,
                 CreatedAt = DateTime.UtcNow
@@ -462,6 +467,22 @@ namespace Unity.GrantManager.Web.Controllers
 
             return true;
         }
+
+        private static string? SerializeStatusIds(IEnumerable<Guid> statusIds)
+        {
+            var values = statusIds?.Distinct().ToList() ?? new List<Guid>();
+            return values.Count == 0 ? null : string.Join(',', values);
+        }
+
+        private static List<Guid> ParseStatusIds(string? statusIds)
+        {
+            return statusIds?
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(value => Guid.TryParse(value, out _))
+                .Select(Guid.Parse)
+                .Distinct()
+                .ToList() ?? new List<Guid>();
+        }
     }
 
     public record EmailTemplateDto
@@ -485,6 +506,7 @@ namespace Unity.GrantManager.Web.Controllers
         public string? DateType { get; init; }
         public string? EventStatus { get; init; }
         public Guid? ApplicationStatusId { get; init; }
+        public List<Guid> ApplicationStatusIds { get; init; } = new();
         public string? RecipientCategory { get; init; }
         public string? RecipientIdentifier { get; init; }
         public DateTime CreatedAt { get; init; }
@@ -498,6 +520,7 @@ namespace Unity.GrantManager.Web.Controllers
         public string? Module { get; init; }
         public string? DateType { get; init; }
         public Guid? ApplicationStatusId { get; init; }
+        public List<Guid> ApplicationStatusIds { get; init; } = new();
         public string? EventStatus { get; init; }
         public string? RecipientCategory { get; init; }
         public string? RecipientIdentifier { get; init; }

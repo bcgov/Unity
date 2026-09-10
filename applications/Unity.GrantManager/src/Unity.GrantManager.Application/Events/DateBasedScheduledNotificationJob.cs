@@ -261,6 +261,8 @@ namespace Unity.GrantManager.Events
                     // Get applications for this form
                     var applicationsForForm = allApplications
                         .Where(a => a.ApplicationFormId == notification.FormId)
+                        .Where(a => MatchesDateField(a, notification.DateField, today))
+                        .Where(a => MatchesStatusFilter(a, notification.ApplicationStatusIds))
                         .ToList();
 
                     if (applicationsForForm.Count == 0)
@@ -320,6 +322,37 @@ namespace Unity.GrantManager.Events
             {
                 _logger.LogError(ex, "DateBasedScheduledNotificationJob: Error processing notifications for current tenant.");
             }
+        }
+
+        internal static bool MatchesStatusFilter(Application application, string? applicationStatusIds)
+        {
+            if (string.IsNullOrWhiteSpace(applicationStatusIds))
+            {
+                return true;
+            }
+
+            var statusIds = applicationStatusIds
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(value => Guid.TryParse(value, out _))
+                .Select(Guid.Parse)
+                .ToHashSet();
+
+            return statusIds.Count == 0 || statusIds.Contains(application.ApplicationStatusId);
+        }
+
+        internal static bool MatchesDateField(Application application, string? dateField, DateTime today)
+        {
+            DateTime? triggerDate = dateField switch
+            {
+                "NotificationDate" => application.NotificationDate,
+                "DueDate" => application.DueDate,
+                "ProjectStartDate" => application.ProjectStartDate,
+                "ProjectEndDate" => application.ProjectEndDate,
+                "ContractExecutionDate" => application.ContractExecutionDate,
+                _ => null
+            };
+
+            return triggerDate.HasValue && triggerDate.Value.Date <= today.Date;
         }
 
         private async Task<ScheduledNotificationTracking?> ProcessApplicationForNotificationAsync(
