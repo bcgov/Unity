@@ -4,6 +4,8 @@ namespace Unity.GrantManager.Applicants;
 
 public class UpdateApplicantContactAddressesDto
 {
+    // Required when a submitted address has an empty Id (creation).
+    public Guid? ExpectedApplicationId { get; set; }
     public UpdatePrimaryContactDto? PrimaryContact { get; set; }
     public UpdatePrimaryApplicantAddressDto? PrimaryPhysicalAddress { get; set; }
     public UpdatePrimaryApplicantAddressDto? PrimaryMailingAddress { get; set; }

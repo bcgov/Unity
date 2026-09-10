@@ -9,11 +9,7 @@ This document outlines security procedures for the Economy Sector Grant Manageme
 
 ## Supported Versions
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.1.x   | Experimental  |
-| 1.0.x   | Initial release |
-| 1.x.x   | Production release |
+This project is continuously deployed rather than released by version. Only the environment built from the current `main` branch (promoted through `dev` → `test` → `uat`/`main`) is supported.
 
 ## Reporting a Security Bug
 
