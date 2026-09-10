@@ -1,0 +1,56 @@
+@page
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Unity.GrantManager.Localization
+@using Unity.Modules.Shared.Permissions
+@using Unity.TenantManagement.Web.Pages.TenantManagement.ITRoles
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+
+@model AssignModalModel
+
+@inject IHtmlLocalizer<GrantManagerResource> L
+@{
+    Layout = null;
+}
+<form asp-page="/TenantManagement/ITRoles/AssignModal" data-check-form-on-close="false">
+    <abp-modal centered="true" scrollable="true" size="ExtraLarge">
+        <abp-modal-header title="@L["ITRoles:AssignRole"].Value"></abp-modal-header>
+        <abp-modal-body>
+            <div class="mt-3">
+                <label class="form-label d-block">@L["ITRoles:RoleName"].Value</label>
+                <div class="form-check form-check-inline mb-3">
+                    <input type="checkbox" class="form-check-input" id="assign-role-itadmin"
+                           name="RoleInfo.RoleNames" value="@IdentityConsts.ITAdminRoleName" />
+                    <label class="form-check-label" for="assign-role-itadmin">@L["ITRoles:ITAdministrator"].Value</label>
+                </div>
+                <div class="form-check form-check-inline mb-3">
+                    <input type="checkbox" class="form-check-input" id="assign-role-itoperations"
+                           name="RoleInfo.RoleNames" value="@IdentityConsts.ITOperationsRoleName" />
+                    <label class="form-check-label" for="assign-role-itoperations">@L["ITRoles:ITOperations"].Value</label>
+                </div>
+                <abp-input id="assign-role-directory" asp-for="RoleInfo.Directory" disabled readonly="true" />
+                <abp-row>
+                    <abp-column size="_5">
+                        <abp-input id="assign-role-firstName" asp-for="RoleInfo.FirstName" />
+                    </abp-column>
+                    <abp-column size="_5">
+                        <abp-input id="assign-role-lastName" asp-for="RoleInfo.LastName" />
+                    </abp-column>
+                    <abp-column size="_2" class="d-flex align-items-center justify-content-end">
+                        <abp-button id="AssignRoleSearchButton"
+                            text="@L["Common:Command:Search"].Value"
+                            class="mt-2"
+                            icon-type="Other"
+                            icon="fl fl-search"
+                            button-type="Light" />
+                    </abp-column>
+                </abp-row>
+                <abp-input type="hidden" id="assign-role-user-id" asp-for="RoleInfo.UserIdentifier" class="mb-0" />
+            </div>
+            <abp-table id="AssignRoleUserSearchTable"></abp-table>
+        </abp-modal-body>
+        <abp-modal-footer>
+            <abp-button id="assign-role-btn" text="@L["ITRoles:AssignRole"].Value" type="submit" button-type="Primary" disabled="true"></abp-button>
+            <abp-button id="cancel-assign-role-btn" class="close" data-dismiss="modal" aria-label="Close" text="@L["Cancel"].Value" button-type="Secondary"></abp-button>
+        </abp-modal-footer>
+    </abp-modal>
+</form>

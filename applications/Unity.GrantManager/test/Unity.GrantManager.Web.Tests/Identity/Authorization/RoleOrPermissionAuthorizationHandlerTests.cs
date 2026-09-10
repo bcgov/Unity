@@ -1,3 +1,4 @@
+using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -5,6 +6,7 @@ using NSubstitute;
 using Shouldly;
 using Unity.GrantManager.Web.Identity.Authorization;
 using Volo.Abp.Authorization.Permissions;
+using Volo.Abp.Users;
 using Xunit;
 
 namespace Unity.GrantManager.Identity.Authorization;
@@ -12,12 +14,19 @@ namespace Unity.GrantManager.Identity.Authorization;
 public class RoleOrPermissionAuthorizationHandlerTests
 {
     private readonly IPermissionChecker _permissionChecker;
+    private readonly ICurrentUser _currentUser;
+    private readonly IUserClaimsRoleChecker _userClaimsRoleChecker;
     private readonly RoleOrPermissionAuthorizationHandler _handler;
 
     public RoleOrPermissionAuthorizationHandlerTests()
     {
         _permissionChecker = Substitute.For<IPermissionChecker>();
-        _handler = new RoleOrPermissionAuthorizationHandler(_permissionChecker);
+        _currentUser = Substitute.For<ICurrentUser>();
+        _userClaimsRoleChecker = Substitute.For<IUserClaimsRoleChecker>();
+        _userClaimsRoleChecker
+            .HasAnyRoleAsync(Arg.Any<Guid?>(), Arg.Any<System.Collections.Generic.IEnumerable<string>>())
+            .Returns(false);
+        _handler = new RoleOrPermissionAuthorizationHandler(_permissionChecker, _currentUser, _userClaimsRoleChecker);
     }
 
     private static AuthorizationHandlerContext CreateContext(
@@ -158,5 +167,49 @@ public class RoleOrPermissionAuthorizationHandlerTests
         context.HasSucceeded.ShouldBeTrue();
         await _permissionChecker.DidNotReceive().IsGrantedAsync(
             Arg.Any<ClaimsPrincipal>(), Arg.Any<string>());
+    }
+
+    [Fact]
+    public async Task HandleAsync_ShouldSucceed_WhenUserHasMatchingClaimInUserClaimsTable()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var user = CreateUserWithoutRole();
+        var requirement = new RoleOrPermissionRequirement(["ITAdministrator"], "Unity.ITAdmin");
+
+        _currentUser.Id.Returns(userId);
+        _userClaimsRoleChecker.HasAnyRoleAsync(userId, requirement.RoleNames).Returns(true);
+
+        var context = CreateContext(user, requirement);
+
+        // Act
+        await _handler.HandleAsync(context);
+
+        // Assert
+        context.HasSucceeded.ShouldBeTrue();
+        await _permissionChecker.DidNotReceive().IsGrantedAsync(
+            Arg.Any<ClaimsPrincipal>(), Arg.Any<string>());
+    }
+
+    [Fact]
+    public async Task HandleAsync_ShouldCheckPermission_WhenNoRoleClaimAndNoUserClaimsTableMatch()
+    {
+        // Arrange
+        var userId = Guid.NewGuid();
+        var user = CreateUserWithoutRole();
+        var requirement = new RoleOrPermissionRequirement(["ITAdministrator"], "Unity.ITAdmin");
+
+        _currentUser.Id.Returns(userId);
+        _userClaimsRoleChecker.HasAnyRoleAsync(userId, requirement.RoleNames).Returns(false);
+        _permissionChecker.IsGrantedAsync(user, "Unity.ITAdmin").Returns(false);
+
+        var context = CreateContext(user, requirement);
+
+        // Act
+        await _handler.HandleAsync(context);
+
+        // Assert
+        context.HasSucceeded.ShouldBeFalse();
+        await _permissionChecker.Received(1).IsGrantedAsync(user, "Unity.ITAdmin");
     }
 }

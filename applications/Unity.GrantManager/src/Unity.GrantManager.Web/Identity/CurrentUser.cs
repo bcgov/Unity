@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Security.Claims;
 using System.Security.Principal;
+using Unity.GrantManager.Identity;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Security.Claims;
 using Volo.Abp.Users;
