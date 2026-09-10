@@ -182,9 +182,9 @@
             <hr class="my-3" />
 
             <fieldset>
-                <legend class="visually-hidden">@L["ApplicationForms.Configuration:OtherLinks"].Value</legend>
+                <legend class="visually-hidden">@L["ApplicationForms.Configuration:RelatedLinksTitle"].Value</legend>
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="form-label mb-0" aria-hidden="true">@L["ApplicationForms.Configuration:OtherLinks"].Value</span>
+                    <span class="form-label mb-0" aria-hidden="true">@L["ApplicationForms.Configuration:RelatedLinksTitle"].Value</span>
                     <button type="button"
                             id="btn-add-related-link"
                             class="btn btn-sm unt-btn-outline-primary btn-outline-primary"
@@ -198,8 +198,7 @@
                             <tr>
                                 <th>@L["ApplicationForms.Configuration:RelatedLinkUrl"].Value</th>
                                 <th>@L["ApplicationForms.Configuration:LinkDisplayName"].Value</th>
-                                <th>@L["ApplicationForms.Configuration:LinkDescription"].Value</th>
-                                <th class="dt-head-center">@L["ApplicationForms.Configuration:ShowOtherLinksInPortal"].Value</th>
+                                <th class="dt-head-center">@L["ApplicationForms.Configuration:ShowRelatedLinksInPortal"].Value</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -230,18 +229,9 @@
                                            maxlength="255"
                                            placeholder="@L["ApplicationForms.Configuration:LinkDisplayName"].Value" />
                                 </td>
-                                <td>
-                                    <label class="visually-hidden" for="relatedLinkDescription_@i">@L["ApplicationForms.Configuration:LinkDescription"].Value</label>
-                                    <input type="text"
-                                           id="relatedLinkDescription_@i"
-                                           class="form-control related-link-description"
-                                           value="@link.Description"
-                                           maxlength="512"
-                                           placeholder="@L["ApplicationForms.Configuration:LinkDescription"].Value" />
-                                </td>
                                 <td class="text-center">
                                     <div class="form-check unt-form-switch form-switch d-inline-block">
-                                        <label class="visually-hidden" for="relatedLinkPublished_@i">@L["ApplicationForms.Configuration:ShowOtherLinksInPortal"].Value</label>
+                                        <label class="visually-hidden" for="relatedLinkPublished_@i">@L["ApplicationForms.Configuration:ShowRelatedLinksInPortal"].Value</label>
                                         <input id="relatedLinkPublished_@i"
                                                class="form-check-input related-link-published"
                                                checked="@link.Published"

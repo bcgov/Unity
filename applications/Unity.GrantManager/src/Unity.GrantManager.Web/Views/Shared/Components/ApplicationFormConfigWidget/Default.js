@@ -64,7 +64,10 @@
             info: false,
             searching: false,
             ordering: false,
-            columnDefs: [{ targets: -1, orderable: false }]
+            columnDefs: [
+                { targets: -1, orderable: false },
+                { targets: -2, width: '250px' }
+            ]
         });
     }
 
@@ -83,7 +86,6 @@
             return {
                 uri: row.querySelector('.related-link-uri').value,
                 title: row.querySelector('.related-link-title').value,
-                description: row.querySelector('.related-link-description').value,
                 published: row.querySelector('.related-link-published').checked
             };
         });
@@ -105,7 +107,7 @@
     }
 
     function createRelatedLinkRow(data) {
-        data = data || { uri: '', title: '', description: '', published: false };
+        data = data || { uri: '', title: '', published: false };
 
         const row = document.createElement('tr');
         row.className = 'related-link-row';
@@ -131,15 +133,6 @@
         titleInput.value = data.title;
         titleCol.appendChild(titleInput);
 
-        const descCol = document.createElement('td');
-        const descInput = document.createElement('input');
-        descInput.type = 'text';
-        descInput.className = 'form-control related-link-description';
-        descInput.maxLength = 512;
-        descInput.placeholder = l('ApplicationForms.Configuration:LinkDescription');
-        descInput.value = data.description;
-        descCol.appendChild(descInput);
-
         const toggleCol = document.createElement('td');
         toggleCol.className = 'text-center';
         const switchWrapper = document.createElement('div');
@@ -147,7 +140,7 @@
         const toggleInput = document.createElement('input');
         toggleInput.type = 'checkbox';
         toggleInput.className = 'form-check-input related-link-published';
-        toggleInput.setAttribute('aria-label', l('ApplicationForms.Configuration:ShowOtherLinksInPortal'));
+        toggleInput.setAttribute('aria-label', l('ApplicationForms.Configuration:ShowRelatedLinksInPortal'));
         toggleInput.style.cursor = 'pointer';
         toggleInput.checked = data.published;
         switchWrapper.appendChild(toggleInput);
@@ -166,7 +159,6 @@
 
         row.appendChild(uriCol);
         row.appendChild(titleCol);
-        row.appendChild(descCol);
         row.appendChild(toggleCol);
         row.appendChild(removeCol);
 
@@ -269,7 +261,6 @@
                     return {
                         uri: row.querySelector('.related-link-uri').value.trim(),
                         title: row.querySelector('.related-link-title').value,
-                        description: row.querySelector('.related-link-description').value,
                         published: row.querySelector('.related-link-published').checked,
                         externalLinkType: EXTERNAL_LINK_TYPE_RELATED,
                         order: index
