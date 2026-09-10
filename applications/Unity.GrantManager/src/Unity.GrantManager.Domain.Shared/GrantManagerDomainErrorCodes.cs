@@ -33,6 +33,15 @@ public static class GrantManagerDomainErrorCodes
     public const string RelatedLinkInvalidUri = "GrantManager:RelatedLinkInvalidUri";
     public const string TooManyRelatedLinks = "GrantManager:TooManyRelatedLinks";
 
+    /* APPLICANT ADDRESSES */
+    public const string AddressApplicantUnavailable = "GrantManager:AddressApplicantUnavailable";
+    public const string AddressApplicationRequired = "GrantManager:AddressApplicationRequired";
+    public const string AddressApplicationChanged = "GrantManager:AddressApplicationChanged";
+    public const string PhysicalAddressStreetRequired = "GrantManager:PhysicalAddressStreetRequired";
+    public const string MailingAddressStreetRequired = "GrantManager:MailingAddressStreetRequired";
+    public const string PhysicalAddressAlreadyExists = "GrantManager:PhysicalAddressAlreadyExists";
+    public const string MailingAddressAlreadyExists = "GrantManager:MailingAddressAlreadyExists";
+
     /* APPLICANT MERGE */
     public const string ApplicantMergeSameApplicant = "GrantManager:ApplicantMergeSameApplicant";
     public const string ApplicantMergeApplicantUnavailable = "GrantManager:ApplicantMergeApplicantUnavailable";
