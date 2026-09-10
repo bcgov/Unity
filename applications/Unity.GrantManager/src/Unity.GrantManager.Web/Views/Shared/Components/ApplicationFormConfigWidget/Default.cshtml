@@ -218,6 +218,8 @@
                                            value="@link.Uri"
                                            maxlength="2048"
                                            placeholder="https://..." />
+                                    <!-- Not user-editable in this UI; preserved so saving doesn't erase it -->
+                                    <input type="hidden" class="related-link-description" value="@link.Description" />
                                     <span class="field-error text-danger small"></span>
                                 </td>
                                 <td>

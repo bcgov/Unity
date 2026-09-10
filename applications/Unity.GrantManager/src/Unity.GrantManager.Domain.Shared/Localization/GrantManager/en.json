@@ -204,7 +204,7 @@
     "ApplicationForms.Configuration.Errors:InvalidUrl": "Please enter a valid, absolute http or https URL.",
     "ApplicationForms.Configuration.Errors:RenewalLinkRequiredForVisibility": "A valid renewal link URL is required before enabling visibility.",
     "ApplicationForms.Configuration.Errors:OtherLinkRequiredForVisibility": "A valid URL is required before enabling visibility for this link.",
-    "ApplicationForms.Configuration.Errors:MaxRelatedLinksReached": "A maximum of 8 other links is allowed.",
+    "ApplicationForms.Configuration.Errors:MaxRelatedLinksReached": "A maximum of 8 related links is allowed.",
 
     "Intakes": "Intakes",
 

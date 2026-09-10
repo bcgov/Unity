@@ -86,14 +86,17 @@
             return {
                 uri: row.querySelector('.related-link-uri').value,
                 title: row.querySelector('.related-link-title').value,
-                published: row.querySelector('.related-link-published').checked
+                published: row.querySelector('.related-link-published').checked,
+                description: row.querySelector('.related-link-description').value
             };
         });
     }
 
     function updateAddButtonState() {
         const isMaxReached = collectRelatedLinkRows().length >= MAX_RELATED_LINKS;
-        addRelatedLinkButton.disabled = isMaxReached;
+        // aria-disabled (not the disabled attribute) keeps the button focusable/hoverable so the
+        // explanatory tooltip remains discoverable; the click guard below still blocks the action.
+        addRelatedLinkButton.setAttribute('aria-disabled', String(isMaxReached));
 
         const tooltipText = isMaxReached
             ? l('ApplicationForms.Configuration.Errors:MaxRelatedLinksReached')
@@ -107,7 +110,7 @@
     }
 
     function createRelatedLinkRow(data) {
-        data = data || { uri: '', title: '', published: false };
+        data = data || { uri: '', title: '', published: false, description: '' };
 
         const row = document.createElement('tr');
         row.className = 'related-link-row';
@@ -118,10 +121,17 @@
         uriInput.className = 'form-control related-link-uri';
         uriInput.maxLength = 2048;
         uriInput.placeholder = 'https://...';
+        uriInput.setAttribute('aria-label', l('ApplicationForms.Configuration:RelatedLinkUrl'));
         uriInput.value = data.uri;
         const uriError = document.createElement('span');
         uriError.className = 'field-error text-danger small';
+        // Not user-editable in this UI; preserved so saving doesn't erase it
+        const descriptionInput = document.createElement('input');
+        descriptionInput.type = 'hidden';
+        descriptionInput.className = 'related-link-description';
+        descriptionInput.value = data.description || '';
         uriCol.appendChild(uriInput);
+        uriCol.appendChild(descriptionInput);
         uriCol.appendChild(uriError);
 
         const titleCol = document.createElement('td');
@@ -130,6 +140,7 @@
         titleInput.className = 'form-control related-link-title';
         titleInput.maxLength = 255;
         titleInput.placeholder = l('ApplicationForms.Configuration:LinkDisplayName');
+        titleInput.setAttribute('aria-label', l('ApplicationForms.Configuration:LinkDisplayName'));
         titleInput.value = data.title;
         titleCol.appendChild(titleInput);
 
@@ -151,7 +162,7 @@
         const removeButton = document.createElement('button');
         removeButton.type = 'button';
         removeButton.className = 'btn btn-sm btn-outline-danger px-0 btn-remove-related-link';
-        removeButton.setAttribute('aria-label', 'Remove Link');
+        removeButton.setAttribute('aria-label', l('ApplicationForms.Configuration:RemoveLink'));
         const removeIcon = document.createElement('i');
         removeIcon.className = 'fl fl-delete';
         removeButton.appendChild(removeIcon);
@@ -195,7 +206,7 @@
     }
 
     addRelatedLinkButton.addEventListener('click', function () {
-        if (collectRelatedLinkRows().length >= MAX_RELATED_LINKS) {
+        if (addRelatedLinkButton.getAttribute('aria-disabled') === 'true') {
             return;
         }
         mutateRelatedLinksTable(function () {
@@ -262,6 +273,7 @@
                         uri: row.querySelector('.related-link-uri').value.trim(),
                         title: row.querySelector('.related-link-title').value,
                         published: row.querySelector('.related-link-published').checked,
+                        description: row.querySelector('.related-link-description').value,
                         externalLinkType: EXTERNAL_LINK_TYPE_RELATED,
                         order: index
                     };

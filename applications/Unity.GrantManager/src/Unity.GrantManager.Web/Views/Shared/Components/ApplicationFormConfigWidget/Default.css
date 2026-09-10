@@ -76,7 +76,7 @@
     border-color: var(--lpx-danger);
 }
 
-#btn-add-related-link:disabled {
+#btn-add-related-link[aria-disabled="true"] {
     opacity: 0.6;
     cursor: not-allowed;
 }
