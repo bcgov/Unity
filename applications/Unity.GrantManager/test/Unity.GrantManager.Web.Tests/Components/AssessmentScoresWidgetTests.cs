@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc.ViewComponents;
 using NSubstitute;
 using Shouldly;
 using System;
+using System.Linq.Expressions;
+using System.Threading;
 using System.Threading.Tasks;
 using Unity.AI.Permissions;
 using Unity.Flex.Domain.ScoresheetInstances;
@@ -13,6 +15,7 @@ using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Web.Views.Shared.Components.AssessmentScoresWidget;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
 using Volo.Abp.Settings;
 using Xunit;
@@ -52,10 +55,12 @@ namespace Unity.GrantManager.Components
                 CleanGrowth = expectedCleanGrowth
             }));
 
-            applicationRepository.GetAsync(applicationId).Returns(Task.FromResult(new Application()
-            {
-                AIScoresheetAnswers = null
-            }));
+            applicationRepository.GetAsync(applicationId).Returns(Task.FromResult(new Application()));
+
+            var scoresheetAnswersRepository = Substitute.For<IRepository<ApplicationScoresheetAnswers, Guid>>();
+            scoresheetAnswersRepository
+                .FindAsync(Arg.Any<Expression<Func<ApplicationScoresheetAnswers, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult<ApplicationScoresheetAnswers?>(null));
 
             applicationFormRepository.GetAsync(Arg.Any<Guid>()).Returns(Task.FromResult(new ApplicationForm()));
             settingProvider.GetOrNullAsync(Arg.Any<string>()).Returns(Task.FromResult<string?>("false"));
@@ -80,6 +85,7 @@ namespace Unity.GrantManager.Components
                 instanceRepository,
                 applicationRepository,
                 applicationFormRepository,
+                scoresheetAnswersRepository,
                 featureChecker,
                 permissionChecker)
             {
@@ -98,6 +104,61 @@ namespace Unity.GrantManager.Components
             resultModel!.EconomicImpact.ShouldBe(expectedEconomicImpact);
             resultModel!.InclusiveGrowth.ShouldBe(expectedInclusiveGrowth);
             resultModel!.CleanGrowth.ShouldBe(expectedCleanGrowth);
+        }
+
+        [Fact]
+        public async Task Should_ReturnModel_When_StoredAiAnswersAreMalformed()
+        {
+            var assessmentId = Guid.NewGuid();
+            var applicationId = Guid.NewGuid();
+
+            var assessmentRepository = Substitute.For<IAssessmentRepository>();
+            var applicationRepository = Substitute.For<IApplicationRepository>();
+            var applicationFormRepository = Substitute.For<IApplicationFormRepository>();
+            var instanceRepository = Substitute.For<IScoresheetInstanceRepository>();
+            var featureChecker = Substitute.For<IFeatureChecker>();
+            var permissionChecker = Substitute.For<IPermissionChecker>();
+            var settingProvider = Substitute.For<ISettingProvider>();
+            var lazyServiceProvider = Substitute.For<IAbpLazyServiceProvider>();
+
+            assessmentRepository.GetAsync(assessmentId).Returns(Task.FromResult(
+                new Assessment(id: assessmentId, applicationId: applicationId, assessorId: Guid.NewGuid())));
+            applicationRepository.GetAsync(applicationId).Returns(Task.FromResult(new Application()));
+            applicationFormRepository.GetAsync(Arg.Any<Guid>()).Returns(Task.FromResult(new ApplicationForm()));
+            instanceRepository.GetByCorrelationAsync(assessmentId).Returns(Task.FromResult<ScoresheetInstance?>(null));
+            settingProvider.GetOrNullAsync(Arg.Any<string>()).Returns(Task.FromResult<string?>("false"));
+            lazyServiceProvider.LazyGetRequiredService<ISettingProvider>().Returns(settingProvider);
+
+            var scoresheetAnswersRepository = Substitute.For<IRepository<ApplicationScoresheetAnswers, Guid>>();
+            scoresheetAnswersRepository
+                .FindAsync(Arg.Any<Expression<Func<ApplicationScoresheetAnswers, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult<ApplicationScoresheetAnswers?>(
+                    new ApplicationScoresheetAnswers(Guid.NewGuid(), applicationId, "not-json")));
+
+            var viewComponent = new AssessmentScoresWidgetViewComponent(
+                assessmentRepository,
+                Substitute.For<IScoresheetRepository>(),
+                instanceRepository,
+                applicationRepository,
+                applicationFormRepository,
+                scoresheetAnswersRepository,
+                featureChecker,
+                permissionChecker)
+            {
+                ViewComponentContext = new ViewComponentContext
+                {
+                    ViewContext = new ViewContext { HttpContext = new DefaultHttpContext() }
+                },
+                LazyServiceProvider = lazyServiceProvider
+            };
+
+            var result = await viewComponent.InvokeAsync(assessmentId, Guid.NewGuid()) as ViewViewComponentResult;
+
+            var model = result!.ViewData!.Model as AssessmentScoresWidgetViewModel;
+            model.ShouldNotBeNull();
+            model.AssessmentId.ShouldBe(assessmentId);
+            await scoresheetAnswersRepository.Received(1).FindAsync(
+                Arg.Any<Expression<Func<ApplicationScoresheetAnswers, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
         }
 
         [Fact]
@@ -161,6 +222,11 @@ namespace Unity.GrantManager.Components
             var instanceRepository = Substitute.For<IScoresheetInstanceRepository>();
             instanceRepository.GetByCorrelationAsync(assessmentId).Returns(Task.FromResult<ScoresheetInstance?>(null));
 
+            var scoresheetAnswersRepository = Substitute.For<IRepository<ApplicationScoresheetAnswers, Guid>>();
+            scoresheetAnswersRepository
+                .FindAsync(Arg.Any<Expression<Func<ApplicationScoresheetAnswers, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromResult<ApplicationScoresheetAnswers?>(null));
+
             var viewComponentContext = new ViewComponentContext
             {
                 ViewContext = new ViewContext { HttpContext = new DefaultHttpContext() }
@@ -172,6 +238,7 @@ namespace Unity.GrantManager.Components
                 instanceRepository,
                 applicationRepository,
                 applicationFormRepository,
+                scoresheetAnswersRepository,
                 featureChecker,
                 permissionChecker)
             {

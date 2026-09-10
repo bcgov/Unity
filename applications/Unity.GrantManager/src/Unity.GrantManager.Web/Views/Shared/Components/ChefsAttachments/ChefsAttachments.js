@@ -525,7 +525,7 @@ function downloadChefsFile(event) {
             link.style.display = 'none';
             document.body.appendChild(link);
             link.click();
-            document.body.removeChild(link);
+            link.remove();
             abp.notify.success('', 'The file has been downloaded successfully.');
         },
         error: function (error) {

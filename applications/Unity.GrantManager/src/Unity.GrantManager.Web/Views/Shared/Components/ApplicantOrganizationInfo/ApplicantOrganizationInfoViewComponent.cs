@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Locality;
+using Unity.Modules.Shared;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
@@ -19,7 +20,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantOrganizationIn
         RefreshUrl = "Widget/ApplicantOrganizationInfo/Refresh",
         ScriptTypes = new[] { typeof(ApplicantOrganizationInfoScriptBundleContributor) },
         StyleTypes = new[] { typeof(ApplicantOrganizationInfoStyleBundleContributor) },
-        AutoInitialize = true)]
+        AutoInitialize = true,
+        RequiredPolicies = new [] { UnitySelector.ApplicantManagement.ApplicantInfo.Default })]
     public class ApplicantOrganizationInfoViewComponent : AbpViewComponent
     {
         private readonly IApplicantRepository _applicantRepository;

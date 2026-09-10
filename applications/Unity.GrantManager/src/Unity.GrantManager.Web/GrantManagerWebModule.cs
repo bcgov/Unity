@@ -482,11 +482,15 @@ public class GrantManagerWebModule : AbpModule
     {
         Configure<AbpBundlingOptions>(options =>
         {
+            options.Mode = BundlingMode.BundleAndMinify;
+            options.MinificationIgnoredFiles.Add("/js/notifications-realtime-client.js");
+            options.MinificationIgnoredFiles.Add("/Pages/UnityMessaging/Index.js");
             options
                 .StyleBundles
                 .Configure(UnityThemeUX2Bundles.Styles.Global, bundle =>
                 {
                     bundle.AddFiles("/global-styles.css");
+                    bundle.AddFiles("/css/notifications-realtime-widget.css");
                 });
 
             options.StyleBundles.Configure(
@@ -494,6 +498,13 @@ public class GrantManagerWebModule : AbpModule
                 bundle =>
                 {
                     bundle.AddContributors(typeof(NotificationsStyleBundleContributor));
+                });
+
+            options.ScriptBundles.Configure(
+                UnityThemeUX2Bundles.Scripts.Global,
+                bundle =>
+                {
+                    bundle.AddContributors(typeof(NotificationsScriptBundleContributor));
                 });
         });
     }
@@ -677,7 +688,6 @@ public class GrantManagerWebModule : AbpModule
         app.UseStaticFiles();
         app.UseMiddleware<RequestCancellationMiddleware>();
         app.UseMiddleware<ExceptionCounterMiddleware>();
-        app.UseMiddleware<TimezoneMiddleware>();
         app.UseRouting();
         app.UseHttpMetrics();
         app.UseAuthentication();
@@ -690,6 +700,7 @@ public class GrantManagerWebModule : AbpModule
         app.UseUnitOfWork();
         app.UseDynamicClaims();
         app.UseAuthorization();
+        app.UseMiddleware<TimezoneMiddleware>();
         if (IsProfilingAllowed(env, configuration))
         {
             app.UseMiniProfiler();
@@ -701,6 +712,7 @@ public class GrantManagerWebModule : AbpModule
         });
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();
+        app.UseMiddleware<OnboardingRedirectMiddleware>();
         app.UseConfiguredEndpoints(endpoints =>
         {
             endpoints.MapMetrics().RequireAuthorization(Unity.GrantManager.Web.Identity.Policy.PolicyRegistrant.MetricsAccessPolicy);

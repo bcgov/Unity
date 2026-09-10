@@ -7,6 +7,8 @@
 @{
     var code = Model.HttpStatusCode;
     var isWrongTenant = code == 409;
+    var isPossibleTenantMismatch = code == 404 && !string.IsNullOrEmpty(Model.EntityType);
+    var isApplicant = string.Equals(Model.EntityType, "Applicant", StringComparison.OrdinalIgnoreCase);
 
     string title;
     string message;
@@ -14,8 +16,8 @@
     switch (code)
     {
         case 404:
-            title = "Page Not Found";
-            message = "The page you are looking for does not exist or may have been moved.";
+            title = isPossibleTenantMismatch ? L["WrongTenantError:Title"].Value : "Page Not Found";
+            message = isPossibleTenantMismatch ? string.Empty : "The page you are looking for does not exist or may have been moved.";
             break;
         case 403:
             title = "Access Denied";
@@ -42,7 +44,15 @@
         @if (isWrongTenant)
         {
             <p class="mt-3">
-                @L["WrongTenantError:ApplicationTenant", Model.ApplicationTenantName]<br />
+                @(isApplicant ? L["WrongTenantError:ApplicantTenant", Model.ApplicationTenantName] : L["WrongTenantError:ApplicationTenant", Model.ApplicationTenantName])<br />
+                @L["WrongTenantError:CurrentTenant", Model.CurrentTenantName]
+            </p>
+            <p>@L["WrongTenantError:Instructions"]</p>
+        }
+        else if (isPossibleTenantMismatch)
+        {
+            <p class="mt-3">
+                @(isApplicant ? L["WrongTenantError:ApplicantNotFoundPossibleTenant"] : L["WrongTenantError:ApplicationNotFoundPossibleTenant"])<br />
                 @L["WrongTenantError:CurrentTenant", Model.CurrentTenantName]
             </p>
             <p>@L["WrongTenantError:Instructions"]</p>

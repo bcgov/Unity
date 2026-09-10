@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -13,6 +12,7 @@ using System.Threading.Tasks;
 using Unity.AspNetCore.Mvc.UI.Theme.UX2.Renderers;
 using Unity.GrantManager.Notifications;
 using Unity.Notifications.Emails;
+using Unity.Notifications.EmailAddresses;
 using Unity.Notifications.Permissions;
 using Unity.Notifications.Settings;
 using Volo.Abp;
@@ -33,8 +33,8 @@ public class EmailNotificationService(
         ISettingManager settingManager,
         IFeatureChecker featureChecker,
         IConfiguration configuration,
-        IWebHostEnvironment webHostEnvironment,
-        IMarkdownRenderer markdownRenderer) : ApplicationService, IEmailNotificationService
+        IMarkdownRenderer markdownRenderer,
+        IEmailAddressConfigurationsRepository emailAddressConfigurationsRepository) : ApplicationService, IEmailNotificationService
 {
 
     public async Task<Guid> InitializeDraftAsync(Guid applicationId)
@@ -104,7 +104,6 @@ public class EmailNotificationService(
         {
             if (await featureChecker.IsEnabledAsync("Unity.Notifications"))
             {
-                var defaultFromAddress = await SettingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
                 var baseUrl = await GetBaseUrlAsync();
 
                 string commentLink = input.CommentType switch
@@ -125,7 +124,9 @@ public class EmailNotificationService(
                 };
 
                 var subject = $"Unity-Comment: {input.Subject}";
-                var fromEmail = defaultFromAddress ?? "NoReply@gov.bc.ca";
+                var senderAddresses = await emailAddressConfigurationsRepository.GetListAsync(address =>
+                    address.EmailType == "Sender" && address.IsActive && address.IsDefault);
+                var fromEmail = senderAddresses.FirstOrDefault()?.EmailAddress ?? "NoReply@gov.bc.ca";
 
                 var hasSurname = !string.IsNullOrWhiteSpace(CurrentUser.SurName);
                 var hasName = !string.IsNullOrWhiteSpace(CurrentUser.Name);
@@ -244,7 +245,6 @@ public class EmailNotificationService(
     [Authorize(NotificationsPermissions.Settings)]
     public async Task UpdateSettings(NotificationsSettingsDto settingsDto)
     {
-        await UpdateTenantSettings(NotificationsSettings.Mailing.DefaultFromAddress, settingsDto.DefaultFromAddress);
         await UpdateTenantSettings(NotificationsSettings.Mailing.EmailMaxRetryAttempts, settingsDto.MaximumRetryAttempts);
         await settingManager.SetForCurrentTenantAsync(NotificationsSettings.Mailing.EnableEmailDelay, settingsDto.EnableEmailDelay ? "true" : "false");
     }
@@ -284,7 +284,8 @@ public class EmailNotificationService(
     }
 
     /// <summary>
-    /// Loads an email template from the Views/EmailTemplates directory.
+    /// Loads an email template from the Application assembly's embedded resources.
+    /// The resource name follows the format Unity.Notifications.EmailTemplates.{templateName}.cshtml.
     /// </summary>
     /// <param name="templateName">Template name without extension (e.g., "CommentNotification")</param>
     /// <returns>Template content as a string</returns>
@@ -292,32 +293,17 @@ public class EmailNotificationService(
     {
         try
         {
-            // Content root is at: .../Unity.GrantManager/src/Unity.GrantManager.Web
-            // We need to go up 2 levels to reach Unity.GrantManager, then into modules
-            var contentRoot = webHostEnvironment.ContentRootPath;
-            
-            var templatePath = Path.Combine(
-                contentRoot,
-                "..",
-                "..",
-                "modules",
-                "Unity.Notifications",
-                "src",
-                "Unity.Notifications.Web",
-                "Views",
-                "EmailTemplates",
-                $"{templateName}.cshtml");
+            var assembly = typeof(EmailNotificationService).Assembly;
+            var resourceName = $"Unity.Notifications.EmailTemplates.{templateName}.cshtml";
+            await using var templateStream = assembly.GetManifestResourceStream(resourceName);
 
-            // Normalize the path to remove .. references
-            templatePath = Path.GetFullPath(templatePath);
-
-            if (!File.Exists(templatePath))
+            if (templateStream == null)
             {
-                throw new FileNotFoundException($"Email template not found at: {templatePath}");
+                throw new FileNotFoundException($"Embedded email template not found: {resourceName}");
             }
 
-            var content = await File.ReadAllTextAsync(templatePath);
-            return content;
+            using var reader = new StreamReader(templateStream);
+            return await reader.ReadToEndAsync();
         }
         catch (Exception ex)
         {

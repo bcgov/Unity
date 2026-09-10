@@ -1,6 +1,7 @@
 ﻿using Polly;
 using Polly.Retry;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -114,10 +115,11 @@ namespace Unity.Modules.Shared.Http
             string? authToken = null,
             (string username, string password)? basicAuth = null,
             HttpCompletionOption completionOption = HttpCompletionOption.ResponseContentRead,
+            IReadOnlyDictionary<string, string>? extraHeaders = null,
             CancellationToken cancellationToken = default)
         {
             return await SendWithClientAsync(
-                _httpClient, httpVerb, resource, body, authToken, basicAuth, completionOption, cancellationToken);
+                _httpClient, httpVerb, resource, body, authToken, basicAuth, completionOption, extraHeaders, cancellationToken);
         }
 
 
@@ -138,7 +140,7 @@ namespace Unity.Modules.Shared.Http
             EnsureMutualTlsClient(certPath, certPassword);
 
             return SendWithClientAsync(
-                _mtlsClient!, httpVerb, resource, body, authToken, basicAuth, HttpCompletionOption.ResponseContentRead, cancellationToken);
+                _mtlsClient!, httpVerb, resource, body, authToken, basicAuth, HttpCompletionOption.ResponseContentRead, null, cancellationToken);
         }
 
 
@@ -193,6 +195,7 @@ namespace Unity.Modules.Shared.Http
             string? authToken,
             (string username, string password)? basicAuth,
             HttpCompletionOption completionOption,
+            IReadOnlyDictionary<string, string>? extraHeaders,
             CancellationToken cancellationToken)
         {
             // Build final URL
@@ -208,7 +211,7 @@ namespace Unity.Modules.Shared.Http
             return await _pipeline.ExecuteAsync(async ct =>
             {
                 using var requestMessage =
-                    BuildRequestMessage(httpVerb, fullUrl, body, authToken, basicAuth);
+                    BuildRequestMessage(httpVerb, fullUrl, body, authToken, basicAuth, extraHeaders);
 
                 return await client.SendAsync(requestMessage, completionOption, ct)
                                    .ConfigureAwait(false);
@@ -226,7 +229,8 @@ namespace Unity.Modules.Shared.Http
             Uri fullUrl,
             object? body,
             string? authToken,
-            (string username, string password)? basicAuth)
+            (string username, string password)? basicAuth,
+            IReadOnlyDictionary<string, string>? extraHeaders = null)
         {
             var requestMessage = new HttpRequestMessage(httpVerb, fullUrl);
             requestMessage.Headers.Accept.Clear();
@@ -246,6 +250,16 @@ namespace Unity.Modules.Shared.Http
 
                 requestMessage.Headers.Remove(AuthorizationHeader);
                 requestMessage.Headers.Add(AuthorizationHeader, $"Basic {encoded}");
+            }
+
+            // Additional headers (e.g. API keys) not covered by the auth-token/basic-auth cases above
+            if (extraHeaders != null)
+            {
+                foreach (var header in extraHeaders)
+                {
+                    requestMessage.Headers.Remove(header.Key);
+                    requestMessage.Headers.Add(header.Key, header.Value);
+                }
             }
 
             // Body

@@ -298,10 +298,15 @@ $(function () {
 });
 
 function calculatePercentage() {
+    const percentageElement = document.getElementById("ProjectInfo_PercentageTotalProjectBudget");
+    // The Project Summary zone can be hidden, in which case these fields are not rendered.
+    if (!percentageElement) {
+        return;
+    }
     const requestedAmount = Number.parseFloat(document.getElementById("RequestedAmountInputPI")?.value.replaceAll(',', ''));
     const totalProjectBudget = Number.parseFloat(document.getElementById("TotalBudgetInputPI")?.value.replaceAll(',', ''));
     if (Number.isNaN(requestedAmount) || Number.isNaN(totalProjectBudget) || totalProjectBudget == 0) {
-        document.getElementById("ProjectInfo_PercentageTotalProjectBudget").value = 0;
+        percentageElement.value = 0;
         return;
     }
     const percentage = ((requestedAmount / totalProjectBudget) * 100.00).toFixed(2);

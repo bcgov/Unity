@@ -16,4 +16,5 @@ jobs:
     with:
       env_name: prod
       cypress_config_key: CYPRESS_CONFIG_PROD
+      git_ref: ${{ github.event.workflow_run.head_sha || github.sha }}
     secrets: inherit

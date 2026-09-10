@@ -31,4 +31,5 @@ jobs:
       env_name: dev
       cypress_config_key: CYPRESS_CONFIG_DEV
       base_url: ${{ inputs.base_url || '' }}
+      git_ref: ${{ github.event.workflow_run.head_sha || github.sha }}
     secrets: inherit

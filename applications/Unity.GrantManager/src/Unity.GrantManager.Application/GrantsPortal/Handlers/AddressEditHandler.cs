@@ -5,7 +5,6 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantsPortal.Messages;
 using Unity.GrantManager.GrantsPortal.Messages.Commands;
-using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Uow;
 
@@ -13,6 +12,7 @@ namespace Unity.GrantManager.GrantsPortal.Handlers;
 
 public class AddressEditHandler(
     IApplicantAddressRepository applicantAddressRepository,
+    IApplicantAddressManager applicantAddressManager,
     ILogger<AddressEditHandler> logger) : IPortalCommandHandler, ITransientDependency
 {
     public string DataType => "ADDRESS_EDIT_COMMAND";
@@ -28,6 +28,9 @@ public class AddressEditHandler(
 
         var address = await applicantAddressRepository.GetAsync(addressId);
 
+        var previousAddressType = address.AddressType;
+        var wasPrimary = address.IsFlaggedPrimary();
+
         address.Street = innerData.Street;
         address.Street2 = innerData.Street2;
         address.Unit = innerData.Unit;
@@ -35,14 +38,19 @@ public class AddressEditHandler(
         address.Province = innerData.Province;
         address.Postal = innerData.PostalCode;
         address.Country = innerData.Country;
-        address.AddressType = MapAddressType(innerData.AddressType);
+        address.AddressType = AddressTypeMapper.FromPortalValue(innerData.AddressType);
+        address.SetPrimaryFlag(innerData.IsPrimary);
 
-        if (innerData.IsPrimary && address.ApplicantId.HasValue)
+        if (address.ApplicantId.HasValue)
         {
-            await DemoteSiblingPrimaryAddressesAsync(address.ApplicantId.Value, addressId);
+            await ApplyPrimaryScopeAsync(
+                address.ApplicantId.Value,
+                addressId,
+                previousAddressType,
+                address.AddressType,
+                wasPrimary,
+                innerData.IsPrimary);
         }
-
-        address.SetProperty(AddressExtraPropertyNames.IsPrimary, innerData.IsPrimary);
 
         await applicantAddressRepository.UpdateAsync(address);
 
@@ -50,30 +58,26 @@ public class AddressEditHandler(
         return "Address updated successfully";
     }
 
-    private async Task DemoteSiblingPrimaryAddressesAsync(Guid applicantId, Guid excludeAddressId)
+    /// <summary>
+    /// Keeps the "at most one primary per address type" invariant intact after an edit.
+    /// An address that moves to another type contests its new group and vacates the old one.
+    /// </summary>
+    private async Task ApplyPrimaryScopeAsync(
+        Guid applicantId,
+        Guid addressId,
+        AddressType previousAddressType,
+        AddressType currentAddressType,
+        bool wasPrimary,
+        bool isPrimary)
     {
-        var siblingAddresses = await applicantAddressRepository.FindByApplicantIdAsync(applicantId);
-
-        foreach (var sibling in siblingAddresses)
+        if (isPrimary)
         {
-            if (sibling.Id == excludeAddressId) continue;
-            if (!sibling.HasProperty(AddressExtraPropertyNames.IsPrimary)) continue;
-            if (!sibling.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary)) continue;
-
-            var trackedSibling = await applicantAddressRepository.GetAsync(sibling.Id);
-            trackedSibling.SetProperty(AddressExtraPropertyNames.IsPrimary, false);
-            await applicantAddressRepository.UpdateAsync(trackedSibling);
+            await applicantAddressManager.DemotePrimarySiblingsAsync(applicantId, currentAddressType, addressId);
         }
-    }
 
-    private static AddressType MapAddressType(string? portalAddressType)
-    {
-        return portalAddressType?.ToUpperInvariant() switch
+        if (wasPrimary && previousAddressType != currentAddressType)
         {
-            "MAILING" => AddressType.MailingAddress,
-            "PHYSICAL" => AddressType.PhysicalAddress,
-            "BUSINESS" => AddressType.BusinessAddress,
-            _ => AddressType.PhysicalAddress
-        };
+            await applicantAddressManager.ElectPrimaryAsync(applicantId, previousAddressType, addressId);
+        }
     }
 }

@@ -1,6 +1,8 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Unity.Modules.Shared.Permissions;
 using Unity.Notifications.Localization;
+using Unity.Notifications.Features;
 using Unity.Notifications.Permissions;
 using Volo.Abp.Features;
 using Volo.Abp.UI.Navigation;
@@ -13,13 +15,14 @@ public class NotificationsMenuContributor : IMenuContributor
     {
         var featureChecker = context.ServiceProvider.GetRequiredService<IFeatureChecker>();
 
-        if (await featureChecker.IsEnabledAsync("Unity.Notifications") && context.Menu.Name == StandardMenus.Main)
+        if (await featureChecker.IsEnabledAsync("Unity.Notifications")
+            && context.Menu.Name == StandardMenus.Main)
         {
-            ConfigureMainMenu(context);
+            await ConfigureMainMenuAsync(context, featureChecker);
         }
     }
 
-    private static void ConfigureMainMenu(MenuConfigurationContext context)
+    private static async Task ConfigureMainMenuAsync(MenuConfigurationContext context, IFeatureChecker featureChecker)
     {
         var l = context.GetLocalizer<NotificationsResource>();
 
@@ -33,5 +36,30 @@ public class NotificationsMenuContributor : IMenuContributor
                 requiredPermissionName: NotificationsPermissions.NotificationList.View
             )
         );
+
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                NotificationsMenus.NotificationLogs,
+                l["Menu:NotificationLogs"],
+                "~/NotificationLogs",
+                icon: "fl fl-table",
+                order: 10,
+                requiredPermissionName: IdentityConsts.ITOperationsPermissionName
+            )
+        );
+
+        if (await featureChecker.IsEnabledAsync(NotificationsFeatureConsts.DirectMessaging))
+        {
+            context.Menu.AddItem(
+                new ApplicationMenuItem(
+                    NotificationsMenus.UnityMessaging,
+                    l["Menu:RealtimeOps"],
+                    "~/UnityMessaging",
+                    icon: "fl fl-users",
+                    order: 11,
+                    requiredPermissionName: IdentityConsts.ITOperationsPermissionName
+                )
+            );
+        }
     }
 }

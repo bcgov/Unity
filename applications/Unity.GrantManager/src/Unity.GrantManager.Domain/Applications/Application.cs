@@ -146,9 +146,6 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public bool EligibleForRenewal { get; set; }
 
-    [Column(TypeName = "jsonb")]
-    public string? AIScoresheetAnswers { get; set; }
-
     public bool IsInFinalDecisionState()
     {
         return GrantApplicationStateGroups.FinalDecisionStates.Contains(ApplicationStatus.StatusCode);
@@ -196,6 +193,11 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
         DueDiligenceStatus = dueDiligenceStatus;
         RecommendedAmount = recommendedAmount ?? 0;
         DeclineRational = declineRational;
+    }
+
+    public void UpdateEligibleForRenewal(bool eligibleForRenewal)
+    {
+        EligibleForRenewal = eligibleForRenewal;
     }
 
     /// <summary>

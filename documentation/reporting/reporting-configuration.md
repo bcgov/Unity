@@ -1,4 +1,6 @@
-# Reporting Configuration
+# Reporting Configuration (Explicit Path)
+
+> This is the **current, go-forward** way reporting views are created in Unity Portal. It is one of [two view-generation paths](README.md); the other — auto-generated "dynamic" views created on publish — is deprecated and documented in [reporting-auto-generated-views.md](reporting-auto-generated-views.md).
 
 ## Overview
 
@@ -35,6 +37,79 @@ Each provider implements `IFieldsProvider`:
 - **`WorksheetFieldsProvider`** — Retrieves field metadata from Unity.Flex worksheet definitions linked to a specific form version. Stamps duplicate DataPaths within a version with `(DK1)`, `(DK2)`, etc. to ensure uniqueness before returning. Change detection tracks worksheet link additions/removals.
 - **`ConsolidatedWorksheetFieldsProvider`** — Retrieves and merges worksheet field metadata across **all versions** of a form (CorrelationId = Form ID). Applies the same DataPath uniqueification per version before merging. Change detection tracks added/removed form versions and worksheets within versions.
 - **`ScoresheetFieldsProvider`** — Retrieves field metadata from the Unity.Flex scoresheet linked to a form via `IApplicationFormAppService`. CorrelationId is the Form ID. Change detection compares the stored scoresheet ID against the form's current scoresheet.
+
+### Module layout
+
+```
+applications/Unity.GrantManager/modules/Unity.Reporting/src/
+├── Unity.Reporting.Domain.Shared/         Providers, ViewStatus, RoleStatus, ReportingSettings, localization
+├── Unity.Reporting.Application.Contracts/ DTOs, IReportMappingService, ITenantViewRoleAppService, ReportingPermissions
+├── Unity.Reporting.Application/           ReportMappingService, ReportMappingUtils, TenantViewRoleAppService,
+│                                          FieldsProviders/ (5), BackgroundJobs/ (2),
+│                                          Domain/Configuration/ReportColumnsMap, EntityFrameworkCore/
+└── Unity.Reporting.Web/                   ReportingConfiguration + ReportingConfigurationViewStatus view components,
+                                           DatabaseInfoModal
+```
+
+The `ReportColumnsMaps` table lives in the `Reporting` schema and is owned by `ReportingDbContext` (`ReportingDbProperties`), mapped tenant-side. `ReportColumnsMap` is an `AuditedEntity<Guid>` implementing `IMultiTenant`, with `Mapping` stored as `jsonb`.
+
+---
+
+## Where it lives in the UI
+
+The configuration screen is a view component, not a page of its own. It is rendered as the **Reporting Configuration** tab of the form configuration screen — `Unity.GrantManager.Web/Pages/ApplicationForms/Mapping.cshtml` — via `@await Component.InvokeAsync("ReportingConfiguration", new { formid = ... })`.
+
+The tab is shown only when **both**:
+
+- the `Unity.Reporting` feature is enabled for the tenant, and
+- the current user has `Reporting.Configuration` (`ReportingPermissions.Configuration.Default`).
+
+### Provider selection
+
+`ReportingConfigurationViewComponent` defaults to **`formversion_consolidated`** when no provider is passed. The toolbar exposes a three-way toggle plus a mode sub-toggle:
+
+| Toggle | Sub-toggle | Resulting provider | CorrelationId used |
+| --- | --- | --- | --- |
+| Submissions | Consolidated *(default)* | `formversion_consolidated` | Form ID |
+| Submissions | Per Version | `formversion` | Selected form version ID |
+| Worksheets | Consolidated | `worksheet_consolidated` | Form ID |
+| Worksheets | Per Version | `worksheet` | Selected form version ID |
+| Scoresheets | — | `scoresheet` | Form ID |
+
+The form-version dropdown is visible only for the `formversion` provider (`IsVersionSelectorVisible`); for that provider the first available version is selected when none is supplied.
+
+### Administrator actions
+
+| Action | Behaviour |
+| --- | --- |
+| **Save** | Creates or updates the mapping (`Create` / `Update`). Requires `Reporting.Configuration.Update`. |
+| **Generate View** | Opens a modal that validates the view name for availability and PostgreSQL compliance, then queues generation. Visible only once a configuration is saved. |
+| **Delete** | Opens a confirmation modal listing what will be removed (the configuration, and the database view if one exists). Requires `Reporting.Configuration.Delete`. |
+| **Undo** | Reverts unsaved edits in the table back to the last loaded state. |
+| **Generate unique column names** | Re-runs the sanitisation/uniquing pipeline across all rows. |
+| **Export / Import / Edit JSON** | Export downloads the current mapping as `column-mapping-{provider}-{correlationId}.json`; Import validates each entry has `propertyName` and `columnName` before applying; Edit opens the mapping in an inline JSON editor. All three operate on the in-memory table — nothing is persisted until Save. |
+| **Edit description** | Sets `Mapping.Metadata.Description` (max 500 characters). |
+
+Two inline warnings can appear above the table: a **duplicate keys** warning (the source schema produced `(DK1)`-prefixed paths, or two rows share a path) and a **dynamic columns** warning (a row with key `dynamic_columns`, meaning a data grid whose columns are populated from CHEFS at runtime).
+
+A separate `ReportingConfigurationViewStatus` view component polls and displays the current `ViewName` / `ViewStatus`.
+
+### HTTP endpoints
+
+`ReportingConfigurationController` is routed at `/ReportingConfiguration` and serves the tab's AJAX calls:
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| GET | `Refresh` | Re-render the component for a different provider/version |
+| GET | `GetConfiguration` | Load a saved mapping (with `DetectedChanges`) |
+| GET | `Exists` | Whether a mapping exists for the correlation |
+| GET | `GetFieldsMetadata` | Live field list from the provider |
+| POST | `Create` / `Update` | Persist the mapping |
+| GET | `IsViewNameAvailable` | Name availability (global or correlation-aware) |
+| POST | `GenerateView` | Queue view generation |
+| POST | `GenerateColumnNames` | Sanitised/unique column names for a key→label map |
+| GET | `GetViewPreviewData` | Sample rows from the generated view |
+| DELETE | `Delete` | Remove the mapping and drop its view |
 
 ---
 
@@ -150,7 +225,7 @@ The component type from Forms.io or Unity.Flex that determines how the raw data 
 | `textfield` / `textarea` | Free-text input — extracted as TEXT |
 | `number` | Numeric input — extracted as NUMERIC |
 | `currency` | Currency input — extracted as DECIMAL(18,2), locale commas stripped |
-| `datetime` | Date/time input — extracted as TIMESTAMP |
+| `datetime` | Date/time input — extracted as TIMESTAMP by the worksheet providers only; the submission and scoresheet providers have no date branch and extract it as TEXT |
 | `radio` | Single-select radio group — extracted as TEXT (the selected value) |
 | `simplecheckboxes` | Multi-select checkbox group — each option becomes a separate row with type `option` |
 | `checkbox` | Single boolean checkbox — extracted as BOOLEAN |
@@ -236,6 +311,49 @@ After saving a configuration, users can generate a PostgreSQL database view:
 8. View status is polled and displayed to the administrator via a widget
 
 View names follow similar sanitization rules with a 63-character maximum (PostgreSQL identifier limit).
+
+### Provider → stored procedure routing
+
+`ReportColumnsMapRepository.GenerateViewAsync` dispatches on the correlation provider; an unrecognised provider throws `ArgumentException`.
+
+| Provider | Procedure | `SELECT` built by |
+| --- | --- | --- |
+| `formversion` | `Reporting.generate_formversion_view(uuid)` | `Reporting.get_formversion_data(correlation_id, report_map_id)` |
+| `formversion_consolidated` | `Reporting.generate_consolidated_formversion_view(uuid)` | `Reporting.get_consolidated_formversion_data(...)` |
+| `worksheet` | `Reporting.generate_worksheet_view(uuid)` | `Reporting.get_worksheet_data(...)` |
+| `worksheet_consolidated` | `Reporting.generate_consolidated_worksheet_view(uuid)` | `Reporting.get_consolidated_worksheet_data(...)` |
+| `scoresheet` | `Reporting.generate_scoresheet_view(uuid)` | `Reporting.get_scoresheet_data(...)` |
+
+Each procedure reads its mapping row out of `Reporting."ReportColumnsMaps"`, raises an exception if the mapping or its `Rows` array is missing, asks the matching `get_*_data` function for a complete `SELECT` statement, then `DROP VIEW IF EXISTS "Reporting".{name}` followed by `CREATE VIEW "Reporting".{name} AS {statement}`.
+
+**Where the values come from at query time** — the generated views read source data directly; they do not read any pre-flattened snapshot:
+
+| Provider | Source |
+| --- | --- |
+| `formversion`, `formversion_consolidated` | `public."ApplicationFormSubmissions"."Submission"` (raw CHEFS JSON, handling both the legacy and current `submission->submission` shapes) |
+| `worksheet`, `worksheet_consolidated` | `Flex."WorksheetInstances"."CurrentValue"` joined to `Flex."Worksheets"` |
+| `scoresheet` | `Flex."ScoresheetInstances"` → `Assessments` → `Applications`, values from `Flex."Answers"` / `Flex."Questions"`, plus `total_score` from `Reporting.calculate_scoresheet_total_score(instance_id)` |
+
+**Typing is not uniform across providers.** Only the two worksheet functions use the `Reporting.safe_to_date` / `safe_to_timestamp` / `safe_to_jsonb` helpers, and only they emit `TIMESTAMP` columns:
+
+| | Worksheet (`worksheet`, `worksheet_consolidated`) | Submissions (`formversion`, `formversion_consolidated`) | `scoresheet` |
+| --- | --- | --- | --- |
+| Typed columns | `TEXT`, `NUMERIC`, `DECIMAL(18,2)`, `TIMESTAMP`, `BOOLEAN` | `TEXT`, `NUMERIC`, `DECIMAL(18,2)`, `BOOLEAN` | `TEXT`, `NUMERIC`, `BOOLEAN` |
+| Date/time handling | `safe_to_date` / `safe_to_timestamp` | none — dates land as `TEXT` | none — dates land as `TEXT` |
+| `safe_to_jsonb` guard | yes (checkbox groups) | no | no |
+| Type-conflict fallback | n/a | `formversion` only: whole column falls back to `TEXT` | yes, falls back to `TEXT` |
+
+Where the helpers are used, a malformed value yields `NULL` rather than failing the whole view. Per-type SQL is documented in the five `get_*_data_specification.md` files.
+
+### Role Assignment
+
+Generated views are useless to Metabase until a database role can read them. Role assignment is per tenant and is stored as the ABP setting `GrantManager.Reporting.TenantViewRole` at the tenant (`"T"`) scope. The host-level `GrantManager.Reporting.ViewRole` setting is deprecated and retained only for backward compatibility.
+
+- `AssignViewRoleBackgroundJob` runs in the tenant context, reads the setting, verifies the role exists in `pg_roles`, then grants `SELECT` — on one view when `ViewName` is supplied (the automatic queue after a successful generation), or on **every** view in the `Reporting` schema when it is not.
+- `TenantViewRoleAppService` (`[Authorize(IdentityConsts.ITAdminPermissionName)]`) reads, updates, and manually re-runs assignment. When no role has been saved it infers one: `{LicencePlate}_readonly` from the tenant's `LicencePlate` extra property, falling back to `{tenantname}_readonly`. `UpdateAsync` and `AssignRoleToViewsAsync` both fail fast with a `UserFriendlyException` if the role does not exist in the tenant's database — the background job alone would only log a warning and silently no-op.
+- `GetTenantDatabaseInfoAsync` backs the **View DB Info** modal (`DatabaseInfoModal`), listing the tenant's database roles, role memberships, and all views currently in the `Reporting` schema.
+
+> **Interaction with the deprecated Auto path:** `AssignRoleToAllViewsAsync` validates every view name it reads back from `pg_views` against `^[a-zA-Z_][a-zA-Z0-9_]*$` before interpolating it into the `GRANT`. Auto-generated view names (`Form-…`, `Worksheet-…`, `Scoresheet-…`) contain hyphens and fail that check, so the grant loop throws part-way through on any database that still holds them. See [reporting-auto-generated-views.md](reporting-auto-generated-views.md#known-rough-edges).
 
 ### View Name Availability
 

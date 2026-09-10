@@ -24,6 +24,10 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+!applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Application/Logs/
+!applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Application.Contracts/Logs/
+!applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Domain/Logs/
+!applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Domain.Shared/Logs/
 
 # Visual Studio cache/options directory
 .vs/

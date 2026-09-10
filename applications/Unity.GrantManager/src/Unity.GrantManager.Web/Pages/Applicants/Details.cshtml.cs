@@ -4,13 +4,13 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.Permissions;
+using Unity.Modules.Shared;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.Users;
 
 namespace Unity.GrantManager.Web.Pages.Applicants
 {
-    [Authorize(GrantApplicationPermissions.Applicants.ViewList)]
+    [Authorize(UnitySelector.ApplicantManagement.Applicant.Default)]
     public class DetailsModel : GrantManagerPageModel
     {
         private readonly IApplicantRepository _applicantRepository;
@@ -60,6 +60,7 @@ namespace Unity.GrantManager.Web.Pages.Applicants
                 return RedirectToPage("/Error", new
                 {
                     httpStatusCode = 409,
+                    entityType = "Applicant",
                     applicationTenantName = applicationTenant?.Name ?? TenantId.Value.ToString(),
                     currentTenantName = CurrentTenant.Name ?? "Host"
                 });
@@ -75,7 +76,12 @@ namespace Unity.GrantManager.Web.Pages.Applicants
                 }
                 catch (Exception)
                 {
-                    return NotFound();
+                    return RedirectToPage("/Error", new
+                    {
+                        httpStatusCode = 404,
+                        entityType = "Applicant",
+                        currentTenantName = CurrentTenant.Name ?? "Host"
+                    });
                 }
             }
 
@@ -105,7 +111,12 @@ namespace Unity.GrantManager.Web.Pages.Applicants
             }
             catch (Exception)
             {
-                return NotFound();
+                return RedirectToPage("/Error", new
+                {
+                    httpStatusCode = 404,
+                    entityType = "Applicant",
+                    currentTenantName = CurrentTenant.Name ?? "Host"
+                });
             }
         }
     }

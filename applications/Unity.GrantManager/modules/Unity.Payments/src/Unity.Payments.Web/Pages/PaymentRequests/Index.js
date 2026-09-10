@@ -778,7 +778,7 @@ $(function () {
 
                 const safeApplicantName = $.fn.dataTable.render.text().display(applicantName);
 
-                if (type === 'display' && abp.auth.isGranted('GrantApplicationManagement.Applicants.ViewList')) {
+                if (type === 'display' && abp.auth.isGranted('Unity.GrantManager.ApplicantManagement.Applicant')) {
                     const applicantId = row?.applicantId;
                     const isGuid = applicantId && guidPattern.test(applicantId);
 
@@ -1042,7 +1042,7 @@ $(function () {
     }
 
     function formatName(userData) {
-        return typeof userData !== 'undefined' && userData !== null ? `${userData?.name} ${userData?.surname}` : "";
+        return userData !== undefined && userData !== null ? `${userData?.name} ${userData?.surname}` : "";
     }
 
     function getApprovalDateColumn(columnIndex, level) {

@@ -14,14 +14,14 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
 
         [HttpGet]
         [Route("RefreshEmails")]
-        public IActionResult Emails(Guid ownerId, Guid currentUserId)
-        { 
+        public IActionResult Emails(Guid applicationId, Guid currentUserId)
+        {
             if (!ModelState.IsValid)
             {
                 logger.LogWarning("Invalid model state for EmailsWidgetController: RefreshEmails");
                 return ViewComponent("EmailsWidget");
             }
-            return ViewComponent("EmailsWidget", new { ownerId, currentUserId });
+            return ViewComponent("EmailsWidget", new { applicationId, currentUserId });
         }
     }
 }

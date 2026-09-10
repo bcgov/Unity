@@ -1,0 +1,164 @@
+@page
+@model Unity.GrantManager.Web.Pages.BulkEmailNotifications.SendEmailNotificationModalModel
+@using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Localization
+
+@inject IStringLocalizer<GrantManagerResource> L
+
+@{
+    Layout = null;
+}
+
+<abp-modal id="sendEmailNotificationModal" size="ExtraLarge">
+    <abp-modal-header class="batch-approval-modal-header" title="@L["SendEmailNotificationRequest:Title"].Value"></abp-modal-header>
+    <abp-modal-body>
+        @if (ViewData["Error"] != null)
+        {
+            <div class="alert alert-warning" role="alert">
+                <i class="fa-solid fa-triangle-exclamation"></i> @ViewData["Error"]
+            </div>
+        }
+        else
+        {
+            <div class="bulk-email-modal-body">
+                <div class="bulk-email-list-panel" id="bulkEmailListPanel">
+                    @* This form wraps only the left panel — deliberately not the whole modal. The right panel
+                       injects EmailsWidget dynamically, which renders its own <form id="EmailForm">; nesting
+                       that inside this form would be invalid HTML with unreliable browser parsing behavior.
+                       The bottom Send button lives in the modal footer, outside this form, and submits it via
+                       the form="bulkEmailNotificationForm" attribute instead of DOM nesting. *@
+                    <form method="post" asp-page-handler="OnPostAsync" id="bulkEmailNotificationForm">
+                        <abp-input id="ApplicationsCount" type="hidden" asp-for="@Model.ApplicationsCount" />
+                        <abp-input id="MaxBatchCount" type="hidden" asp-for="@Model.MaxBatchCount" />
+
+                        <abp-card class="batch-approval-card">
+                            <abp-card-body>
+                                @for (var i = 0; i < Model.BulkEmailNotifications?.Count; i++)
+                                {
+                                    <div id="@($"{Model.BulkEmailNotifications[i].ApplicationId}_container")"
+                                         class="batch-approval-container bulk-email-row"
+                                         tabindex="0"
+                                         role="button"
+                                         aria-label="Select application @Model.BulkEmailNotifications[i].ReferenceNo"
+                                         data-application-id="@Model.BulkEmailNotifications[i].ApplicationId"
+                                         onclick='selectApplicationRow("@Model.BulkEmailNotifications[i].ApplicationId", event)'
+                                         onkeydown='if(event.key === "Enter" || event.key === " ") { selectApplicationRow("@Model.BulkEmailNotifications[i].ApplicationId", event); event.preventDefault(); }'>
+                                        <abp-row class="m-0 p-2 bulk-approval-row-header d-flex flex-nowrap">
+                                            <abp-column size="_9" class="px-1 flex-grow-1">
+                                                <div class="approval-details-header">
+                                                    <div class="reference-no">@Model.BulkEmailNotifications[i].ReferenceNo</div>
+                                                    <div class="applicant-name">@Model.BulkEmailNotifications[i].ApplicantName</div>
+                                                    <div class="form-name pr-1">@string.Format("({0})", @Model.BulkEmailNotifications[i].FormName)</div>
+                                                    <div class="application-status">@Model.BulkEmailNotifications[i].ApplicationStatus</div>
+                                                </div>
+                                            </abp-column>
+                                            <abp-column size="_3" class="bulk-approval-remove-row d-flex justify-content-end col-3 gap-1 align-items-center">
+                                                <abp-button onclick='event.stopPropagation(); removeApplicationEmail("@Model.BulkEmailNotifications[i].ApplicationId" + "_container")'
+                                                            onkeydown='event.stopPropagation(); if(event.key === "Enter" || event.key === " ") { removeApplicationEmail("@Model.BulkEmailNotifications[i].ApplicationId" + "_container"); event.preventDefault(); }'
+                                                            size="Small"
+                                                            icon-type="Other"
+                                                            icon="fa-solid fa-xmark"
+                                                            class="m-0 p-0"
+                                                            data-parameter="@Model.BulkEmailNotifications[i].ApplicationId" />
+                                            </abp-column>
+                                        </abp-row>
+
+                                        <input name="BulkEmailNotifications.Index" type="hidden" value="@i" />
+                                        <abp-input type="hidden" asp-for="@Model.BulkEmailNotifications[i].IsValid" />
+                                        <abp-input type="hidden" asp-for="@Model.BulkEmailNotifications[i].ApplicationId" />
+                                        <abp-input type="hidden" asp-for="@Model.BulkEmailNotifications[i].EmailId" />
+                                        <abp-input type="hidden" asp-for="@Model.BulkEmailNotifications[i].ApplicantName" />
+                                        <abp-input type="hidden" asp-for="@Model.BulkEmailNotifications[i].ReferenceNo" />
+
+                                        <abp-row class="m-0 p-2 bulk-email-details-row">
+                                            <abp-column size="_6" class="px-2">
+                                                <abp-input asp-for="@Model.BulkEmailNotifications[i].ApprovedAmount" class="unity-currency-input" disabled=true />
+                                            </abp-column>
+                                            <abp-column size="_6" class="px-2">
+                                                <abp-input asp-for="@Model.BulkEmailNotifications[i].DecisionDate" type="date" disabled=true />
+                                            </abp-column>
+                                            <abp-column size="_6" class="px-2">
+                                                <abp-input asp-for="@Model.BulkEmailNotifications[i].CreatedByName" disabled=true />
+                                            </abp-column>
+                                            <abp-column size="_6" class="px-2">
+                                                <abp-input asp-for="@Model.BulkEmailNotifications[i].LastModified" type="date" disabled=true />
+                                            </abp-column>
+                                            @for (var j = 0; j < Model.BulkEmailNotifications[i].Notes?.Count; j++)
+                                            {
+                                                <abp-column size="_12" class="bulk-approval-notes-column px-1" id="@($"{Model.BulkEmailNotifications[i].ApplicationId}_container_{@Model.BulkEmailNotifications[i].Notes[j].Key}")" style="display:@(Model.BulkEmailNotifications[i].Notes[j].Active ? "block" : "none")">
+                                                    <span>
+                                                        @if (Model.BulkEmailNotifications[i].Notes[j].IsError)
+                                                        {
+                                                            <span class="approval-note-prefix approval-note-error">Error</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="approval-note-prefix">Note</span>
+                                                        }
+                                                        @Model.BulkEmailNotifications[i].Notes[j].Description
+                                                    </span>
+                                                </abp-column>
+                                            }
+                                        </abp-row>
+                                    </div>
+                                }
+                            </abp-card-body>
+                        </abp-card>
+                    </form>
+                    <div id="batch-approval-summary" class="batch-approval-summary" style="display:@(Model.MaxBatchCountExceeded ? "block" : "none")">
+                        <span class="approval-note-prefix approval-note-error">Error</span> @Model.MaxBatchCountExceededError
+                    </div>
+                </div>
+
+                @* WAI-ARIA "Window Splitter" pattern (draggable/keyboard-resizable, not a decorative break) — role="separator" + tabindex="0" are intentional here, not an <hr>. *@
+                <div class="bulk-email-panel-divider"
+                     id="bulkEmailPanelDivider"
+                     role="separator"
+                     aria-orientation="vertical"
+                     aria-label="Resize the application list and draft editor panels"
+                     tabindex="0"></div>
+
+                <div class="bulk-email-edit-panel" id="bulkEmailEditPanel">
+                        <div id="bulkEmailEditPanelEmpty" class="bulk-email-edit-empty">
+                            Select an application to view its draft email.
+                        </div>
+                        <div id="bulkEmailEditPanelError" class="bulk-email-edit-empty" style="display:none"></div>
+                        <div id="bulkEmailEditPanelLoading" class="bulk-email-edit-loading" style="display:none">
+                            <div class="spinner-grow" role="status"><span class="visually-hidden">Loading...</span></div>
+                        </div>
+                        <div id="bulkEmailEditPanelWidget" class="emails-widget-scope" style="display:none"></div>
+                    </div>
+                </div>
+            }
+        </abp-modal-body>
+        <abp-modal-footer>
+            <abp-button id="btnSubmitBulkEmail"
+                        data-busy-text="Sending..."
+                        class="btn btn-primary"
+                        disabled="@Model.Invalid"
+                        text="@L["SendEmailNotificationRequest:SubmitButtonText"].Value"
+                        type="submit"
+                        form="bulkEmailNotificationForm">
+            </abp-button>
+            <abp-button id="btnCancelBulkEmail"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal"
+                        text="@L["SendEmailNotificationRequest:CancelButtonText"].Value"
+                        data-dismiss="modal"
+                        onclick="closeEmailNotifications()"
+                        onkeydown='if(event.key === "Enter" || event.key === " ") { closeEmailNotifications(); event.preventDefault(); }'>
+            </abp-button>
+        </abp-modal-footer>
+
+    </abp-modal>
+
+<script defer>
+    (function () {
+        if (window.jQuery) {
+             $('#bulkEmailNotificationForm .unity-currency-input').maskMoney({
+                thousands: ',',
+                decimal: '.'
+        }).maskMoney('mask');
+        }
+    })();
+</script>

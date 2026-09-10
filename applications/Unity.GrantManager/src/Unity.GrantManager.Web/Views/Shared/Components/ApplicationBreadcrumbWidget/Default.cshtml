@@ -1,5 +1,5 @@
-﻿@using Unity.GrantManager.Permissions
-@using Unity.GrantManager.Web.Views.Shared.Components.ApplicationBreadcrumbWidget;
+﻿@using Unity.GrantManager.Web.Views.Shared.Components.ApplicationBreadcrumbWidget;
+@using Unity.Modules.Shared
 @using Volo.Abp.Authorization.Permissions
 
 @inject IPermissionChecker PermissionChecker
@@ -8,7 +8,7 @@
 
 @{
     var renderedApplicantName = string.IsNullOrWhiteSpace(Model.ApplicantName) ? "Applicant Name" : Model.ApplicantName;
-    var hasViewPermission = await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Applicants.ViewList);
+    var hasViewPermission = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Applicant.Default);
 }
 
 <div class="breadcrumb-container">

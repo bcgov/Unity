@@ -7,6 +7,7 @@ using Unity.AI.Domain;
 using Unity.AI.RateLimit;
 using Unity.GrantManager.Applications;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Guids;
 using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
@@ -30,6 +31,35 @@ public static class AIGenerationRequestJobHelper
         var application = await applicationRepository.GetAsync(applicationId);
         applyResult(application);
         await applicationRepository.UpdateAsync(application);
+        await uow.CompleteAsync();
+    }
+
+    /// <summary>
+    /// Upserts the AI scoresheet answers for an application in a fresh, short-lived unit of
+    /// work. Answers live in their own aggregate (AI.ApplicationScoresheetAnswers) rather than
+    /// on the Application, so regenerating scoring updates the existing row in place.
+    /// </summary>
+    public static async Task SaveScoresheetAnswersInNewUowAsync(
+        IUnitOfWorkManager unitOfWorkManager,
+        IRepository<ApplicationScoresheetAnswers, Guid> scoresheetAnswersRepository,
+        IGuidGenerator guidGenerator,
+        Guid applicationId,
+        string answers)
+    {
+        using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
+
+        var existing = await scoresheetAnswersRepository.FindAsync(x => x.ApplicationId == applicationId);
+        if (existing == null)
+        {
+            await scoresheetAnswersRepository.InsertAsync(
+                new ApplicationScoresheetAnswers(guidGenerator.Create(), applicationId, answers));
+        }
+        else
+        {
+            existing.SetAnswers(answers);
+            await scoresheetAnswersRepository.UpdateAsync(existing);
+        }
+
         await uow.CompleteAsync();
     }
 

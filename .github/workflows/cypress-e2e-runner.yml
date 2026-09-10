@@ -33,6 +33,10 @@ on:
         required: false
         type: string
         default: ""
+      git_ref:
+        description: "Branch/tag/SHA of bcgov/Unity to check out — must be the triggering commit, not github.sha (workflow_run events set github.sha to the default branch, not the triggering branch)"
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -58,7 +62,16 @@ jobs:
           sudo mv oc /usr/local/bin
 
       - name: Connect to OpenShift API
-        run: oc login --token=$OC_AUTH_TOKEN --server=$OC_CLUSTER
+        run: |
+          for i in 1 2 3; do
+            oc login --token=$OC_AUTH_TOKEN --server=$OC_CLUSTER --request-timeout=30s && break
+            if [ "$i" -eq 3 ]; then
+              echo "oc login failed after 3 attempts" >&2
+              exit 1
+            fi
+            echo "oc login attempt $i failed, retrying in 30s..."
+            sleep 30
+          done
 
       - name: Launch Cypress Job
         id: launch
@@ -69,7 +82,7 @@ jobs:
           JOB_REF=$(oc process unity-cypress-job \
             -p ENV=${{ inputs.env_name }} \
             -p CYPRESS_CONFIG_KEY=${{ inputs.cypress_config_key }} \
-            -p GIT_REF=$GITHUB_SHA \
+            -p GIT_REF="${{ inputs.git_ref }}" \
             -p GIT_TOKEN=$GH_TOKEN \
             -p BASE_URL="${{ inputs.base_url }}" \
             -n $TOOLS_NAMESPACE \

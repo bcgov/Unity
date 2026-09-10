@@ -1,3 +1,7 @@
+@using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Localization
+@inject IStringLocalizer<GrantManagerResource> L
+
 <div class="modal fade" id="applicantListMergeModal" tabindex="-1" aria-labelledby="applicantListMergeModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content">
@@ -59,10 +63,11 @@
                 <div id="listMergeStep2" class="d-none">
                     <div class="text-center mb-3">
                         <h6 class="fw-bold">Compare Action</h6>
-                        <p>You are about to merge these applicants. This action cannot be undone.<br />
+                        <p>You are about to merge these applicants.<br />
                             The principal record will be updated with your chosen values.<br />
                             The other record will not be deleted; instead, it will be flagged as a duplicate and can be removed from the Applicant list in a separate process.
                         </p>
+                        <p style="color: rgb(13,110,253);">@L["ApplicantMerge:ReversibleNotice"].Value</p>
                         <p style="color: rgb(13,110,253);">Note: The address and contact information for any affected applications will be preserved and remain untouched.</p>
                         <p style="color: rgb(13,110,253);">Note: All default sites associated with submissions linked to the merged applicant will be removed and must be re&#8209;set after the merge is completed.</p>
                         <div id="listMergePendingWarning" class="d-none" style="color:red;">Warning: One or more affected submissions have in&#8209;progress payments. These payments will be impacted by the merge. Please complete final approval of all payments before proceeding.</div>

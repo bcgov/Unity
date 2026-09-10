@@ -9,7 +9,7 @@ $(function () {
     const l = abp.localization.getResource('GrantManager');
     const defaultQuickDateRange = 'last6months';
     const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    const canViewApplicants = abp.auth.isGranted('GrantApplicationManagement.Applicants.ViewList');
+    const canViewApplicants = abp.auth.isGranted('Unity.GrantManager.ApplicantManagement.Applicant');
     const dtTextRenderer = $.fn.dataTable.render.text();
 
     let dt = $('#GrantApplicationsTable');

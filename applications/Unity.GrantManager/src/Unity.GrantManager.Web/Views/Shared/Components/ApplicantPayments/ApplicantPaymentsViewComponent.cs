@@ -17,7 +17,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantPayments;
     RefreshUrl = "Widget/ApplicantPayments/Refresh",
     ScriptTypes = [typeof(ApplicantPaymentsScriptBundleContributor)],
     StyleTypes = [typeof(ApplicantPaymentsStyleBundleContributor)],
-    AutoInitialize = true)]
+    AutoInitialize = true,
+    RequiredPolicies = new [] { UnitySelector.ApplicantManagement.Payments.Default })]
 public class ApplicantPaymentsViewComponent(
     IApplicantPaymentsAppService applicantPaymentsAppService,
     IFeatureChecker featureChecker,

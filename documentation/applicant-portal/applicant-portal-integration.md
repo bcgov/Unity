@@ -1574,8 +1574,6 @@ For issues or questions:
 ## Related Documentation
 
 - [Applicant Profile Data Providers](./applicant-profile-data-providers.md) - Provider strategy, data flow diagrams, and OIDC subject extraction details
-- [API Key Authentication](../src/Unity.GrantManager.HttpApi/Controllers/Authentication/README.md) - Authentication setup
-- [Background Jobs](../src/Unity.GrantManager.Application/HealthChecks/BackgroundWorkers/README.md) - Background worker configuration
 
 ---
 

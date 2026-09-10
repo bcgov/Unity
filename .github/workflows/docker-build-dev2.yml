@@ -60,7 +60,7 @@ jobs:
     - name: Get short commitId
       id: get_commit
       run: |
-        echo "SHA_SHORT=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        echo "SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
     outputs:
       SHA_SHORT: ${{steps.get_commit.outputs.SHA_SHORT}}
   Build:
@@ -99,7 +99,15 @@ jobs:
       run: oc version
     - name: Push application images into ce395f-dev (no ce395f-tools hop for dev2)
       run: |
-        oc login --token=$OC_TARGET_TOKEN --server=$OC_CLUSTER
+        for i in 1 2 3; do
+          oc login --token=$OC_TARGET_TOKEN --server=$OC_CLUSTER --request-timeout=30s && break
+          if [ "$i" -eq 3 ]; then
+            echo "oc login failed after 3 attempts" >&2
+            exit 1
+          fi
+          echo "oc login attempt $i failed, retrying in 30s..."
+          sleep 30
+        done
         oc registry login
         docker login -u unused -p $(oc whoami -t) $OC_REGISTRY
         docker tag unity-grantmanager-dbmigrator $OC_REGISTRY/$OC_TARGET_PROJECT/$TARGET_ENV-unity-dbmigrator:latest

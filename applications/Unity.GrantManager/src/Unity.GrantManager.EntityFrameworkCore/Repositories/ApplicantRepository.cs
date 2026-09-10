@@ -137,7 +137,7 @@ namespace Unity.GrantManager.Repositories
 
         public async Task<List<ApplicantListRecord>> GetApplicantListRecordsAsync(IReadOnlyList<string>? requestedFields = null)
         {
-            return await (await GetQueryableAsync())
+            var records = await (await GetQueryableAsync())
                 .AsNoTracking()
                 .Where(a => !a.IsDeleted)
                 .OrderByDescending(a => a.CreationTime)
@@ -166,9 +166,40 @@ namespace Unity.GrantManager.Repositories
                     IsDuplicated = a.IsDuplicated,
                     CreationTime = a.CreationTime,
                     LastModificationTime = a.LastModificationTime,
-                    FiscalYearEnd = a.FiscalYearEnd
+                    FiscalYearEnd = a.FiscalYearEnd,
+                    SupplierId = a.SupplierId
                 })
                 .ToListAsync();
+
+            var supplierIds = records
+                .Where(record => record.SupplierId.HasValue)
+                .Select(record => record.SupplierId!.Value)
+                .Distinct()
+                .ToList();
+            if (supplierIds.Count == 0)
+            {
+                return records;
+            }
+
+            var dbContext = await GetDbContextAsync();
+            var suppliers = await dbContext.Set<Supplier>()
+                .AsNoTracking()
+                .Where(supplier => supplierIds.Contains(supplier.Id) && !supplier.IsDeleted)
+                .ToDictionaryAsync(supplier => supplier.Id);
+
+            foreach (var record in records.Where(record => record.SupplierId.HasValue))
+            {
+                if (!suppliers.TryGetValue(record.SupplierId!.Value, out var supplier))
+                {
+                    continue;
+                }
+
+                record.SupplierNumber = supplier.Number;
+                record.SupplierName = supplier.Name;
+                record.SupplierStatus = supplier.Status;
+            }
+
+            return records;
         }
     }
 }

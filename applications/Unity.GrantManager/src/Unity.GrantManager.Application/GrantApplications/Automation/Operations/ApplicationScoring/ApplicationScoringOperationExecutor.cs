@@ -10,6 +10,7 @@ using Volo.Abp.ObjectMapping;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Guids;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
@@ -22,6 +23,8 @@ public sealed class ApplicationScoringOperationExecutor(
     ApplicationScoringService applicationScoringService,
     IAIApplicationInputBuilder aiApplicationInputBuilder,
     IApplicationRepository applicationRepository,
+    IRepository<ApplicationScoresheetAnswers, Guid> scoresheetAnswersRepository,
+    IGuidGenerator guidGenerator,
     IUnitOfWorkManager unitOfWorkManager,
     ILocalEventBus localEventBus,
     IObjectMapper objectMapper) : AIGenerationOperationExecutor, ITransientDependency
@@ -35,11 +38,12 @@ public sealed class ApplicationScoringOperationExecutor(
         var scoringInput = await aiApplicationInputBuilder.BuildApplicationScoringInputAsync(promptData, args.PromptVersion);
         var scoresheetAnswers = await applicationScoringService.RegenerateAsync(scoringInput);
 
-        await AIGenerationRequestJobHelper.SaveApplicationResultInNewUowAsync(
+        await AIGenerationRequestJobHelper.SaveScoresheetAnswersInNewUowAsync(
             unitOfWorkManager,
-            applicationRepository,
+            scoresheetAnswersRepository,
+            guidGenerator,
             args.ApplicationId,
-            app => app.AIScoresheetAnswers = scoresheetAnswers);
+            scoresheetAnswers);
 
         await localEventBus.PublishAsync(new ApplicationAIScoringGeneratedEvent
         {

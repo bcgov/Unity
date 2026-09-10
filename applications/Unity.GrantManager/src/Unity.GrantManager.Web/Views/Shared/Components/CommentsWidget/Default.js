@@ -203,7 +203,7 @@ function initTribute(mentionData) {
     let tribute = new Tribute({
         values: mentionData,
         selectTemplate: function (item) {
-            if (typeof item === 'undefined') return null;
+            if (item === undefined) return null;
             if (this.range.isContentEditable(this.current.element)) {
                 return (`<span contenteditable="false"><a class="name-highlighted" href="#" onclick="return false;">${item.original.value}</a><span>`);
             }

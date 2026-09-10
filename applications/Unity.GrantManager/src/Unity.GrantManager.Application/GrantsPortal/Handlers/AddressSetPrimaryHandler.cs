@@ -12,7 +12,8 @@ namespace Unity.GrantManager.GrantsPortal.Handlers;
 
 public class AddressSetPrimaryHandler(
     IApplicantAddressRepository applicantAddressRepository,
-    ILogger<AddressSetPrimaryHandler> logger) 
+    IApplicantAddressManager applicantAddressManager,
+    ILogger<AddressSetPrimaryHandler> logger)
     : IPortalCommandHandler, ITransientDependency
 {
     public string DataType => "ADDRESS_SET_PRIMARY_COMMAND";
@@ -28,27 +29,24 @@ public class AddressSetPrimaryHandler(
         var address = await applicantAddressRepository.GetAsync(addressId);
 
         address.SetProperty(AddressExtraPropertyNames.ProfileId, profileId.ToString());
-        address.SetProperty(AddressExtraPropertyNames.IsPrimary, true);
+        address.SetPrimaryFlag(true);
 
         if (address.ApplicantId.HasValue)
         {
-            var siblingAddresses = await applicantAddressRepository.FindByApplicantIdAsync(address.ApplicantId.Value);
-
-            foreach (var sibling in siblingAddresses)
-            {
-                if (sibling.Id == addressId) continue;
-                if (!sibling.HasProperty(AddressExtraPropertyNames.IsPrimary)) continue;
-                if (!sibling.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary)) continue;
-
-                var trackedSibling = await applicantAddressRepository.GetAsync(sibling.Id);
-                trackedSibling.SetProperty(AddressExtraPropertyNames.IsPrimary, false);
-                await applicantAddressRepository.UpdateAsync(trackedSibling);
-            }
+            // Primary is scoped to the address type, so only same-type siblings are demoted.
+            await applicantAddressManager.DemotePrimarySiblingsAsync(
+                address.ApplicantId.Value,
+                address.AddressType,
+                addressId);
         }
 
         await applicantAddressRepository.UpdateAsync(address);
 
-        logger.LogInformation("Address {AddressId} set as primary", addressId);
+        logger.LogInformation(
+            "Address {AddressId} set as primary for address type {AddressType}",
+            addressId,
+            address.AddressType);
+
         return "Address set as primary";
     }
 }

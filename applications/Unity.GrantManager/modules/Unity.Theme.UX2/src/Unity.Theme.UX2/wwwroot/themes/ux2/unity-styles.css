@@ -266,6 +266,10 @@ table.dataTable {
     position: relative;
 }
 
+    .unity-input-group:has(.unity-input-prepend) .form-label {
+        margin-bottom: 0;
+    }
+
     .unity-input-group .unity-input-prepend {
         position: absolute;
         margin-top: 32px;
@@ -675,9 +679,12 @@ div.dt-container div.dt-search {
 
 #app-version-id {
     position: absolute;
+    top: 0;
     right: 0;
+    z-index: 1;
     font-size: 0.7rem;
     opacity: 0.5;
+    white-space: nowrap;
 }
 
 .worksheet_section_label {

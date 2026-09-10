@@ -1263,6 +1263,155 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.ToTable("ApplicantAttachments", (string)null);
                 });
 
+            modelBuilder.Entity("Unity.GrantManager.Applications.ApplicantMergeApplicationChange", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ApplicantIdAfter")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ApplicantIdBefore")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ApplicantMergeOperationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ApplicationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("DefaultSiteIdAfter")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("DefaultSiteIdBefore")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RelatedRecordsSnapshot")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
+                    b.Property<bool>("WasTransferred")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApplicationId");
+
+                    b.HasIndex("ApplicantMergeOperationId", "ApplicationId")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId", "ApplicationId");
+
+                    b.ToTable("ApplicantMergeApplicationChanges", (string)null);
+                });
+
+            modelBuilder.Entity("Unity.GrantManager.Applications.ApplicantMergeOperation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<DateTime>("MergedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<Guid?>("MergedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PrincipalApplicantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PrincipalStateAfter")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("PrincipalStateBefore")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("ReversalReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime?>("ReversedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<Guid?>("ReversedById")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("SecondaryApplicantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SecondaryStateAfter")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("SecondaryStateBefore")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<int>("SnapshotVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PrincipalApplicantId");
+
+                    b.HasIndex("SecondaryApplicantId");
+
+                    b.HasIndex("TenantId", "MergedAt");
+
+                    b.HasIndex("TenantId", "PrincipalApplicantId", "Status");
+
+                    b.HasIndex("TenantId", "SecondaryApplicantId", "Status");
+
+                    b.ToTable("ApplicantMergeOperations", (string)null);
+                });
+
             modelBuilder.Entity("Unity.GrantManager.Applications.Application", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1270,9 +1419,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("AIAnalysis")
                         .HasColumnType("text");
-
-                    b.Property<string>("AIScoresheetAnswers")
-                        .HasColumnType("jsonb");
 
                     b.Property<string>("Acquisition")
                         .HasColumnType("text");
@@ -2110,6 +2256,58 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasIndex("TenantId", "ApplicationId");
 
                     b.ToTable("ApplicationLinks", (string)null);
+                });
+
+            modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationScoresheetAnswers", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Answers")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<Guid>("ApplicationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ApplicationId")
+                        .IsUnique();
+
+                    b.ToTable("ApplicationScoresheetAnswers", "AI");
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.ApplicationStatus", b =>
@@ -3268,6 +3466,78 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.ToTable("ScheduledNotificationTracking", "Notifications");
                 });
 
+            modelBuilder.Entity("Unity.Notifications.EmailAddresses.EmailAddressConfiguration", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.Property<string>("EmailAddress")
+                        .IsRequired()
+                        .HasMaxLength(1024)
+                        .HasColumnType("character varying(1024)");
+
+                    b.Property<string>("EmailType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "EmailAddress", "EmailType")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_EmailAddressConfigurations_TenantId_IsDefault")
+                        .HasFilter("\"IsDefault\" = true")
+                        .IsUnique();
+
+                    b.ToTable("EmailAddressConfigurations", "Notifications");
+                });
+
             modelBuilder.Entity("Unity.Notifications.EmailGroups.EmailGroup", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3588,6 +3858,182 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.HasIndex("TemplateId");
 
                     b.ToTable("EmailLogAttachments", "Notifications");
+                });
+
+            modelBuilder.Entity("Unity.Notifications.Logs.NotificationLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("CommitSha")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<string>("CorrelationId")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("DeliveryTarget")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Environment")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("ExceptionMessage")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ExceptionType")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsDeliveredRealtime")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("NotificationType")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("PayloadJson")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("SenderDisplayName")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<Guid?>("SenderUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Severity")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("SourceReference")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("StackExcerpt")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CorrelationId");
+
+                    b.HasIndex("NotificationType", "CreationTime");
+
+                    b.HasIndex("TenantId", "CreationTime");
+
+                    b.ToTable("NotificationLogs", "Notifications");
+                });
+
+            modelBuilder.Entity("Unity.Notifications.ReadStates.NotificationReadState", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("timestamp without time zone")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<DateTime>("LastReadAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("TenantId");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("NotificationReadStates", "Notifications");
                 });
 
             modelBuilder.Entity("Unity.Notifications.Templates.EmailTemplate", b =>
@@ -4879,6 +5325,36 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Unity.GrantManager.Applications.ApplicantMergeApplicationChange", b =>
+                {
+                    b.HasOne("Unity.GrantManager.Applications.ApplicantMergeOperation", null)
+                        .WithMany("ApplicationChanges")
+                        .HasForeignKey("ApplicantMergeOperationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Unity.GrantManager.Applications.Application", null)
+                        .WithMany()
+                        .HasForeignKey("ApplicationId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Unity.GrantManager.Applications.ApplicantMergeOperation", b =>
+                {
+                    b.HasOne("Unity.GrantManager.Applications.Applicant", null)
+                        .WithMany()
+                        .HasForeignKey("PrincipalApplicantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Unity.GrantManager.Applications.Applicant", null)
+                        .WithMany()
+                        .HasForeignKey("SecondaryApplicantId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Unity.GrantManager.Applications.Application", b =>
                 {
                     b.HasOne("Unity.GrantManager.Applications.Applicant", "Applicant")
@@ -5310,6 +5786,11 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
             modelBuilder.Entity("Unity.GrantManager.Applications.Applicant", b =>
                 {
                     b.Navigation("ApplicantAddresses");
+                });
+
+            modelBuilder.Entity("Unity.GrantManager.Applications.ApplicantMergeOperation", b =>
+                {
+                    b.Navigation("ApplicationChanges");
                 });
 
             modelBuilder.Entity("Unity.GrantManager.Applications.Application", b =>

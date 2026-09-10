@@ -28,4 +28,8 @@ public class ApplicantListRecord
     public DateTime CreationTime { get; set; }
     public DateTime? LastModificationTime { get; set; }
     public DateOnly? FiscalYearEnd { get; set; }
+    public Guid? SupplierId { get; set; }
+    public string? SupplierNumber { get; set; }
+    public string? SupplierName { get; set; }
+    public string? SupplierStatus { get; set; }
 }

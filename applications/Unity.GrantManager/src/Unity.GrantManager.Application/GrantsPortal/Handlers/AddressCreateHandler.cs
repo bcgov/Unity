@@ -14,6 +14,7 @@ namespace Unity.GrantManager.GrantsPortal.Handlers;
 
 public class AddressCreateHandler(
     IApplicantAddressRepository applicantAddressRepository,
+    IApplicantAddressManager applicantAddressManager,
     ILogger<AddressCreateHandler> logger) : IPortalCommandHandler, ITransientDependency
 {
     public string DataType => "ADDRESS_CREATE_COMMAND";
@@ -51,44 +52,26 @@ public class AddressCreateHandler(
             Province = innerData.Province,
             Postal = innerData.PostalCode,
             Country = innerData.Country,
-            AddressType = MapAddressType(innerData.AddressType)
+            AddressType = AddressTypeMapper.FromPortalValue(innerData.AddressType)
         };
 
         EntityHelper.TrySetId(address, () => addressId);
 
         address.SetProperty(AddressExtraPropertyNames.ProfileId, profileId.ToString());
-        address.SetProperty(AddressExtraPropertyNames.IsPrimary, innerData.IsPrimary);
+        address.SetPrimaryFlag(innerData.IsPrimary);
 
-        // Demote existing primary addresses for the same applicant
         if (innerData.IsPrimary)
         {
-            var siblingAddresses = await applicantAddressRepository.FindByApplicantIdAsync(innerData.ApplicantId);
-
-            foreach (var sibling in siblingAddresses)
-            {
-                if (!sibling.HasProperty(AddressExtraPropertyNames.IsPrimary)) continue;
-                if (!sibling.GetProperty<bool>(AddressExtraPropertyNames.IsPrimary)) continue;
-
-                var trackedSibling = await applicantAddressRepository.GetAsync(sibling.Id);
-                trackedSibling.SetProperty(AddressExtraPropertyNames.IsPrimary, false);
-                await applicantAddressRepository.UpdateAsync(trackedSibling);
-            }
+            // Primary is scoped to the address type, so only same-type siblings are demoted.
+            await applicantAddressManager.DemotePrimarySiblingsAsync(
+                innerData.ApplicantId,
+                address.AddressType,
+                addressId);
         }
 
         await applicantAddressRepository.InsertAsync(address);
 
         logger.LogInformation("Address {AddressId} created successfully", addressId);
         return "Address created successfully";
-    }
-
-    private static AddressType MapAddressType(string? portalAddressType)
-    {
-        return portalAddressType?.ToUpperInvariant() switch
-        {
-            "MAILING" => AddressType.MailingAddress,
-            "PHYSICAL" => AddressType.PhysicalAddress,
-            "BUSINESS" => AddressType.BusinessAddress,
-            _ => AddressType.PhysicalAddress
-        };
     }
 }

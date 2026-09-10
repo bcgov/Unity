@@ -1,0 +1,117 @@
+@page
+@using Microsoft.Extensions.Localization
+@using Unity.Notifications.Localization
+@model Unity.Notifications.Web.Pages.UnityMessaging.IndexModel
+@inject IStringLocalizer<NotificationsResource> L
+
+@section styles {
+    <abp-style src="/css/notifications-realtime-widget.css" />
+    <abp-style src="/Pages/UnityMessaging/Index.css" />
+}
+
+@section scripts {
+    <abp-script src="/client-proxies/multi-tenancy-proxy.js" />
+    <abp-script src="/Pages/UnityMessaging/Index.js" />
+}
+
+<div class="container-fluid messaging-page px-3 py-3">
+    <h3 class="mb-3">@L["RealtimeOps:Title"]</h3>
+
+    <div id="messagingSplitLayout" class="messaging-split-layout">
+    <div id="messagingUsersPanel" class="card messaging-split-panel">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>@L["RealtimeOps:OnlineUsers"]</span>
+            <span class="rt-status-legend">
+                <span class="rt-status-dot rt-status-green"></span> @L["RealtimeOps:StatusActive"]
+                <span class="rt-status-dot rt-status-orange"></span> @L["RealtimeOps:StatusIdle"]
+                <span class="rt-status-dot rt-status-red"></span> @L["RealtimeOps:StatusAway"]
+            </span>
+        </div>
+        <div class="card-body p-0">
+            <table class="table table-striped mb-0" id="OnlineUsersTable">
+                <thead>
+                    <tr>
+                        <th>@L["RealtimeOps:Status"]</th>
+                        <th>@L["RealtimeOps:LastActivity"]</th>
+                        <th>@L["RealtimeOps:UserName"]</th>
+                        <th>@L["RealtimeOps:TenantId"]</th>
+                        <th>@L["RealtimeOps:Connections"]</th>
+                        <th></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <button type="button" id="messagingSplitDivider" class="messaging-split-divider" aria-label="Resize messaging panels"></button>
+
+    <div id="messagingComposePanel" class="card messaging-split-panel">
+        <div class="card-header">@L["RealtimeOps:SendMessage"]</div>
+        <div class="card-body">
+            <div class="rt-widget-mode-tabs mb-2" role="tablist" aria-label="@L["RealtimeOps:SendTo"]">
+                <button type="button" class="rt-widget-mode-tab active" id="individualMessageMode" data-message-mode="individual" role="tab" aria-selected="true">@L["RealtimeWidget:Individual"]</button>
+                <button type="button" class="rt-widget-mode-tab" id="tenantMessageMode" data-message-mode="tenant" role="tab" aria-selected="false">@L["RealtimeWidget:Tenant"]</button>
+            </div>
+            <div class="mb-2">
+                <div id="sendTenantFilterContainer" class="mb-2">
+                    <label for="SendTenantFilter" class="form-label">@L["RealtimeWidget:Tenant"]</label>
+                    <select class="form-select" id="SendTenantFilter">
+                        <option value=""></option>
+                    </select>
+                </div>
+                <label for="SendTarget" class="form-label">@L["RealtimeOps:SendTo"]</label>
+                <select class="form-select" id="SendTarget">
+                    <option value=""></option>
+                </select>
+            </div>
+            <div id="messageTypeContainer" class="mb-2" style="display: none;">
+                <label for="MessageType" class="form-label">@L["RealtimeOps:MessageType"]</label>
+                <select class="form-select" id="MessageType" required>
+                    <option value="">@L["RealtimeOps:SelectMessageType"]</option>
+                    <option value="banner">@L["RealtimeOps:MessageTypeBanner"]</option>
+                    <option value="popup">@L["RealtimeOps:MessageTypePopup"]</option>
+                </select>
+            </div>
+            <div class="mb-2">
+                <textarea class="form-control" id="MessageText" rows="3" placeholder="@L["RealtimeOps:Message"]"></textarea>
+            </div>
+            <button class="btn btn-primary" id="SendButton">@L["RealtimeOps:Send"]</button>
+        </div>
+    </div>
+    </div>
+
+    <button type="button" id="messagingActivityDivider" class="messaging-activity-divider" aria-label="Resize message activity panel"></button>
+
+    <div class="card messaging-activity-card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>@L["RealtimeOps:Activity"]</span>
+            <div class="d-flex align-items-center gap-2">
+                <label class="visually-hidden" for="activitySearch">@L["Search"]</label>
+                <input type="search" id="activitySearch" class="form-control form-control-sm" placeholder="@L["Search"]" aria-label="@L["Search"]" />
+                <label class="visually-hidden" for="activityQuickDateRange">@L["NotificationList:QuickDateRange"]</label>
+                <select id="activityQuickDateRange" class="form-control form-control-sm quick-date-input">
+                    <option value="today">@L["NotificationList:DateRange:Today"]</option>
+                    <option value="last7days">@L["NotificationList:DateRange:Last7Days"]</option>
+                    <option value="last30days">@L["NotificationList:DateRange:Last30Days"]</option>
+                    <option value="last3months">@L["NotificationList:DateRange:Last3Months"]</option>
+                    <option value="last6months" selected>@L["NotificationList:DateRange:Last6Months"]</option>
+                    <option value="alltime">@L["NotificationList:DateRange:AllTime"]</option>
+                    <option value="custom">@L["NotificationList:DateRange:Custom"]</option>
+                </select>
+            </div>
+        </div>
+        <div id="activityCustomDateInputs" class="card-body border-bottom py-2" style="display: none;">
+            <div class="d-flex gap-2 align-items-center">
+                <label for="activityFromDate" class="form-label mb-0">@L["NotificationList:DateFrom"]</label>
+                <input abp-data-datepicker="false" type="date" id="activityFromDate" class="form-control form-control-sm" min="1900-01-01" max="2100-01-01" />
+                <label for="activityToDate" class="form-label mb-0">@L["NotificationList:DateTo"]</label>
+                <input abp-data-datepicker="false" type="date" id="activityToDate" class="form-control form-control-sm" min="1900-01-01" max="2100-01-01" />
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <abp-table id="UnityMessagingActivityTable"></abp-table>
+        </div>
+    </div>
+</div>

@@ -9,5 +9,6 @@ namespace Unity.Notifications.Emails
     {
         Task<EmailLog?> GetByIdAsync(Guid id, bool includeDetails = false);
         Task<List<EmailLog>> GetByApplicationIdAsync(Guid applicationId);
+        Task<List<EmailLog>> GetByApplicationIdsAndStatusAsync(List<Guid> applicationIds, string status);
     }
 }

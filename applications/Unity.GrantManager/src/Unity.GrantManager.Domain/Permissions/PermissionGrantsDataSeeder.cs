@@ -70,6 +70,7 @@ namespace Unity.GrantManager.Permissions
         public readonly List<string> Notifications_CommonPermissions = [
             NotificationsPermissions.Email.Default,
             NotificationsPermissions.Email.Send,
+            NotificationsPermissions.Email.SendBulk,
             NotificationsPermissions.Email.DeleteDraft
         ];
 
@@ -113,6 +114,35 @@ namespace Unity.GrantManager.Permissions
             UnitySelector.Application.Status.BulkPublish
         ];
 
+        public readonly List<string> ApplicantManagement_CommonPermissions = [
+            UnitySelector.ApplicantManagement.Default,
+
+            UnitySelector.ApplicantManagement.Applicant.Default,
+            UnitySelector.ApplicantManagement.Applicant.Update,
+            UnitySelector.ApplicantManagement.Applicant.Delete,
+            UnitySelector.ApplicantManagement.Applicant.Merge,
+            UnitySelector.ApplicantManagement.Applicant.Unmerge,
+
+            UnitySelector.ApplicantManagement.ApplicantInfo.Default,
+            UnitySelector.ApplicantManagement.ApplicantInfo.Update,
+            UnitySelector.ApplicantManagement.ApplicantInfo.Update_RedStop,
+            UnitySelector.ApplicantManagement.ApplicantInfo.OrganizationInfo.Update,
+
+            UnitySelector.ApplicantManagement.Contacts.Default,
+            UnitySelector.ApplicantManagement.Contacts.Update,
+
+            UnitySelector.ApplicantManagement.Addresses.Default,
+            UnitySelector.ApplicantManagement.Addresses.Update,
+
+            UnitySelector.ApplicantManagement.Payments.Default,
+
+            UnitySelector.ApplicantManagement.History.Default,
+            UnitySelector.ApplicantManagement.History.FundingHistory.Update,
+            UnitySelector.ApplicantManagement.History.AuditHistory.Update,
+            UnitySelector.ApplicantManagement.History.IssueHistory.Update,
+            UnitySelector.ApplicantManagement.History.ReportsHistory.Update
+        ];
+
         public async Task SeedAsync(DataSeedContext context)
         {
             // Default permission grants based on role
@@ -154,6 +184,7 @@ namespace Unity.GrantManager.Permissions
                     .. Dashboard_CommonPermissions,
                     .. Tags_CommonPermissions,
                     .. ExternalStatusVisibility_CommonPermissions,
+                    .. ApplicantManagement_CommonPermissions,
                     AIPermissions.Configuration.ConfigureAI,
                     FlexPermissions.Worksheets.Default,
                     FlexPermissions.Worksheets.Delete
@@ -200,7 +231,6 @@ namespace Unity.GrantManager.Permissions
                     GrantManagerPermissions.Default,
                     GrantApplicationPermissions.Applications.Default,
                     GrantApplicationPermissions.Assignments.AssignInitial,
-                    GrantApplicationPermissions.Applicants.AssignApplicant,
                     GrantApplicationPermissions.Reviews.StartInitial,
                     GrantApplicationPermissions.Reviews.CompleteInitial,
                     GrantApplicationPermissions.Comments.Add,
@@ -212,6 +242,7 @@ namespace Unity.GrantManager.Permissions
                     .. SettingManagement_Tags_CommonPermissions,
                     .. ReviewAndAssessment_CommonPermissions,
                     .. ApplicantInfo_CommonPermissions,
+                    UnitySelector.Applicant.Summary.Update_AssignApplicant,
                     .. ProjectInfo_CommonPermissions,
                     .. PaymentInfo_CommonPermissions,
                     UnitySelector.Payment.Supplier.Update,
@@ -220,6 +251,7 @@ namespace Unity.GrantManager.Permissions
                     .. Dashboard_CommonPermissions,
                     .. Tags_CommonPermissions,
                     .. ExternalStatusVisibility_CommonPermissions,
+                    .. ApplicantManagement_CommonPermissions,
 
                     // Role Specific Permissions
                     UnitySelector.Project.Summary.Update.UpdateFinalStateFields,
@@ -266,6 +298,7 @@ namespace Unity.GrantManager.Permissions
                     NotificationsPermissions.Settings,
                     .. Dashboard_CommonPermissions,
                     .. Tags_CommonPermissions,
+                    .. ApplicantManagement_CommonPermissions,
                     UnitySettingManagementPermissions.ConfigurePayments,
                     UnitySettingManagementPermissions.BackgroundJobSettings,
                     AIPermissions.Configuration.ConfigureAI,
