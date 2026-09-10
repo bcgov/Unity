@@ -54,7 +54,7 @@ Start-Process powershell -ArgumentList @(
 Write-Host "=== Launching Angular (4300, serve-path /app/) ===" -ForegroundColor Cyan
 Start-Process powershell -ArgumentList @(
     '-NoExit', '-Command',
-    "Set-Location '$angularDir'; ng serve --configuration=development-app-path --port 4300 --serve-path=/app/ --ssl --ssl-cert `"$certPath`" --ssl-key `"$keyPath`""
+    "Set-Location '$angularDir'; npx ng serve --configuration=development-app-path --port 4300 --serve-path=/app/ --ssl --ssl-cert `"$certPath`" --ssl-key `"$keyPath`""
 )
 
 Write-Host "=== Launching gateway (44342) ===" -ForegroundColor Cyan

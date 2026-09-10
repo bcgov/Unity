@@ -28,13 +28,22 @@ Not part of the deployed app — nothing here ships.
    openssl pkcs12 -in "$certDir\localhost.pfx" -clcerts -nokeys -out "$certDir\localhost-cert.pem" -passin pass:devcert
    openssl pkcs12 -in "$certDir\localhost.pfx" -nocerts -nodes -out "$certDir\localhost-key.pem" -passin pass:devcert
    ```
-3. Install this folder's one dependency:
+3. Install front-end dependencies - this folder's one dependency, and the Angular
+   app's:
    ```powershell
+   cd applications\Unity.GrantManager.Angular
+   npm install
    cd local-dev-gateway
    npm install
    ```
+4. Make sure the backend itself already runs locally (database created and seeded via
+   `Unity.GrantManager.DbMigrator`) - see
+   [`applications/Unity.GrantManager/README.md`](../../Unity.GrantManager/README.md).
 
 ## Every time: three things running, in order
+
+`..\scripts\start-local-dev.ps1` does all three at once, in their own windows,
+killing anything already bound to those ports first. To run them by hand instead:
 
 **1. Backend**, over HTTPS, on port 44343 (not its usual 44342 — the gateway
 takes that port):
@@ -48,7 +57,7 @@ configuration (plain `ng serve` on the default port/config will *not* work under
 `/app/` — see `angular.json`'s `development-app-path` configuration):
 ```powershell
 cd applications\Unity.GrantManager.Angular
-ng serve --configuration=development-app-path --port 4300 --serve-path=/app/ `
+npx ng serve --configuration=development-app-path --port 4300 --serve-path=/app/ `
   --ssl --ssl-cert "$env:USERPROFILE\.dev-certs\localhost-cert.pem" --ssl-key "$env:USERPROFILE\.dev-certs\localhost-key.pem"
 ```
 
@@ -72,5 +81,8 @@ don't survive stopping/restarting the backend.
 - **Certificate warnings in the browser** — you're on `http://` where `https://`
   was expected, or `LOCAL_GATEWAY_CERT`/`LOCAL_GATEWAY_KEY` point at the wrong
   files. Re-run the one-time export steps above.
+- **`ng : The term 'ng' is not recognized`** - you dropped the `npx` prefix and have
+  no global Angular CLI. Use `npx ng serve ...` as shown above, or install the CLI
+  globally (`npm install -g @angular/cli`).
 - **Program Details (or any `/app/*` route) 404s** — the gateway isn't running,
   or Angular isn't actually up on port 4300 with `--serve-path=/app/`.

@@ -266,7 +266,20 @@ backend's relative redirects only land in the right place if it *appears* to be 
 the same host:port the browser is actually using.
 
 **Full instructions, troubleshooting, and the one-time cert setup:**
-[`applications/Unity.GrantManager.Angular/local-dev-gateway/README.md`](../../applications/Unity.GrantManager.Angular/local-dev-gateway/README.md)
+[`applications/Unity.GrantManager.Angular/local-dev-gateway/README.md`](../../applications/Unity.GrantManager.Angular/local-dev-gateway/README.md),
+with a shorter quickstart in
+[`applications/Unity.GrantManager.Angular/README.md`](../../applications/Unity.GrantManager.Angular/README.md).
+
+**Prerequisites**, beyond a checkout: Node.js 22 (the Angular CLI 20 comes from
+`npm install` and is invoked as `npx ng`, so no global install is needed), the .NET 10
+SDK, `npm install` run in both
+`Unity.GrantManager.Angular/` and its `local-dev-gateway/`, the trusted ASP.NET Core dev
+cert exported to PEM at `%USERPROFILE%\.dev-certs\`, and a backend that already runs
+locally (`abp install-libs` plus a `Unity.GrantManager.DbMigrator` run — see
+[`applications/Unity.GrantManager/README.md`](../../applications/Unity.GrantManager/README.md)).
+Reaching the migrated page also needs a login with the `system_admin` role, the
+`SettingManagement.Enable` feature, and the `SettingManagement.EditProgramDetails`
+permission.
 
 Quick reference — three things running, all over HTTPS with the same trusted
 ASP.NET Core dev cert: the backend on 44343, Angular on 4300 (serve-path
@@ -288,7 +301,7 @@ dotnet run --urls https://localhost:44343
 
 # 2. Angular, on 4300, with the /app/ serve-path configuration
 cd applications\Unity.GrantManager.Angular
-ng serve --configuration=development-app-path --port 4300 --serve-path=/app/ `
+npx ng serve --configuration=development-app-path --port 4300 --serve-path=/app/ `
   --ssl --ssl-cert "$env:USERPROFILE\.dev-certs\localhost-cert.pem" --ssl-key "$env:USERPROFILE\.dev-certs\localhost-key.pem"
 
 # 3. The gateway, on 44342 - this is what you actually browse to
@@ -298,7 +311,9 @@ $env:LOCAL_GATEWAY_KEY = "$env:USERPROFILE\.dev-certs\localhost-key.pem"
 npm start
 ```
 
-</details>
+Then browse to `https://localhost:44342`, open the user dropdown →
+**Configuration Management** (still MVC), and click **Program Details** in its side
+menu — that is the handoff into the Angular app.
 
 ---
 
