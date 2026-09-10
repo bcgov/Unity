@@ -40,13 +40,28 @@
 
 .field-error {
     display: block;
-    min-height: 1.1rem;
     font-size: 0.8rem;
 }
 
-.related-link-row {
-    align-items: flex-start;
-    padding-bottom: 0.25rem;
+.field-error:empty {
+    display: none;
+}
+
+.related-links-table th {
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.related-links-table td {
+    vertical-align: middle;
+}
+
+.related-links-table th:nth-child(4) .dt-column-header {
+    justify-content: center;
+}
+
+.related-links-table td:last-child .btn-remove-related-link {
+    margin: 0 auto;
 }
 
 .related-link-row .form-control.is-invalid,
@@ -56,5 +71,15 @@
 
 #btn-add-related-link:disabled {
     opacity: 0.6;
+    cursor: not-allowed;
+}
+
+#otherConfigForm .dt-container {
+    max-height: none !important;
+}
+
+#RelatedLinksTable_wrapper .dt-layout-full {
+    padding-left: 0;
+    padding-right: 0;
 }
 

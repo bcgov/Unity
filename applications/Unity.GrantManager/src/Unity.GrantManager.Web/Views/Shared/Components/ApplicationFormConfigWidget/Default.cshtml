@@ -181,7 +181,7 @@
             <span class="form-label note mt-1" style="display:block"><b>NOTE:</b> @L["ApplicationForms.Configuration.Notes:LinkVisibilityRequiresUrl"].Value</span>
             <hr class="my-3" />
 
-            <fieldset disabled class="visually-hidden">
+            <fieldset>
                 <legend class="visually-hidden">@L["ApplicationForms.Configuration:OtherLinks"].Value</legend>
                 <div class="d-flex justify-content-between align-items-center mb-2">
                     <span class="form-label mb-0" aria-hidden="true">@L["ApplicationForms.Configuration:OtherLinks"].Value</span>
@@ -192,61 +192,74 @@
                         <i class="fl fl-plus"></i> @L["ApplicationForms.Configuration:AddLink"].Value
                     </button>
                 </div>
-                <div id="relatedLinksContainer">
-                @{
-                    var relatedLinks = Model?.RelatedLinks ?? [];
-                }
-                @for (var i = 0; i < relatedLinks.Count; i++)
-                {
-                    var link = relatedLinks[i];
-                    <div class="related-link-row row mt-2">
-                        <div class="col-12 col-md-4">
-                            <label class="visually-hidden" for="relatedLinkUri_@i">@L["ApplicationForms.Configuration:LinkUrl"].Value</label>
-                            <input type="url"
-                                   id="relatedLinkUri_@i"
-                                   class="form-control related-link-uri"
-                                   value="@link.Uri"
-                                   maxlength="2048"
-                                   placeholder="https://..." />
-                            <span class="field-error text-danger small"></span>
-                        </div>
-                        <div class="col-12 col-md-3">
-                            <label class="visually-hidden" for="relatedLinkTitle_@i">@L["ApplicationForms.Configuration:LinkDisplayName"].Value</label>
-                            <input type="text"
-                                   id="relatedLinkTitle_@i"
-                                   class="form-control related-link-title"
-                                   value="@link.Title"
-                                   maxlength="255"
-                                   placeholder="@L["ApplicationForms.Configuration:LinkDisplayName"].Value" />
-                        </div>
-                        <div class="col-12 col-md-3">
-                            <label class="visually-hidden" for="relatedLinkDescription_@i">@L["ApplicationForms.Configuration:LinkDescription"].Value</label>
-                            <input type="text"
-                                   id="relatedLinkDescription_@i"
-                                   class="form-control related-link-description"
-                                   value="@link.Description"
-                                   maxlength="512"
-                                   placeholder="@L["ApplicationForms.Configuration:LinkDescription"].Value" />
-                        </div>
-                        <div class="col-6 col-md-1 d-flex align-items-center">
-                            <div class="form-check unt-form-switch form-switch">
-                                <label class="visually-hidden" for="relatedLinkPublished_@i">@L["ApplicationForms.Configuration:ShowOtherLinksInPortal"].Value</label>
-                                <input id="relatedLinkPublished_@i"
-                                       class="form-check-input related-link-published"
-                                       checked="@link.Published"
-                                       type="checkbox"
-                                       style="cursor:pointer">
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-1 d-flex align-items-center">
-                            <button type="button"
-                                    class="btn btn-sm btn-outline-danger btn-remove-related-link"
-                                    abp-tooltip="@L["ApplicationForms.Configuration:RemoveLink"].Value">
-                                <i class="fl fl-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                }
+                <div class="table-responsive">
+                    <table id="RelatedLinksTable" class="table table-striped related-links-table">
+                        <thead>
+                            <tr>
+                                <th>@L["ApplicationForms.Configuration:RelatedLinkUrl"].Value</th>
+                                <th>@L["ApplicationForms.Configuration:LinkDisplayName"].Value</th>
+                                <th>@L["ApplicationForms.Configuration:LinkDescription"].Value</th>
+                                <th class="dt-head-center">@L["ApplicationForms.Configuration:ShowOtherLinksInPortal"].Value</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="relatedLinksContainer">
+                        @{
+                            var relatedLinks = Model?.RelatedLinks ?? [];
+                        }
+                        @for (var i = 0; i < relatedLinks.Count; i++)
+                        {
+                            var link = relatedLinks[i];
+                            <tr class="related-link-row">
+                                <td>
+                                    <label class="visually-hidden" for="relatedLinkUri_@i">@L["ApplicationForms.Configuration:RelatedLinkUrl"].Value</label>
+                                    <input type="url"
+                                           id="relatedLinkUri_@i"
+                                           class="form-control related-link-uri"
+                                           value="@link.Uri"
+                                           maxlength="2048"
+                                           placeholder="https://..." />
+                                    <span class="field-error text-danger small"></span>
+                                </td>
+                                <td>
+                                    <label class="visually-hidden" for="relatedLinkTitle_@i">@L["ApplicationForms.Configuration:LinkDisplayName"].Value</label>
+                                    <input type="text"
+                                           id="relatedLinkTitle_@i"
+                                           class="form-control related-link-title"
+                                           value="@link.Title"
+                                           maxlength="255"
+                                           placeholder="@L["ApplicationForms.Configuration:LinkDisplayName"].Value" />
+                                </td>
+                                <td>
+                                    <label class="visually-hidden" for="relatedLinkDescription_@i">@L["ApplicationForms.Configuration:LinkDescription"].Value</label>
+                                    <input type="text"
+                                           id="relatedLinkDescription_@i"
+                                           class="form-control related-link-description"
+                                           value="@link.Description"
+                                           maxlength="512"
+                                           placeholder="@L["ApplicationForms.Configuration:LinkDescription"].Value" />
+                                </td>
+                                <td class="text-center">
+                                    <div class="form-check unt-form-switch form-switch d-inline-block">
+                                        <label class="visually-hidden" for="relatedLinkPublished_@i">@L["ApplicationForms.Configuration:ShowOtherLinksInPortal"].Value</label>
+                                        <input id="relatedLinkPublished_@i"
+                                               class="form-check-input related-link-published"
+                                               checked="@link.Published"
+                                               type="checkbox"
+                                               style="cursor:pointer">
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-danger px-0 btn-remove-related-link"
+                                            abp-tooltip="@L["ApplicationForms.Configuration:RemoveLink"].Value">
+                                        <i class="fl fl-delete"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
                 </div>
             </fieldset>
             <span class="form-label note mt-1 visually-hidden" style="display:block"><b>NOTE:</b> @L["ApplicationForms.Configuration.Notes:MaxRelatedLinks"].Value</span>
