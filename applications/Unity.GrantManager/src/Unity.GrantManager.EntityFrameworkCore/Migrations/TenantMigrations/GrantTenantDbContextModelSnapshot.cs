@@ -3338,6 +3338,10 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid?>("ApplicationStatusId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("ApplicationStatusIds")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .IsRequired()

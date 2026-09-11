@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.GrantApplications;
+using Volo.Abp;
 using Volo.Abp.Domain.Services;
 
 namespace Unity.GrantManager.Applications;
@@ -12,9 +13,145 @@ namespace Unity.GrantManager.Applications;
 /// within each <see cref="AddressType"/> group. The rule is generic over the enum — no member
 /// receives special treatment.
 /// </summary>
-public class ApplicantAddressManager(IApplicantAddressRepository applicantAddressRepository)
+public class ApplicantAddressManager(
+    IApplicantAddressRepository applicantAddressRepository,
+    IApplicantRepository applicantRepository,
+    IApplicationRepository applicationRepository)
     : DomainService, IApplicantAddressManager
 {
+    /// <inheritdoc />
+    public virtual async Task<Application?> FindLatestApplicationAsync(Guid applicantId)
+    {
+        var applications = await applicationRepository.GetQueryableAsync();
+        return await AsyncExecuter.FirstOrDefaultAsync(applications.ForApplicantAddressCreation(applicantId));
+    }
+
+    /// <inheritdoc />
+    public virtual async Task<(ApplicantAddress? PhysicalAddress, ApplicantAddress? MailingAddress)> SavePrimaryAddressesAsync(
+        Guid applicantId,
+        Guid? expectedApplicationId,
+        ApplicantAddressInput? physicalAddress,
+        ApplicantAddressInput? mailingAddress)
+    {
+        Application? creationApplication = null;
+        if (physicalAddress?.Id == Guid.Empty || mailingAddress?.Id == Guid.Empty)
+        {
+            var applicant = await applicantRepository.GetAsync(applicantId);
+            if (applicant.IsDeleted)
+            {
+                throw new BusinessException(GrantManagerDomainErrorCodes.AddressApplicantUnavailable);
+            }
+
+            creationApplication = await FindLatestApplicationAsync(applicantId)
+                ?? throw new BusinessException(GrantManagerDomainErrorCodes.AddressApplicationRequired);
+
+            if (expectedApplicationId != creationApplication.Id)
+            {
+                throw new BusinessException(GrantManagerDomainErrorCodes.AddressApplicationChanged);
+            }
+        }
+
+        // Validate both sections before modifying either record.
+        var physical = await ResolvePrimaryAddressAsync(
+            applicantId, physicalAddress, AddressType.PhysicalAddress, creationApplication);
+        var mailing = await ResolvePrimaryAddressAsync(
+            applicantId, mailingAddress, AddressType.MailingAddress, creationApplication);
+
+        return (await SaveAddressAsync(applicantId, physical, physicalAddress),
+            await SaveAddressAsync(applicantId, mailing, mailingAddress));
+    }
+
+    private async Task<ApplicantAddress?> ResolvePrimaryAddressAsync(Guid applicantId,
+        ApplicantAddressInput? input, AddressType expectedType, Application? creationApplication)
+    {
+        if (input == null)
+        {
+            return null;
+        }
+
+        if (input.Id == Guid.Empty)
+        {
+            if (string.IsNullOrWhiteSpace(input.Street) && string.IsNullOrWhiteSpace(input.Street2))
+            {
+                throw new BusinessException(expectedType == AddressType.PhysicalAddress
+                    ? GrantManagerDomainErrorCodes.PhysicalAddressStreetRequired
+                    : GrantManagerDomainErrorCodes.MailingAddressStreetRequired);
+            }
+
+            if (creationApplication == null)
+            {
+                throw new BusinessException(GrantManagerDomainErrorCodes.AddressApplicationRequired);
+            }
+
+            await EnsureAddressTypeMissingAsync(applicantId, expectedType);
+
+            var newAddress = new ApplicantAddress
+            {
+                ApplicantId = applicantId,
+                TenantId = creationApplication.TenantId,
+                ApplicationId = creationApplication.Id,
+                AddressType = expectedType
+            };
+            newAddress.SetPrimaryFlag(true);
+            return newAddress;
+        }
+
+        var applicantAddress = await applicantAddressRepository.GetAsync(input.Id);
+        if (applicantAddress.ApplicantId != applicantId)
+        {
+            throw new BusinessException("Unity:Applicant:AddressNotFound")
+                .WithData("ApplicantId", applicantId)
+                .WithData("AddressId", input.Id);
+        }
+
+        if (applicantAddress.AddressType != expectedType)
+        {
+            throw new BusinessException("Unity:Applicant:AddressTypeMismatch")
+                .WithData("ApplicantId", applicantId)
+                .WithData("AddressId", input.Id)
+                .WithData("ExpectedType", expectedType.ToString());
+        }
+
+        return applicantAddress;
+    }
+
+    private async Task EnsureAddressTypeMissingAsync(Guid applicantId, AddressType addressType)
+    {
+        var addresses = await applicantAddressRepository.FindByApplicantIdAsync(applicantId);
+        if (addresses.Any(address => address.AddressType == addressType))
+        {
+            throw new BusinessException(addressType == AddressType.PhysicalAddress
+                ? GrantManagerDomainErrorCodes.PhysicalAddressAlreadyExists
+                : GrantManagerDomainErrorCodes.MailingAddressAlreadyExists);
+        }
+    }
+
+    private async Task<ApplicantAddress?> SaveAddressAsync(Guid applicantId,
+        ApplicantAddress? address, ApplicantAddressInput? input)
+    {
+        if (address == null || input == null)
+        {
+            return null;
+        }
+
+        address.Street = input.Street?.Trim() ?? string.Empty;
+        address.Street2 = input.Street2?.Trim() ?? string.Empty;
+        address.Unit = input.Unit?.Trim() ?? string.Empty;
+        address.City = input.City?.Trim() ?? string.Empty;
+        address.Province = input.Province?.Trim() ?? string.Empty;
+        address.Postal = input.PostalCode?.Trim() ?? string.Empty;
+
+        if (input.Id == Guid.Empty)
+        {
+            // Best-effort recheck immediately before insertion; another request may still
+            // insert before this unit of work commits. Concurrent writers are not serialized.
+            await EnsureAddressTypeMissingAsync(applicantId, address.AddressType);
+            return await applicantAddressRepository.InsertAsync(address);
+        }
+
+        return await applicantAddressRepository.UpdateAsync(address);
+    }
+
     /// <inheritdoc />
     public virtual async Task DemotePrimarySiblingsAsync(
         Guid applicantId,

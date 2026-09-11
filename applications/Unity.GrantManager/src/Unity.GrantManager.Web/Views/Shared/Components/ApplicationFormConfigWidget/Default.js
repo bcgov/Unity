@@ -56,87 +56,120 @@
         return Array.from(relatedLinksContainer.querySelectorAll('.related-link-row'));
     }
 
+    let relatedLinksTable;
+
+    function initRelatedLinksTable() {
+        relatedLinksTable = new DataTable('#RelatedLinksTable', {
+            paging: false,
+            info: false,
+            searching: false,
+            ordering: false,
+            columnDefs: [
+                { targets: -1, orderable: false },
+                { targets: -2, width: '250px' }
+            ]
+        });
+    }
+
+    // DataTables takes ownership of the table DOM, so any row add/remove must
+    // happen while it is destroyed, then be reinitialized to pick up the change.
+    function mutateRelatedLinksTable(mutateFn) {
+        if (relatedLinksTable) {
+            relatedLinksTable.destroy();
+        }
+        mutateFn();
+        initRelatedLinksTable();
+    }
+
     function collectRelatedLinksSnapshot() {
         return collectRelatedLinkRows().map(function (row) {
             return {
                 uri: row.querySelector('.related-link-uri').value,
                 title: row.querySelector('.related-link-title').value,
-                description: row.querySelector('.related-link-description').value,
-                published: row.querySelector('.related-link-published').checked
+                published: row.querySelector('.related-link-published').checked,
+                description: row.querySelector('.related-link-description').value
             };
         });
     }
 
     function updateAddButtonState() {
-        addRelatedLinkButton.disabled = collectRelatedLinkRows().length >= MAX_RELATED_LINKS;
+        const isMaxReached = collectRelatedLinkRows().length >= MAX_RELATED_LINKS;
+        // aria-disabled (not the disabled attribute) keeps the button focusable/hoverable so the
+        // explanatory tooltip remains discoverable; the click guard below still blocks the action.
+        addRelatedLinkButton.setAttribute('aria-disabled', String(isMaxReached));
+
+        const tooltipText = isMaxReached
+            ? l('ApplicationForms.Configuration.Errors:MaxRelatedLinksReached')
+            : l('ApplicationForms.Configuration:AddLink');
+        addRelatedLinkButton.setAttribute('title', tooltipText);
+        addRelatedLinkButton.dataset.bsOriginalTitle = tooltipText;
+        const tooltipInstance = globalThis.bootstrap?.Tooltip.getInstance(addRelatedLinkButton);
+        if (tooltipInstance) {
+            tooltipInstance.setContent({ '.tooltip-inner': tooltipText });
+        }
     }
 
     function createRelatedLinkRow(data) {
-        data = data || { uri: '', title: '', description: '', published: false };
+        data = data || { uri: '', title: '', published: false, description: '' };
 
-        const row = document.createElement('div');
-        row.className = 'related-link-row row mt-2';
+        const row = document.createElement('tr');
+        row.className = 'related-link-row';
 
-        const uriCol = document.createElement('div');
-        uriCol.className = 'col-12 col-md-4';
+        const uriCol = document.createElement('td');
         const uriInput = document.createElement('input');
         uriInput.type = 'url';
         uriInput.className = 'form-control related-link-uri';
         uriInput.maxLength = 2048;
-        uriInput.placeholder = 'https://...';
+        uriInput.placeholder = 'https://';
+        uriInput.setAttribute('aria-label', l('ApplicationForms.Configuration:RelatedLinkUrl'));
         uriInput.value = data.uri;
         const uriError = document.createElement('span');
         uriError.className = 'field-error text-danger small';
+        // Not user-editable in this UI; preserved so saving doesn't erase it
+        const descriptionInput = document.createElement('input');
+        descriptionInput.type = 'hidden';
+        descriptionInput.className = 'related-link-description';
+        descriptionInput.value = data.description || '';
         uriCol.appendChild(uriInput);
+        uriCol.appendChild(descriptionInput);
         uriCol.appendChild(uriError);
 
-        const titleCol = document.createElement('div');
-        titleCol.className = 'col-12 col-md-3';
+        const titleCol = document.createElement('td');
         const titleInput = document.createElement('input');
         titleInput.type = 'text';
         titleInput.className = 'form-control related-link-title';
         titleInput.maxLength = 255;
         titleInput.placeholder = l('ApplicationForms.Configuration:LinkDisplayName');
+        titleInput.setAttribute('aria-label', l('ApplicationForms.Configuration:LinkDisplayName'));
         titleInput.value = data.title;
         titleCol.appendChild(titleInput);
 
-        const descCol = document.createElement('div');
-        descCol.className = 'col-12 col-md-3';
-        const descInput = document.createElement('input');
-        descInput.type = 'text';
-        descInput.className = 'form-control related-link-description';
-        descInput.maxLength = 512;
-        descInput.placeholder = l('ApplicationForms.Configuration:LinkDescription');
-        descInput.value = data.description;
-        descCol.appendChild(descInput);
-
-        const toggleCol = document.createElement('div');
-        toggleCol.className = 'col-6 col-md-1 d-flex align-items-center';
+        const toggleCol = document.createElement('td');
+        toggleCol.className = 'text-center';
         const switchWrapper = document.createElement('div');
-        switchWrapper.className = 'form-check unt-form-switch form-switch';
+        switchWrapper.className = 'form-check unt-form-switch form-switch d-inline-block';
         const toggleInput = document.createElement('input');
         toggleInput.type = 'checkbox';
         toggleInput.className = 'form-check-input related-link-published';
-        toggleInput.setAttribute('aria-label', l('ApplicationForms.Configuration:ShowOtherLinksInPortal'));
+        toggleInput.setAttribute('aria-label', l('ApplicationForms.Configuration:ShowRelatedLinksInPortal'));
         toggleInput.style.cursor = 'pointer';
         toggleInput.checked = data.published;
         switchWrapper.appendChild(toggleInput);
         toggleCol.appendChild(switchWrapper);
 
-        const removeCol = document.createElement('div');
-        removeCol.className = 'col-6 col-md-1 d-flex align-items-center';
+        const removeCol = document.createElement('td');
+        removeCol.className = 'text-center';
         const removeButton = document.createElement('button');
         removeButton.type = 'button';
-        removeButton.className = 'btn btn-sm btn-outline-danger btn-remove-related-link';
-        removeButton.setAttribute('aria-label', 'Remove Link');
+        removeButton.className = 'btn btn-sm btn-outline-danger px-0 btn-remove-related-link';
+        removeButton.setAttribute('aria-label', l('ApplicationForms.Configuration:RemoveLink'));
         const removeIcon = document.createElement('i');
-        removeIcon.className = 'fl fl-trash';
+        removeIcon.className = 'fl fl-delete';
         removeButton.appendChild(removeIcon);
         removeCol.appendChild(removeButton);
 
         row.appendChild(uriCol);
         row.appendChild(titleCol);
-        row.appendChild(descCol);
         row.appendChild(toggleCol);
         row.appendChild(removeCol);
 
@@ -154,30 +187,37 @@
             return;
         }
 
-        row.remove();
+        mutateRelatedLinksTable(function () {
+            row.remove();
+        });
         updateAddButtonState();
         saveButton.disabled = false;
         cancelButton.disabled = false;
     });
 
     function rebuildRelatedLinkRows(links) {
-        relatedLinksContainer.innerHTML = '';
-        links.forEach(function (link) {
-            relatedLinksContainer.appendChild(createRelatedLinkRow(link));
+        mutateRelatedLinksTable(function () {
+            relatedLinksContainer.innerHTML = '';
+            links.forEach(function (link) {
+                relatedLinksContainer.appendChild(createRelatedLinkRow(link));
+            });
         });
         updateAddButtonState();
     }
 
     addRelatedLinkButton.addEventListener('click', function () {
-        if (collectRelatedLinkRows().length >= MAX_RELATED_LINKS) {
+        if (addRelatedLinkButton.getAttribute('aria-disabled') === 'true') {
             return;
         }
-        relatedLinksContainer.appendChild(createRelatedLinkRow());
+        mutateRelatedLinksTable(function () {
+            relatedLinksContainer.appendChild(createRelatedLinkRow());
+        });
         updateAddButtonState();
         saveButton.disabled = false;
         cancelButton.disabled = false;
     });
 
+    initRelatedLinksTable();
     updateAddButtonState();
 
     function validateExternalLinksConfig() {
@@ -232,8 +272,8 @@
                     return {
                         uri: row.querySelector('.related-link-uri').value.trim(),
                         title: row.querySelector('.related-link-title').value,
-                        description: row.querySelector('.related-link-description').value,
                         published: row.querySelector('.related-link-published').checked,
+                        description: row.querySelector('.related-link-description').value,
                         externalLinkType: EXTERNAL_LINK_TYPE_RELATED,
                         order: index
                     };

@@ -152,6 +152,11 @@
     line-height: 1.5;
 }
 
+.notification-notes-list {
+    margin: 0;
+    padding-left: 1.25rem;
+}
+
 /* Template preview styling */
 .template-preview-container {
     padding: 12px;
@@ -191,6 +196,53 @@
 /* Hidden sections (display:none handled by JavaScript) */
 .hidden-section {
     display: none;
+}
+
+.notification-tooltip {
+    background: transparent;
+    border: 0;
+    cursor: help;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 20px;
+    height: 20px;
+    margin-left: 0.35rem;
+    margin-top: 0;
+    padding: 0;
+    position: relative;
+    top: -5px;
+    z-index: 2;
+}
+
+.notification-tooltip-icon {
+    border: 2px solid rgb(46, 93, 215);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    background-color: rgb(255, 255, 255);
+    color: rgb(46, 93, 215);
+    font-family: Georgia, serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    font-style: italic;
+    line-height: 22px;
+    transform: translateY(4px);
+}
+
+.notification-tooltip:focus-visible {
+    outline: 2px solid #2e5dd7;
+    outline-offset: 2px;
+}
+
+.notification-tooltip-popover .tooltip-inner {
+    font-size: 0.75rem;
+    line-height: 1.35;
+    max-width: 280px;
+    padding: 0.35rem 0.5rem;
 }
 
 /* Notifications table styling */

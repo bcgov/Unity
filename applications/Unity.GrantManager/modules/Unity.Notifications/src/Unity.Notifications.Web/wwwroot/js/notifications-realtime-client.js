@@ -1325,20 +1325,26 @@
             });
 
             const menuObserver = new MutationObserver(function (mutations) {
-                const menuWasAdded = mutations.some(function (mutation) {
-                    return Array.from(mutation.addedNodes).some(function (node) {
-                        return node.nodeType === Node.ELEMENT_NODE
-                            && (node.matches('#realtimeWidgetBubbleMenuItem')
-                                || node.querySelector('#realtimeWidgetBubbleMenuItem'));
-                    });
-                });
-
-                if (menuWasAdded) {
+                if (containsBubbleMenuItem(mutations)) {
                     updateBubbleMenuItem();
                 }
             });
             menuObserver.observe(document.body, { childList: true, subtree: true });
             updateBubbleMenuItem();
+        }
+
+        function containsBubbleMenuItem(mutations) {
+            for (const mutation of mutations) {
+                for (const node of mutation.addedNodes) {
+                    if (node.nodeType === Node.ELEMENT_NODE
+                        && (node.matches('#realtimeWidgetBubbleMenuItem')
+                            || node.querySelector('#realtimeWidgetBubbleMenuItem'))) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         function updateBubbleMenuItem() {
