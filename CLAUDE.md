@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Layout
 
-`applications/Unity.GrantManager/` is where almost all work happens — a self-contained ABP Framework solution with its own extensive AI-agent instructions. `applications/Unity.AutoUI/` holds Cypress E2E tests; `applications/Unity.Tools/`, `database/`, and `documentation/` round out the rest (see root `README.md` for the full layout).
+`applications/Unity.GrantManager/` is where almost all work happens — a self-contained ABP Framework solution with its own extensive AI-agent instructions. `applications/Unity.GrantManager.Angular/` is the Angular front end for the in-progress strangler-fig UI migration (see [`documentation/angular-strangler-fig/architecture.md`](documentation/angular-strangler-fig/architecture.md) and that app's `README.md` for local setup); `applications/Unity.AutoUI/` holds Cypress E2E tests; `applications/Unity.Tools/`, `database/`, and `documentation/` round out the rest (see root `README.md` for the full layout).
 
 **Read these before making non-trivial changes in `applications/Unity.GrantManager/`** — note this solution has its own `.github/`, separate from the root `.github/` above it:
 
