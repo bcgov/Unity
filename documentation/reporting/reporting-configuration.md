@@ -1,6 +1,6 @@
 # Reporting Configuration (Explicit Path)
 
-> This is the **current, go-forward** way reporting views are created in Unity Portal. It is one of [two view-generation paths](README.md); the other — auto-generated "dynamic" views that used to be created on publish — is deprecated, no longer generates views, and is documented in [reporting-auto-generated-views.md](reporting-auto-generated-views.md).
+> This is the only way reporting views are created in Unity Portal. The auto-generated "dynamic" views that used to be created on publish have been removed — see [reporting-auto-generated-views.md](reporting-auto-generated-views.md).
 
 ## Overview
 
@@ -353,7 +353,7 @@ Generated views are useless to Metabase until a database role can read them. Rol
 - `TenantViewRoleAppService` (`[Authorize(IdentityConsts.ITAdminPermissionName)]`) reads, updates, and manually re-runs assignment. When no role has been saved it infers one: `{LicencePlate}_readonly` from the tenant's `LicencePlate` extra property, falling back to `{tenantname}_readonly`. `UpdateAsync` and `AssignRoleToViewsAsync` both fail fast with a `UserFriendlyException` if the role does not exist in the tenant's database — the background job alone would only log a warning and silently no-op.
 - `GetTenantDatabaseInfoAsync` backs the **View DB Info** modal (`DatabaseInfoModal`), listing the tenant's database roles, role memberships, and all views currently in the `Reporting` schema.
 
-> **Interaction with the deprecated Auto path:** `AssignRoleToAllViewsAsync` validates every view name it reads back from `pg_views` against `^[a-zA-Z_][a-zA-Z0-9_]*$` before interpolating it into the `GRANT`. Auto-generated view names (`Form-…`, `Worksheet-…`, `Scoresheet-…`) contain hyphens and fail that check, so the grant loop throws part-way through on any database that still holds them. See [reporting-auto-generated-views.md](reporting-auto-generated-views.md#known-rough-edges).
+> **Non-identifier view names:** `AssignRoleToAllViewsAsync` validates every view name it reads back from `pg_views` against `^[a-zA-Z_][a-zA-Z0-9_]*$` before interpolating it into the `GRANT`, and throws on the first one that fails, leaving the grant loop incomplete. Views generated here always pass. A view created in the `Reporting` schema by any other means whose name contains a hyphen, space, or other non-identifier character — as the removed auto-generated `Form-…` / `Worksheet-…` / `Scoresheet-…` views had — makes the operation throw part-way through; see [reporting-auto-generated-views.md](reporting-auto-generated-views.md#verification).
 
 ### View Name Availability
 

@@ -22,11 +22,6 @@ namespace Unity.Flex.Domain.Worksheets
         public virtual Collection<WorksheetSection> Sections { get; private set; } = [];
         public virtual Collection<WorksheetLink> Links { get; private set; } = [];
 
-        // For reporting purposes
-        public virtual string ReportColumns { get; set; } = string.Empty;
-        public virtual string ReportKeys { get; set; } = string.Empty;
-        public virtual string ReportViewName { get; set; } = string.Empty;
-
         protected Worksheet()
         {
             /* This constructor is for ORMs to be used while getting the entity from the database. */

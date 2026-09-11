@@ -684,16 +684,16 @@ Unity.Flex.Web                       (Razor Pages admin builder + ViewComponents
       <table class="data">
         <thead><tr><th>Table (schema Flex)</th><th>Role</th><th>Notable columns</th></tr></thead>
         <tbody>
-          <tr><td class="code">Worksheets</td><td>Form template</td><td class="mono">ReportKeys, ReportViewName (text)</td></tr>
+          <tr><td class="code">Worksheets</td><td>Form template</td><td class="mono">Name, Version, Published</td></tr>
           <tr><td class="code">WorksheetSections</td><td>Ordered field groups</td><td class="mono">Definition jsonb</td></tr>
           <tr><td class="code">CustomFields</td><td>One field definition</td><td class="mono">Name = custom_&lt;worksheet&gt;_&lt;key&gt;, Definition jsonb</td></tr>
           <tr><td class="code">WorksheetLinks</td><td>Mounts a worksheet to a UI anchor</td><td class="mono">CorrelationId/Provider, UiAnchor, Order</td></tr>
-          <tr><td class="code">WorksheetInstances</td><td>One filled worksheet</td><td class="mono">CurrentValue jsonb, ReportData jsonb</td></tr>
+          <tr><td class="code">WorksheetInstances</td><td>One filled worksheet</td><td class="mono">CurrentValue jsonb</td></tr>
           <tr><td class="code">CustomFieldValues</td><td>One field's value</td><td class="mono">CurrentValue jsonb — no soft delete</td></tr>
-          <tr><td class="code">Scoresheets</td><td>Scoring template</td><td class="mono">ReportColumns, ReportKeys text</td></tr>
+          <tr><td class="code">Scoresheets</td><td>Scoring template</td><td class="mono">Name, Version, Order, Published</td></tr>
           <tr><td class="code">ScoresheetSections</td><td>Ordered question groups</td><td class="mono">Definition jsonb</td></tr>
           <tr><td class="code">Questions</td><td>One scoreable question</td><td class="mono">Definition jsonb</td></tr>
-          <tr><td class="code">ScoresheetInstances</td><td>One assessor's response</td><td class="mono">Value text, ReportData jsonb</td></tr>
+          <tr><td class="code">ScoresheetInstances</td><td>One assessor's response</td><td class="mono">Value text</td></tr>
           <tr><td class="code">Answers</td><td>One question's answer</td><td class="mono">CurrentValue jsonb, full audit + soft delete</td></tr>
         </tbody>
       </table>
@@ -703,7 +703,7 @@ Unity.Flex.Web                       (Razor Pages admin builder + ViewComponents
     <ul>
       <li><strong>Schema-per-row / EAV-style design:</strong> both field <em>definitions</em> (shape/validation rules) and field <em>values</em> are stored as flexible <span class="code">jsonb</span> rather than fixed relational columns — the mechanism that makes the whole system dynamic without per-form schema migrations.</li>
       <li><strong>Multi-tenant:</strong> every entity implements <span class="code">IMultiTenant</span> (nullable <span class="code">TenantId</span>) — standard ABP row-level tenant filtering.</li>
-      <li><strong>Deprecated reporting columns:</strong> the <span class="code">Report*</span> and <span class="code">ReportData</span> columns above fed the deprecated auto-generated reporting views. No code writes them any more; they hold their last generated values until the planned Phase 2 migration drops them — see <span class="code">documentation/reporting/reporting-auto-generated-views.md</span>.</li>
+      <li><strong>Reporting support:</strong> Flex entities carry no reporting-specific columns. Reporting Configuration views read <span class="code">WorksheetInstance.CurrentValue</span> and <span class="code">Answer.CurrentValue</span> directly — see §08 and <span class="code">documentation/reporting/</span>.</li>
       <li><strong>No additional unique indexes/constraints</strong> beyond primary keys were found — duplicate-name prevention is purely an application/domain-layer invariant, not DB-enforced.</li>
     </ul>
   </section>

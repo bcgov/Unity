@@ -19,11 +19,6 @@ namespace Unity.Flex.Domain.Scoresheets
         public virtual bool IsArchived { get; private set; } = false;
         public Guid? TenantId { get; set; }
 
-        // For reporting purposes
-        public virtual string ReportColumns { get; set; } = string.Empty;
-        public virtual string ReportKeys { get; set; } = string.Empty;
-        public virtual string ReportViewName { get; set; } = string.Empty;
-
         public virtual Collection<ScoresheetSection> Sections { get; private set; } = [];
         public virtual Collection<ScoresheetInstance> Instances { get; private set; } = [];
 

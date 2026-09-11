@@ -27,9 +27,6 @@ namespace Unity.Flex.Domain.WorksheetInstances
 
         public virtual Collection<CustomFieldValue> Values { get; private set; } = [];
 
-        [Column(TypeName = "jsonb")]
-        public virtual string ReportData { get; private set; } = "{}";
-
         protected WorksheetInstance()
         {
             /* This constructor is for ORMs to be used while getting the entity from the database. */

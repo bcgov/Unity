@@ -11,21 +11,7 @@ Raw Database  →  Views (Reporting schema)  →  Metabase Models  →  Cards / 
 
 Any reporting tool — not just Metabase — can be pointed at the raw database and generated views to build its own layer on top. Metabase is our current choice, not a hard dependency.
 
-## Two paths into Layer 2
-
-Layer 2 — the views — is produced by **two independent mechanisms** that both write into the `Reporting` schema. A given database may contain views from both.
-
-| | **Explicit** — Reporting Configuration | **Auto / Dynamic** — legacy |
-| --- | --- | --- |
-| Status | **Current, go-forward** | **Deprecated — no longer generated; existing views remain until Phase 2 removes them** |
-| Who decides a view exists | An administrator, on the Reporting Configuration tab | Nobody — views were created automatically on publish; no code creates or refreshes them now |
-| Configuration store | `Reporting.ReportColumnsMaps` | `ReportKeys` / `ReportColumns` / `ReportViewName` on the definition row |
-| Column types | `NUMERIC`, `DECIMAL(18,2)`, `TIMESTAMP`, `BOOLEAN`, `TEXT` | `TEXT` for everything (plus one `integer` `TotalScore`) |
-| Value source at query time | Source data directly — `Submission`, `WorksheetInstances.CurrentValue`, `Flex.Answers` | The pre-flattened `ReportData` JSONB snapshot |
-| Cross-version views | Yes (`*_consolidated` providers) | No — one view per version / worksheet / scoresheet |
-| Detail | [reporting-configuration.md](reporting-configuration.md) | [reporting-auto-generated-views.md](reporting-auto-generated-views.md) |
-
-The two do not interfere at the data level — the explicit path's SQL never reads `ReportData` or the `Report*` definition columns — so the remaining auto views and their columns can be dropped without touching any explicitly configured view. The rest of this document describes the layer model; where a layer differs between the paths, it says so.
+Layer 2 — the views — is produced only by Reporting Configuration, documented in [reporting-configuration.md](reporting-configuration.md). The auto-generated `Form-*` / `Worksheet-*` / `Scoresheet-*` views have been removed; [reporting-auto-generated-views.md](reporting-auto-generated-views.md) covers the migration that drops them.
 
 ---
 
@@ -92,8 +78,6 @@ flowchart TD
 ## Layer 2 — Views (Reporting Schema)
 
 **What it is:** PostgreSQL views in the `Reporting` schema. These views do the hard work of extracting individual fields out of the JSON and presenting them as ordinary, flat, named columns.
-
-Two mechanisms create them — see [Two paths into Layer 2](#two-paths-into-layer-2). The rest of this section describes the **explicit** Reporting Configuration path, which is the one to build on. The deprecated Auto path is summarised in [Layer 2b](#layer-2b--auto-generated-views-deprecated) below and documented in full in [reporting-auto-generated-views.md](reporting-auto-generated-views.md).
 
 **How they are created:**
 
@@ -167,24 +151,6 @@ WHERE region = 'North'
 Each `generate_*` procedure reads the mapping row out of `Reporting."ReportColumnsMaps"`, asks the matching `get_*_data` function for a complete `SELECT` statement, drops any existing view of that name, and creates the view from that statement.
 
 Column typing varies by provider: all five emit `TEXT` / `NUMERIC` / `DECIMAL(18,2)` / `BOOLEAN`, but only the two worksheet functions use the `Reporting.safe_to_date` / `safe_to_timestamp` / `safe_to_jsonb` helpers and only they emit `TIMESTAMP` — under the submission and scoresheet providers, date fields land as `TEXT`. The scoresheet views additionally call `Reporting.calculate_scoresheet_total_score`. See [reporting-configuration.md](reporting-configuration.md#provider--stored-procedure-routing) for the full comparison.
-
----
-
-## Layer 2b — Auto-generated views (deprecated)
-
-**What it is:** A second, older mechanism that created one `Reporting` view per CHEFS form version, per published worksheet, and per published scoresheet — with no configuration step. The generation code has been removed, so no new auto views appear and existing ones are no longer refreshed; the views, the procedures below, and the columns they read stay in the database until Phase 2. Each procedure read a pipe-delimited key/column list stored on the definition row and emitted one `TEXT` column per key, each a lookup into a pre-flattened `ReportData` JSONB snapshot on the instance row.
-
-| Source | View name pattern | Procedure |
-| --- | --- | --- |
-| CHEFS form version | `Form-{FormName}-V{Version}` | `Reporting.generate_submissions_view(uuid)` |
-| Flex worksheet | `Worksheet-{WorksheetName}` | `Reporting.generate_worksheets_view(uuid)` |
-| Flex scoresheet | `Scoresheet-{ScoresheetName}` | `Reporting.generate_scoresheets_view(uuid)` |
-
-**Why it is being retired:** every column is `TEXT`; view names contain hyphens and so are not valid bare PostgreSQL identifiers (which breaks the "assign role to all views" operation); column names are truncated at 63 characters without de-duplication; there is no cross-version view; generation failures are logged and otherwise silent; and `ReportData` is a duplicate copy of data that already exists in the source tables.
-
-**How to tell them apart in a database:** the explicitly configured views are exactly the `ViewName` values in `Reporting."ReportColumnsMaps"`. Anything else under `Reporting` in `pg_views` is an auto view or an orphan.
-
-Full detail, including the Phase 2 removal plan, is in [reporting-auto-generated-views.md](reporting-auto-generated-views.md).
 
 ---
 
@@ -376,8 +342,5 @@ The view generation system (Reporting Configuration) remains the same regardless
 |-------|-----------|-----------|------------|
 | Raw Database | PostgreSQL tables | Application writes | Normalised rows + JSON blobs |
 | Reporting Views | PostgreSQL views (`Reporting` schema) | Reporting Configuration UI | Flat, named, **typed** columns |
-| Reporting Views *(deprecated)* | PostgreSQL views (`Reporting` schema) | No longer generated — frozen, no owner | Flat, named, **all `TEXT`** columns |
 | Models | Metabase Models | Metabase authors | Named, joined, business-labelled sources |
 | Cards / Dashboards | Metabase Questions & Dashboards | Report authors | Specific questions and visualisations |
-
-Layers 3 and 4 are identical regardless of which mechanism produced the view underneath — which is what makes the Auto path's removal a migration of Metabase sources rather than a rebuild of the reports themselves.

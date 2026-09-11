@@ -117,7 +117,11 @@ redefined across several migrations — safer than hand-merging incremental
 `CREATE OR REPLACE` edits from migration history). All of it is now
 (re-)created at the end of `Initial.Up()` via `RunEmbeddedScript(...)` calls
 and two `CREATE EXTENSION IF NOT EXISTS` statements, so a brand-new database
-gets full parity.
+gets full parity. The exception is the three auto-view procedures
+(`generate_scoresheets_view`, `generate_submissions_view`,
+`generate_worksheets_view`): `Initial.Up()` no longer creates them, and
+`AB34344_RemoveAutoReportingViews` drops them from existing databases — see
+`documentation/reporting/reporting-auto-generated-views.md`.
 
 Not restored: `public.populate_application_addresses()` — a one-time data-fix
 helper function created by `AB29492_ApplicantAddress_Datafix`. It exists in
