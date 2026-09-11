@@ -204,21 +204,11 @@ namespace Unity.GrantManager.Events
                 }
 
                 var today = DateTime.UtcNow.Date;
-                var todayDateOnly = DateOnly.FromDateTime(today);
 
                 // OPTIMIZATION: Single query to get all applications for all forms with past dates
                 // Only queries applications where FormId exists in ScheduledNotifications with Date trigger type
-                // includeDetails: true is required to eager-load Applicant (needed for FiscalYearEnd matching)
-                var allApplications = (await _applicationRepository.GetListAsync(
-                    a => formIds.Contains(a.ApplicationFormId)
-                      && ((a.DueDate != null && a.DueDate <= today) ||
-                          (a.ProjectStartDate != null && a.ProjectStartDate <= today) ||
-                          (a.ProjectEndDate != null && a.ProjectEndDate <= today) ||
-                          (a.NotificationDate != null && a.NotificationDate <= today) ||
-                          (a.ContractExecutionDate != null && a.ContractExecutionDate <= today) ||
-                          (a.Applicant != null && a.Applicant.FiscalYearEnd != null && a.Applicant.FiscalYearEnd <= todayDateOnly)),
-                    includeDetails: true))
-                    .ToList();
+                // Only eager-loads Applicant (needed for FiscalYearEnd matching), not the full details graph
+                var allApplications = await _applicationRepository.GetListForDateBasedNotificationsAsync(formIds, today);
 
                 if (allApplications.Count == 0)
                 {

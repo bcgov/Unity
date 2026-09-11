@@ -230,6 +230,25 @@ public class ApplicationRepository
         return await query.AnyAsync(a => a.ApplicantId == applicantId);
     }
 
+    public async Task<List<Application>> GetListForDateBasedNotificationsAsync(List<Guid> formIds, DateTime today)
+    {
+        var todayDateOnly = DateOnly.FromDateTime(today);
+
+        var query = (await GetQueryableAsync())
+            .AsNoTracking()
+            .Include(a => a.Applicant);
+
+        return await query
+            .Where(a => formIds.Contains(a.ApplicationFormId)
+                && ((a.DueDate != null && a.DueDate <= today) ||
+                    (a.ProjectStartDate != null && a.ProjectStartDate <= today) ||
+                    (a.ProjectEndDate != null && a.ProjectEndDate <= today) ||
+                    (a.NotificationDate != null && a.NotificationDate <= today) ||
+                    (a.ContractExecutionDate != null && a.ContractExecutionDate <= today) ||
+                    (a.Applicant != null && a.Applicant.FiscalYearEnd != null && a.Applicant.FiscalYearEnd <= todayDateOnly)))
+            .ToListAsync();
+    }
+
     public async Task<List<ApplicationListRecord>> GetApplicationListRecordsAsync(
         int skipCount,
         int maxResultCount,
