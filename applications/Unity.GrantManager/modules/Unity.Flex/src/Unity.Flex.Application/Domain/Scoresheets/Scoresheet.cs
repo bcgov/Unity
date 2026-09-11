@@ -3,14 +3,13 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using Unity.Flex.Domain.Exceptions;
 using Unity.Flex.Domain.ScoresheetInstances;
-using Unity.Flex.Reporting;
 using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 
 namespace Unity.Flex.Domain.Scoresheets
 {
-    public class Scoresheet : FullAuditedAggregateRoot<Guid>, IMultiTenant, IReportableEntity<Scoresheet>
+    public class Scoresheet : FullAuditedAggregateRoot<Guid>, IMultiTenant
     {
         public virtual string Title { get; set; } = string.Empty;
         public virtual string Name { get; private set; } = string.Empty;
@@ -110,15 +109,6 @@ namespace Unity.Flex.Domain.Scoresheets
         internal Scoresheet CloneSection(ScoresheetSection clonedSection)
         {
             Sections.Add(clonedSection);
-            return this;
-        }
-
-        public Scoresheet SetReportingFields(string keys, string columns, string reportViewName)
-        {
-            ReportColumns = columns;
-            ReportViewName = reportViewName;
-            ReportKeys = keys;
-
             return this;
         }
     }

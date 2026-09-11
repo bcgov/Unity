@@ -24,7 +24,6 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Intakes.Mapping;
-using Unity.GrantManager.Reporting.FieldGenerators;
 using Unity.GrantManager.Integrations.Chefs;
 using Unity.Modules.Shared.Features;
 using Volo.Abp.Application.Dtos;
@@ -587,8 +586,6 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
             Substitute.For<IFormsApiService>(),
             formVersionRepository ?? Substitute.For<IApplicationFormVersionRepository>(),
             Substitute.For<IApplicationFormSubmissionRepository>(),
-            Substitute.For<IReportingFieldsGeneratorService>(),
-            featureChecker,
             new AIFeatureGuard(featureChecker, localizer),
             localizer,
             aiGenerationAppService,

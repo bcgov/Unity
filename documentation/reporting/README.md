@@ -6,22 +6,22 @@ There are **two independent view-generation paths** in the codebase today:
 
 | | **Explicit** — Reporting Configuration | **Auto / Dynamic** — legacy |
 | --- | --- | --- |
-| Status | **Current, go-forward** | **Deprecated — scheduled for removal** |
-| Driven by | `Reporting.ReportColumnsMaps` table, filled in by an administrator | `ReportKeys` / `ReportColumns` / `ReportViewName` columns written automatically on publish |
-| Triggered by | An admin clicking **Generate View** on the Reporting Configuration tab | Publishing a worksheet/scoresheet, or syncing a CHEFS form version |
+| Status | **Current, go-forward** | **Deprecated — no longer generated; existing views remain until the Phase 2 migration drops them** |
+| Driven by | `Reporting.ReportColumnsMaps` table, filled in by an administrator | `ReportKeys` / `ReportColumns` / `ReportViewName` columns, frozen at their last generated values |
+| Triggered by | An admin clicking **Generate View** on the Reporting Configuration tab | Nothing — no code creates or refreshes these views |
 | View shape | Typed columns (`NUMERIC`, `TIMESTAMP`, `BOOLEAN`, `DECIMAL(18,2)`, `TEXT`) | Every column `TEXT` |
 | Reads from | Source data directly (`Submission`, `WorksheetInstances.CurrentValue`, `Flex.Answers`) | Pre-flattened `ReportData` JSONB snapshots |
 | Column names | Admin-controlled, sanitised, uniqueness-enforced | Auto-derived from the source key, truncated at 63 chars |
 | Coverage | 5 providers incl. cross-version consolidated views | One view per form version / worksheet / scoresheet |
 | DB procedures | `generate_formversion_view`, `generate_worksheet_view`, `generate_scoresheet_view`, `generate_consolidated_formversion_view`, `generate_consolidated_worksheet_view` | `generate_submissions_view`, `generate_worksheets_view`, `generate_scoresheets_view` |
 
-Both paths write into the same `Reporting` schema and are both picked up by the same tenant reporting role, so a database today can contain views from both. The end goal is to remove the Auto path entirely once the reporting team has moved all Metabase reports onto explicitly configured views.
+Both paths' views live in the same `Reporting` schema and are both picked up by the same tenant reporting role, so a database can still contain frozen auto views next to explicitly configured ones. Phase 2 drops the auto views, their procedures, and their columns once the reporting team has moved all Metabase reports onto explicitly configured views.
 
 ## Read in this order
 
 1. **[reporting-architecture.md](reporting-architecture.md)** — the layer model (raw tables → views → Metabase models → cards), where each of the two paths sits in it, and the use cases each one serves.
 2. **[reporting-configuration.md](reporting-configuration.md)** — the **explicit** path in full: the five providers, field metadata, column-name generation and validation, view generation, change detection, role assignment, and the admin UI.
-3. **[reporting-auto-generated-views.md](reporting-auto-generated-views.md)** — the **deprecated** Auto/Dynamic path in full: what generates it, what it persists, its known rough edges, and the **phased deprecation plan** (Phase 1 code removal, Phase 2 data/DB removal).
+3. **[reporting-auto-generated-views.md](reporting-auto-generated-views.md)** — the **deprecated** Auto/Dynamic path: what remains in the database, its known rough edges, and the **Phase 2 removal plan** for the views, procedures, and columns.
 
 ### SQL function specifications (explicit path)
 
@@ -47,8 +47,8 @@ applications/Unity.GrantManager/
 │       │                                             5 IFieldsProvider impls, background jobs,
 │       │                                             ReportColumnsMap entity + repository + DbContext
 │       └── Unity.Reporting.Web/                      ReportingConfiguration view component + controller
-├── modules/Unity.Flex/src/Unity.Flex.Application/Reporting/    the Auto path for worksheets/scoresheets
-├── src/Unity.GrantManager.Application/Reporting/               the Auto path for CHEFS submissions
+├── modules/Unity.Flex/src/Unity.Flex.Application/Reporting/Configuration/   worksheet/scoresheet field metadata (explicit path)
+├── src/Unity.GrantManager.Application/Reporting/Configuration/              CHEFS form field metadata (explicit path)
 └── src/Unity.GrantManager.EntityFrameworkCore/Scripts/         all SQL, deployed as embedded resources
 ```
 
@@ -59,4 +59,3 @@ All `Reporting` schema objects — both paths — are created by the tenant migr
 One-page visual summaries live in `documentation/handover/`:
 
 - `reporting-configuration-handover.html` — the explicit path
-- `reporting-auto-views-handover.html` — the Auto path and its deprecation plan

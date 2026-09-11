@@ -11,19 +11,14 @@ using Unity.Flex.Domain.WorksheetInstances;
 using Unity.Flex.Domain.WorksheetLinks;
 using Unity.Flex.Domain.Worksheets;
 using Unity.Flex.Permissions;
-using Unity.Flex.Reporting.FieldGenerators;
 using Unity.Modules.Shared.Correlation;
-using Unity.Modules.Shared.Features;
 using Volo.Abp;
-using Volo.Abp.Features;
 
 namespace Unity.Flex.Worksheets
 {
     [Authorize]
     public partial class WorksheetAppService(IWorksheetRepository worksheetRepository,
         WorksheetsManager worksheetsManager,
-        IReportingFieldsGeneratorService<Worksheet> reportingFieldsGeneratorService,
-        IFeatureChecker featureChecker,
         IWorksheetLinkRepository worksheetLinkRepository,
         IWorksheetInstanceRepository worksheetInstanceRepository) : FlexAppService, IWorksheetAppService
     {
@@ -60,7 +55,6 @@ namespace Unity.Flex.Worksheets
             var newWorksheet = new Worksheet(Guid.NewGuid(), worksheetName, dto.Title);
             newWorksheet.SetVersion(dto.Version);
             newWorksheet.SetPublished(dto.Published);
-            newWorksheet.SetReportingFields(dto.ReportKeys, dto.ReportColumns, dto.ReportViewName);
 
             foreach (var section in dto.Sections.OrderBy(s => s.Order))
             {
@@ -118,11 +112,6 @@ namespace Unity.Flex.Worksheets
             var worksheet = await worksheetRepository.GetAsync(id);
 
             _ = worksheet.SetPublished(true);
-
-            if (await featureChecker.IsEnabledAsync(FeatureConsts.Reporting))
-            {
-                _ = reportingFieldsGeneratorService.GenerateAndSet(worksheet);
-            }
 
             return await Task.FromResult(true);
         }

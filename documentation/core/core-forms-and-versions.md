@@ -78,7 +78,7 @@ The method stamps `ExternalLinkType.Renewal` on the renewal link and `ExternalLi
 | `SubmissionHeaderMapping` | **The field map** — JSON, CHEFS field → Unity field |
 | `AvailableChefsFields` | The field inventory for this version |
 | `FormSchema` | The raw CHEFS schema as `jsonb`; what AI form-generation reads |
-| `ReportColumns`, `ReportKeys`, `ReportViewName` | Reporting view metadata — see [`reporting/`](../reporting/README.md) |
+| `ReportColumns`, `ReportKeys`, `ReportViewName` | Metadata of the deprecated auto-generated reporting views; no longer written, dropped by the planned Phase 2 migration — see [`reporting/reporting-auto-generated-views.md`](../reporting/reporting-auto-generated-views.md) |
 
 `HasSubmissionHeaderMapping(field)` deserialises the mapping to a `Dictionary<string, string>` and reports whether a field is mapped, swallowing malformed JSON as `false`.
 

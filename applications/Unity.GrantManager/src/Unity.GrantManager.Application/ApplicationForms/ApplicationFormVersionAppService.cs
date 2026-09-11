@@ -25,14 +25,11 @@ using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Intakes.Mapping;
 using Unity.GrantManager.Integrations.Chefs;
-using Unity.GrantManager.Reporting.FieldGenerators;
-using Unity.Modules.Shared.Features;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.Features;
 using Volo.Abp.Uow;
 using Unity.Flex.Domain.WorksheetLinks;
 using Unity.Flex.Domain.WorksheetInstances;
@@ -49,8 +46,6 @@ namespace Unity.GrantManager.ApplicationForms
         IFormsApiService formsApiService,
         IApplicationFormVersionRepository formVersionRepository,
         IApplicationFormSubmissionRepository formSubmissionRepository,
-        IReportingFieldsGeneratorService reportingFieldsGeneratorService,
-        IFeatureChecker featureChecker,
         AIFeatureGuard aiFeatureGuard,
         IStringLocalizer<AIResource> localizer,
         IAIGenerationAppService aiGenerationAppService,
@@ -238,13 +233,6 @@ namespace Unity.GrantManager.ApplicationForms
         {
             var applicationFormVersion = await GetOrCreateApplicationFormVersion(chefsFormId, chefsFormVersionId, applicationFormId);
             await UpdateApplicationFormVersionFields(applicationFormVersion, chefsFormVersion, applicationFormId, chefsFormVersionId);
-
-            if (await featureChecker.IsEnabledAsync(FeatureConsts.Reporting) &&
-                string.IsNullOrEmpty(applicationFormVersion.ReportViewName))
-            {
-                // Should be deprecated with new reporting configuration at some point
-                await reportingFieldsGeneratorService.GenerateAndSetAsync(applicationFormVersion);
-            }
 
             return ObjectMapper.Map<ApplicationFormVersion, ApplicationFormVersionDto>(applicationFormVersion);
         }

@@ -18,7 +18,6 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.Forms;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Integrations.Chefs;
-using Unity.GrantManager.Reporting.FieldGenerators;
 using Unity.GrantManager.GrantApplications.Automation.Operations.FormMapping;
 using Unity.Modules.Shared.Correlation;
 using Volo.Abp;
@@ -294,8 +293,6 @@ public class ApplicationFormVersionAppServiceMappingReviewTests(ITestOutputHelpe
             Substitute.For<IFormsApiService>(),
             Substitute.For<IApplicationFormVersionRepository>(),
             Substitute.For<IApplicationFormSubmissionRepository>(),
-            Substitute.For<IReportingFieldsGeneratorService>(),
-            featureChecker,
             new AIFeatureGuard(featureChecker, localizer),
             localizer,
             generationService ?? Substitute.For<IAIGenerationAppService>(),

@@ -83,9 +83,6 @@ public sealed class FormScoresheetOperationExecutor(
                     existingScoresheet.Version,
                     existingScoresheet.Order,
                     existingScoresheet.Published,
-                    existingScoresheet.ReportColumns,
-                    existingScoresheet.ReportKeys,
-                    existingScoresheet.ReportViewName,
                     sections = existingScoresheet.Sections.Select(section => new
                     {
                         section.Name,
@@ -228,11 +225,6 @@ public sealed class FormScoresheetOperationExecutor(
             }
         }
 
-        scoresheet.SetReportingFields(
-            GetRequiredStringProperty(parsed, "ReportKeys", "scoresheet", allowEmpty: true),
-            GetRequiredStringProperty(parsed, "ReportColumns", "scoresheet", allowEmpty: true),
-            GetRequiredStringProperty(parsed, "ReportViewName", "scoresheet", allowEmpty: true));
-
         return scoresheet;
     }
 
@@ -247,10 +239,6 @@ public sealed class FormScoresheetOperationExecutor(
         scoresheet.SetName(scoresheetName);
         scoresheet.Title = dto.Title;
         scoresheet.Version = version;
-        scoresheet.SetReportingFields(
-            GetRequiredStringProperty(parsed, "ReportKeys", "scoresheet", allowEmpty: true),
-            GetRequiredStringProperty(parsed, "ReportColumns", "scoresheet", allowEmpty: true),
-            GetRequiredStringProperty(parsed, "ReportViewName", "scoresheet", allowEmpty: true));
 
         scoresheet.Sections.Clear();
 
@@ -320,11 +308,11 @@ public sealed class FormScoresheetOperationExecutor(
         return false;
     }
 
-    private string GetRequiredStringProperty(JsonElement element, string propertyName, string sourceName, bool allowEmpty = false)
+    private string GetRequiredStringProperty(JsonElement element, string propertyName, string sourceName)
     {
         if (TryGetProperty(element, propertyName, out var property)
             && property.ValueKind == JsonValueKind.String
-            && (allowEmpty || !string.IsNullOrWhiteSpace(property.GetString())))
+            && !string.IsNullOrWhiteSpace(property.GetString()))
         {
             return property.GetString()!;
         }
