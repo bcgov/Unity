@@ -50,7 +50,7 @@ namespace Unity.GrantManager.Applicants
             addressRepo.GetQueryableAsync().Returns(Task.FromResult(Enumerable.Empty<ApplicantAddress>().AsAsyncQueryable()));
             var applicationRepo = Substitute.For<IRepository<Application, Guid>>();
             applicationRepo.GetQueryableAsync().Returns(Task.FromResult(Enumerable.Empty<Application>().AsAsyncQueryable()));
-            return new AddressInfoDataProvider(currentTenant, submissionRepo, addressRepo, applicationRepo);
+            return new AddressInfoDataProvider(currentTenant, submissionRepo, addressRepo, applicationRepo, new TestApplicantSubmissionMatcher());
         }
 
         private static OrgInfoDataProvider CreateOrgInfoDataProvider()
@@ -61,7 +61,7 @@ namespace Unity.GrantManager.Applicants
             submissionRepo.GetQueryableAsync().Returns(Task.FromResult(Enumerable.Empty<ApplicationFormSubmission>().AsAsyncQueryable()));
             var applicantRepo = Substitute.For<IRepository<Applicant, Guid>>();
             applicantRepo.GetQueryableAsync().Returns(Task.FromResult(Enumerable.Empty<Applicant>().AsAsyncQueryable()));
-            return new OrgInfoDataProvider(currentTenant, submissionRepo, applicantRepo);
+            return new OrgInfoDataProvider(currentTenant, submissionRepo, applicantRepo, new TestApplicantSubmissionMatcher());
         }
 
         private static SubmissionInfoDataProvider CreateSubmissionInfoDataProvider()
@@ -79,7 +79,7 @@ namespace Unity.GrantManager.Applicants
             var endpointManagementAppService = Substitute.For<IEndpointManagementAppService>();
             endpointManagementAppService.GetChefsApiBaseUrlAsync().Returns(Task.FromResult(string.Empty));
             var logger = Substitute.For<Microsoft.Extensions.Logging.ILogger<SubmissionInfoDataProvider>>();
-            return new SubmissionInfoDataProvider(currentTenant, submissionRepo, applicationRepo, formRepo, statusRepo, endpointManagementAppService, logger);
+            return new SubmissionInfoDataProvider(currentTenant, submissionRepo, applicationRepo, formRepo, statusRepo, endpointManagementAppService, new TestApplicantSubmissionMatcher(), logger);
         }
 
         [Fact]
@@ -156,7 +156,7 @@ namespace Unity.GrantManager.Applicants
             applicationRepo.GetQueryableAsync().Returns(Task.FromResult(Enumerable.Empty<Application>().AsAsyncQueryable()));
             var paymentRequestRepo = Substitute.For<IRepository<PaymentRequest, Guid>>();
             paymentRequestRepo.GetQueryableAsync().Returns(Task.FromResult(Enumerable.Empty<PaymentRequest>().AsAsyncQueryable()));
-            return new PaymentInfoDataProvider(currentTenant, submissionRepo, applicationRepo, paymentRequestRepo);
+            return new PaymentInfoDataProvider(currentTenant, submissionRepo, applicationRepo, paymentRequestRepo, new TestApplicantSubmissionMatcher());
         }
 
         [Fact]
@@ -183,7 +183,7 @@ namespace Unity.GrantManager.Applicants
             submissionRepo.GetQueryableAsync().Returns(Task.FromResult(Enumerable.Empty<ApplicationFormSubmission>().AsAsyncQueryable()));
             var formVersionRepo = Substitute.For<IApplicationFormVersionRepository>();
             var logger = Substitute.For<Microsoft.Extensions.Logging.ILogger<SubmissionFormDataProvider>>();
-            return new SubmissionFormDataProvider(currentTenant, submissionRepo, formVersionRepo, logger);
+            return new SubmissionFormDataProvider(currentTenant, submissionRepo, formVersionRepo, new TestApplicantSubmissionMatcher(), logger);
         }
 
         [Fact]

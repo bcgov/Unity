@@ -22,7 +22,8 @@ namespace Unity.GrantManager.ApplicantProfile
         ICurrentTenant currentTenant,
         IRepository<ApplicationFormSubmission, Guid> applicationFormSubmissionRepository,
         IRepository<Application, Guid> applicationRepository,
-        IRepository<PaymentRequest, Guid> paymentRequestRepository)
+        IRepository<PaymentRequest, Guid> paymentRequestRepository,
+        IApplicantSubmissionMatcher applicantSubmissionMatcher)
         : IApplicantProfileDataProvider, ITransientDependency
     {
         /// <inheritdoc />
@@ -44,10 +45,11 @@ namespace Unity.GrantManager.ApplicantProfile
                 var submissionsQuery = await applicationFormSubmissionRepository.GetQueryableAsync();
                 var applicationsQuery = await applicationRepository.GetQueryableAsync();
 
+                var matchingSubmissions = await applicantSubmissionMatcher.GetMatchingSubmissionsAsync(submissionsQuery, normalizedSubject);
+
                 var applicationLookup = await (
-                    from submission in submissionsQuery
+                    from submission in matchingSubmissions
                     join application in applicationsQuery on submission.ApplicationId equals application.Id
-                    where submission.OidcSub == normalizedSubject
                     select new { application.Id, application.ReferenceNo }
                 )
                 .Distinct()

@@ -2,7 +2,9 @@
 
 ## Overview
 
-The Applicant Profile system exposes a single polymorphic API endpoint that returns different data shapes depending on a **key** parameter. The controller delegates to `ApplicantProfileAppService`, which resolves the correct `IApplicantProfileDataProvider` implementation using a strategy/dictionary pattern.
+The Applicant Profile system exposes a single polymorphic API endpoint that returns different data shapes depending on a **key** parameter. The controller delegates to `ApplicantProfileQueryService`, which resolves the correct `IApplicantProfileDataProvider` implementation using a strategy/dictionary pattern.
+
+Every provider (and the contact query service it delegates to) resolves data for the caller's `OidcSub` **combined** with any other submissions that share the same underlying `ApplicantId` — see [Cross-Login Applicant Matching](#cross-login-applicant-matching). This lets an applicant who has used two different login methods (e.g. BCeID once, BC Services Card another time — two different `OidcSub` values) see and manage all of their data through either login.
 
 All providers are registered via ABP's `[ExposeServices]` attribute and collected as `IEnumerable<IApplicantProfileDataProvider>` in the app service constructor, where they are indexed by their `Key` property.
 
@@ -22,16 +24,18 @@ All providers are registered via ABP's `[ExposeServices]` attribute and collecte
 | `Subject`   | `string` | The OIDC subject (e.g. `user@idir`)                        |
 | `TenantId`  | `Guid` | The tenant to scope the query to                             |
 | `Key`       | `string` | The provider key — determines which data type is returned  |
+| `SubmissionId` | `Guid?` | Required only when `Key = SUBMISSIONFORMDATA` — identifies the single submission to return schema/data for |
 
 **Supported Keys:**
 
-| Key              | Provider Class               | DTO Returned                  | Status          |
-|------------------|------------------------------|-------------------------------|-----------------|
-| `CONTACTINFO`    | `ContactInfoDataProvider`    | `ApplicantContactInfoDto`     | ✅ Implemented  |
-| `ADDRESSINFO`    | `AddressInfoDataProvider`    | `ApplicantAddressInfoDto`     | ✅ Implemented  |
-| `SUBMISSIONINFO` | `SubmissionInfoDataProvider` | `ApplicantSubmissionInfoDto`  | ✅ Implemented  |
-| `ORGINFO`        | `OrgInfoDataProvider`        | `ApplicantOrgInfoDto`         | ✅ Implemented  |
-| `PAYMENTINFO`    | `PaymentInfoDataProvider`    | `ApplicantPaymentInfoDto`     | ✅ Implemented  |
+| Key                 | Provider Class               | DTO Returned                     | Status          |
+|---------------------|-------------------------------|-----------------------------------|-----------------|
+| `CONTACTINFO`       | `ContactInfoDataProvider`     | `ApplicantContactInfoDto`         | ✅ Implemented  |
+| `ADDRESSINFO`       | `AddressInfoDataProvider`     | `ApplicantAddressInfoDto`         | ✅ Implemented  |
+| `SUBMISSIONINFO`    | `SubmissionInfoDataProvider`  | `ApplicantSubmissionInfoDto`      | ✅ Implemented  |
+| `ORGINFO`           | `OrgInfoDataProvider`         | `ApplicantOrgInfoDto`             | ✅ Implemented  |
+| `PAYMENTINFO`       | `PaymentInfoDataProvider`     | `ApplicantPaymentInfoDto`         | ✅ Implemented  |
+| `SUBMISSIONFORMDATA`| `SubmissionFormDataProvider`  | `ApplicantSubmissionFormDataDto`  | ✅ Implemented  |
 
 **Response:** `ApplicantProfileDto` with a polymorphic `Data` property (JSON discriminator: `dataType`).
 
@@ -44,8 +48,9 @@ graph TB
     Client([External Client])
     Controller["ApplicantProfileController<br/><i>GET /api/app/applicant-profiles/profile</i>"]
     Filter["ApiKeyAuthorizationFilter"]
-    AppService["ApplicantProfileAppService"]
+    AppService["ApplicantProfileQueryService"]
     ProviderDict["Provider Dictionary<br/><i>key to IApplicantProfileDataProvider</i>"]
+    Matcher["IApplicantSubmissionMatcher<br/><i>combines OidcSub + shared ApplicantId</i>"]
 
     Client -->|"HTTP GET ?Key=..."| Controller
     Controller --> Filter
@@ -57,13 +62,21 @@ graph TB
     ProviderDict --> SubmissionProvider["SubmissionInfoDataProvider<br/><b>SUBMISSIONINFO</b>"]
     ProviderDict --> OrgProvider["OrgInfoDataProvider<br/><b>ORGINFO</b>"]
     ProviderDict --> PaymentProvider["PaymentInfoDataProvider<br/><b>PAYMENTINFO</b>"]
+    ProviderDict --> FormDataProvider["SubmissionFormDataProvider<br/><b>SUBMISSIONFORMDATA</b>"]
+
+    ContactProvider -.-> Matcher
+    AddressProvider -.-> Matcher
+    SubmissionProvider -.-> Matcher
+    OrgProvider -.-> Matcher
+    PaymentProvider -.-> Matcher
+    FormDataProvider -.-> Matcher
 ```
 
 ---
 
 ## Dispatch Flow
 
-The `ApplicantProfileAppService.GetApplicantProfileAsync` method is the central orchestrator. It:
+The `ApplicantProfileQueryService.GetApplicantProfileAsync` method is the central orchestrator. It:
 
 1. Creates a new `ApplicantProfileDto` and copies request fields (`ProfileId`, `Subject`, `TenantId`, `Key`).
 2. Looks up the matching `IApplicantProfileDataProvider` by `Key` in an in-memory dictionary (case-insensitive).
@@ -74,7 +87,7 @@ The `ApplicantProfileAppService.GetApplicantProfileAsync` method is the central 
 sequenceDiagram
     participant C as Client
     participant Ctrl as ApplicantProfileController
-    participant Svc as ApplicantProfileAppService
+    participant Svc as ApplicantProfileQueryService
     participant Dict as Provider Dictionary
     participant P as IApplicantProfileDataProvider
 
@@ -116,14 +129,14 @@ All providers are registered via ABP's `[ExposeServices(typeof(IApplicantProfile
 
 **Dependencies:**
 - `ICurrentTenant` — for multi-tenant scoping
-- `IApplicantProfileContactService` — encapsulates contact query logic
+- `IApplicantContactQueryService` (`ApplicantContactQueryService`) — encapsulates contact query logic; internally uses `IApplicantSubmissionMatcher` (see [Cross-Login Applicant Matching](#cross-login-applicant-matching))
 
 **Logic:**
 
 1. Switches to the requested tenant context.
-2. Retrieves **applicant contacts** — resolves applicant IDs from `ApplicationFormSubmission` records matching the normalized OIDC subject, then queries `ContactLink` records where `RelatedEntityType == "Applicant"` and `RelatedEntityId` is in the resolved set. When the subject resolves to a **single** applicant ID the contacts are **editable** (`IsEditable = true`); when **multiple** applicant IDs are found they are **read-only** (`IsEditable = false`). If no submissions match, an empty list is returned.
-3. Retrieves **application contacts** — contacts on applications whose form submissions match the normalized OIDC subject. These are **read-only** (`IsEditable = false`).
-4. Retrieves **applicant agent contacts** — contact information derived from `ApplicantAgent` records on applications whose form submissions match the normalized OIDC subject. The join path is `Submission → Application → ApplicantAgent`. These are **read-only** (`IsEditable = false`).
+2. Retrieves **applicant contacts** — resolves the distinct applicant IDs linked to the subject's own (`OidcSub`-matched) `ApplicationFormSubmission` records via `IApplicantSubmissionMatcher.ResolveApplicantIdsAsync`, then queries `ContactLink` records where `RelatedEntityType == "Applicant"` and `RelatedEntityId` is in that set. When the subject resolves to a **single** applicant ID the contacts are **editable** (`IsEditable = true`); when **multiple** applicant IDs are found they are **read-only** (`IsEditable = false`). If no submissions match, an empty list is returned.
+3. Retrieves **application contacts** — contacts on applications whose form submissions match `IApplicantSubmissionMatcher.GetMatchingSubmissionsAsync`, i.e. the subject's own submissions **plus** any other submissions sharing one of those applicant IDs (a different login for the same applicant). These are **read-only** (`IsEditable = false`).
+4. Retrieves **applicant agent contacts** — contact information derived from `ApplicantAgent` records on applications reached through that same matched submission set. The join path is `Submission → Application → ApplicantAgent`. These are **read-only** (`IsEditable = false`).
 5. Merges all three lists into a single `ApplicantContactInfoDto.Contacts` collection.
 6. Checks the `IsPrimary` flag on contacts; if no contact is marked primary, the most recently created contact (by `CreationTime`) is auto-promoted to primary.
 
@@ -136,7 +149,7 @@ flowchart TD
 
     subgraph ProfileContacts["Applicant Contacts - Conditionally Editable"]
         PC0["Normalize Subject<br/>strip domain, uppercase"]
-        PC0a["Query ApplicationFormSubmission<br/>WHERE OidcSub = normalizedSubject"]
+        PC0a["IApplicantSubmissionMatcher.ResolveApplicantIdsAsync<br/>ApplicationFormSubmission WHERE OidcSub = normalizedSubject"]
         PC0b["Extract distinct ApplicantIds"]
         PC0c{"Single<br/>ApplicantId?"}
         PC1["Query ContactLink<br/>WHERE RelatedEntityType = 'Applicant'<br/>AND RelatedEntityId IN applicantIds<br/>AND IsActive = true"]
@@ -153,7 +166,7 @@ flowchart TD
 
     subgraph AppContacts["Application Contacts - Read-Only"]
         AC1["Normalize Subject<br/>strip domain, uppercase"]
-        AC2["Query ApplicationFormSubmission<br/>WHERE OidcSub = normalizedSubject"]
+        AC2["IApplicantSubmissionMatcher.GetMatchingSubmissionsAsync<br/>OidcSub = subject OR ApplicantId shared via another login"]
         AC3["JOIN ApplicationContact<br/>ON ApplicationId"]
         AC3b["JOIN Application<br/>ON ApplicationId<br/>for ReferenceNo"]
         AC4["Map to ContactInfoItemDto<br/>IsEditable = false"]
@@ -162,7 +175,7 @@ flowchart TD
 
     subgraph AgentContacts["Applicant Agent Contacts - Read-Only"]
         AG1["Normalize Subject<br/>strip domain, uppercase"]
-        AG2["Query ApplicationFormSubmission<br/>WHERE OidcSub = normalizedSubject"]
+        AG2["IApplicantSubmissionMatcher.GetMatchingSubmissionsAsync<br/>OidcSub = subject OR ApplicantId shared via another login"]
         AG3["JOIN ApplicantAgent<br/>ON ApplicationId"]
         AG3b["JOIN Application<br/>ON ApplicationId<br/>for ReferenceNo"]
         AG4["Map to ContactInfoItemDto<br/>ContactType = 'ApplicantAgent'<br/>IsEditable = false"]
@@ -187,9 +200,9 @@ flowchart TD
 
 | Source | Entity | Join Path | Editable |
 |--------|--------|-----------|----------|
-| Applicant Contacts | `ApplicationFormSubmission` → `ContactLink` → `Contact` | `Submission.OidcSub = normalizedSubject` → distinct `ApplicantId` set → `ContactLink.RelatedEntityId IN applicantIds` | ✅ Single applicant / ❌ Multiple |
-| Application Contacts | `ApplicationFormSubmission` → `ApplicationContact` → `Application` | `Submission.OidcSub = normalizedSubject`, `Application.Id` for `ReferenceNo` | ❌ No |
-| Applicant Agent Contacts | `ApplicationFormSubmission` → `ApplicantAgent` → `Application` | `Submission.ApplicationId = Agent.ApplicationId`, `Application.Id` for `ReferenceNo` | ❌ No |
+| Applicant Contacts | `ApplicationFormSubmission` → `ContactLink` → `Contact` | `Submission.OidcSub = normalizedSubject` → distinct `ApplicantId` set (via `IApplicantSubmissionMatcher.ResolveApplicantIdsAsync`) → `ContactLink.RelatedEntityId IN applicantIds` | ✅ Single applicant / ❌ Multiple |
+| Application Contacts | `ApplicationFormSubmission` → `ApplicationContact` → `Application` | `Submission` matched via `IApplicantSubmissionMatcher.GetMatchingSubmissionsAsync` (own `OidcSub` + shared `ApplicantId`), `Application.Id` for `ReferenceNo` | ❌ No |
+| Applicant Agent Contacts | `ApplicationFormSubmission` → `ApplicantAgent` → `Application` | `Submission` matched via `IApplicantSubmissionMatcher.GetMatchingSubmissionsAsync`, `Submission.ApplicationId = Agent.ApplicationId`, `Application.Id` for `ReferenceNo` | ❌ No |
 
 **Applicant Agent Field Mapping:**
 
@@ -221,12 +234,13 @@ The `ApplicantAgent` entity is populated from the CHEFS submission login token d
 - `IRepository<ApplicationFormSubmission>` — form submissions
 - `IRepository<ApplicantAddress>` — address records
 - `IRepository<Application>` — applications (for `ReferenceNo`)
+- `IApplicantSubmissionMatcher` — combines the subject's own submissions with any others sharing the same `ApplicantId` (see [Cross-Login Applicant Matching](#cross-login-applicant-matching))
 
 **Logic:**
 
 1. Normalizes the OIDC subject.
 2. Switches to the requested tenant context.
-3. Queries addresses through **two join paths**:
+3. Resolves the matched submission set via `IApplicantSubmissionMatcher.GetMatchingSubmissionsAsync` (own `OidcSub` **plus** any other submission sharing an `ApplicantId` with one of the subject's own submissions), then queries addresses through **two join paths** against that set:
    - **By ApplicationId:** `Submission → Address (on ApplicationId) → Application` — these are **not editable** (owned by an application).
    - **By ApplicantId:** `Submission → Address (on ApplicantId) → Application (LEFT JOIN)` — these are **editable** (owned by the applicant directly).
 4. Concatenates both result sets.
@@ -242,8 +256,11 @@ flowchart TD
 
     Start --> Norm --> Tenant
 
+    Matcher["IApplicantSubmissionMatcher.GetMatchingSubmissionsAsync<br/>OidcSub = normalized OR ApplicantId shared via another login"]
+    Tenant --> Matcher
+
     subgraph ByAppId["Join Path: By ApplicationId - Read-Only"]
-        A1["ApplicationFormSubmission<br/>WHERE OidcSub = normalized"]
+        A1["matchedSubmissions"]
         A2["JOIN ApplicantAddress<br/>ON Submission.ApplicationId = Address.ApplicationId"]
         A3["JOIN Application<br/>ON Address.ApplicationId = Application.Id"]
         A4["IsEditable = false"]
@@ -251,15 +268,15 @@ flowchart TD
     end
 
     subgraph ByApplicantId["Join Path: By ApplicantId - Editable"]
-        B1["ApplicationFormSubmission<br/>WHERE OidcSub = normalized"]
+        B1["matchedSubmissions"]
         B2["JOIN ApplicantAddress<br/>ON Submission.ApplicantId = Address.ApplicantId"]
         B3["LEFT JOIN Application<br/>ON Address.ApplicationId = Application.Id"]
         B4["IsEditable = true"]
         B1 --> B2 --> B3 --> B4
     end
 
-    Tenant --> A1
-    Tenant --> B1
+    Matcher --> A1
+    Matcher --> B1
 
     A4 --> Concat["CONCAT both result sets"]
     B4 --> Concat
@@ -286,6 +303,7 @@ flowchart TD
 - `IRepository<ApplicationForm>` — application forms (for form name)
 - `IRepository<ApplicationStatus>` — status records
 - `IEndpointManagementAppService` — resolves the CHEFS API base URL
+- `IApplicantSubmissionMatcher` — combines the subject's own submissions with any others sharing the same `ApplicantId` (see [Cross-Login Applicant Matching](#cross-login-applicant-matching))
 - `ILogger<SubmissionInfoDataProvider>` — logging
 
 **Logic:**
@@ -297,13 +315,17 @@ flowchart TD
    - Appends `/user/view?s=` to create the view link template
    - Falls back to an empty string on failure.
 3. Switches to the requested tenant context.
-4. Queries `ApplicationFormSubmission` → `Application` → `ApplicationForm` → `ApplicationStatus` where `OidcSub` matches.
+4. Resolves the matched submission set via `IApplicantSubmissionMatcher.GetMatchingSubmissionsAsync`, then queries `ApplicationFormSubmission` → `Application` → `ApplicationForm` → `ApplicationStatus` against that set — this returns submissions from the subject's own `OidcSub` **and** any other submission sharing an `ApplicantId` with one of them.
 5. Maps each result to a `SubmissionInfoItemDto`:
    - `ReceivedTime` = the submission's `CreationTime` in the system.
    - `SubmissionTime` = the `createdAt` timestamp parsed from the CHEFS JSON payload; falls back to `CreationTime` if parsing fails.
    - `Type` = the `ApplicationFormName` from the joined `ApplicationForm` record.
-   - `Status` = the `ExternalStatus` from the application status record.
+   - `Status` = `Application.ExternalStatusVisibility ? (ApplicationStatus.NotifiedStatus ?? ApplicationStatus.ExternalStatus) : ApplicationStatus.ExternalStatus`.
    - `LinkId` = the `ChefsSubmissionGuid` used to build a direct link to the form.
+   - `EligibleForRenewal` = `Application.EligibleForRenewal`.
+   - `RenewalLink` = when `EligibleForRenewal` is true, the form's published `Renewal`-type external link (from `ApplicationForm.ExternalLinksConfig`); otherwise `null`.
+   - `RelatedLinks` = the form's published `Related`-type external links, ordered by their configured `Order` (unordered links, `Order = -1`, sort last).
+   - `ApplicantMessage` = the external links config's applicant-facing message, populated only when a renewal link was resolved.
 
 ```mermaid
 flowchart TD
@@ -325,7 +347,7 @@ flowchart TD
     ResolveUrl --> U1
 
     subgraph Query["Submission Query"]
-        Q1["ApplicationFormSubmission<br/>WHERE OidcSub = normalized"]
+        Q1["IApplicantSubmissionMatcher.GetMatchingSubmissionsAsync<br/>OidcSub = normalized OR ApplicantId shared via another login"]
         Q2["JOIN Application<br/>ON Submission.ApplicationId = Application.Id"]
         Q2b["JOIN ApplicationForm<br/>ON Application.ApplicationFormId = Form.Id"]
         Q3["JOIN ApplicationStatus<br/>ON Application.ApplicationStatusId = Status.Id"]
@@ -369,7 +391,7 @@ flowchart LR
 
 **Source**: `Applicant` entity, linked via `ApplicationFormSubmission.ApplicantId`.
 
-**Query**: Joins `ApplicationFormSubmission` → `Applicant` where `OidcSub` matches the normalized subject. Returns all matching applicant records — duplicates are **not** removed, since a single user may have multiple submissions pointing to the same or different applicant records. The UI is responsible for presenting this appropriately.
+**Query**: Resolves the matched submission set via `IApplicantSubmissionMatcher.GetMatchingSubmissionsAsync` (own `OidcSub` plus any other submission sharing an `ApplicantId`), then joins that set → `Applicant`. Because the matched set's `ApplicantId`s are already exactly the distinct applicant IDs linked to the subject's own submissions (the matcher only adds *more submissions* for those same IDs, never new IDs), this provider's distinct-applicant result is unchanged by cross-login matching — it is applied here for consistency with the other providers rather than to broaden the result. Returns all matching applicant records — duplicates are **not** removed, since a single user may have multiple submissions pointing to the same or different applicant records. The UI is responsible for presenting this appropriately.
 
 **Response DTO**: `ApplicantOrgInfoDto`
 
@@ -428,7 +450,7 @@ flowchart LR
 
 **Source**: `PaymentRequest` entity (from `Unity.Payments` module), linked via `ApplicationFormSubmission` → `Application` where `PaymentRequest.CorrelationId` matches the application ID.
 
-**Query**: Normalizes the OIDC subject, then joins `ApplicationFormSubmission` → `Application` to build a lookup of `ApplicationId → ReferenceNo`. Payment requests whose `CorrelationId` is in that set **and** whose CAS `PaymentStatus` is `"Fully Paid"` are returned with the application's `ReferenceNo` resolved from the lookup.
+**Query**: Normalizes the OIDC subject, resolves the matched submission set via `IApplicantSubmissionMatcher.GetMatchingSubmissionsAsync`, then joins that set → `Application` to build a lookup of `ApplicationId → ReferenceNo`. Because this join is keyed on `ApplicationId` (not `ApplicantId`), cross-login matching genuinely broadens the result here — it picks up payments for applications that were submitted under a different login than the one the caller is using, as long as both logins share the same `ApplicantId`. Payment requests whose `CorrelationId` is in that lookup **and** whose CAS `PaymentStatus` is `"Fully Paid"` (or whose `Status` is `HistoricalPayment`) are returned with the application's `ReferenceNo` resolved from the lookup.
 
 **Response DTO**: `ApplicantPaymentInfoDto`
 
@@ -457,9 +479,44 @@ flowchart LR
 | `ReferenceNo` | `Application.ReferenceNo` | `string` | Application reference number, resolved via `CorrelationId → Application` lookup |
 | `Amount` | `PaymentRequest.Amount` | `decimal` | Requested payment amount |
 | `PaymentDate` | `PaymentRequest.PaymentDate` | `string?` | Date string populated during CAS reconciliation |
-| `PaymentStatus` | Constant `"Fully Paid"` | `string` | Always `"Fully Paid"` — only payments with CAS `PaymentStatus` of `"Fully Paid"` are returned |
+| `PaymentStatus` | `"Fully Paid"` or `"Paid"` | `string` | `"Paid"` for historical payments (`PaymentRequest.Status == HistoricalPayment`); `"Fully Paid"` for everything else in the result set |
 
 **Cross-module note**: This provider queries the `PaymentRequest` entity directly from the `Unity.Payments` module via `IRepository<PaymentRequest, Guid>`. The `CorrelationId` on `PaymentRequest` corresponds to the `Application.Id` in the grant manager domain.
+
+---
+
+### 6. SubmissionFormDataProvider (`SUBMISSIONFORMDATA`)
+
+**Purpose:** Returns the form.io schema and the submitted answers for a **single** submission, so the Applicant Portal can render a client-side PDF of that submission (AB#34070). Unlike every other provider, this one is looked up by a specific `SubmissionId`, not by subject alone.
+
+**Dependencies:**
+- `ICurrentTenant` — for multi-tenant scoping
+- `IRepository<ApplicationFormSubmission>` — the target submission
+- `IApplicationFormVersionRepository` — resolves the form.io schema for the submission's form version
+- `IApplicantSubmissionMatcher` — used for the ownership check (see below)
+- `ILogger<SubmissionFormDataProvider>` — logging
+
+**Logic:**
+
+1. Normalizes the OIDC subject. If the subject is missing, or `request.SubmissionId` is `null`/`Guid.Empty`, throws `EntityNotFoundException` immediately.
+2. Switches to the requested tenant context, then loads the submission by `Id` alone (not yet filtered by subject).
+3. **Ownership check** — the submission is considered the caller's if either:
+   - `submission.OidcSub == normalizedSubject` (their own login), **or**
+   - `submission.ApplicantId` is in the set returned by `IApplicantSubmissionMatcher.ResolveApplicantIdsAsync` for the subject (the same applicant, reached via a different login).
+
+   If neither holds (or the submission doesn't exist at all), throws `EntityNotFoundException`.
+4. Resolves the form.io schema via `ApplicationFormVersionId` (preferred) or, failing that, `FormVersionId` (the CHEFS form version GUID). Throws `EntityNotFoundException` if no schema is available.
+5. Extracts the `submission.data` object from the stored CHEFS submission JSON. Throws `EntityNotFoundException` if it's missing or malformed.
+6. Returns an `ApplicantSubmissionFormDataDto` with the parsed `Schema` and `Data` as raw `JsonElement` values.
+
+**Security note:** This provider intentionally returns `EntityNotFoundException` (mapped to HTTP 404) for every failure case — unknown ID, wrong owner, missing schema, missing data — rather than a more specific error or an empty payload. The caller must not be able to distinguish "this submission doesn't exist" from "this submission exists but isn't yours," since this DTO carries PII/financial data (the raw form answers). This is the one provider where the cross-login expansion is a genuine *widening of access*, not just a widening of a list: extending the ownership check to `ApplicantId` membership means a submission filed under a different login is now viewable, wherever previously it would have 404'd.
+
+**Response DTO**: `ApplicantSubmissionFormDataDto`
+
+| Field | Type | Description |
+|-------|------|--------------|
+| `Schema` | `JsonElement` | The form.io schema (`ApplicationFormVersion.FormSchema`), parsed |
+| `Data` | `JsonElement` | The `submission` node from the CHEFS submission JSON (`{ data: {...}, state: ... }`) |
 
 ---
 
@@ -477,6 +534,41 @@ Input:  "USER"                                                  →  Output: "US
 
 The portion after `@` is stripped and the remainder is uppercased. This matches the format stored in `ApplicationFormSubmission.OidcSub`, which is populated during intake import (see [OIDC Subject Ingestion from CHEFS](#oidc-subject-ingestion-from-chefs) below).
 
+### Cross-Login Applicant Matching
+
+An applicant can reach Unity through more than one login method — for example BCeID once and a BC Services Card another time. Each login produces a **different** `OidcSub`, but every `ApplicationFormSubmission` also carries an `ApplicantId` that identifies the underlying applicant independent of login method. Filtering purely by `OidcSub` would silently hide a user's own data whenever they switch logins.
+
+Every provider (directly, or indirectly via `IApplicantContactQueryService`) resolves data through `IApplicantSubmissionMatcher`, a domain service at `Unity.GrantManager.Domain/Applications/ApplicantSubmissionMatcher.cs`:
+
+```csharp
+public interface IApplicantSubmissionMatcher
+{
+    // Applicant IDs directly linked to the subject's own (OidcSub-matched) submissions.
+    Task<List<Guid>> ResolveApplicantIdsAsync(IQueryable<ApplicationFormSubmission> submissionsQuery, string normalizedSubject);
+
+    // The subject's own submissions UNION any other submissions sharing one of those applicant IDs.
+    Task<IQueryable<ApplicationFormSubmission>> GetMatchingSubmissionsAsync(IQueryable<ApplicationFormSubmission> submissionsQuery, string normalizedSubject);
+}
+```
+
+`GetMatchingSubmissionsAsync` is a **one-hop** expansion, not a recursive chase: it resolves the distinct `ApplicantId`s linked to the subject's own submissions, then returns every submission whose `OidcSub` matches the subject **or** whose `ApplicantId` is in that resolved set. `ApplicantId == Guid.Empty` is excluded from matching so an unlinked/default applicant ID can't cause an accidental broad match across unrelated submissions.
+
+```mermaid
+flowchart LR
+    A["submissionsQuery"] --> B["WHERE OidcSub = normalizedSubject<br/>AND ApplicantId != Guid.Empty"]
+    B --> C["SELECT DISTINCT ApplicantId"]
+    C --> D["applicantIds"]
+    A --> E["WHERE OidcSub = normalizedSubject<br/>OR ApplicantId IN applicantIds"]
+    D --> E
+    E --> F["matchedSubmissions<br/>own login + other logins for the same applicant"]
+```
+
+**Where this changes results vs. where it doesn't:** every provider now runs its submission query through `GetMatchingSubmissionsAsync` for consistency, but it only *broadens the result set* for providers that join onward through `ApplicationId` (`SubmissionInfoDataProvider`, `PaymentInfoDataProvider`, `AddressInfoDataProvider`'s ApplicationId path, the `ContactInfoDataProvider`'s application/agent contacts). Providers that only need the distinct `ApplicantId` set itself (`OrgInfoDataProvider`, the applicant-linked-contacts path, `AddressInfoDataProvider`'s ApplicantId path) already saw the full picture before this existed, because that set is identical whether or not the extra submissions are included — the matcher's expansion never introduces a *new* `ApplicantId`, only more submissions carrying `ApplicantId`s already in the set. This also means the "editable when a single distinct `ApplicantId` is resolved" rule (see [Editability](#editability) below) is unaffected by the expansion.
+
+**Write path is unaffected:** the Applicant Portal's write commands (RabbitMQ, see [grants-portal-rabbitmq-integration.md](./grants-portal-rabbitmq-integration.md)) were already scoped by an explicit `ApplicantId` in the command payload, not by `OidcSub` — see [Write commands are ApplicantId-scoped, not OidcSub-scoped](./grants-portal-rabbitmq-integration.md#write-commands-are-applicantid-scoped-not-oidcsub-scoped). Broadening the read side to combine logins by `ApplicantId` makes it *more* consistent with the write side, not less: previously a user could never even be shown (and so could never edit) data tied to their other login; now they can see and edit it, through the same `ApplicantId`-keyed write path that already accepted it.
+
+**External surface only:** this matching only runs behind the API-key-gated `ApplicantProfileController` (`api/app/applicant-profiles/profile`) and the subject-based methods on `IApplicantContactQueryService`. Internal, staff-facing contact lookups (`ApplicantContactAppService`, the `ApplicantContacts` view component) call `IApplicantContactQueryService.GetByApplicantIdAsync(Guid)` directly with an explicit applicant ID and never touch `IApplicantSubmissionMatcher`.
+
 ### Multi-Tenancy
 
 Every provider switches to the requested `TenantId` using `ICurrentTenant.Change(request.TenantId)` before querying tenant-scoped data. This ensures queries hit the correct tenant database.
@@ -492,6 +584,7 @@ The `ApplicantProfileDataDto` base class uses `System.Text.Json` polymorphic att
 [JsonDerivedType(typeof(ApplicantAddressInfoDto), "ADDRESSINFO")]
 [JsonDerivedType(typeof(ApplicantSubmissionInfoDto), "SUBMISSIONINFO")]
 [JsonDerivedType(typeof(ApplicantPaymentInfoDto), "PAYMENTINFO")]
+[JsonDerivedType(typeof(ApplicantSubmissionFormDataDto), "SUBMISSIONFORMDATA")]
 ```
 
 The JSON response includes a `dataType` discriminator field so consumers can deserialize the correct concrete type.
@@ -614,33 +707,38 @@ sequenceDiagram
     participant Client
     participant Controller as ApplicantProfileController
     participant AuthFilter as ApiKeyAuthorizationFilter
-    participant AppService as ApplicantProfileAppService
+    participant Svc as ApplicantProfileQueryService
     participant Provider as IApplicantProfileDataProvider
     participant TenantCtx as ICurrentTenant
+    participant Matcher as IApplicantSubmissionMatcher
     participant DB as Tenant Database
 
     Client->>Controller: GET /api/app/applicant-profiles/profile<br/>?ProfileId=...&Subject=...&TenantId=...&Key=CONTACTINFO
     Controller->>AuthFilter: Validate API Key
     AuthFilter-->>Controller: ✅ Authorized
-    Controller->>AppService: GetApplicantProfileAsync(request)
+    Controller->>Svc: GetApplicantProfileAsync(request)
     
-    Note over AppService: Build ApplicantProfileDto shell<br/>with ProfileId, Subject, TenantId, Key
+    Note over Svc: Build ApplicantProfileDto shell<br/>with ProfileId, Subject, TenantId, Key
     
-    AppService->>AppService: _providersByKey.TryGetValue("CONTACTINFO")
-    AppService->>Provider: GetDataAsync(request)
+    Svc->>Svc: _providersByKey.TryGetValue("CONTACTINFO")
+    Svc->>Provider: GetDataAsync(request)
     
     Provider->>TenantCtx: Change(request.TenantId)
     TenantCtx-->>Provider: Scoped to tenant
     
-    Provider->>DB: Query contacts / addresses / submissions
+    Provider->>DB: Query own (OidcSub-matched) submissions
+    DB-->>Provider: Raw submissions
+    Provider->>Matcher: GetMatchingSubmissionsAsync(submissions, subject)
+    Matcher-->>Provider: own submissions UNION submissions<br/>sharing an ApplicantId (other logins)
+    Provider->>DB: Query contacts / addresses / payments<br/>joined against the matched submission set
     DB-->>Provider: Raw data
     
     Provider->>Provider: Normalize, deduplicate, map to DTOs
-    Provider-->>AppService: ApplicantContactInfoDto
+    Provider-->>Svc: ApplicantContactInfoDto
     
-    Note over AppService: dto.Data = contactInfoDto
+    Note over Svc: dto.Data = contactInfoDto
     
-    AppService-->>Controller: ApplicantProfileDto
+    Svc-->>Controller: ApplicantProfileDto
     Controller-->>Client: 200 OK<br/>{ profileId, subject, tenantId, key,<br/>  data: { dataType: "CONTACTINFO", contacts: [...] } }
 ```
 
@@ -651,11 +749,17 @@ sequenceDiagram
 ```
 src/
 ├── Unity.GrantManager.Application.Contracts/ApplicantProfile/
-│   ├── ApplicantProfileDto.cs                  # Response wrapper DTO
-│   ├── ApplicantProfileRequest.cs              # Request models (base + info)
-│   ├── IApplicantProfileAppService.cs          # App service interface
-│   ├── IApplicantProfileContactService.cs      # Contact service interface
-│   ├── IApplicantProfileDataProvider.cs        # Provider strategy interface
+│   ├── Queries/
+│   │   ├── ApplicantProfileDto.cs              # Response wrapper DTO
+│   │   ├── ApplicantProfileRequest.cs          # Request models (base + info)
+│   │   └── IApplicantProfileQueryService.cs    # Central orchestrator interface
+│   ├── Contacts/
+│   │   ├── IApplicantContactQueryService.cs    # Subject/applicant-based contact query interface
+│   │   └── IApplicantContactAppService.cs      # Internal staff-facing contact app service interface
+│   ├── DataProviders/
+│   │   └── IApplicantProfileDataProvider.cs    # Provider strategy interface
+│   ├── Payments/                               # Internal staff-facing payment summary/list (by ApplicantId)
+│   ├── History/                                # Internal staff-facing funding/audit/issue/reports history
 │   └── ProfileData/
 │       ├── ApplicantProfileDataDto.cs          # Polymorphic base (discriminator)
 │       ├── ApplicantContactInfoDto.cs          # CONTACTINFO response
@@ -663,19 +767,36 @@ src/
 │       ├── ApplicantAddressInfoDto.cs          # ADDRESSINFO response
 │       ├── ApplicantSubmissionInfoDto.cs       # SUBMISSIONINFO response
 │       ├── ApplicantPaymentInfoDto.cs          # PAYMENTINFO response
+│       ├── ApplicantSubmissionFormDataDto.cs   # SUBMISSIONFORMDATA response
 │       ├── ContactInfoItemDto.cs               # Individual contact item
 │       ├── AddressInfoItemDto.cs               # Individual address item
-│       └── SubmissionInfoItemDto.cs            # Individual submission item
+│       ├── OrgInfoItemDto.cs                   # Individual organization item
+│       ├── PaymentInfoItemDto.cs               # Individual payment item
+│       ├── SubmissionInfoItemDto.cs            # Individual submission item
+│       └── ExternalLinkDto.cs                  # Renewal / related link item
 │
 ├── Unity.GrantManager.Application/ApplicantProfile/
-│   ├── ApplicantProfileAppService.cs           # Central orchestrator
-│   ├── ApplicantProfileContactService.cs       # Contact query logic
 │   ├── ApplicantProfileKeys.cs                 # Key constants
-│   ├── AddressInfoDataProvider.cs              # ADDRESSINFO provider
-│   ├── ContactInfoDataProvider.cs              # CONTACTINFO provider
-│   ├── SubmissionInfoDataProvider.cs           # SUBMISSIONINFO provider
-│   ├── OrgInfoDataProvider.cs                  # ORGINFO provider
-│   └── PaymentInfoDataProvider.cs              # PAYMENTINFO provider
+│   ├── SubjectNormalizer.cs                    # OidcSub normalization (shared helper)
+│   ├── Queries/
+│   │   ├── ApplicantProfileQueryService.cs     # Central orchestrator (dispatches by Key)
+│   │   └── ApplicantContactQueryService.cs     # Subject/applicant-based contact query logic
+│   ├── DataProviders/
+│   │   ├── AddressInfoDataProvider.cs          # ADDRESSINFO provider
+│   │   ├── ContactInfoDataProvider.cs          # CONTACTINFO provider
+│   │   ├── SubmissionInfoDataProvider.cs       # SUBMISSIONINFO provider
+│   │   ├── OrgInfoDataProvider.cs              # ORGINFO provider
+│   │   ├── PaymentInfoDataProvider.cs          # PAYMENTINFO provider
+│   │   └── SubmissionFormDataProvider.cs       # SUBMISSIONFORMDATA provider
+│   ├── AppServices/
+│   │   └── ApplicantContactAppService.cs       # Internal staff-facing facade (GetByApplicantIdAsync, writes)
+│   ├── TenantMappings/                         # ApplicantTenantMap reconciliation (separate host-level mechanism)
+│   ├── Payments/                               # Internal staff-facing payment summary/list app service
+│   └── History/                                # Internal staff-facing funding/audit/issue/reports history app service
+│
+├── Unity.GrantManager.Domain/Applications/
+│   ├── IApplicantSubmissionMatcher.cs          # Cross-login matching interface
+│   └── ApplicantSubmissionMatcher.cs           # Cross-login matching implementation (DomainService)
 │
 ├── Unity.GrantManager.Application/Intakes/
 │   ├── IntakeFormSubmissionManager.cs          # Import orchestrator (calls ExtractOidcSub)
@@ -696,6 +817,8 @@ src/
 
 The `Id` returned by each provider's read response is used as the entity identifier in the corresponding write command. For organization data, the `OrgInfoItemDto.Id` maps to the `organizationId` field in `PluginDataPayload`.
 
+The read side (this document) resolves a caller's data by combining their `OidcSub` with any other submissions sharing the same `ApplicantId` (see [Cross-Login Applicant Matching](#cross-login-applicant-matching)). The write side has always operated purely on `ApplicantId` + record ID, independent of `OidcSub` — see [Write commands are ApplicantId-scoped, not OidcSub-scoped](./grants-portal-rabbitmq-integration.md#write-commands-are-applicantid-scoped-not-oidcsub-scoped). The two are consistent: both are ultimately keyed on `ApplicantId`.
+
 ---
 
 ## Adding a New Provider
@@ -703,6 +826,7 @@ The `Id` returned by each provider's read response is used as the entity identif
 1. Create a DTO class inheriting from `ApplicantProfileDataDto` in `Application.Contracts/ApplicantProfile/ProfileData/`
 2. Register the DTO as a `[JsonDerivedType]` on `ApplicantProfileDataDto`
 3. Add a key constant to `ApplicantProfileKeys`
-4. Implement `IApplicantProfileDataProvider` in `Application/ApplicantProfile/`
+4. Implement `IApplicantProfileDataProvider` in `Application/ApplicantProfile/DataProviders/`
 5. Annotate with `[ExposeServices(typeof(IApplicantProfileDataProvider))]` and `ITransientDependency`
-6. Add unit tests following the patterns in `OrgInfoDataProviderTests` or `AddressInfoDataProviderTests`
+6. If the provider queries `ApplicationFormSubmission` (directly, or via a join), inject `IApplicantSubmissionMatcher` and resolve the submission set through `GetMatchingSubmissionsAsync` (or `ResolveApplicantIdsAsync` if only the distinct applicant IDs are needed) rather than filtering on `OidcSub` alone — see [Cross-Login Applicant Matching](#cross-login-applicant-matching)
+7. Add unit tests following the patterns in `OrgInfoDataProviderTests` or `AddressInfoDataProviderTests`, including a case for a submission under a different `OidcSub` sharing the same `ApplicantId`

@@ -31,7 +31,7 @@ namespace Unity.GrantManager.Applicants
 
             SetupEmptyQueryables();
 
-            _provider = new OrgInfoDataProvider(_currentTenant, _submissionRepo, _applicantRepo);
+            _provider = new OrgInfoDataProvider(_currentTenant, _submissionRepo, _applicantRepo, new TestApplicantSubmissionMatcher());
         }
 
         private void SetupEmptyQueryables()
@@ -324,6 +324,54 @@ namespace Unity.GrantManager.Applicants
 
             var dto = result.ShouldBeOfType<ApplicantOrgInfoDto>();
             dto.Organizations.ShouldBeEmpty();
+        }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldIncludeApplicant_ForSameApplicantUnderDifferentOidcSub()
+        {
+            var request = CreateRequest();
+            var applicantId = Guid.NewGuid();
+            var applicationId1 = Guid.NewGuid();
+            var applicationId2 = Guid.NewGuid();
+
+            SetupQueryables(
+                [
+                    CreateSubmission(applicationId1, "TESTUSER", applicantId),
+                    CreateSubmission(applicationId2, "OTHERUSER", applicantId)
+                ],
+                [CreateApplicant(applicantId, a => a.OrgName = "Shared Org")]);
+
+            var result = await _provider.GetDataAsync(request);
+
+            var dto = result.ShouldBeOfType<ApplicantOrgInfoDto>();
+            dto.Organizations.Count.ShouldBe(1);
+            dto.Organizations[0].OrgName.ShouldBe("Shared Org");
+        }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldExcludeApplicant_ForUnrelatedApplicantUnderDifferentOidcSub()
+        {
+            var request = CreateRequest();
+            var applicantId1 = Guid.NewGuid();
+            var applicantId2 = Guid.NewGuid();
+            var applicationId1 = Guid.NewGuid();
+            var applicationId2 = Guid.NewGuid();
+
+            SetupQueryables(
+                [
+                    CreateSubmission(applicationId1, "TESTUSER", applicantId1),
+                    CreateSubmission(applicationId2, "OTHERUSER", applicantId2)
+                ],
+                [
+                    CreateApplicant(applicantId1, a => a.OrgName = "Own Org"),
+                    CreateApplicant(applicantId2, a => a.OrgName = "Unrelated Org")
+                ]);
+
+            var result = await _provider.GetDataAsync(request);
+
+            var dto = result.ShouldBeOfType<ApplicantOrgInfoDto>();
+            dto.Organizations.Count.ShouldBe(1);
+            dto.Organizations[0].OrgName.ShouldBe("Own Org");
         }
     }
 }

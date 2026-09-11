@@ -42,7 +42,7 @@ namespace Unity.GrantManager.Applicants
 
             SetupEmptyQueryables();
 
-            _provider = new AddressInfoDataProvider(_currentTenant, _submissionRepo, _addressRepo, _applicationRepo);
+            _provider = new AddressInfoDataProvider(_currentTenant, _submissionRepo, _addressRepo, _applicationRepo, new TestApplicantSubmissionMatcher());
         }
 
         private void SetupEmptyQueryables()
@@ -508,6 +508,70 @@ namespace Unity.GrantManager.Applicants
             // Assert
             var dto = result.ShouldBeOfType<ApplicantAddressInfoDto>();
             dto.Addresses.Count.ShouldBe(1);
+        }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldIncludeAddresses_ForSameApplicantUnderDifferentOidcSub()
+        {
+            // Arrange
+            var request = CreateRequest();
+            var applicationId1 = Guid.NewGuid();
+            var applicationId2 = Guid.NewGuid();
+            var applicantId = Guid.NewGuid();
+
+            SetupQueryables(
+                [
+                    CreateSubmission(applicationId1, "TESTUSER", s => s.ApplicantId = applicantId),
+                    CreateSubmission(applicationId2, "OTHERUSER", s => s.ApplicantId = applicantId)
+                ],
+                [
+                    CreateAddress(applicationId1, city: "Victoria"),
+                    CreateAddress(applicationId2, city: "Kelowna")
+                ],
+                [
+                    CreateApplication(applicationId1, a => a.ReferenceNo = "REF-001"),
+                    CreateApplication(applicationId2, a => a.ReferenceNo = "REF-002")
+                ]);
+
+            // Act
+            var result = await _provider.GetDataAsync(request);
+
+            // Assert
+            var dto = result.ShouldBeOfType<ApplicantAddressInfoDto>();
+            dto.Addresses.Count.ShouldBe(2);
+            dto.Addresses.ShouldContain(a => a.City == "Victoria");
+            dto.Addresses.ShouldContain(a => a.City == "Kelowna");
+        }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldExcludeAddresses_ForUnrelatedApplicantUnderDifferentOidcSub()
+        {
+            // Arrange
+            var request = CreateRequest();
+            var applicationId1 = Guid.NewGuid();
+            var applicationId2 = Guid.NewGuid();
+
+            SetupQueryables(
+                [
+                    CreateSubmission(applicationId1, "TESTUSER", s => s.ApplicantId = Guid.NewGuid()),
+                    CreateSubmission(applicationId2, "OTHERUSER", s => s.ApplicantId = Guid.NewGuid())
+                ],
+                [
+                    CreateAddress(applicationId1, city: "Victoria"),
+                    CreateAddress(applicationId2, city: "Kelowna")
+                ],
+                [
+                    CreateApplication(applicationId1, a => a.ReferenceNo = "REF-001"),
+                    CreateApplication(applicationId2, a => a.ReferenceNo = "REF-002")
+                ]);
+
+            // Act
+            var result = await _provider.GetDataAsync(request);
+
+            // Assert
+            var dto = result.ShouldBeOfType<ApplicantAddressInfoDto>();
+            dto.Addresses.Count.ShouldBe(1);
+            dto.Addresses.ShouldContain(a => a.City == "Victoria");
         }
     }
 }

@@ -25,7 +25,8 @@ namespace Unity.GrantManager.ApplicantProfile
         ICurrentTenant currentTenant,
         IRepository<ApplicationFormSubmission, Guid> applicationFormSubmissionRepository,
         IRepository<ApplicantAddress, Guid> applicantAddressRepository,
-        IRepository<Application, Guid> applicationRepository)
+        IRepository<Application, Guid> applicationRepository,
+        IApplicantSubmissionMatcher applicantSubmissionMatcher)
         : IApplicantProfileDataProvider, ITransientDependency
     {
         /// <inheritdoc />
@@ -48,8 +49,7 @@ namespace Unity.GrantManager.ApplicantProfile
                 var addressesQuery = await applicantAddressRepository.GetQueryableAsync();
                 var applicationsQuery = await applicationRepository.GetQueryableAsync();
 
-                var matchingSubmissions = submissionsQuery
-                    .Where(s => s.OidcSub == normalizedSubject);
+                var matchingSubmissions = await applicantSubmissionMatcher.GetMatchingSubmissionsAsync(submissionsQuery, normalizedSubject);
 
                 // Addresses linked via ApplicationId — not editable (owned by an application)
                 var byApplicationId =

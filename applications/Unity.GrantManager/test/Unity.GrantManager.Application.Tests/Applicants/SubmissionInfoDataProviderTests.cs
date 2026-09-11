@@ -45,7 +45,8 @@ namespace Unity.GrantManager.Applicants
 
             _provider = new SubmissionInfoDataProvider(
                 _currentTenant, _submissionRepo, _applicationRepo,
-                _formRepo, _statusRepo, _endpointManagementAppService, _logger);
+                _formRepo, _statusRepo, _endpointManagementAppService,
+                new TestApplicantSubmissionMatcher(), _logger);
         }
 
         private void SetupEmptyQueryables()
@@ -741,6 +742,70 @@ namespace Unity.GrantManager.Applicants
             dto.Submissions[0].RenewalLink!.Uri.ShouldBe("https://renewal.example.com");
             dto.Submissions[0].RelatedLinks.Count.ShouldBe(1);
             dto.Submissions[0].RelatedLinks[0].Uri.ShouldBe("https://related.example.com");
+        }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldIncludeSubmissions_ForSameApplicantUnderDifferentOidcSub()
+        {
+            // Arrange
+            var request = CreateRequest();
+            var applicantId = Guid.NewGuid();
+            var applicationId1 = Guid.NewGuid();
+            var applicationId2 = Guid.NewGuid();
+            var formId = Guid.NewGuid();
+            var statusId = Guid.NewGuid();
+
+            SetupQueryables(
+                [
+                    CreateSubmission(applicationId1, "TESTUSER", s => { s.ApplicantId = applicantId; s.ChefsSubmissionGuid = "sub-1"; }),
+                    CreateSubmission(applicationId2, "OTHERUSER", s => { s.ApplicantId = applicantId; s.ChefsSubmissionGuid = "sub-2"; })
+                ],
+                [
+                    CreateApplication(applicationId1, statusId, a => { a.ReferenceNo = "REF-001"; a.ApplicationFormId = formId; }),
+                    CreateApplication(applicationId2, statusId, a => { a.ReferenceNo = "REF-002"; a.ApplicationFormId = formId; })
+                ],
+                [CreateForm(formId, "Form")],
+                [CreateStatus(statusId, "Submitted")]);
+
+            // Act
+            var result = await _provider.GetDataAsync(request);
+
+            // Assert
+            var dto = result.ShouldBeOfType<ApplicantSubmissionInfoDto>();
+            dto.Submissions.Count.ShouldBe(2);
+            dto.Submissions.ShouldContain(s => s.ReferenceNo == "REF-001");
+            dto.Submissions.ShouldContain(s => s.ReferenceNo == "REF-002");
+        }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldExcludeSubmissions_ForUnrelatedApplicantUnderDifferentOidcSub()
+        {
+            // Arrange
+            var request = CreateRequest();
+            var applicationId1 = Guid.NewGuid();
+            var applicationId2 = Guid.NewGuid();
+            var formId = Guid.NewGuid();
+            var statusId = Guid.NewGuid();
+
+            SetupQueryables(
+                [
+                    CreateSubmission(applicationId1, "TESTUSER", s => { s.ApplicantId = Guid.NewGuid(); s.ChefsSubmissionGuid = "sub-1"; }),
+                    CreateSubmission(applicationId2, "OTHERUSER", s => { s.ApplicantId = Guid.NewGuid(); s.ChefsSubmissionGuid = "sub-2"; })
+                ],
+                [
+                    CreateApplication(applicationId1, statusId, a => { a.ReferenceNo = "REF-001"; a.ApplicationFormId = formId; }),
+                    CreateApplication(applicationId2, statusId, a => { a.ReferenceNo = "REF-002"; a.ApplicationFormId = formId; })
+                ],
+                [CreateForm(formId, "Form")],
+                [CreateStatus(statusId, "Submitted")]);
+
+            // Act
+            var result = await _provider.GetDataAsync(request);
+
+            // Assert
+            var dto = result.ShouldBeOfType<ApplicantSubmissionInfoDto>();
+            dto.Submissions.Count.ShouldBe(1);
+            dto.Submissions.ShouldContain(s => s.ReferenceNo == "REF-001");
         }
     }
 }
