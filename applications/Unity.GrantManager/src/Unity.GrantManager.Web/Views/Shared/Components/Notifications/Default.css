@@ -208,10 +208,11 @@
     flex: 0 0 20px;
     height: 20px;
     margin-left: 0.35rem;
+    margin-top: 0;
     padding: 0;
     position: relative;
+    top: -5px;
     z-index: 2;
-    margin-top: -7px;
 }
 
 .notification-tooltip-icon {
