@@ -61,7 +61,7 @@ if (container) {
                 .then((token) => {
                     container.appendChild(buildReportingIframe(reportingUrl, token));
                 })
-                .catch((error) => {
+                .catch((error) => { // NOSONAR - ABP loads this bundled file as a classic script; top-level await is not valid here.
                     showInitializationError(container, 'Failed to initialize AI Reporting. Please refresh the page and try again.', error);
                 });
         }
