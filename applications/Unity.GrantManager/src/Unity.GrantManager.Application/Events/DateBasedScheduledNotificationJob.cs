@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Notifications;
 using Unity.GrantManager.Settings;
+using static Unity.GrantManager.Notifications.NotificationDateFields;
 using Unity.Modules.Shared.Utils;
 using Unity.Notifications.EmailGroups;
 using Unity.Notifications.Emails;
@@ -215,7 +216,7 @@ namespace Unity.GrantManager.Events
                           (a.ProjectEndDate != null && a.ProjectEndDate <= today) ||
                           (a.NotificationDate != null && a.NotificationDate <= today) ||
                           (a.ContractExecutionDate != null && a.ContractExecutionDate <= today) ||
-                          (a.Applicant.FiscalYearEnd != null && a.Applicant.FiscalYearEnd <= todayDateOnly)),
+                          (a.Applicant != null && a.Applicant.FiscalYearEnd != null && a.Applicant.FiscalYearEnd <= todayDateOnly)),
                     includeDetails: true))
                     .ToList();
 
@@ -348,13 +349,13 @@ namespace Unity.GrantManager.Events
         {
             DateTime? triggerDate = dateField switch
             {
-                "NotificationDate" => application.NotificationDate,
-                "DueDate" => application.DueDate,
-                "ProjectStartDate" => application.ProjectStartDate,
-                "ProjectEndDate" => application.ProjectEndDate,
-                "ContractExecutionDate" => application.ContractExecutionDate,
+                NotificationDate => application.NotificationDate,
+                DueDate => application.DueDate,
+                ProjectStartDate => application.ProjectStartDate,
+                ProjectEndDate => application.ProjectEndDate,
+                ContractExecutionDate => application.ContractExecutionDate,
                 // The notification will not send if the FYE Date has no value
-                "FiscalYearEnd" => GetApplicantFiscalYearEnd(application) is { } fiscalYearEnd
+                FiscalYearEnd => GetApplicantFiscalYearEnd(application) is { } fiscalYearEnd
                     ? fiscalYearEnd.ToDateTime(TimeOnly.MinValue)
                     : null,
                 _ => null
@@ -363,17 +364,21 @@ namespace Unity.GrantManager.Events
             return triggerDate.HasValue && triggerDate.Value.Date <= today.Date;
         }
 
-        // Applicant navigation throws if not eager-loaded, so guard access rather than returning null via ?.
+        // Applicant is a required relationship (non-nullable ApplicantId), so it is never legitimately null;
+        // the getter only throws InvalidOperationException when the navigation was not eager-loaded.
         private static DateOnly? GetApplicantFiscalYearEnd(Application application)
         {
+            Applicant? applicant;
             try
             {
-                return application.Applicant.FiscalYearEnd;
+                applicant = application.Applicant;
             }
             catch (InvalidOperationException)
             {
                 return null;
             }
+
+            return applicant?.FiscalYearEnd;
         }
 
         private async Task<ScheduledNotificationTracking?> ProcessApplicationForNotificationAsync(

@@ -3,6 +3,7 @@ using System;
 using Unity.GrantManager.Applications;
 using Xunit;
 using GrantApplication = Unity.GrantManager.Applications.Application;
+using static Unity.GrantManager.Notifications.NotificationDateFields;
 
 namespace Unity.GrantManager.Events;
 
@@ -55,16 +56,16 @@ public class DateBasedScheduledNotificationJobTests
         application.DueDate = today.AddDays(-1);
         application.ProjectEndDate = today.AddDays(30);
 
-        DateBasedScheduledNotificationJob.MatchesDateField(application, "DueDate", today).ShouldBeTrue();
-        DateBasedScheduledNotificationJob.MatchesDateField(application, "ProjectEndDate", today).ShouldBeFalse();
+        DateBasedScheduledNotificationJob.MatchesDateField(application, DueDate, today).ShouldBeTrue();
+        DateBasedScheduledNotificationJob.MatchesDateField(application, ProjectEndDate, today).ShouldBeFalse();
     }
 
     [Theory]
-    [InlineData("NotificationDate")]
-    [InlineData("DueDate")]
-    [InlineData("ProjectStartDate")]
-    [InlineData("ProjectEndDate")]
-    [InlineData("ContractExecutionDate")]
+    [InlineData(NotificationDate)]
+    [InlineData(DueDate)]
+    [InlineData(ProjectStartDate)]
+    [InlineData(ProjectEndDate)]
+    [InlineData(ContractExecutionDate)]
     public void MatchesDateField_WhenConfiguredDateIsTodayOrPast_ReturnsTrue(string dateField)
     {
         var today = new DateTime(2026, 9, 10);
@@ -78,11 +79,11 @@ public class DateBasedScheduledNotificationJobTests
     }
 
     [Theory]
-    [InlineData("NotificationDate")]
-    [InlineData("DueDate")]
-    [InlineData("ProjectStartDate")]
-    [InlineData("ProjectEndDate")]
-    [InlineData("ContractExecutionDate")]
+    [InlineData(NotificationDate)]
+    [InlineData(DueDate)]
+    [InlineData(ProjectStartDate)]
+    [InlineData(ProjectEndDate)]
+    [InlineData(ContractExecutionDate)]
     public void MatchesDateField_WhenConfiguredDateIsFutureOrMissing_ReturnsFalse(string dateField)
     {
         var today = new DateTime(2026, 9, 10);
@@ -114,10 +115,10 @@ public class DateBasedScheduledNotificationJobTests
         var application = CreateApplication(Guid.NewGuid());
 
         application.Applicant = new Applicant { FiscalYearEnd = DateOnly.FromDateTime(today).AddDays(-1) };
-        DateBasedScheduledNotificationJob.MatchesDateField(application, "FiscalYearEnd", today).ShouldBeTrue();
+        DateBasedScheduledNotificationJob.MatchesDateField(application, FiscalYearEnd, today).ShouldBeTrue();
 
         application.Applicant = new Applicant { FiscalYearEnd = DateOnly.FromDateTime(today) };
-        DateBasedScheduledNotificationJob.MatchesDateField(application, "FiscalYearEnd", today).ShouldBeTrue();
+        DateBasedScheduledNotificationJob.MatchesDateField(application, FiscalYearEnd, today).ShouldBeTrue();
     }
 
     [Fact]
@@ -127,10 +128,10 @@ public class DateBasedScheduledNotificationJobTests
         var application = CreateApplication(Guid.NewGuid());
 
         application.Applicant = new Applicant { FiscalYearEnd = DateOnly.FromDateTime(today).AddDays(1) };
-        DateBasedScheduledNotificationJob.MatchesDateField(application, "FiscalYearEnd", today).ShouldBeFalse();
+        DateBasedScheduledNotificationJob.MatchesDateField(application, FiscalYearEnd, today).ShouldBeFalse();
 
         application.Applicant = new Applicant { FiscalYearEnd = null };
-        DateBasedScheduledNotificationJob.MatchesDateField(application, "FiscalYearEnd", today).ShouldBeFalse();
+        DateBasedScheduledNotificationJob.MatchesDateField(application, FiscalYearEnd, today).ShouldBeFalse();
     }
 
     [Fact]
@@ -140,7 +141,7 @@ public class DateBasedScheduledNotificationJobTests
 
         DateBasedScheduledNotificationJob.MatchesDateField(
             application,
-            "FiscalYearEnd",
+            FiscalYearEnd,
             new DateTime(2026, 9, 10)).ShouldBeFalse();
     }
 
@@ -156,19 +157,19 @@ public class DateBasedScheduledNotificationJobTests
     {
         switch (dateField)
         {
-            case "NotificationDate":
+            case NotificationDate:
                 application.NotificationDate = value;
                 break;
-            case "DueDate":
+            case DueDate:
                 application.DueDate = value;
                 break;
-            case "ProjectStartDate":
+            case ProjectStartDate:
                 application.ProjectStartDate = value;
                 break;
-            case "ProjectEndDate":
+            case ProjectEndDate:
                 application.ProjectEndDate = value;
                 break;
-            case "ContractExecutionDate":
+            case ContractExecutionDate:
                 application.ContractExecutionDate = value;
                 break;
         }
