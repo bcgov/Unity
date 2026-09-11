@@ -1,6 +1,6 @@
 # Reporting Configuration (Explicit Path)
 
-> This is the **current, go-forward** way reporting views are created in Unity Portal. It is one of [two view-generation paths](README.md); the other — auto-generated "dynamic" views created on publish — is deprecated and documented in [reporting-auto-generated-views.md](reporting-auto-generated-views.md).
+> This is the **current, go-forward** way reporting views are created in Unity Portal. It is one of [two view-generation paths](README.md); the other — auto-generated "dynamic" views that used to be created on publish — is deprecated, no longer generates views, and is documented in [reporting-auto-generated-views.md](reporting-auto-generated-views.md).
 
 ## Overview
 

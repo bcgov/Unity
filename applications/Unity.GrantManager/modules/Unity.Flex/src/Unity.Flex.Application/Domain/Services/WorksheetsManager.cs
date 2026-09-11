@@ -9,20 +9,15 @@ using Unity.Flex.Domain.Utils;
 using Unity.Flex.Domain.WorksheetInstances;
 using Unity.Flex.Domain.WorksheetLinks;
 using Unity.Flex.Domain.Worksheets;
-using Unity.Flex.Reporting.DataGenerators;
 using Unity.Flex.WorksheetInstances;
 using Unity.Flex.Worksheets.Values;
-using Unity.Modules.Shared.Features;
 using Volo.Abp.Domain.Services;
-using Volo.Abp.Features;
 
 namespace Unity.Flex.Domain.Services
 {
     public class WorksheetsManager(IWorksheetInstanceRepository worksheetInstanceRepository,
         IWorksheetRepository worksheetRepository,
-        IWorksheetLinkRepository worksheetLinkRepository,
-        IReportingDataGeneratorService<Worksheet, WorksheetInstance> reportingService,
-        IFeatureChecker featureChecker) : DomainService
+        IWorksheetLinkRepository worksheetLinkRepository) : DomainService
     {
         public async Task PersistWorksheetData(PersistWorksheetIntanceValuesEto eventData)
         {
@@ -95,11 +90,6 @@ namespace Unity.Flex.Domain.Services
             }
 
             instance.SetValue(JsonSerializer.Serialize(instanceCurrentValue));
-
-            if (await featureChecker.IsEnabledAsync(FeatureConsts.Reporting))
-            {
-                reportingService.GenerateAndSet(worksheet, instance);
-            }
         }
 
         private void UpdateExistingWorksheetInstance(WorksheetInstance worksheetInstance, Worksheet? worksheet, List<ValueFieldContainer> fields)
