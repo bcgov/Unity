@@ -344,6 +344,7 @@ public class ApplicationRepository
                 ApplicantIndigenousOrgInd = a.Applicant.IndigenousOrgInd,
                 ApplicantFiscalDay = a.Applicant.FiscalDay,
                 ApplicantFiscalMonth = a.Applicant.FiscalMonth,
+                ApplicantFiscalYearEnd = a.Applicant.FiscalYearEnd,
                 ApplicantUnityApplicantId = a.Applicant.UnityApplicantId,
             })
             .ToListAsync();
@@ -534,6 +535,7 @@ public class ApplicationRepository
                     ApplicantIndigenousOrgInd = a.ApplicantIndigenousOrgInd,
                     ApplicantFiscalDay = a.ApplicantFiscalDay,
                     ApplicantFiscalMonth = a.ApplicantFiscalMonth,
+                    ApplicantFiscalYearEnd = a.ApplicantFiscalYearEnd,
                     ApplicantUnityApplicantId = a.ApplicantUnityApplicantId,
                     ContactFullName = includeApplicantAgent ? agent.Name : null,
                     ContactTitle = includeApplicantAgent ? agent.Title : null,
