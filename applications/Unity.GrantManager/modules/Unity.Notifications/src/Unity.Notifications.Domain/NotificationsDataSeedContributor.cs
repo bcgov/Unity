@@ -42,6 +42,7 @@ public class NotificationsDataSeedContributor(ITemplateVariablesRepository templ
             new() { Name = "Registered Organization Name", Token = "organization_name", MapTo = "organizationName" },
             new() { Name = "Project Start Date", Token = "project_start_date", MapTo = "projectStartDate" },
             new() { Name = "Project End Date", Token = "project_end_date", MapTo = "projectEndDate" },
+            new() { Name = "Fiscal Year End", Token = "fiscal_year_end", MapTo = "applicant.fiscalYearEnd" },
             new() { Name = "Project Name", Token = "project_name", MapTo = "projectName" },
             new() { Name = "Project Summary", Token = "project_summary", MapTo = "projectSummary" },
             new() { Name = "Signing Authority Full Name", Token = "signing_authority_full_name", MapTo = "signingAuthorityFullName" },

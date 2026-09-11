@@ -1,6 +1,6 @@
-using System;
 using Shouldly;
-using Unity.GrantManager.Events;
+using System;
+using Unity.GrantManager.Applications;
 using Xunit;
 using GrantApplication = Unity.GrantManager.Applications.Application;
 
@@ -104,6 +104,43 @@ public class DateBasedScheduledNotificationJobTests
         DateBasedScheduledNotificationJob.MatchesDateField(
             application,
             "UnknownDateField",
+            new DateTime(2026, 9, 10)).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void MatchesDateField_WhenApplicantFiscalYearEndIsTodayOrPast_ReturnsTrue()
+    {
+        var today = new DateTime(2026, 9, 10);
+        var application = CreateApplication(Guid.NewGuid());
+
+        application.Applicant = new Applicant { FiscalYearEnd = DateOnly.FromDateTime(today).AddDays(-1) };
+        DateBasedScheduledNotificationJob.MatchesDateField(application, "FiscalYearEnd", today).ShouldBeTrue();
+
+        application.Applicant = new Applicant { FiscalYearEnd = DateOnly.FromDateTime(today) };
+        DateBasedScheduledNotificationJob.MatchesDateField(application, "FiscalYearEnd", today).ShouldBeTrue();
+    }
+
+    [Fact]
+    public void MatchesDateField_WhenApplicantFiscalYearEndIsFutureOrMissing_ReturnsFalse()
+    {
+        var today = new DateTime(2026, 9, 10);
+        var application = CreateApplication(Guid.NewGuid());
+
+        application.Applicant = new Applicant { FiscalYearEnd = DateOnly.FromDateTime(today).AddDays(1) };
+        DateBasedScheduledNotificationJob.MatchesDateField(application, "FiscalYearEnd", today).ShouldBeFalse();
+
+        application.Applicant = new Applicant { FiscalYearEnd = null };
+        DateBasedScheduledNotificationJob.MatchesDateField(application, "FiscalYearEnd", today).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void MatchesDateField_WhenApplicantNavigationNotLoaded_ReturnsFalseForFiscalYearEnd()
+    {
+        var application = CreateApplication(Guid.NewGuid());
+
+        DateBasedScheduledNotificationJob.MatchesDateField(
+            application,
+            "FiscalYearEnd",
             new DateTime(2026, 9, 10)).ShouldBeFalse();
     }
 
