@@ -68,7 +68,7 @@ The three options map directly onto the BC Government's information classificati
 
 - **Not checked** by any app service, authorization attribute, or permission check.
 - **Not displayed** anywhere at runtime — an assessor or applicant filling in a "Protected C" field sees no indication it's classified.
-- **Not factored** into the reporting pipeline or export data (see [flex-application-services.md](flex-application-services.md#reporting-integration)) — a restricted field flows into report data the same as any other.
+- **Not factored** into the reporting pipeline or export data (see [flex-application-services.md](flex-application-services.md#reporting-integration)) — a restricted field flows into reporting views the same as any other.
 
 This is directly relevant to [flex-roadmap.md](flex-roadmap.md): the "sensitivity tier" idea proposed there as a way to make ABP's compile-time permission model fit runtime-created fields **already exists in the schema and the builder UI**, fully captured and stored — only the enforcement layer (server-side checks in the app services, and some runtime UI treatment) is missing. This changes the roadmap from "design a tiering concept" to "wire up an existing one."
 

@@ -378,7 +378,7 @@
         ↑
 Unity.Flex.Application.Contracts     (DTOs, app service interfaces)
         ↑
-Unity.Flex.Application               (entities, domain services, EF Core, app services, controllers, event handlers, reporting generators)
+Unity.Flex.Application               (entities, domain services, EF Core, app services, controllers, event handlers, reporting field metadata)
         ↑
 Unity.Flex.Web                       (Razor Pages admin builder + ViewComponents runtime widgets)</div>
 
@@ -521,7 +521,7 @@ Unity.Flex.Web                       (Razor Pages admin builder + ViewComponents
     <h3>Runtime data pipeline — WorksheetsManager</h3>
     <p><span class="code">WorksheetsManager</span> (<span class="code">Domain/Services/WorksheetsManager.cs</span>) implements the "fill a worksheet instance from raw field data" pipeline:</p>
     <ul>
-      <li><strong><span class="code">PersistWorksheetData</span></strong> — handles an event with a flat dictionary of field values, resolves the target <span class="code">WorksheetInstance</span>/<span class="code">Worksheet</span> by correlation or name, converts each raw value via <span class="code">ValueConverter.Convert</span> per field's <span class="code">CustomFieldType</span>, rolls the values into the instance's <span class="code">CurrentValue</span> JSON, and optionally triggers reporting-data generation if the Reporting feature is enabled.</li>
+      <li><strong><span class="code">PersistWorksheetData</span></strong> — handles an event with a flat dictionary of field values, resolves the target <span class="code">WorksheetInstance</span>/<span class="code">Worksheet</span> by correlation or name, converts each raw value via <span class="code">ValueConverter.Convert</span> per field's <span class="code">CustomFieldType</span>, and rolls the values into the instance's <span class="code">CurrentValue</span> JSON.</li>
       <li><strong><span class="code">CreateWorksheetDataByFields</span></strong> — bulk-creates new <span class="code">WorksheetInstance</span>s from a flat field-value list keyed by the <span class="code">custom_&lt;worksheet&gt;_&lt;field&gt;</span> naming convention, guarding against duplicate instance creation.</li>
     </ul>
     <p class="note">This is the mechanism by which an external form submission (a CHEFS intake form — see §09) populates a Flex worksheet instance.</p>
@@ -667,10 +667,10 @@ Unity.Flex.Web                       (Razor Pages admin builder + ViewComponents
     </ul>
 
     <h3>Reporting: dynamic columns are treated differently</h3>
-    <p>In <span class="code">DataGridReportDataGenerator</span>, explicit and dynamic columns diverge:</p>
+    <p>In the Reporting Configuration field metadata built by <span class="code">WorksheetFieldSchemaParser.ParseDataGridField</span>, explicit and dynamic columns diverge:</p>
     <ul>
-      <li><strong>Explicit columns</strong> become individual, named report fields — <span class="code">{fieldKey}-{columnName}</span>, same as any other field.</li>
-      <li><strong>Dynamic columns</strong> (in the value but not in <span class="code">DataGridDefinition.Columns</span>) are <strong>not</strong> exploded into individual fields — they're collapsed into one combined JSON blob field, <span class="code">{fieldKey}-DynamicColumns</span>. A variable, CHEFS-driven column set can't map onto fixed SQL columns.</li>
+      <li><strong>Explicit columns</strong> each become their own reporting component.</li>
+      <li><strong>Dynamic columns</strong> become individual components only when they can be resolved from the live CHEFS form schema; otherwise a single <span class="code">"Dynamic Columns"</span> placeholder stands in for the whole unresolved set.</li>
     </ul>
     <p class="note">Full detail, including the reporting-metadata resolution path: <span class="code">documentation/flex/flex-datagrid.md</span>.</p>
   </section>
@@ -684,16 +684,16 @@ Unity.Flex.Web                       (Razor Pages admin builder + ViewComponents
       <table class="data">
         <thead><tr><th>Table (schema Flex)</th><th>Role</th><th>Notable columns</th></tr></thead>
         <tbody>
-          <tr><td class="code">Worksheets</td><td>Form template</td><td class="mono">ReportKeys, ReportViewName (text)</td></tr>
+          <tr><td class="code">Worksheets</td><td>Form template</td><td class="mono">Name, Version, Published</td></tr>
           <tr><td class="code">WorksheetSections</td><td>Ordered field groups</td><td class="mono">Definition jsonb</td></tr>
           <tr><td class="code">CustomFields</td><td>One field definition</td><td class="mono">Name = custom_&lt;worksheet&gt;_&lt;key&gt;, Definition jsonb</td></tr>
           <tr><td class="code">WorksheetLinks</td><td>Mounts a worksheet to a UI anchor</td><td class="mono">CorrelationId/Provider, UiAnchor, Order</td></tr>
-          <tr><td class="code">WorksheetInstances</td><td>One filled worksheet</td><td class="mono">CurrentValue jsonb, ReportData jsonb</td></tr>
+          <tr><td class="code">WorksheetInstances</td><td>One filled worksheet</td><td class="mono">CurrentValue jsonb</td></tr>
           <tr><td class="code">CustomFieldValues</td><td>One field's value</td><td class="mono">CurrentValue jsonb — no soft delete</td></tr>
-          <tr><td class="code">Scoresheets</td><td>Scoring template</td><td class="mono">ReportColumns, ReportKeys text</td></tr>
+          <tr><td class="code">Scoresheets</td><td>Scoring template</td><td class="mono">Name, Version, Order, Published</td></tr>
           <tr><td class="code">ScoresheetSections</td><td>Ordered question groups</td><td class="mono">Definition jsonb</td></tr>
           <tr><td class="code">Questions</td><td>One scoreable question</td><td class="mono">Definition jsonb</td></tr>
-          <tr><td class="code">ScoresheetInstances</td><td>One assessor's response</td><td class="mono">Value text, ReportData jsonb</td></tr>
+          <tr><td class="code">ScoresheetInstances</td><td>One assessor's response</td><td class="mono">Value text</td></tr>
           <tr><td class="code">Answers</td><td>One question's answer</td><td class="mono">CurrentValue jsonb, full audit + soft delete</td></tr>
         </tbody>
       </table>
@@ -703,7 +703,7 @@ Unity.Flex.Web                       (Razor Pages admin builder + ViewComponents
     <ul>
       <li><strong>Schema-per-row / EAV-style design:</strong> both field <em>definitions</em> (shape/validation rules) and field <em>values</em> are stored as flexible <span class="code">jsonb</span> rather than fixed relational columns — the mechanism that makes the whole system dynamic without per-form schema migrations.</li>
       <li><strong>Multi-tenant:</strong> every entity implements <span class="code">IMultiTenant</span> (nullable <span class="code">TenantId</span>) — standard ABP row-level tenant filtering.</li>
-      <li><strong>Reporting support:</strong> <span class="code">Worksheet</span> and <span class="code">Scoresheet</span> implement <span class="code">IReportableEntity&lt;T&gt;</span> and carry <span class="code">ReportColumns</span>/<span class="code">ReportKeys</span>/<span class="code">ReportViewName</span> text columns, backing a generated-SQL-view mechanism that flattens the dynamic JSON into queryable columns — see §08 and <span class="code">documentation/reporting/</span>.</li>
+      <li><strong>Reporting support:</strong> Flex entities carry no reporting-specific columns. Reporting Configuration views read <span class="code">WorksheetInstance.CurrentValue</span> and <span class="code">Answer.CurrentValue</span> directly — see §08 and <span class="code">documentation/reporting/</span>.</li>
       <li><strong>No additional unique indexes/constraints</strong> beyond primary keys were found — duplicate-name prevention is purely an application/domain-layer invariant, not DB-enforced.</li>
     </ul>
   </section>
@@ -757,14 +757,7 @@ Unity.Flex.Web                       (Razor Pages admin builder + ViewComponents
     <p class="note" style="margin-top:12px;"><span class="code">CreateWorksheetInstanceByFieldValuesHandler</span> falls back to <span class="code">eventData.TenantId</span> when <span class="code">ICurrentTenant.Id</span> is null, needed for background-job contexts with no ambient HTTP tenant. Almost every publish site on the host side is gated by <span class="code">IFeatureChecker.IsEnabledAsync("Unity.Flex")</span> first.</p>
 
     <h3>Reporting integration</h3>
-    <p>Two parallel pipelines: one for <strong>field metadata</strong>, one for <strong>instance data</strong>.</p>
-    <ul>
-      <li><strong>Field generators</strong> (<span class="code">Reporting/FieldGenerators/</span>) — <span class="code">IReportingFieldsGenerator</span> / <span class="code">ReportingFieldsGenerator</span> / <span class="code">ReportingFieldsGeneratorFactory</span>, with per-type generators (<span class="code">CheckboxGroupReportingFieldsGenerator</span>, <span class="code">DataGridReportingFieldsGenerator</span>, <span class="code">DefaultReportingFieldsGenerator</span> for worksheets; <span class="code">QuestionsReportingGenerator</span>, <span class="code">DefaultFieldsGenerator</span> for scoresheets). <span class="code">WorksheetReportingFieldsGeneratorService</span> / <span class="code">ScoresheetReportingFieldsGeneratorService</span> compute flattened "report keys" (one per section/field/checkbox-option), stored on the entity as <span class="code">ReportKeys</span> / <span class="code">ReportViewName</span>.</li>
-      <li><strong>Data generators</strong> (<span class="code">Reporting/DataGenerators/</span>) — <span class="code">ScoresheetsReportingDataGeneratorService.GenerateAndSet(Scoresheet, ScoresheetInstance)</span> builds a keyed dictionary matching each report key to an <span class="code">Answer</span>, converts values via <span class="code">ScoresheetsReportingDataGeneratorFactory</span>, computes <span class="code">TotalScore</span> (summing Number/YesNo/SelectList questions), and serializes onto <span class="code">instanceValue.SetReportingData(json)</span>. Wrapped in a blanket try/catch — a failure just logs and skips; report data can be regenerated later. <span class="code">WorksheetsReportingDataGeneratorService</span>/<span class="code">Factory</span> follow the equivalent pattern for <span class="code">CustomFieldValue</span>s.</li>
-      <li><strong>Dynamic DB views</strong> — <span class="code">WorksheetsDynamicViewGeneratorHandler</span> / <span class="code">ScoresheetsDynamicViewGeneratorHandler</span> call a Postgres stored procedure directly via raw SQL (<span class="code">CALL "Reporting".generate_worksheets_view(@worksheetId)</span>) to materialize a queryable SQL view per published worksheet/scoresheet. This is how Flex's dynamic/JSON-shaped data becomes something <span class="code">Unity.Reporting</span> can query relationally.</li>
-      <li><strong>Sync app services</strong> (ops tooling) — <span class="code">IWorksheetReportingFieldsSyncAppService</span> (<span class="code">SyncFields</span>, <span class="code">SyncData</span>) and <span class="code">IScoresheetReportingFieldsSyncAppService</span> (<span class="code">SyncQuestions</span>, <span class="code">SyncAnswers</span>), both <span class="code">[Authorize(ITAdminPolicyName)]</span>. Iterate all tenants and backfill missing report keys/data — not part of the live request path.</li>
-    </ul>
-    <div class="roadmap-banner">PLANNED DIRECTION: auto-generation of dynamic views (one per published worksheet/scoresheet, via <span class="code">generate_worksheets_view()</span>) is scheduled to be removed. Reporting views are planned to move to explicit reporting configuration instead — a view exists where someone has configured one, not automatically for every publish. Stated project direction, not yet implemented.</div>
+    <p>Flex does not create reporting views itself. It supplies field metadata to Reporting Configuration through <span class="code">Reporting/Configuration/</span>: <span class="code">WorksheetsMetadataService</span> and <span class="code">ScoresheetsMetadataService</span>, using <span class="code">WorksheetFieldSchemaParser</span> / <span class="code">ScoresheetFieldSchemaParser</span> to flatten a worksheet's fields or a scoresheet's questions into reportable components. <span class="code">Unity.Reporting</span>'s field providers call them, and a view exists only where an administrator has configured one; the views read <span class="code">WorksheetInstance.CurrentValue</span> and <span class="code">Flex.Answers</span> directly.</p>
 
     <h3>Import / export</h3>
     <p><span class="code">WorksheetImportDto</span>/<span class="code">ExportWorksheetDto</span> and <span class="code">ScoresheetImportDto</span>/<span class="code">ExportScoresheetDto</span> define JSON import/export of an entire worksheet or scoresheet template — sections, fields/questions, and their definitions. The domain-layer contract resolvers (above) make this possible despite nearly every entity property being <span class="code">private set</span>. Exposed over HTTP via the export/import controller endpoints, and in the admin builder UI's clone/publish workflow.</p>
@@ -821,7 +814,7 @@ Unity.Flex.Web                       (Razor Pages admin builder + ViewComponents
           <text x="463" y="85" font-size="10" class="accent">writes jsonb</text>
 
           <line x1="585" y1="144" x2="585" y2="220" stroke="currentColor" stroke-width="1" marker-end="url(#arrow)"></line>
-          <text x="595" y="185" font-size="10">generate_worksheets_view()</text>
+          <text x="595" y="185" font-size="10">Reporting Configuration</text>
 
           <polyline points="290,140 250,140 250,199 190,199" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="3,3" opacity="0.75" marker-end="url(#arrow)"></polyline>
           <text x="253" y="160" font-size="10" opacity="0.75">subtotal read-back</text>
@@ -899,8 +892,6 @@ Unity.Flex.Web                       (Razor Pages admin builder + ViewComponents
       <div>Host permission <span class="code">UnitySettingManagementPermissions.UserInterface</span></div>
       <div class="k">Custom Fields / Scoresheets sections</div>
       <div>ABP tenant feature <span class="code">Unity.Flex</span> — <span class="mono">IFeatureChecker.IsEnabledAsync</span></div>
-      <div class="k">Reporting sync endpoints</div>
-      <div><span class="code">[Authorize(ITAdminPolicyName)]</span> — ops/backfill tooling only</div>
       <div class="k">Everything else in Flex</div>
       <div>No explicit <span class="code">[Authorize]</span> — relies on the caller already having checked the relevant host permission</div>
     </div>
@@ -914,7 +905,6 @@ Unity.Flex.Web                       (Razor Pages admin builder + ViewComponents
       <div class="row"><div class="k"><span class="tag warn">Inconsistent</span></div><div class="v"><p>Most duplicate-name guards throw a plain <span class="code">UserFriendlyException</span> with a hardcoded English string; only <span class="code">Scoresheet.UpdateSectionName</span> uses the namespaced, localizable <span class="code">BusinessException(ErrorConsts.DuplicateSectionName)</span> pattern the rest of the codebase favors.</p></div></div>
       <div class="row"><div class="k"><span class="tag warn">Tech debt</span></div><div class="v"><p><span class="code">PersistScoresheetInstanceHandler</span> writes through <span class="code">IScoresheetInstanceRepository</span> directly instead of an app service — flagged in-code with a "swap over to app service use instead" comment.</p></div></div>
       <div class="row"><div class="k"><span class="tag warn">Unused</span></div><div class="v"><p><span class="code">FlexSettingDefinitionProvider</span> and <span class="code">FlexErrorCodes</span> are both empty scaffolds. <span class="code">ErrorConsts.DuplicateFieldName</span> is defined but never thrown.</p></div></div>
-      <div class="row"><div class="k"><span class="tag accent">By design</span></div><div class="v"><p>Reporting-data generation is wrapped in a blanket try/catch — a failure just logs and skips. Report data can be regenerated later; it never blocks intake or assessment.</p></div></div>
       <div class="row"><div class="k"><span class="tag accent">By design</span></div><div class="v"><p>No unique DB indexes beyond primary keys — duplicate-name prevention (section names, field names) is an in-memory aggregate rule only, never DB-enforced.</p></div></div>
     </div>
   </section>
@@ -963,7 +953,7 @@ Unity.Flex.Web                       (Razor Pages admin builder + ViewComponents
       <div class="row"><div class="k"><span class="tag roadmap">Open</span></div><div class="v"><p><strong>Read/write split.</strong> Mirror the Zone tag helper's read vs. update distinction — a field being visible to a role doesn't mean that role can edit it.</p></div></div>
       <div class="row"><div class="k"><span class="tag roadmap">Open</span></div><div class="v"><p><strong>Backward compatibility.</strong> Every worksheet/scoresheet published today has nothing attached to any section or field. Absent-permission must keep meaning "visible/editable to anyone with existing host-level access" — additive, not a breaking migration.</p></div></div>
       <div class="row"><div class="k"><span class="tag roadmap">Open</span></div><div class="v"><p><strong>Admin UX.</strong> The builder screens need a permission (or sensitivity-tier) picker per section/field. Exposing the full ABP permission tree would be overwhelming; a curated, Flex-scoped list is likely necessary.</p></div></div>
-      <div class="row"><div class="k"><span class="tag roadmap">Open</span></div><div class="v"><p><strong>Reporting implications.</strong> The reporting pipeline currently flattens all answers/values uniformly. A permission-gated field needs a story for whether restricted data flows into shared reports at all — downstream of <span class="code">Unity.Reporting</span> and Metabase, not just the Flex UI.</p></div></div>
+      <div class="row"><div class="k"><span class="tag roadmap">Open</span></div><div class="v"><p><strong>Reporting implications.</strong> Reporting Configuration views read all answers/values uniformly. A permission-gated field needs a story for whether restricted data flows into shared reports at all — downstream of <span class="code">Unity.Reporting</span> and Metabase, not just the Flex UI.</p></div></div>
     </div>
 
     <h3>Suggested next step</h3>

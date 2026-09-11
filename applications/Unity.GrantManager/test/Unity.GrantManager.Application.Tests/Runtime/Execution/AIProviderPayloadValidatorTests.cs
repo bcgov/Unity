@@ -261,19 +261,6 @@ public class PromptResponseValidatorTests
     }
 
     [Fact]
-    public void ValidateFormScoresheetJson_Should_Allow_Empty_Optional_Reporting_Fields()
-    {
-        var response = ValidFormScoresheetJson
-            .Replace("\"ReportColumns\": \"score\"", "\"ReportColumns\": \"\"", StringComparison.Ordinal)
-            .Replace("\"ReportKeys\": \"project_score\"", "\"ReportKeys\": \"\"", StringComparison.Ordinal)
-            .Replace("\"ReportViewName\": \"scoresheet_report\"", "\"ReportViewName\": \"\"", StringComparison.Ordinal);
-
-        var result = AIProviderPayloadValidator.ValidateFormScoresheetJson(response);
-
-        result.IsValid.ShouldBeTrue();
-    }
-
-    [Fact]
     public void ValidateFormScoresheetJson_Should_Allow_Mixed_Property_Casing()
     {
         var response = ValidFormScoresheetJson
@@ -284,9 +271,6 @@ public class PromptResponseValidatorTests
             .Replace("\"Published\"", "\"published\"", StringComparison.Ordinal)
             .Replace("\"Sections\"", "\"sections\"", StringComparison.Ordinal)
             .Replace("\"Fields\"", "\"fields\"", StringComparison.Ordinal)
-            .Replace("\"ReportColumns\"", "\"reportColumns\"", StringComparison.Ordinal)
-            .Replace("\"ReportKeys\"", "\"reportKeys\"", StringComparison.Ordinal)
-            .Replace("\"ReportViewName\"", "\"reportViewName\"", StringComparison.Ordinal)
             .Replace("\"Description\"", "\"description\"", StringComparison.Ordinal)
             .Replace("\"Type\"", "\"type\"", StringComparison.Ordinal)
             .Replace("\"Definition\"", "\"definition\"", StringComparison.Ordinal);
@@ -344,9 +328,6 @@ public class PromptResponseValidatorTests
           "Version": 1,
           "Order": 0,
           "Published": true,
-          "ReportColumns": "score",
-          "ReportKeys": "project_score",
-          "ReportViewName": "scoresheet_report",
           "Sections": [
             {
               "Name": "Review",
