@@ -97,7 +97,7 @@ namespace Unity.GrantManager.Integrations.Css
             {
                 var cssApiUrl = await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.CSS_API_BASE);
                 var tokenResponse = await GetAccessTokenAsync();
-                var baseUrl = $"{cssApiUrl}/test/{directory}/users";
+                var baseUrl = $"{cssApiUrl}/{_cssApiOptions.Env}/{directory}/users";
                 var url = BuildUrlWithQuery(baseUrl, parameters);
 
                 var response = await resilientHttpRequest.HttpAsync(HttpMethod.Get, url, null, tokenResponse.AccessToken);
