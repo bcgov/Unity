@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Contacts;
 using Unity.GrantManager.GrantsPortal.Handlers;
 using Unity.GrantManager.GrantsPortal.Messages;
+using Unity.GrantManager.GrantsPortal.Notifications;
 using Volo.Abp.Domain.Entities;
 using Xunit;
 
@@ -20,6 +21,7 @@ public class ContactCreateHandlerTests
 {
     private readonly IContactRepository _contactRepository;
     private readonly IContactLinkRepository _contactLinkRepository;
+    private readonly IApplicantUpdateNotificationService _notifications = Substitute.For<IApplicantUpdateNotificationService>();
     private readonly ContactCreateHandler _handler;
 
     public ContactCreateHandlerTests()
@@ -42,6 +44,7 @@ public class ContactCreateHandlerTests
         _handler = new ContactCreateHandler(
             _contactRepository,
             _contactLinkRepository,
+            _notifications,
             NullLogger<ContactCreateHandler>.Instance);
     }
 
@@ -89,6 +92,23 @@ public class ContactCreateHandlerTests
     }
 
     #region Happy path
+
+    [Fact]
+    public async Task HandleAsync_ShouldNotifyWithCreatedContactDetails()
+    {
+        var applicantId = Guid.NewGuid();
+        await _handler.HandleAsync(CreatePayload(applicantId: applicantId));
+
+        await _notifications.Received(1).QueueAsync(applicantId, Arg.Is<ApplicantUpdateDetails>(details =>
+            details.UpdateType == "Contact" && details.Fields.Any(field => field.Name == "Contact name" && field.Value == "Jane Doe")
+            && details.Fields.Any(field => field.Name == "Contact type" && field.Value == "Applicant")
+            && details.Fields.Any(field => field.Name == "Role" && field.Value == "Primary Contact")
+            && details.Fields.Any(field => field.Name == "Email address" && field.Value == "jane@example.com")
+            && details.Fields.Any(field => field.Name == "Home phone" && field.Value == "111-1111")
+            && details.Fields.Any(field => field.Name == "Mobile phone" && field.Value == "222-2222")
+            && details.Fields.Any(field => field.Name == "Work phone" && field.Value == "333-3333")
+            && details.Fields.Any(field => field.Name == "Work phone extension" && field.Value == "101")));
+    }
 
     [Fact]
     public async Task HandleAsync_ShouldCreateContactAndLink()
@@ -246,6 +266,7 @@ public class ContactCreateHandlerTests
 
         // Assert
         result.ShouldBe("Contact already exists");
+        await _notifications.DidNotReceive().QueueAsync(Arg.Any<Guid>(), Arg.Any<ApplicantUpdateDetails>());
         await _contactRepository.DidNotReceive().InsertAsync(Arg.Any<Contact>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
         await _contactLinkRepository.DidNotReceive().InsertAsync(Arg.Any<ContactLink>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
     }

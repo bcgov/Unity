@@ -4,12 +4,14 @@ using NSubstitute;
 using Shouldly;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantsPortal.Handlers;
 using Unity.GrantManager.GrantsPortal.Messages;
+using Unity.GrantManager.GrantsPortal.Notifications;
 using Volo.Abp.Data;
 using Volo.Abp.Domain.Entities;
 using Xunit;
@@ -19,6 +21,7 @@ namespace Unity.GrantManager.GrantsPortal;
 public class AddressCreateHandlerTests
 {
     private readonly IApplicantAddressRepository _addressRepository;
+    private readonly IApplicantUpdateNotificationService _notifications = Substitute.For<IApplicantUpdateNotificationService>();
     private readonly AddressCreateHandler _handler;
 
     public AddressCreateHandlerTests()
@@ -36,6 +39,7 @@ public class AddressCreateHandlerTests
         _handler = new AddressCreateHandler(
             _addressRepository,
             new ApplicantAddressManager(_addressRepository),
+            _notifications,
             NullLogger<AddressCreateHandler>.Instance);
     }
 
@@ -80,6 +84,25 @@ public class AddressCreateHandlerTests
     }
 
     #region Happy path
+
+    [Fact]
+    public async Task HandleAsync_ShouldNotifyWithFullCreatedAddress()
+    {
+        var applicantId = Guid.NewGuid();
+        await _handler.HandleAsync(CreatePayload(applicantId: applicantId));
+
+        await _notifications.Received(1).QueueAsync(applicantId, Arg.Is<ApplicantUpdateDetails>(details =>
+            details.UpdateType == "Address" && details.Fields.Count == 9
+            && details.Fields.Any(field => field.Name == "Address type" && field.Value == "Mailing address")
+            && details.Fields.Any(field => field.Name == "Street" && field.Value == "123 Main St")
+            && details.Fields.Any(field => field.Name == "Street line 2" && field.Value == "Suite 100")
+            && details.Fields.Any(field => field.Name == "Unit" && field.Value == "4A")
+            && details.Fields.Any(field => field.Name == "City" && field.Value == "Victoria")
+            && details.Fields.Any(field => field.Name == "Province" && field.Value == "BC")
+            && details.Fields.Any(field => field.Name == "Country" && field.Value == "Canada")
+            && details.Fields.Any(field => field.Name == "Postal code" && field.Value == "V8W 1A1")
+            && details.Fields.Any(field => field.Name == "Primary address" && field.Value == "Yes")));
+    }
 
     [Fact]
     public async Task HandleAsync_ShouldCreateAddress()
@@ -213,6 +236,7 @@ public class AddressCreateHandlerTests
 
         // Assert
         result.ShouldBe("Address already exists");
+        await _notifications.DidNotReceive().QueueAsync(Arg.Any<Guid>(), Arg.Any<ApplicantUpdateDetails>());
         await _addressRepository.DidNotReceive().InsertAsync(Arg.Any<ApplicantAddress>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
     }
 
