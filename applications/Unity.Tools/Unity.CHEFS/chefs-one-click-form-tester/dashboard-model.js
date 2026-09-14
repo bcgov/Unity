@@ -27,7 +27,72 @@
 
   function finiteNumber(value, fallback) {
     const number = Number(value);
-    return Number.isFinite(number) ? number : (fallback === undefined ? 0 : fallback);
+    if (Number.isFinite(number)) {
+      return number;
+    }
+    return fallback === undefined ? 0 : fallback;
+  }
+
+  function isObject(value) {
+    return Boolean(value) && typeof value === 'object';
+  }
+
+  function runProgress(run) {
+    return run?.progress || {};
+  }
+
+  function runEvents(run) {
+    const events = run?.events;
+    if (!Array.isArray(events)) {
+      return [];
+    }
+    return events;
+  }
+
+  function runCheckpoints(run) {
+    const checkpoints = run?.checkpoints;
+    if (!Array.isArray(checkpoints)) {
+      return [];
+    }
+    return checkpoints;
+  }
+
+  function runSnapshot(run) {
+    return run?.snapshots?.final || run?.snapshots?.lastKnown || run?.snapshots?.initial;
+  }
+
+  function runValidationErrors(run) {
+    const validationErrors = run?.validationErrors;
+    if (!Array.isArray(validationErrors)) {
+      return [];
+    }
+    return validationErrors;
+  }
+
+  function runFailureReason(run) {
+    return String(run?.failure?.reason || '').toLowerCase();
+  }
+
+  function runStartedAt(run) {
+    return String(run?.startedAt || '');
+  }
+
+  function runEndedAt(run) {
+    return String(run?.endedAt || run?.finalizedAt || run?.updatedAt || '');
+  }
+
+  function batchIndexText(value) {
+    const text = String(value || '');
+    const match = /^\d{1,6}/.exec(text);
+    return match ? match[0] : '';
+  }
+
+  function isValidVersion(text) {
+    return text === '' || /^\d+\.\d+\.\d+$/.test(text);
+  }
+
+  function isValidBuild(text) {
+    return text === '' || /^\d{4}\.\d{2}\.\d{2}\.\d+$/.test(text);
   }
 
   function boundedInteger(value, maximum) {
@@ -49,7 +114,7 @@
     if (!text) return 'run-unknown';
     let hash = 2166136261;
     for (let index = 0; index < text.length; index += 1) {
-      hash ^= text.charCodeAt(index);
+      hash ^= text.codePointAt(index) || 0;
       hash = Math.imul(hash, 16777619);
     }
     return `run-${(hash >>> 0).toString(16).padStart(8, '0')}`;
@@ -59,21 +124,22 @@
     try {
       const url = new URL(String(urlText || ''));
       const value = String(url.searchParams.get('f') || '');
-      const match = value.match(/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i);
+      const match = /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.exec(value);
       return match ? `form-${match[0].slice(0, 8).toLowerCase()}` : 'form-unknown';
-    } catch (error) {
+    } catch {
+      // Invalid URLs are expected when the source record does not include a form URL.
       return 'form-unknown';
     }
   }
 
   function safeVersion(value) {
-    const clean = String(value || '').match(/^\d+\.\d+\.\d+$/);
-    return clean ? clean[0] : '';
+    const text = String(value || '');
+    return isValidVersion(text) ? text : '';
   }
 
   function safeBuild(value) {
-    const clean = String(value || '').match(/^\d{4}\.\d{2}\.\d{2}\.\d+$/);
-    return clean ? clean[0] : '';
+    const text = String(value || '');
+    return isValidBuild(text) ? text : '';
   }
 
   function safeStrategy(value) {
@@ -87,11 +153,11 @@
   }
 
   function failureCategory(run) {
-    const status = safeResult(run && run.status);
+    const status = safeResult(run?.status);
     if (status === 'submitted' || status === 'completed') {
       return 'none';
     }
-    const reason = String(run && run.failure && run.failure.reason || '').toLowerCase();
+    const reason = runFailureReason(run);
     if (reason.includes('submit')) return 'submission';
     if (reason.includes('validation')) return 'validation';
     if (reason.includes('watchdog') || status === 'stalled') return 'watchdog';
@@ -102,30 +168,76 @@
   }
 
   function durationMs(run) {
-    const start = Date.parse(String(run && run.startedAt || ''));
-    const end = Date.parse(String(
-      run && (run.endedAt || run.finalizedAt || run.updatedAt) || ''
-    ));
+    const start = Date.parse(runStartedAt(run));
+    const end = Date.parse(runEndedAt(run));
     return Number.isFinite(start) && Number.isFinite(end)
       ? Math.max(0, Math.min(24 * 60 * 60 * 1000, end - start))
       : 0;
   }
 
+  function recordFillAttempt(pending, stats, event) {
+    const strategy = safeStrategy(event?.strategy);
+    const identity = `${String(event?.componentId || '')}:${boundedInteger(event?.attempt, 100)}`;
+    pending.set(identity, {
+      strategy,
+      time: Date.parse(String(event?.time || ''))
+    });
+    if (!stats.has(strategy)) {
+      stats.set(strategy, { strategy, attempts: 0, successes: 0, failures: 0, latencyMs: [] });
+    }
+    stats.get(strategy).attempts += 1;
+  }
+
+  function recordFillOutcome(pending, stats, event) {
+    const strategy = safeStrategy(event?.strategy);
+    const identity = `${String(event?.componentId || '')}:${boundedInteger(event?.attempt, 100)}`;
+    const attempt = pending.get(identity);
+    const resolvedStrategy = attempt?.strategy || strategy;
+    if (!stats.has(resolvedStrategy)) {
+      stats.set(resolvedStrategy, {
+        strategy: resolvedStrategy,
+        attempts: 0,
+        successes: 0,
+        failures: 0,
+        latencyMs: []
+      });
+    }
+    const item = stats.get(resolvedStrategy);
+    if (event?.event === 'FILL_SUCCEEDED') item.successes += 1;
+    if (event?.event === 'FILL_FAILED') item.failures += 1;
+    const end = Date.parse(String(event?.time || ''));
+    if (attempt && Number.isFinite(attempt.time) && Number.isFinite(end)) {
+      item.latencyMs.push(Math.max(0, Math.min(10 * 60 * 1000, end - attempt.time)));
+      item.latencyMs = item.latencyMs.slice(-200);
+    }
+    pending.delete(identity);
+  }
+
+  function accumulateStrategyEvent(pending, stats, event) {
+    const eventType = String(event?.event || '');
+    if (eventType === 'FILL_ATTEMPT') {
+      recordFillAttempt(pending, stats, event);
+      return;
+    }
+    if (eventType === 'FILL_SUCCEEDED' || eventType === 'FILL_FAILED') {
+      recordFillOutcome(pending, stats, event);
+    }
+  }
+
   function buildPassSeries(run) {
     const byPass = new Map();
-    for (const checkpoint of Array.isArray(run && run.checkpoints) ? run.checkpoints : []) {
-      const pass = boundedInteger(checkpoint && checkpoint.pass, 500);
-      if (!pass || !checkpoint || checkpoint.reason !== 'Fill pass completed') {
+    for (const checkpoint of runCheckpoints(run)) {
+      const pass = boundedInteger(checkpoint?.pass, 500);
+      if (!pass || checkpoint?.reason !== 'Fill pass completed') {
         continue;
       }
-      const progress = checkpoint.progress || {};
+      const progress = checkpoint?.progress || {};
       byPass.set(pass, {
         pass,
         filled: boundedInteger(progress.filled, 100000),
         remaining: boundedInteger(progress.remaining, 100000),
         actions: boundedInteger(checkpoint.actions, 100000),
-        elapsedMs: Math.max(0, Date.parse(String(checkpoint.time || '')) -
-          Date.parse(String(run.startedAt || '')))
+        elapsedMs: Math.max(0, Date.parse(String(checkpoint.time || '')) - Date.parse(runStartedAt(run)))
       });
     }
     return Array.from(byPass.values()).sort((left, right) => left.pass - right.pass).slice(0, 500);
@@ -134,57 +246,57 @@
   function buildStrategyStats(run) {
     const pending = new Map();
     const stats = new Map();
-    const events = Array.isArray(run && run.events) ? run.events : [];
-    for (const event of events) {
-      const eventType = String(event && event.event || '');
-      const strategy = safeStrategy(event && event.strategy);
-      const identity = `${String(event && event.componentId || '')}:${boundedInteger(event && event.attempt, 100)}`;
-      if (eventType === 'FILL_ATTEMPT') {
-        pending.set(identity, {
-          strategy,
-          time: Date.parse(String(event.time || ''))
-        });
-        if (!stats.has(strategy)) {
-          stats.set(strategy, { strategy, attempts: 0, successes: 0, failures: 0, latencyMs: [] });
-        }
-        stats.get(strategy).attempts += 1;
-      } else if (eventType === 'FILL_SUCCEEDED' || eventType === 'FILL_FAILED') {
-        const attempt = pending.get(identity);
-        const resolvedStrategy = attempt ? attempt.strategy : strategy;
-        if (!stats.has(resolvedStrategy)) {
-          stats.set(resolvedStrategy, {
-            strategy: resolvedStrategy,
-            attempts: 0,
-            successes: 0,
-            failures: 0,
-            latencyMs: []
-          });
-        }
-        const item = stats.get(resolvedStrategy);
-        if (eventType === 'FILL_SUCCEEDED') item.successes += 1;
-        if (eventType === 'FILL_FAILED') item.failures += 1;
-        const end = Date.parse(String(event.time || ''));
-        if (attempt && Number.isFinite(attempt.time) && Number.isFinite(end)) {
-          item.latencyMs.push(Math.max(0, Math.min(10 * 60 * 1000, end - attempt.time)));
-          item.latencyMs = item.latencyMs.slice(-200);
-        }
-        pending.delete(identity);
-      }
+    for (const event of runEvents(run)) {
+      accumulateStrategyEvent(pending, stats, event);
     }
     return Array.from(stats.values()).sort((left, right) => right.attempts - left.attempts).slice(0, 20);
   }
 
+  function buildSummaryMetrics(run, progress) {
+    return {
+      passes: boundedInteger(progress.pass, 10000),
+      discovered: boundedInteger(progress.discovered, 100000),
+      filled: boundedInteger(progress.filled, 100000),
+      remaining: boundedInteger(progress.remaining, 100000),
+      failed: boundedInteger(progress.failed, 100000),
+      unsupported: boundedInteger(progress.unsupported, 100000),
+      rowsAdded: boundedInteger(progress.rowsAdded, 100000),
+      attachmentsCompleted: boundedInteger(progress.attachmentsCompleted, 100000),
+      attachmentsPending: boundedInteger(progress.attachmentsPending, 100000),
+      submitAttempts: boundedInteger(progress.submitAttempts, 1000),
+      validationErrors: boundedInteger(runValidationErrors(run).length, 100000)
+    };
+  }
+
+  function buildSummaryIssueCounts(run, progress) {
+    return {
+      fieldFailures: boundedInteger(progress.failed, 100000),
+      unsupported: boundedInteger(progress.unsupported, 100000),
+      validation: boundedInteger(runValidationErrors(run).length, 100000),
+      screenshotFailure: runEvents(run).some((event) => event?.event === 'SCREENSHOT_CAPTURE_FAILED') ? 1 : 0
+    };
+  }
+
+  function buildSummaryBatch(context) {
+    if (!context?.suiteId) {
+      return null;
+    }
+    return {
+      suiteRef: opaqueRunRef(context.suiteId),
+      index: batchIndexText(context.index)
+    };
+  }
+
   function buildComponentStats(run) {
-    const snapshot = run && run.snapshots &&
-      (run.snapshots.final || run.snapshots.lastKnown || run.snapshots.initial);
+    const snapshot = runSnapshot(run);
     const statuses = {};
     const types = {};
     for (const component of Array.isArray(snapshot) ? snapshot : []) {
-      const status = String(component && component.status || 'unknown').toLowerCase();
+      const status = String(component?.status || 'unknown').toLowerCase();
       const safeStatus = [
         'filled', 'protected', 'failed', 'unsupported', 'empty', 'pending', 'unknown'
       ].includes(status) ? status : 'unknown';
-      const type = safeComponentType(component && component.componentType);
+      const type = safeComponentType(component?.componentType);
       statuses[safeStatus] = boundedInteger(statuses[safeStatus] || 0, 100000) + 1;
       types[type] = boundedInteger(types[type] || 0, 100000) + 1;
     }
@@ -192,12 +304,12 @@
   }
 
   function buildPhaseDurations(run) {
-    const start = Date.parse(String(run && run.startedAt || ''));
+    const start = Date.parse(runStartedAt(run));
     const end = start + durationMs(run);
-    const events = (Array.isArray(run && run.events) ? run.events : [])
+    const events = runEvents(run)
       .map((event) => ({
-        event: String(event && event.event || ''),
-        time: Date.parse(String(event && event.time || ''))
+        event: String(event?.event || ''),
+        time: Date.parse(String(event?.time || ''))
       }))
       .filter((event) => Number.isFinite(event.time))
       .sort((left, right) => left.time - right.time);
@@ -221,62 +333,51 @@
   }
 
   function buildRunSummary(run, context) {
-    const progress = run && run.progress || {};
+    const progress = runProgress(run);
     const componentStats = buildComponentStats(run);
-    const result = safeResult(run && run.status);
+    const result = safeResult(run?.status);
     const summary = {
       schemaVersion: SCHEMA_VERSION,
-      runRef: opaqueRunRef(run && run.runId),
-      formRef: opaqueFormRef(run && run.formUrl),
-      extensionVersion: safeVersion(run && run.extensionVersion),
-      buildNumber: safeBuild(run && run.buildNumber),
+      runRef: opaqueRunRef(run?.runId),
+      formRef: opaqueFormRef(run?.formUrl),
+      extensionVersion: safeVersion(run?.extensionVersion),
+      buildNumber: safeBuild(run?.buildNumber),
       result,
       failureCategory: failureCategory(run),
-      startedAt: safeIso(run && run.startedAt),
-      endedAt: safeIso(run && (run.endedAt || run.finalizedAt || run.updatedAt)),
+      startedAt: safeIso(run?.startedAt),
+      endedAt: safeIso(run?.endedAt || run?.finalizedAt || run?.updatedAt),
       durationMs: durationMs(run),
-      confirmationCaptured: Boolean(run && run.confirmationId),
-      metrics: {
-        passes: boundedInteger(progress.pass, 10000),
-        discovered: boundedInteger(progress.discovered, 100000),
-        filled: boundedInteger(progress.filled, 100000),
-        remaining: boundedInteger(progress.remaining, 100000),
-        failed: boundedInteger(progress.failed, 100000),
-        unsupported: boundedInteger(progress.unsupported, 100000),
-        rowsAdded: boundedInteger(progress.rowsAdded, 100000),
-        attachmentsCompleted: boundedInteger(progress.attachmentsCompleted, 100000),
-        attachmentsPending: boundedInteger(progress.attachmentsPending, 100000),
-        submitAttempts: boundedInteger(progress.submitAttempts, 1000),
-        validationErrors: boundedInteger(
-          Array.isArray(run && run.validationErrors) ? run.validationErrors.length : 0,
-          100000
-        )
-      },
+      confirmationCaptured: Boolean(run?.confirmationId),
+      metrics: buildSummaryMetrics(run, progress),
       phases: buildPhaseDurations(run),
       passSeries: buildPassSeries(run),
       strategies: buildStrategyStats(run),
       componentOutcomes: componentStats.statuses,
       componentTypes: componentStats.types,
-      issueCounts: {
-        fieldFailures: boundedInteger(progress.failed, 100000),
-        unsupported: boundedInteger(progress.unsupported, 100000),
-        validation: boundedInteger(
-          Array.isArray(run && run.validationErrors) ? run.validationErrors.length : 0,
-          100000
-        ),
-        screenshotFailure: (Array.isArray(run && run.events) ? run.events : [])
-          .some((event) => event && event.event === 'SCREENSHOT_CAPTURE_FAILED') ? 1 : 0
-      },
-      batch: context && context.suiteId ? {
-        suiteRef: opaqueRunRef(context.suiteId),
-        index: (String(context.index || '').match(/^\d{1,6}/) || [''])[0]
-      } : null
+      issueCounts: buildSummaryIssueCounts(run, progress),
+      batch: buildSummaryBatch(context)
     };
-    return JSON.parse(JSON.stringify(summary));
+    return typeof structuredClone === 'function'
+      ? structuredClone(summary)
+      : deepClone(summary);
+  }
+
+  function deepClone(value) {
+    if (Array.isArray(value)) {
+      return value.map((item) => deepClone(item));
+    }
+    if (!isObject(value)) {
+      return value;
+    }
+    const clone = {};
+    for (const [key, child] of Object.entries(value)) {
+      clone[key] = deepClone(child);
+    }
+    return clone;
   }
 
   function hasOnlyKeys(value, allowed) {
-    return Boolean(value) && typeof value === 'object' && !Array.isArray(value) &&
+    return isObject(value) && !Array.isArray(value) &&
       Object.keys(value).every((key) => allowed.has(key));
   }
 
@@ -319,8 +420,8 @@
       !/^form-(?:[0-9a-f]{8}|unknown)$/.test(String(record.formRef || '')) ||
       !RESULT_VALUES.has(String(record.result || '')) ||
       !FAILURE_VALUES.has(String(record.failureCategory || '')) ||
-      !/^(?:|\d+\.\d+\.\d+)$/.test(String(record.extensionVersion || '')) ||
-      !/^(?:|\d{4}\.\d{2}\.\d{2}\.\d+)$/.test(String(record.buildNumber || '')) ||
+      !isValidVersion(String(record.extensionVersion || '')) ||
+      !isValidBuild(String(record.buildNumber || '')) ||
       !Number.isFinite(Date.parse(String(record.startedAt || ''))) ||
       !Number.isFinite(Date.parse(String(record.endedAt || ''))) ||
       !Number.isFinite(Number(record.durationMs)) ||
@@ -374,7 +475,7 @@
       value.forEach((item, index) => pidForbiddenKeys(item, `${path}[${index}]`, findings));
       return findings;
     }
-    if (!value || typeof value !== 'object') return findings;
+    if (!isObject(value)) return findings;
     for (const [key, child] of Object.entries(value)) {
       if (forbidden.test(key)) findings.push(`${path}.${key}`);
       pidForbiddenKeys(child, `${path}.${key}`, findings);

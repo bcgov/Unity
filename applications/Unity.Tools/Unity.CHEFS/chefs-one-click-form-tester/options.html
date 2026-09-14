@@ -44,6 +44,7 @@
           <option value="merge">Merge</option>
           <option value="replace">Replace</option>
         </select>
+        <label for="rulesFileInput" class="sr-only">Import rules file</label>
         <input id="rulesFileInput" type="file" accept="application/json,.json" hidden>
       </div>
 
@@ -61,7 +62,7 @@
         </table>
       </div>
       <p class="hint">Standard CHEFS mask tokens: <code>9</code> numeric, <code>a</code> alphabetic, <code>*</code> alphanumeric. Literal punctuation and spaces are preserved. Example: <code>aaa-999999</code>.</p>
-      <div id="rulesMessage" class="message" role="status" aria-live="polite"></div>
+      <output id="rulesMessage" class="message" aria-live="polite"></output>
     </section>
 
     <section aria-labelledby="exportSettingsHeading">
@@ -74,7 +75,7 @@
       </div>
       <p class="hint">Leave blank to save exports directly to the browser's Downloads folder. To organize exports, enter an optional Downloads-relative folder such as <code>CHEFS Exports</code>.</p>
       <p class="hint">Select validates folders directly inside Downloads with a temporary file. The file is removed automatically. Type a path when using a validated nested relative folder.</p>
-      <div id="exportFolderMessage" class="message" role="status" aria-live="polite"></div>
+      <output id="exportFolderMessage" class="message" aria-live="polite"></output>
 
       <label class="checkbox-row">
         <input id="autoExportAfterRun" type="checkbox">
@@ -107,7 +108,7 @@
         <button id="grantBatchPermissionsButton" type="button" class="secondary">Grant Host Access</button>
       </div>
       <p class="hint">Chrome requires one-time host access before the extension can start runs in tabs opened by an external batch file.</p>
-      <div id="batchSettingsMessage" class="message" role="status" aria-live="polite"></div>
+      <output id="batchSettingsMessage" class="message" aria-live="polite"></output>
     </section>
 
     <section aria-labelledby="dashboardSettingsHeading">
@@ -138,13 +139,13 @@
         <button id="openDashboardButton" type="button" class="secondary">Open Dashboard</button>
         <button id="clearDashboardHistoryButton" type="button" class="danger">Clear Dashboard History</button>
       </div>
-      <div id="dashboardSettingsMessage" class="message" role="status" aria-live="polite"></div>
+      <output id="dashboardSettingsMessage" class="message" aria-live="polite"></output>
     </section>
 
-    <div id="settingsMessage" class="message" role="status" aria-live="polite"></div>
+    <output id="settingsMessage" class="message" aria-live="polite"></output>
     <div class="actions">
       <button id="saveButton" type="button">Save Settings</button>
-      <span id="savedMessage" role="status"></span>
+      <output id="savedMessage"></output>
     </div>
   </main>
   <script src="export-path.js"></script>

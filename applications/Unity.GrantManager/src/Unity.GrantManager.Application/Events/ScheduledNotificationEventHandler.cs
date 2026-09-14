@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using System;
+using System.Linq.Expressions;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
@@ -56,11 +57,7 @@ namespace Unity.GrantManager.Events
 
                 // Find all active event-based scheduled notifications for this form that match the new application status
                 var notifications = (await scheduledNotificationRepository.GetListAsync(
-                    n => n.FormId == application.ApplicationFormId
-                      && n.TriggerType == "Event"
-                      && n.IsActive
-                      && (n.Module == null || n.Module == "Application")
-                      && n.ApplicationStatusId == application.ApplicationStatusId))
+                                        ApplicationEventNotificationFilter(application.ApplicationFormId, application.ApplicationStatusId)))
                     .ToList();
 
                 if (notifications.Count == 0)
@@ -83,6 +80,17 @@ namespace Unity.GrantManager.Events
             {
                 logger.LogError(ex, "ScheduledNotificationEventHandler: Error processing event for application {ApplicationId}.", eventData.ApplicationId);
             }
+        }
+
+        internal static Expression<Func<ScheduledNotification, bool>> ApplicationEventNotificationFilter(
+            Guid formId,
+            Guid applicationStatusId)
+        {
+            return n => n.FormId == formId
+                     && n.TriggerType == "Event"
+                     && n.IsActive
+                     && (n.Module == null || n.Module == "Application")
+                     && n.ApplicationStatusId == applicationStatusId;
         }
 
         public async Task HandleEventAsync(PaymentStatusChangedEvent eventData)

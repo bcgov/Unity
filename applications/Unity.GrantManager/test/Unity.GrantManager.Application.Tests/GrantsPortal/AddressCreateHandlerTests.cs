@@ -38,7 +38,7 @@ public class AddressCreateHandlerTests
 
         _handler = new AddressCreateHandler(
             _addressRepository,
-            new ApplicantAddressManager(_addressRepository),
+            new ApplicantAddressManager(_addressRepository, Substitute.For<IApplicantRepository>(), Substitute.For<IApplicationRepository>()),
             _notifications,
             NullLogger<AddressCreateHandler>.Instance);
     }

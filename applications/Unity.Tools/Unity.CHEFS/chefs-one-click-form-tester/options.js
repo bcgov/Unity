@@ -1,6 +1,6 @@
 'use strict';
 
-const VERSION = '0.4.0';
+const VERSION = '0.4.9';
 const RULE_SCHEMA_VERSION = 1;
 const DEFAULT_SETTINGS = {
   additionalHosts: [],
@@ -21,19 +21,77 @@ const DEFAULT_SETTINGS = {
 let rules = [];
 
 function newRuleId() {
-  const cryptoApi = globalThis.crypto;
-  if (cryptoApi && typeof cryptoApi.randomUUID === 'function') {
-    return cryptoApi.randomUUID();
+  if (typeof crypto?.randomUUID === 'function') {
+    return crypto.randomUUID();
   }
-  return `rule-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  const bytes = new Uint8Array(16);
+  if (typeof crypto?.getRandomValues === 'function') {
+    crypto.getRandomValues(bytes);
+  }
+  const suffix = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+  return `rule-${Date.now()}-${suffix}`;
+}
+
+function isPhraseWhitespace(character) {
+  return character === '\u00a0' ||
+    character === ' ' ||
+    character === '\t' ||
+    character === '\n' ||
+    character === '\r' ||
+    character === '\f' ||
+    character === '\v';
+}
+
+function isPhraseEdgeCharacter(character) {
+  return character === ' ' || character === '*' || character === ':' || character === '-';
+}
+
+function normalizePhraseBody(value) {
+  let compact = '';
+  let inTag = false;
+  let pendingSpace = false;
+  const text = String(value || '').replaceAll('\u00a0', ' ');
+  for (const character of text) {
+    if (character === '<') {
+      inTag = true;
+      pendingSpace = true;
+      continue;
+    }
+    if (character === '>') {
+      inTag = false;
+      pendingSpace = true;
+      continue;
+    }
+    if (inTag) {
+      continue;
+    }
+    if (isPhraseWhitespace(character)) {
+      pendingSpace = compact.length > 0;
+      continue;
+    }
+    if (pendingSpace && compact.length > 0) {
+      compact += ' ';
+    }
+    compact += character;
+    pendingSpace = false;
+  }
+  return compact;
+}
+
+function trimPhraseEdges(text) {
+  let start = 0;
+  let end = text.length;
+  while (start < end && isPhraseEdgeCharacter(text[start])) {
+    start += 1;
+  }
+  while (end > start && isPhraseEdgeCharacter(text[end - 1])) {
+    end -= 1;
+  }
+  return text.slice(start, end);
 }
 
 function normalizePhrase(value) {
-  return String(value || '')
-    .replaceAll(/<[^>]*>/g, ' ')
-    .replaceAll(/[\u00a0\s]+/g, ' ')
-    .replaceAll(/^[*:\-\s]+|[*:\-\s]+$/g, '')
-    .trim();
+  return trimPhraseEdges(normalizePhraseBody(value));
 }
 
 function normalizeRule(raw) {
@@ -57,11 +115,14 @@ function validateMask(mask) {
   if (text.length > 200) {
     return 'Masks cannot exceed 200 characters.';
   }
-  if (!/[9a*]/.test(text)) {
+  if (!text.includes('9') && !text.includes('a') && !text.includes('*')) {
     return 'The mask must contain at least one 9, a, or * token.';
   }
-  if (/[^\x20-\x7E]/.test(text)) {
-    return 'The mask must contain printable characters only.';
+  for (const character of text) {
+    const code = character.codePointAt(0);
+    if (code < 32 || code > 126) {
+      return 'The mask must contain printable characters only.';
+    }
   }
   return '';
 }
@@ -96,25 +157,25 @@ function validateRules(candidateRules) {
 function setRulesMessage(text, type) {
   const element = document.getElementById('rulesMessage');
   element.textContent = text || '';
-  element.className = `message${type ? ` ${type}` : ''}`;
+  element.className = 'message' + (type ? ' ' + type : '');
 }
 
 function setSettingsMessage(text, type) {
   const element = document.getElementById('settingsMessage');
   element.textContent = text || '';
-  element.className = `message${type ? ` ${type}` : ''}`;
+  element.className = 'message' + (type ? ' ' + type : '');
 }
 
 function setExportFolderMessage(text, type) {
   const element = document.getElementById('exportFolderMessage');
   element.textContent = text || '';
-  element.className = `message${type ? ` ${type}` : ''}`;
+  element.className = 'message' + (type ? ' ' + type : '');
 }
 
 function setBatchSettingsMessage(text, type) {
   const element = document.getElementById('batchSettingsMessage');
   element.textContent = text || '';
-  element.className = `message${type ? ` ${type}` : ''}`;
+  element.className = 'message' + (type ? ' ' + type : '');
 }
 
 function normalizeBatchLauncherToken(value) {
@@ -226,32 +287,33 @@ function renderRules() {
   });
 }
 
-async function loadSettings() {
-  const stored = await chrome.storage.local.get('chefsTesterSettings');
-  const existing = stored.chefsTesterSettings || {};
-  const settings = Object.assign({}, DEFAULT_SETTINGS, existing);
-  if (!Object.prototype.hasOwnProperty.call(existing, 'autoExportAfterRun')) {
-    settings.autoExportAfterRun = Boolean(existing.autoExportAfterSubmit);
-  }
-  document.getElementById('additionalHosts').value = (settings.additionalHosts || []).join('\n');
-  document.getElementById('allowProduction').checked = Boolean(settings.allowProduction);
-  document.getElementById('rowsPerGrid').value = String(Math.max(2, settings.rowsPerGrid || 2));
-  document.getElementById('captureScreenshot').checked = settings.captureScreenshot !== false;
-  document.getElementById('exportFolder').value = settings.exportFolder || '';
-  document.getElementById('autoExportAfterRun').checked = Boolean(settings.autoExportAfterRun);
-  document.getElementById('batchLauncherEnabled').checked = Boolean(settings.batchLauncherEnabled);
-  document.getElementById('batchLauncherToken').value = settings.batchLauncherToken || '';
-  document.getElementById('batchOrigins').value = (settings.batchOrigins || []).join('\n');
-  document.getElementById('openDashboardAfterCompletion').checked =
-    Boolean(settings.openDashboardAfterCompletion);
-  document.getElementById('retainDashboardHistory').checked =
-    Boolean(settings.retainDashboardHistory);
-  document.getElementById('dashboardDefaultView').value =
-    ['simple', 'analyst', 'statistical', 'experimental'].includes(settings.dashboardDefaultView)
-      ? settings.dashboardDefaultView
-      : 'simple';
-  rules = Array.isArray(settings.customFormatRules) ? settings.customFormatRules.map(normalizeRule) : [];
-  renderRules();
+function loadSettings() {
+  return chrome.storage.local.get('chefsTesterSettings').then((stored) => {
+    const existing = stored.chefsTesterSettings || {};
+    const settings = { ...DEFAULT_SETTINGS, ...existing };
+    if (!Object.hasOwn(existing, 'autoExportAfterRun')) {
+      settings.autoExportAfterRun = Boolean(existing.autoExportAfterSubmit);
+    }
+    document.getElementById('additionalHosts').value = (settings.additionalHosts || []).join('\n');
+    document.getElementById('allowProduction').checked = Boolean(settings.allowProduction);
+    document.getElementById('rowsPerGrid').value = String(Math.max(2, settings.rowsPerGrid || 2));
+    document.getElementById('captureScreenshot').checked = settings.captureScreenshot !== false;
+    document.getElementById('exportFolder').value = settings.exportFolder || '';
+    document.getElementById('autoExportAfterRun').checked = Boolean(settings.autoExportAfterRun);
+    document.getElementById('batchLauncherEnabled').checked = Boolean(settings.batchLauncherEnabled);
+    document.getElementById('batchLauncherToken').value = settings.batchLauncherToken || '';
+    document.getElementById('batchOrigins').value = (settings.batchOrigins || []).join('\n');
+    document.getElementById('openDashboardAfterCompletion').checked =
+      Boolean(settings.openDashboardAfterCompletion);
+    document.getElementById('retainDashboardHistory').checked =
+      Boolean(settings.retainDashboardHistory);
+    document.getElementById('dashboardDefaultView').value =
+      ['simple', 'analyst', 'statistical', 'experimental'].includes(settings.dashboardDefaultView)
+        ? settings.dashboardDefaultView
+        : 'simple';
+    rules = Array.isArray(settings.customFormatRules) ? settings.customFormatRules.map(normalizeRule) : [];
+    renderRules();
+  });
 }
 
 function collectSettings() {
@@ -310,7 +372,7 @@ async function saveSettings() {
     message.textContent = 'Saved.';
     setTimeout(() => { message.textContent = ''; }, 1800);
   } catch (error) {
-    setSettingsMessage(error.message, 'error');
+    setSettingsMessage(error?.message || String(error), 'error');
   }
 }
 
@@ -329,10 +391,10 @@ async function selectExportFolder() {
     );
   } catch (error) {
     input.value = previousValue;
-    if (error && error.name === 'AbortError') {
+    if (error?.name === 'AbortError') {
       setExportFolderMessage('Folder selection cancelled.', '');
     } else {
-      setExportFolderMessage(error && error.message ? error.message : String(error), 'error');
+      setExportFolderMessage(error?.message || String(error), 'error');
     }
   } finally {
     button.disabled = false;
@@ -361,7 +423,7 @@ async function grantBatchPermissions() {
     }
     setBatchSettingsMessage('Host access granted. Select Save Settings to keep the origin list.', 'success');
   } catch (error) {
-    setBatchSettingsMessage(error && error.message ? error.message : String(error), 'error');
+    setBatchSettingsMessage(error?.message || String(error), 'error');
   } finally {
     button.disabled = false;
   }
@@ -370,18 +432,18 @@ async function grantBatchPermissions() {
 function setDashboardSettingsMessage(text, type) {
   const element = document.getElementById('dashboardSettingsMessage');
   element.textContent = text || '';
-  element.className = `message${type ? ` ${type}` : ''}`;
+  element.className = 'message' + (type ? ' ' + type : '');
 }
 
 async function openDashboard() {
   try {
     const response = await chrome.runtime.sendMessage({ type: 'OPEN_DASHBOARD' });
-    if (!response || !response.ok) {
-      throw new Error(response && response.error ? response.error : 'The dashboard could not be opened.');
+    if (!response?.ok) {
+      throw new Error(response?.error || 'The dashboard could not be opened.');
     }
     setDashboardSettingsMessage('Dashboard opened.', 'success');
   } catch (error) {
-    setDashboardSettingsMessage(error && error.message ? error.message : String(error), 'error');
+    setDashboardSettingsMessage(error?.message || String(error), 'error');
   }
 }
 
@@ -391,12 +453,12 @@ async function clearDashboardHistory() {
   }
   try {
     const response = await chrome.runtime.sendMessage({ type: 'CLEAR_DASHBOARD_HISTORY' });
-    if (!response || !response.ok) {
-      throw new Error(response && response.error ? response.error : 'Dashboard history could not be cleared.');
+    if (!response?.ok) {
+      throw new Error(response?.error || 'Dashboard history could not be cleared.');
     }
     setDashboardSettingsMessage('Dashboard history cleared.', 'success');
   } catch (error) {
-    setDashboardSettingsMessage(error && error.message ? error.message : String(error), 'error');
+    setDashboardSettingsMessage(error?.message || String(error), 'error');
   }
 }
 
@@ -413,7 +475,8 @@ function exportRules() {
       rules: validation.rules
     };
     const data = `data:application/json;charset=utf-8,${encodeURIComponent(JSON.stringify(payload, null, 2))}`;
-    const stamp = new Date().toISOString().replaceAll(/[-:]/g, '').replace(/\..+/, '').replace('T', '-');
+    const timestamp = new Date().toISOString();
+    const stamp = timestamp.slice(0, timestamp.indexOf('.')).replaceAll('-', '').replaceAll(':', '').replace('T', '-');
     chrome.downloads.download({
       url: data,
       filename: `chefs-custom-format-rules-v${RULE_SCHEMA_VERSION}-${stamp}.json`,
@@ -421,7 +484,7 @@ function exportRules() {
     });
     setRulesMessage(`Exported ${validation.rules.length} rule${validation.rules.length === 1 ? '' : 's'}.`, 'success');
   } catch (error) {
-    setRulesMessage(error.message, 'error');
+    setRulesMessage(error?.message || String(error), 'error');
   }
 }
 
@@ -433,10 +496,7 @@ function mergeRules(localRules, importedRules) {
   }
   for (const imported of importedRules.map(normalizeRule)) {
     const identity = `${imported.labelMatch.toLowerCase()}\u0000${imported.mask}\u0000${imported.matchMode}`;
-    if (byId.has(imported.id)) {
-      byId.set(imported.id, imported);
-      identities.set(identity, imported.id);
-    } else if (!identities.has(identity)) {
+    if (byId.has(imported.id) || !identities.has(identity)) {
       byId.set(imported.id, imported);
       identities.set(identity, imported.id);
     }
@@ -448,7 +508,7 @@ async function importRulesFromFile(file) {
   try {
     const text = await file.text();
     const payload = JSON.parse(text);
-    if (!payload || payload.schemaVersion !== RULE_SCHEMA_VERSION || !Array.isArray(payload.rules)) {
+    if (payload?.schemaVersion !== RULE_SCHEMA_VERSION || !Array.isArray(payload?.rules)) {
       throw new Error(`The file must use rule schema version ${RULE_SCHEMA_VERSION} and contain a rules array.`);
     }
     const validation = validateRules(payload.rules);
@@ -460,7 +520,7 @@ async function importRulesFromFile(file) {
     renderRules();
     setRulesMessage(`Imported ${validation.rules.length} rule${validation.rules.length === 1 ? '' : 's'} using ${mode} mode. Save settings to keep the changes.`, 'success');
   } catch (error) {
-    setRulesMessage(`Import rejected: ${error.message}`, 'error');
+    setRulesMessage(`Import rejected: ${error?.message || String(error)}`, 'error');
   } finally {
     document.getElementById('rulesFileInput').value = '';
   }
@@ -477,7 +537,7 @@ document.getElementById('addRuleButton').addEventListener('click', () => {
 document.getElementById('importRulesButton').addEventListener('click', () => document.getElementById('rulesFileInput').click());
 document.getElementById('exportRulesButton').addEventListener('click', exportRules);
 document.getElementById('rulesFileInput').addEventListener('change', (event) => {
-  const file = event.target.files && event.target.files[0];
+  const file = event.target.files?.[0];
   if (file) {
     importRulesFromFile(file);
   }
@@ -489,4 +549,4 @@ document.getElementById('generateBatchTokenButton').addEventListener('click', ge
 document.getElementById('grantBatchPermissionsButton').addEventListener('click', grantBatchPermissions);
 document.getElementById('openDashboardButton').addEventListener('click', openDashboard);
 document.getElementById('clearDashboardHistoryButton').addEventListener('click', clearDashboardHistory);
-loadSettings();
+void loadSettings();

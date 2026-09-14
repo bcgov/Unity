@@ -12,6 +12,22 @@ namespace Unity.GrantManager.Applications;
 public interface IApplicantAddressManager
 {
     /// <summary>
+    /// Finds the latest eligible submission using the repository's current tenant scope.
+    /// </summary>
+    Task<Application?> FindLatestApplicationAsync(Guid applicantId);
+
+    /// <summary>
+    /// Validates and saves the requested primary address sections. New addresses require
+    /// an existing applicant, the expected latest application, and no address of that type.
+    /// Call within a transactional unit of work. This operation does not serialize concurrent writers.
+    /// </summary>
+    Task<(ApplicantAddress? PhysicalAddress, ApplicantAddress? MailingAddress)> SavePrimaryAddressesAsync(
+        Guid applicantId,
+        Guid? expectedApplicationId,
+        ApplicantAddressInput? physicalAddress,
+        ApplicantAddressInput? mailingAddress);
+
+    /// <summary>
     /// Clears the primary flag on every other address the applicant holds of the same
     /// <paramref name="addressType"/>. Addresses of any other type are left untouched.
     /// </summary>

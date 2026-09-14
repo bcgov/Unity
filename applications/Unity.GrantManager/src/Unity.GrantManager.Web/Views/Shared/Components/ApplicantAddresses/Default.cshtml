@@ -8,8 +8,8 @@
 
 @{
     Layout = null;
-    var canEditPrimaryPhysical = Model.PrimaryPhysicalAddress.IsEditable && Model.CanEditAddresses;
-    var canEditPrimaryMailing = Model.PrimaryMailingAddress.IsEditable && Model.CanEditAddresses;
+    var canEditPrimaryPhysical = Model.CanEditPrimaryPhysical;
+    var canEditPrimaryMailing = Model.CanEditPrimaryMailing;
 
     var canEditAddresses = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Addresses.Default);
 }
@@ -27,6 +27,7 @@
             <input type="hidden" id="ApplicantAddresses_ApplicantId" value="@Model.ApplicantId" />
             <input type="hidden" id="ApplicantAddresses_PrimaryPhysicalAddressId" value="@Model.PrimaryPhysicalAddress.Id" />
             <input type="hidden" id="ApplicantAddresses_PrimaryMailingAddressId" value="@Model.PrimaryMailingAddress.Id" />
+            <input type="hidden" id="ApplicantAddresses_ExpectedApplicationId" value="@Model.ExpectedApplicationId" />
 
             @if (Model.CanSave)
             {
@@ -73,9 +74,23 @@
                             <abp-input asp-for="PrimaryPhysicalAddress.PostalCode" id="PrimaryPhysicalAddress_PostalCode" disabled="@(!canEditPrimaryPhysical)" />
                         </div>
                     </div>
-                    @if (!Model.PrimaryPhysicalAddress.IsEditable)
+                    @if (!Model.PrimaryPhysicalAddress.Exists)
                     {
-                        <div class="text-muted mt-3 small">No primary physical address on record.</div>
+                        <div id="PrimaryPhysicalAddress_CreationHint" class="text-muted mt-3 small">
+                            @if (Model.CanCreateAddresses)
+                            {
+                                <text>Enter Street or Street 2 and save to create this address for
+                                    <a href="/GrantApplications/Details?ApplicationId=@Model.ExpectedApplicationId">Submission # @Model.ExpectedApplicationReferenceNo</a>.</text>
+                            }
+                            else if (Model.CanEditAddresses)
+                            {
+                                <text>A submission is required before you can add an address.</text>
+                            }
+                            else
+                            {
+                                <text>No primary physical address on record.</text>
+                            }
+                        </div>
                     }
                 </div>
                 <div class="row m-0 mailing-address-form ps-2" style="border-bottom:none;">
@@ -106,9 +121,23 @@
                             <abp-input asp-for="PrimaryMailingAddress.PostalCode" id="PrimaryMailingAddress_PostalCode" disabled="@(!canEditPrimaryMailing)" />
                         </div>
                     </div>
-                    @if (!Model.PrimaryMailingAddress.IsEditable)
+                    @if (!Model.PrimaryMailingAddress.Exists)
                     {
-                        <div class="text-muted mt-3 small">No primary mailing address on record.</div>
+                        <div id="PrimaryMailingAddress_CreationHint" class="text-muted mt-3 small">
+                            @if (Model.CanCreateAddresses)
+                            {
+                                <text>Enter Street or Street 2 and save to create this address for
+                                    <a href="/GrantApplications/Details?ApplicationId=@Model.ExpectedApplicationId">Submission # @Model.ExpectedApplicationReferenceNo</a>.</text>
+                            }
+                            else if (Model.CanEditAddresses)
+                            {
+                                <text>A submission is required before you can add an address.</text>
+                            }
+                            else
+                            {
+                                <text>No primary mailing address on record.</text>
+                            }
+                        </div>
                     }
                 </div>
             </div>

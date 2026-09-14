@@ -38,7 +38,7 @@ public class AddressDeleteHandlerTests
 
         _handler = new AddressDeleteHandler(
             _addressRepository,
-            new ApplicantAddressManager(_addressRepository),
+            new ApplicantAddressManager(_addressRepository, Substitute.For<IApplicantRepository>(), Substitute.For<IApplicationRepository>()),
             NullLogger<AddressDeleteHandler>.Instance);
     }
 
