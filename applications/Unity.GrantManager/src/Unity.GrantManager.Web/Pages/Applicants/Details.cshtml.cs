@@ -4,13 +4,13 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
-using Unity.GrantManager.Permissions;
+using Unity.Modules.Shared;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.Users;
 
 namespace Unity.GrantManager.Web.Pages.Applicants
 {
-    [Authorize(GrantApplicationPermissions.Applicants.ViewList)]
+    [Authorize(UnitySelector.ApplicantManagement.Applicant.Default)]
     public class DetailsModel : GrantManagerPageModel
     {
         private readonly IApplicantRepository _applicantRepository;

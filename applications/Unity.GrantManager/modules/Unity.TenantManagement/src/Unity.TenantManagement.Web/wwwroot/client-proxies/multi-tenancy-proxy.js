@@ -97,7 +97,7 @@
       return abp.ajax($.extend(true, {
         url: abp.appPath + 'api/onboarding-requests/' + id + '/validate' + abp.utils.buildQueryString([
           { name: 'tenantNameFieldKey', value: input?.tenantNameFieldKey },
-          { name: 'superUsersFieldKey', value: input?.superUsersFieldKey }
+          { name: 'programManagersFieldKey', value: input?.programManagersFieldKey }
         ]) + '',
         type: 'GET'
       }, ajaxParams));

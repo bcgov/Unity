@@ -133,10 +133,16 @@ Same as `get_formversion_data`:
 
 | Type | SQL Type |
 | ---- | -------- |
-| `textfield` / `textarea` / `email` / `select` / `phoneNumber` | TEXT |
+| `textfield` / `textarea` / `email` / `select` / `phonenumber` | TEXT |
 | `number` | NUMERIC |
 | `currency` | DECIMAL(18,2) |
 | `option` / `checkbox` | BOOLEAN |
+| *(any other type)* | TEXT |
+
+Two differences from `get_formversion_data` worth noting:
+
+- Types are normalised with `lower(COALESCE(row_data->>'Type', 'text'))` before matching, so the comparison is case-insensitive and a missing `Type` defaults to `text`. `get_formversion_data` matches the raw string case-sensitively.
+- Like `get_formversion_data`, there is no `datetime` branch and no use of the `safe_to_*` helpers — date fields land as `TEXT`. Only the two worksheet functions emit `TIMESTAMP`.
 
 ---
 

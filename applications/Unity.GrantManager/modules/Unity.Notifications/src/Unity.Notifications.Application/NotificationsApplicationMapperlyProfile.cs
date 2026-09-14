@@ -33,8 +33,10 @@ public partial class IUserDataToEmailHistoryUserDtoMapper : MapperBase<IUserData
 [Mapper]
 public partial class EmailGroupToEmailGroupDtoMapper : MapperBase<EmailGroup, EmailGroupDto>
 {
+    [MapperIgnoreTarget(nameof(EmailGroupDto.IsUsedByScheduledNotification))]
     public override partial EmailGroupDto Map(EmailGroup source);
 
+    [MapperIgnoreTarget(nameof(EmailGroupDto.IsUsedByScheduledNotification))]
     public override partial void Map(EmailGroup source, EmailGroupDto destination);
 }
 

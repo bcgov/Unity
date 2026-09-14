@@ -50,7 +50,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CustomFields
 
             var aiSuggestionWorksheetName = formVersion == null
                 ? string.Empty
-                : AiWorksheetSuggestionName.Build(formVersion.ApplicationFormId, formVersion.Id);
+                : AiWorksheetSuggestionName.Build(formVersion.Id);
             var worksheets = await worksheetListAppService.GetListAsync();
             model.HasPendingAiWorksheet = worksheets
                 .Any(worksheet => !worksheet.Published && worksheet.Name == aiSuggestionWorksheetName);

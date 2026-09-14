@@ -38,6 +38,28 @@
     display: none;
 }
 
+#sendEmailNotification.custom-table-btn {
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
+#sendEmailNotificationDropdownToggle.custom-table-btn {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    padding-left: 8px;
+    padding-right: 8px;
+}
+
+.send-email-dropdown-menu {
+    padding: 6px;
+    min-width: 100%;
+}
+
+    .send-email-dropdown-menu .custom-table-btn {
+        width: 100%;
+        white-space: nowrap;
+    }
+
 .margin-left-auto {
     margin-left: auto;
 }

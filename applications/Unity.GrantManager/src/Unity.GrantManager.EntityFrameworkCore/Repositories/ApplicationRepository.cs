@@ -152,6 +152,7 @@ public class ApplicationRepository
             .AsNoTracking()
             .Include(a => a.ApplicationStatus)
             .Include(a => a.Applicant)
+            .Include(a => a.ApplicantAgent)
             .Include(a => a.ApplicationForm)
             .Where(a => ids.Contains(a.Id))
             .ToListAsync();
@@ -511,9 +512,10 @@ public class ApplicationRepository
                     Status = a.Status,
                     ExternalStatusVisibility = a.ExternalStatusVisibility,
                     ExternalStatus = a.ExternalStatus,
+                    // For presentation, render as empty if unpublished
                     PublishedStatus = a.ExternalStatusVisibility
                         ? a.NotifiedStatus ?? a.ExternalStatus
-                        : a.ExternalStatus,
+                        : null,
                     Category = a.Category,
                     ApplicantId = a.ApplicantId,
                     ApplicantName = a.ApplicantName,

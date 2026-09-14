@@ -5,6 +5,7 @@
     let select2Loading = false;
     let initialized = false;  // Guard against reinitializing
     let isSaving = false;  // Guard against duplicate submissions
+    let dateStatusSelect2Ready = false;
 
     // Load Select2 library dynamically only after jQuery is available
     function loadSelect2Library() {
@@ -20,6 +21,16 @@
             select2Loading = false;
         };
         document.head.appendChild(script);
+    }
+
+    function initializeTooltips() {
+        if (typeof bootstrap === 'undefined') return;
+
+        document.querySelectorAll('#notificationModal [data-bs-toggle="tooltip"]').forEach((tooltipElement) => {
+            bootstrap.Tooltip.getOrCreateInstance(tooltipElement, {
+                customClass: 'notification-tooltip-popover'
+            });
+        });
     }
 
     // Wait for select2 to be available, then initialize
@@ -47,6 +58,13 @@
                         closeOnSelect: true,
                         allowClear: false
                     });
+                    $('#dateApplicationStatus').select2({
+                        theme: 'bootstrap-5',
+                        width: '100%',
+                        closeOnSelect: false,
+                        allowClear: true
+                    });
+                    dateStatusSelect2Ready = true;
                 } catch (e) {
                     console.error('Failed to initialize Select2:', e);
                     select2Ready = false;
@@ -86,6 +104,29 @@
         return Array.from(document.getElementById('recipientSelect')?.options ?? [])
             .filter(opt => opt.selected && opt.value)
             .map(opt => opt.value);
+    }
+
+    function getSelectedDateStatuses() {
+        const val = dateStatusSelect2Ready && $ !== undefined
+            ? $('#dateApplicationStatus').val()
+            : Array.from(document.getElementById('dateApplicationStatus')?.selectedOptions ?? []).map(opt => opt.value);
+        let values = [];
+        if (Array.isArray(val)) {
+            values = val;
+        } else if (val) {
+            values = [val];
+        }
+        return values.filter(Boolean);
+    }
+
+    function setSelectedDateStatuses(values) {
+        const selected = Array.isArray(values) ? values.map(String) : [];
+        Array.from(document.getElementById('dateApplicationStatus')?.options ?? []).forEach(opt => {
+            opt.selected = selected.includes(opt.value);
+        });
+        if (dateStatusSelect2Ready && $.fn?.select2) {
+            $('#dateApplicationStatus').trigger('change');
+        }
     }
 
     // Helper function to set selected values
@@ -380,6 +421,7 @@
 
             if (row.triggerType === 'Date') {
                 setVal('dateType', row.dateType);
+                setSelectedDateStatuses(row.applicationStatusIds || []);
                 setVal('recipientCategory', row.recipientCategory);
                 // Set multiple values for recipient select
                 const values = row.recipientIdentifier ? row.recipientIdentifier.split(',').map(v => v.trim()) : [];
@@ -425,6 +467,18 @@
         blank.value = '';
         blank.text = '';
         sel.appendChild(blank);
+        statuses.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.id;
+            opt.text = s.internalStatus;
+            sel.appendChild(opt);
+        });
+    }
+
+    function populateDateStatuses(statuses) {
+        const sel = document.getElementById('dateApplicationStatus');
+        if (!sel) return;
+        sel.replaceChildren();
         statuses.forEach(s => {
             const opt = document.createElement('option');
             opt.value = s.id;
@@ -666,6 +720,7 @@
             document.getElementById(id).value = '';
         });
         document.getElementById('statusSelect').disabled = true;
+        setSelectedDateStatuses([]);
 
         // Clear the recipient select
         clearSelectedRecipients();
@@ -771,6 +826,7 @@
         console.debug('Marking initialized = true');
 
         configureSubmitOnlyValidation();
+        initializeTooltips();
 
         if (modalEl) {
             // Always reset validation when modal is fully closed
@@ -830,7 +886,7 @@
                 localStorage.removeItem('notifications-template-to-select');
             }
         });
-        ['dateType', 'moduleSelect', 'statusSelect'].forEach(id => {
+        ['dateType', 'moduleSelect', 'statusSelect', 'dateApplicationStatus'].forEach(id => {
             document.getElementById(id)?.addEventListener('change', (e) => {
                 e.target.classList.remove('is-invalid');
             });
@@ -912,6 +968,7 @@
         const dateType = document.getElementById('dateType').value;
         const module = document.getElementById('moduleSelect')?.value;
         const statusValue = document.getElementById('statusSelect')?.value;
+        const dateApplicationStatusIds = getSelectedDateStatuses();
         const recipientCategory = document.getElementById('recipientCategory')?.value;
         
         // Collect multiple selected recipients as comma-separated string
@@ -924,6 +981,7 @@
             triggerType: triggerType,
             module: triggerType === 'Event' ? module : null,
             dateType: triggerType === 'Date' ? dateType : null,
+            applicationStatusIds: triggerType === 'Date' ? dateApplicationStatusIds : [],
             applicationStatusId: resolvedStatusId,
             eventStatus: triggerType === 'Event' && module === 'Payment' ? (statusValue || null) : null,
             recipientCategory: recipientCategory,
@@ -975,7 +1033,10 @@
         init();
         
         // Load statuses and initial recipients
-        fetchStatuses().then(populateStatuses);
+        fetchStatuses().then(statuses => {
+            populateStatuses(statuses);
+            populateDateStatuses(statuses);
+        });
     });
 
     function configureSubmitOnlyValidation() {

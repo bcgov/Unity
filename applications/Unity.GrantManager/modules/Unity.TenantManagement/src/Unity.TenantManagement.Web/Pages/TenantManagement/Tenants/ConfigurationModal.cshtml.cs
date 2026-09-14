@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Unity.GrantManager.Integrations;
 using Unity.Modules.Shared.Permissions;
+using Unity.Reporting.Configuration;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Features;
@@ -21,7 +22,8 @@ namespace Unity.TenantManagement.Web.Pages.TenantManagement.Tenants;
 public class ConfigurationModalModel(
     ITenantAppService tenantAppService,
     ICasClientCodeLookupService lookupService,
-    IFeatureAppService featureAppService) : TenantManagementPageModel
+    IFeatureAppService featureAppService,
+    ITenantViewRoleAppService tenantViewRoleAppService) : TenantManagementPageModel
 {
     [BindProperty]
     public TenantInfoModel Tenant { get; set; } = null!;
@@ -45,6 +47,10 @@ public class ConfigurationModalModel(
 
     public bool CanManageManagers { get; set; }
 
+    public bool CanManageReporting { get; set; }
+
+    public TenantViewRoleDto? ViewRole { get; set; }
+
     public virtual async Task<IActionResult> OnGetAsync(Guid id)
     {
         var tenantDto = await tenantAppService.GetAsync(id);
@@ -61,9 +67,20 @@ public class ConfigurationModalModel(
 
         CanManageManagers = CanManageFeatures;
 
+        // Stricter than CanManageFeatures - this mirrors the reporting database-role admin page's
+        // original ITAdministrator-only gating (IdentityConsts.ITAdminPermissionName on
+        // TenantViewRoleAppService itself), not the broader ITAdminOrITOperations used above.
+        CanManageReporting = (await AuthorizationService
+            .AuthorizeAsync(User, IdentityConsts.ITAdminPolicyName)).Succeeded;
+
         if (CanManageConnectionStrings)
         {
             ConnectionStrings = await tenantAppService.GetConnectionStringsAsync(id);
+        }
+
+        if (CanManageReporting)
+        {
+            ViewRole = await tenantViewRoleAppService.GetAsync(id);
         }
 
         return Page();
@@ -121,6 +138,7 @@ public class ConfigurationModalModel(
         [Display(Name = "DisplayName:TenantName")]
         public string Name { get; set; } = string.Empty;
 
+        public string DisplayName { get; set; } = string.Empty;
         public string Division { get; set; } = string.Empty;
         public string Branch { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;

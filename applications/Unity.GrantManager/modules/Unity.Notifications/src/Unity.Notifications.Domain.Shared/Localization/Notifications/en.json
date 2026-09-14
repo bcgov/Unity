@@ -26,6 +26,9 @@
     "Search": "Search",
     "Filter": "Filter",
     "Export": "Export",
+    "NotificationList:Open": "Open",
+    "NotificationList:EmailModalTitle": "Email Notification",
+    "NotificationList:EmailModalLoadFailed": "Failed to load the email notification",
     "NotificationList:NotificationId": "Notification Id",
     "NotificationList:SubmissionId": "Submission #",
     "NotificationList:ApplicantName": "Applicant Name",
@@ -70,6 +73,7 @@
     "NotificationLogs:No": "No",
     "RealtimeOps:Title": "Unity Messaging",
     "RealtimeOps:OnlineUsers": "Online Users",
+    "RealtimeOps:LastActivity": "Last activity",
     "RealtimeOps:NoUsers": "No users are currently online.",
     "RealtimeOps:Status": "Status",
     "RealtimeOps:StatusActive": "Active (last 10 min)",
@@ -105,8 +109,16 @@
     "RealtimeWidget:Individual": "Individual",
     "RealtimeWidget:Tenant": "Team",
     "RealtimeWidget:NoTenant": "No team available",
-    "RealtimeWidget:NoOnlineUsers": "No other users in your team",
+    "RealtimeWidget:NoOnlineUsers": "No other users available",
+    "RealtimeWidget:ResizeIndividuals": "Resize individual users panel",
     "RealtimeWidget:StatusOffline": "Offline",
-    "RealtimeWidget:TenantBroadcast": "team broadcast"
+    "RealtimeWidget:ShowBubble": "Show Message Bubble",
+    "RealtimeWidget:HideBubble": "Hide Message Bubble",
+    "RealtimeWidget:TenantBroadcast": "team broadcast",
+    "RealtimeWidget:CloseBanner": "Close banner",
+    "RealtimeOps:MessageType": "Message Type",
+    "RealtimeOps:SelectMessageType": "Select message type",
+    "RealtimeOps:MessageTypeBanner": "Banner",
+    "RealtimeOps:MessageTypePopup": "Popup"
   }
 }

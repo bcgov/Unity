@@ -5,7 +5,7 @@ using System.Linq;
 using Unity.GrantManager.GrantApplications;
 using Unity.Notifications.EmailGroups;
 using System.Threading.Tasks;
-using Unity.Notifications.Emails;
+using Unity.Notifications.EmailNotifications;
 using Volo.Abp.Users;
 using Unity.GrantManager.Events;
 using Unity.Payments.Enums;
@@ -21,20 +21,20 @@ namespace Unity.GrantManager.Web.Controllers
         private readonly IEmailGroupsAppService _emailGroupsAppService;
         private readonly Unity.Notifications.Templates.ITemplateService _templateService;
         private readonly Notifications.IAutomatedNotificationAppService _automatedNotificationAppService;
-        private readonly IEmailLogAttachmentRepository _emailLogAttachmentRepository;
+        private readonly EmailAttachmentService _emailAttachmentService;
         private readonly ICurrentUser _currentUser;
         private readonly IEmailGroupUsersAppService _emailGroupUsersAppService;
         private readonly IIdentityUserIntegrationService _identityUserIntegrationService;
         private readonly IGrantApplicationAppService _grantApplicationAppService;
         private readonly ScheduledNotificationHelper _scheduledNotificationHelper;
 
-        public FormNotificationsApiController(IApplicationStatusService statusService, IEmailGroupsAppService emailGroupsAppService, Unity.Notifications.Templates.ITemplateService templateService, Unity.GrantManager.Notifications.IAutomatedNotificationAppService automatedNotificationAppService, IEmailLogAttachmentRepository emailLogAttachmentRepository, ICurrentUser currentUser, IEmailGroupUsersAppService emailGroupUsersAppService, IIdentityUserIntegrationService identityUserIntegrationService, IGrantApplicationAppService grantApplicationAppService, ScheduledNotificationHelper scheduledNotificationHelper)
+        public FormNotificationsApiController(IApplicationStatusService statusService, IEmailGroupsAppService emailGroupsAppService, Unity.Notifications.Templates.ITemplateService templateService, Unity.GrantManager.Notifications.IAutomatedNotificationAppService automatedNotificationAppService, EmailAttachmentService emailAttachmentService, ICurrentUser currentUser, IEmailGroupUsersAppService emailGroupUsersAppService, IIdentityUserIntegrationService identityUserIntegrationService, IGrantApplicationAppService grantApplicationAppService, ScheduledNotificationHelper scheduledNotificationHelper)
         {
             _statusService = statusService;
             _emailGroupsAppService = emailGroupsAppService;
             _templateService = templateService;
             _automatedNotificationAppService = automatedNotificationAppService;
-            _emailLogAttachmentRepository = emailLogAttachmentRepository;
+            _emailAttachmentService = emailAttachmentService;
             _currentUser = currentUser;
             _emailGroupUsersAppService = emailGroupUsersAppService;
             _identityUserIntegrationService = identityUserIntegrationService;
@@ -155,49 +155,26 @@ namespace Unity.GrantManager.Web.Controllers
             if (input.EmailLogId == Guid.Empty)
                 return BadRequest("EmailLogId is required");
 
-            // Get all attachments for the template
-            var templateAttachments = await _emailLogAttachmentRepository.GetByTemplateIdAsync(templateId);
-
-            if (templateAttachments.Count == 0)
-            {
-                return Ok(new CopyAttachmentsResponseDto { AttachmentCount = 0 });
-            }
-
-            // Copy attachments to the email log
-            int copiedCount = 0;
-            foreach (var templateAttachment in templateAttachments)
-            {
-                var newAttachment = new EmailLogAttachment
-                {
-                    EmailLogId = input.EmailLogId,
-                    TemplateId = null,
-                    OriginTemplateId = templateId,
-                    S3ObjectKey = templateAttachment.S3ObjectKey,
-                    FileName = templateAttachment.FileName,
-                    DisplayName = templateAttachment.DisplayName,
-                    ContentType = templateAttachment.ContentType,
-                    FileSize = templateAttachment.FileSize,
-                    Time = DateTime.UtcNow,
-                    UserId = _currentUser.Id ?? Guid.Empty,
-                    TenantId = _currentUser.TenantId ?? Guid.Empty
-                };
-
-                await _emailLogAttachmentRepository.InsertAsync(newAttachment);
-                copiedCount++;
-            }
+            var copiedCount = await _emailAttachmentService.ReplaceTemplateAttachmentsAsync(
+                templateId,
+                input.EmailLogId,
+                _currentUser.TenantId);
 
             return Ok(new CopyAttachmentsResponseDto { AttachmentCount = copiedCount });
+        }
+
+        [HttpGet("email-template/{templateId}/validate-attachments")]
+        public async Task<IActionResult> ValidateTemplateAttachments(Guid templateId)
+        {
+            await _emailAttachmentService.ValidateTemplateAttachmentsAsync(templateId);
+            return NoContent();
         }
 
         [HttpDelete("email-log/{emailLogId}/origin-attachments")]
         public async Task<ActionResult<CopyAttachmentsResponseDto>> DeleteOriginAttachments(Guid emailLogId)
         {
-            var attachments = await _emailLogAttachmentRepository.GetOriginAttachmentsByEmailLogIdAsync(emailLogId);
-            foreach (var attachment in attachments)
-            {
-                await _emailLogAttachmentRepository.DeleteAsync(attachment.Id);
-            }
-            return Ok(new CopyAttachmentsResponseDto { AttachmentCount = attachments.Count });
+            var deletedCount = await _emailAttachmentService.DeleteOriginAttachmentsAsync(emailLogId);
+            return Ok(new CopyAttachmentsResponseDto { AttachmentCount = deletedCount });
         }
 
         [HttpGet("statuses")]
@@ -259,6 +236,7 @@ namespace Unity.GrantManager.Web.Controllers
                 DateType = e.DateField,
                 EventStatus = e.EventType ?? e.ApplicationStatus,
                 ApplicationStatusId = e.ApplicationStatusId,
+                ApplicationStatusIds = ParseStatusIds(e.ApplicationStatusIds),
                 RecipientCategory = e.RecipientCategory,
                 RecipientIdentifier = e.RecipientIdentifier,
                 CreatedAt = DateTime.UtcNow,
@@ -317,6 +295,7 @@ namespace Unity.GrantManager.Web.Controllers
                 IsActive = true,
                 EventType = input.Module == "Payment" ? input.EventStatus : null,
                 ApplicationStatusId = input.Module == "Application" ? input.ApplicationStatusId : null,
+                ApplicationStatusIds = input.TriggerType == "Date" ? SerializeStatusIds(input.ApplicationStatusIds) : null,
                 ApplicationStatus = statusLabel,
                 DateField = input.DateType,
                 RecipientCategory = input.RecipientCategory,
@@ -335,6 +314,7 @@ namespace Unity.GrantManager.Web.Controllers
                 DateType = created.DateField,
                 EventStatus = created.EventType ?? created.ApplicationStatus,
                 ApplicationStatusId = created.ApplicationStatusId,
+                ApplicationStatusIds = ParseStatusIds(created.ApplicationStatusIds),
                 RecipientCategory = created.RecipientCategory,
                 RecipientIdentifier = created.RecipientIdentifier,
                 CreatedAt = DateTime.UtcNow
@@ -436,6 +416,7 @@ namespace Unity.GrantManager.Web.Controllers
                 IsActive = true,
                 EventType = input.Module == "Payment" ? input.EventStatus : null,
                 ApplicationStatusId = input.Module == "Application" ? input.ApplicationStatusId : null,
+                ApplicationStatusIds = input.TriggerType == "Date" ? SerializeStatusIds(input.ApplicationStatusIds) : null,
                 ApplicationStatus = statusLabel,
                 DateField = input.DateType,
                 RecipientCategory = input.RecipientCategory,
@@ -454,6 +435,7 @@ namespace Unity.GrantManager.Web.Controllers
                 DateType = updated.DateField,
                 EventStatus = updated.EventType ?? updated.ApplicationStatus,
                 ApplicationStatusId = updated.ApplicationStatusId,
+                ApplicationStatusIds = ParseStatusIds(updated.ApplicationStatusIds),
                 RecipientCategory = updated.RecipientCategory,
                 RecipientIdentifier = updated.RecipientIdentifier,
                 CreatedAt = DateTime.UtcNow
@@ -485,6 +467,22 @@ namespace Unity.GrantManager.Web.Controllers
 
             return true;
         }
+
+        private static string? SerializeStatusIds(IEnumerable<Guid> statusIds)
+        {
+            var values = statusIds?.Distinct().ToList() ?? new List<Guid>();
+            return values.Count == 0 ? null : string.Join(',', values);
+        }
+
+        private static List<Guid> ParseStatusIds(string? statusIds)
+        {
+            return statusIds?
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(value => Guid.TryParse(value, out _))
+                .Select(Guid.Parse)
+                .Distinct()
+                .ToList() ?? new List<Guid>();
+        }
     }
 
     public record EmailTemplateDto
@@ -508,6 +506,7 @@ namespace Unity.GrantManager.Web.Controllers
         public string? DateType { get; init; }
         public string? EventStatus { get; init; }
         public Guid? ApplicationStatusId { get; init; }
+        public List<Guid> ApplicationStatusIds { get; init; } = new();
         public string? RecipientCategory { get; init; }
         public string? RecipientIdentifier { get; init; }
         public DateTime CreatedAt { get; init; }
@@ -521,6 +520,7 @@ namespace Unity.GrantManager.Web.Controllers
         public string? Module { get; init; }
         public string? DateType { get; init; }
         public Guid? ApplicationStatusId { get; init; }
+        public List<Guid> ApplicationStatusIds { get; init; } = new();
         public string? EventStatus { get; init; }
         public string? RecipientCategory { get; init; }
         public string? RecipientIdentifier { get; init; }

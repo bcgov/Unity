@@ -2,7 +2,9 @@
 
 This folder contains SQL scripts that are embedded as resources and used by Entity Framework migrations.
 
-## Files
+> These scripts split across the two reporting view-generation paths. The `get_*_data` functions and the singular `generate_{formversion,worksheet,scoresheet}_view` / `generate_consolidated_*_view` procedures belong to the **explicit** Reporting Configuration path. The plural `generate_{submissions,worksheets,scoresheets}_view` procedures belong to the **deprecated** auto/dynamic path. See `documentation/reporting/README.md`.
+
+## Files — explicit path (Reporting Configuration)
 
 ### `get_formversion_data.sql`
 PostgreSQL function that generates dynamic SELECT clauses for form version data extraction. Used by the `generate_formversion_view` procedure to create database views from form submission data.
@@ -29,11 +31,28 @@ PostgreSQL stored procedure that creates database views for worksheet reporting.
 
 ### `get_scoresheet_data.sql`
 PostgreSQL function that generates dynamic SELECT clauses for scoresheet data extraction. Used by the `generate_scoresheet_view` procedure to create database views from Flex scoresheet instance data. Features:
-- Extracts data from scoresheet ReportData JSONB column
-- Falls back to Answers table via JOIN when needed
-- Handles assessment correlation through Assessments table
-- Includes TotalScore calculation from ReportData
+- Extracts field values exclusively from the normalised `Flex.Answers` table (joined to `Flex.Questions`), one correlated subquery per mapped field — it does **not** read the `ScoresheetInstances.ReportData` JSONB column
+- Handles assessment correlation through `Assessments` → `Applications`
+- Always includes a `total_score` column computed by `calculate_scoresheet_total_score()`
 - Supports various field types (textfield, number, currency, yesno, checkbox, radio, etc.)
+
+### `get_consolidated_formversion_data.sql` / `get_consolidated_worksheet_data.sql`
+Consolidated counterparts of `get_formversion_data` / `get_worksheet_data`. They merge fields across **all** versions of a form into a single SELECT, driven by a mapping whose CorrelationId is the Form ID rather than a version ID.
+
+### `generate_consolidated_formversion_view.sql` / `generate_consolidated_worksheet_view.sql`
+Stored procedures that create the consolidated views from the above functions, following the same validate → build → drop → create sequence as their per-version equivalents.
+
+### `safe_to_date.sql` / `safe_to_timestamp.sql` / `safe_to_jsonb.sql`
+Coercion helpers used inside the generated SELECT statements. Each returns `NULL` for input it cannot parse, so a single malformed value cannot fail an entire view.
+
+## Files — deprecated auto/dynamic path
+
+> Scheduled for removal. See `documentation/reporting/reporting-auto-generated-views.md` for the phased deprecation plan.
+
+### `generate_submissions_view.sql` / `generate_worksheets_view.sql` / `generate_scoresheets_view.sql`
+Three near-identical procedures that build a view of all-`TEXT` columns for a single form version, worksheet, or scoresheet. Each reads the pipe-delimited `ReportViewName` / `ReportColumns` / `ReportKeys` values off the definition row (`public.ApplicationFormVersion`, `Flex.Worksheets`, `Flex.Scoresheets`) and emits one `COALESCE(... jsonb_each_text("ReportData") ...)` column per key against the corresponding instance table. No mapping configuration is involved.
+
+## Other
 
 ### `generate_scoresheet_view.sql`
 PostgreSQL stored procedure that creates database views for scoresheet reporting. This procedure:
@@ -56,34 +75,19 @@ PostgreSQL function that calculates the total score for a scoresheet instance by
 
 These SQL files are configured as **Embedded Resources** in the project file:
 
-```xml
-<ItemGroup>
-  <EmbeddedResource Include="Scripts\get_formversion_data.sql" />
-  <EmbeddedResource Include="Scripts\generate_formversion_view.sql" />
-  <EmbeddedResource Include="Scripts\get_worksheet_data.sql" />
-  <EmbeddedResource Include="Scripts\generate_worksheet_view.sql" />
-  <EmbeddedResource Include="Scripts\get_scoresheet_data.sql" />
-  <EmbeddedResource Include="Scripts\generate_scoresheet_view.sql" />
-  <EmbeddedResource Include="Scripts\calculate_scoresheet_total_score.sql" />
-</ItemGroup>
-```
+See the `<ItemGroup>` in `Unity.GrantManager.EntityFrameworkCore.csproj` for the authoritative list — every `.sql` file in this folder that a migration runs must have an entry there. As of the `20260721203242_Initial` tenant migration that is:
+
+`safe_to_date`, `safe_to_timestamp`, `safe_to_jsonb`, `calculate_scoresheet_total_score`, `get_next_sequence_number`, `get_formversion_data`, `get_worksheet_data`, `get_scoresheet_data`, `get_consolidated_formversion_data`, `get_consolidated_worksheet_data`, `generate_formversion_view`, `generate_worksheet_view`, `generate_scoresheet_view`, `generate_consolidated_formversion_view`, `generate_consolidated_worksheet_view`, `generate_worksheets_view`, `generate_scoresheets_view`, `generate_submissions_view`, `unitydb-communities-script`.
 
 ## Migration Dependencies
 
 ### ⚠️ **CRITICAL MIGRATION NOTE**
 
-The SQL scripts in this folder are deployed via Entity Framework migrations:
-- **Migration**: `20251010193253_AddFormVersionViewGen.cs`
-- **Migration**: `20251113012409_AddWorksheetViewGeneration.cs` 
-- **Migration**: `20251113001650_AddScoresheetViewGeneration.cs`
-- **Resource Names**: 
-  - `Unity.GrantManager.Scripts.get_formversion_data.sql`
-  - `Unity.GrantManager.Scripts.generate_formversion_view.sql`
-  - `Unity.GrantManager.Scripts.get_worksheet_data.sql`
-  - `Unity.GrantManager.Scripts.generate_worksheet_view.sql`
-  - `Unity.GrantManager.Scripts.get_scoresheet_data.sql`
-  - `Unity.GrantManager.Scripts.generate_scoresheet_view.sql`
-  - `Unity.GrantManager.Scripts.calculate_scoresheet_total_score.sql`
+The SQL scripts in this folder are deployed by the **tenant** migration `Migrations/TenantMigrations/20260721203242_Initial.cs`, which calls a `RunEmbeddedScript(migrationBuilder, "<filename>.sql")` helper once per script in dependency order (helpers → `get_*_data` functions → `generate_*` procedures) and drops each object again in its `Down()`.
+
+The earlier per-feature migrations (`AddFormVersionViewGen`, `AddWorksheetViewGeneration`, `AddScoresheetViewGeneration`) were squashed into that `Initial` migration and no longer exist.
+
+Resource names follow `Unity.GrantManager.Scripts.<filename>.sql` — see [Resource Name Pattern](#resource-name-pattern).
 
 ### **If Migration History is Cleaned Up**
 
@@ -129,12 +133,14 @@ These scripts are automatically deployed when running Entity Framework migration
 
 ## Data Flow
 
-### Scoresheet Data Flow
-1. **ScoresheetInstances**: Contains scoresheet answers in `ReportData` JSONB column
-2. **Answers**: Individual answers linked to Questions via QuestionId
+### Scoresheet Data Flow (explicit path — `get_scoresheet_data`)
+1. **ScoresheetInstances**: One row per completed scoresheet; the anchor for the query
+2. **Answers**: Individual answers linked to Questions via QuestionId — **this is where field values are read from**
 3. **Questions**: Scoresheet questions with metadata
 4. **Assessments**: Links scoresheet instances to applications via CorrelationId
 5. **Applications**: The main application entity
+
+The `ScoresheetInstances.ReportData` JSONB column belongs to the deprecated auto path (`generate_scoresheets_view`) and is not read by `get_scoresheet_data`.
 
 ### Key Relationships
 - `ScoresheetInstances.CorrelationId` → `Assessments.Id`

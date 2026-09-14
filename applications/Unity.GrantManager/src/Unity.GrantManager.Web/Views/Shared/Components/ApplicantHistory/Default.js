@@ -13,6 +13,13 @@ $(function () {
         zoneForm.init();
     }
 
+    const persistableFields = new Set([
+        'FundingHistoryComments',
+        'IssueTrackingComments',
+        'AuditComments',
+        'ReportsComments'
+    ]);
+
     saveBtn.on('click', function (e) {
         e.preventDefault();
         if (!zoneForm || zoneForm.modifiedFields.size === 0) return;
@@ -23,14 +30,14 @@ $(function () {
             return;
         }
 
+        const payload = buildPartialNotesPayload();
+        if (!payload) {
+            return;
+        }
+
         zoneForm.setSaving(true);
         unity.grantManager.applicantProfile.applicantHistory
-            .saveNotes(applicantId, {
-                fundingHistoryComments: $('#FundingHistoryComments').val(),
-                issueTrackingComments: $('#IssueTrackingComments').val(),
-                auditComments: $('#AuditComments').val(),
-                reportsComments: $('#ReportsComments').val()
-            })
+            .saveNotes(applicantId, payload)
             .done(function () {
                 abp.notify.success('History notes saved.');
                 zoneForm.resetTracking();
@@ -40,6 +47,41 @@ $(function () {
                 zoneForm.setSaving(false);
             });
     });
+
+    function buildPartialNotesPayload() {
+        if (!zoneForm) {
+            return null;
+        }
+
+        const modifiedFields = Array
+            .from(zoneForm.modifiedFields ?? [])
+            .map(field => field.split('.').pop() ?? field)
+            .filter(field => persistableFields.has(field));
+
+        if (modifiedFields.length === 0) {
+            return null;
+        }
+
+        const data = { modifiedFields };
+
+        modifiedFields.forEach(fieldName => {
+            const $input = form.find(`[name="${fieldName}"]`).first();
+            if ($input.length === 0) {
+                return;
+            }
+
+            const rawValue = $input.val();
+            let fieldValue;
+            if (typeof rawValue === 'string') {
+                fieldValue = rawValue.trim() === '' ? null : rawValue;
+            } else {
+                fieldValue = rawValue;
+            }
+            data[fieldName.charAt(0).toLowerCase() + fieldName.slice(1)] = fieldValue;
+        });
+
+        return data;
+    }
 
     // ── Column definitions ────────────────────────────────────────────────────
 
@@ -257,6 +299,7 @@ $(function () {
         ],
         serverSideEnabled: false,
         pagingEnabled: true,
+        persistSearchState: false,
         dataTableName: 'FundingHistoryTable',
         dynamicButtonContainerId: 'fundingHistoryDynamicButtons'
     });
@@ -287,6 +330,7 @@ $(function () {
         ],
         serverSideEnabled: false,
         pagingEnabled: true,
+        persistSearchState: false,
         dataTableName: 'IssueTrackingTable',
         dynamicButtonContainerId: 'issueTrackingDynamicButtons'
     });
@@ -317,6 +361,7 @@ $(function () {
         ],
         serverSideEnabled: false,
         pagingEnabled: true,
+        persistSearchState: false,
         dataTableName: 'AuditHistoryTable',
         dynamicButtonContainerId: 'auditHistoryDynamicButtons'
     });
@@ -347,6 +392,7 @@ $(function () {
         ],
         serverSideEnabled: false,
         pagingEnabled: true,
+        persistSearchState: false,
         dataTableName: 'ReportsHistoryTable',
         dynamicButtonContainerId: 'reportsHistoryDynamicButtons'
     });

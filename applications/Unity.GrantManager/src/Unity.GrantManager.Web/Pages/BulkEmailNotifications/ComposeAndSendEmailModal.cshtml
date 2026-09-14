@@ -1,0 +1,176 @@
+@page
+@model Unity.GrantManager.Web.Pages.BulkEmailNotifications.ComposeAndSendEmailModalModel
+@using Microsoft.Extensions.Configuration
+@using System.Globalization
+@inject IConfiguration Configuration
+
+@{
+    Layout = null;
+}
+
+<abp-modal id="composeAndSendEmailModal" size="ExtraLarge">
+    <abp-modal-header title="@("Compose & Send Email")"></abp-modal-header>
+    <abp-modal-body>
+        @if (ViewData["Error"] != null)
+        {
+            <div class="alert alert-warning" role="alert">
+                <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                @ViewData["Error"]
+            </div>
+        }
+        else
+        {
+            <form method="post" asp-page-handler="OnPostAsync" id="composeAndSendEmailForm">
+                <input asp-for="ComposeRequestJson" type="hidden" />
+            </form>
+
+            <input id="composeApplicationsJson" type="hidden" value="@Model.ApplicationsJson" />
+            <input id="composeMaxAttachmentMb" type="hidden" value="@(Configuration["S3:EmailAttachmentsTotalMaxFileSize"] ?? "25")" />
+
+            <div id="composeWorkflow" class="compose-email-workflow compose-step-one">
+                <div class="compose-step-heading">
+                    <span id="composeStepNumber" class="compose-step-number">Step 1 of 2</span>
+                    <h5 id="composeStepTitle">Compose email</h5>
+                </div>
+
+                <div class="compose-email-layout">
+                    <aside id="composeApplicationPanel"
+                           class="compose-application-panel bulk-email-list-panel"
+                           aria-label="Selected applications">
+                        <input id="composeApplicationCount" type="hidden" value="@Model.Applications.Count" />
+                        <abp-card class="batch-approval-card">
+                            <abp-card-body id="composeApplicationList">
+                                @foreach (var application in Model.Applications)
+                                {
+                                    <div id="compose-row-@application.ApplicationId"
+                                         class="batch-approval-container bulk-email-row compose-application-row"
+                                         role="button"
+                                         tabindex="0"
+                                         aria-label="Select application @application.ReferenceNo"
+                                         data-application-id="@application.ApplicationId">
+                                        <abp-row class="m-0 p-2 bulk-approval-row-header d-flex flex-nowrap">
+                                            <abp-column size="_9" class="px-1 flex-grow-1">
+                                                <div class="approval-details-header">
+                                                    <div class="reference-no">@application.ReferenceNo</div>
+                                                    <div class="applicant-name">@application.ApplicantName</div>
+                                                    <div class="form-name pr-1">(@application.FormName)</div>
+                                                    <div class="application-status">@application.ApplicationStatus</div>
+                                                </div>
+                                            </abp-column>
+                                            <abp-column size="_3" class="bulk-approval-remove-row d-flex justify-content-end col-3 gap-1 align-items-center">
+                                                <abp-button type="button"
+                                                            size="Small"
+                                                            icon-type="Other"
+                                                            icon="fa-solid fa-xmark"
+                                                            class="m-0 p-0 compose-remove-application"
+                                                            title="Remove application"
+                                                            aria-label="Remove application @application.ReferenceNo" />
+                                            </abp-column>
+                                        </abp-row>
+
+                                        <abp-row class="m-0 p-2 bulk-email-details-row">
+                                            <abp-column size="_6" class="px-2">
+                                                <div class="form-group mb-1">
+                                                    <label class="form-label" for="compose-approved-amount-@application.ApplicationId">Approved Amount</label>
+                                                    <input id="compose-approved-amount-@application.ApplicationId"
+                                                           class="form-control unity-currency-input"
+                                                           value="@application.ApprovedAmount.ToString("F2", CultureInfo.InvariantCulture)"
+                                                           disabled />
+                                                </div>
+                                            </abp-column>
+                                            <abp-column size="_6" class="px-2">
+                                                <div class="form-group mb-1">
+                                                    <label class="form-label" for="compose-decision-date-@application.ApplicationId">Decision Date</label>
+                                                    <input id="compose-decision-date-@application.ApplicationId"
+                                                           class="form-control"
+                                                           type="date"
+                                                           value="@(application.DecisionDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? string.Empty)"
+                                                           disabled />
+                                                </div>
+                                            </abp-column>
+                                            <abp-column size="_6" class="px-2">
+                                                <div class="form-group mb-1">
+                                                    <label class="form-label" for="compose-created-by-@application.ApplicationId">Created By</label>
+                                                    <input id="compose-created-by-@application.ApplicationId"
+                                                           class="form-control compose-created-by"
+                                                           value="@Model.CurrentUserDisplayName"
+                                                           disabled />
+                                                </div>
+                                            </abp-column>
+                                            <abp-column size="_6" class="px-2">
+                                                <div class="form-group mb-1">
+                                                    <label class="form-label" for="compose-last-modified-@application.ApplicationId">Last Modified</label>
+                                                    <input id="compose-last-modified-@application.ApplicationId"
+                                                           class="form-control compose-last-modified"
+                                                           type="date"
+                                                           disabled />
+                                                </div>
+                                            </abp-column>
+                                            <abp-column size="_12" class="px-1">
+                                                <div class="compose-row-validation" aria-live="polite"></div>
+                                            </abp-column>
+                                        </abp-row>
+                                    </div>
+                                }
+                            </abp-card-body>
+                        </abp-card>
+                    </aside>
+
+                    <div id="composePanelDivider"
+                         class="compose-panel-divider bulk-email-panel-divider"
+                         role="separator"
+                         aria-orientation="vertical"
+                         aria-label="Resize the application list and email editor panels"
+                         tabindex="0"></div>
+
+                    <section class="compose-editor-panel" aria-labelledby="composeStepTitle">
+                        <output id="composeRecipientSummary" class="alert alert-secondary compose-recipient-summary">
+                            Each selected application will use its contact email as the initial recipient. You can review or edit recipients in Step 2.
+                        </output>
+                        <div id="composeEditorLoading" class="compose-editor-loading" style="display:none">
+                            <output class="spinner-grow"><span class="visually-hidden">Loading...</span></output>
+                        </div>
+                        <div id="composeEmailEditor" class="emails-widget-scope">
+                            @await Component.InvokeAsync("EmailsWidget", new
+                            {
+                                applicationId = Model.InitialApplicationId,
+                                currentUserId = Model.CurrentUserId,
+                                noDraftPreviewMode = true
+                            })
+                        </div>
+                    </section>
+                </div>
+            </div>
+        }
+    </abp-modal-body>
+
+    <abp-modal-footer>
+        @if (ViewData["Error"] == null)
+        {
+            <abp-button id="composeBackButton"
+                        type="button"
+                        class="btn btn-secondary"
+                        icon-type="Other"
+                        icon="fa-solid fa-arrow-left"
+                        text="Back"
+                        style="display:none"></abp-button>
+            <abp-button id="composeNextButton"
+                        type="button"
+                        class="btn btn-primary"
+                        text="Next"></abp-button>
+            <abp-button id="composeSendButton"
+                        type="submit"
+                        form="composeAndSendEmailForm"
+                        class="btn btn-primary"
+                        data-busy-text="Sending..."
+                        text="Send"
+                        disabled="true"
+                        style="display:none"></abp-button>
+        }
+        <abp-button id="composeCancelButton"
+                    type="button"
+                    class="btn btn-secondary"
+                    data-bs-dismiss="modal"
+                    text="Cancel"></abp-button>
+    </abp-modal-footer>
+</abp-modal>

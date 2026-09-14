@@ -10,10 +10,10 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Unity.Modules.Shared.Utils;
 using Unity.Notifications.Emails;
+using Unity.Notifications.EmailAddresses;
 using Unity.Notifications.Events;
 using Unity.Notifications.Integrations.Ches;
 using Unity.Notifications.Integrations.RabbitMQ;
-using Unity.Notifications.Settings;
 using Volo.Abp;
 using Volo.Abp.Data;
 using Volo.Abp.Domain.Entities;
@@ -30,7 +30,7 @@ namespace Unity.Notifications.EmailNotifications
         IChesClientService chesClientService,
         EmailQueueService emailQueueService,
         EmailAttachmentService emailAttachmentService,
-        ISettingProvider settingProvider) : DomainService, IEmailNotificationManager
+        IEmailAddressConfigurationsRepository emailAddressConfigurationsRepository) : DomainService, IEmailNotificationManager
     {
         private static readonly TimeSpan BcPermanentDstOffset = TimeSpan.FromHours(-7);
 
@@ -203,6 +203,8 @@ namespace Unity.Notifications.EmailNotifications
         /// <param name="emailLog">The email log to send to queue</param>
         public async Task QueueEmailAsync(EmailLog emailLog)
         {
+            await emailAttachmentService.ValidateEmailAttachmentsAsync(emailLog.Id);
+
             EmailNotificationEvent emailNotificationEvent = new()
             {
                 Id = emailLog.Id,
@@ -245,10 +247,14 @@ namespace Unity.Notifications.EmailNotifications
             var attachments = await emailAttachmentService.GetAttachmentsAsync(emailLog.Id);
             if (attachments.Count != 0)
             {
+                await emailAttachmentService.ValidateAttachmentsExistAsync(
+                    attachments,
+                    EmailAttachmentValidationContext.Email);
+
                 var attachmentList = new List<object>();
                 foreach (var attachment in attachments)
                 {
-                    byte[]? content = await emailAttachmentService.DownloadFromS3Async(attachment.S3ObjectKey);
+                    byte[]? content = await emailAttachmentService.DownloadAttachmentFromS3Async(attachment);
                     if (content != null)
                     {
                         attachmentList.Add(CreateAttachmentObject(attachment, content));
@@ -271,7 +277,9 @@ namespace Unity.Notifications.EmailNotifications
             var ccList = email.EmailCC.ParseEmailList();
             var bccList = email.EmailBCC.ParseEmailList();
 
-            var defaultFromAddress = await settingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
+            var senderAddresses = await emailAddressConfigurationsRepository.GetListAsync(configuration =>
+                configuration.EmailType == "Sender" && configuration.IsActive && configuration.IsDefault);
+            var senderAddress = senderAddresses.FirstOrDefault()?.EmailAddress;
 
             dynamic emailObject = new ExpandoObject();
             var emailObjectDictionary = (IDictionary<string, object?>)emailObject;
@@ -279,7 +287,9 @@ namespace Unity.Notifications.EmailNotifications
             emailObjectDictionary["body"] = email.Body;
             emailObjectDictionary["bodyType"] = emailBodyType ?? "text";
             emailObjectDictionary["encoding"] = "utf-8";
-            emailObjectDictionary["from"] = email.EmailFrom ?? defaultFromAddress ?? "NoReply@gov.bc.ca";
+            emailObjectDictionary["from"] = string.IsNullOrWhiteSpace(email.EmailFrom)
+                ? senderAddress ?? "NoReply@gov.bc.ca"
+                : email.EmailFrom;
             emailObjectDictionary["priority"] = "normal";
             emailObjectDictionary["subject"] = email.Subject;
             emailObjectDictionary["tag"] = "tag";
@@ -385,6 +395,10 @@ namespace Unity.Notifications.EmailNotifications
             {
                 var emailObject = await buildEmailObject();
                 return await chesClientService.SendAsync(emailObject);
+            }
+            catch (MissingEmailAttachmentsException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
@@ -541,17 +555,7 @@ namespace Unity.Notifications.EmailNotifications
             var attachments = await emailAttachmentService.GetAttachmentsAsync(emailLogId);
             foreach (var attachment in attachments)
             {
-                try
-                {
-                    await emailAttachmentService.DeleteFromS3Async(attachment.S3ObjectKey);
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogError(
-                        ex,
-                        "Failed to delete S3 attachment with key: {S3ObjectKey}",
-                        attachment.S3ObjectKey);
-                }
+                await emailAttachmentService.DeleteAttachmentAsync(attachment);
             }
         }
 

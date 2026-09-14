@@ -18,21 +18,25 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
         RefreshUrl = "Widget/ApplicantAddresses/Refresh",
         ScriptTypes = new[] { typeof(ApplicantAddressesScriptBundleContributor) },
         StyleTypes = new[] { typeof(ApplicantAddressesStyleBundleContributor) },
-        AutoInitialize = true)]
+        AutoInitialize = true,
+        RequiredPolicies = new [] { UnitySelector.ApplicantManagement.Addresses.Default })]
     public class ApplicantAddressesViewComponent : AbpViewComponent
     {
         private readonly IApplicantAddressRepository _applicantAddressRepository;
         private readonly IPermissionChecker _permissionChecker;
         private readonly IRepository<Application, Guid> _applicationRepository;
+        private readonly IApplicantAddressManager _applicantAddressManager;
 
         public ApplicantAddressesViewComponent(
             IApplicantAddressRepository applicantAddressRepository,
             IPermissionChecker permissionChecker,
-            IRepository<Application, Guid> applicationRepository)
+            IRepository<Application, Guid> applicationRepository,
+            IApplicantAddressManager applicantAddressManager)
         {
             _applicantAddressRepository = applicantAddressRepository;
             _permissionChecker = permissionChecker;
             _applicationRepository = applicationRepository;
+            _applicantAddressManager = applicantAddressManager;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(Guid applicantId)
@@ -61,10 +65,15 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
                 }
             }
 
+            var canUpdateAddresses = await _permissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Addresses.Update);
+            var latestApplication = await _applicantAddressManager.FindLatestApplicationAsync(applicantId);
+
             var viewModel = new ApplicantAddressesViewModel
             {
                 ApplicantId = applicantId,
-                CanEditAddress = await _permissionChecker.IsGrantedAsync(UnitySelector.Applicant.Location.Update),
+                CanEditAddresses = canUpdateAddresses,
+                ExpectedApplicationId = latestApplication?.Id,
+                ExpectedApplicationReferenceNo = latestApplication?.ReferenceNo ?? string.Empty,
                 Addresses = orderedAddresses
                     .Select(a => new ApplicantAddressItemDto
                     {

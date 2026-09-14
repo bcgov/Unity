@@ -57,6 +57,14 @@ public class AIPromptDataSeederTests
         var worksheetPrompt = insertedPrompts.Single(prompt => prompt.Name == AIPromptTypes.FormWorksheet);
         worksheetPrompt.UserPrompt.ShouldContain("all applicable field suggestions");
         worksheetPrompt.UserPrompt.ShouldContain("empty fields array");
+        var scoresheetPrompt = insertedPrompts.Single(prompt => prompt.Name == AIPromptTypes.FormScoresheet);
+        scoresheetPrompt.UserPrompt.ShouldContain("min");
+        scoresheetPrompt.UserPrompt.ShouldContain("max");
+        var mappingPrompt = insertedPrompts.Single(prompt => prompt.Name == AIPromptTypes.FormMapping);
+        mappingPrompt.VersionNumber.ShouldBe(2);
+        mappingPrompt.UserPrompt.ShouldContain("Down-weight CHEFS fields");
+        mappingPrompt.UserPrompt.ShouldContain("Up-weight CHEFS fields");
+        mappingPrompt.UserPrompt.ShouldContain("prefer the hidden-field signal");
     }
 
 

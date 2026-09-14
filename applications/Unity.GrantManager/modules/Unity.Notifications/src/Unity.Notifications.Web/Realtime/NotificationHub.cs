@@ -101,6 +101,7 @@ public class NotificationHub(
             SenderName = message.SenderDisplayName ?? message.SenderUserId?.ToString() ?? "unknown",
             Source = message.Source,
             Message = message.Message,
+            MessageType = GetMessageType(message.PayloadJson),
             Timestamp = message.CreationTime
         })];
     }
@@ -149,6 +150,7 @@ public class NotificationHub(
                 SenderName = message.SenderDisplayName ?? message.SenderUserId?.ToString() ?? "unknown",
                 Source = message.Source,
                 Message = message.Message,
+                MessageType = GetMessageType(message.PayloadJson),
                 Timestamp = message.CreationTime
             })];
     }
@@ -348,7 +350,31 @@ public class NotificationHub(
         public string SenderName { get; set; } = string.Empty;
         public string Source { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
+        public string MessageType { get; set; } = "popup";
         public DateTime Timestamp { get; set; }
+    }
+
+    private static string GetMessageType(string? payloadJson)
+    {
+        if (string.IsNullOrWhiteSpace(payloadJson))
+        {
+            return "popup";
+        }
+
+        try
+        {
+            using var payload = JsonDocument.Parse(payloadJson);
+            var messageType = payload.RootElement.TryGetProperty("messageType", out var property)
+                ? property.GetString()
+                : null;
+            return string.Equals(messageType, "banner", StringComparison.OrdinalIgnoreCase)
+                ? "banner"
+                : "popup";
+        }
+        catch (JsonException)
+        {
+            return "popup";
+        }
     }
 
     private Task BroadcastOnlineUsersAsync()

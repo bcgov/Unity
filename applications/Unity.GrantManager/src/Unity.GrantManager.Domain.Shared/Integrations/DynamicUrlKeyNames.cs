@@ -17,4 +17,5 @@ public static class DynamicUrlKeyNames
     public const string GITHUB_GRAPHQL = "GITHUB_GRAPHQL";
     public const string GEOCODER_LOCATION_API_BASE = "GEOCODER_LOCATION_API_BASE";
     public const string ANALYTICS_MATOMO_BASE = "ANALYTICS_MATOMO_BASE";
+    public const string METABASE_API_BASE = "METABASE_API_BASE";
 }

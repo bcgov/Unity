@@ -1218,6 +1218,7 @@ $(function () {
         actionButtons: actionButtons,
         serverSideEnabled: false,
         pagingEnabled: true,
+        persistSearchState: false,
         reorderEnabled: true,
         fixedHeaders: true,
         dataTableName: 'ApplicantSubmissionsTable',

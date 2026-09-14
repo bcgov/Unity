@@ -19,6 +19,9 @@ $(function () {
     let sendEmailNotificationModal = new abp.ModalManager({
         viewUrl: 'BulkEmailNotifications/SendEmailNotificationModal'
     });
+    let composeAndSendEmailModal = new abp.ModalManager({
+        viewUrl: 'BulkEmailNotifications/ComposeAndSendEmailModal'
+    });
     let sendEmailNotificationSummaryModal = new abp.ModalManager({
         viewUrl: 'BulkEmailNotifications/SendEmailNotificationSummaryModal'
     });
@@ -368,6 +371,46 @@ $(function () {
         }
         let summaryJson = JSON.stringify(
         {
+            Successes: response.responseText.successes,
+            Failures: transformedFailures
+        });
+        sendEmailNotificationSummaryModal.open({ summaryJson: summaryJson });
+        PubSub.publish("refresh_application_list");
+    });
+
+    $('#composeAndSendEmail').on("click", function () {
+        unity.grantManager.applications.applicationBulkActions
+            .storeApplicationIds({ applicationIds: selectedApplicationIds })
+            .then(function (response) {
+                composeAndSendEmailModal.open({ cacheKey: response.cacheKey });
+            })
+            .catch(function (error) {
+                abp.notify.error('Failed to prepare composed email. Please try again.');
+                console.error('Error storing application IDs:', error);
+            });
+    });
+
+    composeAndSendEmailModal.onOpen(function () {
+        Promise.resolve(window.ComposeAndSendEmail?.initialize()).catch(function (error) {
+            console.error('Failed to initialize Compose & Send Email.', error);
+            abp.notify.error('Failed to initialize the email editor. Please close the dialog and try again.');
+        });
+    });
+
+    composeAndSendEmailModal.onResult(function (_, response) {
+        let transformedFailures = response.responseText.failures.map(function (failure) {
+            return { Key: failure.key, Value: failure.value };
+        });
+        let successCount = response.responseText.successes.length;
+        if (successCount > 0) {
+            abp.notify.success(
+                successCount === 1
+                    ? 'The email has been successfully queued for delivery.'
+                    : successCount + ' emails have been successfully queued for delivery.',
+                'Compose & Send Email'
+            );
+        }
+        let summaryJson = JSON.stringify({
             Successes: response.responseText.successes,
             Failures: transformedFailures
         });

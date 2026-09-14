@@ -252,6 +252,11 @@ const emailGroupsManager = {
         emailGroupsTable.on('click', 'td button.delete-group-btn', function (event) {
             event.stopPropagation();
             const rowData = emailGroupsTable.row(event.target.closest('tr')).data();
+            if ($(event.currentTarget).data('email-group-in-use')) {
+                abp.notify.error('This email group is associated with a scheduled notification and cannot be deleted.');
+                return;
+            }
+
             // Check for both lowercase and uppercase
             const isDynamic = rowData.type === 'dynamic' || rowData.type === 'Dynamic';
             if (isDynamic) {
@@ -311,7 +316,10 @@ const emailGroupsManager = {
                             .addClass('btn btn-sm delete-group-btn px-0 float-end')
                             .attr({
                                 'aria-label': 'Delete',
-                                'title': 'Delete'
+                                'title': row.isUsedByScheduledNotification
+                                    ? 'This email group is associated with a scheduled notification and cannot be deleted.'
+                                    : 'Delete',
+                                'data-email-group-in-use': row.isUsedByScheduledNotification
                             }).append($('<i>').addClass('fl fl-delete'));
                         
                         $buttonWrapper.append($deleteButton);

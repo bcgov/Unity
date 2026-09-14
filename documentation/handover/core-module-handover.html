@@ -1,0 +1,848 @@
+<title>Unity.GrantManager</title>
+<meta name="description" content="Complete technical handover of Unity Portal's core — intake from CHEFS, the hierarchical fifteen-state application workflow, assessment, the form flags that reconfigure the product, the permission and zone model, the two-database split, and the known rough edges in one page.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --paper:#F5F3EB;
+    --paper-raised:#EEEADB;
+    --ink:#20242B;
+    --ink-soft:#5B6472;
+    --line:#D9D3BF;
+    --accent:#2C6E68;
+    --accent-strong:#1B4B47;
+    --accent-soft:#DCEAE6;
+    --warn:#A85D2E;
+    --warn-soft:#F1E1D0;
+    --good:#3D7A3D;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#12161A;
+      --paper-raised:#1A2024;
+      --ink:#E9E6DC;
+      --ink-soft:#98A2AB;
+      --line:#2B333A;
+      --accent:#63C4B9;
+      --accent-strong:#8AD8CE;
+      --accent-soft:#17302C;
+      --warn:#E0975A;
+      --warn-soft:#2E2013;
+      --good:#7BC47B;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#12161A;
+    --paper-raised:#1A2024;
+    --ink:#E9E6DC;
+    --ink-soft:#98A2AB;
+    --line:#2B333A;
+    --accent:#63C4B9;
+    --accent-strong:#8AD8CE;
+    --accent-soft:#17302C;
+    --warn:#E0975A;
+    --warn-soft:#2E2013;
+    --good:#7BC47B;
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Source Serif 4', Georgia, 'Times New Roman', serif;
+    font-size:16px;
+    line-height:1.55;
+  }
+  .sheet{
+    max-width:960px;
+    margin:0 auto;
+    padding:56px 40px 90px;
+  }
+  h1,h2,h3,h4{
+    font-family:'Big Shoulders Display', 'Archivo Black', Impact, sans-serif;
+    text-transform:uppercase;
+    letter-spacing:0.01em;
+    text-wrap:balance;
+    color:var(--ink);
+    margin:0;
+  }
+  .mono{ font-family:'JetBrains Mono', ui-monospace, Consolas, monospace; }
+  code, .code{
+    font-family:'JetBrains Mono', ui-monospace, Consolas, monospace;
+    font-size:0.85em;
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:0.05em 0.4em;
+    color:var(--accent-strong);
+    white-space:nowrap;
+  }
+  p{ margin:0 0 0.9em; max-width:68ch; }
+  p:last-child{ margin-bottom:0; }
+  a{ color:var(--accent-strong); }
+  ul{ margin:0; padding-left:1.2em; }
+  li{ margin-bottom:0.4em; }
+  strong{ color:var(--ink); }
+
+  /* ---------- Header ---------- */
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--accent-strong);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .eyebrow::before{ content:""; width:22px; height:1px; background:var(--accent-strong); }
+  h1.title{ font-size:clamp(40px, 7vw, 76px); line-height:0.92; font-weight:800; }
+  .subtitle{ max-width:60ch; font-size:19px; color:var(--ink-soft); margin-top:16px; }
+  .meta-row{
+    margin-top:26px;
+    padding-top:18px;
+    border-top:1px solid var(--line);
+    display:flex;
+    flex-wrap:wrap;
+    gap:22px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:12.5px;
+    color:var(--ink-soft);
+  }
+  .meta-row b{ color:var(--ink); font-weight:600; }
+
+  /* ---------- TOC ---------- */
+  .toc{
+    margin-top:22px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    padding-top:18px;
+    border-top:1px solid var(--line);
+  }
+  .toc a{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    text-decoration:none;
+    color:var(--ink-soft);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:6px 12px;
+    background:var(--paper-raised);
+    transition:color .15s, border-color .15s;
+  }
+  .toc a:hover{ color:var(--accent-strong); border-color:var(--accent); }
+  .toc a:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .toc a b{ color:var(--accent-strong); font-weight:600; margin-right:4px; }
+
+  /* ---------- Fact strip ---------- */
+  .facts{
+    margin-top:40px;
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+  }
+  .fact{ padding:16px 18px; border-left:1px solid var(--line); }
+  .fact:first-child{ border-left:none; }
+  .fact .num{ font-family:'Big Shoulders Display', sans-serif; font-weight:700; font-size:34px; line-height:1; color:var(--accent-strong); font-variant-numeric:tabular-nums; }
+  .fact .lbl{ margin-top:6px; font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.04em; text-transform:uppercase; color:var(--ink-soft); }
+
+  /* ---------- Sections ---------- */
+  section{ margin-top:64px; scroll-margin-top:24px; }
+  .sec-head{ display:flex; align-items:baseline; gap:14px; margin-bottom:8px; }
+  .sec-num{ font-family:'JetBrains Mono', monospace; font-size:13px; color:var(--ink-soft); }
+  h2{ font-size:26px; font-weight:700; }
+  h3{
+    font-size:16px;
+    font-weight:700;
+    text-transform:none;
+    font-family:'JetBrains Mono', monospace;
+    letter-spacing:0.01em;
+    color:var(--accent-strong);
+    margin-top:32px;
+    margin-bottom:12px;
+    padding-bottom:6px;
+    border-bottom:1px solid var(--line);
+  }
+  section > .lede{ color:var(--ink-soft); font-size:15.5px; max-width:72ch; margin-bottom:20px; }
+  .note{ font-size:14px; color:var(--ink-soft); }
+
+  /* ---------- Pipeline ---------- */
+  .pipeline{ display:grid; grid-template-columns:repeat(4, 1fr); gap:0; border:1px solid var(--line); border-radius:2px; overflow:hidden; }
+  .pipeline.three{ grid-template-columns:repeat(3, 1fr); }
+  .pipe-step{ padding:20px 18px 22px; border-left:1px solid var(--line); position:relative; }
+  .pipe-step:first-child{ border-left:none; }
+  .pipe-step::after{
+    content:"→"; position:absolute; right:-13px; top:50%; transform:translateY(-50%);
+    color:var(--accent); font-size:20px; font-weight:600; background:var(--paper); width:24px; text-align:center; z-index:1;
+  }
+  .pipe-step:last-child::after{ content:""; }
+  .pipe-kicker{ font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-soft); margin-bottom:8px; }
+  .pipe-step p{ font-size:14px; margin:0; }
+  .pipe-step .code{ white-space:normal; }
+
+  /* ---------- Chips ---------- */
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chip{ font-family:'JetBrains Mono', monospace; font-size:12px; padding:6px 11px; border:1px solid var(--line); border-radius:999px; color:var(--ink-soft); background:var(--paper-raised); }
+  .chip.on{ border-color:var(--accent); color:var(--accent-strong); background:var(--accent-soft); }
+
+  /* ---------- Data table (generic) ---------- */
+  table.data{ width:100%; border-collapse:collapse; font-size:14px; }
+  table.data th{
+    text-align:left; font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.04em; text-transform:uppercase;
+    color:var(--ink-soft); border-bottom:1px solid var(--line); padding:0 10px 8px 0; font-weight:500;
+  }
+  table.data td{ padding:9px 10px 9px 0; border-bottom:1px solid var(--line); vertical-align:top; }
+  table.data tr:last-child td{ border-bottom:none; }
+  table.data td.num{ font-family:'JetBrains Mono', monospace; text-align:right; font-variant-numeric:tabular-nums; color:var(--ink-soft); }
+  table.data .yes{ color:var(--good); font-weight:700; }
+  table.data .no{ color:var(--ink-soft); opacity:0.5; }
+  .table-scroll{ overflow-x:auto; }
+
+  /* ---------- kv grid ---------- */
+  .kv-grid{ display:grid; grid-template-columns:1fr 1.6fr; gap:0; border:1px solid var(--line); }
+  .kv-grid > div{ padding:14px 18px; border-top:1px solid var(--line); font-size:14.5px; }
+  .kv-grid > div:nth-child(-n+2){ border-top:none; }
+  .kv-grid .k{ font-family:'JetBrains Mono', monospace; font-size:12.5px; color:var(--ink-soft); background:var(--paper-raised); }
+
+  /* ---------- Rowlist ---------- */
+  .rowlist{ display:flex; flex-direction:column; border-top:1px solid var(--line); }
+  .rowlist .row{ display:grid; grid-template-columns:210px 1fr; gap:20px; padding:13px 0; border-bottom:1px solid var(--line); }
+  .rowlist .row .k{ font-family:'JetBrains Mono', monospace; font-size:13px; font-weight:600; color:var(--accent-strong); line-height:1.4; }
+  .rowlist .row .k .sub{ display:block; font-weight:400; color:var(--ink-soft); font-size:11px; margin-top:2px; text-transform:none; }
+  .rowlist .row .v{ font-size:14.5px; }
+  .rowlist .row .v p{ margin:0; }
+
+  /* ---------- Tag badges ---------- */
+  .tag{
+    font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:0.03em; text-transform:uppercase;
+    border-radius:3px; padding:3px 8px; height:fit-content; white-space:nowrap; display:inline-block;
+  }
+  .tag.warn{ color:var(--warn); background:var(--warn-soft); }
+  .tag.accent{ color:var(--accent-strong); background:var(--accent-soft); }
+  .tag.roadmap{ color:var(--accent-strong); background:transparent; border:1px dashed var(--accent); }
+
+  .schematic{
+    font-family:'JetBrains Mono', monospace; font-size:13px; color:var(--ink-soft);
+    background:var(--paper-raised); border:1px solid var(--line); border-radius:3px; padding:10px 14px; margin-bottom:14px; overflow-x:auto; white-space:pre;
+  }
+
+  /* ---------- Gate stack ---------- */
+  .gates{ border:1px solid var(--line); border-radius:2px; overflow:hidden; }
+  .gate-row{
+    display:grid; grid-template-columns:44px 200px 1fr 1fr;
+    border-top:1px solid var(--line); align-items:stretch;
+  }
+  .gate-row:first-child{ border-top:none; }
+  .gate-row.head{ background:var(--paper-raised); }
+  .gate-row.head > div{
+    font-family:'JetBrains Mono', monospace; font-size:10.5px; letter-spacing:0.05em;
+    text-transform:uppercase; color:var(--ink-soft); padding:10px 14px;
+  }
+  .gate-n{
+    font-family:'JetBrains Mono', monospace; font-size:12px; font-weight:600;
+    color:var(--accent-strong); background:var(--paper-raised);
+    display:flex; align-items:center; justify-content:center;
+    border-right:1px solid var(--line);
+  }
+  .gate-row.head .gate-n{ background:transparent; color:var(--ink-soft); font-weight:400; }
+  .gate-what{
+    padding:13px 14px; border-right:1px solid var(--line);
+    font-family:'JetBrains Mono', monospace; font-size:12.5px; font-weight:600; color:var(--accent-strong);
+    display:flex; align-items:center;
+  }
+  .gate-scope{
+    padding:13px 14px; border-right:1px solid var(--line);
+    font-size:13.5px; display:flex; align-items:center; color:var(--ink-soft);
+  }
+  .gate-fail{ padding:13px 14px; font-size:13.5px; display:flex; align-items:center; }
+  .gate-fail b{ font-weight:600; }
+
+  /* ---------- State machine (core-specific) ---------- */
+  .machine{ display:grid; grid-template-columns:1fr; gap:0; border:1px solid var(--line); border-radius:2px; overflow:hidden; }
+  .super{ padding:16px 18px 18px; border-top:1px solid var(--line); }
+  .super:first-child{ border-top:none; }
+  .super-head{ display:flex; align-items:baseline; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
+  .super-name{
+    font-family:'Big Shoulders Display', sans-serif; font-weight:700; font-size:22px;
+    letter-spacing:0.04em; color:var(--accent-strong);
+  }
+  .super-note{ font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--ink-soft); }
+  .band{ display:flex; flex-direction:column; gap:8px; }
+  .band-row{ display:flex; flex-wrap:wrap; gap:7px; align-items:center; }
+  .band-label{
+    font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:0.06em; text-transform:uppercase;
+    color:var(--ink-soft); width:88px; flex:none;
+  }
+  .state{
+    font-family:'JetBrains Mono', monospace; font-size:11.5px;
+    border:1px solid var(--line); background:var(--paper); color:var(--ink);
+    border-radius:3px; padding:5px 9px; white-space:nowrap;
+  }
+  .state.entry{ border-color:var(--accent); background:var(--accent-soft); color:var(--accent-strong); font-weight:600; }
+  .state.park{ border-style:dashed; color:var(--ink-soft); }
+  .state.final{ background:var(--paper-raised); }
+  .state.decision{ border-color:var(--accent); color:var(--accent-strong); font-weight:600; }
+  .inherit{
+    margin-top:12px; padding-top:11px; border-top:1px dashed var(--line);
+    font-size:13.5px; color:var(--ink-soft);
+  }
+  .inherit b{ color:var(--ink); }
+
+  /* ---------- Two-column split ---------- */
+  .split{ display:grid; grid-template-columns:1fr 1fr; border:1px solid var(--line); border-radius:2px; overflow:hidden; }
+  .split > div{ padding:16px 18px; border-left:1px solid var(--line); }
+  .split > div:first-child{ border-left:none; }
+  .split h4{ font-size:15px; font-weight:700; color:var(--accent-strong); margin-bottom:8px; }
+  .split ul{ font-size:14px; padding-left:1.1em; }
+  .split li{ margin-bottom:0.35em; }
+
+  /* ---------- Footer ---------- */
+  footer{
+    margin-top:70px; padding-top:22px; border-top:1px solid var(--line);
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px;
+    font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--ink-soft);
+  }
+
+  @media (max-width:640px){
+    .sheet{ padding:36px 20px 60px; }
+    .facts{ grid-template-columns:repeat(2,1fr); }
+    .fact:nth-child(3){ border-left:none; }
+    .pipeline, .pipeline.three{ grid-template-columns:1fr; }
+    .pipe-step::after{ content:"↓"; right:auto; left:16px; top:auto; bottom:-13px; transform:none; }
+    .pipe-step{ border-left:none; border-top:1px solid var(--line); }
+    .pipe-step:first-child{ border-top:none; }
+    .kv-grid{ grid-template-columns:1fr; }
+    .kv-grid .k{ border-bottom:none; padding-bottom:4px; }
+    .rowlist .row{ grid-template-columns:1fr; gap:6px; }
+    .gate-row{ grid-template-columns:44px 1fr; }
+    .gate-row.head{ display:none; }
+    .gate-n{ grid-row:span 3; }
+    .gate-what, .gate-scope{ border-right:none; }
+    .gate-scope, .gate-fail{ padding-top:0; }
+    .band-label{ width:100%; }
+    .split{ grid-template-columns:1fr; }
+    .split > div{ border-left:none; border-top:1px solid var(--line); }
+    .split > div:first-child{ border-top:none; }
+  }
+</style>
+
+<div class="sheet">
+
+  <header>
+    <div class="eyebrow">Module Handover · Unity Portal</div>
+    <h1 class="title">Unity.GrantManager</h1>
+    <p class="subtitle">Strip away every module and what remains is a system for receiving grant applications and deciding them. One webhook creates them, a hierarchical fifteen-state machine moves them, assessments judge them, and a dozen flags on a form reconfigure the whole product around them. Everything else — Flex, Payments, AI, Notifications, Reporting — hangs off that spine. This page is the complete reference.</p>
+    <div class="meta-row">
+      <span><b>Path</b> <span class="mono">applications/Unity.GrantManager/src</span></span>
+      <span><b>Scale</b> <span class="mono">~62,000 lines · 9 projects</span></span>
+      <span><b>Databases</b> <span class="mono">1 host + 1 per tenant</span></span>
+    </div>
+    <nav class="toc">
+      <a href="#spine"><b>01</b>The spine</a>
+      <a href="#intake"><b>02</b>Intake</a>
+      <a href="#workflow"><b>03</b>The workflow</a>
+      <a href="#assessment"><b>04</b>Assessment</a>
+      <a href="#forms"><b>05</b>Forms are the config</a>
+      <a href="#permissions"><b>06</b>Permissions &amp; zones</a>
+      <a href="#databases"><b>07</b>Two databases</a>
+      <a href="#platform"><b>08</b>The platform</a>
+      <a href="#edges"><b>09</b>Known rough edges</a>
+    </nav>
+  </header>
+
+  <div class="facts">
+    <div class="fact"><div class="num">62k</div><div class="lbl">Lines of C#, nine projects</div></div>
+    <div class="fact"><div class="num">15</div><div class="lbl">Application states, hierarchical</div></div>
+    <div class="fact"><div class="num">111</div><div class="lbl">UnitySelector constants</div></div>
+    <div class="fact"><div class="num">4</div><div class="lbl">Gates on every zoned widget</div></div>
+  </div>
+
+  <!-- ============ 01 SPINE ============ -->
+  <section id="spine">
+    <div class="sec-head"><span class="sec-num">01</span><h2>The spine</h2></div>
+    <p class="lede">The core is intake, an application record, a review and assessment workflow, a decision, and the applicant and form records those hang off. It is also five to six times the size of the largest module — so it is documented as fifteen focused documents in three tracks, not one narrative.</p>
+
+    <div class="schematic">   CHEFS ──webhook──▶  INTAKE           submission → Application
+                                │
+   Unity.Flex ──custom fields──▶│
+   Unity.AI ────analysis/scoring│──▶  APPLICATION      15-state workflow, hierarchical
+   Unity.Notifications ──email──▶│
+                                │
+   Unity.Flex ────scoresheets───▶  ASSESSMENT       3-state workflow
+                                │
+                                ▼
+                          GRANT_APPROVED
+                                │
+   Unity.Payments ◀──approved amount
+   Unity.Reporting ◀─reads everything</div>
+
+    <h3>Modules are compiled in, not plugged in</h3>
+    <p>The core does not reference modules through interfaces it defines. It takes a direct dependency on each one and wires it in at up to four points — application module, web module, DbContext, and for some the migrator. <span class="code">GrantTenantDbContext.OnModelCreating</span> calls <span class="code">ConfigureFlex()</span>, <span class="code">ConfigureNotifications()</span>, <span class="code">ConfigurePayments()</span>, <span class="code">ConfigureReporting()</span>; <span class="code">GrantManagerDbContext</span> calls <span class="code">ConfigureAI()</span>.</p>
+    <p>The coupling runs both ways — modules reference <span class="code">IApplicationRepository</span>, <span class="code">IApplicationFormRepository</span> and <span class="code">IEndpointManagementAppService</span> as freely as the core references theirs. <strong>Treat the core and its modules as one deployable, not a host with plug-ins.</strong></p>
+
+    <h3>Where the code is</h3>
+    <div class="table-scroll">
+    <table class="data">
+      <thead><tr><th>Project</th><th>Holds</th><th>Lines</th><th>Files</th></tr></thead>
+      <tbody>
+        <tr><td class="code">Application</td><td>App services, intake, integrations, events, workers, attachments, dashboard</td><td class="num">26,232</td><td class="num">221</td></tr>
+        <tr><td class="code">Web</td><td>Razor Pages, 36 shared view components, menus, middleware, theme</td><td class="num">15,008</td><td class="num">226</td></tr>
+        <tr><td class="code">Domain</td><td>Aggregates, domain managers, repository interfaces, permission seeding, zones</td><td class="num">8,000</td><td class="num">168</td></tr>
+        <tr><td class="code">Application.Contracts</td><td>DTOs, app service interfaces, permission definitions</td><td class="num">5,671</td><td class="num">292</td></tr>
+        <tr><td class="code">EntityFrameworkCore</td><td>Both DbContexts, repositories, host + tenant migrations</td><td class="num">4,421</td><td class="num">59</td></tr>
+        <tr><td class="code">HttpApi · Domain.Shared · DbMigrator · HttpApi.Client</td><td>Controllers, enums and workflow types, migration host, generated proxies</td><td class="num">~3,100</td><td class="num">82</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p class="note" style="margin-top:14px;"><strong><span class="code">Domain.Shared</span> carries more than constants.</strong> It holds the state and action enums for both workflows, the <span class="code">UnityWorkflow</span> wrapper over Stateless, error codes and the feature/setting keys — which is how modules reference application states without depending on the Domain project.</p>
+  </section>
+
+  <!-- ============ 02 INTAKE ============ -->
+  <section id="intake">
+    <div class="sec-head"><span class="sec-num">02</span><h2>Intake</h2></div>
+    <p class="lede">Intake is how a CHEFS submission becomes an <span class="code">Application</span>. It is the <em>only</em> path by which applications are created — there is no manual "create application" screen anywhere in the product.</p>
+
+    <div class="pipeline">
+      <div class="pipe-step">
+        <div class="pipe-kicker">01 · Webhook</div>
+        <p><span class="code">POST api/chefs/event/{__tenant}</span>, <span class="code">[AllowAnonymous]</span>. The body is <strong>not trusted as data</strong> — Unity takes only the identifiers.</p>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-kicker">02 · Fetch &amp; validate</div>
+        <p>Resolve the form by CHEFS GUID, fetch the submission back from CHEFS with the form's own API key, reject drafts and deletions.</p>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-kicker">03 · Map &amp; create</div>
+        <p>One transactional unit of work: map to <span class="code">IntakeMapping</span>, create the Application, applicant, agent, attachments, Flex fields.</p>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-kicker">04 · Publish</div>
+        <p><span class="code">ApplicationProcessEvent</span> then <span class="code">ApplicationChangedEvent</span> — both local, both inside the transaction.</p>
+      </div>
+    </div>
+
+    <h3>Why the transaction matters</h3>
+    <p>The whole creation runs inside one transactional unit of work, and the source comment says why: <strong>sequence-number generation for the Unity Application ID needs atomicity.</strong> That id is separate from <span class="code">ReferenceNo</span> (always the CHEFS confirmation id) and is generated from the form's configuration:</p>
+
+    <div class="schematic">Prefix == null or SuffixType == null   →  no Unity ID
+SuffixType == SequentialNumber         →  {Prefix}{n:D5}  via ISequenceRepository, per prefix
+                                          digits auto-expand past 99999
+SuffixType == SubmissionNumber         →  {Prefix}{ReferenceNo}</div>
+
+    <p>Generation is wrapped in graceful degradation at <em>two</em> levels — a failure inside <span class="code">GenerateUnityApplicationIdAsync</span> is logged and returns null, and a failure escaping it is caught again in <span class="code">CreateNewApplicationAsync</span> with the comment <em>"Application creation is priority"</em>. An application is never lost because its id could not be generated.</p>
+
+    <h3>Two events, four handlers</h3>
+    <div class="kv-grid">
+      <div class="k">ApplicationProcessEvent</div>
+      <div>The declared extension point. Carries the Application, the form version, the submission record and the <strong>raw</strong> submission. Handlers: <span class="code">DetermineElectoralDistrictHandler</span>, <span class="code">UpdateApplicantProfileCacheHandler</span>, <span class="code">GenerateReportDataHandler</span> (core) and <span class="code">QueueApplicationAIPipelineOnProcessHandler</span> (Unity.AI).</div>
+      <div class="k">ApplicationChangedEvent</div>
+      <div><span class="code">{ Action = Submit, ApplicationId }</span>. Consumed by Notifications' <span class="code">ScheduledNotificationEventHandler</span> to fire configured event-driven email.</div>
+    </div>
+    <p class="note" style="margin-top:12px;">Both are <strong>local</strong> bus events published inside the transaction, so a handler that throws can roll back the entire intake.</p>
+
+    <h3>Things intake deliberately tolerates</h3>
+    <ul>
+      <li><strong>A missing supplier.</strong> <span class="code">RelateDefaultSupplierAsync</span> is wrapped in a bare <span class="code">try</span>/<span class="code">catch</span> at the call site — the comment records SSL certificate errors reaching CAS, and intake must not block on it.</li>
+      <li><strong>Bad field values.</strong> <span class="code">MappingUtil</span> coerces defensively — <span class="code">ResolveAndTruncateField(255, …)</span>, <span class="code">ConvertToDecimalFromStringDefaultZero</span>, <span class="code">ConvertDateTimeFromStringDefaultNow</span>. Bad or missing values become defaults, not failures.</li>
+      <li><strong>An unmapped form version.</strong> The mapping lives on the matching <span class="code">ApplicationFormVersion</span>; a version Unity has never seen yields no map and the mapper falls back to its defaults. See <a href="#forms">§05</a>.</li>
+      <li><strong>A rejected submission.</strong> Drafts and deletions notify a Teams channel and return a 200 with a failure body rather than an error.</li>
+    </ul>
+
+    <h3>The nightly resync reports; it does not import</h3>
+    <p><span class="code">IntakeSyncWorker</span> runs twice daily (<span class="code">0 0 7,19 1/1 * ? *</span> — 11 PM and 11 AM Pacific) looking back four days, and calls <span class="code">GetMissingSubmissions</span> per tenant. If anything is missing <strong>and</strong> <span class="code">ASPNETCORE_ENVIRONMENT</span> is exactly <span class="code">Production</span>, it emails one summary to a hard-coded address. Recovering a missed submission is a separate, manual action.</p>
+  </section>
+
+  <!-- ============ 03 WORKFLOW ============ -->
+  <section id="workflow">
+    <div class="sec-head"><span class="sec-num">03</span><h2>The workflow</h2></div>
+    <p class="lede">Fifteen states would be unreadable as a flat table. They are not flat: two superstates carry the transitions every open or resolved application shares, and that is the structural fact that makes the rest comprehensible.</p>
+
+    <div class="machine">
+      <div class="super">
+        <div class="super-head">
+          <span class="super-name">OPEN</span>
+          <span class="super-note">superstate · initial transition → SUBMITTED</span>
+        </div>
+        <div class="band">
+          <div class="band-row">
+            <span class="band-label">Pipeline</span>
+            <span class="state entry">SUBMITTED</span>
+            <span class="state">ASSIGNED</span>
+            <span class="state">UNDER_INITIAL_REVIEW</span>
+            <span class="state">INITITAL_REVIEW_COMPLETED</span>
+          </div>
+          <div class="band-row">
+            <span class="band-label"></span>
+            <span class="state">UNDER_ASSESSMENT</span>
+            <span class="state">ASSESSMENT_COMPLETED</span>
+          </div>
+          <div class="band-row">
+            <span class="band-label">Parking</span>
+            <span class="state park">DEFER</span>
+            <span class="state park">ON_HOLD</span>
+          </div>
+        </div>
+        <div class="inherit">Every substate inherits <b>Withdraw</b>, <b>Close</b>, <b>Internal_Unasign</b> — and, when the form allows it, direct <b>Approve</b>/<b>Deny</b>. That inheritance is why those transitions are not repeated eleven times.</div>
+      </div>
+      <div class="super">
+        <div class="super-head">
+          <span class="super-name">RESOLVED</span>
+          <span class="super-note">superstate · no transitions of its own — a grouping</span>
+        </div>
+        <div class="band">
+          <div class="band-row">
+            <span class="band-label">Decided</span>
+            <span class="state decision">GRANT_APPROVED</span>
+            <span class="state decision">GRANT_NOT_APPROVED</span>
+          </div>
+          <div class="band-row">
+            <span class="band-label">Ended</span>
+            <span class="state final">CLOSED</span>
+            <span class="state final">WITHDRAWN</span>
+          </div>
+        </div>
+        <div class="inherit"><b>Neither is terminal.</b> <span class="code">DEFER</span> and <span class="code">ON_HOLD</span> return to any point in the pipeline and to each other; <span class="code">CLOSED</span> and <span class="code">WITHDRAWN</span> reopen. Only one transition in the whole machine is permission-guarded: deferring an <em>already-approved</em> grant, which needs <span class="code">Approvals.DeferAfterApproval</span>.</div>
+      </div>
+    </div>
+
+    <h3>Configured on the service, not the entity</h3>
+    <p><span class="code">ApplicationManager.ConfigureWorkflow(stateMachine, isDirectApproval)</span> lives on the domain <em>service</em> because it needs repositories and a permission checker — unlike the assessment machine, which lives on its entity. Both sit behind the shared <span class="code">UnityWorkflow&lt;TStates, TTriggers&gt;</span> wrapper over Stateless, which throws <span class="code">BusinessException("InvalidStateTransition")</span> for anything not permitted. <span class="code">GetWorkflowDiagram(isDirectApproval)</span> renders the configured machine as a Mermaid graph — the fastest way to check the effect of a change.</p>
+
+    <p><strong>Direct approval</strong> is a per-form flag passed into that method. It unlocks <span class="code">Approve</span>/<span class="code">Deny</span> from <span class="code">OPEN</span> — and therefore from every open substate — plus from <span class="code">CLOSED</span> and <span class="code">WITHDRAWN</span>. The guard <span class="code">stateMachine.State != targetState</span> exists solely to prevent approving an already-approved application.</p>
+
+    <h3>The status is a table, not a column</h3>
+    <p>The application stores <span class="code">ApplicationStatusId</span>, a foreign key into the tenant's <span class="code">ApplicationStatus</span> table. The workflow runs against a <em>local copy</em> of the status code purely as a gate; the real write resolves the row afterwards. The enum carries a warning that its numbering is load-bearing: <span class="code">// WARNING: DO NOT EDIT ORDER NUMBER WITHOUT UPDATING DB CODE TABLE</span>.</p>
+
+    <h3>Assignments drive two automatic transitions</h3>
+    <p>Two rules, called out in comments across four methods: an application in <span class="code">SUBMITTED</span> with a user assigned moves to <span class="code">ASSIGNED</span>; an application with all assignees removed returns to <span class="code">SUBMITTED</span>. They fire <span class="code">Internal_Assign</span> / <span class="code">Internal_Unasign</span> — two of the four <span class="code">Internal_</span> actions, which <span class="code">GetActions</span> flags and hides from the UI by default. An <strong>owner</strong> is separate from assignees and does not affect state.</p>
+
+    <h3>Field updates are tiered by permission</h3>
+    <p>The entity exposes no public setters for the fields that matter. It exposes four grouped update methods, and <em>the grouping is the authorization model</em>.</p>
+    <div class="table-scroll">
+    <table class="data">
+      <thead><tr><th>Method</th><th>Fields</th><th>When</th></tr></thead>
+      <tbody>
+        <tr><td class="code">UpdateAlwaysChangeableFields</td><td>Notes, SubStatus, LikelihoodOfFunding, TotalProjectBudget, NotificationDate, RiskRanking</td><td>Any time</td></tr>
+        <tr><td class="code">UpdateFieldsOnlyForPreFinalDecision</td><td>DueDiligenceStatus, RecommendedAmount, DeclineRational</td><td>Before a final decision only</td></tr>
+        <tr><td class="code">UpdateApprovalFieldsRequiringPostEditPermission</td><td>ApprovedAmount</td><td>Needs a post-decision override</td></tr>
+        <tr><td class="code">UpdateAssessmentResultFieldsRequiringPostEditPermission</td><td>RequestedAmount, TotalScore</td><td>Needs a post-decision override</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="note" style="margin-top:12px;">Entity-level validators sit alongside: a due date cannot be more than a day in the past, a final decision date cannot be in the future, an approved amount cannot be zero, and a recommended amount cannot be zero <em>unless</em> the form is direct-approval. All compare against the current value first, so re-saving an unchanged field never fails validation.</p>
+  </section>
+
+  <!-- ============ 04 ASSESSMENT ============ -->
+  <section id="assessment">
+    <div class="sec-head"><span class="sec-num">04</span><h2>Assessment</h2></div>
+    <p class="lede">One assessor's review of one application. Many per application, at most one per assessor, at most one generated by AI. Three states, and — uniquely in the core — the workflow lives on the entity.</p>
+
+    <div class="schematic">IN_PROGRESS ──Complete──▶ COMPLETED ──SendBack──▶ IN_PROGRESS
+                              ▲
+IN_REVIEW ────Complete────────┘     (legacy — nothing transitions INTO it)
+IN_REVIEW ────SendBack────▶ IN_PROGRESS</div>
+
+    <p>The entry and exit hooks on <span class="code">COMPLETED</span> are the only place <span class="code">IsComplete</span> and <span class="code">EndDate</span> are written. Note the asymmetry: <span class="code">OnReopened</span> clears <span class="code">EndDate</span> but leaves <span class="code">IsComplete</span> true.</p>
+
+    <h3>Creating one has consequences elsewhere</h3>
+    <p><span class="code">AssessmentManager.CreateAsync</span> rejects a second assessment for the same user and any assessment on an application in a final decision state. Then two side effects fire:</p>
+    <div class="kv-grid">
+      <div class="k">First human assessment</div>
+      <div>Moves the application to <span class="code">UNDER_ASSESSMENT</span> via <span class="code">Internal_StartAssessment</span> — but guarded by <span class="code">IsActionAllowed</span> first, so an application already past that point is not dragged backwards. <strong><span class="code">hasOtherAssessments</span> excludes AI assessments</strong>, so an existing AI record does not suppress the transition.</div>
+      <div class="k">Flex scoresheet instance</div>
+      <div>Published as <span class="code">CreateScoresheetInstanceEto</span> when the form has a <span class="code">ScoresheetId</span> and the Flex feature is on. <span class="code">RelatedCorrelationId</span> points at the first existing assessment's instance — how Flex relates parallel assessments of one application.</div>
+    </div>
+
+    <h3>AI assessments are a narrower path</h3>
+    <p><span class="code">CreateAiAssessmentAsync</span> is idempotent, takes no user, and <strong>does not touch application state</strong>. Its assessor is <span class="code">AIScoringConstants.AiPersonId</span> — the fixed GUID <span class="code">00000000-0000-0000-0000-000000000001</span>, seeded as one AI Scoring <span class="code">Person</span> per tenant so it satisfies the same foreign keys a human does. The record is created directly as <span class="code">COMPLETED</span>.</p>
+    <p>It is read-only, enforced twice: <span class="code">ExecuteAssessmentAction</span> throws <span class="code">CannotModifyAiAssessment</span>, and <span class="code">AssessmentAuthorizationHandler</span> short-circuits on <span class="code">IsAiAssessment</span> before any ownership check. An assessor who wants to build on it calls <span class="code">CloneFromAiAsync</span>, which creates an <em>ordinary</em> assessment for them through the normal manager — same rules, same one-per-user constraint — and copies the scoresheet answers across.</p>
+
+    <h3>Resource-based authorization</h3>
+    <p>This is one of the few places in the codebase using ABP's <span class="code">AuthorizationService.CheckAsync(resource, requirement)</span> rather than a static policy. The requirement name is <strong>composed at runtime</strong> from a selector prefix plus the workflow action:</p>
+    <div class="schematic">Name = $"{UnitySelector.Review.AssessmentReviewList.Update.Default}.{triggerAction}"</div>
+    <p>The handler's key rule is ownership — <span class="code">resource.AssessorId == currentUserId || resource.CreatorId == currentUserId</span>. An assessor may act on their own assessment; acting on someone else's requires the broader permission. Completing also runs <span class="code">ValidateAnswersOnCompleteAsync</span>, which blocks the transition when the Flex scoresheet is not adequately answered.</p>
+
+    <p class="note"><strong>Two scoring systems coexist.</strong> Flex scoresheets are current and flow back to <span class="code">Application.TotalScore</span>. The four fixed integer fields on the assessment — <span class="code">FinancialAnalysis</span>, <span class="code">EconomicImpact</span>, <span class="code">InclusiveGrowth</span>, <span class="code">CleanGrowth</span> — predate them and carry their own note: <em>"need to revisit scoring again post-MVP as right now it is only offline scoring"</em>. Assessment <em>results</em> are a third thing again, and live on the application, not the assessment.</p>
+  </section>
+
+  <!-- ============ 05 FORMS ============ -->
+  <section id="forms">
+    <div class="sec-head"><span class="sec-num">05</span><h2>Forms are the configuration</h2></div>
+    <p class="lede">An <span class="code">ApplicationForm</span> is a configured intake channel bound to a CHEFS form. Its flags are the most consequential configuration in the product — each one reaches into a different subsystem, and between them they change how the workflow, payments, AI and the applicant portal behave.</p>
+
+    <div class="table-scroll">
+    <table class="data">
+      <thead><tr><th>Flag</th><th>Effect</th><th>Reaches</th></tr></thead>
+      <tbody>
+        <tr><td class="code">IsDirectApproval</td><td>Unlocks Approve/Deny from any open state, bypassing review and assessment</td><td>Workflow</td></tr>
+        <tr><td class="code">ScoresheetId</td><td>Which Flex scoresheet an assessment instantiates</td><td>Flex</td></tr>
+        <tr><td class="code">Payable</td><td>Whether payments can be raised at all</td><td>Payments</td></tr>
+        <tr><td class="code">PreventPayment</td><td>Approved payments route to FSB as a spreadsheet instead of CAS</td><td>Payments</td></tr>
+        <tr><td class="code">AccountCodingId</td><td>Default GL coding for payments</td><td>Payments</td></tr>
+        <tr><td class="code">PaymentApprovalThreshold</td><td>Combined with the user threshold to decide whether L3 approval is needed</td><td>Payments</td></tr>
+        <tr><td class="code">DefaultPaymentGroup</td><td>EFT or cheque for newly created supplier sites</td><td>Payments</td></tr>
+        <tr><td class="code">FormHierarchy · ParentFormId</td><td>Marks the form Parent or Child; validated against real application links before payment</td><td>Payments · Links</td></tr>
+        <tr><td class="code">AutomaticallyGenerateAIAnalysis</td><td>The AI intake pipeline may fire for this form</td><td>Unity.AI</td></tr>
+        <tr><td class="code">ManuallyInitiateAIAnalysis</td><td>Staff may trigger AI generation on this form</td><td>Unity.AI</td></tr>
+        <tr><td class="code">Prefix · SuffixType</td><td>Whether and how a Unity Application ID is generated</td><td>Intake</td></tr>
+        <tr><td class="code">ElectoralDistrictAddressType</td><td>Which applicant address the electoral district is derived from</td><td>Intake</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3>The mapping is per version, not per form</h3>
+    <p>This is the single most important thing about form versions, and the source of the quietest failure mode in the product.</p>
+    <div class="schematic">submission.formVersionId
+      ↓
+ApplicationFormVersion  where ChefsFormVersionGuid == formVersionId
+      ↓
+SubmissionHeaderMapping  →  IIntakeFormSubmissionMapper.MapFormSubmissionFields</div>
+    <p>A submission arriving for a CHEFS version Unity has never seen resolves to <em>no</em> mapping, and the mapper falls back to defaults. The application is still created — only the fields the defaults cover are populated. <strong>Publishing a new version in CHEFS without mapping it in Unity degrades quietly rather than failing.</strong></p>
+
+    <h3>Synchronising with CHEFS</h3>
+    <p><span class="code">ApplicationFormSycnronizationService</span> (the misspelling is in the type name) owns the pull side: connected forms, what CHEFS holds, what Unity holds, and the set difference. Two behaviours worth carrying: requests are <strong>paced at 500 ms</strong> (<span class="code">ChefsRequestPacingDelay</span>) so a sweep across many forms does not hammer CHEFS, and <strong>authentication is per form</strong> — the encrypted <span class="code">ApiKey</span> used as basic auth with the CHEFS form GUID as username. There is no tenant-wide CHEFS credential.</p>
+
+    <h3>The AI-assisted mapping workflow</h3>
+    <p><span class="code">ApplicationFormVersionAppService</span> is 1,258 lines and does two distinct jobs: version lifecycle, and the human side of AI form generation. AI writes mapping suggestions, draft worksheets and draft scoresheets; this service is where a person accepts or discards them, phase by phase through <span class="code">FormMappingReviewPhase</span>.</p>
+    <p class="note"><strong>Nothing AI produces reaches a form without passing through one of these accept methods.</strong></p>
+
+    <h3>External links have a hard cap</h3>
+    <p><span class="code">SetExternalLinks</span> replaces the whole set atomically, enforces <span class="code">MaxRelatedExternalLinks = 8</span>, and stamps the link types itself so callers cannot mislabel them. Its validation intent: <strong>nothing can be marked visible to applicants without somewhere to go.</strong></p>
+  </section>
+
+  <!-- ============ 06 PERMISSIONS ============ -->
+  <section id="permissions">
+    <div class="sec-head"><span class="sec-num">06</span><h2>Permissions &amp; zones</h2></div>
+    <p class="lede">Unity's authorization is finer-grained than most ABP applications: permissions do not stop at "can open the applications page", they reach individual fields and widgets. One constants tree does the work, and each of its strings does three jobs at once.</p>
+
+    <h3>One string, three jobs</h3>
+    <p><span class="code">UnitySelector</span> — 271 lines, <strong>111 constants</strong>, three partial-class files — states its own intent: conventional semantics around <em>actions, permissions, zones, and front-end element IDs</em>.</p>
+    <div class="schematic">"Unity.GrantManager.ApplicationManagement.Applicant.Summary"
+       ├─ permission name  →  [Authorize(...)] and the role editor
+       ├─ zone name        →  DefaultZoneDefinition, IZoneChecker
+       └─ .ElementId()     →  Unity_GrantManager_..._Summary   (DOM id)</div>
+    <p>Top-level groups: <span class="code">Applicant</span>, <span class="code">Application</span>, <span class="code">Review</span>, <span class="code">Project</span>, <span class="code">Funding</span>, <span class="code">Payment</span>, <span class="code">ApplicantManagement</span>, <span class="code">SettingManagement</span> — each leaf carrying the conventional <span class="code">Default</span>/<span class="code">Create</span>/<span class="code">Update</span>/<span class="code">Delete</span> quartet. <span class="code">GetAll()</span> enumerates the tree by reflection so the permission definition provider never lists it twice.</p>
+
+    <p><strong>The <span class="code">Override</span> file adds a further tier</strong> — permissions that let a user do what the normal rules forbid: editing approval or assessment-result fields <em>after</em> a final decision, setting the renewal flag, reassigning an application's applicant. The entity groups fields by <em>when</em> they may be edited (<a href="#workflow">§03</a>); these permissions decide <em>who</em> may edit them outside that window.</p>
+
+    <h3>Four gates on every zoned widget</h3>
+    <p>A zone is a configurable region of the application detail screen. <span class="code">UnityZoneTagHelperService</span> evaluates four independent conditions and renders only if all pass. They fail differently, and knowing which is which is most of debugging a "why can't I see this?" report.</p>
+
+    <div class="gates">
+      <div class="gate-row head">
+        <div></div><div>Gate</div><div>Answers</div><div>On failure</div>
+      </div>
+      <div class="gate-row">
+        <div class="gate-n">01</div>
+        <div class="gate-what">Read condition</div>
+        <div class="gate-scope">Does the page's own logic allow it?</div>
+        <div class="gate-fail"><span>A caller-supplied boolean — arbitrary per-page logic</span></div>
+      </div>
+      <div class="gate-row">
+        <div class="gate-n">02</div>
+        <div class="gate-what">Feature</div>
+        <div class="gate-scope">Has this tenant got the capability?</div>
+        <div class="gate-fail"><span>Hidden <b>across the whole tenant</b></span></div>
+      </div>
+      <div class="gate-row">
+        <div class="gate-n">03</div>
+        <div class="gate-what">Zone state</div>
+        <div class="gate-scope">Is the zone enabled in the resolved configuration?</div>
+        <div class="gate-fail"><span>Hidden <b>for everyone on that form</b></span></div>
+      </div>
+      <div class="gate-row">
+        <div class="gate-n">04</div>
+        <div class="gate-what">Permission</div>
+        <div class="gate-scope">Does <em>this user</em> hold it?</div>
+        <div class="gate-fail"><span>Hidden <b>from one user</b></span></div>
+      </div>
+    </div>
+
+    <p style="margin-top:16px;"><strong>The zone debugger answers this directly.</strong> The tag helper emits a hidden diagnostic block on every zone — <span class="code">zone-debugger-alert … d-none</span> — listing each requirement, whether it was satisfied, and a link to the form's configuration screen. Unhiding it shows per widget exactly which gate failed.</p>
+
+    <h3>Zone configuration is a setting, not a table</h3>
+    <p><span class="code">ZoneManager</span> serialises the whole <span class="code">ZoneGroupDefinition</span> into one ABP setting, <span class="code">GrantManager.UI.Zones</span>, and reads it with <span class="code">fallback: true</span>. That gives the resolution order for free:</p>
+    <div class="schematic">form ("F" + formId)  →  tenant  →  DefaultZoneDefinition.Template</div>
+    <p>Nothing has to be seeded for the screen to work, and a corrupt or unparseable setting falls back to the default template rather than throwing. Three properties are <span class="code">[JsonIgnore]</span> and never persisted — <span class="code">ViewComponentType</span>, <span class="code">ElementId</span>, <span class="code">IsConfigurationDisabled</span> — so the stored configuration holds only what an administrator can actually change. <span class="code">GetStateSetAsync</span> flattens it to one <span class="code">HashSet&lt;string&gt;</span>, which is why <strong>a zone inside a disabled tab is excluded entirely</strong>, regardless of its own flag.</p>
+
+    <h3>Five places authorization is applied</h3>
+    <div class="rowlist">
+      <div class="row"><div class="k">Method attribute</div><div class="v"><p><span class="code">[Authorize(UnitySelector.Review.AssessmentResults.Update.Default)]</span> — the common case, applied <em>per app-service method</em> rather than per class. That is how field-level editing rights are enforced.</p></div></div>
+      <div class="row"><div class="k">Custom policy</div><div class="v"><p><span class="code">UpdatePolicy</span> entries resolved through a policy provider rather than a plain permission grant.</p></div></div>
+      <div class="row"><div class="k">Resource-based</div><div class="v"><p><span class="code">AuthorizationService.CheckAsync(assessment, requirement)</span> — ownership matters. See <a href="#assessment">§04</a>.</p></div></div>
+      <div class="row"><div class="k">Zone tag helper</div><div class="v"><p><span class="code">&lt;zone name="…"&gt;</span> — the four gates above, permission and feature and configuration at once.</p></div></div>
+      <div class="row"><div class="k">Role check</div><div class="v"><p><span class="code">.OnlyWhenInRole(IdentityConsts.ITOperationsRoleName)</span> — menu items and a few controllers. <span class="code">ITOperations</span> and <span class="code">ITAdmin</span> are raw role checks, not permissions.</p></div></div>
+    </div>
+
+    <h3>Roles and seeding</h3>
+    <div class="chips" style="margin-bottom:12px;">
+      <span class="chip on">program_manager</span><span class="chip on">reviewer</span><span class="chip on">assessor</span>
+      <span class="chip on">team_lead</span><span class="chip on">approver</span><span class="chip on">external_assessor</span>
+      <span class="chip on">system_admin</span><span class="chip">financial_analyst</span>
+      <span class="chip on">l1_approver</span><span class="chip on">l2_approver</span><span class="chip on">l3_approver</span>
+    </div>
+    <p class="note">Eleven roles; <span class="code">PermissionGrantsDataSeeder</span> (393 lines) seeds ten of them — every value except <span class="code">financial_analyst</span>, whose grants come from elsewhere. The three approver roles get their <span class="code">PaymentsPermissions.Payments.L*ApproveOrDecline</span> grants here, which is how a module's permissions reach a core role. Unity replaces ABP's <span class="code">PermissionDataSeeder</span> outright so the seed runs inside <span class="code">CurrentTenant.Change</span> and inserts only what is not already granted — making re-seeding idempotent and tenant-correct.</p>
+    <p class="note" style="margin-top:10px;"><strong>Features are a separate axis from permissions.</strong> A feature says what the tenant has; a permission says what the user may do. Most module permissions are declared <span class="code">.RequireFeatures(...)</span>, so turning a feature off also removes its permissions from the role editor.</p>
+  </section>
+
+  <!-- ============ 07 DATABASES ============ -->
+  <section id="databases">
+    <div class="sec-head"><span class="sec-num">07</span><h2>Two databases</h2></div>
+    <p class="lede">Unity is multi-tenant with a separate PostgreSQL database <em>per tenant</em>, plus one host database. Everything about persistence follows from that — including the most common mistake anyone makes in this codebase.</p>
+
+    <div class="split">
+      <div>
+        <h4>GrantManagerDbContext — host</h4>
+        <p class="note" style="margin-bottom:8px;"><span class="code">ConnectionStringName("Default")</span>, and it <strong>replaces</strong> ABP's <span class="code">IIdentityDbContext</span> and <span class="code">ITenantManagementDbContext</span>.</p>
+        <ul>
+          <li>Tenants, users, roles, permissions, settings</li>
+          <li>Audit logs, background jobs</li>
+          <li><span class="code">DynamicUrls</span>, <span class="code">CasClientCodes</span>, <span class="code">TenantTokens</span></li>
+          <li><span class="code">ApplicantTenantMaps</span>, locality reference data</li>
+          <li><span class="code">InboxMessages</span> / <span class="code">OutboxMessages</span></li>
+          <li><span class="code">ExceptionLogs</span></li>
+          <li>AI config: <span class="code">AIModels</span>, <span class="code">AIOperations</span>, <span class="code">AIPrompts</span>, <span class="code">AIRequests</span></li>
+        </ul>
+      </div>
+      <div>
+        <h4>GrantTenantDbContext — one per tenant</h4>
+        <p class="note" style="margin-bottom:8px;"><span class="code">OnModelCreating</span> is 523 lines: ~30 explicit configurations, then every module's model extension.</p>
+        <ul>
+          <li>Applications, applicants, forms, assessments</li>
+          <li>Attachments, comments, tags, history</li>
+          <li><span class="code">Payments.*</span>, Flex, <span class="code">Notifications.*</span>, Reporting</li>
+          <li>AI's <em>tenant</em> tables: <span class="code">GenerationReviews</span>, <span class="code">ApplicationScoresheetAnswers</span></li>
+        </ul>
+        <p class="note" style="margin-top:10px;">A module that does not appear in that extension list has no tenant tables — which is why <span class="code">ConfigureAI()</span> is called on the <em>host</em> context instead.</p>
+      </div>
+    </div>
+
+    <p class="note" style="margin-top:14px;"><strong>The <span class="code">AI</span> schema exists in both databases holding different tables.</strong> Choosing the wrong migration folder is the most common mistake when adding one:</p>
+    <div class="schematic">dotnet ef migrations add &lt;Name&gt; --context GrantManagerDbContext --output-dir Migrations/HostMigrations
+dotnet ef migrations add &lt;Name&gt; --context GrantTenantDbContext  --output-dir Migrations/TenantMigrations</div>
+
+    <h3>Provisioning a tenant database does more than migrate</h3>
+    <p><span class="code">MigrateAsync(Tenant?)</span> reads the tenant's connection string and <strong>decrypts</strong> it, validates that Database, Username and Password are all present, builds an <em>admin</em> connection string and retargets a resolved context at it, grants schema privileges to the tenant role, ensures and reconciles the migration history table, migrates, grants table privileges — then repeats the privilege grants for the <strong>read-only</strong> connection string if the tenant has one. That read-only role is what Reporting and Metabase connect through.</p>
+    <p>The <span class="code">Database:FlattenMigrations</span> mechanism exists for one specific problem: a database provisioned before the migrations were squashed has history rows predating <span class="code">Initial</span>, so <span class="code">MigrateAsync</span> would try to re-run <span class="code">Initial</span> against a schema that already has those tables. <span class="code">ReconcileMigrationHistoryAsync</span> writes the <span class="code">Initial</span> row in first so EF skips it.</p>
+
+    <h3>Tenancy is ABP's filter, not hand-written WHERE clauses</h3>
+    <p>Nearly every core entity is <span class="code">IMultiTenant</span> and <strong>no core query filters on <span class="code">TenantId</span> by hand</strong>. Stepping outside it is explicit — <span class="code">ICurrentTenant.Change(tenantId)</span>, almost always a background worker sweeping every tenant. The one entity that deliberately avoids a <em>global</em> filter is <span class="code">Applicant</span>: it declares its soft-delete fields manually rather than implementing <span class="code">ISoftDelete</span>, because that filter would apply to <span class="code">Include()</span> joins and silently drop <span class="code">Application</span> rows whose applicant was deleted, breaking the application and payment lists.</p>
+    <p class="note"><strong>The rule that follows:</strong> any new query listing <em>applicants</em> needs its own <span class="code">!a.IsDeleted</span>; any query loading <em>applications</em> through applicants must not have one.</p>
+
+    <h3>Cold start is a designed-around problem</h3>
+    <p><span class="code">GrantManagerDbWarmupService</span> documents the cost precisely: on first use EF compiles the model, translates the LINQ tree — expensive for the multi-join application list — and establishes the Npgsql pool, together <strong>6–8 seconds</strong> on the first application list request. Phase 1 (model compilation) needs no database and always succeeds; phase 2 walks the tenants warming Npgsql's pool and Postgres' plan cache, and can be disabled.</p>
+    <p class="note">Other Postgres specifics worth knowing: <span class="code">Npgsql.EnableLegacyTimestampBehavior</span> is switched on, so <span class="code">timestamp without time zone</span> is used throughout; <span class="code">jsonb</span> carries the semi-structured payloads (<span class="code">Application.Payload</span>, <span class="code">FormSchema</span>, <span class="code">ReviewData</span>, <span class="code">Answers</span>); and tests run on SQLite in-memory, which is why repository code sticks to translatable LINQ.</p>
+  </section>
+
+  <!-- ============ 08 PLATFORM ============ -->
+  <section id="platform">
+    <div class="sec-head"><span class="sec-num">08</span><h2>The platform</h2></div>
+    <p class="lede">What people attach to an application and record around it, and the machinery underneath: attachments, comments and tags, three unrelated things called history, the integration layer, and everything that runs without a user.</p>
+
+    <h3>Attachments: two storage paths</h3>
+    <div class="split">
+      <div>
+        <h4>CHEFS-held</h4>
+        <p class="note">Uploaded by the applicant in CHEFS; the content <strong>stays in CHEFS</strong> and is fetched on demand. <span class="code">ApplicationChefsFileAttachment</span> extends <span class="code">AbstractAttachmentBase</span> and carries <span class="code">ChefsSubmissionId</span>, <span class="code">ChefsFileId</span> — and <span class="code">AISummary</span>, where the AI module writes its attachment summary.</p>
+      </div>
+      <div>
+        <h4>S3</h4>
+        <p class="note">Uploaded by staff in Unity. <span class="code">ApplicationAttachment</span>, <span class="code">AssessmentAttachment</span>, <span class="code">ApplicantAttachment</span> extend <span class="code">AbstractS3Attachment</span>, stored through ABP's <span class="code">IBlobContainer</span> via <span class="code">S3BlobProvider</span> — an S3-<em>compatible</em> store, path-style, no AWS region.</p>
+      </div>
+    </div>
+    <p class="note" style="margin-top:12px;">Preview converts anything not browser-viewable to PDF by <strong>shelling out to <span class="code">/usr/bin/libreoffice</span></strong> — the only place in the product that invokes an external process. <span class="code">IsInstalled()</span> lets callers degrade where the container image lacks the binary. <span class="code">AttachmentController</span>, at 769 lines, is the largest controller in the product and serves both staff and the applicant portal, so its authorization is per-endpoint rather than class-wide.</p>
+
+    <h3>Tags are shared with Payments — so deletion is an event</h3>
+    <p>One <span class="code">Tag</span> table, two join tables: <span class="code">ApplicationTags</span> (core) and <span class="code">PaymentTags</span> (Unity.Payments). That sharing is why <span class="code">ConfigurePayments()</span> re-declares the core's <span class="code">Tag</span> mapping, and why deleting a tag cannot be a foreign-key cascade:</p>
+    <div class="schematic">TagsAppService.DeleteTagAsync
+      ↓ publish DeleteTagEto { TagId }          ← the REQUEST to remove usages
+Payments  DeleteTagHandler → PaymentTagAppService
+      ↓ publish TagDeletedEto                   ← the CONFIRMATION it was done
+core      TagDeletedHandler → clean up application tags</div>
+    <p class="note">Two deliberately distinct event types. Note also that <em>applying</em> a tag is gated separately from <em>administering</em> one — a user can be allowed to tag applications without being allowed to create tags, and vice versa.</p>
+    <p class="note" style="margin-top:10px;"><strong>Comments</strong> share one <span class="code">CommentBase</span> across three subjects (application, assessment, applicant), each its own table with its own repository. Every <span class="code">CommentsManager</span> method takes <span class="code">ownerId</span> alongside <span class="code">commentId</span>, so a comment id from one application cannot reach a comment on another. @-mention email is one of only two paths in the product that <strong>bypass the queued email pipeline</strong> and call CHES directly — the other is exception alerts.</p>
+
+    <h3>Three unrelated things called "history"</h3>
+    <div class="table-scroll">
+    <table class="data">
+      <thead><tr><th>Kind</th><th>Source</th><th>Answers</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Change history</strong></td><td>ABP's audit log, read via <span class="code">HistoryAppService</span></td><td>Who changed which field, when — automatic</td></tr>
+        <tr><td><strong>Funding history</strong></td><td><span class="code">FundingHistory</span> entity</td><td>What this applicant was granted before — <strong>manually maintained</strong></td></tr>
+        <tr><td><strong>Audit history</strong></td><td><span class="code">AuditHistory</span> entity</td><td>External audits of this applicant — <strong>manually maintained</strong></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="note" style="margin-top:12px;">Reading change history is marked <span class="code">[DisableEntityChangeTracking]</span> so it does not generate history of its own. <strong>Payment history is change history filtered by entity type full name</strong> — two hard-coded strings in <span class="code">HistoryConsts</span>. There is a fourth kind again in the UI: <span class="code">EmailHistoryWidget</span> reads the Notifications module's <span class="code">EmailLog</span>.</p>
+
+    <h3>Every external URL is a database row</h3>
+    <p>No external base URL is a constant or a configuration key. <span class="code">DynamicUrlKeyNames</span> lists them — CHEFS, CSS and its token endpoint, CAS, CHES, OrgBook, Geocoder, Metabase, Matomo, GitHub — resolved at runtime through <span class="code">IEndpointManagementAppService</span>. Two keys are <em>prefixes</em>: <span class="code">DIRECT_MESSAGE_</span> and <span class="code">WEBHOOK_</span> take numerically incremented suffixes, so an operator can add another Teams channel without a code change.</p>
+    <p class="note"><strong>Repointing an integration is a data change, not a deployment.</strong> That is the design intent, and it is why environment-specific URLs do not appear in <span class="code">appsettings</span>. A missing row raises <span class="code">UserFriendlyException</span>, which is why several callers wrap the lookup and degrade instead of failing.</p>
+
+    <h3>Background work sweeps tenants serially</h3>
+    <p>Quartz workers start with no tenant context, so every one that touches tenant data follows the same shape — load all tenants, <span class="code">using (_currentTenant.Change(...))</span> per tenant. Two consequences: <strong>the work is serial</strong>, so a slow tenant delays the rest; and an unhandled exception inside the loop aborts the remaining tenants unless the worker catches per tenant. Cron expressions come from settings, changed through the admin UI rather than a deployment.</p>
+
+    <h3>Exception alerting has two collectors and one throttle</h3>
+    <div class="schematic">ABP-handled exceptions ──▶ AbpExceptionNotificationSubscriber (IExceptionSubscriber)
+                                    │
+exceptions bypassing ABP ──▶ ExceptionCounterMiddleware
+                                    ▼
+                        ExceptionNotificationThrottle
+                          per-type cooldown · global cap 5 per minute
+                                    ▼
+                        GitHubBlameLookupService ──▶ who last touched the line
+                                    ▼
+                        Teams webhook (DIRECT_MESSAGE_* dynamic URL)</div>
+    <p>Both collectors are needed: ABP handles most exceptions before they reach middleware, so the subscriber sees those, while the middleware catches only what bypasses ABP. The throttle exists, in its own words, to <em>"prevent Teams notification storms during an outage"</em>. Separately, <span class="code">ExceptionLog</span> rows carry a <strong>five-day per-exception suppression window</strong> on their alert email.</p>
+    <p class="note"><strong>The metrics endpoint is authorized, not public</strong> — <span class="code">MapMetrics().RequireAuthorization(PolicyRegistrant.MetricsAccessPolicy)</span>. And <span class="code">en-CA</span> is the only supported culture, for both supported and UI cultures.</p>
+  </section>
+
+  <!-- ============ 09 EDGES ============ -->
+  <section id="edges">
+    <div class="sec-head"><span class="sec-num">09</span><h2>Known rough edges</h2></div>
+    <p class="lede">The core has no roadmap document of its own; this is what the fifteen documents surfaced, ordered by real-world risk. Much of it is <em>correct but surprising</em> rather than defective — but the first several will cost someone a day if they meet them cold.</p>
+
+    <div class="rowlist">
+      <div class="row"><div class="k"><span class="tag warn">Real risk</span></div><div class="v"><p><strong>Payment history is joined by hard-coded type names.</strong> <span class="code">HistoryConsts</span> pins <span class="code">"Unity.Payments.Domain.PaymentRequests.PaymentRequest"</span> and <span class="code">…ExpenseApproval</span> as strings in the core. Renaming or moving either Payments class silently empties the Payment History page. Nothing at compile time connects them.</p></div></div>
+
+      <div class="row"><div class="k"><span class="tag warn">Real risk</span></div><div class="v"><p><strong>An unmapped form version degrades silently.</strong> The submission mapping is per <em>version</em>. Publish a new version in CHEFS without mapping it in Unity and applications still get created — with only the fields the mapper's defaults cover. There is no failure, no alert, and the gap is visible only as blank fields on new applications.</p></div></div>
+
+      <div class="row"><div class="k"><span class="tag warn">Real risk</span></div><div class="v"><p><strong>The intake resync tells nobody outside production.</strong> <span class="code">IntakeSyncWorker</span> emails its missing-submission summary only when <span class="code">ASPNETCORE_ENVIRONMENT</span> is exactly <span class="code">"Production"</span>. Everywhere else it detects the gap and stays silent. The recipient, sender and subject are hard-coded in the worker, and the worker only <em>reports</em> — importing the missed submission is a separate manual action.</p></div></div>
+
+      <div class="row"><div class="k"><span class="tag warn">Multi-pod</span></div><div class="v"><p><strong><span class="code">InMemoryDistributedLockProvider</span> satisfies the interface, not the guarantee.</strong> It is a <span class="code">ConcurrentDictionary</span> of semaphores — <em>per process</em>. In a multi-pod deployment each pod holds its own dictionary, so a lock taken on one does not exclude the other. Anything relying on a lock for correctness across pods needs the real provider configured.</p></div></div>
+
+      <div class="row"><div class="k"><span class="tag warn">Environment</span></div><div class="v"><p><strong>PDF preview shells out to a hard-coded binary path.</strong> <span class="code">/usr/bin/libreoffice</span>, the only external process the product invokes. Any container image without LibreOffice loses preview for non-browser-viewable attachments — <span class="code">IsInstalled()</span> degrades gracefully, so the symptom is a missing feature rather than an error.</p></div></div>
+
+      <div class="row"><div class="k"><span class="tag warn">Silent</span></div><div class="v"><p><strong>Intake swallows two failures by design.</strong> The default-supplier link is caught and logged (SSL certificate errors reaching CAS), and <span class="code">MappingUtil</span> converts unparseable values to zero, empty or <span class="code">Now</span>. Both are deliberate — intake must not fail — but neither leaves a mark on the application that a reader would notice.</p></div></div>
+
+      <div class="row"><div class="k"><span class="tag warn">Silent</span></div><div class="v"><p><strong>A rejected CHEFS submission returns HTTP 200.</strong> Drafts and deleted submissions notify Teams and return an <span class="code">EventSubscriptionConfirmationDto</span> carrying an exception message — so CHEFS records a successful delivery either way.</p></div></div>
+
+      <div class="row"><div class="k"><span class="tag accent">Coupling</span></div><div class="v"><p><strong>Two enum orderings are load-bearing against database rows.</strong> <span class="code">GrantApplicationState</span> carries <span class="code">// WARNING: DO NOT EDIT ORDER NUMBER WITHOUT UPDATING DB CODE TABLE</span> — the status is stored as a foreign key into a per-tenant <span class="code">ApplicationStatus</span> table, not as the enum value. And <span class="code">INITITAL_REVIEW_COMPLETED</span> is misspelled in the enum <em>and</em> in the matching code-table row, so it cannot be fixed on one side alone.</p></div></div>
+
+      <div class="row"><div class="k"><span class="tag accent">Coupling</span></div><div class="v"><p><strong>Intake resolves the form by "first match, oldest first".</strong> The <span class="code">ApplicationForm</span> whose <span class="code">ChefsApplicationFormGuid</span> matches, ordered by <span class="code">CreationTime</span>, taking the first. Two forms bound to the same CHEFS form is not rejected anywhere — it just routes every submission to the older one.</p></div></div>
+
+      <div class="row"><div class="k"><span class="tag accent">Legacy</span></div><div class="v"><p><strong>Dead paths kept for data compatibility.</strong> <span class="code">AssessmentState.IN_REVIEW</span> has transitions <em>out</em> and none <em>in</em>, kept only so existing rows stay valid — its own comment says it will be removed once none are left. <span class="code">AssessmentAction.Create</span> is declared but never configured as a trigger. And <span class="code">Tags.cs</span> declares a second, near-identical <span class="code">Tags</span> aggregate alongside <span class="code">Tag</span>; only <span class="code">Tag</span> is referenced by the join tables.</p></div></div>
+
+      <div class="row"><div class="k"><span class="tag accent">Legacy</span></div><div class="v"><p><strong>Two scoring systems and an unfinished note.</strong> The four fixed integer fields on <span class="code">Assessment</span> predate Flex scoresheets and are still written by <span class="code">UpdateAssessmentScore</span>, which carries its own TODO: <em>"need to revisit scoring again post-MVP as right now it is only offline scoring — need to leverage state machine and domain layer during the revisit."</em> Reopening a completed assessment also clears <span class="code">EndDate</span> but leaves <span class="code">IsComplete</span> true.</p></div></div>
+
+      <div class="row"><div class="k"><span class="tag accent">Size</span></div><div class="v"><p><strong>Four files carry a disproportionate share of the core.</strong> <span class="code">GrantApplicationAppService</span> (1,388 lines, <span class="code">GetListAsync</span> alone 250), <span class="code">ApplicationFormVersionAppService</span> (1,258, doing two unrelated jobs), <span class="code">AttachmentController</span> (769) and <span class="code">GrantManagerWebModule</span> (738). <span class="code">ApplicationRepository</span> (677) holds the widest read path in the product.</p></div></div>
+
+      <div class="row"><div class="k"><span class="tag accent">Duplication</span></div><div class="v"><p><strong>Types that exist twice.</strong> <span class="code">MatomoUrlProvider</span> in both <span class="code">Application/Analytics/</span> and <span class="code">Web/Analytics/</span> — the web copy is the one the layout uses. And <span class="code">Unity.Payments</span> keeps a near-identical private copy of the <span class="code">UnityWorkflow</span> wrapper as <span class="code">PaymentsWorkflow</span>.</p></div></div>
+
+      <div class="row"><div class="k"><span class="tag roadmap">Convention drift</span></div><div class="v"><p>Misspellings baked into public type and method names — <span class="code">ApplicationFormSycnronizationService</span>, <span class="code">ZoneManager.SetForTennantAsync</span>. <span class="code">DateTime.UtcNow</span> used inline in <span class="code">ApplicationManager</span> rather than <span class="code">IClock</span>, alongside a hand-set <span class="code">LastModificationTime</span> carrying the comment <em>"This was not being updated"</em>. And intake writes the application row, then sets <span class="code">ApplicantId</span> in a second write once the applicant resolves.</p></div></div>
+
+      <div class="row"><div class="k"><span class="tag roadmap">Fragility</span></div><div class="v"><p><strong>Local events inside the intake transaction.</strong> <span class="code">ApplicationProcessEvent</span> and <span class="code">ApplicationChangedEvent</span> are published before the unit of work is saved, so a throwing handler — in the core, in AI, in Notifications — rolls back the entire intake. That is a real coupling between module handler code and whether an application can be received at all.</p></div></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Source: <span class="mono">documentation/core/*.md</span></span>
+    <span>Generated with Claude Code</span>
+  </footer>
+
+</div>

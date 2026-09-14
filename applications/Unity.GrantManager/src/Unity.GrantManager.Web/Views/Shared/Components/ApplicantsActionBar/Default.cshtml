@@ -1,12 +1,20 @@
-@using Unity.GrantManager.Localization;
 @using Microsoft.AspNetCore.Authorization;
 @using Microsoft.Extensions.Localization;
+@using Unity.GrantManager.Localization;
 @using Unity.GrantManager.Permissions
+@using Unity.Modules.Shared
 @using Volo.Abp.Authorization.Permissions;
 
 @inject IStringLocalizer<GrantManagerResource> L
 @inject IAuthorizationService AuthorizationService
 @inject IPermissionChecker PermissionChecker
+
+@{
+    var hasViewApplicant = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Applicant.Default);
+    var hasMergeApplicant = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Applicant.Merge);
+    var hasUnmergeApplicant = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Applicant.Unmerge);
+    var hasDeleteApplicant = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Applicant.Delete);
+}
 
 <div class="action-bar p-2 search-action-bar">
     <div class="search-action-bar_search-wrapper">
@@ -14,30 +22,30 @@
     </div>
 
     <div class="btn-group" id="app_custom_buttons">
-        @if (await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Applicants.ViewList))
-        {
-            <abp-button id="openApplicant"
-                        text="@L["ApplicationList:OpenButton"].Value"
-                        data-selector="applicants-table-actions"
-                        class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
-                        button-type="Secondary" />
-        }
-        @if (await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Applicants.Edit))
-        {
-            <abp-button id="mergeApplicants"
-                        text="Merge"
-                        data-selector="applicants-table-actions"
-                        class="custom-table-btn flex-none btn btn-secondary d-none"
-                        button-type="Secondary" />
-        }
-        @if (await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Applicants.Delete))
-        {
-            <abp-button id="deleteApplicant"
-                        text="Delete"
-                        data-selector="applicants-table-actions"
-                        class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
-                        button-type="Secondary" />
-        }
+        <abp-button id="openApplicant"
+                    text="@L["ApplicationList:OpenButton"].Value"
+                    data-selector="applicants-table-actions"
+                    class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
+                    button-type="Secondary"
+                    abp-if="@hasViewApplicant" />
+        <abp-button id="mergeApplicants"
+                    text="@L["ApplicantMerge:Merge"].Value"
+                    data-selector="applicants-table-actions"
+                    class="custom-table-btn flex-none btn btn-secondary d-none"
+                    button-type="Secondary"
+                    abp-if="@hasMergeApplicant" />
+        <abp-button id="unmergeApplicants"
+                    text="@L["ApplicantMerge:Unmerge"].Value"
+                    data-selector="applicants-table-actions"
+                    class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
+                    button-type="Secondary"
+                    abp-if="@hasUnmergeApplicant" />
+        <abp-button id="deleteApplicant"
+                    text="Delete"
+                    data-selector="applicants-table-actions"
+                    class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
+                    button-type="Secondary"
+                    abp-if="@hasDeleteApplicant" />
     </div>
 
     @* Spacer to align buttons properly *@
@@ -45,3 +53,4 @@
 </div>
 
 @await Html.PartialAsync("~/Views/Shared/Components/ApplicantsActionBar/ListMerge.cshtml")
+@await Html.PartialAsync("~/Views/Shared/Components/ApplicantsActionBar/ListUnmerge.cshtml")

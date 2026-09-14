@@ -20,7 +20,6 @@
     <PackageReference Include="Volo.Abp.Features" Version="10.5.0" />
     <PackageReference Include="Volo.Abp.TenantManagement.Domain" Version="10.5.0" />
     <!-- Explicit reference to fix vulnerable transitive dependency -->
-    <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.10" />
     <ProjectReference Include="..\..\..\..\modules\Unity.Flex\src\Unity.Flex.Application\Unity.Flex.Application.csproj" />
     <ProjectReference Include="..\..\..\Unity.SharedKernel\Unity.SharedKernel.csproj" />
     <ProjectReference Include="..\Unity.AI.Application.Contracts\Unity.AI.Application.Contracts.csproj" />

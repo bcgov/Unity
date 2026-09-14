@@ -9,6 +9,7 @@ using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Attachments;
 using Unity.GrantManager.Events;
 using Unity.GrantManager.Integrations.Css;
+using Unity.GrantManager.Integrations.Metabase;
 using Unity.TenantManagement;
 using Volo.Abp.Mapperly;
 using Volo.Abp.BlobStoring;
@@ -171,6 +172,8 @@ public class GrantManagerApplicationModule : AbpModule
         context.Services.Configure<CasClientOptions>(configuration.GetSection("Payments"));
         context.Services.Configure<CssApiOptions>(configuration.GetSection("CssApi"));
         context.Services.Configure<ChesClientOptions>(configuration.GetSection("Notifications"));
+        context.Services.Configure<MetabaseOptions>(configuration.GetSection("TenantCreation:Steps:Metabase"));
+        context.Services.AddTransient<IMetabaseApiClient, MetabaseApiClient>();
 
         ConfigureBackgroundServices(configuration);
 

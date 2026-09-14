@@ -30,6 +30,7 @@
   <ItemGroup>
     <PackageReference Include="Volo.Abp.FeatureManagement.Web" Version="10.5.0" />
     <ProjectReference Include="..\..\..\..\src\Unity.GrantManager.Application.Contracts\Unity.GrantManager.Application.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\Unity.Reporting\src\Unity.Reporting.Application.Contracts\Unity.Reporting.Application.Contracts.csproj" />
     <PackageReference Include="Volo.Abp.Mapperly" Version="10.5.0" />
     <PackageReference Include="Riok.Mapperly" Version="4.3.1" />
   </ItemGroup>

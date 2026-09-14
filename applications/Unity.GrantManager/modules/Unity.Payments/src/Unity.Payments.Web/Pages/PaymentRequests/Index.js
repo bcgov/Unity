@@ -778,7 +778,7 @@ $(function () {
 
                 const safeApplicantName = $.fn.dataTable.render.text().display(applicantName);
 
-                if (type === 'display' && abp.auth.isGranted('GrantApplicationManagement.Applicants.ViewList')) {
+                if (type === 'display' && abp.auth.isGranted('Unity.GrantManager.ApplicantManagement.Applicant')) {
                     const applicantId = row?.applicantId;
                     const isGuid = applicantId && guidPattern.test(applicantId);
 

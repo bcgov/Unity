@@ -19,6 +19,13 @@ namespace Unity.GrantManager.Applicants
 {
     public class AddressInfoDataProviderTests
     {
+        /// <summary>
+        /// Primary inference falls back to the most recently created address of a type, so only
+        /// the relative order of these matters — they are named for the role they play.
+        /// </summary>
+        private static readonly DateTime Older = new(2023, 1, 1, 10, 0, 0, DateTimeKind.Utc);
+        private static readonly DateTime Newer = new(2023, 6, 15, 14, 30, 0, DateTimeKind.Utc);
+
         private readonly ICurrentTenant _currentTenant;
         private readonly IRepository<ApplicationFormSubmission, Guid> _submissionRepo;
         private readonly IRepository<ApplicantAddress, Guid> _addressRepo;
@@ -84,6 +91,36 @@ namespace Unity.GrantManager.Applicants
             EntityHelper.TrySetId(entity, () => Guid.NewGuid());
             configure(entity);
             return entity;
+        }
+
+        /// <summary>
+        /// Builds an application-scoped address from just the fields these tests vary:
+        /// address type, city (used as the identifying label in assertions), creation time
+        /// and the primary flag. Use the <see cref="Action{T}"/> overload for anything else.
+        /// </summary>
+        private static ApplicantAddress CreateAddress(
+            Guid applicationId,
+            AddressType addressType = AddressType.PhysicalAddress,
+            string? city = null,
+            DateTime? creationTime = null,
+            bool isPrimary = false)
+        {
+            return CreateAddress(a =>
+            {
+                a.ApplicationId = applicationId;
+                a.AddressType = addressType;
+                a.City = city;
+
+                if (creationTime.HasValue)
+                {
+                    a.CreationTime = creationTime.Value;
+                }
+
+                if (isPrimary)
+                {
+                    a.SetProperty(AddressExtraPropertyNames.IsPrimary, true);
+                }
+            });
         }
 
         private static Application CreateApplication(Guid id, Action<Application>? configure = null)
@@ -189,7 +226,7 @@ namespace Unity.GrantManager.Applicants
 
             SetupQueryables(
                 [CreateSubmission(applicationId, "TESTUSER")],
-                [CreateAddress(a => { a.ApplicationId = applicationId; a.AddressType = addressType; })],
+                [CreateAddress(applicationId, addressType)],
                 [CreateApplication(applicationId)]);
 
             // Act
@@ -210,8 +247,8 @@ namespace Unity.GrantManager.Applicants
             SetupQueryables(
                 [CreateSubmission(applicationId, "TESTUSER")],
                 [
-                    CreateAddress(a => { a.ApplicationId = applicationId; a.AddressType = AddressType.PhysicalAddress; a.City = "Victoria"; }),
-                    CreateAddress(a => { a.ApplicationId = applicationId; a.AddressType = AddressType.MailingAddress; a.City = "Vancouver"; })
+                    CreateAddress(applicationId, AddressType.PhysicalAddress, "Victoria"),
+                    CreateAddress(applicationId, AddressType.MailingAddress, "Vancouver")
                 ],
                 [CreateApplication(applicationId)]);
 
@@ -232,7 +269,7 @@ namespace Unity.GrantManager.Applicants
 
             SetupQueryables(
                 [CreateSubmission(applicationId, "OTHERUSER")],
-                [CreateAddress(a => { a.ApplicationId = applicationId; a.City = "Victoria"; })],
+                [CreateAddress(applicationId, city: "Victoria")],
                 [CreateApplication(applicationId)]);
 
             // Act
@@ -319,7 +356,7 @@ namespace Unity.GrantManager.Applicants
             SetupQueryables(
                 [CreateSubmission(applicationId, "TESTUSER", s => s.ApplicantId = applicantId)],
                 [
-                    CreateAddress(a => { a.ApplicationId = applicationId; a.City = "Victoria"; }),
+                    CreateAddress(applicationId, city: "Victoria"),
                     CreateAddress(a => { a.ApplicantId = applicantId; a.City = "Kelowna"; })
                 ],
                 [CreateApplication(applicationId, a => a.ReferenceNo = "REF-002")]);
@@ -366,75 +403,6 @@ namespace Unity.GrantManager.Applicants
         }
 
         [Fact]
-        public async Task GetDataAsync_ShouldMarkMostRecentAddressAsPrimaryWhenNoneMarked()
-        {
-            // Arrange
-            var request = CreateRequest();
-            var applicationId = Guid.NewGuid();
-            var oldAddress = CreateAddress(a =>
-            {
-                a.ApplicationId = applicationId;
-                a.City = "Vancouver";
-                a.CreationTime = new DateTime(2023, 1, 1, 10, 0, 0, DateTimeKind.Utc);
-            });
-            var recentAddress = CreateAddress(a =>
-            {
-                a.ApplicationId = applicationId;
-                a.City = "Victoria";
-                a.CreationTime = new DateTime(2023, 6, 15, 14, 30, 0, DateTimeKind.Utc);
-            });
-
-            SetupQueryables(
-                [CreateSubmission(applicationId, "TESTUSER")],
-                [oldAddress, recentAddress],
-                [CreateApplication(applicationId)]);
-
-            // Act
-            var result = await _provider.GetDataAsync(request);
-
-            // Assert
-            var dto = result.ShouldBeOfType<ApplicantAddressInfoDto>();
-            dto.Addresses.Count.ShouldBe(2);
-            var primary = dto.Addresses.Single(a => a.IsPrimary);
-            primary.City.ShouldBe("Victoria");
-        }
-
-        [Fact]
-        public async Task GetDataAsync_ShouldNotOverridePrimaryWhenAlreadySet()
-        {
-            // Arrange
-            var request = CreateRequest();
-            var applicationId = Guid.NewGuid();
-            var primaryAddress = CreateAddress(a =>
-            {
-                a.ApplicationId = applicationId;
-                a.City = "Vancouver";
-                a.CreationTime = new DateTime(2023, 1, 1, 10, 0, 0, DateTimeKind.Utc);
-                a.SetProperty("isPrimary", true);
-            });
-            var recentAddress = CreateAddress(a =>
-            {
-                a.ApplicationId = applicationId;
-                a.City = "Victoria";
-                a.CreationTime = new DateTime(2023, 6, 15, 14, 30, 0, DateTimeKind.Utc);
-            });
-
-            SetupQueryables(
-                [CreateSubmission(applicationId, "TESTUSER")],
-                [primaryAddress, recentAddress],
-                [CreateApplication(applicationId)]);
-
-            // Act
-            var result = await _provider.GetDataAsync(request);
-
-            // Assert
-            var dto = result.ShouldBeOfType<ApplicantAddressInfoDto>();
-            dto.Addresses.Count.ShouldBe(2);
-            var primary = dto.Addresses.Single(a => a.IsPrimary);
-            primary.City.ShouldBe("Vancouver");
-        }
-
-        [Fact]
         public async Task GetDataAsync_MultipleApplicantIds_ShouldMakeApplicantPathNotEditable()
         {
             // Arrange
@@ -464,6 +432,59 @@ namespace Unity.GrantManager.Applicants
         }
 
         [Fact]
+        public async Task GetDataAsync_ShouldInferOnePrimaryPerAddressTypeWhenNoneMarked()
+        {
+            var request = CreateRequest();
+            var applicationId = Guid.NewGuid();
+
+            // No address is flagged, so each type group must infer its own most recent one.
+            SetupQueryables(
+                [CreateSubmission(applicationId, "TESTUSER")],
+                [
+                    CreateAddress(applicationId, AddressType.PhysicalAddress, "Vancouver", Older),
+                    CreateAddress(applicationId, AddressType.PhysicalAddress, "Victoria", Newer),
+                    CreateAddress(applicationId, AddressType.MailingAddress, "Nanaimo", Older),
+                    CreateAddress(applicationId, AddressType.MailingAddress, "Kelowna", Newer)
+                ],
+                [CreateApplication(applicationId)]);
+
+            var result = await _provider.GetDataAsync(request);
+
+            var dto = result.ShouldBeOfType<ApplicantAddressInfoDto>();
+            dto.Addresses.Count.ShouldBe(4);
+            dto.Addresses.Count(a => a.IsPrimary).ShouldBe(2);
+            dto.Addresses.Single(a => a.AddressType == "Physical" && a.IsPrimary).City.ShouldBe("Victoria");
+            dto.Addresses.Single(a => a.AddressType == "Mailing" && a.IsPrimary).City.ShouldBe("Kelowna");
+        }
+
+        [Fact]
+        public async Task GetDataAsync_ShouldOnlyInferPrimaryForTypeGroupsWithoutOne()
+        {
+            var request = CreateRequest();
+            var applicationId = Guid.NewGuid();
+
+            // Vancouver is flagged but is the OLDER Physical address: asserting it below only
+            // proves anything because inference, if it ran for this group, would pick Victoria.
+            // Mailing has nothing flagged, so that group must still infer.
+            SetupQueryables(
+                [CreateSubmission(applicationId, "TESTUSER")],
+                [
+                    CreateAddress(applicationId, AddressType.PhysicalAddress, "Vancouver", Older, isPrimary: true),
+                    CreateAddress(applicationId, AddressType.PhysicalAddress, "Victoria", Newer),
+                    CreateAddress(applicationId, AddressType.MailingAddress, "Kelowna", Older)
+                ],
+                [CreateApplication(applicationId)]);
+
+            var result = await _provider.GetDataAsync(request);
+
+            var dto = result.ShouldBeOfType<ApplicantAddressInfoDto>();
+            dto.Addresses.Count.ShouldBe(3);
+            dto.Addresses.Count(a => a.IsPrimary).ShouldBe(2);
+            dto.Addresses.Single(a => a.AddressType == "Physical" && a.IsPrimary).City.ShouldBe("Vancouver");
+            dto.Addresses.Single(a => a.AddressType == "Mailing" && a.IsPrimary).City.ShouldBe("Kelowna");
+        }
+
+        [Fact]
         public async Task GetDataAsync_ShouldNormalizeSubjectWithoutAtSign()
         {
             // Arrange
@@ -478,7 +499,7 @@ namespace Unity.GrantManager.Applicants
 
             SetupQueryables(
                 [CreateSubmission(applicationId, "TESTUSER")],
-                [CreateAddress(a => { a.ApplicationId = applicationId; a.City = "Victoria"; })],
+                [CreateAddress(applicationId, city: "Victoria")],
                 [CreateApplication(applicationId)]);
 
             // Act

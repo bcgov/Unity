@@ -36,14 +36,16 @@ public class OnboardingRequestController(IOnboardingRequestAppService onboarding
     public virtual Task<OnboardingValidationResultDto> ValidateAsync(
         Guid id,
         [FromQuery] string? tenantNameFieldKey = null,
-        [FromQuery] string? superUsersFieldKey = null,
+        [FromQuery] string? programManagersFieldKey = null,
         [FromQuery] string? branchFieldKey = null,
         [FromQuery] string? featuresFieldKey = null,
         [FromQuery] string? ministryFieldKey = null,
-        [FromQuery] string? programAreaFieldKey = null)
+        [FromQuery] string? programAreaFieldKey = null,
+        [FromQuery] string? displayNameFieldKey = null,
+        [FromQuery] string? divisionFieldKey = null)
     {
         if (!ModelState.IsValid) throw new UserFriendlyException("OnboardingRequestController->ValidateAsync: ModelState Invalid");
-        return OnboardingRequestAppService.ValidateAsync(id, tenantNameFieldKey, superUsersFieldKey, branchFieldKey, featuresFieldKey, ministryFieldKey, programAreaFieldKey);
+        return OnboardingRequestAppService.ValidateAsync(id, tenantNameFieldKey, programManagersFieldKey, branchFieldKey, featuresFieldKey, ministryFieldKey, programAreaFieldKey, displayNameFieldKey, divisionFieldKey);
     }
 
     [HttpPost("{id}/create-tenant")]

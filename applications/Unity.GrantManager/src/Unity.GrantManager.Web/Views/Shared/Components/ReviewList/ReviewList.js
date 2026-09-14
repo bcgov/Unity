@@ -20,12 +20,12 @@ const actionButtonLabelMap = {
     Complete: 'Complete Assessment'
 };
 
-const finalApplicationStates = [
+const finalApplicationStates = new Set([
     'GRANT_NOT_APPROVED',
     'GRANT_APPROVED',
     'CLOSED',
     'WITHDRAWN'
-];
+]);
 
 $(function () {
     const nullPlaceholder = '—';
@@ -379,7 +379,7 @@ async function getActionButtonConfigMap() {
 
 async function canCreateAssessment() {
     const applicationStatus = await getActionButtonConfigMap();
-    return !finalApplicationStates.includes(applicationStatus.statusCode);
+    return !finalApplicationStates.has(applicationStatus.statusCode);
 }
 
 async function updateCreateButtonState(dataTableContext) {

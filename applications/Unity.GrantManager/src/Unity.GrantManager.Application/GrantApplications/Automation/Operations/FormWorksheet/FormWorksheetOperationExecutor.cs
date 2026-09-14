@@ -49,7 +49,7 @@ public sealed class FormWorksheetOperationExecutor(
             ?? throw new InvalidOperationException("Form worksheet generation requires an application form version.");
         var formVersion = await applicationFormVersionRepository.GetAsync(applicationFormVersionId);
         var applicationForm = await applicationFormRepository.GetAsync(formVersion.ApplicationFormId);
-        var baseWorksheetName = AiWorksheetSuggestionName.Build(applicationForm.Id, formVersion.Id);
+        var baseWorksheetName = AiWorksheetSuggestionName.Build(formVersion.Id);
         var review = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(
             AIGenerationOperations.FormWorksheet,
             applicationFormVersionId);

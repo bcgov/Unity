@@ -361,8 +361,8 @@ $(function () {
         }
         for (let i = 0; i < str.length; i++) {
             const char = str.codePointAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash |= 0;
+            hash = ((hash << 5) - hash) + char;            
+            hash |= 0; // NOSONAR - Intentional signed 32-bit coercion required by this hash algorithm.
             if (char > 0xFFFF) {
                 i++;
             }

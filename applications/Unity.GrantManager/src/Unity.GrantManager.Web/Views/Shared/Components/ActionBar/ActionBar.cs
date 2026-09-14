@@ -30,6 +30,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ActionBar
               .AddIfNotContains("/Pages/BulkActions/BulkPublishApplications.css");
             context.Files
               .AddIfNotContains("/Pages/BulkEmailNotifications/SendEmailNotificationModal.css");
+            context.Files
+              .AddIfNotContains("/Pages/BulkEmailNotifications/ComposeAndSendEmailModal.css");
             // The bulk-send modal mounts EmailsWidget dynamically (via abp.WidgetManager) for the selected
             // application, rather than server-rendering it as part of this page — so its own [Widget] bundle
             // never gets a chance to auto-register here. Pull it in explicitly.
@@ -67,6 +69,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ActionBar
             // fires for widgets that are actually server-rendered as part of a page's initial HTML.
             context.Files
               .AddIfNotContains("/Views/Shared/Components/EmailsWidget/Default.js");
+            context.Files
+              .AddIfNotContains("/Pages/BulkEmailNotifications/ComposeAndSendEmailModal.js");
         }
     }
 }
