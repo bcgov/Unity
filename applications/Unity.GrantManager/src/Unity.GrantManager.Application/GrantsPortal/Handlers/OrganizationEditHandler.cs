@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantsPortal.Messages;
 using Unity.GrantManager.GrantsPortal.Messages.Commands;
+using Unity.GrantManager.GrantsPortal.Notifications;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Uow;
 
@@ -11,6 +12,7 @@ namespace Unity.GrantManager.GrantsPortal.Handlers;
 
 public class OrganizationEditHandler(
     IApplicantRepository applicantRepository,
+    IApplicantUpdateNotificationService notificationService,
     ILogger<OrganizationEditHandler> logger) : IPortalCommandHandler, ITransientDependency
 {
     public string DataType => "ORGANIZATION_EDIT_COMMAND";
@@ -25,6 +27,7 @@ public class OrganizationEditHandler(
 
         var organizationId = Guid.Parse(payload.OrganizationId ?? throw new ArgumentException("organizationId is required"));
         var applicant = await applicantRepository.GetAsync(organizationId);
+        var previousValues = ApplicantUpdateDetails.CaptureApplicantInformation(applicant);
 
         applicant.OrgName = innerData.Name;
         applicant.OrganizationType = innerData.OrganizationType;
@@ -40,6 +43,12 @@ public class OrganizationEditHandler(
         }
 
         await applicantRepository.UpdateAsync(applicant);
+
+        var updateDetails = ApplicantUpdateDetails.ApplicantInformation(previousValues, applicant);
+        if (updateDetails.Fields.Count > 0)
+        {
+            await notificationService.QueueAsync(applicant, updateDetails);
+        }
 
         logger.LogInformation("Organization {OrganizationId} updated successfully", organizationId);
         return "Organization updated successfully";
