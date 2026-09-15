@@ -27,8 +27,8 @@ This document provides a guide for the Unity Grant Manager SonarCloud, including
 
 **Technology Stack:**
 
-- **Backend:** .NET 9.0 with ABP Framework 9.1.3
-- **Database:** PostgreSQL 17 with Entity Framework Core 9.0
+- **Backend:** .NET with ABP Framework 10.3
+- **Database:** PostgreSQL 17 with Entity Framework Core 10.0
 - **Frontend:** Razor Pages with custom ABP theme
 - **Testing:** xUnit with Shouldly assertions and NSubstitute mocks
 
@@ -81,7 +81,7 @@ sonar.tests=test
 
 **Language Configuration:**
 
-- .NET 9.0
+- .NET
 - C# with Razor Pages
 - Java 17 (for SonarCloud scanner)
 
@@ -178,7 +178,7 @@ on:
 
 1. **Environment Setup:**
    - Java 17 (SonarCloud scanner)
-   - .NET 9.0 SDK
+   - .NET SDK
    - dotnet-sonarscanner tool
 
 2. **Build Process:**

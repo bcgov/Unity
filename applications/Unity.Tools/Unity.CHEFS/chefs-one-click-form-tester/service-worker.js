@@ -2,8 +2,8 @@
 
 importScripts('export-path.js', 'dashboard-model.js');
 
-const EXTENSION_VERSION = '0.4.0';
-const BUILD_NUMBER = '2026.07.23.14';
+const EXTENSION_VERSION = '0.4.9';
+const BUILD_NUMBER = '2026.08.28.23';
 const RUN_KEY_PREFIX = 'chefsTesterRun:';
 const TAB_KEY_PREFIX = 'chefsTesterTab:';
 const LAST_RUN_KEY = 'chefsTesterLastRunId';
@@ -15,6 +15,20 @@ const BATCH_MARKER_PARAM = 'chefs-one-click-batch';
 const DASHBOARD_STATE_KEY = 'chefsTesterDashboardState';
 const DASHBOARD_HISTORY_KEY = 'chefsTesterDashboardHistory';
 const DASHBOARD_PAGE = 'dashboard.html';
+const DEFAULT_DASHBOARD_VIEW = 'simple';
+const EMPTY_DASHBOARD_MODE = 'empty';
+const BATCH_DASHBOARD_MODE = 'batch';
+const FAILED_STATUS = 'failed';
+const STALLED_STATUS = 'stalled';
+const STOPPED_STATUS = 'stopped';
+const PENDING_EXPORT_STATUS = 'pending';
+const NOT_REQUESTED_EXPORT_STATUS = 'not_requested';
+const COMPLETE_TAB_STATUS = 'complete';
+const UNKNOWN_VALUE = 'Unknown';
+const BATCH_SUITE_PARAM = 'suite';
+const BATCH_INDEX_PARAM = 'index';
+const SUPPORTED_PROTOCOLS = new Set(['http:', 'https:']);
+const DASHBOARD_VIEWS = new Set([DEFAULT_DASHBOARD_VIEW, 'analyst', 'statistical', 'experimental']);
 const WATCHDOG_STALE_MS = 75000;
 const BATCH_ENTRY_TIMEOUT_MS = 90000;
 const BATCH_COLLECTION_DELAY_MS = 1500;
@@ -22,7 +36,7 @@ const BATCH_FORM_READY_POLL_MS = 750;
 const BATCH_FORM_READY_TIMEOUT_MS = 45000;
 const BATCH_COMPLETED_LIMIT = 200;
 const ACTIVE_RUN_STATUSES = new Set(['initializing', 'scanning', 'filling', 'settling', 'validating', 'submitting']);
-const FINAL_RUN_STATUSES = new Set(['submitted', 'completed', 'failed', 'stalled', 'blocked', 'safety_stop', 'stopped']);
+const FINAL_RUN_STATUSES = new Set(['submitted', 'completed', FAILED_STATUS, STALLED_STATUS, 'blocked', 'safety_stop', STOPPED_STATUS]);
 const DEFAULT_SETTINGS = {
   additionalHosts: [],
   allowProduction: false,
@@ -36,7 +50,7 @@ const DEFAULT_SETTINGS = {
   batchOrigins: [],
   openDashboardAfterCompletion: false,
   retainDashboardHistory: false,
-  dashboardDefaultView: 'simple'
+  dashboardDefaultView: DEFAULT_DASHBOARD_VIEW
 };
 const runLocks = new Map();
 const automaticExportsInProgress = new Set();
@@ -72,7 +86,7 @@ function normalizeBatchOrigins(values) {
     try {
       const url = new URL(String(rawValue || '').trim());
       if (
-        ['http:', 'https:'].includes(url.protocol) &&
+        SUPPORTED_PROTOCOLS.has(url.protocol) &&
         !url.username &&
         !url.password &&
         url.pathname === '/' &&
@@ -81,7 +95,7 @@ function normalizeBatchOrigins(values) {
       ) {
         normalized.push(url.origin);
       }
-    } catch (error) {
+    } catch {
       // Invalid stored origins are discarded during migration.
     }
   }
@@ -90,15 +104,15 @@ function normalizeBatchOrigins(values) {
 
 function normalizeSettings(rawSettings) {
   const existing = rawSettings || {};
-  const settings = Object.assign({}, DEFAULT_SETTINGS, existing);
+  const settings = { ...DEFAULT_SETTINGS, ...existing };
   settings.rowsPerGrid = Math.max(2, Math.min(5, Number(settings.rowsPerGrid) || 2));
   settings.customFormatRules = Array.isArray(settings.customFormatRules) ? settings.customFormatRules : [];
   try {
     settings.exportFolder = ChefsExportPath.normalizeExportFolder(settings.exportFolder);
-  } catch (error) {
+  } catch {
     settings.exportFolder = '';
   }
-  if (Object.prototype.hasOwnProperty.call(existing, 'autoExportAfterRun')) {
+  if (Object.hasOwn(existing, 'autoExportAfterRun')) {
     settings.autoExportAfterRun = Boolean(existing.autoExportAfterRun);
   } else {
     settings.autoExportAfterRun = Boolean(existing.autoExportAfterSubmit);
@@ -110,10 +124,9 @@ function normalizeSettings(rawSettings) {
   settings.batchOrigins = normalizeBatchOrigins(settings.batchOrigins);
   settings.openDashboardAfterCompletion = Boolean(settings.openDashboardAfterCompletion);
   settings.retainDashboardHistory = Boolean(settings.retainDashboardHistory);
-  settings.dashboardDefaultView = ['simple', 'analyst', 'statistical', 'experimental']
-    .includes(settings.dashboardDefaultView)
+  settings.dashboardDefaultView = DASHBOARD_VIEWS.has(settings.dashboardDefaultView)
     ? settings.dashboardDefaultView
-    : 'simple';
+    : DEFAULT_DASHBOARD_VIEW;
   return settings;
 }
 
@@ -130,8 +143,14 @@ chrome.runtime.onStartup.addListener(() => {
   scheduleBatchProcessing();
 });
 
-ensureWatchdogAlarm().catch(() => undefined);
-scheduleBatchProcessing();
+function initializeServiceWorker() {
+  void ensureWatchdogAlarm().catch((error) => {
+    console.error('Unable to initialize CHEFS tester alarms.', error);
+  });
+  scheduleBatchProcessing();
+}
+
+initializeServiceWorker();
 
 function runKey(runId) {
   return `${RUN_KEY_PREFIX}${runId}`;
@@ -139,6 +158,10 @@ function runKey(runId) {
 
 function tabKey(tabId) {
   return `${TAB_KEY_PREFIX}${tabId}`;
+}
+
+function errorMessage(error, fallback = '') {
+  return error?.message || String(error || fallback);
 }
 
 async function getSettings() {
@@ -150,8 +173,8 @@ function isDefaultAllowedHost(hostname) {
   const host = String(hostname || '').toLowerCase();
   return host === 'localhost' ||
     host === '127.0.0.1' ||
-    /^chefs-(test|uat|dev|development|qa)\./.test(host) ||
-    /\.(test|uat|dev)\.[a-z0-9.-]+$/.test(host);
+    /^chefs-(?:test|uat|dev|development|qa)\./.test(host) ||
+    /\.(?:test|uat|dev)\.[a-z0-9.-]+$/.test(host);
 }
 
 function isProductionLikeHost(hostname) {
@@ -163,10 +186,10 @@ async function evaluateEnvironment(urlText) {
   let url;
   try {
     url = new URL(urlText);
-  } catch (error) {
+  } catch {
     return { allowed: false, reason: 'The active tab does not have a valid web address.' };
   }
-  if (!['http:', 'https:'].includes(url.protocol)) {
+  if (!SUPPORTED_PROTOCOLS.has(url.protocol)) {
     return { allowed: false, reason: 'Open a CHEFS form in a normal web tab first.' };
   }
   const settings = await getSettings();
@@ -228,10 +251,10 @@ function buildSummaryText(run) {
     '',
     `Version: ${run.extensionVersion || EXTENSION_VERSION}`,
     `Build: ${run.buildNumber || BUILD_NUMBER}`,
-    `Run ID: ${run.runId || 'Unknown'}`,
+    `Run ID: ${run.runId || UNKNOWN_VALUE}`,
     '',
-    `Form: ${run.formTitle || 'Unknown'}`,
-    `URL: ${run.formUrl || 'Unknown'}`,
+    `Form: ${run.formTitle || UNKNOWN_VALUE}`,
+    `URL: ${run.formUrl || UNKNOWN_VALUE}`,
     `Result: ${String(run.status || 'UNKNOWN').toUpperCase()}`,
     '',
     `Passes completed: ${progress.pass || 0}`,
@@ -245,13 +268,13 @@ function buildSummaryText(run) {
     `Attachments pending: ${progress.attachmentsPending || 0}`,
     `Submission attempts: ${progress.submitAttempts || 0}`,
     '',
-    `Custom format rules loaded: ${progress.customRulesLoaded || (run.customRuleSet && run.customRuleSet.enabledRuleCount) || 0}`,
+    `Custom format rules loaded: ${progress.customRulesLoaded || run.customRuleSet?.enabledRuleCount || 0}`,
     `Custom rules matched: ${progress.customRuleMatches || 0}`,
     `Custom rule values accepted: ${progress.customRuleAccepted || 0}`,
     `Custom rule values rejected: ${progress.customRuleRejected || 0}`,
     `Detected masks used: ${progress.detectedMasksUsed || 0}`,
     `Mask values rejected: ${progress.maskValuesRejected || 0}`,
-    `Rule-set hash: ${(run.customRuleSet && run.customRuleSet.ruleSetHash) || 'None'}`,
+    `Rule-set hash: ${run.customRuleSet?.ruleSetHash || 'None'}`,
     '',
     'Last successful action:',
     run.lastSuccessfulAction || 'None recorded',
@@ -301,7 +324,7 @@ function publicRun(run) {
 }
 
 async function createRun(message, sender) {
-  const tabId = message.tabId || (sender.tab && sender.tab.id);
+  const tabId = message.tabId || sender.tab?.id;
   const run = {
     runId: message.runId,
     tabId,
@@ -334,7 +357,7 @@ async function createRun(message, sender) {
       attachmentsCompleted: 0,
       attachmentsPending: 0,
       submitAttempts: 0,
-      customRulesLoaded: message.customRuleSet && message.customRuleSet.enabledRuleCount || 0,
+      customRulesLoaded: message.customRuleSet?.enabledRuleCount || 0,
       customRuleMatches: 0,
       customRuleAccepted: 0,
       customRuleRejected: 0,
@@ -351,7 +374,7 @@ async function createRun(message, sender) {
     finalizedAt: null,
     exportState: {
       automatic: {
-        status: 'not_requested',
+        status: NOT_REQUESTED_EXPORT_STATUS,
         requestedAt: null,
         completedAt: null,
         failedAt: null,
@@ -396,11 +419,11 @@ async function updateRun(message) {
   return mutateRun(message.runId, (run) => {
     const patch = message.patch || {};
     if (patch.progress) {
-      run.progress = Object.assign({}, run.progress || {}, patch.progress);
+      run.progress = { ...run.progress, ...patch.progress };
       delete patch.progress;
     }
     Object.assign(run, patch);
-    if (['submitted', 'failed', 'stalled', 'blocked', 'stopped', 'safety_stop', 'completed'].includes(run.status)) {
+    if (FINAL_RUN_STATUSES.has(run.status)) {
       run.endedAt = run.endedAt || new Date().toISOString();
     }
   });
@@ -428,12 +451,12 @@ async function addAttachmentRecord(message) {
 async function setFailure(message, sender) {
   const run = await mutateRun(message.runId, (storedRun) => {
     storedRun.failure = message.failure || { message: 'Unknown failure' };
-    storedRun.status = message.status || storedRun.status || 'failed';
+    storedRun.status = message.status || storedRun.status || FAILED_STATUS;
     storedRun.statusLabel = message.statusLabel || String(storedRun.status).replaceAll('_', ' ');
     storedRun.endedAt = storedRun.endedAt || new Date().toISOString();
   });
   const settings = await getSettings();
-  const tabId = (sender.tab && sender.tab.id) || run.tabId;
+  const tabId = sender.tab?.id || run.tabId;
   if (settings.captureScreenshot && tabId) {
     try {
       const tab = await chrome.tabs.get(tabId);
@@ -447,7 +470,7 @@ async function setFailure(message, sender) {
         event: {
           time: new Date().toISOString(),
           event: 'SCREENSHOT_CAPTURE_FAILED',
-          message: error && error.message ? error.message : String(error)
+          message: errorMessage(error)
         }
       });
     }
@@ -472,20 +495,20 @@ async function detectStaleRuns() {
           type: 'CHEFS_TESTER_STATUS'
         });
         if (
-          status &&
-          status.running &&
+          status?.running &&
           status.runId === candidate.runId
         ) {
           await mutateRun(candidate.runId, (storedRun) => {
             storedRun.currentAction = status.currentAction || storedRun.currentAction;
-            storedRun.progress = Object.assign({}, storedRun.progress || {}, status.progress || {});
-            storedRun.watchdogState = Object.assign({}, storedRun.watchdogState || {}, {
+            storedRun.progress = { ...storedRun.progress, ...status.progress };
+            storedRun.watchdogState = {
+              ...storedRun.watchdogState,
               lastResponsiveProbeAt: new Date().toISOString()
-            });
+            };
           });
           continue;
         }
-      } catch (error) {
+      } catch {
         // An absent or unresponsive content controller falls through to bounded stall finalization.
       }
     }
@@ -495,7 +518,7 @@ async function detectStaleRuns() {
       event: {
         time: new Date().toISOString(),
         event: 'WATCHDOG_STALL_DETECTED',
-        pass: candidate.progress && candidate.progress.pass || 0,
+        pass: candidate.progress?.pass || 0,
         staleForMs,
         currentAction: candidate.currentAction || '',
         lastSuccessfulAction: candidate.lastSuccessfulAction || '',
@@ -504,7 +527,7 @@ async function detectStaleRuns() {
     });
     await setFailure({
       runId: candidate.runId,
-      status: 'stalled',
+      status: STALLED_STATUS,
       statusLabel: 'Stalled',
       failure: {
         time: new Date().toISOString(),
@@ -519,15 +542,15 @@ async function detectStaleRuns() {
     await setSnapshot({
       runId: candidate.runId,
       name: 'final',
-      snapshot: candidate.snapshots && (candidate.snapshots.lastKnown || candidate.snapshots.initial) || []
+      snapshot: candidate.snapshots?.lastKnown || candidate.snapshots?.initial || []
     });
     await addCheckpoint({
       runId: candidate.runId,
       checkpoint: {
         time: new Date().toISOString(),
         reason: 'Background watchdog finalized stalled run',
-        status: 'stalled',
-        pass: candidate.progress && candidate.progress.pass || 0,
+        status: STALLED_STATUS,
+        pass: candidate.progress?.pass || 0,
         currentAction: candidate.currentAction || '',
         lastSuccessfulAction: candidate.lastSuccessfulAction || '',
         progress: candidate.progress || {}
@@ -538,9 +561,9 @@ async function detectStaleRuns() {
 }
 
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm && alarm.name === WATCHDOG_ALARM) {
+  if (alarm?.name === WATCHDOG_ALARM) {
     detectStaleRuns().catch(() => undefined);
-  } else if (alarm && alarm.name === BATCH_QUEUE_ALARM) {
+  } else if (alarm?.name === BATCH_QUEUE_ALARM) {
     processBatchQueue().catch(() => undefined);
   }
 });
@@ -549,6 +572,70 @@ async function getTabRun(tabId) {
   const stored = await chrome.storage.local.get([tabKey(tabId), LAST_RUN_KEY]);
   const runId = stored[tabKey(tabId)] || stored[LAST_RUN_KEY];
   return publicRun(await readRun(runId));
+}
+
+async function stopRunInTab(tabId) {
+  const stored = await chrome.storage.local.get(tabKey(tabId));
+  const runId = stored[tabKey(tabId)];
+  let run = await readRun(runId);
+  if (!run) {
+    throw new Error('No run is associated with the active tab.');
+  }
+  if (FINAL_RUN_STATUSES.has(run.status)) {
+    return { acknowledged: true, fallbackFinalized: false, run: publicRun(run) };
+  }
+
+  let acknowledged = false;
+  let controllerError = '';
+  try {
+    const response = await chrome.tabs.sendMessage(tabId, { type: 'CHEFS_TESTER_STOP' });
+    acknowledged = Boolean(response?.ok);
+    if (!acknowledged) {
+      controllerError = response?.error || 'The content controller did not acknowledge Stop Run.';
+    }
+  } catch (error) {
+    controllerError = errorMessage(error);
+  }
+
+  const waitStarted = Date.now();
+  while (acknowledged && Date.now() - waitStarted < 1500) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    run = await readRun(runId);
+    if (run && FINAL_RUN_STATUSES.has(run.status)) {
+      return { acknowledged: true, fallbackFinalized: false, run: publicRun(run) };
+    }
+  }
+
+  const now = new Date().toISOString();
+  await mutateRun(runId, (storedRun) => {
+    if (FINAL_RUN_STATUSES.has(storedRun.status)) {
+      return;
+    }
+    storedRun.status = STOPPED_STATUS;
+    storedRun.statusLabel = 'Stopped';
+    storedRun.currentAction = 'Stopped by user';
+    storedRun.endedAt = now;
+    storedRun.snapshots = storedRun.snapshots || {};
+    storedRun.snapshots.final = storedRun.snapshots.final || storedRun.snapshots.lastKnown || storedRun.snapshots.initial || [];
+    storedRun.events = Array.isArray(storedRun.events) ? storedRun.events : [];
+    storedRun.events.push({
+      time: now,
+      event: 'RUN_STOPPED_BY_BACKGROUND',
+      pass: storedRun.progress?.pass || 0,
+      message: controllerError ? 'The page controller was unavailable; the background finalized Stop Run.' : 'The background finalized Stop Run after the acknowledgement deadline.'
+    });
+    storedRun.checkpoints = Array.isArray(storedRun.checkpoints) ? storedRun.checkpoints : [];
+    storedRun.checkpoints.push({
+      time: now,
+      reason: 'Background Stop Run finalization',
+      status: STOPPED_STATUS,
+      pass: storedRun.progress?.pass || 0,
+      currentAction: 'Stopped by user',
+      progress: storedRun.progress || {}
+    });
+  });
+  const finalized = await finalizeRun(runId, now);
+  return { acknowledged, fallbackFinalized: true, run: finalized };
 }
 
 async function startRunInTab(tabId) {
@@ -614,17 +701,17 @@ async function isChefsFormReady(tabId) {
         };
       }
     });
-    const result = results && results[0] && results[0].result;
+    const result = results?.[0]?.result;
     return {
-      ready: Boolean(result && result.ready && result.stable !== false),
-      componentCount: boundedReadinessCount(result && result.componentCount),
-      interactiveCount: boundedReadinessCount(result && result.interactiveCount),
+      ready: Boolean(result?.ready && result.stable !== false),
+      componentCount: boundedReadinessCount(result?.componentCount),
+      interactiveCount: boundedReadinessCount(result?.interactiveCount),
       error: ''
     };
   } catch (error) {
     return {
       ready: false,
-      error: error && error.message ? error.message : String(error)
+      error: errorMessage(error)
     };
   }
 }
@@ -645,7 +732,7 @@ function emptyBatchState() {
 }
 
 function normalizeBatchState(rawState) {
-  const state = Object.assign(emptyBatchState(), rawState || {});
+  const state = { ...emptyBatchState(), ...rawState };
   state.queue = Array.isArray(state.queue) ? state.queue : [];
   state.active = state.active || null;
   state.completed = Array.isArray(state.completed)
@@ -693,25 +780,26 @@ function batchEntryComparator(left, right) {
 function parseBatchMarker(urlText) {
   try {
     const url = new URL(urlText);
-    const parameters = new URLSearchParams(url.hash.replace(/^#/, ''));
+    const parameters = new URLSearchParams(url.hash.slice(1));
     const token = parameters.get(BATCH_MARKER_PARAM) || '';
     if (!token) {
       return null;
     }
-    const rawSuiteId = parameters.get('suite') || 'regression';
-    const rawIndex = parameters.get('index') || '0';
+    const rawSuiteId = parameters.get(BATCH_SUITE_PARAM) || 'regression';
+    const rawIndex = parameters.get(BATCH_INDEX_PARAM) || '0';
     parameters.delete(BATCH_MARKER_PARAM);
-    parameters.delete('suite');
-    parameters.delete('index');
+    parameters.delete(BATCH_SUITE_PARAM);
+    parameters.delete(BATCH_INDEX_PARAM);
     url.hash = parameters.toString() ? `#${parameters.toString()}` : '';
     return {
       token,
-      suiteId: rawSuiteId.replaceAll(/[^A-Za-z0-9_-]/g, '').slice(0, 64) || 'regression',
-      index: rawIndex.replaceAll(/[^A-Za-z0-9_-]/g, '').slice(0, 32) || '0',
+      suiteId: rawSuiteId.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 64) || 'regression',
+      index: rawIndex.replace(/[^A-Za-z0-9_-]/g, '').slice(0, 32) || '0',
       url: url.href,
       origin: url.origin
     };
-  } catch (error) {
+  } catch {
+    // Invalid or unsupported URLs are not batch launcher requests.
     return null;
   }
 }
@@ -719,16 +807,16 @@ function parseBatchMarker(urlText) {
 async function scrubBatchMarker(tabId) {
   await chrome.scripting.executeScript({
     target: { tabId },
-    func: (markerName) => {
+    func: (markerName, suiteName, indexName) => {
       const url = new URL(window.location.href);
-      const parameters = new URLSearchParams(url.hash.replace(/^#/, ''));
+      const parameters = new URLSearchParams(url.hash.slice(1));
       parameters.delete(markerName);
-      parameters.delete('suite');
-      parameters.delete('index');
+      parameters.delete(suiteName);
+      parameters.delete(indexName);
       url.hash = parameters.toString() ? `#${parameters.toString()}` : '';
       window.history.replaceState(window.history.state, document.title, url.href);
     },
-    args: [BATCH_MARKER_PARAM]
+    args: [BATCH_MARKER_PARAM, BATCH_SUITE_PARAM, BATCH_INDEX_PARAM]
   });
 }
 
@@ -738,14 +826,15 @@ function permissionPatternForUrl(urlText) {
 }
 
 function batchCompletedRecord(entry, status, details) {
-  return Object.assign({
+  return {
     tabId: entry.tabId,
     suiteId: entry.suiteId,
     index: entry.index,
     url: entry.url,
     status,
-    completedAt: new Date().toISOString()
-  }, details || {});
+    completedAt: new Date().toISOString(),
+    ...details
+  };
 }
 
 async function recordBatchRejection(tabId, marker, reason) {
@@ -753,7 +842,7 @@ async function recordBatchRejection(tabId, marker, reason) {
     const state = await getBatchState();
     if (
       state.completed.some((item) => item.tabId === tabId) ||
-      (state.active && state.active.tabId === tabId)
+      state.active?.tabId === tabId
     ) {
       return;
     }
@@ -769,8 +858,8 @@ async function recordBatchRejection(tabId, marker, reason) {
 }
 
 async function upsertBatchTab(tab, ready) {
-  const tabId = tab && tab.id;
-  const marker = parseBatchMarker(tab && (tab.pendingUrl || tab.url) || '');
+  const tabId = tab?.id;
+  const marker = parseBatchMarker(tab?.pendingUrl || tab?.url || '');
   if (!tabId || !marker) {
     return;
   }
@@ -806,7 +895,7 @@ async function upsertBatchTab(tab, ready) {
         tabId,
         marker,
         `The launcher marker could not be removed before automation: ${
-          error && error.message ? error.message : String(error)
+          errorMessage(error)
         }`
       );
       return;
@@ -820,7 +909,7 @@ async function upsertBatchTab(tab, ready) {
     }
     if (
       state.completed.some((item) => item.tabId === tabId) ||
-      (state.active && state.active.tabId === tabId)
+      state.active?.tabId === tabId
     ) {
       return;
     }
@@ -872,11 +961,10 @@ async function completeBatchRun(run) {
     ) {
       return;
     }
-    const entry = Object.assign({}, state.active);
+    const entry = { ...state.active };
     state.completed.push(batchCompletedRecord(entry, run.status, {
       runId: run.runId,
-      exportStatus: run.exportState && run.exportState.automatic &&
-        run.exportState.automatic.status || 'not_requested'
+      exportStatus: run.exportState?.automatic?.status || NOT_REQUESTED_EXPORT_STATUS
     }));
     state.active = null;
     result.completed = true;
@@ -894,7 +982,7 @@ async function markActiveBatchFailure(entry, status, error) {
       return;
     }
     state.completed.push(batchCompletedRecord(state.active, status, {
-      error: error && error.message ? error.message : String(error || status)
+      error: errorMessage(error, status)
     }));
     state.active = null;
     await saveBatchState(state);
@@ -902,7 +990,7 @@ async function markActiveBatchFailure(entry, status, error) {
 }
 
 async function claimNextBatchEntry() {
-  return await withBatchStateLock(async () => {
+  return withBatchStateLock(async () => {
     const state = await getBatchState();
     if (state.active || !state.queue.length) {
       return null;
@@ -920,19 +1008,20 @@ async function claimNextBatchEntry() {
       return null;
     }
     state.queue.shift();
-    state.active = Object.assign({}, first, {
+    state.active = {
+      ...first,
       status: 'starting',
       startedAt: Date.now(),
       runId: null
-    });
+    };
     await saveBatchState(state);
-    return Object.assign({}, state.active);
+    return { ...state.active };
   });
 }
 
 async function recoverActiveBatchRun(active) {
   if (active.runId) {
-    return await readRun(active.runId);
+    return readRun(active.runId);
   }
   const stored = await chrome.storage.local.get(tabKey(active.tabId));
   const runId = stored[tabKey(active.tabId)];
@@ -943,7 +1032,7 @@ async function recoverActiveBatchRun(active) {
   if (run) {
     await withBatchStateLock(async () => {
       const state = await getBatchState();
-      if (state.active && state.active.tabId === active.tabId && !state.active.runId) {
+      if (state.active?.tabId === active.tabId && !state.active.runId) {
         state.active.runId = runId;
         state.active.status = 'running';
         await saveBatchState(state);
@@ -954,18 +1043,17 @@ async function recoverActiveBatchRun(active) {
 }
 
 async function resolveInterruptedAutomaticExport(run) {
-  const automatic = run && run.exportState && run.exportState.automatic;
+  const automatic = run?.exportState?.automatic;
   if (
-    !automatic ||
-    automatic.status !== 'pending' ||
+    automatic?.status !== PENDING_EXPORT_STATUS ||
     automaticExportsInProgress.has(run.runId)
   ) {
     return run;
   }
-  return await mutateRun(run.runId, (storedRun) => {
+  return mutateRun(run.runId, (storedRun) => {
     const storedAutomatic = ensureAutomaticExportState(storedRun);
-    if (storedAutomatic.status === 'pending') {
-      storedAutomatic.status = 'failed';
+    if (storedAutomatic.status === PENDING_EXPORT_STATUS) {
+      storedAutomatic.status = FAILED_STATUS;
       storedAutomatic.failedAt = new Date().toISOString();
       storedAutomatic.completedAt = null;
       storedAutomatic.error =
@@ -1001,12 +1089,12 @@ async function startActiveBatchEntry(entry) {
     return false;
   }
   const response = await startRunInTab(entry.tabId);
-  if (!response || !response.ok) {
-    throw new Error(response && response.error ? response.error : 'The batch run could not be started.');
+  if (!response?.ok) {
+    throw new Error(response?.error || 'The batch run could not be started.');
   }
   await withBatchStateLock(async () => {
     const latest = await getBatchState();
-    if (latest.active && latest.active.tabId === entry.tabId) {
+    if (latest.active?.tabId === entry.tabId) {
       latest.active.runId = response.runId || null;
       latest.active.status = 'running';
       latest.active.readinessError = '';
@@ -1018,6 +1106,55 @@ async function startActiveBatchEntry(entry) {
   return true;
 }
 
+async function processExistingBatchEntry(active) {
+  let run = await recoverActiveBatchRun(active);
+  if (run && FINAL_RUN_STATUSES.has(run.status)) {
+    const automatic = run.exportState?.automatic;
+    if (automatic?.status === PENDING_EXPORT_STATUS && automaticExportsInProgress.has(run.runId)) {
+      return false;
+    }
+    run = await resolveInterruptedAutomaticExport(run);
+    await finalizeRun(run.runId, run.finalizedAt);
+    return true;
+  }
+  if (run) {
+    return false;
+  }
+  const readinessStartedAt = active.readinessStartedAt || active.startedAt || Date.now();
+  if (Date.now() - readinessStartedAt > BATCH_FORM_READY_TIMEOUT_MS) {
+    await markActiveBatchFailure(
+      active,
+      'form_not_ready',
+      new Error('The CHEFS Form.io form did not become ready within the launcher timeout.')
+    );
+    return true;
+  }
+  try {
+    await startActiveBatchEntry(active);
+    return false;
+  } catch (error) {
+    await markActiveBatchFailure(active, 'launcher_failed', error);
+    return true;
+  }
+}
+
+async function processQueuedBatchEntry() {
+  const entry = await claimNextBatchEntry();
+  if (!entry) {
+    return false;
+  }
+  if (entry.retry) {
+    return true;
+  }
+  try {
+    await startActiveBatchEntry(entry);
+    return false;
+  } catch (error) {
+    await markActiveBatchFailure(entry, 'launcher_failed', error);
+    return true;
+  }
+}
+
 async function processBatchQueue() {
   if (batchProcessorRunning) {
     return;
@@ -1026,55 +1163,11 @@ async function processBatchQueue() {
   try {
     while (true) {
       const state = await getBatchState();
-      if (state.active) {
-        let run = await recoverActiveBatchRun(state.active);
-        if (run && FINAL_RUN_STATUSES.has(run.status)) {
-          const automatic = run.exportState && run.exportState.automatic;
-          if (
-            automatic &&
-            automatic.status === 'pending' &&
-            automaticExportsInProgress.has(run.runId)
-          ) {
-            return;
-          }
-          run = await resolveInterruptedAutomaticExport(run);
-          await finalizeRun(run.runId, run.finalizedAt);
-          continue;
-        }
-        if (run) {
-          return;
-        }
-        const readinessStartedAt =
-          state.active.readinessStartedAt || state.active.startedAt || Date.now();
-        if (Date.now() - readinessStartedAt > BATCH_FORM_READY_TIMEOUT_MS) {
-          await markActiveBatchFailure(
-            state.active,
-            'form_not_ready',
-            new Error('The CHEFS Form.io form did not become ready within the launcher timeout.')
-          );
-          continue;
-        }
-        try {
-          await startActiveBatchEntry(state.active);
-        } catch (error) {
-          await markActiveBatchFailure(state.active, 'launcher_failed', error);
-          continue;
-        }
+      const shouldContinue = state.active
+        ? await processExistingBatchEntry(state.active)
+        : await processQueuedBatchEntry();
+      if (!shouldContinue) {
         return;
-      }
-
-      const entry = await claimNextBatchEntry();
-      if (!entry) {
-        return;
-      }
-      if (entry.retry) {
-        continue;
-      }
-      try {
-        await startActiveBatchEntry(entry);
-        return;
-      } catch (error) {
-        await markActiveBatchFailure(entry, 'launcher_failed', error);
       }
     }
   } finally {
@@ -1086,7 +1179,7 @@ async function stopBatch() {
   let active = null;
   await withBatchStateLock(async () => {
     const state = await getBatchState();
-    active = state.active ? Object.assign({}, state.active) : null;
+    active = state.active ? { ...state.active } : null;
     const suiteIds = new Set(state.cancelledSuites || []);
     for (const entry of state.queue) {
       suiteIds.add(entry.suiteId);
@@ -1109,7 +1202,7 @@ async function stopBatch() {
       scheduleBatchProcessing();
     }
   }
-  return await getBatchState();
+  return getBatchState();
 }
 
 async function handleBatchTabRemoved(tabId) {
@@ -1124,7 +1217,7 @@ async function handleBatchTabRemoved(tabId) {
       }
       changed = true;
     }
-    if (state.active && state.active.tabId === tabId) {
+    if (state.active?.tabId === tabId) {
       state.completed.push(batchCompletedRecord(state.active, 'tab_closed'));
       state.active = null;
       changed = true;
@@ -1139,15 +1232,16 @@ async function handleBatchTabRemoved(tabId) {
 }
 
 chrome.tabs.onCreated.addListener((tab) => {
-  upsertBatchTab(tab, tab.status === 'complete').catch(() => undefined);
+  upsertBatchTab(tab, tab.status === COMPLETE_TAB_STATUS).catch(() => undefined);
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  const candidate = Object.assign({}, tab, {
+  const candidate = {
+    ...tab,
     id: tabId,
     url: changeInfo.url || tab.url
-  });
-  upsertBatchTab(candidate, changeInfo.status === 'complete' || tab.status === 'complete')
+  };
+  upsertBatchTab(candidate, changeInfo.status === COMPLETE_TAB_STATUS || tab.status === COMPLETE_TAB_STATUS)
     .catch(() => undefined);
 });
 
@@ -1281,7 +1375,7 @@ function dataUrlToBytes(dataUrl) {
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i += 1) {
-    bytes[i] = binary.charCodeAt(i);
+    bytes[i] = binary.codePointAt(i);
   }
   return bytes;
 }
@@ -1290,7 +1384,7 @@ function bytesToBase64(bytes) {
   let binary = '';
   const chunkSize = 0x8000;
   for (let i = 0; i < bytes.length; i += chunkSize) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + chunkSize));
+    binary += String.fromCodePoint(...bytes.subarray(i, i + chunkSize));
   }
   return btoa(binary);
 }
@@ -1324,17 +1418,17 @@ function createRunBundle(run) {
     { name: 'run-summary.txt', data: buildSummaryText(run) },
     { name: 'events.jsonl', data: (run.events || []).map((event) => JSON.stringify(event)).join('\n') },
     { name: 'checkpoints.jsonl', data: (run.checkpoints || []).map((checkpoint) => JSON.stringify(checkpoint)).join('\n') },
-    { name: 'initial-components.json', data: prettyJson(run.snapshots && run.snapshots.initial || []) },
-    { name: 'last-known-components.json', data: prettyJson(run.snapshots && run.snapshots.lastKnown || []) },
-    { name: 'final-components.json', data: prettyJson(run.snapshots && run.snapshots.final || []) },
+    { name: 'initial-components.json', data: prettyJson(run.snapshots?.initial || []) },
+    { name: 'last-known-components.json', data: prettyJson(run.snapshots?.lastKnown || []) },
+    { name: 'final-components.json', data: prettyJson(run.snapshots?.final || []) },
     { name: 'validation-errors.json', data: prettyJson(run.validationErrors || []) },
     { name: 'attachments.json', data: prettyJson(run.attachments || []) },
     {
       name: 'custom-format-rules.json',
       data: prettyJson({
-        schemaVersion: run.customRuleSet && run.customRuleSet.schemaVersion || 1,
-        ruleSetHash: run.customRuleSet && run.customRuleSet.ruleSetHash || '',
-        enabledRuleCount: run.customRuleSet && run.customRuleSet.enabledRuleCount || 0,
+        schemaVersion: run.customRuleSet?.schemaVersion || 1,
+        ruleSetHash: run.customRuleSet?.ruleSetHash || '',
+        enabledRuleCount: run.customRuleSet?.enabledRuleCount || 0,
         rules: run.customFormatRules || []
       })
     }
@@ -1346,8 +1440,9 @@ function createRunBundle(run) {
     files.push({ name: 'failure-screenshot.png', data: dataUrlToBytes(run.failureScreenshotDataUrl) });
   }
   const zip = createZip(files);
-  const safeRun = String(run.runId).replaceAll(/[^A-Za-z0-9_-]/g, '');
-  const stamp = new Date(run.startedAt || Date.now()).toISOString().replaceAll(/[-:]/g, '').replace(/\..+/, '').replace('T', '-');
+  const safeRun = String(run.runId).replace(/[^A-Za-z0-9_-]/g, '');
+  const isoStamp = new Date(run.startedAt || Date.now()).toISOString().split('.')[0];
+  const stamp = isoStamp.replaceAll('-', '').replaceAll(':', '').replace('T', '-');
   const filename = `chefs-one-click-tester-v${run.extensionVersion}-build-${run.buildNumber}-run-${safeRun}-${stamp}.zip`;
   const url = `data:application/zip;base64,${bytesToBase64(zip)}`;
   return { filename, url };
@@ -1365,7 +1460,7 @@ async function downloadRun(runId, options) {
     url: bundle.url,
     filename: downloadPath,
     conflictAction: 'uniquify',
-    saveAs: Boolean(options && options.saveAs)
+    saveAs: Boolean(options?.saveAs)
   });
   return {
     filename: bundle.filename,
@@ -1376,24 +1471,25 @@ async function downloadRun(runId, options) {
 
 function ensureAutomaticExportState(run) {
   run.exportState = run.exportState || {};
-  run.exportState.automatic = Object.assign({
-    status: 'not_requested',
+  run.exportState.automatic = {
+    status: NOT_REQUESTED_EXPORT_STATUS,
     requestedAt: null,
     completedAt: null,
     failedAt: null,
     filename: '',
     downloadPath: '',
     downloadId: null,
-    error: ''
-  }, run.exportState.automatic || {});
+    error: '',
+    ...run.exportState.automatic
+  };
   return run.exportState.automatic;
 }
 
 function emptyDashboardState(defaultView) {
   return {
     schemaVersion: ChefsDashboardModel.SCHEMA_VERSION,
-    mode: 'empty',
-    defaultView: defaultView || 'simple',
+    mode: EMPTY_DASHBOARD_MODE,
+    defaultView: defaultView || DEFAULT_DASHBOARD_VIEW,
     updatedAt: new Date().toISOString(),
     selectedRunRef: '',
     runs: [],
@@ -1403,11 +1499,12 @@ function emptyDashboardState(defaultView) {
 }
 
 function normalizeDashboardState(rawState, defaultView) {
-  const state = Object.assign(emptyDashboardState(defaultView), rawState || {});
+  const state = { ...emptyDashboardState(defaultView), ...rawState };
   state.schemaVersion = ChefsDashboardModel.SCHEMA_VERSION;
-  state.mode = ['empty', 'run', 'batch'].includes(state.mode) ? state.mode : 'empty';
-  state.defaultView = ['simple', 'analyst', 'statistical', 'experimental']
-    .includes(state.defaultView) ? state.defaultView : 'simple';
+  state.mode = [EMPTY_DASHBOARD_MODE, 'run', BATCH_DASHBOARD_MODE].includes(state.mode)
+    ? state.mode
+    : EMPTY_DASHBOARD_MODE;
+  state.defaultView = DASHBOARD_VIEWS.has(state.defaultView) ? state.defaultView : DEFAULT_DASHBOARD_VIEW;
   state.runs = Array.isArray(state.runs)
     ? state.runs.filter(ChefsDashboardModel.isDashboardSummary).slice(0, 200)
     : [];
@@ -1446,8 +1543,8 @@ async function saveDashboardState(state, history) {
 }
 
 function compareDashboardRuns(left, right) {
-  const leftIndex = Number(left && left.batch && left.batch.index);
-  const rightIndex = Number(right && right.batch && right.batch.index);
+  const leftIndex = Number(left?.batch?.index);
+  const rightIndex = Number(right?.batch?.index);
   if (Number.isFinite(leftIndex) && Number.isFinite(rightIndex)) {
     return leftIndex - rightIndex;
   }
@@ -1455,7 +1552,7 @@ function compareDashboardRuns(left, right) {
 }
 
 async function recordDashboardRun(run, batchCompletion, settings) {
-  const entry = batchCompletion && batchCompletion.entry;
+  const entry = batchCompletion?.entry;
   const context = entry ? { suiteId: entry.suiteId, index: entry.index } : null;
   const summary = ChefsDashboardModel.buildRunSummary(run, context);
   const stored = await chrome.storage.local.get([DASHBOARD_STATE_KEY, DASHBOARD_HISTORY_KEY]);
@@ -1483,7 +1580,7 @@ async function recordDashboardRun(run, batchCompletion, settings) {
       state.runs.push(summary);
     }
     state.runs.sort(compareDashboardRuns);
-    state.mode = 'batch';
+    state.mode = BATCH_DASHBOARD_MODE;
     if (batchCompletion.batchFinished) {
       state.batch.completed = true;
       state.batch.completedAt = new Date().toISOString();
@@ -1501,7 +1598,7 @@ async function recordDashboardRun(run, batchCompletion, settings) {
 async function openDashboardTab() {
   const dashboardUrl = chrome.runtime.getURL(DASHBOARD_PAGE);
   const existing = await chrome.tabs.query({ url: `${dashboardUrl}*` });
-  if (existing && existing.length) {
+  if (existing?.length) {
     const tab = existing[0];
     if (chrome.tabs.reload) {
       await chrome.tabs.reload(tab.id);
@@ -1527,8 +1624,8 @@ async function handleDashboardCompletion(run, batchCompletion) {
     storedRun.dashboardState = storedRun.dashboardState || {};
     if (!storedRun.dashboardState.processedAt) {
       storedRun.dashboardState.processedAt = new Date().toISOString();
-      storedRun.dashboardState.context = batchCompletion && batchCompletion.completed
-        ? 'batch'
+      storedRun.dashboardState.context = batchCompletion?.completed
+        ? BATCH_DASHBOARD_MODE
         : 'singleton';
       shouldProcess = true;
     }
@@ -1538,8 +1635,7 @@ async function handleDashboardCompletion(run, batchCompletion) {
   }
   await recordDashboardRun(processedRun, batchCompletion, settings);
   const shouldOpen = settings.openDashboardAfterCompletion && (
-    !batchCompletion ||
-    !batchCompletion.completed ||
+    !batchCompletion?.completed ||
     batchCompletion.batchFinished
   );
   if (shouldOpen) {
@@ -1575,9 +1671,9 @@ async function finalizeRun(runId, finalizedAt) {
     if (
       FINAL_RUN_STATUSES.has(storedRun.status) &&
       settings.autoExportAfterRun &&
-      automatic.status === 'not_requested'
+      automatic.status === NOT_REQUESTED_EXPORT_STATUS
     ) {
-      automatic.status = 'pending';
+      automatic.status = PENDING_EXPORT_STATUS;
       automatic.requestedAt = new Date().toISOString();
       automatic.completedAt = null;
       automatic.failedAt = null;
@@ -1587,8 +1683,8 @@ async function finalizeRun(runId, finalizedAt) {
   });
 
   if (!shouldExport) {
-    const automatic = run && run.exportState && run.exportState.automatic;
-    if (automatic && automatic.status === 'pending') {
+    const automatic = run?.exportState?.automatic;
+    if (automatic?.status === PENDING_EXPORT_STATUS) {
       if (automaticExportsInProgress.has(runId)) {
         return publicRun(run);
       }
@@ -1614,10 +1710,10 @@ async function finalizeRun(runId, finalizedAt) {
   } catch (error) {
     run = await mutateRun(runId, (storedRun) => {
       const automatic = ensureAutomaticExportState(storedRun);
-      automatic.status = 'failed';
+      automatic.status = FAILED_STATUS;
       automatic.failedAt = new Date().toISOString();
       automatic.completedAt = null;
-      automatic.error = error && error.message ? error.message : String(error);
+      automatic.error = errorMessage(error);
     });
   } finally {
     automaticExportsInProgress.delete(runId);
@@ -1626,65 +1722,49 @@ async function finalizeRun(runId, finalizedAt) {
   return publicRun(run);
 }
 
+const successfulOperation = (operation) => async (message, sender) => {
+  await operation(message, sender);
+  return { ok: true };
+};
+
+const MESSAGE_HANDLERS = {
+  START_RUN_IN_TAB: (message) => startRunInTab(message.tabId),
+  CREATE_RUN: async (message, sender) => ({ ok: true, run: await createRun(message, sender) }),
+  APPEND_EVENTS: successfulOperation(appendEvent),
+  ADD_CHECKPOINT: successfulOperation(addCheckpoint),
+  UPDATE_RUN: successfulOperation(updateRun),
+  SET_SNAPSHOT: successfulOperation(setSnapshot),
+  ADD_VALIDATION_ERRORS: successfulOperation(addValidationErrors),
+  ADD_ATTACHMENT_RECORD: successfulOperation(addAttachmentRecord),
+  SET_FAILURE: successfulOperation(setFailure),
+  GET_TAB_RUN: async (message) => ({ ok: true, run: await getTabRun(message.tabId) }),
+  STOP_RUN_IN_TAB: async (message) => ({ ok: true, ...(await stopRunInTab(message.tabId)) }),
+  GET_BATCH_STATE: async () => ({ ok: true, state: await getBatchState() }),
+  STOP_BATCH: async () => ({ ok: true, state: await stopBatch() }),
+  GET_DASHBOARD_STATE: async () => ({ ok: true, state: await getDashboardState() }),
+  OPEN_DASHBOARD: async () => ({ ok: true, ...(await openDashboardTab()) }),
+  CLEAR_DASHBOARD_HISTORY: async () => ({ ok: true, state: await clearDashboardHistory() }),
+  EXPORT_RUN: async (message) => ({ ok: true, ...(await downloadRun(message.runId, { saveAs: true })) }),
+  RUN_FINALIZED: async (message) => ({
+    ok: true,
+    run: await finalizeRun(message.runId, message.finalizedAt)
+  }),
+  GET_SETTINGS: async () => ({ ok: true, settings: await getSettings() })
+};
+
+async function handleRuntimeMessage(message, sender) {
+  const handler = MESSAGE_HANDLERS[message.type];
+  return handler
+    ? handler(message, sender)
+    : { ok: false, error: `Unknown message type: ${message.type}` };
+}
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  (async () => {
-    switch (message.type) {
-      case 'START_RUN_IN_TAB':
-        return await startRunInTab(message.tabId);
-      case 'CREATE_RUN':
-        return { ok: true, run: await createRun(message, sender) };
-      case 'APPEND_EVENTS':
-        await appendEvent(message);
-        return { ok: true };
-      case 'ADD_CHECKPOINT':
-        await addCheckpoint(message);
-        return { ok: true };
-      case 'UPDATE_RUN':
-        await updateRun(message);
-        return { ok: true };
-      case 'SET_SNAPSHOT':
-        await setSnapshot(message);
-        return { ok: true };
-      case 'ADD_VALIDATION_ERRORS':
-        await addValidationErrors(message);
-        return { ok: true };
-      case 'ADD_ATTACHMENT_RECORD':
-        await addAttachmentRecord(message);
-        return { ok: true };
-      case 'SET_FAILURE':
-        await setFailure(message, sender);
-        return { ok: true };
-      case 'GET_TAB_RUN':
-        return { ok: true, run: await getTabRun(message.tabId) };
-      case 'GET_BATCH_STATE':
-        return { ok: true, state: await getBatchState() };
-      case 'STOP_BATCH':
-        return { ok: true, state: await stopBatch() };
-      case 'GET_DASHBOARD_STATE':
-        return { ok: true, state: await getDashboardState() };
-      case 'OPEN_DASHBOARD':
-        return { ok: true, ...(await openDashboardTab()) };
-      case 'CLEAR_DASHBOARD_HISTORY':
-        return { ok: true, state: await clearDashboardHistory() };
-      case 'EXPORT_RUN': {
-        const result = await downloadRun(message.runId, { saveAs: true });
-        return { ok: true, ...result };
-      }
-      case 'RUN_FINALIZED':
-        return {
-          ok: true,
-          run: await finalizeRun(message.runId, message.finalizedAt)
-        };
-      case 'GET_SETTINGS':
-        return { ok: true, settings: await getSettings() };
-      default:
-        return { ok: false, error: `Unknown message type: ${message.type}` };
-    }
-  })()
+  handleRuntimeMessage(message, sender)
     .then(sendResponse)
     .catch((error) => sendResponse({
       ok: false,
-      error: error && error.message ? error.message : String(error)
+      error: errorMessage(error)
     }));
   return true;
 });

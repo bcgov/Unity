@@ -317,6 +317,7 @@
 
     <h3>Glossary</h3>
     <table class="data">
+      <thead><tr><th>Term</th><th>Meaning</th></tr></thead>
       <tbody>
         <tr><td class="code">Correlation</td><td>The pair <span class="code">(CorrelationId, CorrelationProvider)</span> that identifies one reporting surface. Unique per mapping — one configuration, one view.</td></tr>
         <tr><td class="code">Provider</td><td>One of five <span class="code">IFieldsProvider</span> implementations. Knows how to read field metadata from its source system and how to detect that the source has changed since the mapping was saved.</td></tr>
@@ -594,6 +595,7 @@ GenerateViewBackgroundJob (in tenant context)
     <h3>Endpoints — <span class="code">/ReportingConfiguration</span></h3>
     <div class="table-scroll">
       <table class="data">
+        <thead><tr><th>Endpoint</th><th>Does</th></tr></thead>
         <tbody>
           <tr><td class="code">GET Refresh</td><td>Re-render for a different provider/version</td></tr>
           <tr><td class="code">GET GetConfiguration</td><td>Load a saved mapping, with <span class="code">DetectedChanges</span></td></tr>

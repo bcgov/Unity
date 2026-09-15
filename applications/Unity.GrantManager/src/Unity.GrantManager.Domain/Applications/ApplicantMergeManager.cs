@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -37,11 +38,6 @@ public class ApplicantMergeManager(
         var secondary = await applicantRepository.FindAsync(secondaryApplicantId);
 
         EnsureApplicantsAvailable(principal, secondary);
-
-        if (!values.IsComposedFrom(principal!, secondary!))
-        {
-            throw new BusinessException(GrantManagerDomainErrorCodes.ApplicantMergeInvalidSelection);
-        }
 
         if (selectedSupplierId != principal!.SupplierId && selectedSupplierId != secondary!.SupplierId)
         {
@@ -367,12 +363,16 @@ public class ApplicantMergeManager(
         return currentIds.ToHashSet().SetEquals(expectedIds);
     }
 
-    private static bool ApplicantsAvailable(Applicant? principal, Applicant? secondary)
+    private static bool ApplicantsAvailable(
+        [NotNullWhen(true)] Applicant? principal,
+        [NotNullWhen(true)] Applicant? secondary)
     {
         return principal is { IsDeleted: false } && secondary is { IsDeleted: false };
     }
 
-    private static void EnsureApplicantsAvailable(Applicant? principal, Applicant? secondary)
+    private static void EnsureApplicantsAvailable(
+        [NotNull] Applicant? principal,
+        [NotNull] Applicant? secondary)
     {
         if (!ApplicantsAvailable(principal, secondary))
         {

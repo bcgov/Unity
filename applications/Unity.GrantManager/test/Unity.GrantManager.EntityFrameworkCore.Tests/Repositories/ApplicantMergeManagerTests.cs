@@ -58,6 +58,7 @@ public class ApplicantMergeManagerTests : GrantManagerEntityFrameworkCoreTestBas
                     ApplicantName = fixture.SecondaryApplicantName,
                     UnityApplicantId = fixture.PrincipalUnityApplicantId,
                     OrgName = fixture.PrincipalOrgName,
+                    IndigenousOrgInd = "No",
                     FiscalDay = fixture.SecondaryFiscalDay
                 },
                 fixture.SecondarySupplierId,
@@ -319,6 +320,7 @@ public class ApplicantMergeManagerTests : GrantManagerEntityFrameworkCoreTestBas
             principal.ApplicantName.ShouldBe(fixture.SecondaryApplicantName);
             principal.UnityApplicantId.ShouldBe(fixture.PrincipalUnityApplicantId);
             principal.OrgName.ShouldBe(fixture.PrincipalOrgName);
+            principal.IndigenousOrgInd.ShouldBe("No");
             principal.FiscalDay.ShouldBe(fixture.SecondaryFiscalDay);
             principal.SupplierId.ShouldBe(fixture.SecondarySupplierId);
             principal.IsDuplicated.ShouldBeFalse();

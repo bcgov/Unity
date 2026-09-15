@@ -58,19 +58,19 @@ function percentile(values, probability) {
 }
 
 function comparableHistory() {
-  if (!selectedRun || !dashboardState) return [];
-  return (dashboardState.history || []).filter((run) =>
-    run && run.formRef === selectedRun.formRef
+  if (!selectedRun) return [];
+  return (dashboardState?.history || []).filter((run) =>
+    run?.formRef === selectedRun.formRef
   );
 }
 
 function allVisibleRuns() {
   const byRef = new Map();
   for (const run of [
-    ...(dashboardState && dashboardState.history || []),
-    ...(dashboardState && dashboardState.runs || [])
+    ...(dashboardState?.history || []),
+    ...(dashboardState?.runs || [])
   ]) {
-    if (run && run.runRef) byRef.set(run.runRef, run);
+    if (run?.runRef) byRef.set(run.runRef, run);
   }
   return Array.from(byRef.values());
 }
@@ -129,7 +129,7 @@ function resultClass(result) {
 }
 
 function issueTotal(run) {
-  const issues = run && run.issueCounts || {};
+  const issues = run?.issueCounts || {};
   return Object.values(issues).reduce((sum, value) => sum + (Number(value) || 0), 0);
 }
 
@@ -137,9 +137,11 @@ function plainInterpretation(run) {
   if (!run) return 'No completed result is available.';
   const metrics = run.metrics || {};
   if (run.result === 'submitted' || run.result === 'completed') {
-    const issuePhrase = issueTotal(run)
-      ? `${formatNumber(issueTotal(run))} diagnostic issue${issueTotal(run) === 1 ? '' : 's'} were recorded.`
-      : 'No diagnostic issues were recorded.';
+    const totalIssues = issueTotal(run);
+    let issuePhrase = 'No diagnostic issues were recorded.';
+    if (totalIssues) {
+      issuePhrase = `${formatNumber(totalIssues)} diagnostic issue${totalIssues === 1 ? '' : 's'} were recorded.`;
+    }
     return `The run completed successfully after ${formatNumber(metrics.passes)} pass${metrics.passes === 1 ? '' : 'es'} and filled ${formatNumber(metrics.filled)} fields. ${issuePhrase}`;
   }
   return `The run ended as ${run.result.replaceAll('_', ' ')}. The failure category is ${run.failureCategory.replaceAll('_', ' ')}, with ${formatNumber(metrics.remaining)} visible fields remaining.`;
@@ -168,7 +170,7 @@ const chartRegistry = [
     title: 'Duration by result',
     description: 'Compares total execution time across the current batch.',
     availability: () => ({
-      ok: Boolean(dashboardState && dashboardState.runs && dashboardState.runs.length > 1),
+      ok: Boolean(dashboardState?.runs?.length > 1),
       reason: 'This chart needs a batch containing at least two runs.'
     }),
     render: renderDurations
@@ -187,7 +189,7 @@ const chartRegistry = [
     title: 'Pass-by-pass trend',
     description: 'Tracks filled and remaining fields as the fill loop progresses.',
     availability: () => ({
-      ok: Boolean(selectedRun && selectedRun.passSeries && selectedRun.passSeries.length >= 2),
+      ok: Boolean(selectedRun?.passSeries?.length >= 2),
       reason: 'At least two recorded fill passes are required.'
     }),
     render: renderPassTrend
@@ -198,8 +200,7 @@ const chartRegistry = [
     title: 'Strategy latency distribution',
     description: 'Shows minimum, quartiles, median and maximum fill latency by strategy.',
     availability: () => ({
-      ok: Boolean(selectedRun && selectedRun.strategies &&
-        selectedRun.strategies.some((strategy) => strategy.latencyMs.length >= 2)),
+      ok: Boolean(selectedRun?.strategies?.some((strategy) => strategy.latencyMs.length >= 2)),
       reason: 'At least one fill strategy needs two measured actions.'
     }),
     render: renderStrategyLatency
@@ -210,7 +211,7 @@ const chartRegistry = [
     title: 'Component outcome flow',
     description: 'Shows how discovered components ended: filled, protected, failed, unsupported or empty.',
     availability: () => ({
-      ok: Boolean(selectedRun && Object.keys(selectedRun.componentOutcomes || {}).length),
+      ok: Boolean(Object.keys(selectedRun?.componentOutcomes || {}).length),
       reason: 'The run has no component outcome snapshot.'
     }),
     render: renderComponentOutcomes
@@ -221,7 +222,7 @@ const chartRegistry = [
     title: 'Fill strategy heatmap',
     description: 'Compares attempts, successes and failures across fill strategies.',
     availability: () => ({
-      ok: Boolean(selectedRun && selectedRun.strategies && selectedRun.strategies.length),
+      ok: Boolean(selectedRun?.strategies?.length),
       reason: 'The run has no fill-strategy evidence.'
     }),
     render: renderStrategyHeatmap
@@ -290,7 +291,7 @@ const chartRegistry = [
     title: 'Pass activity density',
     description: 'Shows recorded actions per pass against elapsed time.',
     availability: () => ({
-      ok: Boolean(selectedRun && selectedRun.passSeries && selectedRun.passSeries.length >= 3),
+      ok: Boolean(selectedRun?.passSeries?.length >= 3),
       reason: 'At least three pass checkpoints are required.'
     }),
     render: renderEventDensity
@@ -374,7 +375,7 @@ function renderDurations() {
     const x = 90 + index * (720 / runs.length);
     const height = 290 * run.durationMs / maximum;
     addRect(x, 350 - height, width, height, `series-${resultClass(run.result)}`);
-    addText(x + width / 2, 375, run.batch && run.batch.index || String(index + 1), 'chart-label', 'middle');
+    addText(x + width / 2, 375, run.batch?.index || String(index + 1), 'chart-label', 'middle');
     addText(x + width / 2, 340 - height, formatDuration(run.durationMs), 'chart-value', 'middle');
   });
   addLine(70, 350, 850, 350, 'axis');
@@ -427,7 +428,7 @@ function renderPassTrend() {
 }
 
 function renderStrategyLatency() {
-  const strategies = selectedRun.strategies.filter((item) => item.latencyMs.length >= 2).slice(0, 7);
+  const strategies = (selectedRun?.strategies || []).filter((item) => item.latencyMs.length >= 2).slice(0, 7);
   const maximum = Math.max(1, ...strategies.flatMap((item) => item.latencyMs));
   strategies.forEach((strategy, index) => {
     const values = strategy.latencyMs;
@@ -468,7 +469,7 @@ function renderComponentOutcomes() {
 }
 
 function renderStrategyHeatmap() {
-  const strategies = selectedRun.strategies.slice(0, 9);
+  const strategies = (selectedRun?.strategies || []).slice(0, 9);
   const columns = ['attempts', 'successes', 'failures'];
   const maximum = Math.max(1, ...strategies.flatMap((item) => columns.map((column) => item[column])));
   columns.forEach((column, index) => addText(390 + index * 150, 45, column, 'chart-label', 'middle'));
@@ -545,12 +546,12 @@ function renderControlChart() {
 
 function renderScatter() {
   const runs = allVisibleRuns();
-  const maxX = Math.max(1, ...runs.map((run) => run.metrics.discovered));
+  const maxX = Math.max(1, ...runs.map((run) => run.metrics?.discovered || 0));
   const maxY = Math.max(1, ...runs.map((run) => run.durationMs));
   addLine(75, 360, 850, 360, 'axis');
   addLine(75, 50, 75, 360, 'axis');
   runs.forEach((run) => {
-    const x = 75 + run.metrics.discovered * 750 / maxX;
+    const x = 75 + (run.metrics?.discovered || 0) * 750 / maxX;
     const y = 360 - run.durationMs * 290 / maxY;
     addCircle(x, y, 7, `series-${resultClass(run.result)}`, { opacity: 0.75 });
   });
@@ -601,7 +602,7 @@ function renderCandlesticks() {
 }
 
 function renderEventDensity() {
-  const series = selectedRun.passSeries;
+  const series = selectedRun?.passSeries || [];
   const maxActions = Math.max(1, ...series.map((item) => item.actions));
   const maxTime = Math.max(1, ...series.map((item) => item.elapsedMs));
   addLine(75, 360, 850, 360, 'axis');
@@ -641,7 +642,7 @@ function renderBuildDistribution() {
 
 function populateRunSelect() {
   elements.runSelect.textContent = '';
-  const runs = dashboardState && dashboardState.runs || [];
+  const runs = dashboardState?.runs || [];
   if (!runs.length) {
     const option = document.createElement('option');
     option.value = '';
@@ -654,14 +655,14 @@ function populateRunSelect() {
   runs.forEach((run, index) => {
     const option = document.createElement('option');
     option.value = run.runRef;
-    const prefix = run.batch && run.batch.index ? `#${run.batch.index} · ` : '';
+    const prefix = run.batch?.index ? `#${run.batch.index} · ` : '';
     option.textContent = `${prefix}${run.formRef} · ${run.result}`;
     elements.runSelect.appendChild(option);
-    if (run.runRef === dashboardState.selectedRunRef || (!dashboardState.selectedRunRef && index === runs.length - 1)) {
+    if (run.runRef === dashboardState?.selectedRunRef || (!dashboardState?.selectedRunRef && index === runs.length - 1)) {
       option.selected = true;
     }
   });
-  selectedRun = runs.find((run) => run.runRef === elements.runSelect.value) || runs.at(-1);
+  selectedRun = runs.find((run) => run.runRef === elements.runSelect.value) || runs.at(-1) || null;
 }
 
 function populateChartSelect() {
@@ -689,14 +690,18 @@ function renderSummary() {
   }
   const metrics = selectedRun.metrics || {};
   const issues = issueTotal(selectedRun);
-  const batchCount = dashboardState.mode === 'batch' ? dashboardState.runs.length : 1;
-  elements.contextText.textContent = dashboardState.mode === 'batch'
-    ? `Completed batch · ${batchCount} result${batchCount === 1 ? '' : 's'} · ${selectedRun.formRef} selected`
-    : `Latest singleton · ${selectedRun.formRef}`;
+  const batchCount = dashboardState?.mode === 'batch' ? dashboardState?.runs?.length || 0 : 1;
+  if (dashboardState?.mode === 'batch') {
+    elements.contextText.textContent = `Completed batch · ${batchCount} result${batchCount === 1 ? '' : 's'} · ${selectedRun.formRef} selected`;
+  } else {
+    elements.contextText.textContent = `Latest singleton · ${selectedRun.formRef}`;
+  }
   elements.resultValue.textContent = selectedRun.result.replaceAll('_', ' ');
-  elements.resultDetail.textContent = selectedRun.failureCategory === 'none'
-    ? 'Terminal result captured'
-    : `Category: ${selectedRun.failureCategory.replaceAll('_', ' ')}`;
+  if (selectedRun.failureCategory === 'none') {
+    elements.resultDetail.textContent = 'Terminal result captured';
+  } else {
+    elements.resultDetail.textContent = `Category: ${selectedRun.failureCategory.replaceAll('_', ' ')}`;
+  }
   elements.resultCard.className = `summary-card result-card ${resultClass(selectedRun.result)}`;
   elements.durationValue.textContent = formatDuration(selectedRun.durationMs);
   elements.fieldsValue.textContent = `${formatNumber(metrics.filled)} / ${formatNumber(metrics.discovered)}`;
@@ -733,7 +738,7 @@ function renderChart() {
 
 function render() {
   populateRunSelect();
-  elements.viewSelect.value = dashboardState && dashboardState.defaultView || 'simple';
+  elements.viewSelect.value = dashboardState?.defaultView || 'simple';
   populateChartSelect();
   renderSummary();
   renderChart();
@@ -741,8 +746,8 @@ function render() {
 
 async function refresh() {
   const response = await chrome.runtime.sendMessage({ type: 'GET_DASHBOARD_STATE' });
-  if (!response || !response.ok) {
-    throw new Error(response && response.error ? response.error : 'Dashboard state is unavailable.');
+  if (!response?.ok) {
+    throw new Error(response?.error || 'Dashboard state is unavailable.');
   }
   dashboardState = response.state;
   render();
@@ -751,15 +756,15 @@ async function refresh() {
 async function clearHistory() {
   if (!window.confirm('Clear all retained PID-free aggregate dashboard history?')) return;
   const response = await chrome.runtime.sendMessage({ type: 'CLEAR_DASHBOARD_HISTORY' });
-  if (!response || !response.ok) {
-    throw new Error(response && response.error ? response.error : 'Dashboard history could not be cleared.');
+  if (!response?.ok) {
+    throw new Error(response?.error || 'Dashboard history could not be cleared.');
   }
   dashboardState = response.state;
   render();
 }
 
 elements.runSelect.addEventListener('change', () => {
-  selectedRun = (dashboardState.runs || []).find((run) => run.runRef === elements.runSelect.value) || null;
+  selectedRun = (dashboardState?.runs || []).find((run) => run.runRef === elements.runSelect.value) || null;
   populateChartSelect();
   renderSummary();
   renderChart();
@@ -770,15 +775,17 @@ elements.viewSelect.addEventListener('change', () => {
 });
 elements.chartSelect.addEventListener('change', renderChart);
 elements.refreshButton.addEventListener('click', () => refresh().catch((error) => {
-  elements.interpretation.textContent = error && error.message ? error.message : String(error);
+  elements.interpretation.textContent = error?.message || String(error);
 }));
 elements.clearHistoryButton.addEventListener('click', () => clearHistory().catch((error) => {
-  elements.interpretation.textContent = error && error.message ? error.message : String(error);
+  elements.interpretation.textContent = error?.message || String(error);
 }));
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') refresh().catch(() => undefined);
 });
 
-refresh().catch((error) => {
-  elements.interpretation.textContent = error && error.message ? error.message : String(error);
-});
+try {
+  await refresh();
+} catch (error) {
+  elements.interpretation.textContent = error?.message || String(error);
+}

@@ -4,7 +4,7 @@
 
 The Unity Grant Manager receives commands from the Applicant Portal (Grants Portal) via RabbitMQ and sends acknowledgment responses back. This provides reliable, decoupled communication for profile data mutations (contacts, addresses, organizations) that the portal user initiates.
 
-The integration is built on the [Transactional Outbox Pattern](./transactional-outbox-pattern.md) with a message processing pipeline: the consumer runs as a `BackgroundService` (competing consumer on every pod), while the inbox processor, outbox publisher, and cleanup workers run as Quartz `[DisallowConcurrentExecution]` jobs coordinated via the clustered Quartz scheduler.
+The integration is built on the [Transactional Outbox Pattern](../transactional-outbox-pattern.md) with a message processing pipeline: the consumer runs as a `BackgroundService` (competing consumer on every pod), while the inbox processor, outbox publisher, and cleanup workers run as Quartz `[DisallowConcurrentExecution]` jobs coordinated via the clustered Quartz scheduler.
 
 **Source name**: `"GrantsPortal"` (used as the discriminator in inbox/outbox tables)
 

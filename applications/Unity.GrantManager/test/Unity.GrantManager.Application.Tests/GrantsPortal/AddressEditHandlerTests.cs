@@ -37,7 +37,7 @@ public class AddressEditHandlerTests
 
         _handler = new AddressEditHandler(
             _addressRepository,
-            new ApplicantAddressManager(_addressRepository),
+            new ApplicantAddressManager(_addressRepository, Substitute.For<IApplicantRepository>(), Substitute.For<IApplicationRepository>()),
             NullLogger<AddressEditHandler>.Instance);
     }
 

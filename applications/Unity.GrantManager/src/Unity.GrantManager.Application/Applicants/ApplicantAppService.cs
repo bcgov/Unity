@@ -23,6 +23,7 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Authorization;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Applicants;
 
@@ -35,7 +36,8 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
                                  IApplicantAddressRepository addressRepository,
                                  IOrgBookService orgBookService,
                                  IApplicantAgentRepository applicantAgentRepository,
-                                 IApplicationRepository applicationRepository) : GrantManagerAppService, IApplicantAppService
+                                 IApplicationRepository applicationRepository,
+                                 IApplicantAddressManager applicantAddressManager) : GrantManagerAppService, IApplicantAppService
 {                                   
 
     private const string ApplicantIdDataKey = "ApplicantId";
@@ -332,7 +334,8 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
     }
 
     [Authorize(UnitySelector.ApplicantManagement.Addresses.Update)]
-    public async Task UpdateApplicantContactAddressesAsync(Guid applicantId, UpdateApplicantContactAddressesDto input)
+    [UnitOfWork(isTransactional: true)]
+    public virtual async Task<ApplicantAddressSaveResultDto> UpdateApplicantContactAddressesAsync(Guid applicantId, UpdateApplicantContactAddressesDto input)
     {
         if (applicantId == Guid.Empty)
         {
@@ -345,8 +348,14 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             input.PrimaryPhysicalAddress == null &&
             input.PrimaryMailingAddress == null)
         {
-            return;
+            return new ApplicantAddressSaveResultDto();
         }
+
+        var addresses = await applicantAddressManager.SavePrimaryAddressesAsync(
+            applicantId,
+            input.ExpectedApplicationId,
+            MapAddressInput(input.PrimaryPhysicalAddress),
+            MapAddressInput(input.PrimaryMailingAddress));
 
         if (input.PrimaryContact != null)
         {
@@ -355,15 +364,11 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
             await UpdatePrimaryContactAsync(applicantId, input.PrimaryContact);
         }
 
-        if (input.PrimaryPhysicalAddress != null)
+        return new ApplicantAddressSaveResultDto
         {
-            await UpdatePrimaryAddressAsync(applicantId, input.PrimaryPhysicalAddress, GrantApplications.AddressType.PhysicalAddress);
-        }
-
-        if (input.PrimaryMailingAddress != null)
-        {
-            await UpdatePrimaryAddressAsync(applicantId, input.PrimaryMailingAddress, GrantApplications.AddressType.MailingAddress);
-        }
+            PrimaryPhysicalAddress = await MapSavedAddressAsync(addresses.PhysicalAddress),
+            PrimaryMailingAddress = await MapSavedAddressAsync(addresses.MailingAddress)
+        };
     }
 
     private async Task UpdatePrimaryContactAsync(Guid applicantId, UpdatePrimaryContactDto input)
@@ -433,38 +438,40 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         await contactRepository.UpdateAsync(contact);
     }
 
-    private async Task UpdatePrimaryAddressAsync(Guid applicantId, UpdatePrimaryApplicantAddressDto input, GrantApplications.AddressType expectedType)
+    private static ApplicantAddressInput? MapAddressInput(UpdatePrimaryApplicantAddressDto? input)
     {
-        if (input.Id == Guid.Empty)
+        return input == null ? null : new ApplicantAddressInput(
+            input.Id, input.Street, input.Street2, input.Unit, input.City, input.Province, input.PostalCode);
+    }
+
+    private async Task<ApplicantSavedAddressDto?> MapSavedAddressAsync(ApplicantAddress? savedAddress)
+    {
+        if (savedAddress == null)
         {
-            throw new ArgumentException("Address identifier is required.", nameof(input));
+            return null;
         }
 
-        var applicantAddress = await addressRepository.GetAsync(input.Id);
+        var application = savedAddress.ApplicationId.HasValue
+            ? await applicationRepository.FindAsync(savedAddress.ApplicationId.Value)
+            : null;
 
-        if (applicantAddress.ApplicantId != applicantId)
+        return new ApplicantSavedAddressDto
         {
-            throw new BusinessException("Unity:Applicant:AddressNotFound")
-                .WithData(ApplicantIdDataKey, applicantId)
-                .WithData("AddressId", input.Id);
-        }
-
-        if (applicantAddress.AddressType != expectedType)
-        {
-            throw new BusinessException("Unity:Applicant:AddressTypeMismatch")
-                .WithData(ApplicantIdDataKey, applicantId)
-                .WithData("AddressId", input.Id)
-                .WithData("ExpectedType", expectedType.ToString());
-        }
-
-        applicantAddress.Street = input.Street?.Trim() ?? string.Empty;
-        applicantAddress.Street2 = input.Street2?.Trim() ?? string.Empty;
-        applicantAddress.Unit = input.Unit?.Trim() ?? string.Empty;
-        applicantAddress.City = input.City?.Trim() ?? string.Empty;
-        applicantAddress.Province = input.Province?.Trim() ?? string.Empty;
-        applicantAddress.Postal = input.PostalCode?.Trim() ?? string.Empty;
-
-        await addressRepository.UpdateAsync(applicantAddress);
+            Id = savedAddress.Id,
+            ApplicantId = savedAddress.ApplicantId!.Value,
+            ApplicationId = savedAddress.ApplicationId,
+            ReferenceNo = application?.ReferenceNo ?? string.Empty,
+            AddressType = savedAddress.AddressType,
+            Street = savedAddress.Street ?? string.Empty,
+            Street2 = savedAddress.Street2 ?? string.Empty,
+            Unit = savedAddress.Unit,
+            City = savedAddress.City,
+            Province = savedAddress.Province,
+            Postal = savedAddress.Postal,
+            Country = savedAddress.Country ?? string.Empty,
+            CreationTime = savedAddress.CreationTime,
+            LastModificationTime = savedAddress.LastModificationTime
+        };
     }
 
     [RemoteService(true)]

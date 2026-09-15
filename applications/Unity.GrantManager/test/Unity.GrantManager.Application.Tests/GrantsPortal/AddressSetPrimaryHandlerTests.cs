@@ -29,7 +29,7 @@ public class AddressSetPrimaryHandlerTests
 
         _handler = new AddressSetPrimaryHandler(
             _addressRepository,
-            new ApplicantAddressManager(_addressRepository),
+            new ApplicantAddressManager(_addressRepository, Substitute.For<IApplicantRepository>(), Substitute.For<IApplicationRepository>()),
             NullLogger<AddressSetPrimaryHandler>.Instance);
     }
 

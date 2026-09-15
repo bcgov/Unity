@@ -32,7 +32,19 @@ namespace Unity.GrantManager.Integrations.Css
         public async Task<UserSearchResult> FindUserAsync(string directory, string guid)
         {
             var parameters = new Dictionary<string, string> { { nameof(guid), guid } };
-            return await SearchSsoAsync(directory, parameters);
+            var result = await SearchSsoAsync(directory, parameters);
+
+            if (result.Success && result.Data?.Length > 0)
+            {
+                return result;
+            }
+
+            if (string.Equals(directory, "idir", StringComparison.OrdinalIgnoreCase))
+            {
+                return await SearchSsoAsync("azure-idir", parameters);
+            }
+
+            return result;
         }
 
         public async Task<UserSearchResult> SearchUsersAsync(string directory, string? firstName = null, string? lastName = null, string? email = null)
@@ -48,7 +60,35 @@ namespace Unity.GrantManager.Integrations.Css
             if (!string.IsNullOrWhiteSpace(email) && email.Length >= 2)
                 parameters.Add(nameof(email), email);
 
-            return await SearchSsoAsync(directory, parameters);
+            if (!string.Equals(directory, "idir", StringComparison.OrdinalIgnoreCase))
+            {
+                return await SearchSsoAsync(directory, parameters);
+            }
+
+            var results = await Task.WhenAll(
+                SearchSsoAsync("idir", parameters),
+                SearchSsoAsync("azure-idir", parameters));
+
+            var successfulResults = results
+                .Where(result => result.Success)
+                .ToList();
+
+            if (successfulResults.Count == 0)
+            {
+                return CreateErrorResult("CSS API requests failed for all IDIR directories");
+            }
+
+            return new UserSearchResult
+            {
+                Success = true,
+                Data = successfulResults
+                    .SelectMany(result => result.Data ?? [])
+                    .GroupBy(user => user.Attributes?.IdirUserGuid?.FirstOrDefault()
+                        ?? user.Username
+                        ?? user.Email)
+                    .Select(group => group.First())
+                    .ToArray()
+            };
         }
 
         private async Task<UserSearchResult> SearchSsoAsync(string directory, Dictionary<string, string> parameters)

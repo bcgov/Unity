@@ -6,7 +6,6 @@ do {
 } while (-not ($validEnvironments -contains $environment))
 
 # Use the Gold OpenShift cluster only
-$platform = "gold"
 $server = "https://api.gold.devops.gov.bc.ca:6443"
 
 # Prompt the user to optionally login to OpenShift

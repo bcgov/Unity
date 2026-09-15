@@ -485,6 +485,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.Property(x => x.TriggerDetail).HasMaxLength(1000);
                 b.Property(x => x.EventType).HasMaxLength(128);
                 b.Property(x => x.ApplicationStatus).HasMaxLength(128);
+                b.Property(x => x.ApplicationStatusIds).HasMaxLength(2048);
                 b.Property(x => x.DateField).HasMaxLength(128);
                 b.Property(x => x.TenantId).HasColumnName("TenantId");
                 b.HasIndex(x => x.TenantId);

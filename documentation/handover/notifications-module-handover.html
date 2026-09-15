@@ -467,6 +467,7 @@ Web                   Razor Pages, NotificationHub, presence tracker,
     <h3>Cancelling a scheduled email — the careful path</h3>
     <p>Deleting a scheduled email that already has a <span class="code">ChesMsgId</span> first asks CHES for the real state rather than assuming:</p>
     <table class="data">
+      <thead><tr><th>CHES status</th><th>What Unity does</th></tr></thead>
       <tbody>
         <tr><td class="code">completed / accepted</td><td>Already out. Mark the log <span class="code">Sent</span>, persist, and refuse the delete with a user-friendly error.</td></tr>
         <tr><td class="code">pending</td><td>Still queued at CHES. Call <span class="code">CancelEmailAsync</span> to withdraw it; a failed cancel throws rather than deleting a row for a message that will still arrive.</td></tr>

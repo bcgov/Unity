@@ -20,24 +20,6 @@ public sealed record ApplicantMergeValues
     public int? FiscalDay { get; init; }
     public string? FiscalMonth { get; init; }
 
-    public bool IsComposedFrom(Applicant principal, Applicant secondary)
-    {
-        return IsOneOf(ApplicantName, principal.ApplicantName, secondary.ApplicantName)
-            && IsOneOf(UnityApplicantId, principal.UnityApplicantId, secondary.UnityApplicantId)
-            && IsOneOf(OrgName, principal.OrgName, secondary.OrgName)
-            && IsOneOf(OrgNumber, principal.OrgNumber, secondary.OrgNumber)
-            && IsOneOf(NonRegOrgName, principal.NonRegOrgName, secondary.NonRegOrgName)
-            && IsOneOf(OrganizationType, principal.OrganizationType, secondary.OrganizationType)
-            && IsOneOf(ApproxNumberOfEmployees, principal.ApproxNumberOfEmployees, secondary.ApproxNumberOfEmployees)
-            && IsOneOf(OrgStatus, principal.OrgStatus, secondary.OrgStatus)
-            && IsOneOf(IndigenousOrgInd, principal.IndigenousOrgInd, secondary.IndigenousOrgInd)
-            && IsOneOf(Sector, principal.Sector, secondary.Sector)
-            && IsOneOf(SubSector, principal.SubSector, secondary.SubSector)
-            && IsOneOf(SectorSubSectorIndustryDesc, principal.SectorSubSectorIndustryDesc, secondary.SectorSubSectorIndustryDesc)
-            && IsOneOf(FiscalDay, principal.FiscalDay, secondary.FiscalDay)
-            && IsOneOf(FiscalMonth, principal.FiscalMonth, secondary.FiscalMonth);
-    }
-
     public void ApplyTo(Applicant applicant)
     {
         applicant.ApplicantName = ApplicantName;
@@ -56,18 +38,6 @@ public sealed record ApplicantMergeValues
         applicant.FiscalMonth = FiscalMonth;
     }
 
-    private static bool IsOneOf<T>(T value, T first, T second)
-    {
-        if (typeof(T) == typeof(string))
-        {
-            var normalizedValue = (string?)(object?)value ?? string.Empty;
-            return string.Equals(normalizedValue, (string?)(object?)first ?? string.Empty, StringComparison.Ordinal)
-                || string.Equals(normalizedValue, (string?)(object?)second ?? string.Empty, StringComparison.Ordinal);
-        }
-
-        return EqualityComparer<T>.Default.Equals(value, first)
-            || EqualityComparer<T>.Default.Equals(value, second);
-    }
 }
 
 public sealed record ApplicantMergeApplicantSnapshot
