@@ -537,6 +537,10 @@ function initializeApplicantLookup() {
             if (item.ApplicantName === undefined && item.id) {
                 return null;
             }
+            if (item.IsDuplicated === true) {
+                return $('<span>').text(item.text + ' ')
+                    .append($('<strong>').addClass('ms-2').text('(Is Duplicated)'));
+            }
             return item.text;
         },
         templateSelection: function(item) {
