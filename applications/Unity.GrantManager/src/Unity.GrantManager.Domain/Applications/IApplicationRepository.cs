@@ -46,5 +46,9 @@ namespace Unity.GrantManager.Applications
 
         // Check whether any applications exist for the given applicant
         Task<bool> HasApplicationsByApplicantIdAsync(Guid applicantId);
+
+        // Lean list for the date-based notification job: only eager-loads Applicant (for FiscalYearEnd),
+        // avoiding the full details graph pulled in by includeDetails: true.
+        Task<List<Application>> GetListForDateBasedNotificationsAsync(List<Guid> formIds, DateTime today);
     }
 }
