@@ -1,7 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Unity.Flex.WorksheetInstances;
@@ -138,8 +136,7 @@ namespace Unity.Flex.Web.Pages.Flex
                 CorrelationId = rowInputData.ApplicationId,
                 SheetCorrelationId = rowInputData.FormVersionId,
                 SheetCorrelationProvider = CorrelationConsts.FormVersion,
-                CurrentValue = await CreateExplicitWorksheetInstanceValueAsync(rowInputData.FieldId, dataGridValue),
-                ReportData = await GenerateReportDataForNewRowAsync(rowInputData.FieldId, dataGridValue)
+                CurrentValue = await CreateExplicitWorksheetInstanceValueAsync(rowInputData.FieldId, dataGridValue)
             });
 
             var newDataRow = new CustomFieldValueDto()
@@ -161,29 +158,6 @@ namespace Unity.Flex.Web.Pages.Flex
                 WorksheetId = rowInputData.WorksheetId,
                 Row = 0
             };
-        }
-
-        private async Task<string> GenerateReportDataForNewRowAsync(Guid customFieldId, string dataGridValue)
-        {
-            // Retrieve field
-            var field = await customFieldAppService.GetAsync(customFieldId);
-
-            // Parse the input data and deserialize the "value" property
-            JObject dataValue = JObject.Parse(dataGridValue);
-            var rowsValue = JsonSerializer.Deserialize<DataGridRowsValue>(dataValue["value"]?.ToString() ?? string.Empty);
-
-            if (rowsValue == null) return "{}";
-
-            // Create a dictionary to store the resulting values
-            var values = rowsValue.Rows
-                .SelectMany(row => row.Cells, (row, cell) => new { row, cell })
-                .ToDictionary(
-                    x => $"{field.Key}-{x.cell.Key}",
-                    x => new List<string> { x.cell.Value }
-                );
-
-            // Serialize the dictionary to a JSON string and return it
-            return JsonSerializer.Serialize(values);
         }
 
         private async Task<string> CreateExplicitWorksheetInstanceValueAsync(Guid fieldId, string dataGridValue)

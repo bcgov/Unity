@@ -10,9 +10,6 @@ namespace Unity.Flex.Worksheets
         public string Title { get; set; } = string.Empty;        
         public uint Version { get; set; } = 1;
         public bool Published { get; set; } = false;
-        public string ReportColumns { get; set; } = string.Empty;
-        public string ReportKeys { get; set; } = string.Empty;
-        public string ReportViewName { get; set; } = string.Empty;
         public List<CreateWorksheetSectionDto> Sections { get; set; } = [];
     }
 }

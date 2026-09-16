@@ -4,21 +4,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.Flex.Domain.ScoresheetInstances;
 using Unity.Flex.Domain.Scoresheets;
-using Unity.Flex.Reporting.DataGenerators;
 using Unity.Flex.Scoresheets.Enums;
 using Unity.Flex.Scoresheets.Events;
 using Unity.Flex.Worksheets.Definitions;
-using Unity.Modules.Shared.Features;
 using Volo.Abp.Domain.Services;
-using Volo.Abp.Features;
 using Volo.Abp.Validation;
 
 namespace Unity.Flex.Domain.Services
 {
-    public class ScoresheetsManager(IScoresheetInstanceRepository scoresheetInstanceRepository,
-        IScoresheetRepository scoresheetRepository,
-        IReportingDataGeneratorService<Scoresheet, ScoresheetInstance> reportingDataGeneratorService,
-        IFeatureChecker featureChecker) : DomainService
+    public class ScoresheetsManager(IScoresheetInstanceRepository scoresheetInstanceRepository) : DomainService
     {
         public static List<string> ValidateScoresheetAnswersAsync(ScoresheetInstance scoresheetInstance, Scoresheet scoresheet)
         {
@@ -52,7 +46,6 @@ namespace Unity.Flex.Domain.Services
         public async Task PersistScoresheetData(PersistScoresheetSectionInstanceEto eventData)
         {
             var instance = await scoresheetInstanceRepository.GetByCorrelationAsync(eventData.AssessmentId) ?? throw new AbpValidationException("Missing ScoresheetInstance.");
-            var scoresheet = await scoresheetRepository.GetAsync(instance.ScoresheetId);
 
             var scoresheetAnswers = eventData.AssessmentAnswers.ToList();
 
@@ -76,11 +69,6 @@ namespace Unity.Flex.Domain.Services
                 }
 
                 await scoresheetInstanceRepository.UpdateAsync(instance);
-            }
-
-            if (await featureChecker.IsEnabledAsync(FeatureConsts.Reporting))
-            {
-                reportingDataGeneratorService.GenerateAndSet(scoresheet, instance);
             }
         }
     }

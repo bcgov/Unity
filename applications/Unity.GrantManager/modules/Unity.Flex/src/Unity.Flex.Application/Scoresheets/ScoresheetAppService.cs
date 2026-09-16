@@ -8,11 +8,8 @@ using System.Threading.Tasks;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Flex.Domain.Settings;
 using Unity.Flex.Domain.Utils;
-using Unity.Flex.Reporting.FieldGenerators;
 using Unity.Flex.Scoresheets.Enums;
-using Unity.Modules.Shared.Features;
 using Volo.Abp;
-using Volo.Abp.Features;
 using Volo.Abp.Uow;
 using Volo.Abp.Validation;
 
@@ -22,9 +19,7 @@ namespace Unity.Flex.Scoresheets
     public partial class ScoresheetAppService(IUnitOfWorkManager unitOfWorkManager,
         IScoresheetRepository scoresheetRepository,
         IScoresheetSectionRepository sectionRepository,
-        IQuestionRepository questionRepository,
-        IReportingFieldsGeneratorService<Scoresheet> reportingFieldsGeneratorService,
-        IFeatureChecker featureChecker) : FlexAppService, IScoresheetAppService
+        IQuestionRepository questionRepository) : FlexAppService, IScoresheetAppService
     {
         private static readonly SemaphoreSlim _sectionLock = new SemaphoreSlim(1, 1);
         private static readonly SemaphoreSlim _questionLock = new SemaphoreSlim(1, 1);
@@ -214,11 +209,6 @@ namespace Unity.Flex.Scoresheets
             var scoresheet = await scoresheetRepository.GetAsync(id);
 
             scoresheet.Published = true;
-
-            if (await featureChecker.IsEnabledAsync(FeatureConsts.Reporting))
-            {
-                scoresheet = reportingFieldsGeneratorService.GenerateAndSet(scoresheet);
-            }
 
             await scoresheetRepository.UpdateAsync(scoresheet);
         }

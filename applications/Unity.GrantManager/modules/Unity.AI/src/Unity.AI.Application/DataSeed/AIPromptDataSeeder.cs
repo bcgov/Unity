@@ -912,9 +912,6 @@ public class AIPromptDataSeeder(
           "Version": <number>,
           "Order": 0,
           "Published": false,
-          "ReportColumns": "<string>",
-          "ReportKeys": "<string>",
-          "ReportViewName": "<string>",
           "Sections": [
             {
               "Name": "<string>",
@@ -949,7 +946,7 @@ public class AIPromptDataSeeder(
         - Use CHEFS form fields as evidence for assessment criteria, but do not create one question per form field.
         - Keep the generated scoresheet focused on reviewer criteria, scoring choices, and comments.
         - Do not invent assessor workflow, compliance, declaration, approval, status, conflict-of-interest, or submission identifier questions unless the CHEFS fields explicitly contain content that should be scored for that topic.
-        - Use the template's Name, Version, Order, Published, ReportColumns, ReportKeys, and ReportViewName values.
+        - Use the template's Name, Version, Order, and Published values.
         - Use the numeric QuestionType values from Unity Flex.
         - Do not copy or infer an existing scoresheet unless it is explicitly provided as part of the template.
         - Return valid plain JSON only.

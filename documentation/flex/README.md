@@ -21,7 +21,7 @@ applications/Unity.GrantManager/modules/Unity.Flex/
 │   ├── Unity.Flex.Domain.Shared/           (not present — shared enums live in Unity.Flex.Shared)
 │   ├── Unity.Flex.Shared/                  field/question type enums, definitions, values, ChefsToUnityTypes
 │   ├── Unity.Flex.Application.Contracts/   DTOs + app service interfaces
-│   ├── Unity.Flex.Application/             entities, domain services, EF Core, app services, controllers, handlers, reporting generators
+│   ├── Unity.Flex.Application/             entities, domain services, EF Core, app services, controllers, handlers, reporting field metadata
 │   └── Unity.Flex.Web/                     Razor Pages (admin builder) + ViewComponents (runtime widgets)
 └── test/
     ├── Unity.Flex.TestBase/

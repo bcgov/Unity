@@ -149,7 +149,7 @@ External traffic takes a shorter path: the CHEFS webhook and the applicant-porta
 | **`Applicant`** | The organisation or individual applying. Shared across applications; deliberately **not** `ISoftDelete` (see [core-applicants.md](core-applicants.md#why-applicant-is-not-isoftdelete)). |
 | **`ApplicantAgent`** | The person who actually submitted, with their BCeID identity, contact details and ordering. One per application. |
 | **`ApplicationForm`** | A configured intake form, bound to a CHEFS form GUID. Carries the flags that change product behaviour: `IsDirectApproval`, `Payable`, `PreventPayment`, `ScoresheetId`, the AI toggles, the form hierarchy. |
-| **`ApplicationFormVersion`** | One published version of that form: the CHEFS version GUID, the `SubmissionHeaderMapping` that maps CHEFS fields onto Unity fields, the raw `FormSchema`, and the reporting view metadata. |
+| **`ApplicationFormVersion`** | One published version of that form: the CHEFS version GUID, the `SubmissionHeaderMapping` that maps CHEFS fields onto Unity fields, and the raw `FormSchema`. |
 | **`ApplicationFormSubmission`** | The stored CHEFS submission for one application — the raw JSON, the CHEFS submission GUID, and the OIDC subject of the submitter. |
 | **`Assessment`** | One assessor's review of one application. Many per application; at most one per assessor; at most one AI assessment. |
 | **`ApplicationAssignment`** | A user assigned to an application, with an optional `Duty`. Assignment count drives two automatic state transitions. |
