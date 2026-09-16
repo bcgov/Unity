@@ -1,6 +1,7 @@
 @model Unity.GrantManager.Web.Views.Shared.Components.Notifications.NotificationsViewModel
 @using Volo.Abp.Authorization.Permissions
 @using Unity.Notifications.Permissions;
+@using static Unity.GrantManager.Notifications.NotificationDateFields
 @inject IPermissionChecker PermissionChecker
 
 <link rel="stylesheet" href="/libs/select2/dist/css/select2.min.css" />
@@ -74,11 +75,12 @@
                                         <label for="dateType" class="form-label">Notification Date Type <span class="text-danger" aria-hidden="true">*</span></label>
                                         <select id="dateType" class="form-select" required>
                                             <option value=""></option>
-                                            <option value="NotificationDate">Notification Date</option>
-                                            <option value="DueDate">Due Date</option>
-                                            <option value="ProjectStartDate">Project Start Date</option>
-                                            <option value="ProjectEndDate">Project End Date</option>
-                                            <option value="ContractExecutionDate">Contract Execution Date</option>
+                                            <option value="@NotificationDate">Notification Date</option>
+                                            <option value="@DueDate">Due Date</option>
+                                            <option value="@ProjectStartDate">Project Start Date</option>
+                                            <option value="@ProjectEndDate">Project End Date</option>
+                                            <option value="@ContractExecutionDate">Contract Execution Date</option>
+                                            <option value="@FiscalYearEnd">Fiscal Year End</option>
                                         </select>
                                         <div class="invalid-feedback">Please select a date type.</div>
                                     </div>
