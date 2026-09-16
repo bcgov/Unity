@@ -63,13 +63,14 @@ namespace Unity.GrantManager.Repositories
         private const string ApplicantsTableName = "Applicants";
         private const string FiscalMonthColumnName = "FiscalMonth";
         private const string FiscalDayColumnName = "FiscalDay";
+        private const string FiscalYearEndColumnName = "FiscalYearEnd";
 
         public async Task<FiscalYearEndRolloverResult> RollOverFiscalYearEndAsync()
         {
             var dbContext = await GetDbContextAsync();
 
             var missingColumns = await GetMissingColumnsAsync(
-                dbContext, ApplicantsTableName, FiscalMonthColumnName, FiscalDayColumnName);
+                dbContext, ApplicantsTableName, FiscalMonthColumnName, FiscalDayColumnName, FiscalYearEndColumnName);
 
             if (missingColumns.Count > 0)
             {
