@@ -11,5 +11,7 @@ public class EmailHistoryScriptBundleContributor : BundleContributor
           .AddIfNotContains("/Views/Shared/Components/EmailHistoryWidget/Default.js");
         context.Files
           .AddIfNotContains("/libs/pubsub-js/src/pubsub.js");
+        context.Files
+          .AddIfNotContains("/libs/dompurify/dist/purify.min.js");
     }
 }

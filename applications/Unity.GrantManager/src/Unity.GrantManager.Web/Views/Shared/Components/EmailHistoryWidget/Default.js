@@ -389,12 +389,23 @@ const emailHistoryTemplate = `<div class="emailHistoryPreview">
         <dd class="col-11">{{subject}}</dd>
     </dl>
     <div class="row">
-    {{{body}}}
+    {{safeHtml body}}
     </div>
 </div>`;
 
 Handlebars.registerHelper("csvList", function (listText) {
     return listText.replaceAll(",", "; ");
+});
+
+// Persisted email bodies are user/template-authored HTML and are not trusted;
+// sanitize with DOMPurify's HTML allowlist before rendering as markup.
+Handlebars.registerHelper('safeHtml', function (html) {
+    if (typeof DOMPurify === 'undefined') {
+        return Handlebars.escapeExpression(html || '');
+    }
+
+    const sanitized = DOMPurify.sanitize(html || '', { USE_PROFILES: { html: true } });
+    return new Handlebars.SafeString(sanitized);
 });
 
 Handlebars.registerHelper('default', function (value, fallback) {
@@ -450,7 +461,7 @@ const emailPrintTemplate = `<div class="email-print-container">
     </dl>
     <hr />
     <div class="email-print-body">
-    {{{body}}}
+    {{safeHtml body}}
     </div>
 </div>`;
 
