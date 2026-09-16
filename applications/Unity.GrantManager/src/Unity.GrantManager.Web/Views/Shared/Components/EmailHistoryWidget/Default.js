@@ -482,16 +482,17 @@ function openEmailPrintInNewTab(emailPrintHtml, printTitle) {
         doc.head.appendChild(link);
     });
 
-    const jqueryScript = doc.createElement('script');
-    jqueryScript.src = '/libs/jquery/jquery.js';
-    doc.head.appendChild(jqueryScript);
-
     doc.body.innerHTML = emailPrintHtml;
 
-    newTab.onload = function () {
-        const script = doc.createElement('script');
-        script.src = '/Views/Shared/Components/EmailHistoryWidget/loadEmailPrint.js';
-        script.onload = () => newTab.executeOperations();
-        doc.head.appendChild(script);
+    // Chain script.onload directly instead of relying on the popup's window load
+    // event, which does not reliably fire after doc.open/close plus a body rewrite.
+    const jqueryScript = doc.createElement('script');
+    jqueryScript.src = '/libs/jquery/jquery.js';
+    jqueryScript.onload = () => {
+        const printScript = doc.createElement('script');
+        printScript.src = '/Views/Shared/Components/EmailHistoryWidget/loadEmailPrint.js';
+        printScript.onload = () => newTab.executeOperations();
+        doc.head.appendChild(printScript);
     };
+    doc.head.appendChild(jqueryScript);
 }
