@@ -115,8 +115,34 @@ $(function () {
         $('#openNotification').toggleClass('action-bar-btn-unavailable', !canOpen);
     }
 
-    dataTable.on('select deselect draw', updateOpenButtonState);
-    updateOpenButtonState();
+    const tableContainer = $(dataTable.table().container());
+
+    // Delegate to the container because scrolling places the visible header in a separate table.
+    tableContainer.on('click', '.select-all-notifications', function () {
+        const currentPageRows = dataTable.rows({ page: 'current' });
+        if (this.checked) {
+            currentPageRows.select();
+        } else {
+            currentPageRows.deselect();
+        }
+    });
+
+    function updateSelectionState() {
+        const currentPageRows = dataTable.rows({ page: 'current' });
+        const rowCount = currentPageRows.count();
+        const selectedCount = dataTable.rows({ page: 'current', selected: true }).count();
+
+        currentPageRows.every(function () {
+            $(this.node()).find('.chkbox').prop('checked', this.selected());
+        });
+        tableContainer.find('.select-all-notifications')
+            .prop('checked', rowCount > 0 && selectedCount === rowCount)
+            .prop('indeterminate', selectedCount > 0 && selectedCount < rowCount);
+        updateOpenButtonState();
+    }
+
+    dataTable.on('select deselect draw', updateSelectionState);
+    updateSelectionState();
 
     function handleNotificationEmailCompleted() {
         const notificationEmailModal = document.getElementById('notificationEmailModal');
