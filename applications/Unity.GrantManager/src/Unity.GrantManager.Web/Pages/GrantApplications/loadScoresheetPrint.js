@@ -8,7 +8,7 @@ function executeOperations(data) {
     disableLinks();
 
     setTimeout(function () {
-        window.print();
+        globalThis.print();
     }, 1000);
 }
 
@@ -22,5 +22,3 @@ function disableLinks() {
         link.style.color = 'gray'; // Optionally change the color to indicate it's disabled
     });
 }
-
-
