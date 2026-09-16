@@ -55,6 +55,36 @@
     width: 30px !important;
 }
 
+/* Style Print button to match Filter button appearance */
+#EmailHistoryButtonSection .dt-buttons .buttons-selected-single {
+    font-size: 14px !important;
+    font-weight: 400 !important;
+    padding: 10px 15px !important;
+    color: #255a90 !important;
+    border-color: #255a90 !important;
+    border-width: 1.2px !important;
+    text-transform: none !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    white-space: nowrap;
+    height: 36px;
+    border-radius: 3px !important;
+}
+
+#EmailHistoryButtonSection .dt-buttons .buttons-selected-single:hover:not(:disabled) {
+    background-color: #5595d9 !important;
+    color: #fff !important;
+}
+
+#EmailHistoryButtonSection .dt-buttons .buttons-selected-single:disabled {
+    color: #edebe9 !important;
+    border-color: #edebe9 !important;
+    background-color: transparent !important;
+    cursor: not-allowed;
+}
+
 @media (max-height: 768px) {
     .dt-scroll-body {
         max-height: inherit !important;
