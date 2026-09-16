@@ -8,8 +8,7 @@
 @inject IHtmlLocalizer<AbpUiResource> L
 @model ApplicationMenu
 <div class="dropdown">
-    <a class="nav-link dropdown-toggle" href="#" role="button" id="userMenuDropdownMenuLink" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
-       onkeydown="if(event.key==='Enter'){event.preventDefault();this.click();}else if(event.key===' '){event.preventDefault();if(!event.repeat){this.click();}}">
+    <button type="button" class="nav-link dropdown-toggle" id="userMenuDropdownMenuLink" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         @if (CurrentUser.TenantId != null)
         {
             <small><i>@CurrentTenant.Name</i>\</small>@CurrentUser.UserName
@@ -18,7 +17,7 @@
         {
             @CurrentUser.UserName
         }
-    </a>
+    </button>
 
     @if (Model.Items.Any())
     {
