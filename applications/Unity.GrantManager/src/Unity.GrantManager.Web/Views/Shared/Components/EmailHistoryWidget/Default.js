@@ -36,6 +36,7 @@
 
     let emailHistoryDataTable = $('#EmailHistoryTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
+            dom: 'Bfrtip',
             serverSide: false,
             order: [[2, 'desc']],
             searching: false,
@@ -43,22 +44,18 @@
             select: {
                 style: 'single'
             },
-            layout: {
-                topEnd: {
-                    buttons: [
-                        {
-                            extend: 'selectedSingle',
-                            text: 'Print',
-                            action: function (e, dt, node, config) {
-                                let rowData = dt.row({ selected: true }).data();
-                                if (rowData) {
-                                    printEmailHistoryRow(rowData);
-                                }
-                            }
+            buttons: [
+                {
+                    extend: 'selectedSingle',
+                    text: 'Print',
+                    action: function (e, dt, node, config) {
+                        let rowData = dt.row({ selected: true }).data();
+                        if (rowData) {
+                            printEmailHistoryRow(rowData);
                         }
-                    ]
+                    }
                 }
-            },
+            ],
             info: false,
             scrollX: false,
             ajax: abp.libs.datatables.createAjax(
@@ -207,9 +204,8 @@
         return `<button class="btn btn-delete-draft${widthClass}" type="button" onclick="deleteDraftEmail('${full.id}', '${row}')"><i class="fl fl-cancel"></i></button>`;
     }
 
-    function rowFormat(d) {
-        return emailHistoryHandlebars(d);
-    }
+    // Move the DataTables print button out of the table toolbar and into the header row
+    emailHistoryDataTable.buttons(0, null).container().appendTo('#EmailHistoryButtonSection');
 
     // Add event listener for opening and closing details
     emailHistoryDataTable.on('click', 'td.dt-control', (e) => {
@@ -375,18 +371,18 @@ function deleteDraftEmail(id, rowIndex) {
 
 const emailHistoryTemplate = `<div class="emailHistoryPreview">
     <dl class="row">
-        <dt class="col-sm-2">From:</dt>
-        <dd class="col-sm-10">{{fromAddress}}</dd>
-        <dt class="col-sm-2">Sent:</dt>
-        <dd class="col-sm-10">{{default sentDateTime 'Not Sent'}}</dd>
-        <dt class="col-sm-2">To:</dt>
-        <dd class="col-sm-10">{{csvList toAddress}}</dd>
+        <dt class="text-nowrap col-1">From:</dt>
+        <dd class="col-11">{{fromAddress}}</dd>
+        <dt class="text-nowrap col-1">Sent:</dt>
+        <dd class="col-11">{{default (formatDateTime sentDateTime) 'Not Sent'}}</dd>
+        <dt class="text-nowrap col-1">To:</dt>
+        <dd class="col-11">{{csvList toAddress}}</dd>
         {{#if cc}}
-        <dt class="col-sm-2">CC:</dt>
-        <dd class="col-sm-10">{{csvList cc}}</dd>
+        <dt class="text-nowrap col-1">CC:</dt>
+        <dd class="col-11">{{csvList cc}}</dd>
         {{/if}}
-        <dt class="col-sm-2">Subject:</dt>
-        <dd class="col-sm-10">{{subject}}</dd>
+        <dt class="text-nowrap col-1">Subject:</dt>
+        <dd class="col-11">{{subject}}</dd>
     </dl>
     <div class="row">
     {{{body}}}
@@ -401,18 +397,48 @@ Handlebars.registerHelper('default', function (value, fallback) {
     return (value !== undefined && value !== null && value !== '') ? value : fallback;
 });
 
+// Mirrors the DataTable's Sent Date column rendering, plus the timezone abbreviation in brackets
+Handlebars.registerHelper('formatDateTime', function (value) {
+    if (!value) {
+        return null;
+    }
+
+    const dateTime = luxon.DateTime.fromISO(value, {
+        locale: abp.localization.currentCulture.name,
+    });
+
+    if (!dateTime.isValid) {
+        return value;
+    }
+
+    const formatted = dateTime.toLocaleString({
+        day: 'numeric',
+        year: 'numeric',
+        month: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric'
+    });
+
+    const zoneName = dateTime.offsetNameShort;
+    return zoneName ? `${formatted} (${zoneName})` : formatted;
+});
+
 const emailHistoryHandlebars = Handlebars.compile(emailHistoryTemplate);
 
 const emailPrintTemplate = `<div class="email-print-container">
     <dl class="email-print-header row">
-        <dt class="col-sm-2">Date Sent:</dt>
-        <dd class="col-sm-10">{{default sentDateTime 'Not Sent'}}</dd>
-        <dt class="col-sm-2">To:</dt>
-        <dd class="col-sm-10">{{csvList toAddress}}</dd>
-        <dt class="col-sm-2">From:</dt>
-        <dd class="col-sm-10">{{fromAddress}}</dd>
-        <dt class="col-sm-2">Subject:</dt>
-        <dd class="col-sm-10">{{subject}}</dd>
+        <dt class="text-nowrap col-1">From:</dt>
+        <dd class="col-11">{{fromAddress}}</dd>
+        <dt class="text-nowrap col-1">Sent:</dt>
+        <dd class="col-11">{{default (formatDateTime sentDateTime) 'Not Sent'}}</dd>
+        <dt class="text-nowrap col-1">To:</dt>
+        <dd class="col-11">{{csvList toAddress}}</dd>
+        {{#if cc}}
+        <dt class="text-nowrap col-1">CC:</dt>
+        <dd class="col-11">{{csvList cc}}</dd>
+        {{/if}}
+        <dt class="text-nowrap col-1">Subject:</dt>
+        <dd class="col-11">{{subject}}</dd>
     </dl>
     <hr />
     <div class="email-print-body">

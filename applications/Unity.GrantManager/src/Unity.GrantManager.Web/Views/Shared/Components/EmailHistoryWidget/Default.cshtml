@@ -1,4 +1,10 @@
 ﻿@model Unity.GrantManager.Web.Views.Shared.Components.EmailHistoryWidget.EmailHistoryWidgetViewModel
+<div class="email-history-title-button-split d-flex flex-row justify-content-between align-items-end mb-2">
+    <div class="email-history-title">
+        <h6 class="fw-bold px-3 m-0">Email History</h6>
+    </div>
+    <div class="email-history-button-section me-3" id="EmailHistoryButtonSection"></div>
+</div>
 <div class="px-0">
     <abp-table id="EmailHistoryTable" hoverable-rows="true" data-resize-aware="true" class="attachments-table"
                data-enable-email-delay="@Model.EnableEmailDelay.ToString().ToLower()"></abp-table>
