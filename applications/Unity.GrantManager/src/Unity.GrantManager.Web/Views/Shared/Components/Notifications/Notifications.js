@@ -88,7 +88,11 @@
 
     function init() {
         loadTemplates();
-        loadStatuses();
+        loadStatuses().then(() => {
+            if (dataTable) {
+                dataTable.rows().invalidate().draw();
+            }
+        });
         loadRecipients(document.getElementById('cf_recipientCategory')?.value || 'Internal');
 
         document.getElementById('cf_template')?.addEventListener('change', updatePreview);
@@ -121,7 +125,23 @@
         if (!r) return '';
         const offset = Number(r.offsetDays) || 0;
         const offsetDisplay = offset > 0 ? ('+' + offset) : offset;
-        return r.triggerType === 'Date' ? `${r.dateType} ${offsetDisplay}` : (r.eventStatus || '');
+        if (r.triggerType !== 'Date') return r.eventStatus || '';
+
+        let detail = `${r.dateType} ${offsetDisplay}`;
+        const statusIds = Array.isArray(r.applicationStatusIds)
+            ? r.applicationStatusIds.map(String).filter(Boolean)
+            : [];
+            
+        if (statusIds.length > 0) {
+            const statusOptions = Array.from(document.getElementById('cf_appStatus')?.options ?? []);
+            const statusLabels = statusIds.map(statusId => {
+                const option = statusOptions.find(item => String(item.value) === statusId);
+                return option?.textContent?.trim() || statusId;
+            });
+            detail += ' → Status: ' + statusLabels.join(', ');
+        }
+
+        return detail;
     }
 
     function handleTemplatesList(list) {
@@ -140,7 +160,9 @@
     }
 
     function loadList() {
-        fetchList().then(renderTable).catch(err => console.error(err));
+        fetchList().then(items => {
+            renderTable(items);
+        }).catch(err => console.error(err));
     }
 
         function onSave() {

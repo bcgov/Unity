@@ -18,7 +18,7 @@ namespace Unity.GrantManager.Events
 {
     /// <summary>
     /// Helper service for scheduled notification processing - shared logic between
-    /// event-based (ScheduledNotificationEventHandler) and date-based (DateBasedScheduledNotificationJob) handlers.
+    /// date-based (DateBasedScheduledNotificationJob) notifications.
     /// </summary>
     public partial class ScheduledNotificationHelper(ILoggerFactory loggerFactory)
     {

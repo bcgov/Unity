@@ -3453,6 +3453,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<DateTime>("NotificationSentDate")
                         .HasColumnType("timestamp without time zone");
 
+                    b.Property<DateTime?>("TriggerDate")
+                        .HasColumnType("timestamp without time zone");
+
                     b.Property<Guid>("ScheduledNotificationId")
                         .HasColumnType("uuid");
 
@@ -3464,7 +3467,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("ScheduledNotificationId");
 
-                    b.HasIndex("ApplicationId", "ScheduledNotificationId", "DateField")
+                    b.HasIndex("ApplicationId", "ScheduledNotificationId", "DateField", "TriggerDate")
                         .IsUnique();
 
                     b.ToTable("ScheduledNotificationTracking", "Notifications");

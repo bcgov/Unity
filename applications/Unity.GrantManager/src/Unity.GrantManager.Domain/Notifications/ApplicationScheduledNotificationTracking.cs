@@ -13,6 +13,7 @@ namespace Unity.GrantManager.Notifications
         public Guid ApplicationId { get; set; }
         public Guid ScheduledNotificationId { get; set; }
         public required string DateField { get; set; } // "DueDate", "NotificationDate", "ContractNotificationDate"
+        public DateTime? TriggerDate { get; set; }
         public DateTime NotificationSentDate { get; set; }
         public DateTime CreationTime { get; set; }
         public Guid? CreatorId { get; set; }
@@ -25,11 +26,13 @@ namespace Unity.GrantManager.Notifications
             Guid applicationId,
             Guid scheduledNotificationId,
             string dateField,
+            DateTime triggerDate,
             DateTime notificationSentDate) : base(id)
         {
             ApplicationId = applicationId;
             ScheduledNotificationId = scheduledNotificationId;
             DateField = dateField;
+            TriggerDate = triggerDate.Date;
             NotificationSentDate = notificationSentDate;
             CreationTime = DateTime.UtcNow;
         }

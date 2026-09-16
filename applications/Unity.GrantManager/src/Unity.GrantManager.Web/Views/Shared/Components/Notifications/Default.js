@@ -187,9 +187,24 @@
     }
 
     function renderTriggerDetail(data, type, row) {
+
         let detail = '';
         if (row.triggerType === 'Date') {
             detail = row.dateType ? row.dateType : '';
+
+            const statusIds = Array.isArray(row.applicationStatusIds)
+                ? row.applicationStatusIds.map(String).filter(Boolean)
+                : [];
+                
+            if (statusIds.length > 0) {
+                const statusOptions = Array.from(document.getElementById('dateApplicationStatus')?.options ?? []);
+                const statusLabels = statusIds.map(statusId => {
+                    const option = statusOptions.find(item => String(item.value) === statusId);
+                    return option?.textContent?.trim() || statusId;
+                });
+
+                detail += (detail ? ' → ' : '') + 'Status: ' + statusLabels.join(', ');
+            }
         } else {
             detail = row.eventStatus ? row.eventStatus : '';
         }
@@ -1036,6 +1051,7 @@
         fetchStatuses().then(statuses => {
             populateStatuses(statuses);
             populateDateStatuses(statuses);
+            reloadTable();
         });
     });
 
