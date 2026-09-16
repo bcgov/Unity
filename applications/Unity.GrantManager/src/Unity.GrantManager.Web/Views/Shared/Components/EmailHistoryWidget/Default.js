@@ -43,6 +43,22 @@
             select: {
                 style: 'single'
             },
+            layout: {
+                topEnd: {
+                    buttons: [
+                        {
+                            extend: 'selectedSingle',
+                            text: 'Print',
+                            action: function (e, dt, node, config) {
+                                let rowData = dt.row({ selected: true }).data();
+                                if (rowData) {
+                                    printEmailHistoryRow(rowData);
+                                }
+                            }
+                        }
+                    ]
+                }
+            },
             info: false,
             scrollX: false,
             ajax: abp.libs.datatables.createAjax(
@@ -191,12 +207,8 @@
         return `<button class="btn btn-delete-draft${widthClass}" type="button" onclick="deleteDraftEmail('${full.id}', '${row}')"><i class="fl fl-cancel"></i></button>`;
     }
 
-
-
-
-
     function rowFormat(d) {
-        return '<div class="multi-line">' + d.body + '</div>';
+        return emailHistoryHandlebars(d);
     }
 
     // Add event listener for opening and closing details
@@ -210,7 +222,7 @@
         }
         else {
             // Open this row
-            row.child(rowFormat(row.data())).show();
+            row.child(emailHistoryHandlebars(row.data())).show();
         }
     });
 
@@ -361,4 +373,99 @@ function deleteDraftEmail(id, rowIndex) {
     });
 }
 
+const emailHistoryTemplate = `<div class="emailHistoryPreview">
+    <dl class="row">
+        <dt class="col-sm-2">From:</dt>
+        <dd class="col-sm-10">{{fromAddress}}</dd>
+        <dt class="col-sm-2">Sent:</dt>
+        <dd class="col-sm-10">{{default sentDateTime 'Not Sent'}}</dd>
+        <dt class="col-sm-2">To:</dt>
+        <dd class="col-sm-10">{{csvList toAddress}}</dd>
+        {{#if cc}}
+        <dt class="col-sm-2">CC:</dt>
+        <dd class="col-sm-10">{{csvList cc}}</dd>
+        {{/if}}
+        <dt class="col-sm-2">Subject:</dt>
+        <dd class="col-sm-10">{{subject}}</dd>
+    </dl>
+    <div class="row">
+    {{{body}}}
+    </div>
+</div>`;
 
+Handlebars.registerHelper("csvList", function (listText) {
+    return listText.replaceAll(",", "; ");
+});
+
+Handlebars.registerHelper('default', function (value, fallback) {
+    return (value !== undefined && value !== null && value !== '') ? value : fallback;
+});
+
+const emailHistoryHandlebars = Handlebars.compile(emailHistoryTemplate);
+
+const emailPrintTemplate = `<div class="email-print-container">
+    <dl class="email-print-header row">
+        <dt class="col-sm-2">Date Sent:</dt>
+        <dd class="col-sm-10">{{default sentDateTime 'Not Sent'}}</dd>
+        <dt class="col-sm-2">To:</dt>
+        <dd class="col-sm-10">{{csvList toAddress}}</dd>
+        <dt class="col-sm-2">From:</dt>
+        <dd class="col-sm-10">{{fromAddress}}</dd>
+        <dt class="col-sm-2">Subject:</dt>
+        <dd class="col-sm-10">{{subject}}</dd>
+    </dl>
+    <hr />
+    <div class="email-print-body">
+    {{{body}}}
+    </div>
+</div>`;
+
+const emailPrintHandlebars = Handlebars.compile(emailPrintTemplate);
+
+function printEmailHistoryRow(rowData) {
+    const referenceNo = $('#applicationBreadcrumbWidget .reference-no').text().trim();
+    const applicantName = $('#applicationBreadcrumbWidget .applicant-name').text().trim();
+    const printTitle = buildEmailPrintTitle(referenceNo, applicantName);
+
+    openEmailPrintInNewTab(emailPrintHandlebars(rowData), printTitle);
+}
+
+function buildEmailPrintTitle(referenceNo, applicantName) {
+    const parts = [referenceNo, applicantName, 'Notification'].filter(Boolean);
+    // Strip characters that are invalid in downloaded file names
+    return parts.join('-').replace(/[\\/:*?"<>|]/g, '') || 'Notification';
+}
+
+function openEmailPrintInNewTab(emailPrintHtml, printTitle) {
+    const newTab = globalThis.open('', '_blank');
+    const doc = newTab.document;
+
+    doc.open();
+    doc.close();
+    doc.title = printTitle;
+
+    const stylesheets = [
+        { href: '/libs/bootstrap/css/bootstrap.min.css' },
+        { href: '/Views/Shared/Components/EmailHistoryWidget/EmailPrint.css' }
+    ];
+
+    stylesheets.forEach(({ href }) => {
+        const link = doc.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = href;
+        doc.head.appendChild(link);
+    });
+
+    const jqueryScript = doc.createElement('script');
+    jqueryScript.src = '/libs/jquery/jquery.js';
+    doc.head.appendChild(jqueryScript);
+
+    doc.body.innerHTML = emailPrintHtml;
+
+    newTab.onload = function () {
+        const script = doc.createElement('script');
+        script.src = '/Views/Shared/Components/EmailHistoryWidget/loadEmailPrint.js';
+        script.onload = () => newTab.executeOperations();
+        doc.head.appendChild(script);
+    };
+}
