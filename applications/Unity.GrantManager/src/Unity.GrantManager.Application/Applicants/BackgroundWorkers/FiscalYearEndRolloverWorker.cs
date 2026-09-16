@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Quartz;
 using System;
 using System.Threading.Tasks;
@@ -9,6 +10,7 @@ using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
+using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Applicants.BackgroundWorkers;
 
@@ -16,21 +18,18 @@ namespace Unity.GrantManager.Applicants.BackgroundWorkers;
 public class FiscalYearEndRolloverWorker : QuartzBackgroundWorkerBase
 {
     private readonly ILogger<FiscalYearEndRolloverWorker> _logger;
-    private readonly ICurrentTenant _currentTenant;
+    private readonly IServiceProvider _serviceProvider;
     private readonly ITenantRepository _tenantRepository;
-    private readonly IApplicantRepository _applicantRepository;
 
     public FiscalYearEndRolloverWorker(
         ILogger<FiscalYearEndRolloverWorker> logger,
-        ICurrentTenant currentTenant,
+        IServiceProvider serviceProvider,
         ITenantRepository tenantRepository,
-        IApplicantRepository applicantRepository,
         ISettingManager settingManager)
     {
         _logger = logger;
-        _currentTenant = currentTenant;
+        _serviceProvider = serviceProvider;
         _tenantRepository = tenantRepository;
-        _applicantRepository = applicantRepository;
 
         // Midnight January 1st every year (server local time)
         const string defaultCronExpression = "0 0 0 1 1 ? *";
@@ -82,13 +81,22 @@ public class FiscalYearEndRolloverWorker : QuartzBackgroundWorkerBase
         {
             try
             {
+                // Each tenant gets its own DI scope, UoW, and repository so the cached tenant
+                // DbContext from a prior iteration cannot leak into the next tenant's connection.
+                using var tenantScope = _serviceProvider.CreateScope();
+                var currentTenant = tenantScope.ServiceProvider.GetRequiredService<ICurrentTenant>();
+                var uowManager = tenantScope.ServiceProvider.GetRequiredService<IUnitOfWorkManager>();
+
                 // The rollover runs raw SQL directly against the tenant connection, which bypasses
                 // ABP's EF Core query filters (soft-delete, multi-tenancy) entirely, so no explicit
                 // IDataFilter bypass is required here - CurrentTenant.Change only selects the
                 // correct tenant connection string.
-                using (_currentTenant.Change(tenant.Id, tenant.Name))
+                using (currentTenant.Change(tenant.Id, tenant.Name))
                 {
-                    var result = await _applicantRepository.RollOverFiscalYearEndAsync();
+                    using var uow = uowManager.Begin(requiresNew: true, isTransactional: false);
+                    var applicantRepository = tenantScope.ServiceProvider.GetRequiredService<IApplicantRepository>();
+
+                    var result = await applicantRepository.RollOverFiscalYearEndAsync();
 
                     if (!result.ColumnsAvailable)
                     {
@@ -97,6 +105,8 @@ public class FiscalYearEndRolloverWorker : QuartzBackgroundWorkerBase
                             tenant.Name, tenant.Id, string.Join(", ", result.MissingColumns));
                         continue;
                     }
+
+                    await uow.CompleteAsync(context.CancellationToken);
 
                     _logger.LogInformation(
                         "Fiscal year end rollover completed for tenant {TenantName} ({TenantId}). Rows affected: {RowsAffected}",

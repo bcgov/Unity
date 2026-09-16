@@ -1,6 +1,7 @@
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Quartz;
@@ -10,6 +11,7 @@ using Unity.GrantManager.Applications;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
+using Volo.Abp.Uow;
 using Xunit;
 
 namespace Unity.GrantManager.Applicants;
@@ -99,8 +101,21 @@ public class FiscalYearEndRolloverWorkerTests
     {
         var logger = Substitute.For<ILogger<FiscalYearEndRolloverWorker>>();
         var settingManager = Substitute.For<ISettingManager>();
+        var serviceProvider = CreateServiceProvider(currentTenant, applicantRepository);
 
-        return new FiscalYearEndRolloverWorker(logger, currentTenant, tenantRepository, applicantRepository, settingManager);
+        return new FiscalYearEndRolloverWorker(logger, serviceProvider, tenantRepository, settingManager);
+    }
+
+    private static IServiceProvider CreateServiceProvider(ICurrentTenant currentTenant, IApplicantRepository applicantRepository)
+    {
+        var uowManager = Substitute.For<IUnitOfWorkManager>();
+        uowManager.Begin(Arg.Any<AbpUnitOfWorkOptions>(), Arg.Any<bool>()).Returns(Substitute.For<IUnitOfWork>());
+
+        var services = new ServiceCollection();
+        services.AddSingleton(currentTenant);
+        services.AddSingleton(uowManager);
+        services.AddSingleton(applicantRepository);
+        return services.BuildServiceProvider();
     }
 
     private static ICurrentTenant CreateCurrentTenant()
