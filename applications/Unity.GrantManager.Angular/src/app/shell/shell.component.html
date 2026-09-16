@@ -1,0 +1,83 @@
+<div class="abp-application-layout">
+  <nav class="navbar navbar-expand-md shadow-sm flex-column flex-md-row unity-navbar" id="main-navbar">
+    <div class="container-fluid unity-navbar-btns">
+      <a class="navbar-brand" href="/">
+        @if (bootstrap(); as data) {
+          <img fetchpriority="high" [src]="data.branding.logoUrl" [alt]="data.branding.appName" />
+        }
+      </a>
+
+      <ul class="unity-navbar-nav">
+        @for (item of mainMenu(); track item.name) {
+          @if (isLeaf(item)) {
+            @if (item.url) {
+              <li class="nav-item btn btn-nav">
+                <a class="nav-link" [href]="item.url">
+                  @if (showIcon(item.icon)) {
+                    <i [class]="item.icon"></i>
+                  }
+                  {{ item.displayName }}
+                </a>
+              </li>
+            }
+          } @else {
+            <li class="nav-item nav-btn-dropdown">
+              <div class="dropdown">
+                <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  @if (showIcon(item.icon)) {
+                    <i [class]="item.icon"></i>
+                  }
+                  {{ item.displayName }}
+                </a>
+                <div class="dropdown-menu border-0 shadow-sm">
+                  @for (child of item.items; track child.name) {
+                    <app-menu-item [item]="child" />
+                  }
+                </div>
+              </div>
+            </li>
+          }
+        }
+      </ul>
+    </div>
+
+    <div class="unity-container-fluid">
+      <div class="px-3 d-flex align-items-center">
+        <div class="unity-user-initials" [innerHTML]="badgeHtml()" (click)="toggleUserDropdown($event)"></div>
+      </div>
+    </div>
+
+    @if (userDropdown(); as dropdown) {
+      <div class="dropdown" id="user-dropdown" [class.show]="userDropdownOpen()">
+        <div class="btn-dropdown">
+          <span class="dropdown-title">
+            {{ bootstrap()?.user?.currentTenantName }}
+          </span>
+        </div>
+        <div class="user-dropdown-items dropdown-menu dropdown-menu-end" [class.show]="userDropdownOpen()">
+          @if (dropdown.showSwitchGrantPrograms) {
+            <a class="dropdown-item" href="/GrantPrograms">Switch Grant Programs</a>
+          }
+          @if (dropdown.showApplicantPortalConfiguration) {
+            <a class="dropdown-item" href="/ApplicantPortalSettings">Applicant Portal Configuration</a>
+          }
+          @if (dropdown.showConfigurationManagement) {
+            <a class="dropdown-item" href="/ConfigurationManagement">Configuration Management</a>
+          }
+          @if (dropdown.showUnityAdmin) {
+            <a class="dropdown-item" href="/UnityAdmin">Unity Admin</a>
+          }
+          <a class="dropdown-item" href="/Account/Logout">Logout</a>
+        </div>
+      </div>
+    }
+  </nav>
+
+  <div class="container-fluid unity-app-container p-0">
+    <div class="d-flex">
+      <div class="flex-fill unity-app-main-container">
+        <router-outlet />
+      </div>
+    </div>
+  </div>
+</div>

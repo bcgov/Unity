@@ -11,6 +11,7 @@ Enterprise Grant Management Solution is a Foundational Tool for Common Connected
     applications/               - Application root containing all major components
     ├── Unity.AutoUI/           - Automated end-to-end UI testing (Cypress)
     ├── Unity.GrantManager/     - Grant management and adjudication solution
+    ├── Unity.GrantManager.Angular/ - Angular front end for the strangler-fig UI migration
     └── Unity.Tools/            - Supporting tools and services
         ├── Unity.CHEFS/        - CHEFS regression test suite runner
         ├── Unity.Metabase/     - Reserved for Metabase integration

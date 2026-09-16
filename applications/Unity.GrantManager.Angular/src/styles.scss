@@ -1,0 +1,30 @@
+/* You can add global styles to this file, and also import other style files */
+
+/* Same root cause as the router-outlet fix below, one level up: the real MVC app
+   has `html, body { height: 100%; }` (themes/ux2/layout.css) and the
+   `abp-application-layout` class lives directly ON the <body> tag, so 100% height
+   cascades naturally with no extra hops. In Angular, that class lives on a <div>
+   inside custom-element wrappers (<app-root>, <app-shell>) that Angular inserts at
+   every component boundary - those default to `display: inline` with no defined
+   height, so a percentage-height chain breaks at that hop and the app renders
+   shorter than the viewport, leaving white space below. Viewport units sidestep the
+   whole problem instead of fixing every intermediate hop's height individually. */
+app-root,
+app-shell {
+  display: block;
+  min-height: 100vh;
+}
+
+/* Angular inserts a custom-element wrapper (e.g. <app-configuration-management>) as
+   a sibling of <router-outlet> for whatever's routed. In the real MVC app,
+   @RenderBody() has no such wrapper - .config-page-layout (width: 100%) is a direct
+   flex item of .unity-app-main-container and sizes correctly. Here the wrapper
+   element becomes an extra flex item that defaults to shrink-to-fit, narrowing
+   everything inside it (this is why the Program Details card came out narrower than
+   in the MVC app). Force it to grow and pass width through instead - generic so it
+   covers whatever component ends up routed here, not just today's one. */
+.unity-app-main-container > router-outlet + * {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+}

@@ -1,0 +1,12 @@
+{
+  "name": "local-dev-gateway",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Local-only reverse proxy putting the Angular dev server and MVC backend on one origin, for strangler-fig testing before real OpenShift Routes exist. Not part of the deployed app.",
+  "scripts": {
+    "start": "node gateway.js"
+  },
+  "dependencies": {
+    "http-proxy": "^1.18.1"
+  }
+}
