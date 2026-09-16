@@ -47,20 +47,29 @@ $(function () {
             className: 'custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable',
             action: function () {
                 const selectedRows = dataTable.rows({ selected: true }).data().toArray();
-                if (selectedRows.length !== 1 || !selectedRows[0].applicationId) return;
+                if (selectedRows.length !== 1 || !selectedRows[0].id) return;
 
                 $.get('/Notifications/EmailModal', {
-                    applicationId: selectedRows[0].applicationId,
                     emailId: selectedRows[0].id
                 })
                     .done(function (markup) {
                         const modalMarkup = $('<div>').html(markup);
+                        const emailFrame = modalMarkup.find('iframe.notification-email-body')[0];
+                        if (emailFrame) {
+                            // Open email links outside the preview so authentication can use a normal browser tab.
+                            const emailDocument = new DOMParser().parseFromString(emailFrame.srcdoc, 'text/html');
+                            emailDocument.querySelectorAll('a[href], area[href]').forEach(link => {
+                                link.setAttribute('target', '_blank');
+                                link.setAttribute('rel', 'noopener noreferrer');
+                            });
+                            emailFrame.srcdoc = '<!DOCTYPE html>' + emailDocument.documentElement.outerHTML;
+                        }
                         const breadcrumb = modalMarkup.find('.breadcrumb-container').first();
                         $('#notificationEmailModalBreadcrumb').empty().append(breadcrumb);
                         $('#notificationEmailModalBody').empty().append(modalMarkup.contents());
-                        window.EmailsWidget?.reinitialize?.();
                         const selectedEmailElement = document.getElementById('notificationSelectedEmail');
                         if (selectedEmailElement?.textContent) {
+                            window.EmailsWidget?.reinitialize?.();
                             PubSub.publish('email_selected', JSON.parse(selectedEmailElement.textContent));
                         }
                         bootstrap.Modal.getOrCreateInstance(document.getElementById('notificationEmailModal')).show();
@@ -111,7 +120,7 @@ $(function () {
 
     function updateOpenButtonState() {
         const selectedRows = dataTable.rows({ selected: true }).data().toArray();
-        const canOpen = selectedRows.length === 1 && !!selectedRows[0].applicationId;
+        const canOpen = selectedRows.length === 1 && !!selectedRows[0].id;
         $('#openNotification').toggleClass('action-bar-btn-unavailable', !canOpen);
     }
 

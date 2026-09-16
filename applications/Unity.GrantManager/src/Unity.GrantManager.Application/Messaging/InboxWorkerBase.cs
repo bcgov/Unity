@@ -142,7 +142,7 @@ public abstract class InboxWorkerBase : QuartzBackgroundWorkerBase
                 // Switch to tenant context ONLY for the domain handler execution
                 using (currentTenant.Change(inboxMsg.TenantId))
                 {
-                    using var uow = unitOfWorkManager.Begin(requiresNew: true);
+                    using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
                     details = await handler.HandleAsync(inboxMsg.Payload);
                     await uow.CompleteAsync();
                 }

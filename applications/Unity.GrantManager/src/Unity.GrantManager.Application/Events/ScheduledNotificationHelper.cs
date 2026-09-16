@@ -7,12 +7,9 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Notifications;
 using Unity.Notifications.EmailGroups;
-using Unity.Notifications.Emails;
 using Unity.Notifications.Events;
-using Unity.Notifications.Templates;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Identity.Integration;
-using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.Events
 {
@@ -63,6 +60,7 @@ namespace Unity.GrantManager.Events
                 ["project_summary"]             = application.ProjectSummary ?? string.Empty,
                 ["project_start_date"]          = application.ProjectStartDate?.ToString("yyyy-MM-dd") ?? string.Empty,
                 ["project_end_date"]            = application.ProjectEndDate?.ToString("yyyy-MM-dd") ?? string.Empty,
+                ["fiscal_year_end"]             = applicant?.FiscalYearEnd?.ToString("yyyy-MM-dd") ?? string.Empty,
                 ["signing_authority_full_name"] = application.SigningAuthorityFullName ?? string.Empty,
                 ["signing_authority_title"]     = application.SigningAuthorityTitle ?? string.Empty,
                 ["contact_full_name"]           = applicantAgent?.Name ?? string.Empty,

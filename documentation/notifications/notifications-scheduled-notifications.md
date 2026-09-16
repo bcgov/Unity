@@ -120,6 +120,7 @@ The tokens produced:
 |`category`|`ApplicationForm.Category`|
 |`today_date`|`DateTime.Today` as `MMMM d, yyyy`|
 |`unity_application_id`|`UnityApplicationId`|
+|`fiscal_year_end`| `applicant.fiscalYearEnd` |
 
 These must stay in sync with the `TemplateVariable` rows seeded by `NotificationsDataSeedContributor`, which is what the template editor offers the user. The seed's `MapTo` column is documentation of intent — the actual resolution is this hand-written dictionary, not reflection over `MapTo`. Adding a variable therefore takes **two** edits: a seed row and a dictionary entry.
 
