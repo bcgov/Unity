@@ -381,6 +381,10 @@ const emailHistoryTemplate = `<div class="emailHistoryPreview">
         <dt class="text-nowrap col-1">CC:</dt>
         <dd class="col-11">{{csvList cc}}</dd>
         {{/if}}
+        {{#if bcc}}
+        <dt class="text-nowrap col-1">BCC:</dt>
+        <dd class="col-11">{{csvList bcc}}</dd>
+        {{/if}}
         <dt class="text-nowrap col-1">Subject:</dt>
         <dd class="col-11">{{subject}}</dd>
     </dl>
@@ -436,6 +440,10 @@ const emailPrintTemplate = `<div class="email-print-container">
         {{#if cc}}
         <dt class="text-nowrap col-1">CC:</dt>
         <dd class="col-11">{{csvList cc}}</dd>
+        {{/if}}
+        {{#if bcc}}
+        <dt class="text-nowrap col-1">BCC:</dt>
+        <dd class="col-11">{{csvList bcc}}</dd>
         {{/if}}
         <dt class="text-nowrap col-1">Subject:</dt>
         <dd class="col-11">{{subject}}</dd>
