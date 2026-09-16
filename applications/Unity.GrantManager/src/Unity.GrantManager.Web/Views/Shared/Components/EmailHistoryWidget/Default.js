@@ -483,12 +483,14 @@ function openEmailPrintInNewTab(emailPrintHtml, printTitle) {
         { href: '/Views/Shared/Components/EmailHistoryWidget/EmailPrint.css' }
     ];
 
-    stylesheets.forEach(({ href }) => {
+    const stylesReady = Promise.all(stylesheets.map(({ href }) => new Promise((resolve, reject) => {
         const link = doc.createElement('link');
         link.rel = 'stylesheet';
         link.href = href;
+        link.onload = resolve;
+        link.onerror = reject;
         doc.head.appendChild(link);
-    });
+    })));
 
     doc.body.innerHTML = emailPrintHtml;
 
@@ -496,11 +498,13 @@ function openEmailPrintInNewTab(emailPrintHtml, printTitle) {
     // event, which does not reliably fire after doc.open/close plus a body rewrite.
     const jqueryScript = doc.createElement('script');
     jqueryScript.src = '/libs/jquery/jquery.js';
-    jqueryScript.onload = () => {
-        const printScript = doc.createElement('script');
-        printScript.src = '/Views/Shared/Components/EmailHistoryWidget/loadEmailPrint.js';
-        printScript.onload = () => newTab.executeOperations();
-        doc.head.appendChild(printScript);
-    };
-    doc.head.appendChild(jqueryScript);
+    stylesReady.then(() => {
+        jqueryScript.onload = () => {
+            const printScript = doc.createElement('script');
+            printScript.src = '/Views/Shared/Components/EmailHistoryWidget/loadEmailPrint.js';
+            printScript.onload = () => newTab.executeOperations();
+            doc.head.appendChild(printScript);
+        };
+        doc.head.appendChild(jqueryScript);
+    });
 }
