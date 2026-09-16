@@ -14,5 +14,4 @@ public interface IApplicantRepository : IRepository<Applicant, Guid>
     Task<List<Applicant>> GetApplicantsWithUnityApplicantIdAsync();
     Task<JsonDocument> GetApplicantAutocompleteQueryAsync(string? applicantLookUpQuery);
     Task<List<ApplicantListRecord>> GetApplicantListRecordsAsync(IReadOnlyList<string>? requestedFields = null);
-    Task<FiscalYearEndRolloverResult> RollOverFiscalYearEndAsync();
 }

@@ -69,9 +69,7 @@ public class GrantManagerSettingDefinitionProvider : SettingDefinitionProvider
             // 2 AM PST = 10 AM UTC
             { SettingsConstants.BackgroundJobs.ApplicantTenantMapReconciliation_Expression, "0 0 10 1/1 * ? *" },
             // 2 AM PST = 10 AM UTC
-            { SettingsConstants.BackgroundJobs.DateBasedNotificationSchedule_Expression, "0 0 10 1/1 * ? *" },
-            // Midnight January 1st every year (server local time)
-            { SettingsConstants.BackgroundJobs.FiscalYearEndRollover_Expression, "0 0 0 1 1 ? *" }
+            { SettingsConstants.BackgroundJobs.DateBasedNotificationSchedule_Expression, "0 0 10 1/1 * ? *" }
         };
 
         foreach (var setting in backGroundSchedules)

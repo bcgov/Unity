@@ -32,7 +32,6 @@
             public const string DataHealthCheckMonitor_Expression = "GrantManager.BackgroundJobs.DataHealthCheckMonitor_Expression";
             public const string ApplicantTenantMapReconciliation_Expression = "GrantManager.BackgroundJobs.ApplicantTenantMapReconciliation_Expression";
             public const string DateBasedNotificationSchedule_Expression = "GrantManager.BackgroundJobs.DateBasedNotificationSchedule_Expression";
-            public const string FiscalYearEndRollover_Expression = "GrantManager.BackgroundJobs.FiscalYearEndRollover_Expression";
         }
     }
 }
