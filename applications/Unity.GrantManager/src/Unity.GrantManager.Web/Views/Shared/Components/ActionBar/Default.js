@@ -478,9 +478,10 @@ $(function () {
     });
 
     $('#externalLink').on('click', function () {
-        location.href =
+        const applicationUrl =
             '/GrantApplications/Details?ApplicationId=' +
             selectedApplicationIds[0];
+        window.open(applicationUrl, '_blank', 'noopener,noreferrer');
     });
     //#endregion Action Button Click Events
 

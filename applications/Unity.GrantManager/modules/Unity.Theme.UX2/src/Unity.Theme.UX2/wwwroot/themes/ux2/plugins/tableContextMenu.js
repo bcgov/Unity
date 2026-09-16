@@ -496,6 +496,11 @@
                     return;
                 }
 
+                // Preserve the browser's link context menu for hyperlinks inside cells.
+                if ($(e.target).closest('a[href]').length > 0) {
+                    return;
+                }
+
                 e.preventDefault();
                 e.stopPropagation();
 
