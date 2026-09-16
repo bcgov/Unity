@@ -388,7 +388,7 @@ const emailHistoryTemplate = `<div class="emailHistoryPreview">
         <dt class="text-nowrap col-1">Subject:</dt>
         <dd class="col-11">{{subject}}</dd>
     </dl>
-    <div class="row">
+    <div class="emailHistoryBody">
     {{safeHtml body}}
     </div>
 </div>`;

@@ -55,6 +55,38 @@
     width: 30px !important;
 }
 
+/* Prevent nested email body content (ol/ul markers, etc.) from being clipped by the td's overflow:hidden */
+.emailHistoryPreview .emailHistoryBody {
+    margin: 0;
+    overflow-wrap: break-word;
+}
+
+.emailHistoryPreview .emailHistoryBody ol,
+.emailHistoryPreview .emailHistoryBody ul {
+    padding-inline-start: 2em;
+}
+
+/* Size the label column to fit its content instead of a fixed Bootstrap percentage,
+   which overlaps the value column at narrow widths. Grid keeps each label/value
+   pair stacked on its own line since Bootstrap's flex row no longer forces that. */
+.emailHistoryPreview dl.row {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    column-gap: 6px;
+    row-gap: 0;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.emailHistoryPreview dl.row dt.col-1,
+.emailHistoryPreview dl.row dd.col-11 {
+    width: auto;
+    max-width: none;
+    padding-left: 0;
+    padding-right: 0;
+    margin-top: 0;
+}
+
 /* Style Print button to match Filter button appearance */
 #EmailHistoryButtonSection .dt-buttons .buttons-selected-single {
     font-size: 14px !important;
