@@ -28,5 +28,6 @@ module.exports = {
         '@node_modules/tributejs': '@libs/tributejs',
         '@node_modules/tinymce': '@libs/tinymce',
         '@node_modules/handlebars': '@libs/handlebars',
+        '@node_modules/dompurify/dist': '@libs/dompurify/dist',
     },
 };

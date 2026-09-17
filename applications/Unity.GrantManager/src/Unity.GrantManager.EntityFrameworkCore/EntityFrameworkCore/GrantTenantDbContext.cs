@@ -503,7 +503,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.HasIndex(x => x.ApplicationId);
                 b.HasIndex(x => x.ScheduledNotificationId);
                 b.HasIndex(x => x.CreationTime);
-                b.HasIndex(new[] { nameof(ScheduledNotificationTracking.ApplicationId), nameof(ScheduledNotificationTracking.ScheduledNotificationId), nameof(ScheduledNotificationTracking.DateField) }).IsUnique();
+                b.HasIndex(new[] { nameof(ScheduledNotificationTracking.ApplicationId), nameof(ScheduledNotificationTracking.ScheduledNotificationId), nameof(ScheduledNotificationTracking.DateField), nameof(ScheduledNotificationTracking.TriggerDate) }).IsUnique();
                 b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired().OnDelete(DeleteBehavior.Cascade);
                 b.HasOne<ScheduledNotification>().WithMany().HasForeignKey(x => x.ScheduledNotificationId).IsRequired().OnDelete(DeleteBehavior.Cascade);
             });

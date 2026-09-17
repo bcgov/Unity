@@ -6,8 +6,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Notifications;
-using Unity.Notifications.Emails;
+using Unity.GrantManager.Settings;
+using static Unity.GrantManager.Notifications.NotificationDateFields;
+using Unity.Modules.Shared.Utils;
 using Unity.Notifications.EmailGroups;
+using Unity.Notifications.Emails;
+using Unity.Notifications.Events;
 using Unity.Notifications.Settings;
 using Unity.Notifications.Templates;
 using Volo.Abp.BackgroundWorkers.Quartz;
@@ -17,19 +21,16 @@ using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
 using Volo.Abp.Identity.Integration;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.SettingManagement;
 using Volo.Abp.Settings;
 using Volo.Abp.TenantManagement;
-using Unity.Notifications.Events;
-using Unity.Modules.Shared.Utils;
-using Unity.GrantManager.Settings;
-using Volo.Abp.SettingManagement;
 
 namespace Unity.GrantManager.Events
 {
     /// <summary>
     /// Quartz background job that runs nightly to process date-based scheduled notifications.
-    /// Checks if application trigger dates (DueDate, NotificationDate, ContractNotificationDate) have passed
-    /// and sends emails accordingly.
+    /// Checks if application trigger dates (DueDate, NotificationDate, ProjectStartDate, ProjectEndDate,
+    /// ContractExecutionDate, FiscalYearEnd) have passed and sends emails accordingly.
     /// </summary>
     [DisallowConcurrentExecution]
     public class DateBasedScheduledNotificationJob : QuartzBackgroundWorkerBase, ITransientDependency
@@ -84,8 +85,7 @@ namespace Unity.GrantManager.Events
             _scheduledNotificationHelper = scheduledNotificationHelper;
             _logger = logger;
 
-            // 2 AM PST = 10 AM UTC
-            const string defaultCronExpression = "0 0 2 * * ?";
+            const string defaultCronExpression = "0 0/5 * * * ?";
             string cronExpression = defaultCronExpression;
 
             try
@@ -98,7 +98,7 @@ namespace Unity.GrantManager.Events
                 {
                     if (CronExpression.IsValidExpression(settingsValue))
                     {
-                        cronExpression = settingsValue;
+                        cronExpression = defaultCronExpression;  //settingsValue;
                     }
                     else
                     {
@@ -177,6 +177,7 @@ namespace Unity.GrantManager.Events
                 // Get all active date-based notifications for this tenant (now in correct tenant context)
                 var notifications = (await _scheduledNotificationRepository.GetListAsync(
                     n => n.IsActive
+                      && n.TriggerType == "Date"
                       && !string.IsNullOrEmpty(n.DateField)))
                     .ToList();
 
@@ -188,10 +189,8 @@ namespace Unity.GrantManager.Events
 
                 _logger.LogInformation("DateBasedScheduledNotificationJob: Processing {Count} date-based notifications for current tenant.", notifications.Count);
 
-                // Extract unique FormIds from date-based notifications only
-                // (notifications are already filtered to include only those with DateField set, meaning TriggerType is "Date")
+                // Extract unique FormIds from date-based notifications only.
                 var formIds = notifications
-                    .Where(n => !string.IsNullOrEmpty(n.DateField)) // Explicit check for Date trigger type
                     .Select(n => n.FormId)
                     .Distinct()
                     .ToList();
@@ -206,14 +205,8 @@ namespace Unity.GrantManager.Events
 
                 // OPTIMIZATION: Single query to get all applications for all forms with past dates
                 // Only queries applications where FormId exists in ScheduledNotifications with Date trigger type
-                var allApplications = (await _applicationRepository.GetListAsync(
-                    a => formIds.Contains(a.ApplicationFormId)
-                      && ((a.DueDate != null && a.DueDate <= today) ||
-                          (a.ProjectStartDate != null && a.ProjectStartDate <= today) ||
-                          (a.ProjectEndDate != null && a.ProjectEndDate <= today) ||
-                          (a.NotificationDate != null && a.NotificationDate <= today) ||
-                          (a.ContractExecutionDate != null && a.ContractExecutionDate <= today))))
-                    .ToList();
+                // Only eager-loads Applicant (needed for FiscalYearEnd matching), not the full details graph
+                var allApplications = await _applicationRepository.GetListForDateBasedNotificationsAsync(formIds, today);
 
                 if (allApplications.Count == 0)
                 {
@@ -277,6 +270,9 @@ namespace Unity.GrantManager.Events
                     var notifiedAppIds = allTracking
                         .Where(t => t.ScheduledNotificationId == notification.Id
                                  && t.DateField == notification.DateField)
+                        .Where(t => applicationsForForm.Any(application =>
+                            application.Id == t.ApplicationId
+                            && GetDateFieldValue(application, notification.DateField)?.Date == t.TriggerDate?.Date))
                         .Select(t => t.ApplicationId)
                         .ToHashSet();
 
@@ -344,15 +340,36 @@ namespace Unity.GrantManager.Events
         {
             DateTime? triggerDate = dateField switch
             {
-                "NotificationDate" => application.NotificationDate,
-                "DueDate" => application.DueDate,
-                "ProjectStartDate" => application.ProjectStartDate,
-                "ProjectEndDate" => application.ProjectEndDate,
-                "ContractExecutionDate" => application.ContractExecutionDate,
+                NotificationDate => application.NotificationDate,
+                DueDate => application.DueDate,
+                ProjectStartDate => application.ProjectStartDate,
+                ProjectEndDate => application.ProjectEndDate,
+                ContractExecutionDate => application.ContractExecutionDate,
+                // The notification will not send if the FYE Date has no value
+                FiscalYearEnd => GetApplicantFiscalYearEnd(application) is { } fiscalYearEnd
+                    ? fiscalYearEnd.ToDateTime(TimeOnly.MinValue)
+                    : null,
                 _ => null
             };
 
             return triggerDate.HasValue && triggerDate.Value.Date <= today.Date;
+        }
+
+        // Applicant is a required relationship (non-nullable ApplicantId), so it is never legitimately null;
+        // the getter only throws InvalidOperationException when the navigation was not eager-loaded.
+        private static DateOnly? GetApplicantFiscalYearEnd(Application application)
+        {
+            Applicant? applicant;
+            try
+            {
+                applicant = application.Applicant;
+            }
+            catch (InvalidOperationException)
+            {
+                return null;
+            }
+
+            return applicant?.FiscalYearEnd;
         }
 
         private async Task<ScheduledNotificationTracking?> ProcessApplicationForNotificationAsync(
@@ -425,10 +442,11 @@ namespace Unity.GrantManager.Events
             ScheduledNotification notification,
             Application application)
         {
-            if (string.IsNullOrEmpty(notification.DateField))
+            if (!string.Equals(notification.TriggerType, "Date", StringComparison.OrdinalIgnoreCase) ||
+                string.IsNullOrEmpty(notification.DateField))
             {
                 _logger.LogWarning(
-                    "DateBasedScheduledNotificationJob: DateField is null or empty for notification {NotificationId}, cannot create tracking record.",
+                    "DateBasedScheduledNotificationJob: Notification {NotificationId} is not a valid date-based notification, cannot create tracking record.",
                     notification.Id);
                 return null;
             }
@@ -438,6 +456,7 @@ namespace Unity.GrantManager.Events
                 application.Id,
                 notification.Id,
                 notification.DateField,
+                GetDateFieldValue(application, notification.DateField)!.Value,
                 DateTime.UtcNow);
 
             _logger.LogInformation(
@@ -445,6 +464,19 @@ namespace Unity.GrantManager.Events
                 notification.Id, application.Id);
 
             return tracking;
+        }
+
+        internal static DateTime? GetDateFieldValue(Application application, string? dateField)
+        {
+            return dateField switch
+            {
+                "NotificationDate" => application.NotificationDate,
+                "DueDate" => application.DueDate,
+                "ProjectStartDate" => application.ProjectStartDate,
+                "ProjectEndDate" => application.ProjectEndDate,
+                "ContractExecutionDate" => application.ContractExecutionDate,
+                _ => null
+            };
         }
     }
 }

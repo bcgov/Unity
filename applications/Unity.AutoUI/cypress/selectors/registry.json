@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "mode": "report-only",
-  "generatedAt": "2026-09-04T19:18:25.516Z",
+  "generatedAt": "2026-09-16T21:49:16.066Z",
   "summary": {
     "total": 360,
     "matched": 147,
@@ -801,6 +801,7 @@
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicationLinksWidget/Default.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/CustomFields/Default.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/DetailsActionBar/Default.js",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/EmailHistoryWidget/Default.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/PaymentConfiguration/Default.js"
       ]
     },
@@ -829,6 +830,7 @@
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicationLinksWidget/Default.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/CustomFields/Default.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/DetailsActionBar/Default.js",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/EmailHistoryWidget/Default.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/PaymentConfiguration/Default.js"
       ]
     },

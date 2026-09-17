@@ -186,13 +186,26 @@
         return fetch('/api/form-notifications/recipients?category=' + encodeURIComponent(category)).then(r => r.json());
     }
 
-    function renderTriggerDetail(data, type, row) {
-        let detail = '';
-        if (row.triggerType === 'Date') {
-            detail = row.dateType ? row.dateType : '';
-        } else {
-            detail = row.eventStatus ? row.eventStatus : '';
+    function renderDateTriggerDetail(row) {
+        const detail = row.dateType || '';
+        const statusIds = Array.isArray(row.applicationStatusIds)
+            ? row.applicationStatusIds.map(String).filter(Boolean)
+            : [];
+
+        if (statusIds.length === 0) {
+            return detail;
         }
+
+        const statusOptions = Array.from(document.getElementById('dateApplicationStatus')?.options ?? []);
+        const statusLabels = statusIds.map(statusId => {
+            const option = statusOptions.find(item => String(item.value) === statusId);
+            return option?.textContent?.trim() || statusId;
+        });
+
+        return detail + (detail ? ' → ' : '') + 'Status: ' + statusLabels.join(', ');
+    }
+
+    function appendRecipientDetail(detail, row) {
         if (row.recipientCategory) {
             detail += (detail ? ' → ' : '') + 'Category: ' + row.recipientCategory;
         }
@@ -200,6 +213,14 @@
             detail += (detail ? ', ' : '') + 'Recipients: ' + row.recipientIdentifier;
         }
         return detail;
+    }
+
+    function renderTriggerDetail(data, type, row) {
+        const detail = row.triggerType === 'Date'
+            ? renderDateTriggerDetail(row)
+            : row.eventStatus || '';
+
+        return appendRecipientDetail(detail, row);
     }
 
     function renderTriggerType(data, type, row) {
@@ -1036,6 +1057,7 @@
         fetchStatuses().then(statuses => {
             populateStatuses(statuses);
             populateDateStatuses(statuses);
+            reloadTable();
         });
     });
 

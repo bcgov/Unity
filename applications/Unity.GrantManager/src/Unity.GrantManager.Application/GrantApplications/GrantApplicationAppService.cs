@@ -206,7 +206,8 @@ public class GrantApplicationAppService(
                     IndigenousOrgInd = rec.ApplicantIndigenousOrgInd ?? string.Empty,
                     UnityApplicantId = rec.ApplicantUnityApplicantId ?? string.Empty,
                     FiscalDay = rec.ApplicantFiscalDay?.ToString() ?? string.Empty,
-                    FiscalMonth = rec.ApplicantFiscalMonth ?? string.Empty
+                    FiscalMonth = rec.ApplicantFiscalMonth ?? string.Empty,
+                    FiscalYearEnd = rec.ApplicantFiscalYearEnd
                 },
                 OrganizationName = rec.ApplicantOrgName ?? string.Empty,
                 NonRegOrgName = rec.ApplicantNonRegOrgName ?? string.Empty,

@@ -784,7 +784,7 @@ div.dt-container div.dt-search {
 }
 
 .unt-accordion .accordion-button:not(.collapsed) {
-    color: #FFFFFF;
+    color: #1F1F1F;
     background-color: #5595D9;
     box-shadow: inset 0 calc(-1* var(--bs-accordion-border-width)) 0 var(--bs-accordion-border-color);
 }

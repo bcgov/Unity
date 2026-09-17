@@ -5,10 +5,9 @@
 @if (Model.OtherLanguages.Any())
 {
     <div class="dropdown">
-        <a class="nav-link dropdown-toggle" href="#" role="button" id="languageSwitchDropdownMenuLink" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
-           onkeydown="if(event.key==='Enter'){event.preventDefault();this.click();}else if(event.key===' '){event.preventDefault();if(!event.repeat){this.click();}}">
+        <button type="button" class="nav-link dropdown-toggle" id="languageSwitchDropdownMenuLink" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
             @Model.CurrentLanguage.DisplayName
-        </a>
+        </button>
 
         <div class="dropdown-menu dropdown-menu-end border-0 shadow-sm" aria-labelledby="languageSwitchDropdownMenuLink">
             @foreach (var language in Model.OtherLanguages)

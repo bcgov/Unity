@@ -2285,6 +2285,10 @@ function initializeDraftEmailsWidget() {
             id: (activeTemplateId || '').toString()
         };
 
+        // Only drafts pick up the current date. Sent and scheduled emails must show the
+        // "Today's Date" value that was frozen into the body when they left the draft state.
+        const displayBody = isDraft ? refreshTodayDateSpans(data.body) : data.body;
+
         resetValidationErrors();
         console.log("data", data)
         $('#EmailTemplateName').val(selectedRecordTemplateName);
@@ -2321,7 +2325,7 @@ function initializeDraftEmailsWidget() {
             },
             init_instance_callback: function (editor) {
                 // Set initial content
-                const bodyContent = data.body ? refreshTodayDateSpans(data.body) : '';
+                const bodyContent = displayBody || '';
                 if (bodyContent) {
                     const sanitizedBodyContent = sanitizeTinyMceHtml(bodyContent);
                     editor.setContent(sanitizedBodyContent);
@@ -2354,9 +2358,8 @@ function initializeDraftEmailsWidget() {
         UIElements.inputEmailBCC.val(data.bcc?.replaceAll(',', '; ') ?? '');
         setEmailFromAddress(data.fromAddress);
         UIElements.inputEmailSubject.val(data.subject);
-        const bodyContentWithRefresh = refreshTodayDateSpans(data.body);
-        UIElements.inputEmailBody.val(bodyContentWithRefresh);
-        UIElements.inputOriginalEmailBody.val(bodyContentWithRefresh);
+        UIElements.inputEmailBody.val(displayBody);
+        UIElements.inputOriginalEmailBody.val(displayBody);
 
         // Load scheduled send date/time if available
         if (data.sendOnDateTime) {
