@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "mode": "report-only",
-  "generatedAt": "2026-09-16T21:49:16.066Z",
+  "generatedAt": "2026-09-17T20:57:29.101Z",
   "summary": {
     "total": 360,
     "matched": 147,
@@ -3042,7 +3042,7 @@
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/Notifications/Index.cshtml",
-        "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Views/Settings/NotificationsSettingGroup/Default.js",
+        "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Views/Settings/NotificationsSettingGroup/Default.cshtml",
         "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Views/Settings/NotificationsSettingGroup/InternalEmailGroups.js",
         "applications/Unity.GrantManager/modules/Unity.Reporting/src/Unity.Reporting.Web/Views/Shared/Components/ReportingConfiguration/Default.cshtml",
         "applications/Unity.GrantManager/modules/Unity.Reporting/src/Unity.Reporting.Web/Views/Shared/Components/ReportingConfigurationViewStatus/Default.cshtml",
