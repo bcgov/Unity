@@ -1102,7 +1102,7 @@ function initializeDraftEmailsWidget() {
         if (!templates) {
             try {
                 templates = await $.ajax({
-                    url: `/api/form-notifications/templates`,
+                    url: `/api/form-notifications/templates?templateType=Application`,
                     type: 'GET'
                 });
                 cachedTemplates = templates;
@@ -1122,7 +1122,7 @@ function initializeDraftEmailsWidget() {
         if (!templates) {
             try {
                 templates = await $.ajax({
-                    url: `/api/form-notifications/templates`,
+                    url: `/api/form-notifications/templates?templateType=Application`,
                     type: 'GET'
                 });
                 cachedTemplates = templates;
@@ -1373,7 +1373,7 @@ function initializeDraftEmailsWidget() {
 
         try {
             const response = await $.ajax({
-                url: `/api/form-notifications/templates`,
+                url: `/api/form-notifications/templates?templateType=Application`,
                 type: 'GET'
             });
 
@@ -2189,7 +2189,7 @@ function initializeDraftEmailsWidget() {
         if (cachedTemplates) return;
         try {
             cachedTemplates = await $.ajax({
-                url: `/api/form-notifications/templates`,
+                url: `/api/form-notifications/templates?templateType=Application`,
                 type: 'GET'
             });
         } catch (e) {

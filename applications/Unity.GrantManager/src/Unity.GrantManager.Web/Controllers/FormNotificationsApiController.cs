@@ -6,6 +6,7 @@ using Unity.GrantManager.GrantApplications;
 using Unity.Notifications.EmailGroups;
 using System.Threading.Tasks;
 using Unity.Notifications.EmailNotifications;
+using Unity.Notifications.Templates;
 using Volo.Abp.Users;
 using Unity.GrantManager.Events;
 using Unity.Payments.Enums;
@@ -54,9 +55,16 @@ namespace Unity.GrantManager.Web.Controllers
 
 
         [HttpGet("templates")]
-        public async Task<ActionResult<List<EmailTemplateDto>>> GetTemplates()
+        public async Task<ActionResult<List<EmailTemplateDto>>> GetTemplates([FromQuery] string? templateType = null)
         {
             var templates = await _templateService.GetTemplatesByTenant();
+            if (!string.IsNullOrWhiteSpace(templateType))
+            {
+                templates = templates
+                    .Where(t => string.Equals(t.TemplateType, templateType, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
             var list = templates.Select(t => new EmailTemplateDto
             {
                 Id = t.Id,
@@ -65,7 +73,8 @@ namespace Unity.GrantManager.Web.Controllers
                 Body = t.BodyHTML,
                 SendFrom = t.SendFrom,
                 RecipientCategory = t.RecipientCategory,
-                RecipientIdentifier = t.RecipientIdentifier
+                RecipientIdentifier = t.RecipientIdentifier,
+                TemplateType = t.TemplateType
             }).ToList();
 
             return Ok(list);
@@ -231,6 +240,9 @@ namespace Unity.GrantManager.Web.Controllers
                 Id = e.Id,
                 TemplateId = e.EmailTemplateId,
                 TemplateName = templateMap.TryGetValue(e.EmailTemplateId, out var t) && t != null ? t.Name : string.Empty,
+                TemplateType = templateMap.TryGetValue(e.EmailTemplateId, out var template) && template != null
+                    ? template.TemplateType
+                    : TemplateTypes.Application,
                 TriggerType = e.TriggerType,
                 Module = e.Module ?? (e.TriggerType == "Event" ? "Application" : null),
                 DateType = e.DateField,
@@ -274,6 +286,10 @@ namespace Unity.GrantManager.Web.Controllers
 
             var template = await _templateService.GetTemplateById(input.TemplateId);
             if (template == null) return BadRequest("Template not found");
+            if (!string.Equals(template.TemplateType, TemplateTypes.Application, StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest("Only Application templates can be used for application notifications.");
+            }
             if (!Guid.TryParse(formId, out var parsedFormId)) return BadRequest("Invalid form id");
 
             // Resolve status label if an ApplicationStatusId was provided
@@ -309,6 +325,7 @@ namespace Unity.GrantManager.Web.Controllers
                 Id = created.Id,
                 TemplateId = input.TemplateId,
                 TemplateName = template.Name,
+                TemplateType = template.TemplateType,
                 TriggerType = created.TriggerType,
                 Module = created.Module,
                 DateType = created.DateField,
@@ -398,6 +415,18 @@ namespace Unity.GrantManager.Web.Controllers
             var template = await _templateService.GetTemplateById(input.TemplateId);
             if (template == null) return BadRequest("Template not found");
 
+            var existingNotification = await _automatedNotificationAppService.GetAsync(id);
+            var existingTemplate = await _templateService.GetTemplateById(existingNotification.EmailTemplateId);
+            if (existingTemplate != null &&
+                !string.Equals(template.TemplateType, existingTemplate.TemplateType, StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest("The replacement template must have the same template type as the existing notification.");
+            }
+            if (!string.Equals(template.TemplateType, TemplateTypes.Application, StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest("Only Application templates can be used for application notifications.");
+            }
+
             string? statusLabel = null;
             if (input.ApplicationStatusId.HasValue)
             {
@@ -430,6 +459,7 @@ namespace Unity.GrantManager.Web.Controllers
                 Id = updated.Id,
                 TemplateId = input.TemplateId,
                 TemplateName = template.Name,
+                TemplateType = template.TemplateType,
                 TriggerType = updated.TriggerType,
                 Module = updated.Module,
                 DateType = updated.DateField,
@@ -494,6 +524,7 @@ namespace Unity.GrantManager.Web.Controllers
         public string SendFrom { get; init; } = string.Empty;
         public string? RecipientCategory { get; init; }
         public string? RecipientIdentifier { get; init; }
+        public string TemplateType { get; init; } = TemplateTypes.Application;
     }
 
     public record ScheduledNotificationDto
@@ -509,6 +540,7 @@ namespace Unity.GrantManager.Web.Controllers
         public List<Guid> ApplicationStatusIds { get; init; } = new();
         public string? RecipientCategory { get; init; }
         public string? RecipientIdentifier { get; init; }
+        public string TemplateType { get; init; } = TemplateTypes.Application;
         public DateTime CreatedAt { get; init; }
         public bool IsActive { get; init; }
     }

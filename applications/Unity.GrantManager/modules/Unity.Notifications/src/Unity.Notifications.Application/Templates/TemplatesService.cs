@@ -33,6 +33,8 @@ public class TemplateService : ApplicationService, ITemplateService
 
     public async Task<EmailTemplate?> CreateAsync(EmailTempateDto templateDto)
     {
+        var templateType = NormalizeTemplateType(templateDto.TemplateType);
+
         // When being called here the current tenant is in context - verified by looking at the tenant id
         return await _templatesRepository.InsertAsync(
             new EmailTemplate(Guid.NewGuid(),
@@ -43,7 +45,8 @@ public class TemplateService : ApplicationService, ITemplateService
             templateDto.BodyHTML,
             templateDto.SendFrom,
             templateDto.RecipientCategory,
-            templateDto.RecipientIdentifier));
+            templateDto.RecipientIdentifier,
+            templateType));
     }
 
     public async Task<EmailTemplate?> UpdateTemplate(Guid id, EmailTempateDto templateDto)
@@ -59,6 +62,7 @@ public class TemplateService : ApplicationService, ITemplateService
         template.SendFrom = templateDto.SendFrom;
         template.RecipientCategory = templateDto.RecipientCategory;
         template.RecipientIdentifier = templateDto.RecipientIdentifier;
+        template.TemplateType = NormalizeTemplateType(templateDto.TemplateType);
 
         // When being called here the current tenant is in context - verified by looking at the tenant id
         EmailTemplate updatedTemplate = await _templatesRepository.UpdateAsync(template, autoSave: true);
@@ -85,9 +89,37 @@ public class TemplateService : ApplicationService, ITemplateService
         return data;
     } 
     
-    public async Task<List<TemplateVariable>> GetTemplateVariables()
+    public Task<List<string>> GetTemplateTypes()
     {
-        var templateVariables =  await _templateVariablesRepository.GetQueryableAsync();
-        return templateVariables.OrderBy(x => x.Name).ToList();
+        return Task.FromResult(new List<string>
+        {
+            TemplateTypes.Application,
+            TemplateTypes.Applicant
+        });
+    }
+
+    public async Task<List<TemplateVariable>> GetTemplateVariables(string? templateType = null)
+    {
+        var selectedType = NormalizeTemplateType(templateType);
+        var templateVariables = await _templateVariablesRepository.GetQueryableAsync();
+        return templateVariables
+            .Where(x => x.TemplateType == selectedType)
+            .OrderBy(x => x.Name)
+            .ToList();
+    }
+
+    private static string NormalizeTemplateType(string? templateType)
+    {
+        if (string.Equals(templateType, TemplateTypes.Applicant, StringComparison.OrdinalIgnoreCase))
+        {
+            return TemplateTypes.Applicant;
+        }
+
+        if (string.Equals(templateType, TemplateTypes.Application, StringComparison.OrdinalIgnoreCase))
+        {
+            return TemplateTypes.Application;
+        }
+
+        return TemplateTypes.Applicant;
     }
 }

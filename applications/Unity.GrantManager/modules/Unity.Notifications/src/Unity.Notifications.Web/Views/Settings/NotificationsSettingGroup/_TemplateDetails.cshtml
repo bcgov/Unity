@@ -20,6 +20,18 @@
     </div>
     <div class="mb-3">
         <div class="d-flex template-field-div">
+            <label for="templateType" class="form-label template-field">Template Type</label>
+            <div class="flex-grow-1">
+                <select id="templateType" class="form-control form-select" name="templateType" required>
+                    <option value="Application">Application</option>
+                    <option value="Applicant">Applicant</option>                    
+                </select>
+                <div id="templateType-error" class="invalid-feedback d-block" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="mb-3">
+        <div class="d-flex template-field-div">
             <label for="sendFrom" class="form-label template-field">Send From</label>
             <div class="flex-grow-1">
                 <select id="sendFrom" class="form-control form-select" name="sendFrom" required></select>
