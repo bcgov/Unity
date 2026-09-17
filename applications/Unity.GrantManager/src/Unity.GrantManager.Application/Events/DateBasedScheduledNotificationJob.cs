@@ -384,7 +384,7 @@ namespace Unity.GrantManager.Events
                 // Build token values and render template
                 // OPTIMIZATION: Use pre-loaded applicant agent from cache instead of querying per application
                 applicantAgentsDict.TryGetValue(application.Id, out var applicantAgent);
-                var tokenValues = ScheduledNotificationHelper.BuildTokenValues(application, applicantAgent);
+                var tokenValues = ScheduledNotificationHelper.BuildTokenValues(application, applicantAgent, template.TemplateType);
                 string subject = ScheduledNotificationHelper.RenderTemplate(template.Subject, tokenValues);
                 string body = ScheduledNotificationHelper.RenderTemplate(
                     string.IsNullOrWhiteSpace(template.BodyHTML) ? template.BodyText : template.BodyHTML,
