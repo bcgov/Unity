@@ -670,7 +670,9 @@ $(function () {
     function checkActionButtons() {
         const hasSelection = dataTable.rows({ selected: true }).indexes().length > 0;
         let isInSentState = hasSelection && checkAllRowsHaveState(['Submitted', 'FSB']);
-        setActionButtonState(payment_check_status_buttons, isInSentState);
+        const hasSubmittedInvoiceError = dataTable.rows('.selected').data().toArray()
+            .some(row => row.status === 'Submitted' && row.invoiceStatus?.trim().toUpperCase() === 'ERROR');
+        setActionButtonState(payment_check_status_buttons, isInSentState && !hasSubmittedInvoiceError);
 
         let hasHistoricalPayment = dataTable.rows('.selected').data().toArray().some(row => row.status === 'HistoricalPayment');
         let hasCancelledPayment = dataTable.rows('.selected').data().toArray().some(row => row.status === 'Cancelled');
