@@ -36,6 +36,7 @@
 
     let emailHistoryDataTable = $('#EmailHistoryTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
+            dom: 'Bfrtip',
             serverSide: false,
             order: [[2, 'desc']],
             searching: false,
@@ -43,6 +44,18 @@
             select: {
                 style: 'single'
             },
+            buttons: [
+                {
+                    extend: 'selectedSingle',
+                    text: 'Print',
+                    action: function (e, dt, node, config) {
+                        let rowData = dt.row({ selected: true }).data();
+                        if (rowData) {
+                            printEmailHistoryRow(rowData);
+                        }
+                    }
+                }
+            ],
             info: false,
             scrollX: false,
             ajax: abp.libs.datatables.createAjax(
@@ -191,13 +204,8 @@
         return `<button class="btn btn-delete-draft${widthClass}" type="button" onclick="deleteDraftEmail('${full.id}', '${row}')"><i class="fl fl-cancel"></i></button>`;
     }
 
-
-
-
-
-    function rowFormat(d) {
-        return '<div class="multi-line">' + d.body + '</div>';
-    }
+    // Move the DataTables print button out of the table toolbar and into the header row
+    emailHistoryDataTable.buttons(0, null).container().appendTo('#EmailHistoryButtonSection');
 
     // Add event listener for opening and closing details
     emailHistoryDataTable.on('click', 'td.dt-control', (e) => {
@@ -210,7 +218,7 @@
         }
         else {
             // Open this row
-            row.child(rowFormat(row.data())).show();
+            row.child(emailHistoryHandlebars(row.data())).show();
         }
     });
 
@@ -361,4 +369,153 @@ function deleteDraftEmail(id, rowIndex) {
     });
 }
 
+const emailHistoryTemplate = `<div class="emailHistoryPreview">
+    <dl class="row">
+        <dt class="text-nowrap col-1">From:</dt>
+        <dd class="col-11">{{fromAddress}}</dd>
+        <dt class="text-nowrap col-1">Sent:</dt>
+        <dd class="col-11">{{default (formatDateTime sentDateTime) 'Not Sent'}}</dd>
+        <dt class="text-nowrap col-1">To:</dt>
+        <dd class="col-11">{{csvList toAddress}}</dd>
+        {{#if cc}}
+        <dt class="text-nowrap col-1">CC:</dt>
+        <dd class="col-11">{{csvList cc}}</dd>
+        {{/if}}
+        {{#if bcc}}
+        <dt class="text-nowrap col-1">BCC:</dt>
+        <dd class="col-11">{{csvList bcc}}</dd>
+        {{/if}}
+        <dt class="text-nowrap col-1">Subject:</dt>
+        <dd class="col-11">{{subject}}</dd>
+    </dl>
+    <div class="emailHistoryBody">
+    {{safeHtml body}}
+    </div>
+</div>`;
 
+Handlebars.registerHelper("csvList", function (listText) {
+    return listText.replaceAll(",", "; ");
+});
+
+// Persisted email bodies are user/template-authored HTML and are not trusted;
+// sanitize with DOMPurify's HTML allowlist before rendering as markup.
+Handlebars.registerHelper('safeHtml', function (html) {
+    if (typeof DOMPurify === 'undefined') {
+        return Handlebars.escapeExpression(html || '');
+    }
+
+    const sanitized = DOMPurify.sanitize(html || '', { USE_PROFILES: { html: true } });
+    return new Handlebars.SafeString(sanitized);
+});
+
+Handlebars.registerHelper('default', function (value, fallback) {
+    return (value !== undefined && value !== null && value !== '') ? value : fallback;
+});
+
+// Mirrors the DataTable's Sent Date column rendering, plus the timezone abbreviation in brackets
+Handlebars.registerHelper('formatDateTime', function (value) {
+    if (!value) {
+        return null;
+    }
+
+    const dateTime = luxon.DateTime.fromISO(value, {
+        locale: abp.localization.currentCulture.name,
+    });
+
+    if (!dateTime.isValid) {
+        return value;
+    }
+
+    const formatted = dateTime.toLocaleString({
+        day: 'numeric',
+        year: 'numeric',
+        month: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric'
+    });
+
+    const zoneName = dateTime.offsetNameShort;
+    return zoneName ? `${formatted} (${zoneName})` : formatted;
+});
+
+const emailHistoryHandlebars = Handlebars.compile(emailHistoryTemplate);
+
+const emailPrintTemplate = `<div class="email-print-container">
+    <dl class="email-print-header row">
+        <dt class="text-nowrap col-1">From:</dt>
+        <dd class="col-11">{{fromAddress}}</dd>
+        <dt class="text-nowrap col-1">Sent:</dt>
+        <dd class="col-11">{{default (formatDateTime sentDateTime) 'Not Sent'}}</dd>
+        <dt class="text-nowrap col-1">To:</dt>
+        <dd class="col-11">{{csvList toAddress}}</dd>
+        {{#if cc}}
+        <dt class="text-nowrap col-1">CC:</dt>
+        <dd class="col-11">{{csvList cc}}</dd>
+        {{/if}}
+        {{#if bcc}}
+        <dt class="text-nowrap col-1">BCC:</dt>
+        <dd class="col-11">{{csvList bcc}}</dd>
+        {{/if}}
+        <dt class="text-nowrap col-1">Subject:</dt>
+        <dd class="col-11">{{subject}}</dd>
+    </dl>
+    <hr />
+    <div class="email-print-body">
+    {{safeHtml body}}
+    </div>
+</div>`;
+
+const emailPrintHandlebars = Handlebars.compile(emailPrintTemplate);
+
+function printEmailHistoryRow(rowData) {
+    const referenceNo = $('#applicationBreadcrumbWidget .reference-no').text().trim();
+    const applicantName = $('#applicationBreadcrumbWidget .applicant-name').text().trim();
+    const printTitle = buildEmailPrintTitle(referenceNo, applicantName);
+
+    openEmailPrintInNewTab(emailPrintHandlebars(rowData), printTitle);
+}
+
+function buildEmailPrintTitle(referenceNo, applicantName) {
+    const parts = [referenceNo, applicantName, 'Notification'].filter(Boolean);
+    // Strip characters that are invalid in downloaded file names
+    return parts.join('-').replace(/[\\/:*?"<>|]/g, '') || 'Notification';
+}
+
+function openEmailPrintInNewTab(emailPrintHtml, printTitle) {
+    const newTab = globalThis.open('', '_blank');
+    const doc = newTab.document;
+
+    doc.open();
+    doc.close();
+    doc.title = printTitle;
+
+    const stylesheets = [
+        { href: '/libs/bootstrap/css/bootstrap.min.css' },
+        { href: '/Views/Shared/Components/EmailHistoryWidget/EmailPrint.css' }
+    ];
+
+    const stylesReady = Promise.all(stylesheets.map(({ href }) => new Promise((resolve, reject) => {
+        const link = doc.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = href;
+        link.onload = resolve;
+        link.onerror = reject;
+        doc.head.appendChild(link);
+    })));
+
+    doc.body.innerHTML = emailPrintHtml;
+
+    // Chain script.onload directly instead of relying on the popup's window load
+    // event, which does not reliably fire after doc.open/close plus a body rewrite.
+    const jqueryScript = doc.createElement('script');
+    jqueryScript.src = '/libs/jquery/jquery.js';
+    stylesReady.then(() => {
+        jqueryScript.onload = () => {
+            const printScript = doc.createElement('script');
+            printScript.src = '/Views/Shared/Components/EmailHistoryWidget/loadEmailPrint.js';
+            printScript.onload = () => newTab.executeOperations();
+            doc.head.appendChild(printScript);
+        };
+        doc.head.appendChild(jqueryScript);
+    });
+}

@@ -1,0 +1,49 @@
+@using System
+@using Microsoft.Extensions.Localization
+@using Unity.Modules.Shared.Utils
+@using Unity.Notifications.Localization
+@model Unity.GrantManager.Web.Controllers.NotificationEmailModalViewModel
+@inject IStringLocalizer<NotificationsResource> L
+@{
+    Layout = null;
+    var email = Model.SelectedEmail!;
+}
+<div class="applicant-notification-email">
+    <p>
+        <a href="@Url.Content($"~/GrantApplicants/Details?ApplicantId={Model.ApplicantId}&TenantId={Model.TenantId}")">
+            @L["NotificationList:ViewApplicant"]
+        </a>
+    </p>
+    <dl class="row mb-3">
+        <dt class="col-sm-2">@L["NotificationList:Subject"]</dt>
+        <dd class="col-sm-10 text-break">@email.Subject</dd>
+        <dt class="col-sm-2">@L["NotificationList:From"]</dt>
+        <dd class="col-sm-10 text-break">@email.FromAddress</dd>
+        <dt class="col-sm-2">@L["NotificationList:To"]</dt>
+        <dd class="col-sm-10 text-break">@email.ToAddress</dd>
+        @if (!string.IsNullOrWhiteSpace(email.Cc))
+        {
+            <dt class="col-sm-2">@L["NotificationList:Cc"]</dt>
+            <dd class="col-sm-10 text-break">@email.Cc</dd>
+        }
+        @if (!string.IsNullOrWhiteSpace(email.Bcc))
+        {
+            <dt class="col-sm-2">@L["NotificationList:Bcc"]</dt>
+            <dd class="col-sm-10 text-break">@email.Bcc</dd>
+        }
+        <dt class="col-sm-2">@L["NotificationList:Status"]</dt>
+        <dd class="col-sm-10">@email.Status</dd>
+        <dt class="col-sm-2">@L["NotificationList:SentDate"]</dt>
+        <dd class="col-sm-10">@DateTimeExtensions.FormatPacificTime(email.SentDateTime)</dd>
+    </dl>
+    @if (string.Equals(Model.BodyType, "html", StringComparison.OrdinalIgnoreCase))
+    {
+        @* Razor encodes the attribute; sandbox preserves email tables/styles without executing scripts in the app. *@
+        <iframe class="notification-email-body" title="@L["NotificationList:EmailBody"]"
+                sandbox="allow-popups allow-popups-to-escape-sandbox" referrerpolicy="no-referrer" srcdoc="@email.Body"></iframe>
+    }
+    else
+    {
+        <pre class="notification-email-text">@email.Body</pre>
+    }
+</div>
