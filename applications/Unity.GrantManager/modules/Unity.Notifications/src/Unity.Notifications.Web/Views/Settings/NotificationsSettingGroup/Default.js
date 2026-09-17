@@ -176,10 +176,6 @@ $(function () {
         return { Sender: 'Sender Address', ReplyTo: 'Reply-to Address', NoReply: 'No-reply Address', Inbound: 'Inbound Address', Support: 'Support Address', Other: 'Other' }[data] || data;
     }
 
-    function escapeHtml(value) {
-        return String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
-    }
-
     function showEmailAddressModal(address) {
         const id = 'emailAddressModal';
         const item = address || { emailAddress: '', emailType: 'Sender', description: '', isActive: true, isDefault: false };
