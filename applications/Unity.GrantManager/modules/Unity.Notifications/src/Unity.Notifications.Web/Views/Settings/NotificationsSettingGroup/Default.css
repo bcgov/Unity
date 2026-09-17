@@ -117,6 +117,28 @@ body {
     margin-top: 10px;
 }
 
+.configured-email-use-note {
+    display: block;
+    margin-top: 1rem;
+}
+
+.configured-email-options {
+    display: flex;
+}
+
+.configured-email-options > div {
+    width: 50%;
+}
+
+.configured-email-warning {
+    display: block;
+    width: 100%;
+    background-color: #fff3cd;
+    border: 1px solid #ffecb5;
+    border-radius: 0.25rem;
+    color: #664d03;
+    padding: 0.75rem;
+}
 
 /* ── Split-pane container ─────────────────────────────────────────────────── */
 .split-container {

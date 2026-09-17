@@ -1739,7 +1739,15 @@ function initializeDraftEmailsWidget() {
         let emailValue = fieldElement.value.trim();
 
         // Remove trailing commas, semicolons, or spaces
-        emailValue = emailValue.replace(/[;,\s]+$/, '');
+        let endIndex = emailValue.length;
+        while (endIndex > 0) {
+            const trailingCharacter = emailValue[endIndex - 1];
+            if (trailingCharacter !== ';' && trailingCharacter !== ',' && trailingCharacter.trim() !== '') {
+                break;
+            }
+            endIndex--;
+        }
+        emailValue = emailValue.slice(0, endIndex);
 
         // If the field is empty and not required, clear any existing errors
         if (!isRequired && emailValue === '') {

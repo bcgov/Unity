@@ -85,7 +85,7 @@ namespace Unity.GrantManager.Events
             _scheduledNotificationHelper = scheduledNotificationHelper;
             _logger = logger;
 
-            const string defaultCronExpression = "0 0/5 * * * ?";
+            const string defaultCronExpression = "0 0 10 1/1 * ? *";
             string cronExpression = defaultCronExpression;
 
             try
@@ -98,7 +98,7 @@ namespace Unity.GrantManager.Events
                 {
                     if (CronExpression.IsValidExpression(settingsValue))
                     {
-                        cronExpression = defaultCronExpression;  //settingsValue;
+                        cronExpression = settingsValue;
                     }
                     else
                     {

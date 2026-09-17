@@ -106,8 +106,8 @@
 }
 
 #EmailHistoryButtonSection .dt-buttons .buttons-selected-single:hover:not(:disabled) {
-    background-color: #5595d9 !important;
-    color: #fff !important;
+    background-color: var(--bc-colors-primary-hover) !important;
+    color: var(--bc-colors-white-primary-500) !important;
 }
 
 #EmailHistoryButtonSection .dt-buttons .buttons-selected-single:disabled {
