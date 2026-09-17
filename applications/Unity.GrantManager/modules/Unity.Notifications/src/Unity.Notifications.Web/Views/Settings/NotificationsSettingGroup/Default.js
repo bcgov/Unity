@@ -182,12 +182,16 @@ $(function () {
 
     function showEmailAddressModal(address) {
         const id = 'emailAddressModal';
-        $(`#${id}`).remove();
         const item = address || { emailAddress: '', emailType: 'Sender', description: '', isActive: true, isDefault: false };
         const activeDisabled = item.isDefault ? 'disabled' : '';
-        $('body').append(`<div class="modal fade" id="${id}" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">${address ? 'Edit' : 'Add'} Email Address</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><form id="configuredEmailForm"><div class="modal-body"><label class="form-label" for="configuredEmailAddress">Email Address</label><input id="configuredEmailAddress" name="configuredEmailAddress" class="email-input from-input form-control" type="text" value="${escapeHtml(item.emailAddress)}" required><label class="form-label mt-3" for="configuredEmailType">Email Type</label><select id="configuredEmailType" class="form-select"><option value="Sender">Sender Address</option><option value="ReplyTo">Reply-to Address</option><option value="NoReply">No-reply Address</option><option value="Inbound">Inbound Address</option><option value="Support">Support Address</option><option value="Other">Other</option></select><label class="form-label mt-3" for="configuredEmailDescription">Description</label><textarea id="configuredEmailDescription" class="form-control">${escapeHtml(item.description)}</textarea><div class="form-check mt-3"><input id="configuredEmailDefault" class="form-check-input" type="checkbox" ${item.isDefault ? 'checked' : ''}><label class="form-check-label" for="configuredEmailDefault">Default</label></div><div class="form-check mt-3"><input id="configuredEmailActive" class="form-check-input" type="checkbox" ${item.isActive ? 'checked' : ''} ${activeDisabled}><label class="form-check-label" for="configuredEmailActive">Active</label></div></div><div class="modal-footer"><button type="submit" class="btn btn-primary" id="saveConfiguredEmail">Save</button><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button></div></form></div></div></div>`);
-        $('#configuredEmailType').val(item.emailType);
-        const modal = new bootstrap.Modal(document.getElementById(id));
+        const $modal = $(`#${id}`);
+        $modal.find('#emailAddressModalTitle').text(`${address ? 'Edit' : 'Add'} Email Address`);
+        $modal.find('#configuredEmailAddress').val(item.emailAddress);
+        $modal.find('#configuredEmailType').val(item.emailType);
+        $modal.find('#configuredEmailDescription').val(item.description);
+        $modal.find('#configuredEmailDefault').prop('checked', item.isDefault);
+        $modal.find('#configuredEmailActive').prop('checked', item.isActive).prop('disabled', Boolean(activeDisabled));
+        const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById(id));
         modal.show();
         const $emailForm = $('#configuredEmailForm');
         const emailInput = $('#configuredEmailAddress');
@@ -224,7 +228,7 @@ $(function () {
                 errorSpan.text(error.text());
             }
         });
-        $defaultInput.on('change', function () {
+        $defaultInput.off('change.configuredEmail').on('change.configuredEmail', function () {
             if (!$(this).prop('checked') && address?.isDefault) {
                 $(this).prop('checked', true);
                 abp.notify.error('There must always be one default email address. Select another email address as the default to change it.');
@@ -232,7 +236,7 @@ $(function () {
             }
             if ($(this).prop('checked')) $activeInput.prop('checked', true);
         });
-        $emailForm.on('submit', function (event) {
+        $emailForm.off('submit.configuredEmail').on('submit.configuredEmail', function (event) {
             event.preventDefault();
             if (!$emailForm.valid()) {
                 return;
