@@ -185,7 +185,11 @@ function initializeDraftEmailsWidget() {
         });
         UIElements.inputEmailCC.on('input', function () {
             validateEmailFieldWithOptions(UIElements.inputEmailCC[0], false, false, false);
-        });
+            let endIndex = emailValue.length;
+            while (endIndex > 0 && /[;,\s]/.test(emailValue[endIndex - 1])) {
+                endIndex--;
+            }
+            emailValue = emailValue.slice(0, endIndex);
         UIElements.inputEmailBCC.on('input', function () {
             validateEmailFieldWithOptions(UIElements.inputEmailBCC[0], false, false, false);
         });
@@ -1739,7 +1743,15 @@ function initializeDraftEmailsWidget() {
         let emailValue = fieldElement.value.trim();
 
         // Remove trailing commas, semicolons, or spaces
-        emailValue = emailValue.replace(/[;,\s]+$/, '');
+        let endIndex = emailValue.length;
+        while (endIndex > 0) {
+            const trailingCharacter = emailValue[endIndex - 1];
+            if (trailingCharacter !== ';' && trailingCharacter !== ',' && trailingCharacter.trim() !== '') {
+                break;
+            }
+            endIndex--;
+        }
+        emailValue = emailValue.slice(0, endIndex);
 
         // If the field is empty and not required, clear any existing errors
         if (!isRequired && emailValue === '') {
