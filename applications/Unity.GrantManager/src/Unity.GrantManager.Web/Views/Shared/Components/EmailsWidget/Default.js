@@ -185,11 +185,7 @@ function initializeDraftEmailsWidget() {
         });
         UIElements.inputEmailCC.on('input', function () {
             validateEmailFieldWithOptions(UIElements.inputEmailCC[0], false, false, false);
-            let endIndex = emailValue.length;
-            while (endIndex > 0 && /[;,\s]/.test(emailValue[endIndex - 1])) {
-                endIndex--;
-            }
-            emailValue = emailValue.slice(0, endIndex);
+        });
         UIElements.inputEmailBCC.on('input', function () {
             validateEmailFieldWithOptions(UIElements.inputEmailBCC[0], false, false, false);
         });
