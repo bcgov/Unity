@@ -171,8 +171,8 @@
         }
     }
 
-    function fetchTemplates() {
-        return fetch('/api/form-notifications/templates').then(r => r.json());
+    function fetchTemplates(templateType = 'Application') {
+        return fetch('/api/form-notifications/templates?templateType=' + encodeURIComponent(templateType)).then(r => r.json());
     }
 
     function fetchStatuses() {
@@ -629,7 +629,7 @@
         if (sel === null || preview === null) return;
         const val = sel.value;
         updateTemplateAttachments(val);
-        fetch('/api/form-notifications/templates').then(r => r.json()).then(list => {
+        fetch('/api/form-notifications/templates?templateType=Application').then(r => r.json()).then(list => {
             const t = list.find(x => String(x.id) === String(val));
             renderTemplatePreview(preview, t);
         });

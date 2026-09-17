@@ -10,6 +10,7 @@ using Unity.Notifications.Settings;
 using System.Threading.Tasks;
 using Unity.Notifications.Templates;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Linq;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
 {
@@ -46,7 +47,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
         }
         private async Task PopulateTemplates(EmailsWidgetViewModel model)
         {
-            var templates = await templateService.GetTemplatesByTenant();
+            var templates = (await templateService.GetTemplatesByTenant())
+                .Where(t => string.Equals(t.TemplateType, TemplateTypes.Application, StringComparison.OrdinalIgnoreCase))
+                .ToList();
 
             templates.ForEach(t =>
            {

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 
 using Unity.Notifications.Emails;
 using Unity.Notifications.Logs;
@@ -60,6 +60,10 @@ public static class NotificationsDbContextModelCreatingExtensions
                 NotificationsDbProperties.DbSchema);
 
             b.ConfigureByConvention();
+            b.Property(x => x.TemplateType)
+                .HasMaxLength(64)
+                .HasDefaultValue(TemplateTypes.Applicant)
+                .IsRequired();
 
         });
         modelBuilder.Entity<Subscriber>(b =>
@@ -97,6 +101,10 @@ public static class NotificationsDbContextModelCreatingExtensions
                 NotificationsDbProperties.DbSchema);
 
             b.ConfigureByConvention();
+            b.Property(x => x.TemplateType)
+                .HasMaxLength(64)
+                .HasDefaultValue(TemplateTypes.Applicant)
+                .IsRequired();
         });
         modelBuilder.Entity<Trigger>(b =>
         {
@@ -129,6 +137,10 @@ public static class NotificationsDbContextModelCreatingExtensions
                 NotificationsDbProperties.DbSchema);
 
             b.ConfigureByConvention();
+            b.Property(x => x.TemplateType)
+                .HasMaxLength(64)
+                .HasDefaultValue(TemplateTypes.Applicant)
+                .IsRequired();
         });
         modelBuilder.Entity<EmailGroup>(b =>
         {
