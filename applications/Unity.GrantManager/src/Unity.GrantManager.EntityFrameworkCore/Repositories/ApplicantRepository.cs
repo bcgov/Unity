@@ -16,7 +16,7 @@ namespace Unity.GrantManager.Repositories
     [Dependency(ReplaceServices = true)]
     [ExposeServices(typeof(IApplicantRepository))]
 #pragma warning disable CS8613 // Nullability of reference types in return type doesn't match implicitly implemented member.
-    // This pattern is an implementation ontop of ABP framework, will not change this
+    // This pattern is an implementation on top of ABP framework, will not change this
     public class ApplicantRepository : EfCoreRepository<GrantTenantDbContext, Applicant, Guid>, IApplicantRepository
 #pragma warning restore CS8613 // Nullability of reference types in return type doesn't match implicitly implemented member.
     {
@@ -58,6 +58,70 @@ namespace Unity.GrantManager.Repositories
             return await dbContext.Applicants
                 .Where(x => x.UnityApplicantId != null && !x.IsDeleted)
                 .ToListAsync();
+        }
+
+        private const string ApplicantsTableName = "Applicants";
+        private const string FiscalMonthColumnName = "FiscalMonth";
+        private const string FiscalDayColumnName = "FiscalDay";
+        private const string FiscalYearEndColumnName = "FiscalYearEnd";
+
+        public async Task<FiscalYearEndRolloverResult> RollOverFiscalYearEndAsync()
+        {
+            var dbContext = await GetDbContextAsync();
+
+            var missingColumns = await GetMissingColumnsAsync(
+                dbContext, ApplicantsTableName, FiscalMonthColumnName, FiscalDayColumnName, FiscalYearEndColumnName);
+
+            if (missingColumns.Count > 0)
+            {
+                return new FiscalYearEndRolloverResult { MissingColumns = missingColumns };
+            }
+
+            // Re-assigning FiscalDay to itself fires trg_applicants_fiscal_year_end,
+            // which recomputes FiscalYearEnd using the current year.
+            var rowsAffected = await dbContext.Database.ExecuteSqlRawAsync(
+                $"""
+                UPDATE "{ApplicantsTableName}"
+                SET "{FiscalDayColumnName}" = "{FiscalDayColumnName}"
+                WHERE "{FiscalMonthColumnName}" IS NOT NULL AND "{FiscalDayColumnName}" IS NOT NULL;
+                """);
+
+            return new FiscalYearEndRolloverResult { RowsAffected = rowsAffected };
+        }
+
+        private static async Task<List<string>> GetMissingColumnsAsync(
+            GrantTenantDbContext dbContext, string tableName, params string[] columnNames)
+        {
+            var connection = dbContext.Database.GetDbConnection();
+            await dbContext.Database.OpenConnectionAsync();
+
+            try
+            {
+                using var command = connection.CreateCommand();
+                command.CommandText = """
+                    SELECT column_name FROM information_schema.columns WHERE table_name = @tableName;
+                    """;
+
+                var tableNameParameter = command.CreateParameter();
+                tableNameParameter.ParameterName = "tableName";
+                tableNameParameter.Value = tableName;
+                command.Parameters.Add(tableNameParameter);
+
+                var existingColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                using (var reader = await command.ExecuteReaderAsync())
+                {
+                    while (await reader.ReadAsync())
+                    {
+                        existingColumns.Add(reader.GetString(0));
+                    }
+                }
+
+                return [.. columnNames.Where(columnName => !existingColumns.Contains(columnName))];
+            }
+            finally
+            {
+                await dbContext.Database.CloseConnectionAsync();
+            }
         }
 
         public async Task<JsonDocument> GetApplicantAutocompleteQueryAsync(string? applicantLookUpQuery)
