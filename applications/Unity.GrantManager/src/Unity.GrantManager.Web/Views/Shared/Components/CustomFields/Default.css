@@ -12,6 +12,21 @@
     padding: 5px;
 }
 
+.worksheet-filter-toolbar {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.35rem;
+}
+
+.worksheet-filter-toolbar input {
+    min-width: 0;
+}
+
+.worksheet-filter-toolbar .btn {
+    white-space: nowrap;
+}
+
 .available-worksheets {
     border: 1px solid gray;
     border-radius: 5px;
@@ -74,6 +89,18 @@
     width: 98%;
     cursor: grab;
     background-image: linear-gradient(135deg, #f9f9fb 10%, #38598A 900%);
+}
+
+.worksheet-archived {
+    opacity: 0.55;
+}
+
+.worksheet-archived:hover {
+    opacity: 0.8;
+}
+
+.worksheet-archived-icon {
+    margin-left: 0.25rem;
 }
 
 .dragging {
