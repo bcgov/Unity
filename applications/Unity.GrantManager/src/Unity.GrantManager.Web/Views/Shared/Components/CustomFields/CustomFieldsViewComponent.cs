@@ -56,7 +56,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CustomFields
                 .Any(worksheet => !worksheet.Published && worksheet.Name == aiSuggestionWorksheetName);
 
             model.PublishedWorksheets = [.. worksheets
-                .Where(s => s.Published && !model.WorksheetLinks.Select(s => s.WorksheetId).Contains(s.Id))
+                .Where(s => WorksheetAvailabilityFilter.Matches(s, null, WorksheetAvailabilityStatus.All)
+                    && !model.WorksheetLinks.Select(s => s.WorksheetId).Contains(s.Id))
                 .OrderBy(s => s.Title)];
 
             (model.CustomTabLinks, model.CustomTabsSlotIds) = ProcessWorksheetLinks(model.WorksheetLinks, FlexConsts.CustomTab);
