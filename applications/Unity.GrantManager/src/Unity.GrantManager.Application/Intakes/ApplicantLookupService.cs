@@ -175,7 +175,7 @@ namespace Unity.GrantManager.Intakes
                 var queryable = await applicationFormSubmissionRepository.GetQueryableAsync();
                 
                 var submission = queryable
-                    .Where(s => s.OidcSub == oidcSub && !s.IsDeleted)
+                    .Where(s => s.OidcSub == oidcSub)
                     .OrderByDescending(s => s.CreationTime)
                     .FirstOrDefault();
 
