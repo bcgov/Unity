@@ -208,6 +208,16 @@ namespace Unity.GrantManager.ApplicationForms
                         AddFact("Status Code: ", statusCode);
                         AddFact("Message: ", hrex.Message);
                     }
+                    catch (ApiException apiException) when (apiException.ErrorCode is 400 or 401 or 403)
+                    {
+                        await NotifyProductionFormConfigurationFailureAsync(applicationFormDto, apiException);
+                        Logger.LogError(
+                            apiException,
+                            "CHEFS form synchronization failed for form {FormId} in tenant {TenantName} with status {StatusCode}.",
+                            applicationFormDto.ChefsApplicationFormGuid,
+                            await GetTenantNameAsync(),
+                            apiException.ErrorCode);
+                    }
                     catch (Exception ex)
                     {
                         Logger.LogError(ex, "Exception: {Exception}", ex);
@@ -327,6 +337,42 @@ namespace Unity.GrantManager.ApplicationForms
 
             List<FormSubmissionSummaryDto>? jsonResponse = JsonSerializer.Deserialize<List<FormSubmissionSummaryDto>>(content, _submissionSerializerOptions);
             return jsonResponse;
+        }
+
+        private async Task NotifyProductionFormConfigurationFailureAsync(ApplicationFormDto applicationForm, ApiException exception)
+        {
+            if (!string.Equals(
+                    Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
+                    "Production",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            try
+            {
+                string tenantName = await GetTenantNameAsync() ?? string.Empty;
+                List<Fact> facts =
+                [
+                    new Fact { Name = "Tenant: ", Value = tenantName },
+                    new Fact { Name = "Form Name: ", Value = applicationForm.ApplicationFormName ?? string.Empty },
+                    new Fact { Name = "CHEFS Form ID: ", Value = applicationForm.ChefsApplicationFormGuid ?? "Missing" },
+                    new Fact { Name = "HTTP Status: ", Value = exception.ErrorCode.ToString() },
+                    new Fact { Name = "Issue: ", Value = "CHEFS form ID or API key is missing, invalid, or unauthorized." }
+                ];
+
+                await NotificationsAppService.PostToNotificationsAsync(
+                    "CHEFS Form Configuration Failure",
+                    "Production synchronization could not authenticate with CHEFS.",
+                    facts);
+            }
+            catch (Exception notificationException)
+            {
+                Logger.LogWarning(
+                    notificationException,
+                    "Unable to notify about CHEFS form configuration failure for form {FormId}.",
+                    applicationForm.ChefsApplicationFormGuid);
+            }
         }
 
         private void AddFact(string Name, string Value)
