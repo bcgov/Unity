@@ -36,7 +36,7 @@
             isAuthorizedForTenantSwitch = true;
 
         bool isItOperations = CurrentUser.IsInRole("ITOperations");
-        bool isDirectMessagingEnabled = isItOperations && await FeatureChecker.IsEnabledAsync("Unity.Notifications.DirectMessaging");
+        bool isDirectMessagingEnabled = await FeatureChecker.IsEnabledAsync("Unity.Notifications.DirectMessaging");
     }
     <abp-dropdown id="user-dropdown">
         <abp-dropdown-button class="btn-dropdown" text="@CurrentTenant.Name" />
@@ -64,7 +64,7 @@
             @if (isDirectMessagingEnabled)
             {
                 <abp-dropdown-item href="/UnityMessaging">Unity Messaging</abp-dropdown-item>
-                <abp-dropdown-item id="realtimeWidgetBubbleMenuItem" href="#" style="display: none;"></abp-dropdown-item>
+                <abp-dropdown-item id="realtimeWidgetBubbleMenuItem" href="#"></abp-dropdown-item>
             }
 
             <abp-dropdown-item href="/Account/Logout">Logout</abp-dropdown-item>

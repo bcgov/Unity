@@ -1102,7 +1102,7 @@ function initializeDraftEmailsWidget() {
         if (!templates) {
             try {
                 templates = await $.ajax({
-                    url: `/api/form-notifications/templates`,
+                    url: `/api/form-notifications/templates?templateType=Application`,
                     type: 'GET'
                 });
                 cachedTemplates = templates;
@@ -1122,7 +1122,7 @@ function initializeDraftEmailsWidget() {
         if (!templates) {
             try {
                 templates = await $.ajax({
-                    url: `/api/form-notifications/templates`,
+                    url: `/api/form-notifications/templates?templateType=Application`,
                     type: 'GET'
                 });
                 cachedTemplates = templates;
@@ -1373,7 +1373,7 @@ function initializeDraftEmailsWidget() {
 
         try {
             const response = await $.ajax({
-                url: `/api/form-notifications/templates`,
+                url: `/api/form-notifications/templates?templateType=Application`,
                 type: 'GET'
             });
 
@@ -1739,7 +1739,15 @@ function initializeDraftEmailsWidget() {
         let emailValue = fieldElement.value.trim();
 
         // Remove trailing commas, semicolons, or spaces
-        emailValue = emailValue.replace(/[;,\s]+$/, '');
+        let endIndex = emailValue.length;
+        while (endIndex > 0) {
+            const trailingCharacter = emailValue[endIndex - 1];
+            if (trailingCharacter !== ';' && trailingCharacter !== ',' && trailingCharacter.trim() !== '') {
+                break;
+            }
+            endIndex--;
+        }
+        emailValue = emailValue.slice(0, endIndex);
 
         // If the field is empty and not required, clear any existing errors
         if (!isRequired && emailValue === '') {
@@ -2181,7 +2189,7 @@ function initializeDraftEmailsWidget() {
         if (cachedTemplates) return;
         try {
             cachedTemplates = await $.ajax({
-                url: `/api/form-notifications/templates`,
+                url: `/api/form-notifications/templates?templateType=Application`,
                 type: 'GET'
             });
         } catch (e) {

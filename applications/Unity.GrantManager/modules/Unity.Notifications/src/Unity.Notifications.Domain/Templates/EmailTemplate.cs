@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 
@@ -19,7 +19,8 @@ public class EmailTemplate : FullAuditedAggregateRoot<Guid>, IMultiTenant
         string bodyHTML,
         string sendFrom,
         string? recipientCategory = null,
-        string? recipientIdentifier = null)
+        string? recipientIdentifier = null,
+        string templateType = TemplateTypes.Applicant)
         : base(id)
     {
         Name = name;
@@ -30,6 +31,7 @@ public class EmailTemplate : FullAuditedAggregateRoot<Guid>, IMultiTenant
         SendFrom = sendFrom;
         RecipientCategory = recipientCategory;
         RecipientIdentifier = recipientIdentifier;
+        TemplateType = templateType;
     }
 
     public Guid? TenantId { get; set; }
@@ -43,4 +45,5 @@ public class EmailTemplate : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public string SendFrom { get; set; } = string.Empty;
     public string? RecipientCategory { get; set; }
     public string? RecipientIdentifier { get; set; }
+    public string TemplateType { get; set; } = TemplateTypes.Applicant;
 }

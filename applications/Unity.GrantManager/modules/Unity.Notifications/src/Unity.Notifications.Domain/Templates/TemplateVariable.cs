@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 
@@ -12,5 +12,6 @@ public class TemplateVariable : AuditedAggregateRoot<Guid>, IMultiTenant
     public string Name { get; set; } = string.Empty;
     public string Token { get; set; } = string.Empty;
     public string MapTo { get; set; } = string.Empty;
+    public string TemplateType { get; set; } = TemplateTypes.Application;
 
 }
