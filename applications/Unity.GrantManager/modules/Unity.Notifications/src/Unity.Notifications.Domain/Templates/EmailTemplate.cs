@@ -20,7 +20,7 @@ public class EmailTemplate : FullAuditedAggregateRoot<Guid>, IMultiTenant
         string sendFrom,
         string? recipientCategory = null,
         string? recipientIdentifier = null,
-        string templateType = TemplateTypes.Applicant)
+        string templateType = TemplateTypes.Application)
         : base(id)
     {
         Name = name;
@@ -45,5 +45,5 @@ public class EmailTemplate : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public string SendFrom { get; set; } = string.Empty;
     public string? RecipientCategory { get; set; }
     public string? RecipientIdentifier { get; set; }
-    public string TemplateType { get; set; } = TemplateTypes.Applicant;
+    public string TemplateType { get; set; } = TemplateTypes.Application;
 }
