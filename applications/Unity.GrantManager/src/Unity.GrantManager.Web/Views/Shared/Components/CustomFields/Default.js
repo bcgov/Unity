@@ -17,12 +17,39 @@ $(function () {
 
     function init() {
         bindUIEvents();
+        applyAvailableWorksheetFilters();
     }
 
     function bindUIEvents() {
         UIElements.scoreSheet.on('change', saveScoresheet);
         UIElements.backButton.on('click', handleBack);
         UIElements.worksheetForm.on('submit', handleSave);
+        $(document).on('input', '#configure-worksheet-name-filter', applyAvailableWorksheetFilters);
+        $(document).on('click', '#configure-worksheet-status-filter button', function () {
+            $('#configure-worksheet-status-filter button').removeClass('active');
+            $(this).addClass('active');
+            applyAvailableWorksheetFilters();
+        });
+    }
+
+    function applyAvailableWorksheetFilters() {
+        const searchText = ($('#configure-worksheet-name-filter').val() || '').toLowerCase();
+        const filter = $('#configure-worksheet-status-filter .active').data('filter') || 'published';
+        let visibleCount = 0;
+
+        $('.available-worksheets .draggable-card').each(function () {
+            const $worksheet = $(this);
+            const worksheetText = $worksheet.find('.published-form-title').text().toLowerCase();
+            const isArchived = $worksheet.data('is-archived') === true || $worksheet.data('is-archived') === 'true';
+            const matchesSearch = !searchText || worksheetText.includes(searchText);
+            const matchesFilter = filter === 'archived' ? isArchived : filter === 'all' || !isArchived;
+            const visible = matchesSearch && matchesFilter;
+
+            $worksheet.toggle(visible);
+            if (visible) visibleCount++;
+        });
+
+        $('#configure-worksheet-no-results').toggle(visibleCount === 0);
     }
 
     init();

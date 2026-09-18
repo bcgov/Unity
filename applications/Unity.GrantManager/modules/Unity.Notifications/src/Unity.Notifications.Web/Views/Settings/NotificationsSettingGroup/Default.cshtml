@@ -103,3 +103,55 @@
 
     </div>
 </div>
+
+<div class="modal fade" id="emailAddressModal" tabindex="-1" aria-labelledby="emailAddressModalTitle" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="emailAddressModalTitle">Email Address</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="configuredEmailForm">
+                <div class="modal-body">
+                    <label class="form-label" for="configuredEmailAddress">Email Address</label>
+                    <input id="configuredEmailAddress" name="configuredEmailAddress" class="email-input from-input form-control" type="text" required />
+
+                    <label class="form-label mt-3" for="configuredEmailType">Email Type</label>
+                    <select id="configuredEmailType" class="form-select">
+                        <option value="Sender">Sender Address</option>
+                        <option value="ReplyTo">Reply-to Address</option>
+                        <option value="NoReply">No-reply Address</option>
+                        <option value="Inbound">Inbound Address</option>
+                        <option value="Support">Support Address</option>
+                        <option value="Other">Other</option>
+                    </select>
+
+                    <label class="form-label mt-3" for="configuredEmailDescription">Description</label>
+                    <textarea id="configuredEmailDescription" class="form-control"></textarea>
+
+                    <div class="configured-email-use-note mt-3">
+                        <div class="configured-email-options">
+                            <div class="form-check">
+                                <input id="configuredEmailDefault" class="form-check-input" type="checkbox" />
+                                <label class="form-check-label" for="configuredEmailDefault">Default</label>
+                            </div>
+                            <div class="form-check">
+                                <input id="configuredEmailActive" class="form-check-input" type="checkbox" />
+                                <label class="form-check-label" for="configuredEmailActive">Active</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="configured-email-warning mt-3" role="note">
+                        <strong>Email Address In Use</strong>
+                        <p class="mb-0">If this email address is currently associated with one or more active Email Templates and/or Form-Level Notification Plans, updating the email address will <strong>not</strong> automatically update any existing templates or notification plans that use it.</p>
+                        <p class="mb-0 mt-2">To ensure those configurations use the new email address, you must manually update the <strong>From</strong> email address within each associated Email Template or Form-Level Notification Plan.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary" id="saveConfiguredEmail">Save</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

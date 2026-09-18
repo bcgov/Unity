@@ -57,6 +57,7 @@ public class WorksheetToWorksheetBasicDtoMapper : MapperBase<Worksheet, Workshee
         destination.Title = source.Title;
         destination.Version = source.Version;
         destination.Published = source.Published;
+        destination.IsArchived = source.IsArchived;
         destination.TotalSections = (uint)(source.Sections?.Count ?? 0);
         destination.TotalFields = (uint)(source.Sections?.SelectMany(s => s.Fields).Count() ?? 0);
     }

@@ -80,16 +80,32 @@
         <div class="drop-layout">
             <div class="published-forms-col">
                 <div class="slot-title">Available Worksheets:</div>
+                <div class="worksheet-filter-toolbar">
+                    <input type="text" id="configure-worksheet-name-filter" class="form-control form-control-sm"
+                           placeholder="Filter by title or name..." aria-label="Filter available worksheets by title or name" />
+                    <fieldset class="btn-group btn-group-sm flex-shrink-0" id="configure-worksheet-status-filter">
+                        <legend class="visually-hidden">Available worksheet status filter</legend>
+                        <button type="button" class="btn btn-outline-secondary active" data-filter="published">Published</button>
+                        <button type="button" class="btn btn-outline-secondary" data-filter="all">All</button>
+                        <button type="button" class="btn btn-outline-secondary" data-filter="archived">Archived</button>
+                    </fieldset>
+                </div>
                 <div class="available-worksheets drag-target multi-target" draggable="false" data-target="worksheets">
                     @foreach (var worksheet in Model.PublishedWorksheets!)
                     {
-                        <div class="published-form draggable-card" draggable="true" data-worksheet-id="@worksheet.Id">
+                        <div class="published-form draggable-card @(worksheet.IsArchived ? "worksheet-archived" : "")"
+                             draggable="true" data-worksheet-id="@worksheet.Id" data-is-archived="@worksheet.IsArchived.ToString().ToLowerInvariant()">
                             <span class="published-form-title">
                                 @worksheet.Title (@worksheet.Name)
+                                @if (worksheet.IsArchived)
+                                {
+                                    <i class="fl fl-folder worksheet-archived-icon" title="Archived worksheet" aria-label="Archived worksheet"></i>
+                                }
                             </span>
                         </div>
                     }
                 </div>
+                <p id="configure-worksheet-no-results" class="text-muted text-center py-2" style="display:none">No worksheets match the current filters.</p>
             </div>
             <div class="slots-col">
                 <div class="slot-title">Assessment Info:</div>

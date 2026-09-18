@@ -31,8 +31,18 @@ namespace Unity.GrantManager.Events
         /// Builds the token-to-value dictionary from the application and applicant agent,
         /// matching the MapTo paths defined in the TemplateVariable seed data.
         /// </summary>
-        public static Dictionary<string, string> BuildTokenValues(Application application, ApplicantAgent? applicantAgent)
+        public static Dictionary<string, string> BuildTokenValues(
+            Application application,
+            ApplicantAgent? applicantAgent,
+            string templateType = "Application")
         {
+            if (string.Equals(templateType, "Applicant", StringComparison.OrdinalIgnoreCase))
+            {
+                Applicant? applicantForApplicantTemplate = null;
+                try { applicantForApplicantTemplate = application.Applicant; } catch { /* navigation property may not be loaded */ }
+                return BuildApplicantTokenValues(applicantForApplicantTemplate);
+            }
+
             Applicant? applicant = null;
             try { applicant = application.Applicant; } catch { /* navigation property may not be loaded */ }
 
@@ -68,6 +78,32 @@ namespace Unity.GrantManager.Events
                 ["category"]                    = applicationForm?.Category ?? string.Empty,
                 ["today_date"]                  = $"{DateTime.Today.ToString("MMMM d, yyyy")}",
                 ["unity_application_id"]        = application.UnityApplicationId ?? string.Empty
+            };
+        }
+
+        public static Dictionary<string, string> BuildApplicantTokenValues(Applicant? applicant)
+        {
+            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["applicant_name"]                   = applicant?.ApplicantName ?? string.Empty,
+                ["applicant_id"]                     = applicant?.UnityApplicantId ?? string.Empty,
+                ["organization_name"]                = applicant?.OrgName ?? string.Empty,
+                ["non_registered_business_name"]     = applicant?.NonRegisteredBusinessName ?? string.Empty,
+                ["organization_number"]              = applicant?.OrgNumber ?? string.Empty,
+                ["business_number"]                  = applicant?.BusinessNumber ?? string.Empty,
+                ["organization_status"]              = applicant?.OrgStatus ?? string.Empty,
+                ["organization_type"]                = applicant?.OrganizationType ?? string.Empty,
+                ["applicant_status"]                 = applicant?.Status ?? string.Empty,
+                ["sector"]                           = applicant?.Sector ?? string.Empty,
+                ["sub_sector"]                       = applicant?.SubSector ?? string.Empty,
+                ["industry_description"]             = applicant?.SectorSubSectorIndustryDesc ?? string.Empty,
+                ["approximate_number_of_employees"]  = applicant?.ApproxNumberOfEmployees ?? string.Empty,
+                ["indigenous_organization"]         = applicant?.IndigenousOrgInd ?? string.Empty,
+                ["fiscal_month"]                     = applicant?.FiscalMonth ?? string.Empty,
+                ["fiscal_day"]                       = applicant?.FiscalDay?.ToString() ?? string.Empty,
+                ["fiscal_year_end"]                  = applicant?.FiscalYearEnd?.ToString("yyyy-MM-dd") ?? string.Empty,
+                ["started_operating_date"]           = applicant?.StartedOperatingDate?.ToString("yyyy-MM-dd") ?? string.Empty,
+                ["today_date"]                       = DateTime.Today.ToString("MMMM d, yyyy")
             };
         }
 
