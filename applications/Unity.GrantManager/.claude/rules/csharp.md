@@ -63,13 +63,20 @@ These properties are pre-injected in `ApplicationService`, `DomainService`, and 
 
 ## Code Style
 
+- 4 spaces indentation, no tabs
 - No emojis in comments
+- Always use braces, even for single-line statements
+- Use `nameof` instead of string literals when referring to member names
+- Prefer pattern matching and switch expressions where appropriate
 - All user-facing text must be localized via `L["Key"]`. No hardcoded English strings.
 - Permissions defined in `*PermissionDefinitionProvider` in Application.Contracts.
 - Do not call other application services within the same module; push shared logic to domain services.
 
 ## Naming Conventions
 
+- Follow PascalCase for public members, types, and methods
+- Use camelCase for private fields and local variables
+- Prefix interface names with `I`
 - Domain Services: `*Manager` suffix (e.g., `AssessmentManager`)
 - Application Services: `*AppService` suffix (e.g., `ApplicationAppService`)
 - DTOs: Descriptive suffixes (`CreateApplicationDto`, `UpdateApplicationDto`, `ApplicationDto`)
