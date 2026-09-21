@@ -6,8 +6,6 @@ globs: "**/*.js"
 
 > JavaScript development standards for ABP Framework frontend patterns.
 
-- Variables should be declared with "let" or "const" instead of "var"
-
 ## General Patterns
 
 - Wrap all page scripts in IIFE: `(function ($) { ... })(jQuery);`

@@ -25,8 +25,6 @@ globs: "**/*.cs, **/*.cshtml, **/*.js"
 
 - Validate all inputs at the application service boundary using data annotations or FluentValidation
 - Use ABP's `Check.*` methods for domain-level validation (e.g., `Check.NotNullOrWhiteSpace`)
-- Sanitize user inputs before storage — prevent XSS and injection attacks
-- Use parameterized queries — never concatenate user input into SQL
 
 ## Secrets Management
 
