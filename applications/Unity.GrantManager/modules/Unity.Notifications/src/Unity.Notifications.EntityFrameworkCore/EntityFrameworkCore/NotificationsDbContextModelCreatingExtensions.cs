@@ -62,7 +62,7 @@ public static class NotificationsDbContextModelCreatingExtensions
             b.ConfigureByConvention();
             b.Property(x => x.TemplateType)
                 .HasMaxLength(64)
-                .HasDefaultValue(TemplateTypes.Applicant)
+                .HasDefaultValue(TemplateTypes.Application)
                 .IsRequired();
 
         });
@@ -103,7 +103,7 @@ public static class NotificationsDbContextModelCreatingExtensions
             b.ConfigureByConvention();
             b.Property(x => x.TemplateType)
                 .HasMaxLength(64)
-                .HasDefaultValue(TemplateTypes.Applicant)
+                .HasDefaultValue(TemplateTypes.Application)
                 .IsRequired();
         });
         modelBuilder.Entity<Trigger>(b =>

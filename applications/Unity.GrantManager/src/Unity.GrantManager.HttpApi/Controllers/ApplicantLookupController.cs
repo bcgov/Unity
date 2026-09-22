@@ -55,9 +55,14 @@ namespace Unity.GrantManager.Controllers
         {
             string? applicantLookupResult = null;
             IActionResult result;
+            
             if (applicantLookup.UnityApplicantId != null)
             {
                 applicantLookupResult = await applicantService.ApplicantLookupByApplicantId(applicantLookup.UnityApplicantId);
+            }
+            else if (applicantLookup.OidcSub != null)
+            {
+                applicantLookupResult = await applicantService.ApplicantLookupByOidcSub(applicantLookup.OidcSub);
             }
             else if (applicantLookup.UnityApplicantName != null)
             {
