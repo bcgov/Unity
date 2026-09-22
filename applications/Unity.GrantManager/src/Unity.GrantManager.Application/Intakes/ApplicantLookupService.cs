@@ -103,6 +103,12 @@ namespace Unity.GrantManager.Intakes
                 throw new KeyNotFoundException("Applicant not found.");
             }
 
+            // Exclude duplicate applicants
+            if (applicant.IsDuplicated)
+            {
+                throw new UserFriendlyException("Cannot retrieve data for duplicate applicants.");
+            }
+
             string operatingDate = applicant.StartedOperatingDate != null
                 ? ((DateOnly)applicant.StartedOperatingDate).ToString("o", CultureInfo.InvariantCulture)
                 : string.Empty;
@@ -113,12 +119,9 @@ namespace Unity.GrantManager.Intakes
             // Fetch all applicant addresses at once
             List<ApplicantAddress>? applicantAddresses = await applicantAddressRepository.FindByApplicantIdAsync(applicant.Id);
 
-            // Order by date (for example, DateCreated) in descending order
-            applicantAddresses = applicantAddresses?.OrderByDescending(x => x.CreationTime).ToList();
-
             // Filter physical and mailing addresses from the sorted list
-            ApplicantAddress? applicantPhysicalAgent = applicantAddresses?.Find(x => x.AddressType == GrantApplications.AddressType.PhysicalAddress);
-            ApplicantAddress? applicantMailingAgent = applicantAddresses?.Find(x => x.AddressType == GrantApplications.AddressType.MailingAddress);
+            ApplicantAddress? applicantPhysicalAgent = applicantAddresses?.FirstOrDefault(x => x.AddressType == GrantApplications.AddressType.PhysicalAddress);
+            ApplicantAddress? applicantMailingAgent = applicantAddresses?.FirstOrDefault(x => x.AddressType == GrantApplications.AddressType.MailingAddress);
 
             ApplicantAgent? applicantAgent = await applicantAgentRepository.FirstOrDefaultAsync(x => x.ApplicantId == applicant.Id);
 
@@ -156,6 +159,46 @@ namespace Unity.GrantManager.Intakes
             };
 
             return JsonConvert.SerializeObject(result);
+        }
+
+        public async Task<string?> ApplicantLookupByOidcSub(string oidcSub)
+        {
+            if (string.IsNullOrWhiteSpace(oidcSub))
+            {
+                return null;
+            }
+
+            try
+            {
+                // Find the first form submission with this OIDC subject
+                var applicationFormSubmissionRepository = LazyServiceProvider.LazyGetRequiredService<IApplicationFormSubmissionRepository>();
+                var queryable = await applicationFormSubmissionRepository.GetQueryableAsync();
+                
+                var submission = queryable
+                    .Where(s => s.OidcSub == oidcSub)
+                    .OrderByDescending(s => s.CreationTime)
+                    .FirstOrDefault();
+
+                if (submission == null)
+                {
+                    return null;
+                }
+
+                // Get the applicant from the submission
+                Applicant? applicant = await applicantRepository.GetAsync(submission.ApplicantId);
+                
+                if (applicant == null || applicant.IsDeleted)
+                {
+                    return null;
+                }
+
+                return await FormatApplicantJsonAsync(applicant);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "ApplicantService->ApplicantLookupByOidcSub Exception: {Message}", ex.Message);
+                return null;
+            }
         }
     }
 }

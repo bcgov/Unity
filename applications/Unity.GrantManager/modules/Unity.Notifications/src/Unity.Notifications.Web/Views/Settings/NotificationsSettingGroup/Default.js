@@ -503,7 +503,7 @@ $(function () {
         
         $('#templateId').val(data.id);
         $('#templateName').val(data.name);
-        $('#templateType').val(data.templateType || 'Applicant');
+        $('#templateType').val(data.templateType || 'Application');
         setSendFromValue(data.sendFrom);
         $('#subject').val(data.subject);
         $('#templateRecipientCategory').val(data.recipientCategory || '');
@@ -542,7 +542,7 @@ $(function () {
         originalFormValues = {
             id: '',
             name: '',
-            templateType: 'Applicant',
+            templateType: 'Application',
             description: '',
             sendFrom: '',
             subject: '',
@@ -554,7 +554,7 @@ $(function () {
         
         $('#templateId').val('');
         $('#templateName').val('');
-        $('#templateType').val('Applicant');
+        $('#templateType').val('Application');
         setSendFromValue('');
         $('#subject').val('');
         $('#templateRecipientCategory').val('');
@@ -569,7 +569,7 @@ $(function () {
         if (Object.keys(originalFormValues).length > 0) {
             $('#templateId').val(originalFormValues.id);
             $('#templateName').val(originalFormValues.name);
-            $('#templateType').val(originalFormValues.templateType || 'Applicant');
+            $('#templateType').val(originalFormValues.templateType || 'Application');
             setSendFromValue(originalFormValues.sendFrom);
             $('#subject').val(originalFormValues.subject);
             $('#templateRecipientCategory').val(originalFormValues.recipientCategory || '');
@@ -603,7 +603,7 @@ $(function () {
     UiElements.saveButton.on('click', function () {
         const templateId = $('#templateId').val();
         const templateName = $('#templateName').val();
-        const templateType = $('#templateType').val() || 'Applicant';
+        const templateType = $('#templateType').val() || 'Application';
         const sendFrom = $('#sendFrom').val();
         const subject = $('#subject').val();
         const recipientCategory = $('#templateRecipientCategory').val();
@@ -784,7 +784,7 @@ $(function () {
     UiElements.addTemplateButton.on('click', function () {
         // Populate fields with empty values for new template
         populateFieldsForNewTemplate();
-        initializeTemplateEditor({ bodyHTML: '', templateType: 'Applicant' });
+        initializeTemplateEditor({ bodyHTML: '', templateType: 'Application' });
         
         // Highlight nothing in the table
         $('#TemplatesTable tbody tr').removeClass('template-selected');
@@ -1053,7 +1053,7 @@ $(function () {
     }
 
     function initializeTemplateEditor(data) {
-        const templateType = data?.templateType || 'Applicant';
+        const templateType = data?.templateType || 'Application';
         const requestVersion = ++templateVariableRequestVersion;
         $('#templateType').val(templateType);
         dropdownItems = [];
@@ -1084,7 +1084,7 @@ $(function () {
 
     $('#templateType').on('change', function () {
         const selectedType = $(this).val() || 'Applicant';
-        const previousType = originalFormValues.templateType || 'Applicant';
+        const previousType = originalFormValues.templateType || 'Application';
         const editor = tinymce.get('templateBody');
         const bodyHTML = editor ? editor.getContent() : '';
 

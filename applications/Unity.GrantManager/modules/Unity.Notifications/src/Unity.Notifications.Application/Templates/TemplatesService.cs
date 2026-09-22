@@ -120,6 +120,6 @@ public class TemplateService : ApplicationService, ITemplateService
             return TemplateTypes.Application;
         }
 
-        return TemplateTypes.Applicant;
+        return TemplateTypes.Application;
     }
 }

@@ -88,7 +88,7 @@ public class ScheduledNotificationHelperTests
     }
 
     [Fact]
-    public void EmailTemplate_DefaultsToApplicantType()
+    public void EmailTemplate_DefaultsToApplicationType()
     {
         var template = new EmailTemplate(
             Guid.NewGuid(),
@@ -99,6 +99,6 @@ public class ScheduledNotificationHelperTests
             "<p>Welcome</p>",
             "notifications@example.com");
 
-        template.TemplateType.ShouldBe(TemplateTypes.Applicant);
+        template.TemplateType.ShouldBe(TemplateTypes.Application);
     }
 }
