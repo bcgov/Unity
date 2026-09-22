@@ -295,6 +295,7 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
                 _ => status.ToString(),
             };
         }
+
         public static string GetStatusTextColor(PaymentRequestStatus status) => status switch
         {
             PaymentRequestStatus.L1Declined or PaymentRequestStatus.L2Declined or PaymentRequestStatus.L3Declined => "#CE3E39",
