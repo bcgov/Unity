@@ -15,6 +15,6 @@ namespace Unity.Notifications.Templates
         public string SendFrom { get; set; } = "";
         public string? RecipientCategory { get; set; }
         public string? RecipientIdentifier { get; set; }
-        public string TemplateType { get; set; } = "Applicant";
+        public string TemplateType { get; set; } = "Application";
     }
 }

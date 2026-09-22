@@ -11,6 +11,7 @@ using Volo.Abp.Users;
 using Unity.GrantManager.Events;
 using Unity.Payments.Enums;
 using Volo.Abp.Identity.Integration;
+using Unity.Payments.Web.Pages.PaymentApprovals;
 
 namespace Unity.GrantManager.Web.Controllers
 {
@@ -20,7 +21,7 @@ namespace Unity.GrantManager.Web.Controllers
     {
         private readonly IApplicationStatusService _statusService;
         private readonly IEmailGroupsAppService _emailGroupsAppService;
-        private readonly Unity.Notifications.Templates.ITemplateService _templateService;
+        private readonly ITemplateService _templateService;
         private readonly Notifications.IAutomatedNotificationAppService _automatedNotificationAppService;
         private readonly EmailAttachmentService _emailAttachmentService;
         private readonly ICurrentUser _currentUser;
@@ -43,14 +44,14 @@ namespace Unity.GrantManager.Web.Controllers
             _scheduledNotificationHelper = scheduledNotificationHelper;
         }
 
-                [HttpGet("payment-statuses")]
-                public ActionResult<List<object>> GetPaymentStatuses()
-                {
-                    var statuses = Enum.GetNames<PaymentRequestStatus>()
-                        .Select(status => (object)new { id = status, internalStatus = status })
-                        .ToList();
-                    return Ok(statuses);
-                }
+        [HttpGet("payment-statuses")]
+        public ActionResult<List<object>> GetPaymentStatuses()
+        {
+            var statuses = Enum.GetValues<PaymentRequestStatus>()
+                .Select(status => (object)new { id = status.ToString(), internalStatus = UpdatePaymentRequestStatus.GetStatusText(status) })
+                .ToList();
+            return Ok(statuses);
+        }
         // In-memory storage removed; persisting to ScheduledNotifications table via IAutomatedNotificationAppService
 
 

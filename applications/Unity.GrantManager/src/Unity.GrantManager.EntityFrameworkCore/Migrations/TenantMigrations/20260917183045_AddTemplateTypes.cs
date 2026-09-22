@@ -23,7 +23,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 type: "character varying(64)",
                 maxLength: 64,
                 nullable: false,
-                defaultValue: "Applicant");
+                defaultValue: "Application");
 
             migrationBuilder.AddColumn<string>(
                 name: "TemplateType",
@@ -32,7 +32,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                 type: "character varying(64)",
                 maxLength: 64,
                 nullable: false,
-                defaultValue: "Applicant");
+                defaultValue: "Application");
         }
 
         /// <inheritdoc />
