@@ -30,7 +30,7 @@ public class TemplatesServiceTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("Unknown")]
-    public async Task GetTemplateVariables_WhenTypeIsMissingOrUnknown_DefaultsToApplicantVariables(string? templateType)
+    public async Task GetTemplateVariables_WhenTypeIsMissingOrUnknown_DefaultsToApplicationVariables(string? templateType)
     {
         var variables = new[]
         {
@@ -41,7 +41,7 @@ public class TemplatesServiceTests
 
         var result = await service.GetTemplateVariables(templateType);
 
-        result.Select(variable => variable.Token).ShouldBe(["applicant_token"]);
+        result.Select(variable => variable.Token).ShouldBe(["application_token"]);
     }
 
     private static TemplateService CreateService(IEnumerable<TemplateVariable> variables)
