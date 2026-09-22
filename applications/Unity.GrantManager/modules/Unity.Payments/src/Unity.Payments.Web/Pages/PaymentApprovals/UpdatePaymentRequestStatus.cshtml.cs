@@ -287,10 +287,12 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
                 "L3Approved" => "L3 Approved",
                 "L3Declined" => "L3 Declined",
                 "Submitted" => "Submitted to CAS",
+                "NotValidated" => "Not Validated",
+                "HistoricalPayment" => "Historical Payment",
                 "FSB" => "Sent to Accounts Payable",
                 "Paid" => "Paid",
                 "PaymentFailed" => "Payment Failed",
-                _ => "L1 Pending",
+                _ => status.ToString(),
             };
         }
         public static string GetStatusTextColor(PaymentRequestStatus status) => status switch
