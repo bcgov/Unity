@@ -32,7 +32,7 @@ namespace Unity.GrantManager.Intakes
             try
             {
                 Applicant? applicant = await applicantRepository.GetByUnityApplicantIdAsync(unityApplicantId);
-                if (applicant == null || applicant.IsDeleted)
+                if (applicant == null || applicant.IsDeleted || applicant.IsDuplicated)
                 {
                     throw new KeyNotFoundException("Applicant not found.");
                 }
@@ -70,6 +70,11 @@ namespace Unity.GrantManager.Intakes
                         RedStop = false
                     });
                 }
+                else if (applicant.IsDuplicated)
+                {
+                    // Reject duplicated applicants
+                    throw new KeyNotFoundException("Applicant not found.");
+                }
 
                 if (applicant.OrgNumber.IsNullOrEmpty() || applicant.BusinessNumber.IsNullOrEmpty())
                 {
@@ -101,12 +106,6 @@ namespace Unity.GrantManager.Intakes
             if (applicant == null)
             {
                 throw new KeyNotFoundException("Applicant not found.");
-            }
-
-            // Exclude duplicate applicants
-            if (applicant.IsDuplicated)
-            {
-                throw new UserFriendlyException("Cannot retrieve data for duplicate applicants.");
             }
 
             string operatingDate = applicant.StartedOperatingDate != null
@@ -187,7 +186,7 @@ namespace Unity.GrantManager.Intakes
                 // Get the applicant from the submission
                 Applicant? applicant = await applicantRepository.GetAsync(submission.ApplicantId);
                 
-                if (applicant == null || applicant.IsDeleted)
+                if (applicant == null || applicant.IsDeleted || applicant.IsDuplicated)
                 {
                     return null;
                 }
