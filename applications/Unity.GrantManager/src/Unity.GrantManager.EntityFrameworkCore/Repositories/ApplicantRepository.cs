@@ -204,7 +204,7 @@ namespace Unity.GrantManager.Repositories
         {
             var records = await (await GetQueryableAsync())
                 .AsNoTracking()
-                .Where(a => !a.IsDeleted && !a.IsDuplicated)
+                .Where(a => !a.IsDeleted)
                 .OrderByDescending(a => a.CreationTime)
                 .Select(a => new ApplicantListRecord
                 {
