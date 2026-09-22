@@ -1,6 +1,5 @@
 # Combined Frontend + Backend Docker Image
 # Flask serves both the static Angular frontend AND the API endpoints
-# No nginx needed - everything runs through Flask
 
 # Stage 1: Build Angular Frontend
 FROM node:24-alpine AS frontend-build
