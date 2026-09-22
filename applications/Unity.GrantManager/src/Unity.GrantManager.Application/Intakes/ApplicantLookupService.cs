@@ -32,7 +32,7 @@ namespace Unity.GrantManager.Intakes
             try
             {
                 Applicant? applicant = await applicantRepository.GetByUnityApplicantIdAsync(unityApplicantId);
-                if (applicant == null || applicant.IsDeleted || applicant.IsDuplicated)
+                if (applicant == null)
                 {
                     throw new KeyNotFoundException("Applicant not found.");
                 }
@@ -69,11 +69,6 @@ namespace Unity.GrantManager.Intakes
                         UnityApplicantId = unityApplicantId.ToString(),
                         RedStop = false
                     });
-                }
-                else if (applicant.IsDuplicated)
-                {
-                    // Reject duplicated applicants
-                    throw new KeyNotFoundException("Applicant not found.");
                 }
 
                 if (applicant.OrgNumber.IsNullOrEmpty() || applicant.BusinessNumber.IsNullOrEmpty())
@@ -186,7 +181,7 @@ namespace Unity.GrantManager.Intakes
                 // Get the applicant from the submission
                 Applicant? applicant = await applicantRepository.GetAsync(submission.ApplicantId);
                 
-                if (applicant == null || applicant.IsDeleted || applicant.IsDuplicated)
+                if (applicant == null || applicant.IsDeleted)
                 {
                     return null;
                 }
