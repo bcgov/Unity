@@ -343,6 +343,11 @@ public class EmailConsumer(
                 if (fresh != null)
                 {
                     emailLog.ConcurrencyStamp = fresh.ConcurrencyStamp;
+
+                    // Another request may have changed these since we first loaded - re-capture so we
+                    // restore the latest real edit, not the stale value from before this retry loop started
+                    originalModifierId = fresh.LastModifierId;
+                    originalModificationTime = fresh.LastModificationTime;
                 }
             }
         }

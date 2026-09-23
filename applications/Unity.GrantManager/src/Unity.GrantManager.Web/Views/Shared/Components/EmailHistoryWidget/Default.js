@@ -116,7 +116,12 @@
                     data: 'lastModificationTime',
                     className: 'data-table-header',
                     width: '12%',
-                    render: function (data) {
+                    render: function (data, type) {
+                        if (type === 'sort' || type === 'type') {
+                            // Support sorting
+                            return data ? luxon.DateTime.fromISO(data).toMillis() : 0;
+                        }
+
                         return data ? luxon.DateTime.fromISO(data, {
                             locale: abp.localization.currentCulture.name,
                         }).toLocaleString({
