@@ -11,13 +11,13 @@ public partial class EmailLogToEmailHistoryDtoMapper : MapperBase<EmailLog, Emai
 {
     [MapProperty(nameof(EmailLog.CC), nameof(EmailHistoryDto.Cc))]
     [MapProperty(nameof(EmailLog.BCC), nameof(EmailHistoryDto.Bcc))]
-    [MapperIgnoreTarget(nameof(EmailHistoryDto.SentBy))]
+    [MapperIgnoreTarget(nameof(EmailHistoryDto.LastModifiedBy))]
     [MapperIgnoreTarget(nameof(EmailHistoryDto.ExtraProperties))]
     public override partial EmailHistoryDto Map(EmailLog source);
 
     [MapProperty(nameof(EmailLog.CC), nameof(EmailHistoryDto.Cc))]
     [MapProperty(nameof(EmailLog.BCC), nameof(EmailHistoryDto.Bcc))]
-    [MapperIgnoreTarget(nameof(EmailHistoryDto.SentBy))]
+    [MapperIgnoreTarget(nameof(EmailHistoryDto.LastModifiedBy))]
     [MapperIgnoreTarget(nameof(EmailHistoryDto.ExtraProperties))]
     public override partial void Map(EmailLog source, EmailHistoryDto destination);
 }
