@@ -310,7 +310,7 @@ public class EmailConsumer(
             {
                 await emailLogsRepository.UpdateAsync(emailLog, autoSave: false);
                 await uow.SaveChangesAsync();
-                await emailLogsRepository.RestoreAuditStampsAsync(emailLog.Id, originalModifierId, originalModificationTime);
+                await emailLogsRepository.RestoreAuditStampsAsync(emailLog.Id, originalModifierId, originalModificationTime, emailLog.ConcurrencyStamp);
                 return;
             }
             catch (Exception ex) when (

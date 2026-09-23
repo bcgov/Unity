@@ -115,7 +115,7 @@ namespace Unity.Notifications.EmailNotifications
                 {
                     // Update the entity in the current context and persist it
                     await emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
-                    await emailLogsRepository.RestoreAuditStampsAsync(emailLog.Id, originalModifierId, originalModificationTime);
+                    await emailLogsRepository.RestoreAuditStampsAsync(emailLog.Id, originalModifierId, originalModificationTime, emailLog.ConcurrencyStamp);
                     throw new UserFriendlyException(
                         "This scheduled email has already been sent and cannot be deleted.");
                 }
@@ -462,7 +462,7 @@ namespace Unity.Notifications.EmailNotifications
                 }
 
                 await UpdateChesStatusAsync(emailLog, status);
-                await emailLogsRepository.RestoreAuditStampsAsync(emailLog.Id, originalModifierId, originalModificationTime);
+                await emailLogsRepository.RestoreAuditStampsAsync(emailLog.Id, originalModifierId, originalModificationTime, emailLog.ConcurrencyStamp);
 
                 if (status.Equals("pending", StringComparison.OrdinalIgnoreCase))
                 {
@@ -515,7 +515,8 @@ namespace Unity.Notifications.EmailNotifications
             }
 
             emailLog.ChesStatus = status.Capitalize();
-            await emailLogsRepository.UpdateAsync(emailLog);
+            // autoSave so ConcurrencyStamp reflects the persisted row before the caller restores audit stamps
+            await emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
             Logger.LogInformation(
                 "Updated email {EmailLogId} status to {Status}",
                 emailLog.Id,
