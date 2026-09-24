@@ -35,7 +35,7 @@ namespace Unity.GrantManager.Repositories
         public async Task<Applicant?> GetByUnityApplicantIdAsync(string unityApplicantId)
         {
             var dbContext = await GetDbContextAsync();
-            return await dbContext.Applicants.FirstOrDefaultAsync(x => x.UnityApplicantId == unityApplicantId && !x.IsDeleted);
+            return await dbContext.Applicants.FirstOrDefaultAsync(x => x.UnityApplicantId == unityApplicantId && !x.IsDeleted && !x.IsDuplicated);
         }
 
         public async Task<Applicant?> GetByUnityApplicantNameAsync(string unityApplicantName)
@@ -48,7 +48,8 @@ namespace Unity.GrantManager.Repositories
             return await dbContext.Applicants
                 .FirstOrDefaultAsync(a => a.ApplicantName != null &&
                                           a.ApplicantName.ToLower() == unityApplicantNameNormalized &&
-                                          !a.IsDeleted);
+                                          !a.IsDeleted &&
+                                          !a.IsDuplicated);
 #pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
 
         }
@@ -56,7 +57,7 @@ namespace Unity.GrantManager.Repositories
         {
             var dbContext = await GetDbContextAsync();
             return await dbContext.Applicants
-                .Where(x => x.UnityApplicantId != null && !x.IsDeleted)
+                .Where(x => x.UnityApplicantId != null && !x.IsDeleted && !x.IsDuplicated)
                 .ToListAsync();
         }
 
@@ -137,7 +138,7 @@ namespace Unity.GrantManager.Repositories
 
             var applicants = await dbContext.Applicants
             .AsNoTracking()
-            .Where(a => !a.IsDeleted)
+            .Where(a => !a.IsDeleted && !a.IsDuplicated)
             .ToListAsync();
 
             var filtered = applicants

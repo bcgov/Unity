@@ -32,7 +32,7 @@ namespace Unity.GrantManager.Intakes
             try
             {
                 Applicant? applicant = await applicantRepository.GetByUnityApplicantIdAsync(unityApplicantId);
-                if (applicant == null || applicant.IsDeleted)
+                if (applicant == null)
                 {
                     throw new KeyNotFoundException("Applicant not found.");
                 }
@@ -101,12 +101,6 @@ namespace Unity.GrantManager.Intakes
             if (applicant == null)
             {
                 throw new KeyNotFoundException("Applicant not found.");
-            }
-
-            // Exclude duplicate applicants
-            if (applicant.IsDuplicated)
-            {
-                throw new UserFriendlyException("Cannot retrieve data for duplicate applicants.");
             }
 
             string operatingDate = applicant.StartedOperatingDate != null
