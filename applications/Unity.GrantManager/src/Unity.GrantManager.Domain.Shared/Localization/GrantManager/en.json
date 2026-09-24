@@ -742,6 +742,8 @@
     "DataTable:ContextMenu:CopiedToClipboard": "Copied to clipboard",
     "DataTable:ContextMenu:Filter": "Filter",
     "DataTable:ContextMenu:ClearFilter": "Clear Filters",
+    "DataTable:ContextMenu:Open": "Open",
+    "DataTable:ContextMenu:OpenNewTab": "Open in New Tab",
 
     "WrongTenantError:Title": "An Error Occurred",
     "WrongTenantError:ApplicationTenant": "This application is in Tenant: {0}",
