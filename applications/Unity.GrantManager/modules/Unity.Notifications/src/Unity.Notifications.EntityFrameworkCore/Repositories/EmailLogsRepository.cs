@@ -35,6 +35,17 @@ namespace Unity.Notifications.Repositories
             return await dbSet.Where(x => applicationIds.Contains(x.ApplicationId) && x.Status == status).ToListAsync();
         }
 
+        public async Task RestoreAuditStampsAsync(Guid id, Guid? modifierId, DateTime? modificationTime, string concurrencyStamp)
+        {
+            var dbSet = await GetDbSetAsync();
+            // Only restore if nobody else has changed the row since our system save - otherwise a
+            // concurrent user edit's stamp would be silently overwritten with the stale system values.
+            await dbSet.Where(e => e.Id == id && e.ConcurrencyStamp == concurrencyStamp)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(e => e.LastModifierId, modifierId)
+                    .SetProperty(e => e.LastModificationTime, modificationTime));
+        }
+
         public override async Task<IQueryable<EmailLog>> WithDetailsAsync()
         {
             // Uses the extension method defined above

@@ -300,6 +300,9 @@ public class EmailConsumer(
         int maxRetries = 3)
     {
         int attempt = 0;
+        // These are system/background status writes, not user edits - preserve the last user's stamp
+        var originalModifierId = emailLog.LastModifierId;
+        var originalModificationTime = emailLog.LastModificationTime;
 
         while (attempt < maxRetries)
         {
@@ -307,6 +310,7 @@ public class EmailConsumer(
             {
                 await emailLogsRepository.UpdateAsync(emailLog, autoSave: false);
                 await uow.SaveChangesAsync();
+                await emailLogsRepository.RestoreAuditStampsAsync(emailLog.Id, originalModifierId, originalModificationTime, emailLog.ConcurrencyStamp);
                 return;
             }
             catch (Exception ex) when (
@@ -339,6 +343,11 @@ public class EmailConsumer(
                 if (fresh != null)
                 {
                     emailLog.ConcurrencyStamp = fresh.ConcurrencyStamp;
+
+                    // Another request may have changed these since we first loaded - re-capture so we
+                    // restore the latest real edit, not the stale value from before this retry loop started
+                    originalModifierId = fresh.LastModifierId;
+                    originalModificationTime = fresh.LastModificationTime;
                 }
             }
         }
