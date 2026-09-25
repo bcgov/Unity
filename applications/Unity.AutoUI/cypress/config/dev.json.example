@@ -8,5 +8,12 @@
     "TEST_EMAIL_TO": "",
     "TEST_EMAIL_CC": "",
     "TEST_EMAIL_BCC": "",
+    "notificationFormId": "",
+    "notificationApplicationId": "",
+    "notificationRecipientGroup": "James",
+    "notificationTemplateName": "",
+    "notificationProjectStartDate": "2026-09-25",
+    "notificationProjectEndDate": "2026-09-26",
+    "notificationContractExecutionDate": "2026-09-27",
     "chefsApiKey": ""
 }
