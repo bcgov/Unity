@@ -14,9 +14,7 @@
             <ul class="navbar-nav mx-auto">
                 @(await Component.InvokeAsync<MainNavbarMenuViewComponent>())
             </ul> 
-            <ul class="navbar-nav"> 
-                @(await Component.InvokeAsync<MainNavbarToolbarViewComponent>())
-            </ul>
+            @(await Component.InvokeAsync<MainNavbarToolbarViewComponent>())
         </div>
     </div>
 </nav>

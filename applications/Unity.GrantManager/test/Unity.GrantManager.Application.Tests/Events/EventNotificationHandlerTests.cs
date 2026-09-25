@@ -78,7 +78,7 @@ public class EventNotificationHandlerTests
 
         var matches = notifications
             .AsQueryable()
-            .Where(EventNotificationHandler.PaymentEventNotificationFilter(formId, paymentStatus))
+            .Where(EventNotificationHandler.PaymentEventNotificationFilter(formId, paymentStatus, null))
             .ToList();
 
         matches.Count.ShouldBe(1);
@@ -94,8 +94,30 @@ public class EventNotificationHandlerTests
 
         new[] { notification }
             .AsQueryable()
-            .Where(EventNotificationHandler.PaymentEventNotificationFilter(formId, PaymentRequestStatus.Paid))
+            .Where(EventNotificationHandler.PaymentEventNotificationFilter(formId, PaymentRequestStatus.Paid, null))
             .ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void PaymentEventNotificationFilter_SelectsMatchingCasPaymentStatus()
+    {
+        var formId = Guid.NewGuid();
+        var notification = new ScheduledNotification
+        {
+            FormId = formId,
+            TriggerType = "Event",
+            IsActive = true,
+            Module = "Payment",
+            EventType = "Validated"
+        };
+
+        new[] { notification }
+            .AsQueryable()
+            .Where(EventNotificationHandler.PaymentEventNotificationFilter(
+                formId,
+                PaymentRequestStatus.Submitted,
+                "Validated"))
+            .ShouldHaveSingleItem();
     }
 
     private static ScheduledNotification CreateNotification(

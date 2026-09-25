@@ -11,6 +11,8 @@ namespace Unity.Payments.Events
 
         public PaymentRequestStatus Status { get; set; }
 
+        public string? CasPaymentStatus { get; set; }
+
         public Guid? TenantId { get; set; }
     }
 }
