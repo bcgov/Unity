@@ -7,9 +7,13 @@
 
 .rt-widget-bubble {
     position: relative;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    min-height: 34px;
+    max-width: 34px;
+    max-height: 34px;
+    border-radius: 75%;
     border: none;
     background-color: #2e5dd7;
     color: #fff;
@@ -20,6 +24,11 @@
     cursor: pointer;
     padding: 0;
     touch-action: none;
+}
+
+.rt-widget-bubble svg {
+    width: 20px;
+    height: 20px;
 }
 
 .rt-widget-bubble:hover {
