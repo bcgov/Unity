@@ -14,7 +14,7 @@ const addressId = '22222222-2222-2222-2222-222222222222';
 
 // Exercise the widget and real change tracker with small DOM/AJAX/DataTables adapters.
 // The table adapter invokes the configured renderers on initialization and redraw.
-function widget({ addresses = [], values = {} } = {}) {
+function widget({ addresses = [], values = {}, canEdit = true } = {}) {
     const nodes = new Map();
     const fields = [];
     const calls = [];
@@ -81,6 +81,16 @@ function widget({ addresses = [], values = {} } = {}) {
             fields.push(element(`[name="${name}"]`, values[name] || '').attr('name', name));
         }
     }
+    // The restructured widget reads its state from the root element and a text payload,
+    // re-binds after a write, and delegates click handlers on document.
+    const widgetRoot = element('.applicant-addresses-widget');
+    widgetRoot.data = key => ({ 'can-edit': canEdit })[key];
+    widgetRoot.parent = () => ({ html() {} });
+    const documentNode = element('#document');
+    nodes.set('#ApplicantAddressesTable [data-bs-toggle="tooltip"]', collection([]));
+    // The widget's initial `let widgetRoot = $();` calls $ with no selector, the way jQuery
+    // returns an empty set for a no-argument call.
+    nodes.set(undefined, collection([]));
     function collection(elements) {
         return {
             each(callback) { elements.forEach((node, index) => callback(index, node)); return this; },
@@ -102,11 +112,14 @@ function widget({ addresses = [], values = {} } = {}) {
     function $(selector) {
         if (typeof selector === 'function') return selector();
         if (selector instanceof $) return selector;
+        if (selector === documentNode || selector === 'document') return documentNode;
         assert.ok(nodes.has(selector), `Unexpected selector: ${selector}`);
         return nodes.get(selector);
     }
     $.fn = $.prototype;
     $.fn.DataTable = function () {};
+    $.fn.DataTable.isDataTable = () => false;
+    $.ajax = () => {};
 
     function renderTable() {
         renderedRows = tableRows.map(row => tableConfig.columnDefs.map(column =>
@@ -140,9 +153,16 @@ function widget({ addresses = [], values = {} } = {}) {
 
     const context = vm.createContext({
         $, jQuery: $, console, setTimeout() {},
+        document: documentNode,
         captureTracking(instance) { tracking = instance; },
         abp: {
+            appPath: '/',
             notify: { warn: message => warnings.push(message), error: message => errors.push(message), success() {} },
+            event: { trigger() {} },
+            ModalManager: class { onResult() {} open() {} },
+            // The widget localizes through ABP rather than a text payload. Echoing the key back
+            // keeps the tests independent of en.json while still proving the right key is used.
+            localization: { getResource: () => key => key },
             libs: { datatables: { normalizeConfiguration: config => config } },
             utils: {
                 // ABP exposes htmlEscape, not htmlEncode.
@@ -150,6 +170,7 @@ function widget({ addresses = [], values = {} } = {}) {
                     .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
             }
         },
+        bootstrap: { Tooltip: { getInstance: () => null, getOrCreateInstance() {} } },
         unity: { grantManager: { applicants: { applicant: {
             updateApplicantContactAddresses(applicant, payload) {
                 calls.push({ applicant, payload });

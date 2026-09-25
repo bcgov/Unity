@@ -14,7 +14,8 @@
     var canEditAddresses = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Addresses.Default);
 }
 
-<div class="applicant-addresses-widget applicant-info-container px-1 pb-2 mb-4">
+<div class="applicant-addresses-widget applicant-info-container px-1 pb-2 mb-4"
+     data-can-edit="@Model.CanEditAddresses.ToString().ToLowerInvariant()">
     @if (Model.ApplicantId == Guid.Empty)
     {
         <div class="alert alert-warning m-3">

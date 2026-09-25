@@ -618,6 +618,17 @@
     "ApplicantContacts:ColumnName": "Name",
     "ApplicantContacts:ColumnPhone": "Phone (Work)",
     "ApplicantContacts:ColumnSubmission": "Submission #",
+    
+    "ApplicantAddresses:ColumnAddressType": "Address Type",
+    "ApplicantAddresses:ColumnAddress": "Address",
+    "ApplicantAddresses:ColumnUnit": "Unit",
+    "ApplicantAddresses:ColumnCity": "City",
+    "ApplicantAddresses:ColumnProvince": "Province",
+    "ApplicantAddresses:ColumnPostalCode": "Postal Code",
+    "ApplicantAddresses:ColumnSubmission": "Submission #",
+    "ApplicantAddresses:AddressSaved": "Address saved.",
+    "ApplicantAddresses:ServiceUnavailable": "Applicant address service is not available.",
+    "ApplicantAddress:EditTitle": "Edit Address",
 
     "ApplicationBatchApprovalRequest:Title": "Approve Applications",
     "ApplicationBatchApprovalRequest:SubmitButtonText": "Approve",
