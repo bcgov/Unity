@@ -439,7 +439,7 @@ SuffixType == SubmissionNumber         →  {Prefix}{ReferenceNo}</div>
     <h3>Two events, four handlers</h3>
     <div class="kv-grid">
       <div class="k">ApplicationProcessEvent</div>
-      <div>The declared extension point. Carries the Application, the form version, the submission record and the <strong>raw</strong> submission. Handlers: <span class="code">DetermineElectoralDistrictHandler</span>, <span class="code">UpdateApplicantProfileCacheHandler</span>, <span class="code">GenerateReportDataHandler</span> (core) and <span class="code">QueueApplicationAIPipelineOnProcessHandler</span> (Unity.AI).</div>
+      <div>The declared extension point. Carries the Application, the form version, the submission record and the <strong>raw</strong> submission. Handlers: <span class="code">DetermineElectoralDistrictHandler</span>, <span class="code">UpdateApplicantProfileCacheHandler</span> (core) and <span class="code">QueueApplicationAIPipelineOnProcessHandler</span> (Unity.AI).</div>
       <div class="k">ApplicationChangedEvent</div>
       <div><span class="code">{ Action = Submit, ApplicationId }</span>. Consumed by Notifications' <span class="code">ScheduledNotificationEventHandler</span> to fire configured event-driven email.</div>
     </div>

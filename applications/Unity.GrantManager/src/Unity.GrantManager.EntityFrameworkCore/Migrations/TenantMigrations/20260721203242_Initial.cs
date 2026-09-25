@@ -2601,9 +2601,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
             RunEmbeddedScript(migrationBuilder, "generate_formversion_view.sql");
             RunEmbeddedScript(migrationBuilder, "generate_worksheet_view.sql");
             RunEmbeddedScript(migrationBuilder, "generate_scoresheet_view.sql");
-            RunEmbeddedScript(migrationBuilder, "generate_worksheets_view.sql");
-            RunEmbeddedScript(migrationBuilder, "generate_scoresheets_view.sql");
-            RunEmbeddedScript(migrationBuilder, "generate_submissions_view.sql");
             RunEmbeddedScript(migrationBuilder, "generate_consolidated_formversion_view.sql");
             RunEmbeddedScript(migrationBuilder, "generate_consolidated_worksheet_view.sql");
         }
@@ -2624,9 +2621,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
         {
             migrationBuilder.Sql(@"DROP PROCEDURE IF EXISTS ""Reporting"".generate_consolidated_worksheet_view(UUID);");
             migrationBuilder.Sql(@"DROP PROCEDURE IF EXISTS ""Reporting"".generate_consolidated_formversion_view(UUID);");
-            migrationBuilder.Sql(@"DROP PROCEDURE IF EXISTS ""Reporting"".generate_submissions_view(UUID);");
-            migrationBuilder.Sql(@"DROP PROCEDURE IF EXISTS ""Reporting"".generate_scoresheets_view(UUID);");
-            migrationBuilder.Sql(@"DROP PROCEDURE IF EXISTS ""Reporting"".generate_worksheets_view(UUID);");
             migrationBuilder.Sql(@"DROP PROCEDURE IF EXISTS ""Reporting"".generate_scoresheet_view(UUID);");
             migrationBuilder.Sql(@"DROP PROCEDURE IF EXISTS ""Reporting"".generate_worksheet_view(UUID);");
             migrationBuilder.Sql(@"DROP PROCEDURE IF EXISTS ""Reporting"".generate_formversion_view(UUID);");

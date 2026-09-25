@@ -116,7 +116,7 @@ Every `*Definition` also inherits a common base, `CustomFieldDefinition`, carryi
 
 `WorksheetsManager` (`Domain/Services/WorksheetsManager.cs`) implements the "fill a worksheet instance from raw field data" pipeline:
 
-- **`PersistWorksheetData`** — handles an event with a flat dictionary of field values, resolves the target `WorksheetInstance`/`Worksheet` by correlation or name, converts each raw value via `ValueConverter.Convert` per field's `CustomFieldType`, rolls the values into the instance's `CurrentValue` JSON, and optionally triggers reporting-data generation if the `Reporting` feature is enabled.
+- **`PersistWorksheetData`** — handles an event with a flat dictionary of field values, resolves the target `WorksheetInstance`/`Worksheet` by correlation or name, converts each raw value via `ValueConverter.Convert` per field's `CustomFieldType`, and rolls the values into the instance's `CurrentValue` JSON.
 - **`CreateWorksheetDataByFields`** — bulk-creates new `WorksheetInstance`s from a flat field-value list keyed by the `custom_<worksheet>_<field>` naming convention, guarding against duplicate instance creation.
 
 This is the mechanism by which an external form submission (a CHEFS intake form — see [flex-integration.md](flex-integration.md#intake--worksheet)) populates a Flex worksheet instance.
@@ -125,8 +125,8 @@ This is the mechanism by which an external form submission (a CHEFS intake form 
 
 - Both Worksheets and Scoresheets tables live in **schema `Flex`**, inside the **tenant database** (`FlexDbProperties.ConnectionStringName = "Tenant"` → `GrantTenantDbContext`). No table prefix.
 - Confirmed tables (`FlexDbContextModelCreatingExtensions.ConfigureFlex`, migration `20260721203242_Initial.cs`): `Worksheets`, `WorksheetSections`, `CustomFields`, `CustomFieldValues`, `WorksheetInstances`, `WorksheetLinks`, `Scoresheets`, `ScoresheetSections`, `Questions`, `Answers`, `ScoresheetInstances` — all under `schema: "Flex"`.
-- **JSON columns** (Postgres `jsonb`, via `[Column(TypeName = "jsonb")]`): `WorksheetSection.Definition`, `CustomField.Definition`, `WorksheetInstance.CurrentValue`, `WorksheetInstance.ReportData`, `CustomFieldValue.CurrentValue`, `Question.Definition`, `Answer.CurrentValue`, `ScoresheetInstance.ReportData`. (`Scoresheet.ReportColumns`/`ReportKeys`/`ReportViewName` and `ScoresheetInstance.Value` are plain `text`, not `jsonb`.)
+- **JSON columns** (Postgres `jsonb`, via `[Column(TypeName = "jsonb")]`): `WorksheetSection.Definition`, `CustomField.Definition`, `WorksheetInstance.CurrentValue`, `CustomFieldValue.CurrentValue`, `Question.Definition`, `Answer.CurrentValue`. (`ScoresheetInstance.Value` is plain `text`, not `jsonb`.)
 - This is a **schema-per-row / EAV-style design**: both field *definitions* (shape/validation rules) and field *values* are stored as flexible JSON rather than fixed relational columns — the mechanism that makes the whole system dynamic without per-form schema migrations.
 - Multi-tenant: every entity implements `IMultiTenant` (nullable `TenantId`) — standard ABP row-level tenant filtering.
-- **Reporting support:** `Worksheet` and `Scoresheet` implement `IReportableEntity<T>` and carry `ReportColumns`/`ReportKeys`/`ReportViewName` text columns, backing a generated-SQL-view mechanism that flattens the dynamic JSON into queryable columns — see [flex-application-services.md](flex-application-services.md#reporting-integration) and `documentation/reporting/`.
+- **Reporting support:** Flex entities carry no reporting-specific columns. Reporting Configuration views read `WorksheetInstance.CurrentValue` and `Answer.CurrentValue` directly — see [flex-application-services.md](flex-application-services.md#reporting-integration) and `documentation/reporting/`.
 - No additional unique indexes/constraints beyond primary keys were found — duplicate-name prevention is purely an application/domain-layer invariant, not DB-enforced.

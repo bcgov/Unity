@@ -46,33 +46,7 @@ Almost every publish site on the host side is gated by `IFeatureChecker.IsEnable
 
 ## Reporting integration
 
-Two parallel pipelines: one for **field metadata**, one for **instance data**.
-
-### Field generators (`Reporting/FieldGenerators/`)
-
-`IReportingFieldsGenerator` / `ReportingFieldsGenerator` / `ReportingFieldsGeneratorFactory`, with per-type generators:
-
-- `CustomFieldGenerators/` — `CheckboxGroupReportingFieldsGenerator`, `DataGridReportingFieldsGenerator`, `DefaultReportingFieldsGenerator` (worksheet custom fields).
-- `QuestionFieldGenerators/` — `QuestionsReportingGenerator`, `DefaultFieldsGenerator` (scoresheet questions).
-
-`WorksheetReportingFieldsGeneratorService` / `ScoresheetReportingFieldsGeneratorService` compute a set of flattened "report keys" for a worksheet/scoresheet definition (one key per section/field/checkbox-option), stored on the entity itself (`Worksheet.ReportKeys` / `Scoresheet.ReportKeys`, plus `ReportViewName`).
-
-### Data generators (`Reporting/DataGenerators/`)
-
-`IReportingDataGeneratorService<TDef, TInstance>` / `ReportingDataGeneratorServiceBase`:
-
-- **`ScoresheetsReportingDataGeneratorService.GenerateAndSet(Scoresheet, ScoresheetInstance)`** builds a `Dictionary<string, object?>` keyed by each report key, matches each key to an `Answer` (by `Question.Name == key`), converts the value via `ScoresheetsReportingDataGeneratorFactory.Create(answer).Generate()`, computes `TotalScore` (summing `Number`, `YesNo`, and `SelectList` question types via `CalculateNumberFieldScore` / `CalculateYesNoFieldScore` / `CalculateSelectListFieldScore`), and serializes the result onto `instanceValue.SetReportingData(json)`. Wrapped in a blanket try/catch — a generation failure just logs and skips; report data can be regenerated later and never blocks intake/assessment.
-- **`WorksheetsReportingDataGeneratorService` / `Factory`** follow the equivalent pattern for `CustomFieldValue`s, with `CheckboxGroupReportDataGenerator`, `DataGridReportDataGenerator`, `DefaultReportDataGenerator`.
-
-### Dynamic DB views
-
-`WorksheetsDynamicViewGeneratorHandler` (on `WorksheetsDynamicViewGeneratorEto`) and `ScoresheetsDynamicViewGeneratorHandler` (analogous) call a Postgres stored procedure directly via raw SQL — `CALL "Reporting".generate_worksheets_view(@worksheetId)` — to materialize a queryable SQL view per published worksheet/scoresheet, scoped by `ICurrentTenant.Change(tenantId)` inside a non-transactional unit of work. This is how Flex's dynamic/JSON-shaped data becomes something `Unity.Reporting` (and Power BI-style consumers) can query relationally. See `documentation/reporting/reporting-architecture.md` for the layer this feeds into.
-
-> **Deprecated:** this auto-generation mechanism (one view per worksheet/scoresheet, materialized automatically via `generate_worksheets_view()`) is scheduled to be removed, in favour of views configured explicitly through Reporting Configuration. The full inventory of what it writes and a phased removal plan — Phase 1 deletes the generation code and its call sites, Phase 2 drops the views, procedures, and the `Report*` / `ReportData` columns — is in [`documentation/reporting/reporting-auto-generated-views.md`](../reporting/reporting-auto-generated-views.md). Not yet implemented as of 2026-09-04; confirm current status before relying on it either way.
-
-### Reporting sync app services (maintenance/ops tooling)
-
-`IWorksheetReportingFieldsSyncAppService` (`SyncFields`, `SyncData`) and `IScoresheetReportingFieldsSyncAppService` (`SyncQuestions`, `SyncAnswers`) are both `[Authorize(IdentityConsts.ITAdminPolicyName)]`. They iterate all tenants (or one, via an optional `tenantId`) and backfill missing `ReportKeys` / reporting data for published worksheets/scoresheets lacking a `ReportViewName`, gated on the `Unity.Reporting` feature being enabled per tenant. These are ops/support tooling for fixing drift — not part of the live request path.
+Flex does not create reporting views itself. It supplies field metadata to Reporting Configuration through `Reporting/Configuration/`: `WorksheetsMetadataService` and `ScoresheetsMetadataService` (behind `IWorksheetsMetadataService` / `IScoresheetsMetadataService` in Contracts), using `WorksheetFieldSchemaParser` and `ScoresheetFieldSchemaParser` to flatten a worksheet's custom fields or a scoresheet's questions into reportable components. `Unity.Reporting`'s `WorksheetFieldsProvider`, `ConsolidatedWorksheetFieldsProvider`, and `ScoresheetFieldsProvider` call them; the views themselves read `WorksheetInstance.CurrentValue` and `Flex.Answers` directly. See [`documentation/reporting/reporting-configuration.md`](../reporting/reporting-configuration.md).
 
 ## Import / export
 

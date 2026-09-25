@@ -417,9 +417,6 @@ public partial class ApplicationFormVersionDtoToEntityMapper : MapperBase<Applic
 public partial class CreateUpdateApplicationFormVersionDtoToEntityMapper : MapperBase<CreateUpdateApplicationFormVersionDto, ApplicationFormVersion>
 {
     [MapperIgnoreTarget(nameof(ApplicationFormVersion.TenantId))]
-    [MapperIgnoreTarget(nameof(ApplicationFormVersion.ReportColumns))]
-    [MapperIgnoreTarget(nameof(ApplicationFormVersion.ReportKeys))]
-    [MapperIgnoreTarget(nameof(ApplicationFormVersion.ReportViewName))]
     [MapperIgnoreTarget(nameof(ApplicationFormVersion.FormSchema))]
     [MapperIgnoreTarget(nameof(ApplicationFormVersion.LastModificationTime))]
     [MapperIgnoreTarget(nameof(ApplicationFormVersion.LastModifierId))]
@@ -429,9 +426,6 @@ public partial class CreateUpdateApplicationFormVersionDtoToEntityMapper : Mappe
     public override partial ApplicationFormVersion Map(CreateUpdateApplicationFormVersionDto source);
 
     [MapperIgnoreTarget(nameof(ApplicationFormVersion.TenantId))]
-    [MapperIgnoreTarget(nameof(ApplicationFormVersion.ReportColumns))]
-    [MapperIgnoreTarget(nameof(ApplicationFormVersion.ReportKeys))]
-    [MapperIgnoreTarget(nameof(ApplicationFormVersion.ReportViewName))]
     [MapperIgnoreTarget(nameof(ApplicationFormVersion.FormSchema))]
     [MapperIgnoreTarget(nameof(ApplicationFormVersion.LastModificationTime))]
     [MapperIgnoreTarget(nameof(ApplicationFormVersion.LastModifierId))]

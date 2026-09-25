@@ -35,7 +35,6 @@ Flex has **no permission definitions of its own** — `FlexMenus.cs` is an empty
 |---|---|
 | Configuration Management page (builders) | Host permission `UnitySettingManagementPermissions.UserInterface` |
 | Custom Fields / Scoresheets sections within it | ABP tenant feature `"Unity.Flex"` |
-| Reporting sync app services (IT tooling) | `[Authorize(IdentityConsts.ITAdminPolicyName)]` |
 | Everything else in the Flex module | No explicit `[Authorize]` — relies on the caller (host app service or Razor Page) already having checked the relevant host permission |
 
 A tenant can therefore turn the entire Flex-driven UI off by disabling the `"Unity.Flex"` feature; see [flex-integration.md](flex-integration.md#assessment--scoresheet-scoring) for how the assessment flow falls back to a legacy mechanism in that case.

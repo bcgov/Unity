@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Unity.GrantManager.EntityFrameworkCore;
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Unity.GrantManager.Migrations.TenantMigrations
 {
     [DbContext(typeof(GrantTenantDbContext))]
-    partial class GrantTenantDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260911160335_AB34344_RemoveAutoReportingViews")]
+    partial class AB34344_RemoveAutoReportingViews
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3408,9 +3411,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid>("ScheduledNotificationId")
                         .HasColumnType("uuid");
 
-                    b.Property<DateTime?>("TriggerDate")
-                        .HasColumnType("timestamp without time zone");
-
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationId");
@@ -3419,7 +3419,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("ScheduledNotificationId");
 
-                    b.HasIndex("ApplicationId", "ScheduledNotificationId", "DateField", "TriggerDate")
+                    b.HasIndex("ApplicationId", "ScheduledNotificationId", "DateField")
                         .IsUnique();
 
                     b.ToTable("ScheduledNotificationTracking", "Notifications");
@@ -3486,11 +3486,12 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TenantId")
-                        .IsUnique()
-                        .HasFilter("\"IsDefault\" = true");
-
                     b.HasIndex("TenantId", "EmailAddress", "EmailType")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId")
+                        .HasDatabaseName("IX_EmailAddressConfigurations_TenantId_IsDefault")
+                        .HasFilter("\"IsDefault\" = true")
                         .IsUnique();
 
                     b.ToTable("EmailAddressConfigurations", "Notifications");
@@ -4072,13 +4073,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("TemplateType")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasDefaultValue("Applicant");
-
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
                         .HasColumnName("TenantId");
@@ -4284,13 +4278,6 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
-
-                    b.Property<string>("TemplateType")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasDefaultValue("Applicant");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")

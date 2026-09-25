@@ -22,7 +22,7 @@ CHEFS ──webhook──▶ POST api/chefs/event/{__tenant}          [AllowAnon
                         publish ApplicationProcessEvent
                         publish ApplicationChangedEvent (Submit)
                         ↓
-                   handlers: electoral district · profile cache · report data · AI pipeline
+                   handlers: electoral district · profile cache · AI pipeline
 ```
 
 ## The entry point
@@ -113,7 +113,6 @@ The extension point. Its declared purpose in the source: *"Extend any further pr
 |---|---|---|
 | `DetermineElectoralDistrictHandler` | core | Resolves the electoral district from the applicant's physical or mailing address, per the form's `ElectoralDistrictAddressType` |
 | `UpdateApplicantProfileCacheHandler` | core | Refreshes the applicant-profile cache |
-| `GenerateReportDataHandler` | core | Generates reporting data for the new application |
 | `QueueApplicationAIPipelineOnProcessHandler` | Unity.AI | Queues attachment summary, analysis and scoring — see [`ai/ai-generation-pipeline.md`](../ai/ai-generation-pipeline.md) |
 
 ### `ApplicationChangedEvent`
