@@ -160,15 +160,20 @@
 
 .comment-read-mode {
     display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
 }
 
-    .comment-read-mode > .unity-user-initials {
-        margin-top: 0.5rem;
-        padding: 5px;
-        width: 22px;
-        height: 22px;
-        font-size: 0.45rem;
-    }
+.comment-read-mode > .unity-user-initials {
+    flex: 0 0 32px;
+    width: 32px;
+    height: 32px;
+    margin-top: 0.5rem;
+    font-size: 0.45rem;
+    line-height: 32px;
+    text-align: center;
+    border-radius: 75%;
+}
 
 .commenter-name {
     font-size: var(--bc-font-size);
