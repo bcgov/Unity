@@ -10,8 +10,10 @@ using Volo.Abp.Uow;
 using Microsoft.Extensions.Logging;
 using Unity.Payments.Integrations.Cas;
 using Unity.Payments.Codes;
+using Unity.Payments.Events;
 using Unity.Payments.RabbitMQ.QueueMessages;
 using Unity.Notifications.Integrations.RabbitMQ;
+using Volo.Abp.EventBus.Local;
 
 namespace Unity.Payments.PaymentRequests
 {
@@ -19,7 +21,8 @@ namespace Unity.Payments.PaymentRequests
             IPaymentRequestRepository paymentRequestsRepository,
             IUnitOfWorkManager unitOfWorkManager,
             ITenantRepository tenantRepository,
-            ICurrentTenant currentTenant) : ApplicationService
+            ICurrentTenant currentTenant,
+            ILocalEventBus localEventBus) : ApplicationService
     {
 
         private static int TenMinutes = 10;
@@ -129,6 +132,8 @@ namespace Unity.Payments.PaymentRequests
             using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
 
             var paymentRequest = await paymentRequestsRepository.GetAsync(PaymentRequestId);
+            var previousPaymentStatus = paymentRequest.PaymentStatus;
+            var previousStatus = paymentRequest.Status;
 
             UpdatePaymentRequestFromCasResult(paymentRequest, result);
 
@@ -138,6 +143,18 @@ namespace Unity.Payments.PaymentRequests
             // which triggers AbpDbContext to collect entity changes into the active audit log.
             // The audit log is then persisted by QueueConsumerHandler after ConsumeAsync returns.
             await uow.CompleteAsync();
+
+            if (previousPaymentStatus != paymentRequest.PaymentStatus || previousStatus != paymentRequest.Status)
+            {
+                await localEventBus.PublishAsync(new PaymentStatusChangedEvent
+                {
+                    PaymentRequestId = paymentRequest.Id,
+                    ApplicationId = paymentRequest.CorrelationId,
+                    Status = paymentRequest.Status,
+                    CasPaymentStatus = paymentRequest.PaymentStatus,
+                    TenantId = TenantId
+                });
+            }
 
             return paymentRequest;
         }

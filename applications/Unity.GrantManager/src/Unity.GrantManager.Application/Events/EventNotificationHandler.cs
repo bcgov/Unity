@@ -91,13 +91,15 @@ namespace Unity.GrantManager.Events
 
         internal static Expression<Func<ScheduledNotification, bool>> PaymentEventNotificationFilter(
             Guid formId,
-            PaymentRequestStatus paymentStatus)
+            PaymentRequestStatus paymentStatus,
+            string? casPaymentStatus)
         {
             return n => n.FormId == formId
                      && n.TriggerType == "Event"
                      && n.IsActive
                      && n.Module == "Payment"
-                     && n.EventType == paymentStatus.ToString();
+                     && (n.EventType == paymentStatus.ToString() ||
+                         (!string.IsNullOrWhiteSpace(casPaymentStatus) && n.EventType == casPaymentStatus));
         }
 
         public async Task HandleEventAsync(PaymentStatusChangedEvent eventData)
@@ -120,7 +122,10 @@ namespace Unity.GrantManager.Events
                 }
 
                 var notifications = (await scheduledNotificationRepository.GetListAsync(
-                    PaymentEventNotificationFilter(application.ApplicationFormId, eventData.Status)))
+                    PaymentEventNotificationFilter(
+                        application.ApplicationFormId,
+                        eventData.Status,
+                        eventData.CasPaymentStatus)))
                     .ToList();
 
                 if (notifications.Count == 0)
