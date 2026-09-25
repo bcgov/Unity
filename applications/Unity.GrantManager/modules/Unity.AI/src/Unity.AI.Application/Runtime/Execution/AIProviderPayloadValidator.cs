@@ -154,15 +154,6 @@ namespace Unity.AI.Runtime.Execution
                 }
             }
 
-            foreach (var propertyName in new[] { "ReportColumns", "ReportKeys", "ReportViewName" })
-            {
-                var result = ValidateRequiredStringProperty(root, propertyName, "scoresheet", allowEmpty: true);
-                if (!result.IsValid)
-                {
-                    return result;
-                }
-            }
-
             foreach (var propertyName in new[] { "Version", "Order" })
             {
                 var result = ValidateRequiredUIntProperty(root, propertyName, "scoresheet");
@@ -421,14 +412,13 @@ namespace Unity.AI.Runtime.Execution
                 && property.TryGetUInt32(out value);
         }
 
-        private static AIResponseValidationResult ValidateRequiredStringProperty(JsonElement element, string propertyName, string sourceName, bool allowEmpty = false)
+        private static AIResponseValidationResult ValidateRequiredStringProperty(JsonElement element, string propertyName, string sourceName)
         {
             if (!TryGetProperty(element, propertyName, out var property)
                 || property.ValueKind != JsonValueKind.String
-                || (!allowEmpty && string.IsNullOrWhiteSpace(property.GetString())))
+                || string.IsNullOrWhiteSpace(property.GetString()))
             {
-                var expectation = allowEmpty ? "string" : "non-empty string";
-                return AIResponseValidationResult.Invalid($"{sourceName} response is missing or invalid required field '{propertyName}' (expected {expectation}).");
+                return AIResponseValidationResult.Invalid($"{sourceName} response is missing or invalid required field '{propertyName}' (expected non-empty string).");
             }
 
             return AIResponseValidationResult.Success();

@@ -24,15 +24,6 @@ public class FormScoresheetResponse
     [JsonPropertyName("published")]
     public bool Published { get; set; }
 
-    [JsonPropertyName("reportColumns")]
-    public string ReportColumns { get; set; } = string.Empty;
-
-    [JsonPropertyName("reportKeys")]
-    public string ReportKeys { get; set; } = string.Empty;
-
-    [JsonPropertyName("reportViewName")]
-    public string ReportViewName { get; set; } = string.Empty;
-
     [JsonPropertyName("sections")]
     public List<FormScoresheetSectionResponse> Sections { get; set; } = [];
 }

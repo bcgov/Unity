@@ -257,13 +257,12 @@
 <div class="sheet">
 
   <header>
-    <div class="eyebrow">Module Handover · Unity Portal · 1 of 2</div>
+    <div class="eyebrow">Module Handover · Unity Portal</div>
     <h1 class="title">Unity.Reporting</h1>
-    <p class="subtitle">The explicit path: an administrator decides a reporting view should exist, maps every source field to a column by hand, and presses Generate. One row in <span class="code">ReportColumnsMaps</span> is the whole contract — five providers feed it, five stored procedures consume it. This is the go-forward system; its predecessor is documented in the companion page.</p>
+    <p class="subtitle">The explicit path: an administrator decides a reporting view should exist, maps every source field to a column by hand, and presses Generate. One row in <span class="code">ReportColumnsMaps</span> is the whole contract — five providers feed it, five stored procedures consume it. This is the only way new reporting views are created; the deprecated auto-generated views it replaces are no longer generated, and their removal is documented in <span class="code">documentation/reporting/reporting-auto-generated-views.md</span>.</p>
     <div class="meta-row">
       <span><b>Path</b> <span class="mono">applications/Unity.GrantManager/modules/Unity.Reporting</span></span>
       <span><b>Config store</b> <span class="mono">Reporting."ReportColumnsMaps"</span></span>
-      <span><b>Companion</b> <span class="mono">reporting-auto-views-handover.html</span></span>
     </div>
     <nav class="toc">
       <a href="#pattern"><b>01</b>The pattern</a>
@@ -552,7 +551,7 @@ GenerateViewBackgroundJob (in tenant context)
     </div>
 
     <div class="rowlist" style="margin-top:24px;">
-      <div class="row"><div class="k"><span class="tag warn">Cross-path</span></div><div class="v"><p><strong>The all-views grant can throw on a database that still holds legacy views.</strong> <span class="code">AssignRoleToAllViewsAsync</span> validates every name it reads back from <span class="code">pg_views</span> against <span class="code">^[a-zA-Z_][a-zA-Z0-9_]*$</span> before interpolating it into the <span class="code">GRANT</span> — a deliberate injection guard, since quoted PostgreSQL identifiers can contain quotes and semicolons. The deprecated path's view names (<span class="code">Form-…</span>, <span class="code">Worksheet-…</span>, <span class="code">Scoresheet-…</span>) contain hyphens and fail that check, so the loop throws part-way through and leaves the remaining grants unapplied. See the companion handover page.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Cross-path</span></div><div class="v"><p><strong>The all-views grant can throw on a database that still holds legacy views.</strong> <span class="code">AssignRoleToAllViewsAsync</span> validates every name it reads back from <span class="code">pg_views</span> against <span class="code">^[a-zA-Z_][a-zA-Z0-9_]*$</span> before interpolating it into the <span class="code">GRANT</span> — a deliberate injection guard, since quoted PostgreSQL identifiers can contain quotes and semicolons. The deprecated path's view names (<span class="code">Form-…</span>, <span class="code">Worksheet-…</span>, <span class="code">Scoresheet-…</span>) contain hyphens and fail that check, so the loop throws part-way through and leaves the remaining grants unapplied. They are no longer generated, but existing ones remain until the Phase 2 migration in <span class="code">documentation/reporting/reporting-auto-generated-views.md</span> drops them.</p></div></div>
     </div>
   </section>
 
@@ -644,7 +643,7 @@ GenerateViewBackgroundJob (in tenant context)
       <div class="row"><div class="k"><span class="tag accent">Confusing</span></div><div class="v"><p>The UI column labelled <strong>Path</strong> shows <span class="code">DataPath</span>, not <span class="code">Path</span>. The real <span class="code">Path</span> is the row-identity key and is never displayed. This trips people up when reading a mapping JSON export against the screen.</p></div></div>
       <div class="row"><div class="k"><span class="tag accent">Partial cleanup</span></div><div class="v"><p><span class="code">DeleteAsync</span> and the rename path both downgrade a failed <span class="code">DROP VIEW</span> to a warning. A view can outlive the mapping that created it, after which its name reads as "available" to the correlation-aware check but conflicts on the actual <span class="code">CREATE</span>.</p></div></div>
       <div class="row"><div class="k"><span class="tag accent">Unwired</span></div><div class="v"><p><span class="code">ReportColumnsMap.RoleStatus</span> exists on the entity and defaults to <span class="code">NOTASSIGNED</span>, but the grant jobs never write it — role state is only observable in the logs and the DB Info modal.</p></div></div>
-      <div class="row"><div class="k"><span class="tag roadmap">Next</span></div><div class="v"><p>Retire the auto-generated path (companion page) so that every view under <span class="code">Reporting</span> is one this module knows about. At that point <span class="code">pg_views</span> and <span class="code">ReportColumnsMaps</span> become the same set, and orphan detection becomes a one-line query.</p></div></div>
+      <div class="row"><div class="k"><span class="tag roadmap">Next</span></div><div class="v"><p>Drop the remaining auto-generated views (Phase 2 in <span class="code">documentation/reporting/reporting-auto-generated-views.md</span>) so that every view under <span class="code">Reporting</span> is one this module knows about. At that point <span class="code">pg_views</span> and <span class="code">ReportColumnsMaps</span> become the same set, and orphan detection becomes a one-line query.</p></div></div>
     </div>
   </section>
 

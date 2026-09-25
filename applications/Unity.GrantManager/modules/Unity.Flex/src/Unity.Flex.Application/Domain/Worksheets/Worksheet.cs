@@ -6,11 +6,10 @@ using Volo.Abp;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 using Unity.Flex.Worksheets;
-using Unity.Flex.Reporting;
 
 namespace Unity.Flex.Domain.Worksheets
 {
-    public class Worksheet : FullAuditedAggregateRoot<Guid>, IMultiTenant, IReportableEntity<Worksheet>
+    public class Worksheet : FullAuditedAggregateRoot<Guid>, IMultiTenant
     {
         public virtual string Name { get; private set; } = string.Empty;
         public virtual string Title { get; private set; } = string.Empty;
@@ -105,14 +104,6 @@ namespace Unity.Flex.Domain.Worksheets
         public Worksheet SetName(string name)
         {
             Name = name;
-            return this;
-        }
-
-        public Worksheet SetReportingFields(string keys, string columns, string reportViewName)
-        {
-            ReportKeys = keys;
-            ReportColumns = columns;
-            ReportViewName = reportViewName;
             return this;
         }
     }

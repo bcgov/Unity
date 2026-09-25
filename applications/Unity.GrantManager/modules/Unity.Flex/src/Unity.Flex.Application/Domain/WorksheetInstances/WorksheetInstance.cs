@@ -41,8 +41,7 @@ namespace Unity.Flex.Domain.WorksheetInstances
             string correlationProvider,
             Guid worksheetCorrelationId,
             string worksheetCorrelationProvider,
-            string correlationAnchor,
-            string? reportData = null)
+            string correlationAnchor)
         {
             Id = id;
             CorrelationId = correlationId;
@@ -51,7 +50,6 @@ namespace Unity.Flex.Domain.WorksheetInstances
             WorksheetCorrelationProvider = worksheetCorrelationProvider;
             UiAnchor = correlationAnchor;
             WorksheetId = worksheetId;
-            ReportData = reportData ?? "{}";
         }
 
         public WorksheetInstance AddValue(Guid customFieldId, string currentValue)
@@ -69,12 +67,6 @@ namespace Unity.Flex.Domain.WorksheetInstances
         public WorksheetInstance SetAnchor(string uiAnchor)
         {
             UiAnchor = uiAnchor;
-            return this;
-        }
-
-        public WorksheetInstance SetReportingData(string reportingData)
-        {
-            ReportData = reportingData;
             return this;
         }
     }

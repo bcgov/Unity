@@ -17,15 +17,15 @@ Layer 2 — the views — is produced by **two independent mechanisms** that bot
 
 | | **Explicit** — Reporting Configuration | **Auto / Dynamic** — legacy |
 | --- | --- | --- |
-| Status | **Current, go-forward** | **Deprecated — scheduled for removal** |
-| Who decides a view exists | An administrator, on the Reporting Configuration tab | Nobody — one is created automatically on publish |
+| Status | **Current, go-forward** | **Deprecated — no longer generated; existing views remain until Phase 2 removes them** |
+| Who decides a view exists | An administrator, on the Reporting Configuration tab | Nobody — views were created automatically on publish; no code creates or refreshes them now |
 | Configuration store | `Reporting.ReportColumnsMaps` | `ReportKeys` / `ReportColumns` / `ReportViewName` on the definition row |
 | Column types | `NUMERIC`, `DECIMAL(18,2)`, `TIMESTAMP`, `BOOLEAN`, `TEXT` | `TEXT` for everything (plus one `integer` `TotalScore`) |
 | Value source at query time | Source data directly — `Submission`, `WorksheetInstances.CurrentValue`, `Flex.Answers` | The pre-flattened `ReportData` JSONB snapshot |
 | Cross-version views | Yes (`*_consolidated` providers) | No — one view per version / worksheet / scoresheet |
 | Detail | [reporting-configuration.md](reporting-configuration.md) | [reporting-auto-generated-views.md](reporting-auto-generated-views.md) |
 
-The two do not interfere at the data level — the explicit path's SQL never reads `ReportData` or the `Report*` definition columns — so the Auto path can be switched off without touching any explicitly configured view. The rest of this document describes the layer model; where a layer differs between the paths, it says so.
+The two do not interfere at the data level — the explicit path's SQL never reads `ReportData` or the `Report*` definition columns — so the remaining auto views and their columns can be dropped without touching any explicitly configured view. The rest of this document describes the layer model; where a layer differs between the paths, it says so.
 
 ---
 
@@ -41,7 +41,6 @@ flowchart TD
 
     subgraph APP["Unity.GrantManager Application"]
         CFG["⚙️ Reporting Configuration\n(field mapping + view generation)"]
-        AUTO["⛔ Auto/Dynamic generators\nDEPRECATED — one view per\nform version / worksheet / scoresheet"]
         CHEFS["📋 CHEFS Form Submissions\nformversion / formversion_consolidated"]
         WS["📝 Unity.Flex Worksheets\nworksheet / worksheet_consolidated"]
         SS["🎯 Unity.Flex Scoresheets\nscoresheet"]
@@ -57,13 +56,9 @@ flowchart TD
     RAW -->|"raw columns available\ndirectly"| MB
     RAW -->|"source JSON\ndigested by"| CFG
     CFG -->|"generates stored views\nvia background job"| RSCHEMA
-    AUTO -.->|"auto-generates TEXT-only\nviews on publish"| RSCHEMA
     CHEFS --> CFG
     WS --> CFG
     SS --> CFG
-    CHEFS -.-> AUTO
-    WS -.-> AUTO
-    SS -.-> AUTO
     RSCHEMA -->|"flat, named columns\nready to consume"| MODELS
     RAW -->|"raw columns\n(for models that need them)"| MODELS
     MODELS -->|"shared semantic layer\nqueried by"| CARDS
@@ -177,7 +172,7 @@ Column typing varies by provider: all five emit `TEXT` / `NUMERIC` / `DECIMAL(18
 
 ## Layer 2b — Auto-generated views (deprecated)
 
-**What it is:** A second, older mechanism that creates one `Reporting` view per CHEFS form version, per published worksheet, and per published scoresheet — with no configuration step. It reads a pipe-delimited key/column list stored on the definition row and emits one `TEXT` column per key, each a lookup into a pre-flattened `ReportData` JSONB snapshot on the instance row.
+**What it is:** A second, older mechanism that created one `Reporting` view per CHEFS form version, per published worksheet, and per published scoresheet — with no configuration step. The generation code has been removed, so no new auto views appear and existing ones are no longer refreshed; the views, the procedures below, and the columns they read stay in the database until Phase 2. Each procedure read a pipe-delimited key/column list stored on the definition row and emitted one `TEXT` column per key, each a lookup into a pre-flattened `ReportData` JSONB snapshot on the instance row.
 
 | Source | View name pattern | Procedure |
 | --- | --- | --- |
@@ -189,7 +184,7 @@ Column typing varies by provider: all five emit `TEXT` / `NUMERIC` / `DECIMAL(18
 
 **How to tell them apart in a database:** the explicitly configured views are exactly the `ViewName` values in `Reporting."ReportColumnsMaps"`. Anything else under `Reporting` in `pg_views` is an auto view or an orphan.
 
-Full detail, including the phased removal plan, is in [reporting-auto-generated-views.md](reporting-auto-generated-views.md).
+Full detail, including the Phase 2 removal plan, is in [reporting-auto-generated-views.md](reporting-auto-generated-views.md).
 
 ---
 
@@ -381,7 +376,7 @@ The view generation system (Reporting Configuration) remains the same regardless
 |-------|-----------|-----------|------------|
 | Raw Database | PostgreSQL tables | Application writes | Normalised rows + JSON blobs |
 | Reporting Views | PostgreSQL views (`Reporting` schema) | Reporting Configuration UI | Flat, named, **typed** columns |
-| Reporting Views *(deprecated)* | PostgreSQL views (`Reporting` schema) | Auto-generated on publish — no owner | Flat, named, **all `TEXT`** columns |
+| Reporting Views *(deprecated)* | PostgreSQL views (`Reporting` schema) | No longer generated — frozen, no owner | Flat, named, **all `TEXT`** columns |
 | Models | Metabase Models | Metabase authors | Named, joined, business-labelled sources |
 | Cards / Dashboards | Metabase Questions & Dashboards | Report authors | Specific questions and visualisations |
 

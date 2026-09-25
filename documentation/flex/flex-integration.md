@@ -16,7 +16,7 @@ flowchart LR
     ASSESS["AssessmentScoresheetService\n(assessor saves section)"] -->|"PersistScoresheetSectionInstanceEto"| FLEX4["Flex: Answers updated"]
 
     FLEX2 -->|"scoring"| ASSESS
-    FLEX3 & FLEX4 -->|"ReportingDataGenerator"| RPT["Unity.Reporting\n(dynamic SQL views)"]
+    FLEX3 & FLEX4 -->|"read directly by\nconfigured views"| RPT["Unity.Reporting\n(Reporting Configuration views)"]
 ```
 
 ## Intake → Worksheet
@@ -61,4 +61,4 @@ Key responsibilities:
 
 ## Reporting
 
-See [flex-application-services.md#reporting-integration](flex-application-services.md#reporting-integration) for the data-generator/dynamic-view pipeline, and `documentation/reporting/reporting-architecture.md` for how those generated views feed into the broader BI/reporting stack (Metabase and friends).
+See [flex-application-services.md#reporting-integration](flex-application-services.md#reporting-integration) for the field metadata Flex supplies to Reporting Configuration, and `documentation/reporting/reporting-architecture.md` for how the generated views feed into the broader BI/reporting stack (Metabase and friends).

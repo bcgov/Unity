@@ -56,6 +56,5 @@ Unity.Flex has **no dedicated ABP permission definitions of its own** (`FlexMenu
 
 - The whole Configuration Management screen (where the worksheet/scoresheet builders live) requires the host's `UnitySettingManagementPermissions.UserInterface` permission.
 - Each builder section's visibility is gated purely by the ABP **tenant feature** `"Unity.Flex"` being enabled (`IFeatureChecker.IsEnabledAsync("Unity.Flex")`) — checked throughout the host module before publishing any Flex-related event, and in the host's `ConfigurationManagement/Index.cshtml.cs`.
-- The only explicit `[Authorize]` inside the Flex module itself guards the two Reporting sync app services (`IdentityConsts.ITAdminPolicyName`) — IT-admin-only maintenance/backfill tooling, not part of normal end-user flow.
 
 This means a tenant can be switched off Flex entirely via the feature flag; the host module falls back to a legacy, hardcoded scoresheet mechanism when it is disabled (see [flex-integration.md](flex-integration.md#assessment--scoresheet-scoring)).

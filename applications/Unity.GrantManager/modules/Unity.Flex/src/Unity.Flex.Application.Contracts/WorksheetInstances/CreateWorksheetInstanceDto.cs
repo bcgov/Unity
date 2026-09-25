@@ -12,6 +12,5 @@ namespace Unity.Flex.WorksheetInstances
         public string SheetCorrelationProvider { get; set; } = string.Empty;
         public string CorrelationAnchor { get; set; } = string.Empty; 
         public string? CurrentValue { get; set; }
-        public string ReportData { get; set; } = string.Empty;
     }
 }

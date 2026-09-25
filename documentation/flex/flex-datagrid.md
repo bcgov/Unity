@@ -37,10 +37,9 @@ DataGrid columns support a curated subset of `CustomFieldType` (not all fifteen)
 
 ## Reporting behavior
 
-DataGrid is the one field type where reporting treats dynamic and explicit columns **differently**, in `DataGridReportDataGenerator` (`Unity.Flex.Application/Reporting/DataGenerators/CustomFieldValueGenerators/`):
+DataGrid is the one field type where Reporting Configuration treats dynamic and explicit columns **differently**, in the field metadata produced by `WorksheetFieldSchemaParser.ParseDataGridField` (`Unity.Flex.Application/Reporting/Configuration/`):
 
-- **Explicitly-declared columns** become individual, named report fields — `{fieldKey}-{columnName}`, one per row, same as any other field.
-- **Dynamic columns** (present in the value but *not* in `DataGridDefinition.Columns`) are **not** exploded into individual fields — `CaterForDynamicColumns` collapses all of them into a single combined JSON blob field, `{fieldKey}-DynamicColumns`. A variable, CHEFS-driven column set can't map onto fixed SQL columns, so it's kept as opaque JSON instead.
-- The reporting-fields-metadata side (`WorksheetFieldSchemaParser.ParseDataGridField`) mirrors this split: if the dynamic columns can be resolved from the live CHEFS form schema (via a submission-header-mapping lookup keyed on `{field.Name}.DataGrid`), each becomes its own reporting component; otherwise a single `"Dynamic Columns"` placeholder component stands in for the whole unresolved set.
+- **Explicitly-declared columns** each become their own reporting component.
+- **Dynamic columns** become individual components only if they can be resolved from the live CHEFS form schema (via a submission-header-mapping lookup keyed on `{field.Name}.DataGrid`); otherwise a single `"Dynamic Columns"` placeholder component stands in for the whole unresolved set.
 
-See [flex-application-services.md](flex-application-services.md#reporting-integration) for the broader reporting pipeline this feeds into — including a note on planned changes to how reporting views get generated.
+See [flex-application-services.md](flex-application-services.md#reporting-integration) for how this metadata reaches Reporting Configuration.
