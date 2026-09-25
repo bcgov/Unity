@@ -65,6 +65,6 @@ button {
 }
 
 #assessment-scoresheet .preview-btn:not(.collapsed) {
-    background-color: #007bff;
-    color: #ffffff;
+    background-color: var(--bc-colors-blue-primary-500);
+    color: var(--bc-colors-white-primary-500);
 }

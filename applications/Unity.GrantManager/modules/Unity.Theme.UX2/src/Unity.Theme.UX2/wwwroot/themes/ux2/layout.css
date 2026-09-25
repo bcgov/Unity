@@ -665,8 +665,8 @@ abp-date-picker .btn {
     }
 
         .tags-input-wrapper .tags-add-button:hover:not(:disabled) {
-            border-color: #69b3ff;
-            color: #69b3ff;
+            border-color: var(--bc-colors-blue-text-links);
+            color: var(--bc-colors-blue-text-links);
             background-color: #F3F6F9;
         }
 
