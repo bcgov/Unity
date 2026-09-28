@@ -119,7 +119,7 @@
 .links-suggestion-title {
     padding: 8px 12px;
     background-color: #f8f9fa;
-    color: #6c757d;
+    color: var(--bc-colors-grey-text-500);
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
@@ -136,7 +136,7 @@
 .links-suggestion-element:hover,
 .links-suggestion-element.suggestion-active {
     background-color: #e3f2fd;
-    color: #1976d2;
+    color: var(--bc-colors-blue-primary-500);
 }
 
 .links-suggestion-element:last-child {

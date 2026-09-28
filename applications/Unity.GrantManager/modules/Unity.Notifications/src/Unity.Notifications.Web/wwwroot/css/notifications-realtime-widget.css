@@ -310,7 +310,7 @@
 
 .rt-widget-individual-presence {
     overflow: hidden;
-    color: #6b7280;
+    color: var(--bc-colors-grey-text-500);
     font-size: 0.68rem;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -342,7 +342,7 @@
 
 .rt-widget-individuals-empty {
     padding: 12px 6px;
-    color: #6b7280;
+    color: var(--bc-colors-grey-text-500);
     font-size: 0.75rem;
     text-align: center;
 }
@@ -569,6 +569,7 @@
 
 .rt-widget-compose-send:hover {
     background-color: #244bb0;
+    color: var(--bc-colors-white-primary-500);
 }
 
 @media (max-width: 480px) {
