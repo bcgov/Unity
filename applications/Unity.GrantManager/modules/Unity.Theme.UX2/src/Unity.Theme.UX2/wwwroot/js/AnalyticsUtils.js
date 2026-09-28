@@ -114,9 +114,18 @@ const AnalyticsUtils = (function () {
     function initMatomo(url, siteId) {
 
         if (url) {
-            const parsed = new URL(url);
+            let parsed;
+            try {
+                parsed = new URL(url);
+            } catch {
+                console.warn('[Analytics] initMatomo aborted: url is invalid.');
+                return;
+            }
             siteId = parsed.searchParams.get('idsite') || siteId;
-            url = (parsed.origin + parsed.pathname).replace(/\/+$/, '');
+            url = parsed.origin + parsed.pathname;
+            while (url.endsWith('/')) {
+                url = url.slice(0, -1);
+            }
         }
 
         if (!url || !siteId) {
