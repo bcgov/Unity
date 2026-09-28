@@ -28,9 +28,29 @@ public class NotificationsDataSeedContributor(ITemplateVariablesRepository templ
 
         var emailTemplateVariableDtos = new List<EmailTempateVariableDto>
         {
-            new() { TemplateType = TemplateTypes.Application, Name = "Applicant name", Token = "applicant_name", MapTo = "application.applicantName" },
-            new() { TemplateType = TemplateTypes.Application, Name = "Registered Organization Name", Token = "organization_name", MapTo = "application.organizationName" },
-            new() { TemplateType = TemplateTypes.Application, Name = "Applicant ID", Token = "applicant_id", MapTo = "application.unityApplicantId" },
+                        new() { TemplateType = TemplateTypes.Application, Name = "Applicant name", Token = "applicant_name", MapTo = "applicant.applicantName" },
+            new() { TemplateType = TemplateTypes.Application, Name = "Submission #", Token = "submission_number", MapTo = "referenceNo" },
+            new() { TemplateType = TemplateTypes.Application, Name = "Submission Date", Token = "submission_date", MapTo = "submissionDate" },
+            new() { TemplateType = TemplateTypes.Application, Name = "Category", Token = "category", MapTo = "applicationForm.category" },
+            new() { TemplateType = TemplateTypes.Application, Name = "Status", Token = "status", MapTo = "status" },
+            new() { TemplateType = TemplateTypes.Application, Name = "Approved Amount", Token = "approved_amount", MapTo = "approvedAmount" },
+            new() { TemplateType = TemplateTypes.Application, Name = "Approval date", Token = "approval_date", MapTo = "finalDecisionDate" },
+            new() { TemplateType = TemplateTypes.Application, Name = "Community", Token = "community", MapTo = "community" },
+            new() { TemplateType = TemplateTypes.Application, Name = "Contact Full Name", Token = "contact_full_name", MapTo = "contactFullName" },
+            new() { TemplateType = TemplateTypes.Application, Name = "Contact Title", Token = "contact_title", MapTo = "contactTitle" },
+            new() { TemplateType = TemplateTypes.Application, Name = "Decline Rationale", Token = "decline_rationale", MapTo = "declineRational" },
+            new() { TemplateType = TemplateTypes.Application, Name = "Registered Organization Name", Token = "organization_name", MapTo = "organizationName" },
+            new() { TemplateType = TemplateTypes.Application, Name = "Project Start Date", Token = "project_start_date", MapTo = "projectStartDate" },
+            new() { TemplateType = TemplateTypes.Application, Name = "Project End Date", Token = "project_end_date", MapTo = "projectEndDate" },
+            new() { TemplateType = TemplateTypes.Application, Name = "Fiscal Year End", Token = "fiscal_year_end", MapTo = "applicant.fiscalYearEnd" },
+            new() { TemplateType = TemplateTypes.Application, Name = "Project Name", Token = "project_name", MapTo = "projectName" },
+            new() { TemplateType = TemplateTypes.Application, Name = "Project Summary", Token = "project_summary", MapTo = "projectSummary" },
+            new() { TemplateType = TemplateTypes.Application, Name = "Signing Authority Full Name", Token = "signing_authority_full_name", MapTo = "signingAuthorityFullName" },
+            new() { TemplateType = TemplateTypes.Application, Name = "Signing Authority Title", Token = "signing_authority_title", MapTo = "signingAuthorityTitle" },
+            new() { TemplateType = TemplateTypes.Application, Name = "Applicant ID", Token = "applicant_id", MapTo = "applicant.unityApplicantId" },
+            new() { TemplateType = TemplateTypes.Application, Name = "Requested Amount", Token = "requested_amount", MapTo = "requestedAmount" },
+            new() { TemplateType = TemplateTypes.Application, Name = "Recommended Amount", Token = "recommended_amount", MapTo = "recommendedAmount" },
+            new() { TemplateType = TemplateTypes.Application, Name = "Unity Application ID", Token = "unity_application_id", MapTo = "unityApplicationId" },
             new() { TemplateType = TemplateTypes.Application, Name = "Today's Date", Token = "today_date", MapTo = "" },
             new() { TemplateType = TemplateTypes.Applicant, Name = "Applicant name", Token = "applicant_name", MapTo = "applicantName" },
             new() { TemplateType = TemplateTypes.Applicant, Name = "Registered Organization Name", Token = "organization_name", MapTo = "orgName" },
@@ -40,10 +60,9 @@ public class NotificationsDataSeedContributor(ITemplateVariablesRepository templ
 
         try
         {
-            var allVariables = await templateVariablesRepository.GetListAsync();
-
             foreach (var template in emailTemplateVariableDtos)
             {
+                var allVariables = await templateVariablesRepository.GetListAsync();
                 var existingVariable = allVariables.FirstOrDefault(tv =>
                     tv.Token == template.Token &&
                     (tv.TemplateType == template.TemplateType ||
@@ -64,15 +83,11 @@ public class NotificationsDataSeedContributor(ITemplateVariablesRepository templ
                         needsUpdate = true;
                     }
 
-                    if (existingVariable.Name != template.Name)
+                    if (existingVariable.TemplateType == TemplateTypes.Application &&
+                        existingVariable.Token == "category" &&
+                        existingVariable.MapTo == "category")
                     {
-                        existingVariable.Name = template.Name;
-                        needsUpdate = true;
-                    }
-
-                    if (existingVariable.MapTo != template.MapTo)
-                    {
-                        existingVariable.MapTo = template.MapTo;
+                        existingVariable.MapTo = "applicationForm.category";
                         needsUpdate = true;
                     }
 
