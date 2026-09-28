@@ -59,7 +59,7 @@ namespace Unity.GrantManager.Events
                 ["organization_name"]           = applicant?.OrgName ?? applicant?.NonRegisteredBusinessName ?? string.Empty,
                 ["submission_number"]           = application.ReferenceNo,
                 ["submission_date"]             = application.SubmissionDate.ToString("yyyy-MM-dd"),
-                ["status"]                      = applicationStatus?.StatusCode.ToString() ?? string.Empty,
+                ["status"]                      = applicationStatus?.InternalStatus.ToString() ?? string.Empty,
                 ["approved_amount"]             = application.ApprovedAmount.ToString("$#,##0.00"),
                 ["requested_amount"]            = application.RequestedAmount.ToString("$#,##0.00"),
                 ["recommended_amount"]          = application.RecommendedAmount.ToString("$#,##0.00"),

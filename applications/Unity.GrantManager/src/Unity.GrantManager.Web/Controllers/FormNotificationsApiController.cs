@@ -223,11 +223,11 @@ namespace Unity.GrantManager.Web.Controllers
         {
             if (!Guid.TryParse(formId, out var parsedFormId)) return BadRequest("Invalid form id");
 
-            var listResult = await _automatedNotificationAppService.GetListAsync(new Unity.GrantManager.Notifications.GetNotificationsInput { FormId = parsedFormId, MaxResultCount = 1000 });
+            var listResult = await _automatedNotificationAppService.GetListAsync(new Notifications.GetNotificationsInput { FormId = parsedFormId, MaxResultCount = 1000 });
 
             // Resolve template names and status labels
             var templateIds = listResult.Items.Select(x => x.EmailTemplateId).Where(id => id != Guid.Empty).Distinct().ToList();
-            var templateMap = new Dictionary<Guid, Unity.Notifications.Templates.EmailTemplate?>();
+            var templateMap = new Dictionary<Guid, EmailTemplate?>();
             foreach (var id in templateIds)
             {
                 templateMap[id] = await _templateService.GetTemplateById(id);

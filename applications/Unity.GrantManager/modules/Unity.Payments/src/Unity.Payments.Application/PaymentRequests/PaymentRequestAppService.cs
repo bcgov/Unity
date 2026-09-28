@@ -162,6 +162,7 @@ namespace Unity.Payments.PaymentRequests
                 PaymentRequestId = payment.Id,
                 ApplicationId = payment.CorrelationId,
                 Status = payment.Status,
+                CasPaymentStatus = payment.PaymentStatus,
                 TenantId = CurrentTenant.Id
             });
         }
@@ -235,6 +236,7 @@ namespace Unity.Payments.PaymentRequests
                                 PaymentRequestId = updatedPayment.Id,
                                 ApplicationId = updatedPayment.CorrelationId,
                                 Status = updatedPayment.Status,
+                                CasPaymentStatus = updatedPayment.PaymentStatus,
                                 TenantId = CurrentTenant.Id
                             });
                         }
@@ -484,6 +486,7 @@ namespace Unity.Payments.PaymentRequests
                 PaymentRequestId = result.Id,
                 ApplicationId = result.CorrelationId,
                 Status = result.Status,
+                CasPaymentStatus = result.PaymentStatus,
                 TenantId = CurrentTenant.Id
             });
 
