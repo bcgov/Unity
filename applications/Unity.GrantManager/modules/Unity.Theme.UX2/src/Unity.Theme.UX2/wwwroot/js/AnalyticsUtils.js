@@ -107,10 +107,17 @@ const AnalyticsUtils = (function () {
      * applies custom dimensions, tracks initial page view,
      * and enables link tracking.
      *
-     * @param {string} url - Base Matomo URL (no trailing slash).
-     * @param {string|number} siteId - Matomo site ID.
+     * @param {string} url - Base Matomo URL, optionally carrying the site ID
+     *   as "?idsite=N" (e.g. https://host/?idsite=5), which overrides siteId.
+     * @param {string|number} siteId - Matomo site ID used when url has no idsite.
      */
     function initMatomo(url, siteId) {
+
+        if (url) {
+            const parsed = new URL(url);
+            siteId = parsed.searchParams.get('idsite') || siteId;
+            url = (parsed.origin + parsed.pathname).replace(/\/+$/, '');
+        }
 
         if (!url || !siteId) {
             console.warn(
