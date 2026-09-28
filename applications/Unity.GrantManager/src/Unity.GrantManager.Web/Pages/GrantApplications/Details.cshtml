@@ -372,7 +372,7 @@
                         @await Component.InvokeAsync("EmailsWidget", new { applicationId = Model.ApplicationId, currentUserId = Model.CurrentUserId })
                     </div>
                     <div class="px-3 pt-4 pb-2" id="applicationEmailHistoryWidget">
-                        @await Component.InvokeAsync("EmailHistoryWidget")
+                        @await Component.InvokeAsync("EmailHistoryWidget", new { applicationId = Model.ApplicationId })
                     </div>
                 </div>
                 }

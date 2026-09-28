@@ -8,5 +8,6 @@ namespace Unity.GrantManager.Notifications.Email
         Task<bool> SendAsync(CreateEmailDto dto);
         Task<bool> SaveDraftAsync(CreateEmailDto dto);
         Task<Guid> InitializeDraftAsync(Guid applicationId);
+        Task<Guid> InitializeApplicantDraftAsync(Guid applicantId);
     }
 }

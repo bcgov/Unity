@@ -1,6 +1,9 @@
 {
   "culture": "en",
   "texts": {
+    "Applicant:Email": "Email",
+    "Email:DiscardFailed": "Unable to discard this email. Your changes have been kept. Please try again.",
+    "Email:ReplacementDraftFailed": "The email was discarded, but a new draft could not be created. Click New Email to try again.",
     "Menu:Home": "Home",
     "Menu:Dashboard": "Dashboard",
     "Menu:GrantPrograms": "Grant Programs",
