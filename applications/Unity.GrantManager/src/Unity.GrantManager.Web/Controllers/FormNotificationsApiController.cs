@@ -9,9 +9,9 @@ using Unity.Notifications.EmailNotifications;
 using Unity.Notifications.Templates;
 using Volo.Abp.Users;
 using Unity.GrantManager.Events;
+using Unity.Payments.Codes;
 using Unity.Payments.Enums;
 using Volo.Abp.Identity.Integration;
-using Unity.Payments.Web.Pages.PaymentApprovals;
 
 namespace Unity.GrantManager.Web.Controllers
 {
@@ -47,9 +47,23 @@ namespace Unity.GrantManager.Web.Controllers
         [HttpGet("payment-statuses")]
         public ActionResult<List<object>> GetPaymentStatuses()
         {
-            var statuses = Enum.GetValues<PaymentRequestStatus>()
-                .Select(status => (object)new { id = status.ToString(), internalStatus = UpdatePaymentRequestStatus.GetStatusText(status) })
-                .ToList();
+            var statuses = new List<object>
+            {
+                new { id = PaymentRequestStatus.Cancelled.ToString(), internalStatus = "Canceled", originalSource = "Unity Payment Status" },
+                new { id = PaymentRequestStatus.Failed.ToString(), internalStatus = "Failed", originalSource = "CAS Payment Status" },
+                new { id = CasPaymentRequestStatus.FullyPaid, internalStatus = CasPaymentRequestStatus.FullyPaid, originalSource = "CAS Payment Status" },
+                new { id = PaymentRequestStatus.HistoricalPayment.ToString(), internalStatus = "Historical Payment", originalSource = "Unity Payment Status" },
+                new { id = PaymentRequestStatus.L1Declined.ToString(), internalStatus = "L1 Declined", originalSource = "Unity Payment Status" },
+                new { id = PaymentRequestStatus.L1Pending.ToString(), internalStatus = "L1 Pending", originalSource = "Unity Payment Status" },
+                new { id = PaymentRequestStatus.L2Declined.ToString(), internalStatus = "L2 Declined", originalSource = "Unity Payment Status" },
+                new { id = PaymentRequestStatus.L2Pending.ToString(), internalStatus = "L2 Pending", originalSource = "Unity Payment Status" },
+                new { id = PaymentRequestStatus.L3Declined.ToString(), internalStatus = "L3 Declined", originalSource = "Unity Payment Status" },
+                new { id = PaymentRequestStatus.L3Pending.ToString(), internalStatus = "L3 Pending", originalSource = "Unity Payment Status" },
+                new { id = CasPaymentRequestStatus.NotPaid, internalStatus = CasPaymentRequestStatus.NotPaid, originalSource = "CAS Payment Status" },
+                new { id = PaymentRequestStatus.Paid.ToString(), internalStatus = "Paid", originalSource = "CAS Payment Status" },
+                new { id = PaymentRequestStatus.FSB.ToString(), internalStatus = "Sent to Accounts Payable", originalSource = "Unity Payment Status" },
+                new { id = PaymentRequestStatus.Submitted.ToString(), internalStatus = "Submitted to CAS", originalSource = "Unity Payment Status" }
+            };
             return Ok(statuses);
         }
         // In-memory storage removed; persisting to ScheduledNotifications table via IAutomatedNotificationAppService
