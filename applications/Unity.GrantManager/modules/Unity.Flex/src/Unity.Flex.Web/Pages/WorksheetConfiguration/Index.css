@@ -65,6 +65,10 @@
     margin-top: 10px;
 }
 
+#worksheet-right-col {
+    overflow-y: auto;
+}
+
 .preview-section:has(> :nth-child(1)) .preview-field {
     flex: 0 0 99%;
 }
