@@ -28,7 +28,7 @@ public class NotificationsDataSeedContributor(ITemplateVariablesRepository templ
 
         var emailTemplateVariableDtos = new List<EmailTempateVariableDto>
         {
-            new() { TemplateType = TemplateTypes.Application, Name = "Applicant name", Token = "applicant_name", MapTo = "applicant.applicantName" },
+                        new() { TemplateType = TemplateTypes.Application, Name = "Applicant name", Token = "applicant_name", MapTo = "applicant.applicantName" },
             new() { TemplateType = TemplateTypes.Application, Name = "Submission #", Token = "submission_number", MapTo = "referenceNo" },
             new() { TemplateType = TemplateTypes.Application, Name = "Submission Date", Token = "submission_date", MapTo = "submissionDate" },
             new() { TemplateType = TemplateTypes.Application, Name = "Category", Token = "category", MapTo = "applicationForm.category" },
@@ -53,23 +53,8 @@ public class NotificationsDataSeedContributor(ITemplateVariablesRepository templ
             new() { TemplateType = TemplateTypes.Application, Name = "Unity Application ID", Token = "unity_application_id", MapTo = "unityApplicationId" },
             new() { TemplateType = TemplateTypes.Application, Name = "Today's Date", Token = "today_date", MapTo = "" },
             new() { TemplateType = TemplateTypes.Applicant, Name = "Applicant name", Token = "applicant_name", MapTo = "applicantName" },
-            new() { TemplateType = TemplateTypes.Applicant, Name = "Applicant ID", Token = "applicant_id", MapTo = "unityApplicantId" },
             new() { TemplateType = TemplateTypes.Applicant, Name = "Registered Organization Name", Token = "organization_name", MapTo = "orgName" },
-            new() { TemplateType = TemplateTypes.Applicant, Name = "Non-registered Business Name", Token = "non_registered_business_name", MapTo = "nonRegisteredBusinessName" },
-            new() { TemplateType = TemplateTypes.Applicant, Name = "Organization Number", Token = "organization_number", MapTo = "orgNumber" },
-            new() { TemplateType = TemplateTypes.Applicant, Name = "Business Number", Token = "business_number", MapTo = "businessNumber" },
-            new() { TemplateType = TemplateTypes.Applicant, Name = "Organization Status", Token = "organization_status", MapTo = "orgStatus" },
-            new() { TemplateType = TemplateTypes.Applicant, Name = "Organization Type", Token = "organization_type", MapTo = "organizationType" },
-            new() { TemplateType = TemplateTypes.Applicant, Name = "Applicant Status", Token = "applicant_status", MapTo = "status" },
-            new() { TemplateType = TemplateTypes.Applicant, Name = "Sector", Token = "sector", MapTo = "sector" },
-            new() { TemplateType = TemplateTypes.Applicant, Name = "Sub-sector", Token = "sub_sector", MapTo = "subSector" },
-            new() { TemplateType = TemplateTypes.Applicant, Name = "Industry Description", Token = "industry_description", MapTo = "sectorSubSectorIndustryDesc" },
-            new() { TemplateType = TemplateTypes.Applicant, Name = "Approximate Number of Employees", Token = "approximate_number_of_employees", MapTo = "approxNumberOfEmployees" },
-            new() { TemplateType = TemplateTypes.Applicant, Name = "Indigenous Organization", Token = "indigenous_organization", MapTo = "indigenousOrgInd" },
-            new() { TemplateType = TemplateTypes.Applicant, Name = "Fiscal Month", Token = "fiscal_month", MapTo = "fiscalMonth" },
-            new() { TemplateType = TemplateTypes.Applicant, Name = "Fiscal Day", Token = "fiscal_day", MapTo = "fiscalDay" },
-            new() { TemplateType = TemplateTypes.Applicant, Name = "Fiscal Year End", Token = "fiscal_year_end", MapTo = "fiscalYearEnd" },
-            new() { TemplateType = TemplateTypes.Applicant, Name = "Started Operating Date", Token = "started_operating_date", MapTo = "startedOperatingDate" },
+            new() { TemplateType = TemplateTypes.Applicant, Name = "Applicant ID", Token = "applicant_id", MapTo = "unityApplicantId" },
             new() { TemplateType = TemplateTypes.Applicant, Name = "Today's Date", Token = "today_date", MapTo = "" }
         };
 
