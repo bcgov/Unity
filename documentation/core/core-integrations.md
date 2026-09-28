@@ -36,9 +36,9 @@ No external base URL is a constant or a configuration key. Every one is a **row 
 
 The two prefixes are the exception to one-key-one-row: multiple rows share a prefix with an incrementing suffix, so an operator can add another Teams channel without a code change.
 
-`EndpointManagementAppService` (211 lines) resolves them, with typed helpers such as `GetChefsApiBaseUrlAsync()` alongside the generic `GetUgmUrlByKeyNameAsync(keyName)`. A missing row raises `UserFriendlyException`, which is why several callers wrap the lookup and degrade rather than fail — the AI Reporting page renders empty, `SupplierService` throws only when actually used.
+`EndpointManagementAppService` (211 lines) resolves them, with typed helpers such as `GetChefsApiBaseUrlAsync()` alongside the generic `GetUgmUrlByKeyNameAsync(keyName)`. A missing row (or, for `GetUgmUrlByKeyNameAsync`, a blank URL) raises `UserFriendlyException`, which is why several callers wrap the lookup and degrade rather than fail — the AI Reporting page renders empty, `SupplierService` throws only when actually used.
 
-`DynamicUrlDataSeeder` seeds the defaults, each row carrying a description (`"BC Corporate Accounting Services API"`).
+`DynamicUrlDataSeeder` seeds the defaults, each row carrying a description (`"BC Corporate Accounting Services API"`). It only inserts missing rows and never updates an existing one. Only endpoints that are identical in every environment carry a seeded URL. Environment-specific ones (`INTAKE_API_BASE`, `PAYMENT_API_BASE`, `NOTIFICATION_API_BASE`, `NOTIFICATION_AUTH`, `METABASE_API_BASE`, `REPORTING_AI`, `ANALYTICS_MATOMO_BASE`) are seeded with a blank URL and must be set per environment through the Endpoint Management page. For local development, an optional `DynamicUrls:Seed:{KeyName}` setting in the DbMigrator configuration supplies the URL used when a missing row is inserted; it is never applied to an existing row.
 
 **Repointing an integration is a data change, not a deployment.** That is the design intent, and it is why environment-specific URLs do not appear in `appsettings`.
 
@@ -92,7 +92,7 @@ It is what backs address autocomplete on applicant addresses, and contributes to
 
 ## Matomo
 
-`MatomoUrlProvider` supplies the Matomo tracking URL from `ANALYTICS_MATOMO_BASE`, and returns nothing unless the `Unity.Analytics` tenant feature is enabled. The type exists twice — in `Application/Analytics/` and `Web/Analytics/` — with the web copy being the one the layout uses.
+`MatomoUrlProvider` supplies the Matomo tracking URL from `ANALYTICS_MATOMO_BASE`, and returns nothing unless the `Unity.Analytics` tenant feature is enabled. The value can carry the Matomo site ID with Matomo's own `idsite` parameter (`https://prod-analytics-matomo.apps.silver.devops.gov.bc.ca/?idsite=5`); `AnalyticsUtils.initMatomo` reads it and falls back to site `1` when it is absent. The type exists twice — in `Application/Analytics/` and `Web/Analytics/` — with the web copy being the one the layout uses.
 
 ## GitHub
 

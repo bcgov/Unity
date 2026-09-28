@@ -377,7 +377,7 @@ td.dt-editable {
 
     td.dt-editable:hover {
         background-color: #e6eff7;
-        color: white;
+        color: var(--bc-colors-blue-primary-500);
     }
 
     td.dt-editable:before {
