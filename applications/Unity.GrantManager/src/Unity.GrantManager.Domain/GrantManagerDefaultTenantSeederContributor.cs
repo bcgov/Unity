@@ -86,6 +86,13 @@ namespace Unity.GrantManager
                         "True",
                         "T",
                         newTenant.Id.ToString());
+
+                    // Onboarding requests import data in Flex worksheet fields - without "Unity.Flex" intake silently drops them
+                    await _featureManager.SetAsync(
+                        "Unity.Flex",
+                        "True",
+                        "T",
+                        newTenant.Id.ToString());
                 }
             }
         }
