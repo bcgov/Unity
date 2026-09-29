@@ -7,18 +7,19 @@ using Unity.Notifications.EmailNotifications;
 using Unity.Notifications.Permissions;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Authorization;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Users;
 
 namespace Unity.Notifications.Emails;
 
-[Authorize(NotificationsPermissions.Email.Send)]
+[Authorize]
 [ExposeServices(typeof(EmailLogAttachmentAppService), typeof(IEmailLogAttachmentAppService), typeof(IEmailLogAttachmentUploadService))]
 public class EmailLogAttachmentAppService(
     IEmailLogAttachmentRepository emailLogAttachmentRepository,
-    IEmailLogsRepository emailLogsRepository,
     EmailAttachmentService emailAttachmentService,
-    IExternalUserLookupServiceProvider externalUserLookupServiceProvider) : ApplicationService, IEmailLogAttachmentAppService, IEmailLogAttachmentUploadService
+    IExternalUserLookupServiceProvider externalUserLookupServiceProvider,
+    EmailComposerAccessChecker emailAccessChecker) : ApplicationService, IEmailLogAttachmentAppService, IEmailLogAttachmentUploadService
 {
 
     public async Task<List<EmailLogAttachmentDto>> GetListByEmailLogIdAsync(Guid emailLogId)
@@ -36,10 +37,12 @@ public class EmailLogAttachmentAppService(
         var attachments = new List<EmailLogAttachment>();
         if (emailLogId.HasValue)
         {
+            await emailAccessChecker.CheckEmailReadAsync(emailLogId.Value);
             attachments = await emailLogAttachmentRepository.GetByEmailLogIdAsync(emailLogId.Value);
         }
         else if (templateId.HasValue)
         {
+            await AuthorizationService.CheckAsync(NotificationsPermissions.Email.Send);
             attachments = await emailLogAttachmentRepository.GetByTemplateIdAsync(templateId.Value);
         }
 
@@ -63,6 +66,7 @@ public class EmailLogAttachmentAppService(
         return dtos;
     }
 
+    [Authorize(NotificationsPermissions.Email.Send)]
     public async Task DeleteAsync(Guid id)
     {
         // Idempotent delete: if already removed by another request, treat as success.
@@ -83,17 +87,21 @@ public class EmailLogAttachmentAppService(
             throw new UserFriendlyException("Invalid email log ID.");
         }
 
-        var emailLog = await emailLogsRepository.GetAsync(attachment.EmailLogId.Value);
-        if (emailLog.Status != EmailStatus.Draft)
-        {
-            throw new UserFriendlyException("Attachments can only be deleted from draft emails.");
-        }
+        await emailAccessChecker.CheckEmailAsync(attachment.EmailLogId.Value, NotificationsPermissions.Email.Send, requireDraft: true);
 
         await emailAttachmentService.DeleteAttachmentAsync(attachment);
     }
 
     public async Task<long> GetTotalFileSizeByEmailLogIdAsync(Guid? emailLogId, Guid? templateId)
     {
+        if (emailLogId.HasValue)
+        {
+            await emailAccessChecker.CheckEmailReadAsync(emailLogId.Value);
+        }
+        else
+        {
+            await AuthorizationService.CheckAsync(NotificationsPermissions.Email.Send);
+        }
         return await emailAttachmentService.GetTotalFileSizeAsync(emailLogId, templateId);
     }
 
@@ -102,9 +110,14 @@ public class EmailLogAttachmentAppService(
     // must only ever be reached in-process, via IEmailLogAttachmentUploadService, from a caller
     // (AttachmentController) that has already run those checks - never directly by an HTTP client,
     // which would bypass validation entirely despite still needing the Email.Send permission.
+    [Authorize(NotificationsPermissions.Email.Send)]
     [RemoteService(false)]
     public async Task<EmailLogAttachmentDto> UploadAsync(Guid? emailLogId, Guid? templateId, Guid? tenantId, string fileName, byte[] content, string contentType)
     {
+        if (emailLogId.HasValue)
+        {
+            await emailAccessChecker.CheckEmailAsync(emailLogId.Value, NotificationsPermissions.Email.Send, requireDraft: true);
+        }
         var attachment = await emailAttachmentService.UploadUserAttachmentAsync(emailLogId, templateId, tenantId, fileName, content, contentType);
 
         return new EmailLogAttachmentDto

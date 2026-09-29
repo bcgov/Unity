@@ -42,6 +42,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
         public string EmailBody { get; set; } = string.Empty;
         public Guid OwnerId { get; set; }
         public Guid ApplicationId { get; set; }
+        public Guid ApplicantId { get; set; }
+        public string TemplateType => ApplicantId == Guid.Empty ? "Application" : "Applicant";
+        public Guid EmailOwnerId => ApplicantId == Guid.Empty ? ApplicationId : ApplicantId;
         public Guid EmailId { get; set; } = Guid.Empty;
         public Guid CurrentUserId { get; set; }
 

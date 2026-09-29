@@ -23,6 +23,7 @@ namespace Unity.GrantManager.Notifications.Email
         public string? EmailBCC { get; set; }
         
         public Guid ApplicationId { get; set; }
+        public Guid? ApplicantId { get; set; }
         public Guid OwnerId { get; set; }
         public Guid EmailId { get; set; } = Guid.Empty;
         public Guid CurrentUserId { get; set; }

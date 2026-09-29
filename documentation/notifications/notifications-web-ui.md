@@ -79,12 +79,20 @@ These are in `src/Unity.GrantManager.Web/`, not in this module, but they are the
 
 |Surface|What it does|Gating|
 |---|---|---|
-|`Views/Shared/Components/EmailsWidget/`|The per-application email composer and history list on the application details page. Pre-fills To from `ApplicantAgent.Email`, From from the `DefaultFromAddress` setting, exposes the template dropdown from `TemplateService.GetTemplatesByTenant`, and shows the send-later control when `EnableEmailDelay` is on.|`Notifications.Email.Send`|
+|`Views/Shared/Components/EmailsWidget/`|Shared composer for Application and Applicant details, paired with `EmailHistoryWidget`. Application To defaults to `ApplicantAgent.Email`; Applicant To defaults to the primary contact shown in Applicant Contacts. Lists only templates of the matching type. Scheduling requires `EnableEmailDelay` and the Schedule permission.|`Unity.Notifications` feature, `Notifications.Email` to view, `.Send` to compose; Applicant details also requires Applicant access|
 |`Views/Shared/Components/Notifications/Default.cshtml`|The form-level **Scheduled & Event Based Notifications** table, with Create/Edit/Cancel actions.|`Notifications.Form.Email.Schedule.Create` for Create/Edit, `.Cancel` for Cancel|
 |`Views/Shared/Components/ActionBar/Default.cshtml`|The bulk **Send Email Notification** button and dropdown on the applications list.|`Unity.Notifications` feature **and** `Notifications.Email.SendBulk` **and** `Notifications.Email.Send`|
 |`Controllers/NotificationsController` (`/Notifications/EmailModal`)|Renders the read-only email detail modal opened from the Notification List. Fetches history for the application and picks the single matching email; returns `404` if it is not there.|`Notifications.NotificationList.View`|
 |`Controllers/FormNotificationsApiController` (`api/form-notifications`)|The scheduled-notification configuration API — see [notifications-scheduled-notifications.md](notifications-scheduled-notifications.md#configuration-api).|`Notifications.Form.Tab` family|
 |`Pages/ConfigurationManagement/Index.cshtml.cs`|Sets `ShowNotifications` from the `Unity.Notifications` feature check, hiding the notification configuration section when off.|feature only|
+
+### Applicant Email tab
+
+Applicant history selects `EmailLog.ApplicantId` with an empty `ApplicationId`, including existing automatic applicant notifications. It excludes all application-owned messages. The widgets share markup and CSS with Application details and use Applicant-specific history refresh events and counters; printing uses Unity Applicant ID and applicant name.
+
+`POST /api/app/email/initialize-applicant-draft` creates an applicant-owned draft. The existing send/save request accepts `ApplicantId` alongside the existing `ApplicationId`, requiring exactly one owner. `GET /api/form-notifications/templates/{templateId}/applicant-preview?applicantId=...` validates access and template type, then renders the subject/body from applicant fields. HTML substitutions are encoded. External `ApplicationContact` resolves to the displayed primary contact; `SigningAuthority` resolves matching contacts from that same list. Internal templates retain distribution-group resolution. Empty resolution leaves To blank for staff to complete.
+
+Backend checks cover owner, tenant, action permissions, draft status, scheduling settings, and template type. Draft template identity is retained in the existing email log's JSON metadata when saving/sending. Existing log columns and delivery infrastructure are reused; no migration or reseeding is required.
 
 ## Localization
 

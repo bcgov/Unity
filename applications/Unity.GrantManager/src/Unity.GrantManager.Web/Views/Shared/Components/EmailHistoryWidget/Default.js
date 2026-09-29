@@ -1,10 +1,18 @@
 ﻿$(function () {
 
+    if (!$('#EmailHistoryTable').length) return;
+    const applicantId = $('#EmailHistoryTable').attr('data-applicant-id');
+    const isApplicantEmail = !!applicantId && applicantId !== '00000000-0000-0000-0000-000000000000';
+    const refreshTopic = isApplicantEmail ? 'refresh_applicant_emails' : 'refresh_application_emails';
+    const selectedTopic = isApplicantEmail ? 'applicant_email_selected' : 'email_selected';
+    const countTopic = isApplicantEmail ? 'update_applicant_emails_count' : 'update_application_emails_count';
+    const historyService = unity.notifications.emailNotifications.emailNotification;
     let inputAction = function () {
-        const urlParams = new URL(window.location.toLocaleString()).searchParams;
-        const applicationId = urlParams.get('ApplicationId');
-        return applicationId;
-    }
+        if (isApplicantEmail) return applicantId;
+        const applicationId = $('#EmailHistoryTable').attr('data-application-id');
+        return applicationId && applicationId !== '00000000-0000-0000-0000-000000000000'
+            ? applicationId : new URL(window.location.href).searchParams.get('ApplicationId');
+    };
 
     let hasReceivedInitialResponse = false;
     let hasLoadedEmptyState = false;
@@ -22,7 +30,8 @@
 
         if (result) {
             setTimeout(function () {
-                PubSub.publish('update_application_emails_count', { itemCount: normalizedResult.length });
+                PubSub.publish(countTopic, { itemCount: normalizedResult.length });
+                if (isApplicantEmail) $('#applicant_emails_count').text(normalizedResult.length);
             }, 10);
         }
 
@@ -59,7 +68,7 @@
             info: false,
             scrollX: false,
             ajax: abp.libs.datatables.createAjax(
-                unity.notifications.emailNotifications.emailNotification.getHistoryByApplicationId, inputAction, responseCallback
+                (isApplicantEmail ? historyService.getHistoryByApplicantId : historyService.getHistoryByApplicationId), inputAction, responseCallback
             ),
             columnDefs: [
                 {
@@ -122,7 +131,7 @@
                     className: 'data-table-header',
                     width: enableEmailDelay ? '10%' : '16%',
                     render: function (data, type, full) {
-                        if (full.scheduledNotificationId && full.scheduledNotificationId !== '00000000-0000-0000-0000-000000000000') {
+                        if (full.emailType === 'EventBased' || full.emailType === 'DateBased' || (full.scheduledNotificationId && full.scheduledNotificationId !== '00000000-0000-0000-0000-000000000000')) {
                             return 'Automated Notification';
                         }
                         return data ? data.name + ' ' + data.surname : '—';
@@ -234,11 +243,11 @@
                 templateName: resolveTemplateName(data)
             };
 
-            PubSub.publish('email_selected', normalizedSelectedRow);
+            PubSub.publish(selectedTopic, normalizedSelectedRow);
         }
     });
 
-    PubSub.subscribe('refresh_application_emails', () => {
+    PubSub.subscribe(refreshTopic, () => {
         emailHistoryDataTable.ajax.reload(() => {
             emailHistoryDataTable.columns.adjust().draw();
         }, false);
@@ -320,7 +329,7 @@ function cancelScheduledEmail(id, rowIndex) {
             })
                 .then(response => {
                     abp.notify.success('Scheduled email has been cancelled.', 'Cancel Scheduled Email');
-                    PubSub.publish('refresh_application_emails');
+                    PubSub.publish($('#EmailHistoryTable').attr('data-applicant-id') !== '00000000-0000-0000-0000-000000000000' ? 'refresh_applicant_emails' : 'refresh_application_emails');
                     PubSub.publish('scheduled_email_cancelled', { id: id });
                 })
                 .catch(error => {
@@ -354,8 +363,8 @@ function deleteDraftEmail(id, rowIndex) {
                 })
                 .then(response => {
                     abp.notify.success('Draft email is successfully deleted.', 'Delete Draft Email');
-                    PubSub.publish('refresh_application_emails');
-                    PubSub.publish('draft_email_deleted', { id: id });
+                    PubSub.publish($('#EmailHistoryTable').attr('data-applicant-id') !== '00000000-0000-0000-0000-000000000000' ? 'refresh_applicant_emails' : 'refresh_application_emails');
+                    PubSub.publish($('#EmailHistoryTable').attr('data-applicant-id') !== '00000000-0000-0000-0000-000000000000' ? 'applicant_draft_email_deleted' : 'draft_email_deleted', { id: id });
                 })
                 .catch(error => {
                     console.error('There was a problem with the fetch operation:', error);
@@ -468,8 +477,8 @@ const emailPrintTemplate = `<div class="email-print-container">
 const emailPrintHandlebars = Handlebars.compile(emailPrintTemplate);
 
 function printEmailHistoryRow(rowData) {
-    const referenceNo = $('#applicationBreadcrumbWidget .reference-no').text().trim();
-    const applicantName = $('#applicationBreadcrumbWidget .applicant-name').text().trim();
+    const referenceNo = $('#EmailHistoryTable').attr('data-unity-applicant-id') || $('#applicationBreadcrumbWidget .reference-no').text().trim();
+    const applicantName = $('#EmailHistoryTable').attr('data-applicant-name') || $('#applicationBreadcrumbWidget .applicant-name').text().trim();
     const printTitle = buildEmailPrintTitle(referenceNo, applicantName);
 
     openEmailPrintInNewTab(emailPrintHandlebars(rowData), printTitle);
