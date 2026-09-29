@@ -10,8 +10,8 @@ namespace Unity.Notifications.EmailNotifications
 {
     public interface IEmailNotificationService : IApplicationService
     {
-        Task<EmailLog?> UpdateEmailLog(Guid emailId, EmailMessageParams email, Guid applicationId, string? status);
-        Task<EmailLog?> InitializeEmailLog(EmailMessageParams email, Guid applicationId, string? status);
+        Task<EmailLog?> UpdateEmailLog(Guid emailId, EmailMessageParams email, Guid applicationId, string? status, Guid applicantId = default);
+        Task<EmailLog?> InitializeEmailLog(EmailMessageParams email, Guid applicationId, string? status, Guid applicantId = default);
         Task<EmailLog?> InitializeEmailLog(EmailMessageParams email, Guid applicationId);
         Task<EmailLog?> GetEmailLogById(Guid id);
         Task<HttpResponseMessage> SendCommentNotification(EmailCommentDto input);
@@ -19,6 +19,7 @@ namespace Unity.Notifications.EmailNotifications
         Task<HttpResponseMessage> SendEmailNotification(EmailLog emailLog);        
         Task SendEmailToQueue(EmailLog emailLog);
         Task<List<EmailHistoryDto>> GetHistoryByApplicationId(Guid applicationId);
+        Task<List<EmailHistoryDto>> GetHistoryByApplicantId(Guid applicantId);
         Task UpdateSettings(NotificationsSettingsDto settingsDto);
         Task<Guid> InitializeDraftAsync(Guid applicationId);
         Task DeleteEmail(Guid id);

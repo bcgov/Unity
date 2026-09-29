@@ -25,8 +25,22 @@ namespace Unity.Notifications.Repositories
 
         public async Task<List<EmailLog>> GetByApplicationIdAsync(Guid applicationId)
         {
+            if (applicationId == Guid.Empty)
+            {
+                throw new ArgumentException(nameof(applicationId));
+            }
             var dbSet = await GetDbSetAsync();
             return await dbSet.Where(x => x.ApplicationId == applicationId).ToListAsync();
+        }
+
+        public async Task<List<EmailLog>> GetByApplicantIdAsync(Guid applicantId)
+        {
+            if (applicantId == Guid.Empty)
+            {
+                throw new ArgumentException(nameof(applicantId));
+            }
+            var dbSet = await GetDbSetAsync();
+            return await dbSet.Where(x => x.ApplicantId == applicantId && x.ApplicationId == Guid.Empty).ToListAsync();
         }
 
         public async Task<List<EmailLog>> GetByApplicationIdsAndStatusAsync(List<Guid> applicationIds, string status)

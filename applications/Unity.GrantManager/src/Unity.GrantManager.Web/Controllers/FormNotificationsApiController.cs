@@ -1,4 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Unity.GrantManager.Notifications.Email;
+using Unity.Notifications.Emails;
+using Unity.Notifications.Permissions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -29,8 +33,10 @@ namespace Unity.GrantManager.Web.Controllers
         private readonly IIdentityUserIntegrationService _identityUserIntegrationService;
         private readonly IGrantApplicationAppService _grantApplicationAppService;
         private readonly ScheduledNotificationHelper _scheduledNotificationHelper;
+        private readonly IApplicantEmailTemplateAppService _applicantEmailTemplateService;
+        private readonly EmailComposerAccessChecker _emailAccessChecker;
 
-        public FormNotificationsApiController(IApplicationStatusService statusService, IEmailGroupsAppService emailGroupsAppService, Unity.Notifications.Templates.ITemplateService templateService, Unity.GrantManager.Notifications.IAutomatedNotificationAppService automatedNotificationAppService, EmailAttachmentService emailAttachmentService, ICurrentUser currentUser, IEmailGroupUsersAppService emailGroupUsersAppService, IIdentityUserIntegrationService identityUserIntegrationService, IGrantApplicationAppService grantApplicationAppService, ScheduledNotificationHelper scheduledNotificationHelper)
+        public FormNotificationsApiController(IApplicationStatusService statusService, IEmailGroupsAppService emailGroupsAppService, Unity.Notifications.Templates.ITemplateService templateService, Unity.GrantManager.Notifications.IAutomatedNotificationAppService automatedNotificationAppService, EmailAttachmentService emailAttachmentService, ICurrentUser currentUser, IEmailGroupUsersAppService emailGroupUsersAppService, IIdentityUserIntegrationService identityUserIntegrationService, IGrantApplicationAppService grantApplicationAppService, ScheduledNotificationHelper scheduledNotificationHelper, IApplicantEmailTemplateAppService applicantEmailTemplateService, EmailComposerAccessChecker emailAccessChecker)
         {
             _statusService = statusService;
             _emailGroupsAppService = emailGroupsAppService;
@@ -42,6 +48,8 @@ namespace Unity.GrantManager.Web.Controllers
             _identityUserIntegrationService = identityUserIntegrationService;
             _grantApplicationAppService = grantApplicationAppService;
             _scheduledNotificationHelper = scheduledNotificationHelper;
+            _applicantEmailTemplateService = applicantEmailTemplateService;
+            _emailAccessChecker = emailAccessChecker;
         }
 
         [HttpGet("payment-statuses")]
@@ -93,6 +101,13 @@ namespace Unity.GrantManager.Web.Controllers
             }).ToList();
 
             return Ok(list);
+        }
+
+        [Authorize(NotificationsPermissions.Email.Send)]
+        [HttpGet("templates/{templateId:guid}/applicant-preview")]
+        public async Task<ActionResult<ApplicantEmailTemplatePreviewDto>> GetApplicantTemplatePreview(Guid templateId, [FromQuery] Guid applicantId)
+        {
+            return Ok(await _applicantEmailTemplateService.GetPreviewAsync(applicantId, templateId));
         }
 
         [HttpGet("templates/{templateId:guid}/resolved-recipients")]
@@ -173,12 +188,15 @@ namespace Unity.GrantManager.Web.Controllers
             return Ok(new ResolvedRecipientsDto { EmailTo = string.Empty });
         }
 
+        [Authorize(NotificationsPermissions.Email.Send)]
         [HttpPost("email-template/{templateId}/copy-attachments")]
         public async Task<ActionResult<CopyAttachmentsResponseDto>> CopyTemplateAttachments(Guid templateId, [FromBody] CopyAttachmentsInput input)
         {
             if (input.EmailLogId == Guid.Empty)
                 return BadRequest("EmailLogId is required");
 
+            var email = await _emailAccessChecker.CheckEmailAsync(input.EmailLogId, NotificationsPermissions.Email.Send, requireDraft: true);
+            await _emailAccessChecker.CheckTemplateAsync(templateId, email.ApplicantId);
             var copiedCount = await _emailAttachmentService.ReplaceTemplateAttachmentsAsync(
                 templateId,
                 input.EmailLogId,
@@ -194,9 +212,11 @@ namespace Unity.GrantManager.Web.Controllers
             return NoContent();
         }
 
+        [Authorize(NotificationsPermissions.Email.Send)]
         [HttpDelete("email-log/{emailLogId}/origin-attachments")]
         public async Task<ActionResult<CopyAttachmentsResponseDto>> DeleteOriginAttachments(Guid emailLogId)
         {
+            await _emailAccessChecker.CheckEmailAsync(emailLogId, NotificationsPermissions.Email.Send, requireDraft: true);
             var deletedCount = await _emailAttachmentService.DeleteOriginAttachmentsAsync(emailLogId);
             return Ok(new CopyAttachmentsResponseDto { AttachmentCount = deletedCount });
         }
