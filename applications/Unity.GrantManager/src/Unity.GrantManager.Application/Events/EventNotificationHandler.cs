@@ -20,6 +20,7 @@ using Volo.Abp.Features;
 using Volo.Abp.Identity.Integration;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Settings;
+using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Events
 {
@@ -35,6 +36,7 @@ namespace Unity.GrantManager.Events
         IFeatureChecker featureChecker,
         ISettingProvider settingProvider,
         ICurrentTenant currentTenant,
+        IUnitOfWorkManager unitOfWorkManager,
         ScheduledNotificationHelper scheduledNotificationHelper,
         ILogger<EventNotificationHandler> logger)
         : ILocalEventHandler<ApplicationChangedEvent>, ILocalEventHandler<PaymentStatusChangedEvent>, ITransientDependency
@@ -48,6 +50,8 @@ namespace Unity.GrantManager.Events
 
             try
             {
+                using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
+
                 var application = await applicationRepository.GetAsync(eventData.ApplicationId, includeDetails: true);
                 if (application == null)
                 {
@@ -71,6 +75,8 @@ namespace Unity.GrantManager.Events
                 {
                     await ProcessNotificationAsync(notification, application, applicantAgent, emailFrom);
                 }
+
+                await uow.CompleteAsync();
             }
             catch (Exception ex)
             {
@@ -111,6 +117,8 @@ namespace Unity.GrantManager.Events
 
             try
             {
+                using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
+
                 var application = await applicationRepository.GetAsync(eventData.ApplicationId, includeDetails: true);
                 if (application == null)
                 {
@@ -140,6 +148,8 @@ namespace Unity.GrantManager.Events
                 {
                     await ProcessNotificationAsync(notification, application, applicantAgent, emailFrom);
                 }
+
+                await uow.CompleteAsync();
             }
             catch (Exception ex)
             {
