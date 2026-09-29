@@ -34,7 +34,7 @@
 else
 {
     <div class="dropdown-submenu">
-        <a role="button" class="btn dropdown-toggle" data-bs-toggle="dropdown"
+        <button type="button" class="btn dropdown-toggle" data-bs-toggle="dropdown"
            aria-haspopup="true" aria-expanded="false" tabindex="0"
            onkeydown="if(event.key==='Enter'){event.preventDefault();this.click();}else if(event.key===' '){event.preventDefault();if(!event.repeat){this.click();}}">
             @if (!string.IsNullOrEmpty(Model.Icon))
@@ -47,7 +47,7 @@ else
             <span class="lp-text">
                 @Model.DisplayName
             </span>
-        </a>
+        </button>
         <div class="dropdown-menu border-0 shadow-sm">
             @foreach (var childMenuItem in Model.Items)
             {

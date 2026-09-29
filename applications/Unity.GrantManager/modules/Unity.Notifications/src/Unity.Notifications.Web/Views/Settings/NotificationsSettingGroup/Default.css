@@ -87,8 +87,8 @@ body {
 /* Add User Button Styling */
 .btn-add-user {
     background-color: white !important;
-    border: 2px solid #007bff !important;
-    color: #007bff !important;
+    border: 2px solid var(--bc-colors-blue-primary-500) !important;
+    color: var(--bc-colors-blue-primary-500) !important;
     font-weight: 700;
     padding: 0.25rem 0.5rem;
     white-space: nowrap;
@@ -98,8 +98,8 @@ body {
 }
 
 .btn-add-user:hover:not(:disabled) {
-    background-color: #007bff !important;
-    color: white !important;
+    background-color: var(--bc-colors-blue-primary-500) !important;
+    color: var(--bc-colors-white-primary-500) !important;
 }
 
 .btn-add-user:disabled {

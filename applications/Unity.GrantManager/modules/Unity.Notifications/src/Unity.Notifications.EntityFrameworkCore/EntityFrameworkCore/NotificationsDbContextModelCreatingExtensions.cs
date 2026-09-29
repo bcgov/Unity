@@ -130,6 +130,10 @@ public static class NotificationsDbContextModelCreatingExtensions
                 .WithMany()
                 .HasForeignKey(ts => ts.TemplateId);
 
+            b.HasQueryFilter(ts =>
+                ts.EmailTemplate.TenantId == ts.TenantId &&
+                !ts.EmailTemplate.IsDeleted);
+
             b.HasOne(ts => ts.SubscriptionGroup)
                .WithMany() 
                .HasForeignKey(ts => ts.SubscriptionGroupId);

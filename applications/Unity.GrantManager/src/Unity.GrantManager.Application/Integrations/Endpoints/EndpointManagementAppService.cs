@@ -109,7 +109,7 @@ namespace Unity.GrantManager.Integrations.Endpoints
         public async Task<string> GetUgmUrlByKeyNameAsync(string keyName)
         {
             var url = await GetUrlByKeyNameInternalAsync(keyName, tenantSpecific: false);
-            return url ?? throw new UserFriendlyException($"URL for key '{keyName}' not configured.");
+            return !string.IsNullOrWhiteSpace(url) ? url : throw new UserFriendlyException($"URL for key '{keyName}' not configured.");
         }
 
         public async Task<string> GetUrlByKeyNameAsync(string keyName)
