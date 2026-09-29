@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace Unity.Notifications.Templates
 {
@@ -6,6 +7,7 @@ namespace Unity.Notifications.Templates
     public class EmailTempateDto
     {
         public Guid? TenantId { get; set; }
+        [StringLength(EmailTemplateConsts.MaxNameLength)]
         public string Name { get; set; } = "";
         public string Description { get; set; } = "";
         public string Subject { get; set; } = "";

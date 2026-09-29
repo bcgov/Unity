@@ -28,6 +28,7 @@ $(function () {
     let dropdownItems = [];
     let emailAttachmentsTable = null;
     let templatesDataTable = null;
+    const TEMPLATE_NAME_MAX_LENGTH = Number.parseInt($('#templateName').attr('maxlength'), 10) || 50;
     let originalFormValues = {};
     let attachmentChangesPending = false;
     let defaultSendFromAddress = '';
@@ -619,6 +620,10 @@ $(function () {
         if (!templateName?.trim()) {
             validationErrors.push('Template name is required.');
             markFieldError('templateName', 'Template name is required.');
+        } else if (templateName.length > TEMPLATE_NAME_MAX_LENGTH) {
+            const lengthMessage = `Template name must be ${TEMPLATE_NAME_MAX_LENGTH} characters or fewer.`;
+            validationErrors.push(lengthMessage);
+            markFieldError('templateName', lengthMessage);
         }
         if (!sendFrom?.trim()) {
             validationErrors.push('Send From is required.');

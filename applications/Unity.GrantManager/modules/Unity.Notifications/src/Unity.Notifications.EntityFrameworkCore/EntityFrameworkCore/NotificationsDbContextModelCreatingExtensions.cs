@@ -60,6 +60,9 @@ public static class NotificationsDbContextModelCreatingExtensions
                 NotificationsDbProperties.DbSchema);
 
             b.ConfigureByConvention();
+            b.Property(x => x.Name)
+                .HasMaxLength(EmailTemplateConsts.MaxNameLength)
+                .IsRequired();
             b.Property(x => x.TemplateType)
                 .HasMaxLength(64)
                 .HasDefaultValue(TemplateTypes.Application)
