@@ -7,6 +7,7 @@ namespace Unity.Notifications.Templates
     public class EmailTempateDto
     {
         public Guid? TenantId { get; set; }
+        // Server-side guard matching the maxlength on the template editor input
         [StringLength(EmailTemplateConsts.MaxNameLength)]
         public string Name { get; set; } = "";
         public string Description { get; set; } = "";

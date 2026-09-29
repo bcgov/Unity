@@ -60,6 +60,7 @@ public static class NotificationsDbContextModelCreatingExtensions
                 NotificationsDbProperties.DbSchema);
 
             b.ConfigureByConvention();
+            // Existing names over the limit are truncated by the LimitEmailTemplateNameLength tenant migration
             b.Property(x => x.Name)
                 .HasMaxLength(EmailTemplateConsts.MaxNameLength)
                 .IsRequired();

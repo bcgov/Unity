@@ -13,6 +13,7 @@
         <div class="d-flex template-field-div">
             <label for="templateName" class="form-label template-field">Template Name</label>
             <div class="flex-grow-1">
+                @* maxlength stops users typing past the limit; Default.js reads it for the save validation *@
                 <input id="templateName" type="text" class="form-control form-input" name="templateName" maxlength="@Unity.Notifications.Templates.EmailTemplateConsts.MaxNameLength" required>
                 <div id="templateName-error" class="invalid-feedback d-block" style="display: none;"></div>
             </div>

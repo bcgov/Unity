@@ -28,6 +28,7 @@ $(function () {
     let dropdownItems = [];
     let emailAttachmentsTable = null;
     let templatesDataTable = null;
+    // Read the limit from the input's maxlength (rendered from EmailTemplateConsts.MaxNameLength) so it is defined in one place
     const TEMPLATE_NAME_MAX_LENGTH = Number.parseInt($('#templateName').attr('maxlength'), 10) || 50;
     let originalFormValues = {};
     let attachmentChangesPending = false;
@@ -621,6 +622,7 @@ $(function () {
             validationErrors.push('Template name is required.');
             markFieldError('templateName', 'Template name is required.');
         } else if (templateName.length > TEMPLATE_NAME_MAX_LENGTH) {
+            // Fallback for values that bypass maxlength, such as names set programmatically
             const lengthMessage = `Template name must be ${TEMPLATE_NAME_MAX_LENGTH} characters or fewer.`;
             validationErrors.push(lengthMessage);
             markFieldError('templateName', lengthMessage);
