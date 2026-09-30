@@ -399,10 +399,31 @@ public class OnboardingRequestAppServiceTests : AbpTenantManagementApplicationTe
     }
 
     [Fact]
+    public async Task CreateTenantAsync_RequestNotApproved_ThrowsAndDoesNotCreateTenant()
+    {
+        var id = Guid.NewGuid();
+        _applicationProvider.GetByIdAsync(id).Returns(new OnboardingApplicationRecord { Id = id, Category = "Onboarding", Status = "Submitted" });
+        _worksheetInstanceAppService.GetListByCorrelationIdsAsync(Arg.Any<List<Guid>>(), ApplicationCorrelationProvider).Returns(new List<WorksheetInstanceDataDto>
+        {
+            WorksheetInstanceFor(id, ("tn", "Brand New Co"), ("su", "first@example.com"))
+        });
+        _userLookup.FindUserGuidByEmailAsync("first@example.com").Returns("guid-1");
+
+        await Should.ThrowAsync<UserFriendlyException>(() => _appService.CreateTenantAsync(id, new CreateTenantInputDto
+        {
+            TenantNameFieldKey = "tn",
+            ProgramManagersFieldKey = "su"
+        }));
+
+        await _tenantAppService.DidNotReceive().CreateAsync(Arg.Any<TenantCreateDto>());
+        await _applicationProvider.DidNotReceive().CloseApplicationAsync(Arg.Any<Guid>());
+    }
+
+    [Fact]
     public async Task CreateTenantAsync_NoValidProgramManagers_ThrowsAndDoesNotCreateTenant()
     {
         var id = Guid.NewGuid();
-        _applicationProvider.GetByIdAsync(id).Returns(new OnboardingApplicationRecord { Id = id, Category = "Onboarding" });
+        _applicationProvider.GetByIdAsync(id).Returns(new OnboardingApplicationRecord { Id = id, Category = "Onboarding", IsApproved = true });
         _worksheetInstanceAppService.GetListByCorrelationIdsAsync(Arg.Any<List<Guid>>(), ApplicationCorrelationProvider).Returns(new List<WorksheetInstanceDataDto>
         {
             WorksheetInstanceFor(id, ("tn", "Brand New Co"), ("su", "not-an-email"))
@@ -421,7 +442,7 @@ public class OnboardingRequestAppServiceTests : AbpTenantManagementApplicationTe
     public async Task CreateTenantAsync_DuplicateTenantName_ThrowsAndDoesNotCreateTenant()
     {
         var id = Guid.NewGuid();
-        _applicationProvider.GetByIdAsync(id).Returns(new OnboardingApplicationRecord { Id = id, Category = "Onboarding" });
+        _applicationProvider.GetByIdAsync(id).Returns(new OnboardingApplicationRecord { Id = id, Category = "Onboarding", IsApproved = true });
         _worksheetInstanceAppService.GetListByCorrelationIdsAsync(Arg.Any<List<Guid>>(), ApplicationCorrelationProvider).Returns(new List<WorksheetInstanceDataDto>
         {
             // "acme" is seeded by the test host, so this collides even though program managers resolve fine.
@@ -445,7 +466,7 @@ public class OnboardingRequestAppServiceTests : AbpTenantManagementApplicationTe
         var id = Guid.NewGuid();
         var newTenantId = Guid.NewGuid();
 
-        _applicationProvider.GetByIdAsync(id).Returns(new OnboardingApplicationRecord { Id = id, Category = "Onboarding" });
+        _applicationProvider.GetByIdAsync(id).Returns(new OnboardingApplicationRecord { Id = id, Category = "Onboarding", IsApproved = true });
         _worksheetInstanceAppService.GetListByCorrelationIdsAsync(Arg.Any<List<Guid>>(), ApplicationCorrelationProvider).Returns(new List<WorksheetInstanceDataDto>
         {
             WorksheetInstanceFor(id, ("tn", "New Co"), ("su", "first@example.com,second@example.com"), ("branch", "North"))
@@ -477,7 +498,7 @@ public class OnboardingRequestAppServiceTests : AbpTenantManagementApplicationTe
         var id = Guid.NewGuid();
         var newTenantId = Guid.NewGuid();
 
-        _applicationProvider.GetByIdAsync(id).Returns(new OnboardingApplicationRecord { Id = id, Category = "Onboarding" });
+        _applicationProvider.GetByIdAsync(id).Returns(new OnboardingApplicationRecord { Id = id, Category = "Onboarding", IsApproved = true });
         _worksheetInstanceAppService.GetListByCorrelationIdsAsync(Arg.Any<List<Guid>>(), ApplicationCorrelationProvider).Returns(new List<WorksheetInstanceDataDto>
         {
             WorksheetInstanceFor(id, ("tn", "Metabase Co"), ("su", "first@example.com"))
@@ -503,7 +524,7 @@ public class OnboardingRequestAppServiceTests : AbpTenantManagementApplicationTe
         var id = Guid.NewGuid();
         var newTenantId = Guid.NewGuid();
 
-        _applicationProvider.GetByIdAsync(id).Returns(new OnboardingApplicationRecord { Id = id, Category = "Onboarding" });
+        _applicationProvider.GetByIdAsync(id).Returns(new OnboardingApplicationRecord { Id = id, Category = "Onboarding", IsApproved = true });
         _worksheetInstanceAppService.GetListByCorrelationIdsAsync(Arg.Any<List<Guid>>(), ApplicationCorrelationProvider).Returns(new List<WorksheetInstanceDataDto>
         {
             WorksheetInstanceFor(id, ("tn", "Metabase Defaults Co"), ("su", "first@example.com"))
@@ -532,7 +553,7 @@ public class OnboardingRequestAppServiceTests : AbpTenantManagementApplicationTe
         var id = Guid.NewGuid();
         var newTenantId = Guid.NewGuid();
 
-        _applicationProvider.GetByIdAsync(id).Returns(new OnboardingApplicationRecord { Id = id, Category = "Onboarding" });
+        _applicationProvider.GetByIdAsync(id).Returns(new OnboardingApplicationRecord { Id = id, Category = "Onboarding", IsApproved = true });
         _worksheetInstanceAppService.GetListByCorrelationIdsAsync(Arg.Any<List<Guid>>(), ApplicationCorrelationProvider).Returns(new List<WorksheetInstanceDataDto>
         {
             WorksheetInstanceFor(id, ("tn", "Metabase Removal Co"), ("su", "first@example.com"))

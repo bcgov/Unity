@@ -13,6 +13,7 @@ public class TenantDto : ExtensibleEntityDto<Guid>, IHasConcurrencyStamp
     public string Description { get; set; } = string.Empty;
     public string CasClientCode { get; set; } = string.Empty;
     public string LicencePlate { get; set; } = string.Empty;
+    public bool IsDeleted { get; set; }
 
     /// <summary>
     /// JSON-serialized list of <c>PostTenantCreationStepStatusEntry</c> (post-tenant-creation

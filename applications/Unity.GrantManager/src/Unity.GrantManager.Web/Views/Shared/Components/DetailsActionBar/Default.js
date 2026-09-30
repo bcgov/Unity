@@ -319,4 +319,14 @@ $(function () {
             confirmButtonText: l('DetailsActionBar:ConfirmButton')
         };
     }
+
+    // Onboarding requests: Create Tenant is available only while the request is Approved.
+    // Approve is the only action that leads to Approved; every other status action leaves it.
+    PubSub.subscribe('application_status_changed', function (_msg, action) {
+        let $createTenant = $('#createTenantFromDetailsBtn');
+        if (!$createTenant.length || action === 'Publish' || action === 'Unpublish') {
+            return;
+        }
+        $createTenant.toggleClass('d-none', action !== 'Approve');
+    });
 });

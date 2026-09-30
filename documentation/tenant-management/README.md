@@ -10,7 +10,7 @@ This folder documents how the module is built and how it is used. Read in this o
 4. **[tenant-management-onboarding.md](tenant-management-onboarding.md)** — how Onboarding turns a submitted intake form into a fully provisioned tenant: field mapping, validation steps, user lookup, and the approval flow.
 5. **[tenant-management-post-creation.md](tenant-management-post-creation.md)** — the deferred post-tenant-creation job sequence (Metabase registration today), its status tracking, and how the Metabase API client handles that API's inconsistencies.
 6. **[tenant-management-web-ui.md](tenant-management-web-ui.md)** — full Razor Pages inventory and the permission gating on each page.
-7. **[tenant-management-roadmap.md](tenant-management-roadmap.md)** — known rough edges: connection-string password desync risks, orphaned resources on tenant deletion, and other gaps worth knowing before extending this module.
+7. **[tenant-management-roadmap.md](tenant-management-roadmap.md)** — known rough edges: connection-string password desync risks, what tenant purge doesn't clean up, and other gaps worth knowing before extending this module.
 
 ## Source location
 

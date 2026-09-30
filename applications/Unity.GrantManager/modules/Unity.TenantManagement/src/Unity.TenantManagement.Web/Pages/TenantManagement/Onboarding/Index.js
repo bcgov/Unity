@@ -279,6 +279,8 @@
             lengthMenu: [10, 25, 50]
         });
 
+        _openRequestedCreateTenant();
+
         _dataTable.select.style('single');
 
         _dataTable.on('select', function (e, dt, type, indexes) {
@@ -294,6 +296,21 @@
                 manageActionButtons();
             }
         });
+    }
+
+    // ─── Create Tenant requested from the request details page ───────────────
+
+    // Details page links here with ?createTenant={applicationId}; open the modal once, then drop
+    // the parameter so a refresh doesn't reopen it. The server still enforces Approved.
+    let _requestedCreateTenantId = new URLSearchParams(globalThis.location.search).get('createTenant');
+
+    function _openRequestedCreateTenant() {
+        const id = _requestedCreateTenantId;
+        _requestedCreateTenantId = null;
+        if (!id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return;
+
+        globalThis.history.replaceState(null, '', globalThis.location.pathname);
+        _createTenantModal.open({ id: id });
     }
 
     // ─── Action button state ──────────────────────────────────────────────────

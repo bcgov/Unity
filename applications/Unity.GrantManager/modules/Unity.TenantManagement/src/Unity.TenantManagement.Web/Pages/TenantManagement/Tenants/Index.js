@@ -25,12 +25,19 @@
 
     // ─── Actions column renderer ──────────────────────────────────────────────
 
-    function _buildActionsCell(id, name) {
+    function _buildActionsCell(id, name, row) {
         let items = [];
-        if (abp.auth.isGranted('UnityTenantManagement.Tenants.Update') || abp.auth.isGranted('ITOperations')) {
+        const isDeleted = row?.isDeleted === true;
+        if (isDeleted) {
+            // A soft-deleted tenant's only action is the permanent purge - and only for tenants
+            // with their own generated database (licence plate); the server refuses the rest.
+            if (abp.auth.isGranted('ITAdministrator') && row.licencePlate) {
+                items.push('<a href="javascript:;" class="dropdown-item text-danger tenant-action-purge" data-id="' + id + '">' + lGm('TenantList:PurgeAction') + '</a>');
+            }
+        } else if (abp.auth.isGranted('UnityTenantManagement.Tenants.Update') || abp.auth.isGranted('ITOperations')) {
             items.push('<a href="javascript:;" class="dropdown-item tenant-action-config" data-id="' + id + '">' + lGm('TenantList:ConfigurationAction') + '</a>');
         }
-        if (abp.auth.isGranted('UnityTenantManagement.Tenants.Delete')) {
+        if (!isDeleted && abp.auth.isGranted('UnityTenantManagement.Tenants.Delete')) {
             items.push('<a href="javascript:;" class="dropdown-item tenant-action-delete" data-id="' + id + '" data-name="' + $('<span>').text(name || '').html() + '">' + l('Delete') + '</a>');
         }
         if (!items.length) return '';
@@ -52,10 +59,22 @@
             className: 'notexport text-center',
             index: 0,
             render: function (data, type, row) {
-                return type === 'display' ? _buildActionsCell(data, row.name) : '';
+                return type === 'display' ? _buildActionsCell(data, row.name, row) : '';
             }
         },
-        { title: l('TenantName'),  data: 'name',         name: 'name',         index: 1 },
+        {
+            title: l('TenantName'),
+            data: 'name',
+            name: 'name',
+            index: 1,
+            render: function (data, type, row) {
+                if (type === 'display' && row.isDeleted) {
+                    return $('<span>').text(data || '').html() +
+                        ' <span class="badge bg-secondary ms-1">' + lGm('TenantList:DeletedBadge') + '</span>';
+                }
+                return data;
+            }
+        },
         { title: lGm('TenantList:DisplayName'), data: 'displayName', name: 'displayName', index: 2 },
         { title: lGm('TenantList:LicencePlate'),  data: 'licencePlate', name: 'licencePlate', index: 3 },
         { title: l('Division'),    data: 'division',     name: 'division',     index: 4 },
@@ -789,6 +808,47 @@
         abp.message.confirm(l('TenantDeletionConfirmationMessage', name), _onDeleteConfirmed(id));
     }
 
+    // ─── Purge (permanent delete of a soft-deleted tenant) ────────────────────
+
+    // Typing the tenant name is required because this drops a database; SweetAlert2 is used
+    // directly (as for the post-creation status detail) since abp.message has no input prompt.
+    function _confirmPurgeTenant(row) {
+        let escape = function (text) { return $('<span>').text(text || '').html(); };
+
+        Swal.fire({
+            title: lGm('TenantList:PurgeTitle'),
+            html: '<div class="text-start">' +
+                '<p>' + escape(lGm('TenantList:PurgeMessage', row.licencePlate)) + '</p>' +
+                '<p>' + lGm('TenantList:PurgeTypeName', '<strong>' + escape(row.name) + '</strong>') + '</p>' +
+                '</div>',
+            icon: 'warning',
+            input: 'text',
+            inputAttributes: { autocomplete: 'off', 'aria-label': lGm('TenantList:PurgeTypeName', row.name) },
+            showCancelButton: true,
+            confirmButtonText: lGm('TenantList:PurgeConfirm'),
+            cancelButtonText: lGm('TenantList:PurgeCancel'),
+            customClass: { confirmButton: 'btn btn-danger', cancelButton: 'btn btn-secondary ms-2' },
+            buttonsStyling: false,
+            showLoaderOnConfirm: true,
+            allowOutsideClick: function () { return !Swal.isLoading(); },
+            preConfirm: function (typedName) {
+                if (typedName !== row.name) {
+                    Swal.showValidationMessage(lGm('TenantList:PurgeNameMismatch'));
+                    return false;
+                }
+                // abp.ajax shows its own error dialog on failure; close ours so it isn't hidden.
+                return _tenantAppService.purge(row.id).then(
+                    function () { return true; },
+                    function () { Swal.close(); return false; });
+            }
+        }).then(function (result) {
+            if (result.isConfirmed && result.value === true) {
+                _dataTable.ajax.reload();
+                abp.notify.success(lGm('TenantList:Purged'));
+            }
+        });
+    }
+
     // ─── Document ready ───────────────────────────────────────────────────────
 
     $(function () {
@@ -806,6 +866,9 @@
             defaultVisibleColumns: defaultVisibleColumns,
             defaultSortColumn: 1,
             dataEndpoint: _tenantAppService.getList,
+            data: function () {
+                return { includeDeleted: true };
+            },
             responseCallback: responseCallback,
             actionButtons: commonTableActionButtons('Tenants').filter(function (b) { return b.id !== 'btn-toggle-filter'; }),
             serverSideEnabled: false,
@@ -820,6 +883,14 @@
         // Disable interactive row selection (selection is only ever driven via the API),
         // without needing a "selectable" option on the shared initializeDataTable helper.
         _dataTable.select.style('api');
+
+        // Gray out soft-deleted tenants (they're listed only so they can be purged).
+        _dataTable.on('draw', function () {
+            _dataTable.rows({ page: 'current' }).every(function () {
+                let rowData = this.data();
+                $(this.node()).toggleClass('tenant-row-deleted', rowData?.isDeleted === true);
+            });
+        });
 
         _createModal.onResult(function () {
             _dataTable.ajax.reload();
@@ -847,6 +918,14 @@
         $(document).on('click', '.tenant-action-delete', function (e) {
             e.preventDefault();
             _confirmDeleteTenant($(this).data('id'), $(this).data('name'));
+        });
+
+        $(document).on('click', '.tenant-action-purge', function (e) {
+            e.preventDefault();
+            let rowData = _dataTable.row($(this).closest('tr')).data();
+            if (rowData) {
+                _confirmPurgeTenant(rowData);
+            }
         });
 
         $(document).on('click', '.post-creation-status-icon', function (e) {
