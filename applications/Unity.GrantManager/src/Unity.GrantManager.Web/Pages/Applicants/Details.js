@@ -50,6 +50,19 @@ $(document).ready(function () {
     // Handle resizable divider
     initializeResizableDivider();
     initCommentsWidget();
+    if ($('#applicantEmailsWidget').length) {
+        const emailsWidgetManager = new abp.WidgetManager({
+            wrapper: '#applicantEmailsWidget',
+            filterCallback: function () {
+                return {
+                    applicantId: $('#DetailsViewApplicantId').val(),
+                    applicationId: '00000000-0000-0000-0000-000000000000',
+                    currentUserId: $('#CurrentUserId').val()
+                };
+            }
+        });
+        PubSub.subscribe('ApplicantEmail_refresh', () => emailsWidgetManager.refresh());
+    }
     initializeStatusActions();
 });
 

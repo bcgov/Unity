@@ -35,6 +35,8 @@ namespace Unity.GrantManager.Web.Pages.Applicants
         public string CurrentUserName { get; set; }
         public string AllowedFileTypes { get; set; } = string.Empty;
         public string MaxFileSize { get; set; } = string.Empty;
+        public string EmailAttachmentMaxFileSize { get; set; } = string.Empty;
+        public string TotalEmailAttachmentMaxFileSize { get; set; } = string.Empty;
 
         public DetailsModel(
             IApplicantRepository applicantRepository,
@@ -50,6 +52,8 @@ namespace Unity.GrantManager.Web.Pages.Applicants
             CurrentUserName = currentUser.SurName + ", " + currentUser.Name;
             AllowedFileTypes = configuration["S3:AllowedFileTypes"] ?? "";
             MaxFileSize = configuration["S3:MaxFileSize"] ?? "";
+            EmailAttachmentMaxFileSize = configuration["S3:EmailAttachmentMaxFileSize"] ?? "20";
+            TotalEmailAttachmentMaxFileSize = configuration["S3:EmailAttachmentsTotalMaxFileSize"] ?? "25";
         }
 
         public async Task<IActionResult> OnGetAsync()

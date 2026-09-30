@@ -44,7 +44,7 @@ Used when a composer swaps one template for another. The ordering is the point:
 2. Copy all of them to fresh, email-owned S3 objects and insert the new rows.
 3. **Only then** delete the previous template-origin attachments (`GetOriginAttachmentsByEmailLogIdAsync`).
 
-Manually uploaded draft attachments have no `OriginTemplateId` and are left untouched.
+Manually uploaded draft attachments have no `OriginTemplateId` and are left untouched. Template replacement validates that its type matches the email owner (Application or Applicant). Sending an existing manual draft uses its prepared attachment snapshot and does not re-add attachments removed by the user.
 
 ### `CopyAttachmentsAsync` — the shared core
 
@@ -89,12 +89,12 @@ The comment in the source states the invariant: *"The database must never retain
 
 ## The HTTP surface
 
-`EmailLogAttachmentAppService` — `[Authorize(NotificationsPermissions.Email.Send)]`, exposing both `IEmailLogAttachmentAppService` and `IEmailLogAttachmentUploadService`.
+`EmailLogAttachmentAppService` requires authentication and exposes both `IEmailLogAttachmentAppService` and `IEmailLogAttachmentUploadService`. Email attachment reads require owner access and `Notifications.Email`, or the existing global `Notifications.NotificationList.View` permission. Upload/delete require `Notifications.Email.Send`; email attachments can only be changed on an accessible draft. Template attachment reads retain the Send permission.
 
 |Method|Notes|
 |---|---|
 |`GetListByEmailLogIdAsync` / `GetListByTemplateIdAsync`|Return `EmailLogAttachmentDto`s with `AttachedBy` resolved through `IExternalUserLookupServiceProvider` (falling back to an empty string on lookup failure).|
-|`DeleteAsync(id)`|Idempotent — a missing row returns success. Template attachments delete freely; email attachments delete **only from `Draft` emails**, otherwise `UserFriendlyException("Attachments can only be deleted from draft emails.")`.|
+|`DeleteAsync(id)`|Idempotent — a missing row returns success. Template attachments delete freely; email attachments delete **only from `Draft` emails**, otherwise the localized `Notifications:EmailMustBeDraft` business error.|
 |`GetTotalFileSizeByEmailLogIdAsync(emailLogId?, templateId?)`|Sums `FileSize` from metadata, not from S3 — a cheap in-database check. Backs the composer's total-size indicator and the bulk-send size gate.|
 |`UploadAsync(...)`|**`[RemoteService(false)]`** — deliberately not exposed over HTTP.|
 

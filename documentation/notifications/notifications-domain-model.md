@@ -71,10 +71,12 @@ The active default `Sender` row is the From address fallback used by `EmailNotif
 |Entity|Purpose|
 |---|---|
 |`EmailTemplate`|`FullAuditedAggregateRoot<Guid>` — `Name`, `Description`, `Subject`, `BodyText`, `BodyHTML`, `SendFrom`, `RecipientCategory?`, `RecipientIdentifier?`. The only soft-deleted entity in the module. Can own `EmailLogAttachment` rows.|
-|`TemplateVariable`|`Name` (display), `Token` (the `{{token}}` placeholder), `MapTo` (dotted path on the application object). Seeded, not user-created.|
+|`TemplateVariable`|`Name` (display), `Token` (the `{{token}}` placeholder), `TemplateType` (`Application` or `Applicant`), `MapTo` (dotted path in that context). Seeded, not user-created.|
 |`Trigger`, `TriggerSubscription`, `Subscriber`, `SubscriptionGroup`, `SubscriptionGroupSubscription`|A subscription/trigger model with full EF mapping and navigation properties — mapped, migrated, and **unreferenced by any service**. See [notifications-roadmap.md](notifications-roadmap.md#the-subscriptiontrigger-model-is-mapped-but-unused).|
 
 `TemplateService` (declared in `Templates/TemplatesService.cs`, implementing `ITemplateService` from `Templates/ITemplatesService.cs` — note both class and interface are singular while the files are plural) is the only service touching templates: CRUD plus `GetTemplatesByTenant`, `GetTemplateByName`, `GetTemplateVariables`.
+
+`TemplateVariableCatalog` lists the supported tokens for each type. `GetTemplateVariables` filters by both the stored `TemplateType` and the catalog's supported tokens. A legacy row labelled `Applicant` with an application-only token such as `submission_number` cannot appear in the Applicant variable menu. This is a read-only filter: it does not repair or delete database rows and does not require running DbMigrator. Missing or unknown requested types retain the `Application` fallback. Keep the catalog synchronized with the existing seed definitions and the runtime token resolver when adding variables.
 
 ## Email group entities
 
@@ -159,7 +161,7 @@ Defined in `Domain/Settings/NotificationsSettingDefinitionProvider.cs`, keys in 
 
 `NotificationsDataSeedContributor` runs **per tenant only** (returns immediately when `context.TenantId == null`) and seeds three things:
 
-1. **23 `TemplateVariable` rows** — the `{{token}}` → `MapTo` mapping used by scheduled notifications. Includes one repair path: an existing `category` variable whose `MapTo` is still the bare `category` is rewritten to `applicationForm.category`.
+1. **43 `TemplateVariable` definitions** — 24 Application and 19 Applicant entries defined in `NotificationsDataSeedContributor`, matched by `(TemplateType, Token)`. Existing repair paths treat a missing legacy type as Application and rewrite the old Application `category` mapping to `applicationForm.category`. Seeding does not remove misclassified rows; the variable API excludes unsupported tokens when reading them.
 2. **The `FSB-AP` and `Payments` email groups**, if absent by name.
 3. **The default sender address** — inserts an `EmailAddressConfiguration` for the `DefaultFromAddress` setting value, or promotes an existing matching row to `IsDefault` if no default exists yet.
 
