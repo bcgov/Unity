@@ -27,7 +27,8 @@
 
     function _buildActionsCell(id, name, row) {
         let items = [];
-        if (row && row.isDeleted) {
+        const isDeleted = row?.isDeleted === true;
+        if (isDeleted) {
             // A soft-deleted tenant's only action is the permanent purge - and only for tenants
             // with their own generated database (licence plate); the server refuses the rest.
             if (abp.auth.isGranted('ITAdministrator') && row.licencePlate) {
@@ -36,7 +37,7 @@
         } else if (abp.auth.isGranted('UnityTenantManagement.Tenants.Update') || abp.auth.isGranted('ITOperations')) {
             items.push('<a href="javascript:;" class="dropdown-item tenant-action-config" data-id="' + id + '">' + lGm('TenantList:ConfigurationAction') + '</a>');
         }
-        if (!(row && row.isDeleted) && abp.auth.isGranted('UnityTenantManagement.Tenants.Delete')) {
+        if (!isDeleted && abp.auth.isGranted('UnityTenantManagement.Tenants.Delete')) {
             items.push('<a href="javascript:;" class="dropdown-item tenant-action-delete" data-id="' + id + '" data-name="' + $('<span>').text(name || '').html() + '">' + l('Delete') + '</a>');
         }
         if (!items.length) return '';
@@ -887,7 +888,7 @@
         _dataTable.on('draw', function () {
             _dataTable.rows({ page: 'current' }).every(function () {
                 let rowData = this.data();
-                $(this.node()).toggleClass('tenant-row-deleted', !!(rowData && rowData.isDeleted));
+                $(this.node()).toggleClass('tenant-row-deleted', rowData?.isDeleted === true);
             });
         });
 
