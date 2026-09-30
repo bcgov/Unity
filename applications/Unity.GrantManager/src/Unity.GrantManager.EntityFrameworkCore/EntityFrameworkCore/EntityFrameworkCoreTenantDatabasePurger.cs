@@ -74,6 +74,14 @@ public class EntityFrameworkCoreTenantDatabasePurger(
             EntityFrameworkCoreGrantManagerDbSchemaMigrator.EnsureSafeIdentifier(roleName, "role name");
         }
 
+        // A license plate reused by another tenant (active or soft-deleted) means the database and roles
+        // are shared - dropping them would destroy that tenant's data.
+        if (await IsLicencePlateSharedAsync(adminConnectionString, tenant.Id, licencePlate))
+        {
+            throw new InvalidOperationException(
+                $"Another tenant also uses licence plate '{licencePlate}'. Refusing to drop its database and roles.");
+        }
+
         LogSucceededPostCreationSteps(tenant);
 
         // Database and roles first: if anything below fails, the tenant row is still there
@@ -83,6 +91,18 @@ public class EntityFrameworkCoreTenantDatabasePurger(
 
         logger.LogInformation("Purged tenant {TenantName} ({TenantId}): dropped database {DatabaseName} and roles {RoleNames}.",
             tenant.Name, tenant.Id, dbName, string.Join(", ", roleNames));
+    }
+
+    private static async Task<bool> IsLicencePlateSharedAsync(string adminConnectionString, Guid tenantId, string licencePlate)
+    {
+        await using var conn = new NpgsqlConnection(adminConnectionString);
+        await conn.OpenAsync();
+        await using var cmd = new NpgsqlCommand(
+            "SELECT EXISTS (SELECT 1 FROM \"Tenants\" WHERE \"Id\" <> @tenantId " +
+            "AND \"ExtraProperties\"::jsonb ->> 'LicencePlate' = @licencePlate)", conn);
+        cmd.Parameters.AddWithValue("tenantId", tenantId);
+        cmd.Parameters.AddWithValue("licencePlate", licencePlate);
+        return (bool)(await cmd.ExecuteScalarAsync())!;
     }
 
     private NpgsqlConnectionStringBuilder? ReadConnectionString(Tenant tenant, string name)
