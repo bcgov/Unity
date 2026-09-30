@@ -30,13 +30,11 @@ public class OnboardingApplicationManager(
             .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER);
 
         sm.Configure(GrantApplicationState.CLOSED)
-            .Permit(GrantApplicationAction.Defer, GrantApplicationState.DEFER);
+            .Permit(GrantApplicationAction.Submit, GrantApplicationState.SUBMITTED);
 
-        // Defer is reversible from every onboarding state: it must be able to return to any of them.
+        // A deferred request re-enters through Submitted (and needs a fresh decision), or is closed.
         sm.Configure(GrantApplicationState.DEFER)
             .Permit(GrantApplicationAction.Submit, GrantApplicationState.SUBMITTED)
-            .Permit(GrantApplicationAction.Approve, GrantApplicationState.GRANT_APPROVED)
-            .Permit(GrantApplicationAction.Deny, GrantApplicationState.GRANT_NOT_APPROVED)
             .Permit(GrantApplicationAction.Close, GrantApplicationState.CLOSED);
     }
 

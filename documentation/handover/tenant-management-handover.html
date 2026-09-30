@@ -516,7 +516,7 @@ if (await _permissionChecker.IsGrantedAsync(context.User, requirement.Permission
     <table class="data">
       <thead><tr><th>Step</th><th>Order</th><th>Checks</th></tr></thead>
       <tbody>
-        <tr><td class="code">TenantNameUniquenessStep</td><td class="mono">10</td><td><span class="code">ITenantRepository.FindByNameAsync</span> — no existing tenant with this normalized name.</td></tr>
+        <tr><td class="code">TenantNameUniquenessStep</td><td class="mono">10</td><td><span class="code">ITenantRepository.FindByNameAsync</span> — no existing tenant with this normalized name, including soft-deleted ones (those must be purged first).</td></tr>
         <tr><td class="code">ProgramManagersValidationStep</td><td class="mono">20</td><td>Parses <span class="code">ProgramManagers</span> as either a CHEFS DataGrid JSON shape or a delimited string; requires at least one email to resolve via <span class="code">IOnboardingUserLookup</span>.</td></tr>
       </tbody>
     </table>
