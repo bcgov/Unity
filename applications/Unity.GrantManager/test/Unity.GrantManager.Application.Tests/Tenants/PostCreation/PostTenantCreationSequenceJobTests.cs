@@ -71,6 +71,7 @@ public class PostTenantCreationSequenceJobTests
         var tenant = CreateTenant(tenantId ?? Guid.NewGuid());
         var tenantRepository = Substitute.For<ITenantRepository>();
         tenantRepository.GetAsync(tenant.Id, Arg.Any<bool>(), Arg.Any<System.Threading.CancellationToken>()).Returns(tenant);
+        tenantRepository.FindAsync(tenant.Id, Arg.Any<bool>(), Arg.Any<System.Threading.CancellationToken>()).Returns(tenant);
 
         var clock = Substitute.For<IClock>();
         clock.Now.Returns(DateTime.UtcNow);
@@ -185,7 +186,20 @@ public class PostTenantCreationSequenceJobTests
 
         await job.ExecuteAsync(new PostTenantCreationStepArgs { TenantId = tenant.Id, StepIndex = 0 });
 
-        currentTenant.Received().Change(null);
+        // Once for the up-front tenant-exists check, once for recording the status.
+        currentTenant.Received(2).Change(null);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_TenantNoLongerExists_SkipsStepWithoutThrowingOrEnqueuing()
+    {
+        var step = new FakeStep(0, "Step0", continueOnError: false);
+        var (job, enqueued, _, _) = CreateJob([step]);
+
+        await job.ExecuteAsync(new PostTenantCreationStepArgs { TenantId = Guid.NewGuid(), StepIndex = 0 });
+
+        step.Executed.ShouldBeFalse();
+        enqueued.ShouldBeEmpty();
     }
 
     [Fact]

@@ -59,9 +59,14 @@ public class EntityFrameworkCoreTenantDatabasePurger(
                 $"Tenant '{tenant.Name}' connection string points at database '{dbName}', not its licence plate '{licencePlate}'. Refusing to drop it.");
         }
 
-        var roleNames = new List<string>();
-        AddRoleName(roleNames, tenantCsb.Username);
-        AddRoleName(roleNames, ReadConnectionString(tenant, GrantManagerConsts.DefaultTenantReadOnlyConnectionStringName)?.Username);
+        // Role names come from the immutable licence plate (TenantConnectionStringBuilder creates
+        // them as {plate} and {plate}_readonly), never from the editable connection strings - an
+        // edited Username must not make purge drop an unrelated login.
+        var roleNames = new List<string>
+        {
+            licencePlate,
+            $"{licencePlate}_readonly"
+        };
 
         EntityFrameworkCoreGrantManagerDbSchemaMigrator.EnsureSafeIdentifier(dbName, "database name");
         foreach (var roleName in roleNames)
@@ -78,14 +83,6 @@ public class EntityFrameworkCoreTenantDatabasePurger(
 
         logger.LogInformation("Purged tenant {TenantName} ({TenantId}): dropped database {DatabaseName} and roles {RoleNames}.",
             tenant.Name, tenant.Id, dbName, string.Join(", ", roleNames));
-    }
-
-    private static void AddRoleName(List<string> roleNames, string? roleName)
-    {
-        if (!string.IsNullOrWhiteSpace(roleName) && !roleNames.Contains(roleName))
-        {
-            roleNames.Add(roleName);
-        }
     }
 
     private NpgsqlConnectionStringBuilder? ReadConnectionString(Tenant tenant, string name)
