@@ -140,11 +140,12 @@ $(function () {
                             aria-expanded="false"
                             data-address-id="${row.id}">
                         <i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i>
+                        <span class="visually-hidden">${abp.utils.htmlEscape(l('ApplicantAddresses:AddressActions'))}</span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li>
                             <button class="dropdown-item applicant-address-edit-btn"
-                                    data-address-id="${row.id}">${l('Common:Command:Edit')}</button>
+                                    data-address-id="${row.id}">${abp.utils.htmlEscape(l('Common:Command:Edit'))}</button>
                         </li>
                     </ul>
                 </div>`;
@@ -312,9 +313,11 @@ $(function () {
                 abp.event.trigger('applicant-addresses-refreshed');
             },
             error: function () {
+                savedOrder = null;
                 if (addressesTable) {
                     try { addressesTable.processing(false); } catch (e) { console.error('Failed to disable DataTables processing indicator.', e); }
                 }
+                abp.notify.error(l('ApplicantAddresses:RefreshFailed'));
             }
         });
     }

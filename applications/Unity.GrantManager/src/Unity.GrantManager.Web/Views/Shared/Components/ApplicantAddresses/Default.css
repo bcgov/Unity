@@ -119,7 +119,6 @@
 .applicant-addresses-widget .applicant-address-menu-btn {
     border: none;
     box-shadow: none;
-    outline: none;
     transition: none;
     text-decoration: none;
     color: var(--bc-colors-grey-text-300);
@@ -129,23 +128,24 @@
 .applicant-addresses-widget .applicant-address-menu-btn:focus {
     border: none;
     box-shadow: none;
-    outline: none;
     text-decoration: none;
     color: var(--bc-colors-blue-text-links);
+}
+
+/* Suppress the focus ring for mouse clicks only; keyboard focus keeps a visible indicator. */
+.applicant-addresses-widget .applicant-address-menu-btn:focus:not(:focus-visible) {
+    outline: none;
+}
+
+.applicant-addresses-widget .applicant-address-menu-btn:focus-visible {
+    outline: 2px solid var(--bc-colors-blue-text-links);
+    outline-offset: 2px;
 }
 
 .applicant-addresses-widget .applicant-address-edit-btn {
     border: none;
     box-shadow: none;
-    outline: none;
     transition: none;
-}
-
-.applicant-addresses-widget .applicant-address-edit-btn:hover,
-.applicant-addresses-widget .applicant-address-edit-btn:focus {
-    border: none;
-    box-shadow: none;
-    outline: none;
 }
 
 .applicant-addresses-widget #ApplicantAddressesTable td:last-child,

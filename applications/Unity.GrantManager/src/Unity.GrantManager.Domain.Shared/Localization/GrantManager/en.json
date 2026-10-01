@@ -629,6 +629,8 @@
     "ApplicantAddresses:ColumnSubmission": "Submission #",
     "ApplicantAddresses:AddressSaved": "Address saved.",
     "ApplicantAddresses:ServiceUnavailable": "Applicant address service is not available.",
+    "ApplicantAddresses:RefreshFailed": "The address was saved, but the list could not be refreshed. Reload the page to see the latest addresses.",
+    "ApplicantAddresses:AddressActions": "Address actions",
     "ApplicantAddress:EditTitle": "Edit Address",
     "ApplicantAddress:AddressType": "Address Type",
     "ApplicantAddress:Street": "Street Address",

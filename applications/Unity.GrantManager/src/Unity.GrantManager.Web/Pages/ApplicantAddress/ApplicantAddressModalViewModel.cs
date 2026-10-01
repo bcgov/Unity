@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using Unity.GrantManager.GrantApplications;
 
 namespace Unity.GrantManager.Web.Pages.ApplicantAddress;
@@ -20,7 +21,7 @@ public class ApplicantAddressModalViewModel
     [Required]
     public AddressType AddressType { get; set; } = AddressType.PhysicalAddress;
 
-    public List<SelectListItem> AddressTypeOptions { get; set; } = CreateAddressTypeOptions();
+    public List<SelectListItem> AddressTypeOptions { get; set; } = [];
 
     [DisplayName("ApplicantAddress:Street")]
     [StringLength(500)]
@@ -53,24 +54,25 @@ public class ApplicantAddressModalViewModel
     {
         if (AddressTypeOptions is null || AddressTypeOptions.Count == 0)
         {
-            AddressTypeOptions = CreateAddressTypeOptions();
+            AddressTypeOptions = CreateAddressTypeOptions(AddressType);
         }
     }
 
-    public static List<SelectListItem> CreateAddressTypeOptions()
+    /// <summary>
+    /// Offers Physical and Mailing, plus the address's current type when it is neither, so an
+    /// address of another type (for example Business, written by the Applicant Portal) keeps its
+    /// type on save instead of silently falling back to the first option.
+    /// </summary>
+    public static List<SelectListItem> CreateAddressTypeOptions(AddressType currentAddressType)
     {
-        return
-        [
-            new SelectListItem
+        return Enum.GetValues<AddressType>()
+            .Where(addressType => addressType is AddressType.PhysicalAddress or AddressType.MailingAddress
+                || addressType == currentAddressType)
+            .Select(addressType => new SelectListItem
             {
-                Value = nameof(AddressType.PhysicalAddress),
-                Text = AddressTypeMapper.ToDisplayName(AddressType.PhysicalAddress)
-            },
-            new SelectListItem
-            {
-                Value = nameof(AddressType.MailingAddress),
-                Text = AddressTypeMapper.ToDisplayName(AddressType.MailingAddress)
-            }
-        ];
+                Value = addressType.ToString(),
+                Text = AddressTypeMapper.ToDisplayName(addressType)
+            })
+            .ToList();
     }
 }
