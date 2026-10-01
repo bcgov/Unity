@@ -1,0 +1,36 @@
+<div class="container-fluid px-0">
+  <div class="unity-page-titlebar">
+    <h4 class="m-0">Program Details</h4>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <div class="p-3">
+      <div class="mb-3">
+        <label class="form-label" for="displayName">Display Name</label>
+        <input id="displayName" type="text" class="form-control" formControlName="displayName" [maxlength]="limits.displayName" appCharacterCounter />
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="division">Division</label>
+        <input id="division" type="text" class="form-control" formControlName="division" [maxlength]="limits.division" appCharacterCounter />
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="branch">Branch</label>
+        <input id="branch" type="text" class="form-control" formControlName="branch" [maxlength]="limits.branch" appCharacterCounter />
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label" for="description">Description</label>
+        <textarea id="description" rows="4" class="form-control" formControlName="description" [maxlength]="limits.description" appCharacterCounter></textarea>
+      </div>
+    </div>
+
+    <hr class="my-4" />
+
+    <div class="d-flex gap-2 p-2">
+      <button type="submit" class="btn btn-primary me-2" [disabled]="saving || !hasChanges() || form.invalid">Save Changes</button>
+      <button type="button" class="btn btn-secondary me-2" (click)="discard()" [disabled]="saving || !hasChanges()">Discard Changes</button>
+    </div>
+  </form>
+</div>

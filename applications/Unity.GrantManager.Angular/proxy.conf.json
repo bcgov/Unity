@@ -1,0 +1,22 @@
+{
+  "/api": {
+    "target": "https://localhost:44342",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/Account": {
+    "target": "https://localhost:44342",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/signin-oidc": {
+    "target": "https://localhost:44342",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/signout-callback-oidc": {
+    "target": "https://localhost:44342",
+    "secure": false,
+    "changeOrigin": true
+  }
+}
