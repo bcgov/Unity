@@ -46,7 +46,7 @@ The BCeID block comes from the CHEFS login token and is what ties a portal user 
 
 ## Addresses
 
-`ApplicantAddress` is an `AuditedAggregateRoot` linked to **both** an applicant and (optionally) an application, with an `AddressType` — `PhysicalAddress` or `MailingAddress`.
+`ApplicantAddress` is an `AuditedAggregateRoot` linked to **both** an applicant and (optionally) an application, with an `AddressType` of `PhysicalAddress`, `MailingAddress` or `BusinessAddress`. The Applicant Portal can write all three.
 
 The invariant is primary-per-type, and `ApplicantAddressManager` owns it:
 
@@ -59,12 +59,18 @@ The invariant is primary-per-type, and `ApplicantAddressManager` owns it:
 | `GetOwnedAsync(applicantId, addressId)` | Loads an address and rejects it if it does not belong to the given applicant |
 | `UpdateAsync(applicantId, addressId, input, addressType, isPrimary)` | Applies an edit from the applicant profile and rejects an address that came from a submission |
 | `ApplyPrimaryScopeAsync(…)` | Keeps one primary per type after an edit, including when the edit moves an address to another type |
+| `SetPrimaryAsync(applicantId, addressId)` | Makes an address the primary of its own type and clears the flag on the others of that type. An address that came from a submission can be made primary even though it cannot be edited |
+| `IsResolvedPrimaryAsync(applicantId, address)` | Says whether an address is the primary of its type, either flagged or chosen by the fallback described below |
 
-The manager is written generically over the enum so adding a third address type needs no change to the rule.
+The manager is written generically over the enum so adding another address type needs no change to the rule.
+
+Reading the primary back follows one rule, in `ApplicantAddressPrimaryResolver`: within an address type, the explicitly flagged address wins, and when none is flagged the newest by creation time is inferred. Creation time is used rather than last modification time for two reasons. Editing an address makes it the most recently modified row even when it is not primary. Promoting one address demotes its same type siblings in the same unit of work, and the audit interceptor stamps every affected row with an identical `LastModificationTime`. The Applicant Portal's own resolver and `AddressInfoDataProvider` apply the same rule, which is what keeps the two systems agreeing about which address is primary. The Addresses tab's primary badge, the primary address fields at the top of the tab, and the Edit modal's Primary switch all use this rule, so they always agree.
+
+`ApplicantInfoViewComponent` deliberately does not use this resolver. `ApplicationRepository.WithBasicDetailsAsync` filters the addresses it loads down to the application being viewed, so that screen must show that submission's own address rather than the applicant's flagged primary.
 
 Addresses matter beyond correspondence: `ApplicationForm.ElectoralDistrictAddressType` decides *which* address the electoral district is derived from at intake, and `DetermineElectoralDistrictHandler` performs that lookup.
 
-Two write paths are gated by `UnitySelector.ApplicantManagement.Addresses.Update`: `ApplicantAppService.UpdateApplicantContactAddressesAsync`, behind the primary address fields at the top of the Addresses tab, and `IApplicantAddressAppService`, behind the per-row Edit modal. Both delegate to `ApplicantAddressManager`, so the primary-per-type rule lives in one place. The Edit modal refuses an address owned by a submission. Those addresses are edited through the primary address fields or the submission's own Applicant Info form. The Applicant Portal changes addresses through its own `ADDRESS_EDIT_COMMAND` handler, described in [`applicant-portal/grants-portal-rabbitmq-integration.md`](../applicant-portal/grants-portal-rabbitmq-integration.md).
+Two write paths are gated by `UnitySelector.ApplicantManagement.Addresses.Update`: `ApplicantAppService.UpdateApplicantContactAddressesAsync`, behind the primary address fields at the top of the Addresses tab, and `IApplicantAddressAppService`, behind the per-row Edit modal and the per-row Set as Primary menu item. Both delegate to `ApplicantAddressManager`, so the primary-per-type rule lives in one place. The Edit modal refuses an address owned by a submission, while Set as Primary also accepts one. Those addresses are edited through the primary address fields or the submission's own Applicant Info form. The Applicant Portal changes addresses through its own `ADDRESS_EDIT_COMMAND` handler, described in [`applicant-portal/grants-portal-rabbitmq-integration.md`](../applicant-portal/grants-portal-rabbitmq-integration.md).
 
 ## Contacts
 
