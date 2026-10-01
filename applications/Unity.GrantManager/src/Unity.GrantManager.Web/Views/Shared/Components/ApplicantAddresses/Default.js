@@ -1,12 +1,17 @@
 $(function () {
     const LAYOUT_NOTIFICATION_DELAYS = [0, 120, 300, 700];
-    const addressesRaw = $('#ApplicantAddresses_Data').val();
-    const addressesData = safeParse(addressesRaw);
+    const l = abp.localization.getResource('GrantManager');
 
     const nullPlaceholder = '—';
+    let widgetRoot = $();
+    let applicantId = null;
+    let canEdit = false;
+    let addressesData = [];
     let addressesTable = null;
     let zoneForm = null;
     let isSaving = false;
+    let savedOrder = null;
+    let editAddressModal = null;
     const PHYSICAL_ADDRESS_FIELDS = new Set([
         'PrimaryPhysicalAddress.Street',
         'PrimaryPhysicalAddress.Street2',
@@ -38,16 +43,153 @@ $(function () {
         return `<a href="/GrantApplications/Details?ApplicationId=${encodeURIComponent(row.applicationId)}">${abp.utils.htmlEscape(data)}</a>`;
     }
 
-    function initializeApplicantTable(selector, data, columnDefs, extraConfig = {}) {
-        if (!$.fn.DataTable || !$(selector).length) {
+    function scheduleLayoutNotifications() {
+        LAYOUT_NOTIFICATION_DELAYS.forEach((delay) => {
+            setTimeout(notifyApplicantAddressesLayoutChange, delay);
+        });
+    }
+
+    function readWidgetState() {
+        widgetRoot = $('.applicant-addresses-widget');
+        applicantId = $('#ApplicantAddresses_ApplicantId').val();
+        canEdit = widgetRoot.data('can-edit') === true || widgetRoot.data('can-edit') === 'true';
+        addressesData = safeParse($('#ApplicantAddresses_Data').val());
+    }
+
+    function buildColumnDefs() {
+        return [
+            {
+                title: l('ApplicantAddresses:ColumnAddressType'),
+                data: 'addressType',
+                width: '13%',
+                render: renderTableText,
+                targets: 0
+            },
+            {
+                title: l('ApplicantAddresses:ColumnAddress'),
+                data: 'street',
+                width: '22%',
+                render: (data, type, row) =>
+                    renderTableText([data, row.street2].filter(Boolean).join(', '), type),
+                targets: 1
+            },
+            {
+                title: l('ApplicantAddresses:ColumnUnit'),
+                data: 'unit',
+                width: '8%',
+                render: renderTableText,
+                targets: 2
+            },
+            {
+                title: l('ApplicantAddresses:ColumnCity'),
+                data: 'city',
+                width: '14%',
+                render: renderTableText,
+                targets: 3
+            },
+            {
+                title: l('ApplicantAddresses:ColumnProvince'),
+                data: 'province',
+                width: '14%',
+                render: renderTableText,
+                targets: 4
+            },
+            {
+                title: l('ApplicantAddresses:ColumnPostalCode'),
+                data: 'postal',
+                width: '10%',
+                render: renderTableText,
+                targets: 5
+            },
+            {
+                title: l('ApplicantAddresses:ColumnSubmission'),
+                data: 'referenceNo',
+                width: '13%',
+                render: renderTableLink,
+                targets: 6
+            },
+            {
+                title: '',
+                data: null,
+                orderable: false,
+                searchable: false,
+                width: '48px',
+                className: 'text-center',
+                render: renderActions,
+                targets: 7
+            }
+        ];
+    }
+
+    function renderActions(data, type, row) {
+        if (!canEdit) {
+            return row.isEditable ? '' : renderSourceInfo();
+        }
+
+        // A submission-linked row has no action available in this story, so the bare icon is
+        // the right affordance. AB#33875 removes this branch: once Set as Primary applies to
+        // those rows the menu becomes correct and the tooltip moves onto a disabled Edit item.
+        if (!row.isEditable) {
+            return renderSourceInfo();
+        }
+
+        return `<div class="dropdown applicant-address-actions">
+                    <button type="button"
+                            class="btn btn-sm btn-link p-0 applicant-address-menu-btn"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                            data-address-id="${row.id}">
+                        <i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i>
+                        <span class="visually-hidden">${abp.utils.htmlEscape(l('ApplicantAddresses:AddressActions'))}</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <button class="dropdown-item applicant-address-edit-btn"
+                                    data-address-id="${row.id}">${abp.utils.htmlEscape(l('Common:Command:Edit'))}</button>
+                        </li>
+                    </ul>
+                </div>`;
+    }
+
+    function renderSourceInfo() {
+        const escaped = abp.utils.htmlEscape(l('GrantManager:AddressNotEditable'));
+        return `<span class="applicant-address-source-info"
+                      data-bs-toggle="tooltip"
+                      data-bs-placement="left"
+                      title="${escaped}">
+                    <i class="fa-solid fa-circle-info text-muted" aria-hidden="true"></i>
+                    <span class="visually-hidden">${escaped}</span>
+                </span>`;
+    }
+
+    function ensureEditAddressModal() {
+        if (editAddressModal) {
+            return editAddressModal;
+        }
+
+        editAddressModal = new abp.ModalManager(abp.appPath + 'ApplicantAddress/EditModal');
+        editAddressModal.onResult(function () {
+            abp.notify.success(l('ApplicantAddresses:AddressSaved'));
+            refreshWidget();
+        });
+
+        return editAddressModal;
+    }
+
+    function initializeAddressesTable(order) {
+        if (!$.fn.DataTable || !$('#ApplicantAddressesTable').length) {
             return null;
         }
 
-        return $(selector).DataTable(
+        if ($.fn.DataTable.isDataTable('#ApplicantAddressesTable')) {
+            $('#ApplicantAddressesTable').DataTable().destroy();
+        }
+
+        return $('#ApplicantAddressesTable').DataTable(
             abp.libs.datatables.normalizeConfiguration({
-                data: data,
+                data: addressesData,
                 serverSide: false,
-                order: [[0, 'asc']],
+                order: order || [[0, 'asc']],
                 searching: true,
                 paging: true,
                 pageLength: 10,
@@ -56,142 +198,138 @@ $(function () {
                 scrollX: true,
                 drawCallback: function () {
                     this.api().columns.adjust();
+                    $('#ApplicantAddressesTable [data-bs-toggle="tooltip"]').each(function () {
+                        const existing = bootstrap.Tooltip.getInstance(this);
+                        if (existing) { existing.dispose(); }
+                        bootstrap.Tooltip.getOrCreateInstance(this);
+                    });
                 },
-                ...extraConfig,
-                columnDefs: columnDefs
+                columnDefs: buildColumnDefs()
             })
         );
     }
 
-    function scheduleLayoutNotifications() {
-        LAYOUT_NOTIFICATION_DELAYS.forEach((delay) => {
-            setTimeout(notifyApplicantAddressesLayoutChange, delay);
-        });
+    function bindZoneForm() {
+        const form = $('#ApplicantAddressesForm');
+        const saveButton = $('#saveApplicantAddressesBtn');
+
+        if (form.length && saveButton.length && typeof UnityZoneForm === 'function') {
+            zoneForm = new UnityZoneForm(form, {
+                saveButtonSelector: '#saveApplicantAddressesBtn'
+            });
+
+            zoneForm.init();
+
+            // The shared tracker handles change/blur; also track typing and pasting immediately.
+            form.find('input, textarea').on('input', function () {
+                if (isSaving) {
+                    return;
+                }
+
+                const field = $(this);
+                const name = field.attr('name');
+                if (name) {
+                    zoneForm.checkFieldModified(field, name);
+                }
+            });
+
+            saveButton.on('click', function (event) {
+                event.preventDefault();
+
+                if (isSaving || !zoneForm || zoneForm.modifiedFields.size === 0) {
+                    return;
+                }
+
+                let payload;
+                try {
+                    payload = buildSavePayload(zoneForm, form);
+                } catch (error) {
+                    abp.notify.warn(error.message);
+                    return;
+                }
+                if (!payload) {
+                    return;
+                }
+
+                if (!applicantId) {
+                    abp.notify.warn('Applicant identifier is missing.');
+                    return;
+                }
+
+                isSaving = true;
+                zoneForm.setSaving(true);
+                const editableFields = form.find('input:enabled:not([type="hidden"]), select:enabled, textarea:enabled');
+                editableFields.prop('disabled', true);
+
+                unity.grantManager.applicants.applicant
+                    .updateApplicantContactAddresses(applicantId, payload, { abpHandleError: false })
+                    .done(function (result) {
+                        applySavedApplicantAddresses(result, form);
+                        updateAddressTableAfterSave(result, addressesTable);
+                        zoneForm.resetTracking();
+                        abp.notify.success('Addresses saved.');
+                        scheduleLayoutNotifications();
+                    })
+                    .fail(function (error) {
+                        abp.notify.error(error?.message || 'Failed to save addresses.');
+                    })
+                    .always(function () {
+                        editableFields.prop('disabled', false);
+                        isSaving = false;
+                        zoneForm.setSaving(false);
+                    });
+            });
+        }
     }
 
-    addressesTable = initializeApplicantTable(
-        '#ApplicantAddressesTable',
-        addressesData,
-        [
-            {
-                title: 'Address Type',
-                data: 'addressType',
-                width: '13%',
-                render: renderTableText
-            },
-            {
-                title: 'Address',
-                data: 'street',
-                width: '22%',
-                render: (data, type, row) => renderTableText([data, row.street2].filter(Boolean).join(', '), type)
-            },
-            {
-                title: 'Unit',
-                data: 'unit',
-                width: '8%',
-                render: renderTableText
-            },
-            {
-                title: 'City',
-                data: 'city',
-                width: '14%',
-                render: renderTableText
-            },
-            {
-                title: 'Province',
-                data: 'province',
-                width: '14%',
-                render: renderTableText
-            },
-            {
-                title: 'Postal Code',
-                data: 'postal',
-                width: '10%',
-                render: renderTableText
-            },
-            {
-                title: 'Submission #',
-                data: 'referenceNo',
-                width: '13%',
-                render: renderTableLink
-            }
-        ]
-    );
+    function bindWidget(order) {
+        readWidgetState();
+        addressesTable = initializeAddressesTable(order);
+        bindZoneForm();
+        scheduleLayoutNotifications();
+    }
 
-    scheduleLayoutNotifications();
-
-    const form = $('#ApplicantAddressesForm');
-    const saveButton = $('#saveApplicantAddressesBtn');
-
-    if (form.length && saveButton.length && typeof UnityZoneForm === 'function') {
-        zoneForm = new UnityZoneForm(form, {
-            saveButtonSelector: '#saveApplicantAddressesBtn'
-        });
-
-        zoneForm.init();
-
-        // The shared tracker handles change/blur; also track typing and pasting immediately.
-        form.find('input, textarea').on('input', function () {
-            if (isSaving) {
-                return;
-            }
-
-            const field = $(this);
-            const name = field.attr('name');
-            if (name) {
-                zoneForm.checkFieldModified(field, name);
-            }
-        });
-
-        saveButton.on('click', function (event) {
-            event.preventDefault();
-
-            if (isSaving || !zoneForm || zoneForm.modifiedFields.size === 0) {
-                return;
-            }
-
-            let payload;
+    function refreshWidget() {
+        if (addressesTable) {
             try {
-                payload = buildSavePayload(zoneForm, form);
-            } catch (error) {
-                abp.notify.warn(error.message);
-                return;
-            }
-            if (!payload) {
-                return;
-            }
+                savedOrder = addressesTable.order();
+                addressesTable.processing(true);
+            } catch (e) { console.error('Failed to enable DataTables processing indicator.', e); }
+        }
 
-            const applicantId = $('#ApplicantAddresses_ApplicantId').val();
-            if (!applicantId) {
-                abp.notify.warn('Applicant identifier is missing.');
-                return;
+        $.ajax({
+            url: abp.appPath + 'Widget/ApplicantAddresses/Refresh',
+            type: 'GET',
+            dataType: 'html',
+            data: { applicantId: applicantId },
+            success: function (html) {
+                if (addressesTable) {
+                    addressesTable.destroy();
+                    addressesTable = null;
+                }
+                widgetRoot.parent().html(html);
+                bindWidget(savedOrder);
+                savedOrder = null;
+                abp.event.trigger('applicant-addresses-refreshed');
+            },
+            error: function () {
+                savedOrder = null;
+                if (addressesTable) {
+                    try { addressesTable.processing(false); } catch (e) { console.error('Failed to disable DataTables processing indicator.', e); }
+                }
+                abp.notify.error(l('ApplicantAddresses:RefreshFailed'));
             }
-
-            isSaving = true;
-            zoneForm.setSaving(true);
-            const editableFields = form.find('input:enabled:not([type="hidden"]), select:enabled, textarea:enabled');
-            editableFields.prop('disabled', true);
-
-            unity.grantManager.applicants.applicant
-                .updateApplicantContactAddresses(applicantId, payload, { abpHandleError: false })
-                .done(function (result) {
-                    applySavedApplicantAddresses(result, form);
-                    updateAddressTableAfterSave(result, addressesTable);
-                    zoneForm.resetTracking();
-                    abp.notify.success('Addresses saved.');
-                    scheduleLayoutNotifications();
-                })
-                .fail(function (error) {
-                    abp.notify.error(error?.message || 'Failed to save addresses.');
-                })
-                .always(function () {
-                    editableFields.prop('disabled', false);
-                    isSaving = false;
-                    zoneForm.setSaving(false);
-                });
         });
     }
 
+    bindWidget();
+
+    $(document).on('click', '.applicant-address-edit-btn', function () {
+        ensureEditAddressModal().open({
+            id: $(this).data('address-id'),
+            applicantId: applicantId
+        });
+    });
 
     function buildSavePayload(zoneFormInstance, $form) {
         const modifiedFields = Array.from(zoneFormInstance.modifiedFields ?? []);
