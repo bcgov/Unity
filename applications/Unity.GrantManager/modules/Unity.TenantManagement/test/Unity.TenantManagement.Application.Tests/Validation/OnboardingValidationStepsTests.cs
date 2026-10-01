@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 using NSubstitute;
 using Shouldly;
 using Unity.TenantManagement;
+using Volo.Abp;
+using Volo.Abp.Data;
 using Volo.Abp.TenantManagement;
 using Xunit;
 
@@ -126,7 +128,7 @@ public class TenantNameUniquenessStepTests
     public async Task ValidateAsync_BlankTenantName_ReturnsFailureWithoutQueryingRepository()
     {
         var tenantRepository = Substitute.For<ITenantRepository>();
-        var step = new TenantNameUniquenessStep(tenantRepository);
+        var step = new TenantNameUniquenessStep(tenantRepository, Substitute.For<IDataFilter>());
 
         var result = await step.ValidateAsync(RequestWithTenantName("   "));
 
@@ -141,12 +143,31 @@ public class TenantNameUniquenessStepTests
         var existing = NewTenant("Acme");
         tenantRepository.FindByNameAsync("ACME", Arg.Any<bool>(), Arg.Any<System.Threading.CancellationToken>())
             .Returns(existing);
-        var step = new TenantNameUniquenessStep(tenantRepository);
+        var step = new TenantNameUniquenessStep(tenantRepository, Substitute.For<IDataFilter>());
 
         var result = await step.ValidateAsync(RequestWithTenantName("Acme"));
 
         result.IsValid.ShouldBeFalse();
         result.Issue.ShouldContain("Acme");
+        result.Issue.ShouldNotContain("deleted");
+    }
+
+    [Fact]
+    public async Task ValidateAsync_SoftDeletedTenantWithSameName_ReturnsDeletedTenantFailure()
+    {
+        var tenantRepository = Substitute.For<ITenantRepository>();
+        var dataFilter = Substitute.For<IDataFilter>();
+        var existing = NewTenant("Acme");
+        existing.IsDeleted = true;
+        tenantRepository.FindByNameAsync("ACME", Arg.Any<bool>(), Arg.Any<System.Threading.CancellationToken>())
+            .Returns(existing);
+        var step = new TenantNameUniquenessStep(tenantRepository, dataFilter);
+
+        var result = await step.ValidateAsync(RequestWithTenantName("Acme"));
+
+        result.IsValid.ShouldBeFalse();
+        result.Issue.ShouldContain("deleted tenant named 'Acme'");
+        dataFilter.Received(1).Disable<ISoftDelete>();
     }
 
     [Fact]
@@ -155,7 +176,7 @@ public class TenantNameUniquenessStepTests
         var tenantRepository = Substitute.For<ITenantRepository>();
         tenantRepository.FindByNameAsync(Arg.Any<string>(), Arg.Any<bool>(), Arg.Any<System.Threading.CancellationToken>())
             .Returns((Tenant)null);
-        var step = new TenantNameUniquenessStep(tenantRepository);
+        var step = new TenantNameUniquenessStep(tenantRepository, Substitute.For<IDataFilter>());
 
         var result = await step.ValidateAsync(RequestWithTenantName("Brand New Co"));
 

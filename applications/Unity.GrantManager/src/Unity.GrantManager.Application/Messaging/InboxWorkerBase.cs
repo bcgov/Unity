@@ -107,6 +107,7 @@ public abstract class InboxWorkerBase : QuartzBackgroundWorkerBase
         var outboxRepo = scope.ServiceProvider.GetRequiredService<IOutboxMessageRepository>();
         var unitOfWorkManager = scope.ServiceProvider.GetRequiredService<IUnitOfWorkManager>();
         var currentTenant = scope.ServiceProvider.GetRequiredService<ICurrentTenant>();
+        var tenantStore = scope.ServiceProvider.GetRequiredService<ITenantStore>();
         var handlers = scope.ServiceProvider.GetServices<IInboxMessageHandler>();
 
         Logger.LogInformation("Processing inbox message {MessageId} (source={Source}, dataType={DataType}, tenantId={TenantId})",
@@ -136,6 +137,14 @@ public abstract class InboxWorkerBase : QuartzBackgroundWorkerBase
                 details = $"Unknown command type: {inboxMsg.DataType}";
                 Logger.LogWarning("No handler registered for source {Source}, dataType {DataType}",
                     SourceName, inboxMsg.DataType);
+            }
+            else if (inboxMsg.TenantId.HasValue && await tenantStore.FindAsync(inboxMsg.TenantId.Value) == null)
+            {
+                // Deleted or purged tenant: switching into it would fall back to the host connection.
+                ackStatus = "FAILED";
+                details = "The target tenant no longer exists.";
+                Logger.LogWarning("Inbox message {MessageId} targets tenant {TenantId}, which no longer exists",
+                    inboxMsg.MessageId, inboxMsg.TenantId);
             }
             else
             {
