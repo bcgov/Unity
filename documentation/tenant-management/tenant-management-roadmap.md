@@ -18,7 +18,6 @@ None of these three read as bugs in isolation — each is a reasonable "create-o
 Deleting a tenant is two steps: `DeleteAsync` soft-deletes it, and `TenantAppService.PurgeAsync` drops its database, roles and host records (see [tenant-management-application-services.md](tenant-management-application-services.md)). Gaps that remain:
 
 - **Metabase is never deregistered.** The database connection, permissions group and collection created by the post-creation step stay behind. `MetabaseApiClient` has no delete calls, and the IDs it creates are not stored, so a safe delete would first need those IDs persisted — a name-based delete could hit another environment's resources where environments share one Metabase. Purge logs a warning when a post-creation step had succeeded.
-- **Soft-deleted tenants keep their resources until purged.** `TenantConnectionStringBuilder.GenerateCredentialsAsync`'s uniqueness check for the `T_XXX999` licence-plate stem only checks **currently-existing tenants'** `LicencePlate` extra property. A random collision (small but non-zero, given a 3-letter/3-digit space) with a soft-deleted, not-yet-purged tenant would land `CreateRoleIfNotExistsAsync` on the "role already exists" branch described above, silently keeping the old role's password.
 - **Seeded tenants can't be purged.** They have no `LicencePlate` and point at configured databases, so `PurgeAsync` refuses them; soft-deleting one also lets the DbMigrator seeder create a new copy beside it (`FindByNameAsync` ignores soft-deleted rows).
 
 ## Declared but unenforced permissions
