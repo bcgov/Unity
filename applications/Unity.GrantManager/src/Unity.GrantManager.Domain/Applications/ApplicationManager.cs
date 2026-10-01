@@ -222,10 +222,20 @@ public class ApplicationManager : DomainService, IApplicationManager
         return Workflow.GetWorkflowDiagram();
     }
 
-    public async Task<Application> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction)
+    public async Task<Application> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction, DateTime? finalDecisionDate = null, string? declineRational = null)
     {
         var application = await _applicationRepository.GetAsync(applicationId);
         var statusChange = application.ApplicationStatus.StatusCode;
+
+        if (finalDecisionDate != null)
+        {
+            application.ValidateAndSetFinalDecisionDate(finalDecisionDate);
+        }
+
+        if (!declineRational.IsNullOrEmpty())
+        {
+            application.SetDeclineRational(declineRational);
+        }
 
         if (triggerAction == GrantApplicationAction.Deny && application.DeclineRational.IsNullOrEmpty())
         {

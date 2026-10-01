@@ -1169,7 +1169,8 @@ public class GrantApplicationAppService(
     /// </summary>
     /// <param name="applicationId">The application</param>
     /// <param name="triggerAction">The action to be invoked on an Application</param>
-    public async Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction)
+    /// <param name="input">Optional values required by the target action</param>
+    public async Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction, TriggerActionInputDto? input = null)
     {
         if (await featureChecker.IsEnabledAsync(SpecializationConsts.Onboarding))
         {
@@ -1192,7 +1193,7 @@ public class GrantApplicationAppService(
             throw new UserFriendlyException(L["GrantApplication:ActionButton.RedStopWarning"]);
         }
 
-        application = await applicationManager.TriggerAction(applicationId, triggerAction);
+        application = await applicationManager.TriggerAction(applicationId, triggerAction, input?.FinalDecisionDate, input?.DeclineRational);
 
         // After the workflow state change, publish to the local event bus
         await LocalEventBus.PublishAsync(
