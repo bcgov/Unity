@@ -135,9 +135,7 @@ $(function () {
             return '';
         }
 
-        const label = row.addressType === 'Mailing'
-            ? l('ApplicantAddresses:PrimaryMailingBadge')
-            : l('ApplicantAddresses:PrimaryPhysicalBadge');
+        const label = l('ApplicantAddresses:PrimaryBadge', row.addressType);
 
         if (type !== 'display') {
             return label;
@@ -165,9 +163,7 @@ $(function () {
                                         data-address-id="${row.id}" disabled>${editLabel}</button>
                             </span>`;
 
-        const setPrimaryLabel = row.addressType === 'Mailing'
-            ? l('ApplicantAddresses:SetAsPrimaryMailing')
-            : l('ApplicantAddresses:SetAsPrimaryPhysical');
+        const setPrimaryLabel = l('ApplicantAddresses:SetAsPrimary', row.addressType);
         const setPrimaryDisabled = row.isPrimary ? 'disabled' : '';
 
         return `<div class="dropdown applicant-address-actions">

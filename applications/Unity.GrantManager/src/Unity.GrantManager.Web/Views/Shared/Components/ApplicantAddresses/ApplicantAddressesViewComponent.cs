@@ -105,18 +105,17 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
                 viewModel.PrimaryMailingAddress = MapPrimaryAddress(primaryMailingAddress);
             }
 
-            foreach (var addressId in new[] { primaryPhysicalAddress?.Id, primaryMailingAddress?.Id })
-            {
-                if (addressId is null)
-                {
-                    continue;
-                }
+            // Every address type has its own primary, including types without fields above the table.
+            var primaryAddressIds = orderedAddresses
+                .Select(address => address.AddressType)
+                .Distinct()
+                .Select(addressType => ApplicantAddressPrimaryResolver.Resolve(orderedAddresses, addressType)?.Id)
+                .OfType<Guid>()
+                .ToHashSet();
 
-                var row = viewModel.Addresses.Find(address => address.Id == addressId.Value);
-                if (row is not null)
-                {
-                    row.IsPrimary = true;
-                }
+            foreach (var row in viewModel.Addresses)
+            {
+                row.IsPrimary = primaryAddressIds.Contains(row.Id);
             }
 
             return View(viewModel);
