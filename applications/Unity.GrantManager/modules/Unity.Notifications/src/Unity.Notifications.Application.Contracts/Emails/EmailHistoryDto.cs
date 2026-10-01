@@ -7,6 +7,7 @@ namespace Unity.Notifications.Emails;
 public class EmailHistoryDto : ExtensibleAuditedEntityDto<Guid>
 {
     public string Subject { get; set; } = string.Empty;
+    public EmailType? EmailType { get; set; }
     public string Status { get; set; } = string.Empty;
     public string FromAddress { get; set; } = string.Empty;
     public string ToAddress { get; set; } = string.Empty;
@@ -15,6 +16,7 @@ public class EmailHistoryDto : ExtensibleAuditedEntityDto<Guid>
     public DateTime? SentDateTime { get; set; }
     public string Body { get; set; } = string.Empty;
     public EmailHistoryUserDto? SentBy { get; set; }
+    public Guid? TemplateId { get; set; }
     public string TemplateName { get; set; } = string.Empty;
     public DateTime? SendOnDateTime { get; set; }
     public Guid? ScheduledNotificationId { get; set; }

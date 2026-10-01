@@ -4104,7 +4104,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("RecipientCategory")
                         .HasColumnType("text");
@@ -4125,7 +4126,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)")
-                        .HasDefaultValue("Applicant");
+                        .HasDefaultValue("Application");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
