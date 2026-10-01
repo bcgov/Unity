@@ -34,23 +34,45 @@ public class EmailNotificationService(
         IFeatureChecker featureChecker,
         IConfiguration configuration,
         IMarkdownRenderer markdownRenderer,
-        IEmailAddressConfigurationsRepository emailAddressConfigurationsRepository) : ApplicationService, IEmailNotificationService
+        IEmailAddressConfigurationsRepository emailAddressConfigurationsRepository,
+        EmailComposerAccessChecker emailAccessChecker,
+        IEmailLogsRepository emailLogsRepository) : ApplicationService, IEmailNotificationService
 {
 
+    [Authorize(NotificationsPermissions.Email.Send)]
     public async Task<Guid> InitializeDraftAsync(Guid applicationId)
     {
+        await emailAccessChecker.CheckOwnerAsync(applicationId, Guid.Empty, NotificationsPermissions.Email.Send);
         var emailLog = await emailNotificationManager.CreateDraftEmailLogAsync(applicationId);
         return emailLog.Id;
     }
 
+    [Authorize]
     public async Task DeleteEmail(Guid id)
     {
+        var email = await emailLogsRepository.GetAsync(id);
+        // Closing an unsaved composer cleans up only the current user's empty draft.
+        var isUnsavedOwnDraft = email.Status == EmailStatus.Draft && email.CreatorId == CurrentUser.Id
+            && string.IsNullOrEmpty(email.Subject) && string.IsNullOrEmpty(email.Body);
+        var permission = email.Status == EmailStatus.Draft
+            ? (isUnsavedOwnDraft ? NotificationsPermissions.Email.Send : NotificationsPermissions.Email.DeleteDraft)
+            : NotificationsPermissions.Email.CancelScheduled;
+        await emailAccessChecker.CheckOwnerAsync(email.ApplicationId, email.ApplicantId, permission);
+        if (email.Status != EmailStatus.Draft && (!email.SendOnDateTime.HasValue || email.SendOnDateTime <= Clock.Now))
+        {
+            throw new BusinessException("Notifications:EmailNotScheduled");
+        }
         await emailNotificationManager.DeleteEmailLogAsync(id);
     }
 
-    [Authorize(NotificationsPermissions.Email.Send)]
+    [Authorize(NotificationsPermissions.Email.CancelScheduled)]
     public async Task CancelEmail(Guid id)
     {
+        var email = await emailAccessChecker.CheckEmailAsync(id, NotificationsPermissions.Email.CancelScheduled);
+        if (!email.SendOnDateTime.HasValue || email.SendOnDateTime <= Clock.Now)
+        {
+            throw new BusinessException("Notifications:EmailNotScheduled");
+        }
         await emailNotificationManager.CancelEmailLogAsync(id);
     }
 
@@ -59,20 +81,22 @@ public class EmailNotificationService(
         return await emailNotificationManager.GetPendingEmailsCountAsync();
     }
 
-    public async Task<EmailLog?> UpdateEmailLog(Guid emailId, EmailMessageParams email, Guid applicationId, string? status)
+    [RemoteService(false)]
+    public async Task<EmailLog?> UpdateEmailLog(Guid emailId, EmailMessageParams email, Guid applicationId, string? status, Guid applicantId = default)
     {
-        return await emailNotificationManager.UpdateEmailLogAsync(emailId, email, applicationId, status);
+        return await emailNotificationManager.UpdateEmailLogAsync(emailId, email, applicationId, status, applicantId);
     }
 
+    [RemoteService(false)]
     public async Task<EmailLog?> InitializeEmailLog(EmailMessageParams email, Guid applicationId)
     {
         return await emailNotificationManager.CreateEmailLogAsync(email, applicationId);
     }
 
     [RemoteService(false)]
-    public async Task<EmailLog?> InitializeEmailLog(EmailMessageParams email, Guid applicationId, string? status)
+    public async Task<EmailLog?> InitializeEmailLog(EmailMessageParams email, Guid applicationId, string? status, Guid applicantId = default)
     {
-        return await emailNotificationManager.CreateEmailLogAsync(email, applicationId, status);
+        return await emailNotificationManager.CreateEmailLogAsync(email, applicationId, status, applicantId: applicantId);
     }
 
     protected virtual async Task NotifyTeamsChannel(string chesEmailError)
@@ -178,6 +202,7 @@ public class EmailNotificationService(
     /// <param name="emailCC">CC email addresses</param>
     /// <param name="emailBCC">BCC email addresses</param>
     /// <returns>HttpResponseMessage indicating the result of the operation</returns>
+    [RemoteService(false)]
     public async Task<HttpResponseMessage> SendEmailNotification(EmailMessageParams email, string? emailBodyType = null)
     {
         return await emailNotificationManager.SendEmailAsync(email, emailBodyType);
@@ -194,6 +219,7 @@ public class EmailNotificationService(
         return await emailNotificationManager.SendEmailAsync(emailLog);
     }
 
+    [RemoteService(false)]
     public async Task<EmailLog?> GetEmailLogById(Guid id)
     {
         return await emailNotificationManager.GetEmailLogByIdAsync(id);
@@ -203,7 +229,25 @@ public class EmailNotificationService(
     public virtual async Task<List<EmailHistoryDto>> GetHistoryByApplicationId(Guid applicationId)
     {
         var entityList = await emailNotificationManager.GetEmailLogsByApplicationIdAsync(applicationId);
+        return await MapEmailHistoryAsync(entityList);
+    }
+
+    [Authorize(NotificationsPermissions.Email.Default)]
+    public virtual async Task<List<EmailHistoryDto>> GetHistoryByApplicantId(Guid applicantId)
+    {
+        await emailAccessChecker.CheckOwnerAsync(Guid.Empty, applicantId, NotificationsPermissions.Email.Default);
+        return await MapEmailHistoryAsync(await emailLogsRepository.GetByApplicantIdAsync(applicantId));
+    }
+
+    private async Task<List<EmailHistoryDto>> MapEmailHistoryAsync(List<EmailLog> entityList)
+    {
         var dtoList = ObjectMapper.Map<List<EmailLog>, List<EmailHistoryDto>>(entityList);
+
+        var templatesByEmail = entityList.ToDictionary(e => e.Id, EmailOwnership.GetTemplateId);
+        foreach (var dto in dtoList)
+        {
+            dto.TemplateId = templatesByEmail[dto.Id];
+        }
 
         var sentByUserIds = dtoList
             .Where(d => d.CreatorId.HasValue)
@@ -237,6 +281,7 @@ public class EmailNotificationService(
     /// Send Email To Queue
     /// </summary>
     /// <param name="emailLog">The email log to send to queue</param>
+    [RemoteService(false)]
     public async Task SendEmailToQueue(EmailLog emailLog)
     {
         await emailNotificationManager.QueueEmailAsync(emailLog);

@@ -22,6 +22,9 @@
     var hasHistory          = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.History.Default);
     var hasPayments         = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Payments.Default);
 
+    var hasEmail = await FeatureChecker.IsEnabledAsync("Unity.Notifications")
+        && await PermissionChecker.IsGrantedAsync("Notifications.Email");
+
     // Set the first tab to display based on permissions
     string firstTab = "nav-submissions";
     if (hasApplicantInfo)  firstTab = "nav-organization-info";
@@ -78,6 +81,8 @@
 <input type="hidden" id="CurrentUserName" value="@Model.CurrentUserName" />
 <input type="hidden" id="AllowedFileTypes" value="@Model.AllowedFileTypes" />
 <input type="hidden" id="MaxFileSize" value="@Model.MaxFileSize" />
+<input type="hidden" id="EmailAttachmentMaxFileSize" value="@Model.EmailAttachmentMaxFileSize" />
+<input type="hidden" id="TotalEmailAttachmentMaxFileSize" value="@Model.TotalEmailAttachmentMaxFileSize" />
 
 @if (Model.ApplicantIsDeleted)
 {
@@ -193,9 +198,14 @@ else
                 <li class="nav-item">
                     <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="details" aria-selected="true">Details</button>
                 </li>
-                <li class="nav-item">
-                    <button class="nav-link" id="emails-tab" data-bs-toggle="tab" data-bs-target="#emails" type="button" role="tab" aria-controls="emails" aria-selected="true">Email</button>
-                </li>
+                @if (hasEmail)
+                {
+                    <li class="nav-item">
+                        <button class="nav-link" id="emails-tab" data-bs-toggle="tab" data-bs-target="#emails" type="button" role="tab" aria-controls="emails" aria-selected="false" aria-label="@L["Applicant:Email"]">
+                            <i class="fl fl-emails" aria-hidden="true"></i> (<span id="applicant_emails_count">0</span>)
+                        </button>
+                    </li>
+                }
                 <li class="nav-item">
                     <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab" aria-controls="comments" aria-selected="true">
                         <i class="fl fl-comments" aria-hidden="true"></i> (<span id="application_comments_count">0</span>)
@@ -226,14 +236,17 @@ else
                 @*-------- Details Tab Section END ---------*@
 
                 @*-------- Emails Tab Section ---------*@
-                <div class="tab-pane fade" id="emails" role="tabpanel" aria-labelledby="emails-tab">
-                    <div id="applicantEmails">
-                        <div class="px-3 pt-4 pb-2">
-                            <h6 class="fw-bold">Emails</h6> 
-                            <h6>Under Construction</h6>
+                @if (hasEmail)
+                {
+                    <div class="tab-pane fade" id="emails" role="tabpanel" aria-labelledby="emails-tab">
+                        <div class="px-2 pb-2 emails-widget-scope" id="applicantEmailsWidget">
+                            @await Component.InvokeAsync("EmailsWidget", new { applicationId = Guid.Empty, applicantId = Model.ApplicantId, currentUserId = Model.CurrentUserId })
+                        </div>
+                        <div class="px-3 pt-4 pb-2" id="applicantEmailHistoryWidget">
+                            @await Component.InvokeAsync("EmailHistoryWidget", new { applicantId = Model.ApplicantId, applicantName = Model.ApplicantDisplayName, unityApplicantId = Model.UnityApplicantId })
                         </div>
                     </div>
-                </div>
+                }
                 @*-------- Emails Tab Section END ---------*@
 
                 @*-------- Comments Tab Section ---------*@

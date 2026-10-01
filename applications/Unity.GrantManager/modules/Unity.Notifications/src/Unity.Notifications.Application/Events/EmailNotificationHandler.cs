@@ -73,6 +73,10 @@ namespace Unity.GrantManager.Events
                         ex,
                         "Email notification skipped because one or more attachments are missing for event {EventId}.",
                         eventData.Id);
+                    if (eventData.Action == EmailAction.SendCustom || eventData.Action == EmailAction.SaveDraft)
+                    {
+                        throw;
+                    }
                 }
             }
         }
@@ -86,7 +90,8 @@ namespace Unity.GrantManager.Events
             string? EmailTemplateName,
             string? EmailCC = null,
             string? EmailBCC = null,
-            DateTime? SendOnDateTime = null);
+            DateTime? SendOnDateTime = null,
+            Guid ApplicantId = default);
 
         private bool HasRecipients(EmailNotificationEvent eventData, string actionName)
         {
@@ -126,9 +131,9 @@ namespace Unity.GrantManager.Events
             };
         }
 
-        private async Task<EmailLog> InitializeEmailAndUploadAttachments(EmailInitParams p, List<EmailAttachmentData>? emailAttachments = null)
+        private async Task<EmailLog> InitializeEmailAndUploadAttachments(EmailInitParams p, List<EmailAttachmentData>? emailAttachments = null, string status = EmailStatus.Initialized)
         {
-            EmailLog emailLog = await InitializeEmail(p, EmailStatus.Initialized);
+            EmailLog emailLog = await InitializeEmail(p, status);
 
             try
             {
@@ -164,7 +169,7 @@ namespace Unity.GrantManager.Events
                                                     new EmailMessageParams(p.EmailTo, p.Body, p.Subject,
                                                         p.EmailFrom, p.EmailTemplateName, p.EmailCC, p.EmailBCC, p.SendOnDateTime),
                                                     p.ApplicationId,
-                                                    status) ?? throw new UserFriendlyException("Unable to Initialize Email Log");
+                                                    status, p.ApplicantId) ?? throw new UserFriendlyException("Unable to Initialize Email Log");
             return emailLog;
         }
 
@@ -238,14 +243,18 @@ namespace Unity.GrantManager.Events
                 to, eventData.Body, eventData.Subject,
                 eventData.EmailFrom, eventData.EmailTemplateName, cc, bcc, eventData.SendOnDateTime);
 
-            var emailLog = await CreateOrUpdateEmail(eventData.Id, messageParams, eventData.ApplicationId, eventData.EmailAttachments, EmailStatus.Initialized);
+            var emailLog = await CreateOrUpdateEmail(eventData.Id, messageParams, eventData.ApplicationId, eventData.EmailAttachments, EmailStatus.Initialized, eventData.ApplicantId);
             
             if (emailLog == null)
             {
                 return null;
             }
 
-            emailLog.EmailType = GetEmailType(eventData.Action);
+            emailLog.EmailType = GetEmailType(eventData.Action, eventData.SendOnDateTime);
+            if (eventData.TemplateId != Guid.Empty)
+            {
+                EmailOwnership.SetTemplateId(emailLog, eventData.TemplateId);
+            }
             
             if (eventData.ScheduledNotificationId.HasValue && !emailLog.ScheduledNotificationId.HasValue)
             {
@@ -253,7 +262,8 @@ namespace Unity.GrantManager.Events
                 await emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
             }
 
-            if (eventData.TemplateId != Guid.Empty)
+            // Existing manual drafts already own their attachment snapshot, including user removals.
+            if (eventData.TemplateId != Guid.Empty && (eventData.Action != EmailAction.SendCustom || eventData.Id == Guid.Empty))
             {
                 try
                 {
@@ -294,7 +304,8 @@ namespace Unity.GrantManager.Events
             EmailMessageParams messageParams,
             Guid applicationId,
             List<EmailAttachmentData>? attachments,
-            string status)
+            string status,
+            Guid applicantId = default)
         {
             if (emailId == Guid.Empty)
             {
@@ -308,8 +319,8 @@ namespace Unity.GrantManager.Events
                         messageParams.EmailTemplateName,
                         messageParams.EmailCC,
                         messageParams.EmailBCC,
-                        messageParams.SendOnDateTime),
-                    attachments);
+                        messageParams.SendOnDateTime, applicantId),
+                    attachments, status);
             }
 
             var existingEmail = await emailLogsRepository.FindAsync(emailId);
@@ -319,7 +330,7 @@ namespace Unity.GrantManager.Events
                     emailId,
                     messageParams,
                     applicationId,
-                    status);
+                    status, applicantId);
             }
             
             return await InitializeEmailAndUploadAttachments(
@@ -332,8 +343,8 @@ namespace Unity.GrantManager.Events
                     messageParams.EmailTemplateName,
                     messageParams.EmailCC,
                     messageParams.EmailBCC,
-                    messageParams.SendOnDateTime),
-                attachments);
+                    messageParams.SendOnDateTime, applicantId),
+                attachments, status);
         }
 
         private async Task<EmailLog> StampClassificationAsync(EmailLog emailLog)
@@ -373,10 +384,14 @@ namespace Unity.GrantManager.Events
                 to, eventData.Body, eventData.Subject,
                 eventData.EmailFrom, eventData.EmailTemplateName, cc, bcc, eventData.SendOnDateTime);
 
-            var emailLog = await CreateOrUpdateEmail(eventData.Id, messageParams, eventData.ApplicationId, null, EmailStatus.Draft);
+            var emailLog = await CreateOrUpdateEmail(eventData.Id, messageParams, eventData.ApplicationId, null, EmailStatus.Draft, eventData.ApplicantId);
             
             if (emailLog != null)
             {
+                if (eventData.TemplateId != Guid.Empty)
+                {
+                    EmailOwnership.SetTemplateId(emailLog, eventData.TemplateId);
+                }
                 await StampClassificationAsync(emailLog);
             }
             
