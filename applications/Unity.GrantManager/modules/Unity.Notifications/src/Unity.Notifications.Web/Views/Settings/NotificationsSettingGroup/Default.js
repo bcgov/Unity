@@ -28,11 +28,27 @@ $(function () {
     let dropdownItems = [];
     let emailAttachmentsTable = null;
     let templatesDataTable = null;
+    // Read the limit from the input's maxlength (rendered from EmailTemplateConsts.MaxNameLength) so it is defined in one place
+    const TEMPLATE_NAME_MAX_LENGTH = Number.parseInt($('#templateName').attr('maxlength'), 10) || 50;
     let originalFormValues = {};
     let attachmentChangesPending = false;
     let defaultSendFromAddress = '';
     let templateVariableRequestVersion = 0;
     let editorInitializationPromise = Promise.resolve();
+
+    // Attach the shared character counter (CharacterCounter.js) to inputs with data-char-count in the templates tab.
+    // The script is loaded by the Configuration Management page
+    function initializeTemplateNameCounter() {
+        if (window.UnityCharacterCounter) {
+            UnityCharacterCounter.init('#nav-template');
+        }
+    }
+
+    // Using this instead of $('#templateName').val() so the counter stays in sync: the counter only listens for 'input',
+    // which is not raised when a value is set from code. The triggered event also clears any template name error.
+    function setTemplateName(value) {
+        $('#templateName').val(value).trigger('input');
+    }
 
     function init() {
         $('#email-attachments-section').hide();
@@ -40,12 +56,13 @@ $(function () {
         initializeSenderAddressSelector();
         loadActiveEmailAddresses();
         initializeTooltips();
+        initializeTemplateNameCounter();
         initializeTemplateDataTables();
         initializeDivider();
         initializeTabPersistence();
         initializeRecipientSelect();
         checkFormChanges();
-    }      
+    }
 
     function loadActiveEmailAddresses() {
         unity.notifications.emailAddresses.emailAddressConfigurations.getList().then(function (addresses) {
@@ -312,12 +329,12 @@ $(function () {
     // ── Tab State Persistence ─────────────────────────────────────────────
     function initializeTabPersistence() {
         const tabContainer = $('#nav-tab');
-        
+
         // Save tab selection when tab changes
         tabContainer.on('shown.bs.tab', 'button[data-bs-toggle="tab"]', function () {
             localStorage.setItem('notifications-active-tab', this.id);
         });
-        
+
         // Handle Templates tab visibility - redraw and reinitialize if needed
         const templateTabButton = tabContainer.find('#nav-template-tab');
         if (templateTabButton.length) {
@@ -331,7 +348,7 @@ $(function () {
                 }
             });
         }
-        
+
         // Restore saved tab on page load - but delay to ensure DOM is ready
         const savedTabId = localStorage.getItem('notifications-active-tab');
         if (savedTabId) {
@@ -463,7 +480,7 @@ $(function () {
     });
 
     // ── Open / close right panel ──────────────────────────────────────────
-    function openRightPanel() {           
+    function openRightPanel() {
         // Activate split layout
         $('#splitContainer').addClass('split-active');
         $('#rightPane').show();
@@ -500,14 +517,14 @@ $(function () {
             recipientCategory: data.recipientCategory || '',
             recipientIdentifier: data.recipientIdentifier || ''
         };
-        
+
         $('#templateId').val(data.id);
-        $('#templateName').val(data.name);
+        setTemplateName(data.name);
         $('#templateType').val(data.templateType || 'Application');
         setSendFromValue(data.sendFrom);
         $('#subject').val(data.subject);
         $('#templateRecipientCategory').val(data.recipientCategory || '');
-        
+
         // Load recipients if category is set
         if (data.recipientCategory) {
             fetchRecipients(data.recipientCategory)
@@ -523,12 +540,12 @@ $(function () {
             $('#templateRecipientSelect').empty();
             setSelectedTemplateRecipients([]);
         }
-        
+
         UiElements.deleteButton.show();
         $('#email-attachments-section').show();
         attachmentChangesPending = false;
         initEmailAttachmentsTable(data.id);
-        
+
         // Recalculate table columns after initialization
         if (emailAttachmentsTable) {
             setTimeout(() => {
@@ -551,9 +568,9 @@ $(function () {
             recipientCategory: '',
             recipientIdentifier: ''
         };
-        
+
         $('#templateId').val('');
-        $('#templateName').val('');
+        setTemplateName('');
         $('#templateType').val('Application');
         setSendFromValue('');
         $('#subject').val('');
@@ -568,17 +585,17 @@ $(function () {
     UiElements.discardButton.on('click', function () {
         if (Object.keys(originalFormValues).length > 0) {
             $('#templateId').val(originalFormValues.id);
-            $('#templateName').val(originalFormValues.name);
+            setTemplateName(originalFormValues.name);
             $('#templateType').val(originalFormValues.templateType || 'Application');
             setSendFromValue(originalFormValues.sendFrom);
             $('#subject').val(originalFormValues.subject);
             $('#templateRecipientCategory').val(originalFormValues.recipientCategory || '');
-            
+
             const editor = tinymce.get('templateBody');
             if (editor) {
                 editor.setContent(originalFormValues.bodyHTML || '');
             }
-            
+
             // Restore recipients
             if (originalFormValues.recipientCategory) {
                 fetchRecipients(originalFormValues.recipientCategory)
@@ -619,6 +636,11 @@ $(function () {
         if (!templateName?.trim()) {
             validationErrors.push('Template name is required.');
             markFieldError('templateName', 'Template name is required.');
+        } else if (templateName.length > TEMPLATE_NAME_MAX_LENGTH) {
+            // Fallback for values that bypass maxlength, such as names set programmatically
+            const lengthMessage = `Template name must be ${TEMPLATE_NAME_MAX_LENGTH} characters or fewer.`;
+            validationErrors.push(lengthMessage);
+            markFieldError('templateName', lengthMessage);
         }
         if (!sendFrom?.trim()) {
             validationErrors.push('Send From is required.');
@@ -785,10 +807,10 @@ $(function () {
         // Populate fields with empty values for new template
         populateFieldsForNewTemplate();
         initializeTemplateEditor({ bodyHTML: '', templateType: 'Application' });
-        
+
         // Highlight nothing in the table
         $('#TemplatesTable tbody tr').removeClass('template-selected');
-        
+
         // Open right panel
         openRightPanel();
     });
@@ -858,7 +880,7 @@ $(function () {
         initiateTemplateDelete(templateId);
     });
 
-    function initializeTemplateDataTables() {                
+    function initializeTemplateDataTables() {
         // ── Table columns ────────────────────────────────────────────────────────
         const listColumns = [
             {
@@ -867,7 +889,7 @@ $(function () {
                 data: 'id',
                 visible: false,
                 index: 0
-            },        
+            },
             {
                 title: 'Name',
                 name: 'name',
@@ -910,14 +932,14 @@ $(function () {
                         </div>
                     `;
                 }
-            }       
+            }
         ];
 
-        const responseCallback = (result) => (        
-            {        
-                recordsTotal:    result.length,
+        const responseCallback = (result) => (
+            {
+                recordsTotal: result.length,
                 recordsFiltered: result.length,
-                data:            result
+                data: result
             }
         );
 
@@ -959,12 +981,12 @@ $(function () {
                     if (rowData) {
                         initializeTemplateEditor(rowData);
                         populateFields(rowData);
-                        
+
                         // Highlight selected row
                         $('#TemplatesTable tbody tr').removeClass('template-selected');
                         $row.addClass('template-selected');
                         openRightPanel();
-                        
+
                         // Publish event for pub/sub listeners
                         PubSub.publish('template_selected_from_email_editor', {
                             templateId: templateId
@@ -979,20 +1001,20 @@ $(function () {
         let hasCheckedAutoSelect = false;
         $('#TemplatesTable').on('draw.dt', function () {
             if (hasCheckedAutoSelect) return; // Only check once
-            
+
             const templateToSelectId = localStorage.getItem('notifications-template-to-select');
             if (!templateToSelectId) return;
-            
+
             hasCheckedAutoSelect = true;
             localStorage.removeItem('notifications-template-to-select');
-            
+
             // Ensure Templates tab is active
             const templateTab = document.getElementById('nav-template-tab');
             if (templateTab && !templateTab.classList.contains('active')) {
                 const tab = new bootstrap.Tab(templateTab);
                 tab.show();
             }
-            
+
             // Wait for tab transition to complete, then find and select the template
             setTimeout(() => {
                 selectTemplateById(templateToSelectId);
@@ -1013,7 +1035,7 @@ $(function () {
 
             // Highlight selected row
             $('#TemplatesTable tbody tr').removeClass('template-selected');
-            $(this).addClass('template-selected');            
+            $(this).addClass('template-selected');
             openRightPanel();
         });
 
@@ -1021,12 +1043,12 @@ $(function () {
         $('#TemplatesTable').on('click', '.template-edit-btn', function (e) {
             e.stopPropagation();
             const rowData = templatesDataTable.row($(this).closest('tr')).data();
-            
+
             if (!rowData) return;
-            
+
             initializeTemplateEditor(rowData);
             populateFields(rowData);
-            
+
             // Highlight selected row
             $('#TemplatesTable tbody tr').removeClass('template-selected');
             $(this).closest('tr').addClass('template-selected');
@@ -1327,19 +1349,19 @@ $(function () {
 
     // ── Draggable divider ─────────────────────────────────────────────────────
     function initializeDivider() {
-        
-        const $divider   = $('#divider');
-        const $leftPane  = $('#leftPane');
+
+        const $divider = $('#divider');
+        const $leftPane = $('#leftPane');
         const $rightPane = $('#rightPane');
         const $container = $('#splitContainer');
 
-        let isDragging     = false;
-        let dragStartX     = 0;
-        let dragStartLeft  = 0;
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartLeft = 0;
 
         $divider.on('mousedown', function (e) {
-            isDragging    = true;
-            dragStartX    = e.clientX;
+            isDragging = true;
+            dragStartX = e.clientX;
             dragStartLeft = $leftPane.width();
             $divider.addClass('dragging');
             $('body').addClass('split-dragging');
@@ -1349,21 +1371,21 @@ $(function () {
         $(document).on('mousemove.splitDrag', function (e) {
             if (!isDragging) return;
 
-            const totalWidth  = $container.width();
-            const dividerW    = $divider.outerWidth();
-            const delta       = e.clientX - dragStartX;
-            let   newLeft     = dragStartLeft + delta;
-            const minLeft     = totalWidth * 0.2;
-            const maxLeft     = totalWidth * 0.8 - dividerW;
+            const totalWidth = $container.width();
+            const dividerW = $divider.outerWidth();
+            const delta = e.clientX - dragStartX;
+            let newLeft = dragStartLeft + delta;
+            const minLeft = totalWidth * 0.2;
+            const maxLeft = totalWidth * 0.8 - dividerW;
 
             newLeft = Math.max(minLeft, Math.min(maxLeft, newLeft));
 
-            const leftPct  = (newLeft / totalWidth * 100).toFixed(2);
+            const leftPct = (newLeft / totalWidth * 100).toFixed(2);
             const rightPct = ((totalWidth - newLeft - dividerW) / totalWidth * 100).toFixed(2);
 
             $leftPane.css('flex', `0 0 ${leftPct}%`);
             $rightPane.css({ 'flex': 'none', 'width': rightPct + '%' });
-            
+
             // Recalculate table columns while dragging
             if (emailAttachmentsTable) {
                 emailAttachmentsTable.columns.adjust();
@@ -1375,7 +1397,7 @@ $(function () {
                 isDragging = false;
                 $divider.removeClass('dragging');
                 $('body').removeClass('split-dragging');
-                
+
                 // Final recalculation after dragging completes
                 if (emailAttachmentsTable) {
                     emailAttachmentsTable.columns.adjust().draw();
@@ -1424,13 +1446,13 @@ $(function () {
 
 function initializeEditor(data, dropdownItems) {
     const templateId = 'templateBody';
-    
+
     // Remove existing editor instance if it exists
     const existingEditor = tinymce.get(templateId);
     if (existingEditor) {
         tinymce.remove(existingEditor);
     }
-    
+
     return tinymce.init({
         license_key: 'gpl',
         selector: `#${templateId}`,
@@ -1444,7 +1466,7 @@ function initializeEditor(data, dropdownItems) {
         promotion: false,
         content_css: false,
         skin: false,
-        setup: function (editor) {                
+        setup: function (editor) {
             setupEditor(editor, templateId, templateId, data, dropdownItems);
         }
     });
@@ -1469,9 +1491,9 @@ function setupEditor(editor, id, editorId, data, dropdownItems) {
         editor.mode.set('design');
         if (data?.bodyHTML !== undefined) {
             editor.setContent(data.bodyHTML);
-        }    
+        }
     });
-}    
+}
 
 function fetchVariablesMenuItems(dropdownItems, editor) {
     return function (callback) {

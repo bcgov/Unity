@@ -25,8 +25,9 @@
     {
         <abp-style src="/Views/Settings/NotificationsSettingGroup/Default.css" />
     }
-    @if (Model.ShowProgramDetails)
+    @if (Model.ShowProgramDetails || Model.ShowNotifications)
     {
+        @* Holds the shared .char-counter styles used by Program Details and the email template editor *@
         <abp-style src="/Views/Settings/ProgramDetails/ProgramDetails.css" />
     }
 }
@@ -36,6 +37,12 @@
     @if (Model.ShowPayments)
     {
         <abp-script src="/Pages/ConfigurationManagement/PaymentConfigurations.js" />
+    }
+    @if (Model.ShowProgramDetails || Model.ShowNotifications)
+    {
+        @* Shared character counter used by Program Details and the email template editor.
+           Loaded before the Notifications and Program Details scripts, which call UnityCharacterCounter.init *@
+        <abp-script src="/Views/Settings/ProgramDetails/CharacterCounter.js" />
     }
     @if (Model.ShowNotifications)
     {
@@ -52,7 +59,6 @@
     }
     @if (Model.ShowProgramDetails)
     {
-        <abp-script src="/Views/Settings/ProgramDetails/CharacterCounter.js" />
         <abp-script src="/Views/Settings/ProgramDetails/ProgramDetails.js" />
     }
 }
