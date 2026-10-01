@@ -11,6 +11,7 @@ $(function () {
     let zoneForm = null;
     let isSaving = false;
     let savedOrder = null;
+    let editAddressModal = null;
     const PHYSICAL_ADDRESS_FIELDS = new Set([
         'PrimaryPhysicalAddress.Street',
         'PrimaryPhysicalAddress.Street2',
@@ -106,8 +107,72 @@ $(function () {
                 width: '13%',
                 render: renderTableLink,
                 targets: 6
+            },
+            {
+                title: '',
+                data: null,
+                orderable: false,
+                searchable: false,
+                width: '48px',
+                className: 'text-center',
+                render: renderActions,
+                targets: 7
             }
         ];
+    }
+
+    function renderActions(data, type, row) {
+        if (!canEdit) {
+            return row.isEditable ? '' : renderSourceInfo();
+        }
+
+        // A submission-linked row has no action available in this story, so the bare icon is
+        // the right affordance. AB#33875 removes this branch: once Set as Primary applies to
+        // those rows the menu becomes correct and the tooltip moves onto a disabled Edit item.
+        if (!row.isEditable) {
+            return renderSourceInfo();
+        }
+
+        return `<div class="dropdown applicant-address-actions">
+                    <button type="button"
+                            class="btn btn-sm btn-link p-0 applicant-address-menu-btn"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                            data-address-id="${row.id}">
+                        <i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <button class="dropdown-item applicant-address-edit-btn"
+                                    data-address-id="${row.id}">${l('Common:Command:Edit')}</button>
+                        </li>
+                    </ul>
+                </div>`;
+    }
+
+    function renderSourceInfo() {
+        const escaped = abp.utils.htmlEscape(l('GrantManager:AddressNotEditable'));
+        return `<span class="applicant-address-source-info"
+                      data-bs-toggle="tooltip"
+                      data-bs-placement="left"
+                      title="${escaped}">
+                    <i class="fa-solid fa-circle-info text-muted" aria-hidden="true"></i>
+                    <span class="visually-hidden">${escaped}</span>
+                </span>`;
+    }
+
+    function ensureEditAddressModal() {
+        if (editAddressModal) {
+            return editAddressModal;
+        }
+
+        editAddressModal = new abp.ModalManager(abp.appPath + 'ApplicantAddress/EditModal');
+        editAddressModal.onResult(function () {
+            abp.notify.success(l('ApplicantAddresses:AddressSaved'));
+            refreshWidget();
+        });
+
+        return editAddressModal;
     }
 
     function initializeAddressesTable(order) {
@@ -255,6 +320,13 @@ $(function () {
     }
 
     bindWidget();
+
+    $(document).on('click', '.applicant-address-edit-btn', function () {
+        ensureEditAddressModal().open({
+            id: $(this).data('address-id'),
+            applicantId: applicantId
+        });
+    });
 
     function buildSavePayload(zoneFormInstance, $form) {
         const modifiedFields = Array.from(zoneFormInstance.modifiedFields ?? []);

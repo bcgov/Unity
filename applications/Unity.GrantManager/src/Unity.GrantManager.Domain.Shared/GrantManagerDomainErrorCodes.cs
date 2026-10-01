@@ -42,6 +42,7 @@ public static class GrantManagerDomainErrorCodes
     public const string PhysicalAddressAlreadyExists = "GrantManager:PhysicalAddressAlreadyExists";
     public const string MailingAddressAlreadyExists = "GrantManager:MailingAddressAlreadyExists";
     public const string AddressNotEditable = "GrantManager:AddressNotEditable";
+    public const string AddressStreetRequired = "GrantManager:AddressStreetRequired";
 
     /* APPLICANT MERGE */
     public const string ApplicantMergeSameApplicant = "GrantManager:ApplicantMergeSameApplicant";

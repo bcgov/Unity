@@ -226,9 +226,7 @@ public class ApplicantAddressManager(
 
         if (string.IsNullOrWhiteSpace(input.Street) && string.IsNullOrWhiteSpace(input.Street2))
         {
-            throw new BusinessException(addressType == AddressType.PhysicalAddress
-                ? GrantManagerDomainErrorCodes.PhysicalAddressStreetRequired
-                : GrantManagerDomainErrorCodes.MailingAddressStreetRequired);
+            throw new BusinessException(GrantManagerDomainErrorCodes.AddressStreetRequired);
         }
 
         var previousAddressType = address.AddressType;

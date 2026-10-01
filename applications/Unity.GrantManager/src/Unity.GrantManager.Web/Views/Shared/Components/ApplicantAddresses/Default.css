@@ -96,3 +96,60 @@
 .mailing-address-form {
     flex: 1;
 }
+
+.applicant-address-edit-form > .mb-3,
+.applicant-address-edit-form > .form-check,
+.applicant-address-edit-form > .abp-input,
+.applicant-address-edit-form > .abp-select {
+    width: 100%;
+}
+
+.applicant-addresses-widget .applicant-address-source-info {
+    display: inline-flex;
+    align-items: center;
+    cursor: help;
+    color: var(--bc-colors-grey-text-300);
+    font-size: 1rem;
+}
+
+.applicant-addresses-widget .applicant-address-source-info:hover {
+    color: var(--bc-colors-blue-text-links);
+}
+
+.applicant-addresses-widget .applicant-address-menu-btn {
+    border: none;
+    box-shadow: none;
+    outline: none;
+    transition: none;
+    text-decoration: none;
+    color: var(--bc-colors-grey-text-300);
+}
+
+.applicant-addresses-widget .applicant-address-menu-btn:hover,
+.applicant-addresses-widget .applicant-address-menu-btn:focus {
+    border: none;
+    box-shadow: none;
+    outline: none;
+    text-decoration: none;
+    color: var(--bc-colors-blue-text-links);
+}
+
+.applicant-addresses-widget .applicant-address-edit-btn {
+    border: none;
+    box-shadow: none;
+    outline: none;
+    transition: none;
+}
+
+.applicant-addresses-widget .applicant-address-edit-btn:hover,
+.applicant-addresses-widget .applicant-address-edit-btn:focus {
+    border: none;
+    box-shadow: none;
+    outline: none;
+}
+
+.applicant-addresses-widget #ApplicantAddressesTable td:last-child,
+.applicant-addresses-widget #ApplicantAddressesTable th:last-child {
+    text-align: center;
+    white-space: nowrap;
+}
