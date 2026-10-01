@@ -85,4 +85,11 @@ public interface IApplicantAddressManager
     /// eligible: the editability restriction covers editing an address, not designating one.
     /// </summary>
     Task SetPrimaryAsync(Guid applicantId, Guid addressId);
+
+    /// <summary>
+    /// True when the address is the applicant's primary address for its own
+    /// <see cref="AddressType"/>: flagged explicitly, or selected by
+    /// <see cref="ApplicantAddressPrimaryResolver"/> when no address of that type is flagged.
+    /// </summary>
+    Task<bool> IsResolvedPrimaryAsync(Guid applicantId, ApplicantAddress address);
 }

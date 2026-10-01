@@ -56,5 +56,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
         /// form and is not editable from the applicant profile.
         /// </summary>
         public bool IsEditable => !ApplicationId.HasValue;
+        /// <summary>
+        /// True when this row is the applicant's primary address for its own address type,
+        /// either flagged explicitly or resolved as the fallback.
+        /// </summary>
+        public bool IsPrimary { get; set; }
     }
 }

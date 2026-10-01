@@ -88,6 +88,7 @@ function widget({ addresses = [], values = {}, canEdit = true } = {}) {
     widgetRoot.parent = () => ({ html() {} });
     const documentNode = element('#document');
     nodes.set('#ApplicantAddressesTable [data-bs-toggle="tooltip"]', collection([]));
+    nodes.set('#ApplicantAddressesTable .applicant-address-menu-btn', collection([]));
     // The widget's initial `let widgetRoot = $();` calls $ with no selector, the way jQuery
     // returns an empty set for a no-argument call.
     nodes.set(undefined, collection([]));
@@ -170,7 +171,10 @@ function widget({ addresses = [], values = {}, canEdit = true } = {}) {
                     .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
             }
         },
-        bootstrap: { Tooltip: { getInstance: () => null, getOrCreateInstance() {} } },
+        bootstrap: {
+            Tooltip: { getInstance: () => null, getOrCreateInstance() {} },
+            Dropdown: { getOrCreateInstance() {} }
+        },
         unity: { grantManager: { applicants: { applicant: {
             updateApplicantContactAddresses(applicant, payload) {
                 calls.push({ applicant, payload });

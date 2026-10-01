@@ -109,6 +109,15 @@ $(function () {
                 targets: 6
             },
             {
+                title: l('ApplicantAddresses:ColumnPrimary'),
+                data: null,
+                orderable: false,
+                searchable: false,
+                width: '10%',
+                render: renderPrimary,
+                targets: 7
+            },
+            {
                 title: '',
                 data: null,
                 orderable: false,
@@ -116,9 +125,25 @@ $(function () {
                 width: '48px',
                 className: 'text-center',
                 render: renderActions,
-                targets: 7
+                targets: 8
             }
         ];
+    }
+
+    function renderPrimary(data, type, row) {
+        if (!row.isPrimary) {
+            return '';
+        }
+
+        const label = row.addressType === 'Mailing'
+            ? l('ApplicantAddresses:PrimaryMailingBadge')
+            : l('ApplicantAddresses:PrimaryPhysicalBadge');
+
+        if (type !== 'display') {
+            return label;
+        }
+
+        return `<span class="badge applicant-address-primary-badge">${abp.utils.htmlEscape(label)}</span>`;
     }
 
     function renderActions(data, type, row) {
@@ -126,12 +151,24 @@ $(function () {
             return row.isEditable ? '' : renderSourceInfo();
         }
 
-        // A submission-linked row has no action available in this story, so the bare icon is
-        // the right affordance. AB#33875 removes this branch: once Set as Primary applies to
-        // those rows the menu becomes correct and the tooltip moves onto a disabled Edit item.
-        if (!row.isEditable) {
-            return renderSourceInfo();
-        }
+        const editLabel = abp.utils.htmlEscape(l('Common:Command:Edit'));
+        // A disabled button receives no hover or focus, so the explanation sits on a focusable
+        // wrapper carrying the same Bootstrap tooltip as renderSourceInfo.
+        const editItem = row.isEditable
+            ? `<button class="dropdown-item applicant-address-edit-btn"
+                                    data-address-id="${row.id}">${editLabel}</button>`
+            : `<span class="d-block" tabindex="0"
+                                  data-bs-toggle="tooltip"
+                                  data-bs-placement="left"
+                                  title="${abp.utils.htmlEscape(l('GrantManager:AddressNotEditable'))}">
+                                <button class="dropdown-item applicant-address-edit-btn"
+                                        data-address-id="${row.id}" disabled>${editLabel}</button>
+                            </span>`;
+
+        const setPrimaryLabel = row.addressType === 'Mailing'
+            ? l('ApplicantAddresses:SetAsPrimaryMailing')
+            : l('ApplicantAddresses:SetAsPrimaryPhysical');
+        const setPrimaryDisabled = row.isPrimary ? 'disabled' : '';
 
         return `<div class="dropdown applicant-address-actions">
                     <button type="button"
@@ -144,8 +181,11 @@ $(function () {
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li>
-                            <button class="dropdown-item applicant-address-edit-btn"
-                                    data-address-id="${row.id}">${abp.utils.htmlEscape(l('Common:Command:Edit'))}</button>
+                            ${editItem}
+                        </li>
+                        <li>
+                            <button class="dropdown-item applicant-address-set-primary-btn"
+                                    data-address-id="${row.id}" ${setPrimaryDisabled}>${abp.utils.htmlEscape(setPrimaryLabel)}</button>
                         </li>
                     </ul>
                 </div>`;
@@ -202,6 +242,12 @@ $(function () {
                         const existing = bootstrap.Tooltip.getInstance(this);
                         if (existing) { existing.dispose(); }
                         bootstrap.Tooltip.getOrCreateInstance(this);
+                    });
+                    // The table's scroll body clips an absolutely positioned menu, so use Popper's fixed strategy.
+                    $('#ApplicantAddressesTable .applicant-address-menu-btn').each(function () {
+                        bootstrap.Dropdown.getOrCreateInstance(this, {
+                            popperConfig: (config) => ({ ...config, strategy: 'fixed' })
+                        });
                     });
                 },
                 columnDefs: buildColumnDefs()
@@ -329,6 +375,25 @@ $(function () {
             id: $(this).data('address-id'),
             applicantId: applicantId
         });
+    });
+
+    $(document).on('click', '.applicant-address-set-primary-btn', function () {
+        const addressId = $(this).data('address-id');
+        const service = globalThis.unity?.grantManager?.applicantProfile?.applicantAddress;
+
+        if (!service) {
+            abp.notify.error(l('ApplicantAddresses:ServiceUnavailable'));
+            return;
+        }
+
+        service.setPrimary(applicantId, addressId)
+            .done(function () {
+                abp.notify.success(l('ApplicantAddresses:AddressSetPrimary'));
+                refreshWidget();
+            })
+            .fail(function () {
+                abp.notify.error(l('ApplicantAddresses:SetPrimaryFailed'));
+            });
     });
 
     function buildSavePayload(zoneFormInstance, $form) {

@@ -105,6 +105,20 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
                 viewModel.PrimaryMailingAddress = MapPrimaryAddress(primaryMailingAddress);
             }
 
+            foreach (var addressId in new[] { primaryPhysicalAddress?.Id, primaryMailingAddress?.Id })
+            {
+                if (addressId is null)
+                {
+                    continue;
+                }
+
+                var row = viewModel.Addresses.Find(address => address.Id == addressId.Value);
+                if (row is not null)
+                {
+                    row.IsPrimary = true;
+                }
+            }
+
             return View(viewModel);
 
         }

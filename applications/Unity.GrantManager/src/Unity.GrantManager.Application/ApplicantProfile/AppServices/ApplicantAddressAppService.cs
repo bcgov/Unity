@@ -23,7 +23,7 @@ public class ApplicantAddressAppService(IApplicantAddressManager applicantAddres
     public virtual async Task<AddressInfoItemDto> GetAsync(Guid applicantId, Guid addressId)
     {
         var address = await applicantAddressManager.GetOwnedAsync(applicantId, addressId);
-        return MapToDto(address);
+        return MapToDto(address, await applicantAddressManager.IsResolvedPrimaryAsync(applicantId, address));
     }
 
     /// <inheritdoc />
@@ -43,7 +43,7 @@ public class ApplicantAddressAppService(IApplicantAddressManager applicantAddres
             input.AddressType,
             input.IsPrimary);
 
-        return MapToDto(address);
+        return MapToDto(address, await applicantAddressManager.IsResolvedPrimaryAsync(applicantId, address));
     }
 
     /// <inheritdoc />
@@ -56,7 +56,7 @@ public class ApplicantAddressAppService(IApplicantAddressManager applicantAddres
     }
 
     // ReferenceNo is left unset: filling it needs an extra Application lookup and no consumer reads it.
-    private static AddressInfoItemDto MapToDto(ApplicantAddress address)
+    private static AddressInfoItemDto MapToDto(ApplicantAddress address, bool isPrimary)
     {
         return new AddressInfoItemDto
         {
@@ -69,7 +69,7 @@ public class ApplicantAddressAppService(IApplicantAddressManager applicantAddres
             Province = address.Province ?? string.Empty,
             PostalCode = address.Postal ?? string.Empty,
             Country = address.Country ?? string.Empty,
-            IsPrimary = address.IsFlaggedPrimary(),
+            IsPrimary = isPrimary,
             IsEditable = !address.ApplicationId.HasValue
         };
     }

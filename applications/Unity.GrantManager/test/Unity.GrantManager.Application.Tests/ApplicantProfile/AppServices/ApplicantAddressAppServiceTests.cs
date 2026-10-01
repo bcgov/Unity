@@ -80,4 +80,39 @@ public class ApplicantAddressAppServiceTests
 
         exception.Code.ShouldBe(GrantManagerDomainErrorCodes.AddressNotEditable);
     }
+
+    [Fact]
+    public async Task Should_ReportResolvedPrimary_WhenNoAddressOfTheTypeIsFlagged()
+    {
+        var olderId = Guid.NewGuid();
+        var newerId = Guid.NewGuid();
+        var older = CreateUnflaggedPhysicalAddress(olderId, new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        var newer = CreateUnflaggedPhysicalAddress(newerId, new DateTime(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc));
+        _addressRepository
+            .GetAsync(olderId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(older);
+        _addressRepository
+            .GetAsync(newerId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(newer);
+        _addressRepository.FindByApplicantIdAsync(_applicantId).Returns([older, newer]);
+
+        var newerResult = await _service.GetAsync(_applicantId, newerId);
+        var olderResult = await _service.GetAsync(_applicantId, olderId);
+
+        newerResult.IsPrimary.ShouldBeTrue();
+        olderResult.IsPrimary.ShouldBeFalse();
+    }
+
+    private ApplicantAddress CreateUnflaggedPhysicalAddress(Guid id, DateTime creationTime)
+    {
+        var address = new ApplicantAddress
+        {
+            ApplicantId = _applicantId,
+            AddressType = AddressType.PhysicalAddress,
+            Street = "1 Existing St",
+            CreationTime = creationTime
+        };
+        EntityHelper.TrySetId(address, () => id);
+        return address;
+    }
 }
