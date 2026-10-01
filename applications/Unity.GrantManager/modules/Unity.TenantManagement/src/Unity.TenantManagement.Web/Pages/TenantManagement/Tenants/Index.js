@@ -831,6 +831,14 @@
             buttonsStyling: false,
             showLoaderOnConfirm: true,
             allowOutsideClick: function () { return !Swal.isLoading(); },
+            // Keep Purge disabled until the name matches exactly (case and whitespace).
+            didOpen: function () {
+                let confirmButton = Swal.getConfirmButton();
+                confirmButton.disabled = true;
+                Swal.getInput().addEventListener('input', function (e) {
+                    confirmButton.disabled = e.target.value !== row.name;
+                });
+            },
             preConfirm: function (typedName) {
                 if (typedName !== row.name) {
                     Swal.showValidationMessage(lGm('TenantList:PurgeNameMismatch'));
