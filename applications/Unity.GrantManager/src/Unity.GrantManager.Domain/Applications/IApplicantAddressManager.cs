@@ -78,4 +78,11 @@ public interface IApplicantAddressManager
         AddressType currentAddressType,
         bool wasPrimary,
         bool isPrimary);
+
+    /// <summary>
+    /// Flags an address as the applicant's primary address for its own <see cref="AddressType"/>
+    /// and demotes the other addresses of that type. Addresses owned by a submission are
+    /// eligible: the editability restriction covers editing an address, not designating one.
+    /// </summary>
+    Task SetPrimaryAsync(Guid applicantId, Guid addressId);
 }

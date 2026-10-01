@@ -46,6 +46,15 @@ public class ApplicantAddressAppService(IApplicantAddressManager applicantAddres
         return MapToDto(address);
     }
 
+    /// <inheritdoc />
+    [Authorize(UnitySelector.ApplicantManagement.Addresses.Update)]
+    [UnitOfWork(isTransactional: true)]
+    public virtual async Task<bool> SetPrimaryAsync(Guid applicantId, Guid addressId)
+    {
+        await applicantAddressManager.SetPrimaryAsync(applicantId, addressId);
+        return true;
+    }
+
     // ReferenceNo is left unset: filling it needs an extra Application lookup and no consumer reads it.
     private static AddressInfoItemDto MapToDto(ApplicantAddress address)
     {
