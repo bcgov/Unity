@@ -1175,7 +1175,12 @@ public class GrantApplicationAppService(
         {
             var onboardingManager = LazyServiceProvider.LazyGetRequiredService<OnboardingApplicationManager>();
             var onboardingApplication = await onboardingManager.TriggerAction(applicationId, triggerAction);
-            await LocalEventBus.PublishAsync(new ApplicationChangedEvent { Action = triggerAction, ApplicationId = applicationId });
+            await LocalEventBus.PublishAsync(new ApplicationChangedEvent
+            {
+                Action = triggerAction,
+                ApplicationId = applicationId,
+                ApplicationStatusId = onboardingApplication.ApplicationStatusId
+            });
             return ObjectMapper.Map<Application, GrantApplicationDto>(onboardingApplication);
         }
 
@@ -1200,6 +1205,7 @@ public class GrantApplicationAppService(
             {
                 ApplicationId = applicationId,
                 Action = triggerAction,  // e.g. GrantApplicationAction.Approve / Deny
+                ApplicationStatusId = application.ApplicationStatusId,
                 TenantId = CurrentTenant.Id
             }
         );

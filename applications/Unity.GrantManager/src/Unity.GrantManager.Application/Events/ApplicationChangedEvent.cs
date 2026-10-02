@@ -8,6 +8,8 @@ namespace Unity.GrantManager.Events
     {
         public Guid ApplicationId { get; set; }
 
+        public Guid? ApplicationStatusId { get; set; }
+
         [JsonConverter(typeof(JsonStringEnumConverter))]
         public GrantApplicationAction Action { get; set; }
 
