@@ -37,6 +37,7 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
+using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -57,7 +58,8 @@ public class GrantApplicationAppService(
     IApplicantSupplierAppService applicantSupplierService,
     IPaymentRequestAppService paymentRequestService,
     IFeatureChecker featureChecker,
-    AIFeatureGuard aiFeatureGuard)
+    AIFeatureGuard aiFeatureGuard,
+    IUnitOfWorkManager unitOfWorkManager)
     : GrantManagerAppService, IGrantApplicationAppService
 #pragma warning restore S107 // Methods should not have too many parameters
 {
@@ -1175,12 +1177,13 @@ public class GrantApplicationAppService(
         {
             var onboardingManager = LazyServiceProvider.LazyGetRequiredService<OnboardingApplicationManager>();
             var onboardingApplication = await onboardingManager.TriggerAction(applicationId, triggerAction);
-            await LocalEventBus.PublishAsync(new ApplicationChangedEvent
+            var applicationChangedEvent = new ApplicationChangedEvent
             {
                 Action = triggerAction,
                 ApplicationId = applicationId,
                 ApplicationStatusId = onboardingApplication.ApplicationStatusId
-            });
+            };
+            await PublishApplicationChangedEventAfterCommitAsync(applicationChangedEvent, unitOfWorkManager);
             return ObjectMapper.Map<Application, GrantApplicationDto>(onboardingApplication);
         }
 
@@ -1199,18 +1202,32 @@ public class GrantApplicationAppService(
 
         application = await applicationManager.TriggerAction(applicationId, triggerAction);
 
-        // After the workflow state change, publish to the local event bus
-        await LocalEventBus.PublishAsync(
+        await PublishApplicationChangedEventAfterCommitAsync(
             new ApplicationChangedEvent
             {
                 ApplicationId = applicationId,
-                Action = triggerAction,  // e.g. GrantApplicationAction.Approve / Deny
+                Action = triggerAction,
                 ApplicationStatusId = application.ApplicationStatusId,
                 TenantId = CurrentTenant.Id
-            }
+            },
+            unitOfWorkManager
         );
 
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+    }
+
+    private Task PublishApplicationChangedEventAfterCommitAsync(
+        ApplicationChangedEvent applicationChangedEvent,
+        IUnitOfWorkManager unitOfWorkManager)
+    {
+        var unitOfWork = unitOfWorkManager.Current;
+        if (unitOfWork == null)
+        {
+            return LocalEventBus.PublishAsync(applicationChangedEvent);
+        }
+
+        unitOfWork.OnCompleted(() => LocalEventBus.PublishAsync(applicationChangedEvent));
+        return Task.CompletedTask;
     }
 
     /// <summary>

@@ -65,7 +65,14 @@ namespace Unity.GrantManager.Events
                     return;
                 }
 
-                application.ApplicationStatus = await applicationStatusRepository.GetAsync(eventData.ApplicationStatusId.Value);
+                var applicationStatus = await applicationStatusRepository.FindAsync(eventData.ApplicationStatusId.Value);
+                if (applicationStatus == null)
+                {
+                    logger.LogWarning("EventNotificationHandler: Application status {ApplicationStatusId} not found.", eventData.ApplicationStatusId);
+                    return;
+                }
+
+                application.ApplicationStatus = applicationStatus;
 
                 var notifications = (await scheduledNotificationRepository.GetListAsync(
                     ApplicationEventNotificationFilter(
