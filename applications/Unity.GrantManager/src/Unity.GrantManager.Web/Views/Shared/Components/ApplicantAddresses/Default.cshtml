@@ -1,5 +1,8 @@
+@using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Localization
 @using Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
 @using Unity.Modules.Shared
+@inject IStringLocalizer<GrantManagerResource> L
 
 @model ApplicantAddressesViewModel
 
@@ -143,6 +146,10 @@
                     <h6 class="fw-bold mb-0">Addresses</h6>
                 </div>
                 <div class="table-card__body">
+                    <div class="text-muted small mb-2">
+                        <i class="fa-solid fa-circle-info me-1" aria-hidden="true"></i>
+                        @L["ApplicantAddresses:PrimaryRule"]
+                    </div>
                     <abp-table id="ApplicantAddressesTable"
                                hoverable-rows="true"
                                data-resize-aware="true"

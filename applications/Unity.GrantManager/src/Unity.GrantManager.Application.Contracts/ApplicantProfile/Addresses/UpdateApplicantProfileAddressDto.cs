@@ -6,6 +6,7 @@ namespace Unity.GrantManager.ApplicantProfile.Addresses;
 public class UpdateApplicantProfileAddressDto
 {
     [Required]
+    [EnumDataType(typeof(AddressType))]
     public AddressType AddressType { get; set; } = AddressType.PhysicalAddress;
 
     [StringLength(500)]

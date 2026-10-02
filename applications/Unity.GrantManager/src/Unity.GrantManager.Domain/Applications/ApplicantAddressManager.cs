@@ -267,6 +267,33 @@ public class ApplicantAddressManager(
         }
     }
 
+    /// <inheritdoc />
+    public virtual async Task SetPrimaryAsync(Guid applicantId, Guid addressId)
+    {
+        var address = await GetOwnedAsync(applicantId, addressId);
+
+        address.SetPrimaryFlag(true);
+        await DemotePrimarySiblingsAsync(applicantId, address.AddressType, addressId);
+        await applicantAddressRepository.UpdateAsync(address);
+    }
+
+    /// <inheritdoc />
+    public virtual async Task<bool> IsResolvedPrimaryAsync(Guid applicantId, ApplicantAddress address)
+    {
+        ArgumentNullException.ThrowIfNull(address);
+
+        if (address.IsFlaggedPrimary())
+        {
+            return true;
+        }
+
+        // Use the in-memory instance rather than the stored copy: the group query is untracked and
+        // may not see this unit of work's pending edits to the address.
+        var siblings = await GetGroupAsync(applicantId, address.AddressType, excludeAddressId: address.Id);
+        List<ApplicantAddress> group = [.. siblings, address];
+        return ApplicantAddressPrimaryResolver.Resolve(group, address.AddressType)?.Id == address.Id;
+    }
+
     /// <summary>
     /// Returns the applicant's addresses that belong to the given address type group,
     /// optionally skipping one address.
