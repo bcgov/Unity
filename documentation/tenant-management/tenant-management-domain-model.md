@@ -30,7 +30,7 @@ Both are **AES-256-CBC encrypted at rest** via ABP's built-in `IStringEncryption
 - Encrypt on write: `TenantAppService.CreateAsync`/`UpdateConnectionStringsAsync`.
 - Runtime decrypt: `EncryptedTenantConnectionStringResolver` — replaces ABP's `MultiTenantConnectionStringResolver` via `[Dependency(ReplaceServices = true)]`. Falls back to treating a value as plain text if decryption fails, so pre-encryption rows keep working.
 - Migration-time decrypt: `EntityFrameworkCoreGrantManagerDbSchemaMigrator.cs`.
-- One-time backfill of pre-existing plain-text rows: `TenantConnectionStringEncryptionMigrator.cs`, run from `GrantManagerDbMigrationService.MigrateAsync()` on startup.
+- Pre-existing plain-text rows are not backfilled automatically. They stay plain text (the runtime resolver still reads them) until the tenant's Configuration modal is saved by a user with `Tenants.ManageConnectionStrings`, which re-submits both strings through `UpdateConnectionStringsAsync`.
 - Admin utility: `scripts/Decrypt-TenantConnectionString.ps1`.
 
 ### `TenantConnectionStringBuilder` — how credentials are generated
