@@ -30,14 +30,14 @@ Both are **AES-256-CBC encrypted at rest** via ABP's built-in `IStringEncryption
 - Encrypt on write: `TenantAppService.CreateAsync`/`UpdateConnectionStringsAsync`.
 - Runtime decrypt: `EncryptedTenantConnectionStringResolver` — replaces ABP's `MultiTenantConnectionStringResolver` via `[Dependency(ReplaceServices = true)]`. Falls back to treating a value as plain text if decryption fails, so pre-encryption rows keep working.
 - Migration-time decrypt: `EntityFrameworkCoreGrantManagerDbSchemaMigrator.cs`.
-- One-time backfill of pre-existing plain-text rows: `TenantConnectionStringEncryptionMigrator.cs`, run from `GrantManagerDbMigrationService.MigrateAsync()` on startup.
+- Pre-existing plain-text rows are not backfilled automatically. They stay plain text (the runtime resolver still reads them) until the tenant's Configuration modal is saved by a user with `Tenants.ManageConnectionStrings`, which re-submits both strings through `UpdateConnectionStringsAsync`.
 - Admin utility: `scripts/Decrypt-TenantConnectionString.ps1`.
 
 ### `TenantConnectionStringBuilder` — how credentials are generated
 
 `Unity.TenantManagement.Application/TenantConnectionStringBuilder.cs` (`ITenantConnectionStringBuilder`, `[RemoteService(false)]`):
 
-- **`GenerateCredentialsAsync()`** — picks a unique `T_XXX999` DB/username (3 random uppercase letters + 3 random digits, `RandomNumberGenerator`/CSPRNG), checked for uniqueness against **currently-existing tenants'** `LicencePlate` extra property only — not against orphaned Postgres roles left behind by a deleted tenant (see [tenant-management-roadmap.md](tenant-management-roadmap.md)). Also generates a fresh 24-character password.
+- **`GenerateCredentialsAsync()`** — picks a unique `T_XXX999` DB/username (3 random uppercase letters + 3 random digits, `RandomNumberGenerator`/CSPRNG), checked for uniqueness against every tenant's `LicencePlate` extra property, **including soft-deleted tenants** (they keep their database and roles until purged). `PurgeAsync` also refuses to drop a database/roles whose licence plate another tenant shares. Also generates a fresh 24-character password.
 - **`GeneratePassword()`** — 24 characters from `A-Za-z0-9` only. Quote and backslash characters are deliberately excluded **at generation time**, not escaped later, because the password gets interpolated into a single-quoted SQL literal by the migrator — a defense-in-depth choice against SQL injection via a self-generated value, called out explicitly in the source comment.
 - **`GenerateReadOnlyCredentials(credentials)`** — same `DbName`, username `+ "_readonly"`, and a **freshly generated, independent** password (not derived from or equal to the read-write password).
 - **`Build(tenantName, credentials)`** — string-replaces `Database`/`Username`/`Password` into the `ConnectionStrings:Tenant` config template by key, preserving `Host`/`Port`/`SSL` and original key casing verbatim.

@@ -13,14 +13,12 @@ Combined: if a tenant's readonly (or read-write) password is ever changed after 
 
 None of these three read as bugs in isolation — each is a reasonable "create-only, idempotent-on-existing" implementation. Together, they mean a password change made through the UI silently fails to propagate to either of the two systems that actually need it, with no error at the time of the change — only later, and only if something tries to connect.
 
-## Tenant deletion leaves orphaned resources
+## Tenant deletion: what purge does not clean up
 
-`TenantAppService.DeleteAsync` deletes only the ABP `Tenant` row. It does not drop the tenant's Postgres database or roles, and does not deregister anything in Metabase (database connection, permissions group, collection). Two consequences:
+Deleting a tenant is two steps: `DeleteAsync` soft-deletes it, and `TenantAppService.PurgeAsync` drops its database, roles and host records (see [tenant-management-application-services.md](tenant-management-application-services.md)). Gaps that remain:
 
-- Those resources are simply orphaned — nothing else in the codebase cleans them up.
-- `TenantConnectionStringBuilder.GenerateCredentialsAsync`'s uniqueness check for the `T_XXX999` licence-plate stem only checks **currently-existing tenants'** `LicencePlate` extra property — not orphaned Postgres roles left behind by a deleted tenant. A random collision (small but non-zero, given a 3-letter/3-digit space) between a new tenant and a deleted-but-not-cleaned-up one would land `CreateRoleIfNotExistsAsync` on the "role already exists" branch described above, silently keeping the old role's password.
-
-Worth deciding deliberately: either build real cleanup on delete, or make deletion itself a rarer, more guarded operation (e.g. require confirming the Postgres/Metabase side has been handled manually first) — right now it's neither.
+- **Metabase is never deregistered.** The database connection, permissions group and collection created by the post-creation step stay behind. `MetabaseApiClient` has no delete calls, and the IDs it creates are not stored, so a safe delete would first need those IDs persisted — a name-based delete could hit another environment's resources where environments share one Metabase. Purge logs a warning when a post-creation step had succeeded.
+- **Seeded tenants can't be purged.** They have no `LicencePlate` and point at configured databases, so `PurgeAsync` refuses them; soft-deleting one also lets the DbMigrator seeder create a new copy beside it (`FindByNameAsync` ignores soft-deleted rows).
 
 ## Declared but unenforced permissions
 

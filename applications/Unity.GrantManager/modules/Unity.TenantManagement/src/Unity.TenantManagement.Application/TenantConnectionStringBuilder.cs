@@ -64,7 +64,13 @@ namespace Unity.TenantManagement.Application
 
         public async Task<TenantDbCredentials> GenerateCredentialsAsync()
         {
-            var allTenants = await _tenantRepository.GetListAsync(nameof(Tenant.Name), int.MaxValue, 0, null, includeDetails: true);
+            // Soft-deleted tenants still own their database and roles until purged, so their
+            // licence plates must not be reused.
+            List<Tenant> allTenants;
+            using (DataFilter.Disable<ISoftDelete>())
+            {
+                allTenants = await _tenantRepository.GetListAsync(nameof(Tenant.Name), int.MaxValue, 0, null, includeDetails: true);
+            }
 
             var existingDbNames = allTenants
                 .Where(t => t.ExtraProperties.ContainsKey(UnityTenantManagementConsts.TenantLicencePlateExtraPropertyKey))

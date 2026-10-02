@@ -375,6 +375,8 @@ $(function () {
             submissionData = submissionJson.submission;
         }
 
+        patchHtmlElementTags(formSchema);
+
         data.version.schema = formSchema;
         data.submission.submission = submissionData;
 

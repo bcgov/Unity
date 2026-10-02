@@ -10,6 +10,7 @@ public class OnboardingApplicationRecord
     public string ReferenceNo { get; set; } = string.Empty;
     public DateTime SubmissionDate { get; set; }
     public string Status { get; set; } = string.Empty;
+    public bool IsApproved { get; set; }
     public string Category { get; set; } = string.Empty;
     public Dictionary<string, object?> CoreFieldValues { get; set; } = [];
 }

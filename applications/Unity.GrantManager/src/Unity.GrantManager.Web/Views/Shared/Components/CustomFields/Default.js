@@ -286,36 +286,34 @@ $(function () {
         updateDraggedClasses(beingDragged, addClass, removeClass);
         dragOver.appendChild(beingDragged);
     }
+
+    function updateDraggedClasses(beingDragged, addClass, removeClass) {
+        if (addClass) {
+            beingDragged.classList.add('published-form');
+        }
+        if (removeClass) {
+            beingDragged.classList.remove('published-form');
+        }
+    }
+
+    function compareSort(vA, vB) {
+        if (vA < vB) {
+            return -1;
+        } else if (vA > vB) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    function beingDragged(ev) {
+        let draggedEl = ev.target;
+        if (draggedEl.classList + "" !== "undefined") {
+            draggedEl.classList.add('dragging');
+        }
+    }
+
+    function handleBack() {
+        location.href = '/ApplicationForms';
+    }
 });
-
-function updateDraggedClasses(beingDragged, addClass, removeClass) {
-    if (addClass) {
-        beingDragged.classList.add('published-form');
-    }
-    if (removeClass) {
-        beingDragged.classList.remove('published-form');
-    }
-}
-
-function compareSort(vA, vB) {
-    if (vA < vB) {
-        return -1;
-    } else if (vA > vB) {
-        return 1;
-    } else {
-        return 0;
-    }
-}
-
-function beingDragged(ev) {
-    let draggedEl = ev.target;
-    if (draggedEl.classList + "" != "undefined") {
-        draggedEl.classList.add('dragging');
-    }
-}
-
-function handleBack() {
-    location.href = '/ApplicationForms';
-}
-
-

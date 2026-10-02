@@ -11,4 +11,5 @@ public interface ITenantAppService : ICrudAppService<TenantDto, Guid, GetTenants
     Task<TenantConnectionStringsDto> GetConnectionStringsAsync(Guid id);
     Task UpdateConnectionStringsAsync(Guid id, TenantConnectionStringsDto input);
     Task<List<TenantManagerDto>> GetManagersAsync(Guid id);
+    Task PurgeAsync(Guid id);
 }

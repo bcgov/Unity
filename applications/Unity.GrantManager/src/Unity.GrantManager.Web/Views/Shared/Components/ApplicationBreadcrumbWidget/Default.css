@@ -23,6 +23,13 @@
     padding-right: 0.75rem !important;
 }
 
+    .application-details-breadcrumb .applicant-name-link,
+    .application-details-breadcrumb .applicant-name-link:hover,
+    .application-details-breadcrumb .applicant-name-link:focus {
+        color: var(--bc-colors-blue-text-links);
+        text-decoration-color: var(--bc-colors-blue-text-links);
+    }
+
     .application-details-breadcrumb .form-version {
         font-weight: 400;
         color: var(--bc-type-color-secondary);

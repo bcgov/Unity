@@ -143,6 +143,7 @@ public class GrantManagerOnboardingApplicationProvider(
             ReferenceNo = a.ReferenceNo,
             SubmissionDate = a.SubmissionDate,
             Status = a.ApplicationStatus.InternalStatus,
+            IsApproved = a.ApplicationStatus.StatusCode == GrantApplicationState.GRANT_APPROVED,
             Category = a.ApplicationForm.Category ?? string.Empty,
             CoreFieldValues = coreFields.ToDictionary(f => f.Key, f => f.Selector(a))
         };
