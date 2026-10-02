@@ -1672,24 +1672,21 @@ $(function () {
         }
     );
 
+    function handleBack() {
+        location.href = '/ApplicationForms';
+    }
 
+    function beingDragged(ev) {
+        let draggedEl = ev.target;
+        if (draggedEl.classList + "" !== "undefined") {
+            draggedEl.classList.add('dragging');
+        }
+    }
+
+    function dragEnd(ev) {
+        let draggedEl = ev.target;
+        if (draggedEl.classList + "" !== "undefined") {
+            draggedEl.classList.remove('dragging');
+        }
+    }
 });
-
-
-function handleBack() {
-    location.href = '/ApplicationForms';
-}
-
-function beingDragged(ev) {
-    let draggedEl = ev.target;
-    if (draggedEl.classList + "" !== "undefined") {
-        draggedEl.classList.add('dragging');
-    }
-}
-
-function dragEnd(ev) {
-    let draggedEl = ev.target;
-    if (draggedEl.classList + "" !== "undefined") {
-        draggedEl.classList.remove('dragging');
-    }
-}

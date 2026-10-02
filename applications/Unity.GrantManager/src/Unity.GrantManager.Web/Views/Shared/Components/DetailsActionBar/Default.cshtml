@@ -18,6 +18,12 @@
                     icon-type="Other"
                     button-type="Light"
                     disabled="@(!Model.CanUpdateExternalStatusVisibility)" />
+        @if (Model.IsOnboardingRequest)
+        {
+            <a id="createTenantFromDetailsBtn"
+               class="btn btn-primary@(Model.CanCreateTenant ? "" : " d-none")"
+               href="@($"/TenantManagement/Onboarding?createTenant={Model.ApplicationId}")">@L["OnboardingList:CreateTenantButton"].Value</a>
+        }
     </div>
     <div id="DetailsActionBarEnd" class="d-flex align-items-stretch justify-content-end gap-2 margin-left-auto">
         <abp-button id="tagApplication"
