@@ -19,7 +19,7 @@ public interface IGrantApplicationAppService
     Task<IList<GrantApplicationDto>> GetApplicationDetailsListAsync(List<Guid> applicationIds);
     Task<GrantApplicationDto> GetAsync(Guid id);
     Task<GrantApplicationLiteDto> GetBasicAsync(Guid id);
-    Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction);
+    Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction, TriggerActionInputDto? input = null);
     Task<Guid?> GetAccountCodingIdFromFormIdAsync(Guid formId);
     Task<string> DismissAIAnalysisItemAsync(Guid applicationId, string itemId);
     Task<string> RestoreAIAnalysisItemAsync(Guid applicationId, string itemId);

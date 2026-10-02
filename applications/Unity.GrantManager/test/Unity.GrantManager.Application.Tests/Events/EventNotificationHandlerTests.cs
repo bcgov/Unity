@@ -1,7 +1,7 @@
+using Shouldly;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Shouldly;
 using Unity.GrantManager.Notifications;
 using Unity.Payments.Enums;
 using Xunit;
@@ -118,6 +118,45 @@ public class EventNotificationHandlerTests
                 PaymentRequestStatus.Submitted,
                 "Validated"))
             .ShouldHaveSingleItem();
+    }
+
+    [Fact]
+    public void PaymentEventNotificationFilter_UsesDestinationStatusesOnly()
+    {
+        var formId = Guid.NewGuid();
+        var notifications = new List<ScheduledNotification>
+        {
+            CreatePaymentNotification(formId, PaymentRequestStatus.Submitted, isActive: true),
+            CreatePaymentNotification(formId, PaymentRequestStatus.L1Pending, isActive: true),
+            new ScheduledNotification
+            {
+                FormId = formId,
+                TriggerType = "Event",
+                IsActive = true,
+                Module = "Payment",
+                EventType = "Validated"
+            },
+            new ScheduledNotification
+            {
+                FormId = formId,
+                TriggerType = "Event",
+                IsActive = true,
+                Module = "Payment",
+                EventType = "SentToCas"
+            }
+        };
+
+        var matches = notifications
+            .AsQueryable()
+            .Where(EventNotificationHandler.PaymentEventNotificationFilter(
+                formId,
+                PaymentRequestStatus.Submitted,
+                "Validated"))
+            .ToList();
+
+        matches.Count.ShouldBe(2);
+        matches.ShouldAllBe(notification =>
+            notification.EventType == "Submitted" || notification.EventType == "Validated");
     }
 
     private static ScheduledNotification CreateNotification(

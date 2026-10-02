@@ -27,6 +27,7 @@ namespace Unity.GrantManager.Events
     internal class EventNotificationHandler(
         IRepository<ScheduledNotification, Guid> scheduledNotificationRepository,
         IApplicationRepository applicationRepository,
+        IApplicationStatusRepository applicationStatusRepository,
         IApplicantAgentRepository applicantAgentRepository,
         ILocalEventBus localEventBus,
         ITemplateService templateService,
@@ -48,6 +49,11 @@ namespace Unity.GrantManager.Events
                 return;
             }
 
+            if (!eventData.ApplicationStatusId.HasValue)
+            {
+                return;
+            }
+
             try
             {
                 using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
@@ -59,8 +65,19 @@ namespace Unity.GrantManager.Events
                     return;
                 }
 
+                var applicationStatus = await applicationStatusRepository.FindAsync(eventData.ApplicationStatusId.Value);
+                if (applicationStatus == null)
+                {
+                    logger.LogWarning("EventNotificationHandler: Application status {ApplicationStatusId} not found.", eventData.ApplicationStatusId);
+                    return;
+                }
+
+                application.ApplicationStatus = applicationStatus;
+
                 var notifications = (await scheduledNotificationRepository.GetListAsync(
-                    ApplicationEventNotificationFilter(application.ApplicationFormId, application.ApplicationStatusId)))
+                    ApplicationEventNotificationFilter(
+                        application.ApplicationFormId,
+                        eventData.ApplicationStatusId.Value)))
                     .ToList();
 
                 if (notifications.Count == 0)

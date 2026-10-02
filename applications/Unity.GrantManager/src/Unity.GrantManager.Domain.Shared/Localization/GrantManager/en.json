@@ -407,6 +407,13 @@
 
     "GrantApplication:ActionButtonName": "Status Actions",
     "GrantApplication:ActionButton.RedStopWarning": "This application is from an applicant with a Red-Stop. Status actions are not permitted.",
+    "GrantApplication:ActionPrompt.DecisionDate": "Decision Date",
+    "GrantApplication:ActionPrompt.DeclineRational": "Decline Rationale",
+    "GrantApplication:ActionPrompt.SelectDecisionDateBanner": "Please select the decision date before proceeding.",
+    "GrantApplication:ActionPrompt.SelectDeclineDetailsBanner": "Please provide the decline rationale and decision date.",
+    "GrantApplication:ActionPrompt.ConfirmApprove": "Are you sure you want to approve this application?",
+    "GrantApplication:ActionPrompt.ConfirmDecline": "Are you sure you want to decline this application?",
+    "GrantApplication:ActionPrompt.FieldRequired": "{0} is required.",
     "Enum:GrantApplicationAction.Open": "Open",
     "Enum:GrantApplicationAction.Submit": "Submit",
     "Enum:GrantApplicationAction.Internal_Assign": "Assign",
