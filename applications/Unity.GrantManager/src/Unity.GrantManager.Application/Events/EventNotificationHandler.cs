@@ -46,6 +46,11 @@ namespace Unity.GrantManager.Events
                 return;
             }
 
+            if (!eventData.ApplicationStatusId.HasValue)
+            {
+                return;
+            }
+
             try
             {
                 var application = await applicationRepository.GetAsync(eventData.ApplicationId, includeDetails: true);
@@ -56,7 +61,9 @@ namespace Unity.GrantManager.Events
                 }
 
                 var notifications = (await scheduledNotificationRepository.GetListAsync(
-                    ApplicationEventNotificationFilter(application.ApplicationFormId, application.ApplicationStatusId)))
+                    ApplicationEventNotificationFilter(
+                        application.ApplicationFormId,
+                        eventData.ApplicationStatusId.Value)))
                     .ToList();
 
                 if (notifications.Count == 0)
