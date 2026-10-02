@@ -26,6 +26,7 @@ namespace Unity.GrantManager.Events
     internal class EventNotificationHandler(
         IRepository<ScheduledNotification, Guid> scheduledNotificationRepository,
         IApplicationRepository applicationRepository,
+        IApplicationStatusRepository applicationStatusRepository,
         IApplicantAgentRepository applicantAgentRepository,
         ILocalEventBus localEventBus,
         ITemplateService templateService,
@@ -59,6 +60,8 @@ namespace Unity.GrantManager.Events
                     logger.LogWarning("EventNotificationHandler: Application {ApplicationId} not found.", eventData.ApplicationId);
                     return;
                 }
+
+                application.ApplicationStatus = await applicationStatusRepository.GetAsync(eventData.ApplicationStatusId.Value);
 
                 var notifications = (await scheduledNotificationRepository.GetListAsync(
                     ApplicationEventNotificationFilter(
