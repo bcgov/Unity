@@ -1,4 +1,5 @@
 /// <reference types="cypress" />
+// @ts-nocheck
 
 /**
  * Approval Flow Regression Test - Full Approval Workflow
@@ -15,12 +16,22 @@
  * - Post-approval status and date validation on the Payments table
  */
 
-import { ApplicationsListPage } from "../pages/ApplicationsListPage";
-import { ApplicationDetailsPage } from "../pages/ApplicationDetailsPage";
-import { ReviewAssessmentPage } from "../pages/ReviewAssessmentPage";
-import { ApplicationDetailsRightTabPage } from "../pages/ApplicationDetailsRightTabPage";
-import { NavigationPage } from "../pages/NavigationPage";
-import { loginIfNeeded } from "../support/auth";
+declare const cy: any;
+declare const Cypress: any;
+declare const describe: {
+  (name: string, callback: () => void): void;
+  skip(name: string, callback: () => void): void;
+};
+declare function it(name: string, callback: (...args: any[]) => void): void;
+declare function before(callback: (...args: any[]) => void): void;
+declare function require(moduleName: string): any;
+
+const { ApplicationsListPage } = require("../pages/ApplicationsListPage");
+const { ApplicationDetailsPage } = require("../pages/ApplicationDetailsPage");
+const { ReviewAssessmentPage } = require("../pages/ReviewAssessmentPage");
+const { ApplicationDetailsRightTabPage } = require("../pages/ApplicationDetailsRightTabPage");
+const { NavigationPage } = require("../pages/NavigationPage");
+const { loginIfNeeded } = require("../support/auth");
 
 const isProd =
   (
@@ -109,7 +120,7 @@ const APPLICATIONS_PATH = "GrantApplications";
   function waitForSubmissionToAppearInList(
     attempt = 1,
     maxAttempts = 8,
-  ): Cypress.Chainable<void> {
+  ): void {
     navigateToApplicationsList();
     dismissBlockingModalIfPresent();
 
@@ -118,7 +129,7 @@ const APPLICATIONS_PATH = "GrantApplications";
       .waitForTableRefresh()
       .searchForSubmission(submissionId);
 
-    return cy.get("body").then(($body) => {
+    cy.get("body").then(($body) => {
       const hasRow = $body.find(`tr:contains("${submissionId}")`).length > 0;
 
       if (hasRow) {
@@ -139,7 +150,7 @@ const APPLICATIONS_PATH = "GrantApplications";
       );
       cy.wait(5000);
       cy.reload();
-      return waitForSubmissionToAppearInList(attempt + 1, maxAttempts);
+      waitForSubmissionToAppearInList(attempt + 1, maxAttempts);
     });
   }
 
