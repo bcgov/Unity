@@ -1,7 +1,13 @@
 /**
+/**
  * Authentication helper for Unity webapp
  * Handles multiple authentication states and provides robust login flow
  */
+
+declare const cy: any;
+declare const Cypress: any;
+declare const expect: any;
+type JQuery<TElement = HTMLElement> = any;
 
 interface LoginOptions {
   baseUrl?: string;
@@ -14,7 +20,7 @@ interface LoginOptions {
 /**
  * Detects if we're on the Keycloak login provider selection page
  */
-function isKeycloakPage($body: JQuery<HTMLElement>): boolean {
+function isKeycloakPage($body: any): boolean {
   return (
     $body.find(".login-pf-page").length > 0 ||
     $body.find("#social-idir").length > 0 ||
@@ -25,7 +31,7 @@ function isKeycloakPage($body: JQuery<HTMLElement>): boolean {
 /**
  * Detects if we're already logged in
  */
-function isLoggedIn($body: JQuery<HTMLElement>): boolean {
+function isLoggedIn($body: any): boolean {
   return (
     $body.find('button:contains("VIEW APPLICATIONS")').length > 0 ||
     $body.find("#GrantApplicationsTable").length > 0
@@ -35,23 +41,23 @@ function isLoggedIn($body: JQuery<HTMLElement>): boolean {
 /**
  * Detects if we're on the login landing page
  */
-function isLoginPage($body: JQuery<HTMLElement>): boolean {
+function isLoginPage($body: any): boolean {
   return $body.find('button:contains("LOGIN")').length > 0;
 }
 
-function hasCredentialForm($body: JQuery<HTMLElement>): boolean {
+function hasCredentialForm($body: any): boolean {
   return (
     $body.find("#user, input[name='user'], input[name='username']").length > 0 &&
     $body.find("#password, input[name='password'], input[type='password']").length > 0
   );
 }
 
-function hasViewApplicationsButton($body: JQuery<HTMLElement>): boolean {
+function hasViewApplicationsButton($body: any): boolean {
   return $body.find('button:contains("VIEW APPLICATIONS")').length > 0;
 }
 
 function waitForCredentialFormOrAuthenticatedPage(timeout: number): void {
-  cy.get("body", { timeout }).should(($body) => {
+  cy.get("body", { timeout }).should(($body: any) => {
     const pathname = $body[0]?.ownerDocument?.location?.pathname ?? "";
 
     const isReady =
@@ -67,7 +73,7 @@ function waitForCredentialFormOrAuthenticatedPage(timeout: number): void {
 }
 
 function getExistingSelector(
-  $body: JQuery<HTMLElement>,
+  $body: any,
   selectors: string[],
 ): string {
   const selector = selectors.find((candidate) => $body.find(candidate).length > 0);
@@ -91,7 +97,7 @@ function handleKeycloakLogin(
 ): void {
   cy.log("🔑 Handling Keycloak login flow");
 
-  cy.get("body", { timeout }).then(($body) => {
+  cy.get("body", { timeout }).then(($body: any) => {
     // Click appropriate IDIR provider
     if (useMfa && $body.find("#social-azureidir").length > 0) {
       cy.log("Selecting IDIR - MFA");
@@ -104,7 +110,7 @@ function handleKeycloakLogin(
         "Expected Keycloak IDIR provider buttons but none found. Available: " +
           $body
             .find("a[id^='social-']")
-            .map((_, el) => el.id)
+            .map((_: any, el: any) => el.id)
             .get()
             .join(", "),
       );
@@ -114,7 +120,7 @@ function handleKeycloakLogin(
   waitForCredentialFormOrAuthenticatedPage(timeout);
 
   // Handle username/password form if it appears
-  cy.get("body", { timeout }).then(($loginBody) => {
+  cy.get("body", { timeout }).then(($loginBody: any) => {
     if (!hasCredentialForm($loginBody)) {
       cy.log("✓ Already authenticated, skipping credentials");
       return;
@@ -146,7 +152,7 @@ function handleKeycloakLogin(
       .type(password, { log: false });
 
     // Look for Continue button or submit the form
-    cy.get("body").then(($formBody) => {
+    cy.get("body").then(($formBody: any) => {
       if ($formBody.find('button:contains("Continue")').length > 0) {
         cy.contains("button", "Continue", { timeout }).click();
       } else if ($formBody.find("input[type='submit']").length > 0) {
@@ -165,14 +171,14 @@ function handleKeycloakLogin(
  * Ensures we end up at the GrantApplications page
  */
 function ensureGrantApplicationsPage(timeout: number): void {
-  cy.location("pathname", { timeout }).then((pathname) => {
+  cy.location("pathname", { timeout }).then((pathname: any) => {
     if (pathname.includes("/GrantApplications")) {
       cy.log("✓ Already at GrantApplications page");
       return;
     }
 
     // Check if VIEW APPLICATIONS button exists
-    cy.get("body", { timeout }).then(($body) => {
+    cy.get("body", { timeout }).then(($body: any) => {
       if ($body.find('button:contains("VIEW APPLICATIONS")').length > 0) {
         cy.log("Clicking VIEW APPLICATIONS button");
         cy.contains("button", "VIEW APPLICATIONS", { timeout })
@@ -198,9 +204,13 @@ function performLogin(options: LoginOptions = {}): void {
   const useMfa = options.useMfa || false;
   const timeout = options.timeout || 20000;
 
+  if (!baseUrl) {
+    throw new Error("Missing baseUrl for Unity login flow");
+  }
+
   cy.visit(baseUrl);
 
-  cy.get("body", { timeout }).then(($body) => {
+  cy.get("body", { timeout }).then(($body: any) => {
     // Check if already logged in
     if (isLoggedIn($body)) {
       cy.log("✓ Already logged in");
@@ -215,7 +225,7 @@ function performLogin(options: LoginOptions = {}): void {
   });
 
   // Handle Keycloak login if needed
-  cy.get("body", { timeout }).then(($body) => {
+  cy.get("body", { timeout }).then(($body: any) => {
     if (isKeycloakPage($body)) {
       handleKeycloakLogin(options, useMfa, timeout);
     }
@@ -244,6 +254,11 @@ export function loginIfNeeded(
     options.baseUrl ||
     (Cypress.env("webapp.url") as string | undefined) ||
     Cypress.config("baseUrl");
+
+  if (!baseUrl) {
+    throw new Error("Missing baseUrl for Unity login flow");
+  }
+
   const sessionId = `unity-${baseUrl}-${username}`;
 
   cy.session(
@@ -254,7 +269,7 @@ export function loginIfNeeded(
     {
       validate() {
         // Lightweight validation: check auth cookies exist without visiting
-        cy.getCookie(".AspNetCore.Cookies").then((cookie) => {
+        cy.getCookie(".AspNetCore.Cookies").then((cookie: any) => {
           if (!cookie) {
             throw new Error("Session expired - auth cookie missing");
           }
