@@ -155,7 +155,8 @@ public class EventNotificationHandlerTests
             .ToList();
 
         matches.Count.ShouldBe(2);
-        matches.ShouldAllBe(notification => notification.EventType is "Submitted" or "Validated");
+        matches.Select(notification => notification.EventType)
+            .ShouldBe(new[] { "Submitted", "Validated" });
     }
 
     private static ScheduledNotification CreateNotification(
