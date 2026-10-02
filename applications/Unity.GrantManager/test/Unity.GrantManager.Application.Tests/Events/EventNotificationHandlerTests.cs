@@ -1,7 +1,7 @@
+using Shouldly;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Shouldly;
 using Unity.GrantManager.Notifications;
 using Unity.Payments.Enums;
 using Xunit;
@@ -155,7 +155,8 @@ public class EventNotificationHandlerTests
             .ToList();
 
         matches.Count.ShouldBe(2);
-        matches.ShouldAllBe(notification => notification.EventType is "Submitted" or "Validated");
+        matches.ShouldAllBe(notification =>
+            notification.EventType == "Submitted" || notification.EventType == "Validated");
     }
 
     private static ScheduledNotification CreateNotification(
