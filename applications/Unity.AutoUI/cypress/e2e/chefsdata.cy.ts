@@ -1,12 +1,14 @@
-/// <reference types="cypress" />
+// @ts-nocheck
 
 // cypress/e2e/chefsdata.cy.ts
-import { LoginPageInstance, NavigationPageInstance } from "../utilities";
+import { LoginPage } from "../pages/LoginPage";
+import { NavigationPage } from "../pages/NavigationPage";
 
 describe('Unity Login and check data from CHEFS', () => {
     const STANDARD_TIMEOUT = 20000
-    const loginPage = LoginPageInstance()
-    const navPage = NavigationPageInstance()
+    const DETAILS_TIMEOUT = 60000
+    const loginPage = new LoginPage()
+    const navPage = new NavigationPage()
 
     // TEST renders the Submission tab inside an open shadow root (Form.io).
     // Enabling this makes cy.get / cy.contains pierce shadow DOM consistently across envs.
@@ -25,7 +27,7 @@ describe('Unity Login and check data from CHEFS', () => {
 
     // Verify that the details panel populates with mapped data
     it('Verify the UI is populated with valid data from CHEFS', () => {
-        cy.getSubmissionDetail('confirmationID').then((id) => {
+        cy.getSubmissionDetail('confirmationID').then((id: string) => {
             cy.log(`Confirmation ID: ${id}`)
         })
 
@@ -33,7 +35,7 @@ describe('Unity Login and check data from CHEFS', () => {
         cy.get('#search', { timeout: STANDARD_TIMEOUT }).should('exist')
 
         // Select "All time" from quick date range to widen the search
-        cy.get('body', { timeout: STANDARD_TIMEOUT }).then(($body) => {
+        cy.get('body', { timeout: STANDARD_TIMEOUT }).then(($body: any) => {
             if ($body.find('select#quickDateRange').length > 0) {
                 cy.get('select#quickDateRange', { timeout: STANDARD_TIMEOUT })
                     .should('be.visible')
@@ -42,29 +44,35 @@ describe('Unity Login and check data from CHEFS', () => {
         })
 
         // Clear and focus search
-        cy.get('#search', { timeout: STANDARD_TIMEOUT }).clear()
-        cy.get('#search', { timeout: STANDARD_TIMEOUT }).click({ force: true })
+        cy.get('#search', { timeout: STANDARD_TIMEOUT })
+            .should('be.visible')
+            .clear()
+            .click()
 
         // Type confirmation ID
-        cy.getSubmissionDetail('confirmationID').then((id) => {
+        cy.getSubmissionDetail('confirmationID').then((id: string) => {
             cy.get('#search', { timeout: STANDARD_TIMEOUT }).type(id)
         })
 
         // Select matching row if table rendering exists
-        cy.getSubmissionDetail('confirmationID').then((id) => {
-            cy.get('body', { timeout: STANDARD_TIMEOUT }).then(($body) => {
+        cy.getSubmissionDetail('confirmationID').then((id: string) => {
+            cy.get('body', { timeout: STANDARD_TIMEOUT }).then(($body: any) => {
                 if ($body.find(`tr:contains("${id}")`).length > 0) {
                     cy.contains('tr', id, { timeout: STANDARD_TIMEOUT })
+                        .scrollIntoView()
                         .find('.checkbox-select')
-                        .click({ force: true })
+                        .should('be.visible')
+                        .click()
                 }
             })
         })
 
         // Open the info panel if available
-        cy.get('body', { timeout: STANDARD_TIMEOUT }).then(($body) => {
+        cy.get('body', { timeout: STANDARD_TIMEOUT }).then(($body: any) => {
             if ($body.find('#applicationLink').length > 0) {
-                cy.get('#applicationLink', { timeout: STANDARD_TIMEOUT }).click({ force: true })
+                cy.get('#applicationLink', { timeout: STANDARD_TIMEOUT })
+                    .should('be.visible')
+                    .click()
             }
         })
 
@@ -79,18 +87,31 @@ describe('Unity Login and check data from CHEFS', () => {
         cy.get('label[for="ProjectBudget"]', { timeout: STANDARD_TIMEOUT }).next('.display-input').should('include.text', '$125,000.00')
         cy.get('label[for="Sector"]', { timeout: STANDARD_TIMEOUT }).next('.display-input').should('include.text', 'Other services (except public administration)')
 
-        cy.get('#closeSummaryCanvas', { timeout: STANDARD_TIMEOUT }).click({ force: true })
+        cy.get('#closeSummaryCanvas', { timeout: STANDARD_TIMEOUT })
+            .should('be.visible')
+            .click()
 
         // Open the application details
-        cy.get('#externalLink', { timeout: STANDARD_TIMEOUT }).should('exist').click({ force: true })
+        cy.getSubmissionDetail('confirmationID').then((id: string) => {
+            cy.contains('#GrantApplicationsTable tbody tr td a', id, { timeout: DETAILS_TIMEOUT })
+                .should('be.visible')
+                .click()
+        })
+        cy.location('pathname', { timeout: DETAILS_TIMEOUT }).should('include', '/GrantApplications/Details')
+        cy.get('#main-loading', { timeout: DETAILS_TIMEOUT }).should('have.class', 'hidden')
+        cy.get('#detailsTab', { timeout: DETAILS_TIMEOUT }).should('exist')
 
         // Review & Assessment tab
-        cy.get('#nav-review-and-assessment-tab', { timeout: STANDARD_TIMEOUT }).should('exist').click({ force: true })
-        cy.get('#RequestedAmountInputAR', { timeout: STANDARD_TIMEOUT }).should('have.value', '89,000.00')
-        cy.get('#TotalBudgetInputAR', { timeout: STANDARD_TIMEOUT }).should('have.value', '125,000.00')
+        cy.contains('#detailsTab .nav-link, #detailsTab button, #detailsTab a', 'Review & Assessment', { timeout: DETAILS_TIMEOUT })
+            .should('be.visible')
+            .click()
+        cy.get('#RequestedAmountInputAR', { timeout: DETAILS_TIMEOUT }).should('have.value', '89,000.00')
+        cy.get('#TotalBudgetInputAR', { timeout: DETAILS_TIMEOUT }).should('have.value', '125,000.00')
 
         // Project Info tab
-        cy.get('#nav-project-info-tab', { timeout: STANDARD_TIMEOUT }).should('exist').click({ force: true })
+        cy.get('#nav-project-info-tab', { timeout: STANDARD_TIMEOUT })
+            .should('be.visible')
+            .click()
         cy.get('#ProjectInfo_ProjectName', { timeout: STANDARD_TIMEOUT }).should('have.value', 'Hanbury Development Initiative - Phase 2')
         cy.get('#startDate', { timeout: STANDARD_TIMEOUT }).should('have.value', '2026-01-05')
         cy.get('#ProjectInfo_ProjectEndDate', { timeout: STANDARD_TIMEOUT }).should('have.value', '2027-03-11')
@@ -107,7 +128,9 @@ describe('Unity Login and check data from CHEFS', () => {
         cy.get('#ProjectInfo_Place', { timeout: STANDARD_TIMEOUT }).should('have.value', 'Hanbury')
 
         // Applicant Info tab
-        cy.contains('a.nav-link', 'Applicant Info', { timeout: STANDARD_TIMEOUT }).should('exist').click({ force: true })
+        cy.contains('a.nav-link', 'Applicant Info', { timeout: STANDARD_TIMEOUT })
+            .should('be.visible')
+            .click()
 
         // Applicant Summary fieldset
         cy.get('fieldset[name="Unity_GrantManager_ApplicationManagement_Applicant_Summary"]', { timeout: STANDARD_TIMEOUT })
@@ -172,11 +195,15 @@ describe('Unity Login and check data from CHEFS', () => {
         })
 
         // Payment Info tab
-        cy.get('#nav-payment-info-tab', { timeout: STANDARD_TIMEOUT }).should('exist').click({ force: true })
+        cy.get('#nav-payment-info-tab', { timeout: STANDARD_TIMEOUT })
+            .should('be.visible')
+            .click()
         cy.get('#RequestedAmount', { timeout: STANDARD_TIMEOUT }).should('have.value', '89,000.00')
 
         // Submission tab
-        cy.get('#nav-summery-tab', { timeout: STANDARD_TIMEOUT }).should('exist').click({ force: true })
+        cy.get('#nav-summery-tab', { timeout: STANDARD_TIMEOUT })
+            .should('be.visible')
+            .click()
 
         // In TEST, the section headers are inside shadow DOM and include the numeric prefix (e.g., "2. ELIGIBILITY").
         // Anchor to the actual tag and allow the number to vary.
@@ -196,11 +223,12 @@ describe('Unity Login and check data from CHEFS', () => {
         sectionRegexes.forEach((rx) => {
             cy.contains('h4', rx, { timeout: STANDARD_TIMEOUT })
                 .should('exist')
-                .click({ force: true })
+                .click()
         })
     })
 
     it('Verify Logout', () => {
         loginPage.quickLogout()
+        cy.contains('button', 'LOGIN', { timeout: STANDARD_TIMEOUT }).should('be.visible')
     })
 })
