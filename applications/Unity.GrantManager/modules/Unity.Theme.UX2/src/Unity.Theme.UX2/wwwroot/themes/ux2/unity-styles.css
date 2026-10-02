@@ -377,7 +377,7 @@ td.dt-editable {
 
     td.dt-editable:hover {
         background-color: #e6eff7;
-        color: white;
+        color: var(--bc-colors-blue-primary-500);
     }
 
     td.dt-editable:before {
@@ -923,4 +923,87 @@ table.dataTable th.dt-type-date div.dt-column-header,
 table.dataTable td.dt-type-numeric div.dt-column-header, 
 table.dataTable td.dt-type-date div.dt-column-header {
     flex-direction: row !important;
+}
+/* Action prompt dialog (ApplicationActionWidget) - scoped via customClass.popup */
+.swal2-popup.unity-action-prompt {
+    width: 36em;
+    padding: 1.5rem 2rem 2rem;
+    border-radius: 8px;
+}
+
+.unity-action-prompt .swal2-title {
+    color: var(--bc-type-color-primary);
+    font-weight: 700;
+    font-size: 1.75rem;
+    padding: 0 0 1rem;
+}
+
+.unity-action-prompt .swal2-html-container {
+    margin: 0;
+    padding: 0;
+    color: var(--bc-type-color-primary);
+}
+
+.unity-action-prompt .alert-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background-color: #EEF3FD;
+    color: var(--bc-colors-blue-primary-500);
+    border: none;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.unity-action-prompt .alert-info::before {
+    content: 'i';
+    flex: 0 0 auto;
+    width: 26px;
+    height: 26px;
+    line-height: 26px;
+    border-radius: 50%;
+    text-align: center;
+    font-weight: 700;
+    color: #fff;
+    background-color: var(--bc-colors-blue-primary);
+}
+
+.unity-action-prompt .form-control,
+.unity-action-prompt .form-select {
+    border: 1px solid #C9CDD3;
+    border-radius: 6px;
+    min-height: 44px;
+}
+
+.unity-action-prompt .form-control:focus,
+.unity-action-prompt .form-select:focus {
+    border-color: var(--bc-colors-blue-primary);
+    box-shadow: 0 0 0 2px rgba(46, 93, 215, 0.2);
+}
+
+.unity-action-prompt .swal2-actions {
+    gap: 2.5rem;
+    margin-top: 1.5rem;
+}
+
+.unity-action-prompt .swal2-confirm {
+    min-width: 11rem;
+    padding: 0.9rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 700;
+    background-color: var(--bc-colors-blue-primary-500);
+    border-color: var(--bc-colors-blue-primary-500);
+}
+
+.unity-action-prompt .swal2-cancel {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    color: var(--bc-colors-blue-primary);
+    font-weight: 700;
+}
+
+.unity-action-prompt .swal2-cancel:hover {
+    background: transparent;
+    text-decoration: underline;
 }

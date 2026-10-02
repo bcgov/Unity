@@ -1,0 +1,39 @@
+@page
+@using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Localization
+
+@model Unity.GrantManager.Web.Pages.ApplicantAddress.EditModal
+
+@inject IStringLocalizer<GrantManagerResource> L
+@{
+    Layout = null;
+}
+
+<form method="post" asp-page="/ApplicantAddress/EditModal">
+    <abp-modal>
+        <abp-modal-header title="@L["ApplicantAddress:EditTitle"].Value"></abp-modal-header>
+        <abp-modal-body>
+            <div class="applicant-address-edit-form">
+                <abp-input type="hidden" asp-for="AddressForm!.ApplicantId" />
+                <abp-input type="hidden" asp-for="AddressForm!.Id" />
+
+                <abp-select asp-for="AddressForm!.AddressType" asp-items="@Model.AddressForm!.AddressTypeOptions"></abp-select>
+                <abp-input asp-for="AddressForm!.Street"></abp-input>
+                <abp-input asp-for="AddressForm!.Unit"></abp-input>
+                <abp-input asp-for="AddressForm!.Street2"></abp-input>
+                <abp-input asp-for="AddressForm!.City"></abp-input>
+                <abp-input asp-for="AddressForm!.Province"></abp-input>
+                <abp-input asp-for="AddressForm!.PostalCode"></abp-input>
+                <div class="switch-container applicant-address-primary-toggle">
+                    <div class="px-3 form-check unt-form-switch form-switch">
+                        <abp-input type="checkbox" asp-for="AddressForm!.IsPrimary"></abp-input>
+                    </div>
+                </div>
+            </div>
+        </abp-modal-body>
+        <abp-modal-footer>
+            <button class="btn btn-primary" data-busy-text="@L["SavingWithThreeDot"].Value" type="submit">@L["Common:Command:Save"].Value</button>
+            <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">@L["Common:Command:Cancel"].Value</button>
+        </abp-modal-footer>
+    </abp-modal>
+</form>

@@ -40,18 +40,18 @@ namespace Unity.Notifications.EmailNotifications
         }
 
         [RemoteService(false)]
-        public async Task<EmailLog?> CreateEmailLogAsync(EmailMessageParams email, Guid applicationId, string? status, Guid? scheduledNotificationId = null)
+        public async Task<EmailLog?> CreateEmailLogAsync(EmailMessageParams email, Guid applicationId, string? status, Guid? scheduledNotificationId = null, Guid applicantId = default)
         {
             if (string.IsNullOrEmpty(email.EmailTo))
             {
                 return null;
             }
             var emailLog = new EmailLog { Id = GuidGenerator.Create() };
-            emailLog = await PopulateEmailLogAsync(emailLog, email, applicationId, status, scheduledNotificationId);
+            emailLog = await PopulateEmailLogAsync(emailLog, email, applicationId, status, scheduledNotificationId, applicantId);
             return await emailLogsRepository.InsertAsync(emailLog, autoSave: true);
         }
 
-        public async Task<EmailLog?> UpdateEmailLogAsync(Guid emailId, EmailMessageParams email, Guid applicationId, string? status)
+        public async Task<EmailLog?> UpdateEmailLogAsync(Guid emailId, EmailMessageParams email, Guid applicationId, string? status, Guid applicantId = default)
         {
             if (string.IsNullOrEmpty(email.EmailTo))
             {
@@ -64,12 +64,14 @@ namespace Unity.Notifications.EmailNotifications
             {
                 // Email doesn't exist, create a new one instead
                 var newEmailLog = new EmailLog { Id = emailId };
-                newEmailLog = await PopulateEmailLogAsync(newEmailLog, email, applicationId, status);
+                newEmailLog = await PopulateEmailLogAsync(newEmailLog, email, applicationId, status, applicantId: applicantId);
                 return await emailLogsRepository.InsertAsync(newEmailLog, autoSave: true);
             }
             
+            EmailOwnership.EnsureDraftOwner(existingEmail, applicationId, applicantId);
+
             // Email exists, update it
-            existingEmail = await PopulateEmailLogAsync(existingEmail, email, applicationId, status);
+            existingEmail = await PopulateEmailLogAsync(existingEmail, email, applicationId, status, applicantId: applicantId);
             return await emailLogsRepository.UpdateAsync(existingEmail, autoSave: true);
         }
 
@@ -86,11 +88,14 @@ namespace Unity.Notifications.EmailNotifications
             }
         }
 
-        public async Task<EmailLog> CreateDraftEmailLogAsync(Guid applicationId)
+        public async Task<EmailLog> CreateDraftEmailLogAsync(Guid applicationId, Guid applicantId = default)
         {
+            EmailOwnership.EnsureSingleOwner(applicationId, applicantId);
             var emailLog = new EmailLog
             {
+                Id = GuidGenerator.Create(),
                 ApplicationId = applicationId,
+                ApplicantId = applicantId,
                 Status = EmailStatus.Draft
             };
             return await emailLogsRepository.InsertAsync(emailLog, autoSave: true);
@@ -370,11 +375,13 @@ namespace Unity.Notifications.EmailNotifications
             EmailMessageParams email,
             Guid applicationId,
             string? status,
-            Guid? scheduledNotificationId = null)
+            Guid? scheduledNotificationId = null,
+            Guid applicantId = default)
         {
             var emailObject = await GetEmailObjectAsync(email, "html");
             emailLog = UpdateMappedEmailLog(emailLog, emailObject);
             emailLog.ApplicationId = applicationId;
+            emailLog.ApplicantId = applicantId;
             if (scheduledNotificationId.HasValue)
             {
                 emailLog.ScheduledNotificationId = scheduledNotificationId.Value;

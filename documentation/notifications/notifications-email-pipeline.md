@@ -36,7 +36,8 @@ This is the core of the module. Every email — user-composed, bulk, scheduled, 
 - `TenantId` — the handler switches into this tenant before doing anything, so publishers running outside a request context (background jobs, the payments module iterating tenants) still write to the right database.
 - `Action` — an `EmailAction`, the dispatch key.
 - `EmailAddressList` / `Cc` / `Bcc` — collections here, joined to comma strings on the `EmailLog`.
-- `TemplateId` — non-empty means "copy this template's attachments onto the email".
+- `ApplicationId` / `ApplicantId` — manual messages have exactly one owner. Applicant messages keep `ApplicationId` empty through creation, updates, and queuing.
+- `TemplateId` — identifies the selected template, retained in existing email-log JSON metadata on save/send. New messages copy its attachments; existing manual drafts keep their prepared attachment snapshot, including user removals.
 - `ScheduledNotificationId?` — set by the scheduled-notification paths; used to classify the recipient and to trace a message back to its configuration.
 - `EmailAttachments` — inline `{FileName, Content, ContentType}` byte payloads, used by the FSB path which generates a spreadsheet in memory.
 - `SendOnDateTime?` — a future UTC time turns this into a delayed send.
@@ -48,7 +49,7 @@ This is the core of the module. Every email — user-composed, bulk, scheduled, 
 
 |`EmailAction`|Handler method|Behaviour|
 |---|---|---|
-|`SendCustom`, `SendEventDriven`, `SendDateDriven`|`HandleSendCustomEmail`|Create-or-update the log, apply the template's attachments, set `EmailType`, attach the scheduled-notification id, classify the recipient. **Returns the log → it gets queued.**|
+|`SendCustom`, `SendEventDriven`, `SendDateDriven`|`HandleSendCustomEmail`|Create-or-update the log, prepare template attachments for new messages (preserve existing manual draft attachments), set `EmailType`, attach the scheduled-notification id, classify the recipient. **Returns the log → it gets queued.**|
 |`SaveDraft`|`HandleSaveDraftAndReturnNull`|Same create-or-update with status `Draft`, then deliberately returns `null` so nothing is queued.|
 |`SendFailedSummary`|`HandleFailedSummary`|Fixed subject `"CAS Payment Failure Notification"`, `RecipientType.Internal`.|
 |`SendFsbNotification`|`HandleFsbNotification`|Subject from the event (fallback `"FSB Payment Notification"`), uploads the inline attachments, records `PaymentRequestIds`, `RecipientType.Internal`.|
@@ -88,6 +89,8 @@ Three deliberate orderings here, each worth preserving:
 - **Validate twice.** The first check fails a send of an existing draft *before* any S3 object is copied or the draft is mutated. The second fails *before* the unit of work commits, so a missing object rolls back the transition out of `Draft` and the user can remove and re-upload the file.
 - **Own transactional unit of work.** `requiresNew: true` means the email log and its attachment rows commit or roll back as one, independently of whatever transaction the publisher was in.
 - **Queue after commit.** `SendEmailToQueue` is outside `uow.CompleteAsync()`, so the consumer can never dequeue a message whose `EmailLog` row is not yet visible.
+
+Missing-attachment failures from interactive send/save operations propagate back to the caller. Automatic notification handling retains its existing logging behavior.
 
 ### Recipient classification
 

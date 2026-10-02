@@ -46,4 +46,50 @@ public interface IApplicantAddressManager
     /// <param name="excludeAddressId">Address to ignore, such as one being deleted or moved to another group.</param>
     /// <returns>The id of the address promoted to primary, or <c>null</c> when none was.</returns>
     Task<Guid?> ElectPrimaryAsync(Guid applicantId, AddressType addressType, Guid? excludeAddressId = null);
+
+    /// <summary>
+    /// Loads an address and verifies it belongs to <paramref name="applicantId"/>.
+    /// </summary>
+    /// <exception cref="Volo.Abp.BusinessException">
+    /// <c>Unity:Applicant:AddressNotFound</c> when the address belongs to another applicant.
+    /// </exception>
+    Task<ApplicantAddress> GetOwnedAsync(Guid applicantId, Guid addressId);
+
+    /// <summary>
+    /// Applies an edit from the Applicant Profile. Addresses owned by a submission are not
+    /// editable here and are rejected. Keeps the primary-per-type invariant intact, including
+    /// when the edit moves the address to another type.
+    /// </summary>
+    Task<ApplicantAddress> UpdateAsync(
+        Guid applicantId,
+        Guid addressId,
+        ApplicantAddressInput input,
+        AddressType addressType,
+        bool isPrimary);
+
+    /// <summary>
+    /// Keeps the "at most one primary per address type" invariant intact after an edit.
+    /// An address that moves to another type contests its new group and vacates the old one.
+    /// </summary>
+    Task ApplyPrimaryScopeAsync(
+        Guid applicantId,
+        Guid addressId,
+        AddressType previousAddressType,
+        AddressType currentAddressType,
+        bool wasPrimary,
+        bool isPrimary);
+
+    /// <summary>
+    /// Flags an address as the applicant's primary address for its own <see cref="AddressType"/>
+    /// and demotes the other addresses of that type. Addresses owned by a submission are
+    /// eligible: the editability restriction covers editing an address, not designating one.
+    /// </summary>
+    Task SetPrimaryAsync(Guid applicantId, Guid addressId);
+
+    /// <summary>
+    /// True when the address is the applicant's primary address for its own
+    /// <see cref="AddressType"/>: flagged explicitly, or selected by
+    /// <see cref="ApplicantAddressPrimaryResolver"/> when no address of that type is flagged.
+    /// </summary>
+    Task<bool> IsResolvedPrimaryAsync(Guid applicantId, ApplicantAddress address);
 }

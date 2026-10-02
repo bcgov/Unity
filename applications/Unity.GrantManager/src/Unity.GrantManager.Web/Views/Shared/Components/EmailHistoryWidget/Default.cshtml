@@ -7,5 +7,7 @@
 </div>
 <div class="px-0">
     <abp-table id="EmailHistoryTable" hoverable-rows="true" data-resize-aware="true" class="attachments-table"
+               data-applicant-id="@Model.ApplicantId" data-application-id="@Model.ApplicationId"
+               data-applicant-name="@Model.ApplicantName" data-unity-applicant-id="@Model.UnityApplicantId"
                data-enable-email-delay="@Model.EnableEmailDelay.ToString().ToLower()"></abp-table>
 </div>

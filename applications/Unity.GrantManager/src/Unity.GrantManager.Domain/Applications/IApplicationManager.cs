@@ -10,7 +10,7 @@ public interface IApplicationManager
     Task UpdateAssigneeAsync(Guid applicationId, Guid assigneeId, string? duty);
     Task RemoveAssigneeAsync(Guid applicationId, Guid assigneeId);
     Task<List<ApplicationActionResultItem>> GetActions(Guid applicationId);    
-    Task<Application> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction);
+    Task<Application> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction, DateTime? finalDecisionDate = null, string? declineRational = null);
     Task SetAssigneesAsync(Guid applicationId, List<(Guid? assigneeId, string? fullName)> assigneeSubs);
     Task<bool> IsActionAllowed(Application application, GrantApplicationAction triggerAction);
     string? GetWorkflowDiagram(bool isDirectApproval);

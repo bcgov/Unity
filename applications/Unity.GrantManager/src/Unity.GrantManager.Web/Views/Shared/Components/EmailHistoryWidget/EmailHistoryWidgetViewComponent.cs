@@ -15,13 +15,13 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailHistoryWidget;
     StyleTypes = new [] {typeof(EmailHistoryStyleBundleContributor)})]
 public class EmailHistoryWidgetViewComponent(ISettingProvider settingProvider) : AbpViewComponent
 {
-    public async Task<IViewComponentResult> InvokeAsync()
+    public async Task<IViewComponentResult> InvokeAsync(Guid applicationId = default, Guid applicantId = default, string applicantName = "", string unityApplicantId = "")
     {
         var enableEmailDelay = string.Equals(
             await settingProvider.GetOrNullAsync(NotificationsSettings.Mailing.EnableEmailDelay),
             "true", StringComparison.OrdinalIgnoreCase);
 
-        return View(new EmailHistoryWidgetViewModel { EnableEmailDelay = enableEmailDelay });
+        return View(new EmailHistoryWidgetViewModel { EnableEmailDelay = enableEmailDelay, ApplicationId = applicationId, ApplicantId = applicantId, ApplicantName = applicantName, UnityApplicantId = unityApplicantId });
     }
 }
 

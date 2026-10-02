@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.Validation;
 using Microsoft.EntityFrameworkCore;
 
 namespace Unity.GrantManager.Notifications
@@ -15,8 +14,6 @@ namespace Unity.GrantManager.Notifications
 
         public async Task<NotificationDto> CreateAsync(CreateUpdateNotificationDto input)
         {
-            EnsureDateBasedNotification(input);
-
             var entity = new ScheduledNotification
             {
                 FormId = input.FormId,
@@ -130,8 +127,6 @@ namespace Unity.GrantManager.Notifications
 
         public async Task<NotificationDto> UpdateAsync(Guid id, CreateUpdateNotificationDto input)
         {
-            EnsureDateBasedNotification(input);
-
             var e = await _repository.GetAsync(id);
             e.EmailTemplateId = input.EmailTemplateId;
             e.TriggerType = input.TriggerType;
@@ -166,12 +161,6 @@ namespace Unity.GrantManager.Notifications
             };
         }
 
-        private static void EnsureDateBasedNotification(CreateUpdateNotificationDto input)
-        {
-            if (string.Equals(input.TriggerType, "Event", StringComparison.OrdinalIgnoreCase))
-            {
-                throw new AbpValidationException("Event-based notifications are not supported.");
-            }
-        }
+
     }
 }

@@ -9,6 +9,7 @@ namespace Unity.Notifications.Emails
     {
         Task<EmailLog?> GetByIdAsync(Guid id, bool includeDetails = false);
         Task<List<EmailLog>> GetByApplicationIdAsync(Guid applicationId);
+        Task<List<EmailLog>> GetByApplicantIdAsync(Guid applicantId);
         Task<List<EmailLog>> GetByApplicationIdsAndStatusAsync(List<Guid> applicationIds, string status);
 
         // Bypasses ABP's automatic audit-stamping so system/background saves don't overwrite the last user edit.

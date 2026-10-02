@@ -444,19 +444,55 @@
     }
 
     /**
+     * Handle open action (current tab).
+     */
+    function handleOpenAction(e, $row) {
+        e.preventDefault();
+        hideMenu();
+
+        // Try to find a link in the row to open
+        const $link = $row.find('a[href]').first();
+        if ($link.length > 0) {
+            const url = $link.attr('href');
+            if (url) {
+                window.location = url;
+            }
+        }
+    }
+
+    /**
+     * Handle open in new tab action.
+     */
+    function handleOpenInNewTabAction(e, $row) {
+        e.preventDefault();
+        hideMenu();
+
+        // Try to find a link in the row to open
+        const $link = $row.find('a[href]').first();
+        if ($link.length > 0) {
+            const url = $link.attr('href');
+            if (url) {
+                window.open(url, '_blank');
+            }
+        }
+    }
+
+    /**
      * Initialize a context menu for a DataTable.
      * Features:
      * - Right-click selection: if row not selected, select it; if already selected, keep selection
      * - Copy: copies the right-clicked cell's rendered text to clipboard
      * - Toolbar items: Filtering
+     * - Open: opens the selected row's link in the current tab
+     * - Open in New Tab: opens the selected row's link in a new tab
      * - Custom actions: mirrors visible/enabled ActionBar buttons
      * 
      * @param {DataTables.Api} dtApi - The initialized DataTable API instance
      * @param {Object} options - Configuration options
      * @param {boolean} [options.enabled=true] - Whether context menu is enabled
-     * @param {string} [options.actionsSelector='[data-selector$="-table-actions"]'] - Selector for custom action buttons
+     * @param {string} [options.actionsSelector='[data-selector$=\"-table-actions\"]'] - Selector for custom action buttons
      * @param {boolean} [options.copyEnabled=true] - Whether Copy action is available
-     * @param {Object} [options.labels={}] - Localization overrides { copy, filter, clearFilter }
+     * @param {Object} [options.labels={}] - Localization overrides { copy, filter, clearFilter, open, openNewTab }
      */
     globalThis.initializeTableContextMenu = function (dtApi, options) {
         options = options ?? {};
@@ -475,7 +511,9 @@
         const defaultLabels = {
             copy: l('DataTable:ContextMenu:Copy') ?? 'Copy',
             filter: l('DataTable:ContextMenu:Filter') ?? 'Filter',
-            clearFilter: l('DataTable:ContextMenu:ClearFilter') ?? 'Clear Filters'
+            clearFilter: l('DataTable:ContextMenu:ClearFilter') ?? 'Clear Filters',
+            open: l('DataTable:ContextMenu:Open') ?? 'Open',
+            openNewTab: l('DataTable:ContextMenu:OpenNewTab') ?? 'Open in New Tab'
         };
 
         const finalLabels = $.extend({}, defaultLabels, labels);
@@ -533,6 +571,8 @@
             const $menuContainer = getMenuContainer();
             $menuContainer.empty();
 
+            const $row = $cell.closest('tr');
+
             // Copy
             if (copyEnabled) {
                 const cellText = ($cell.text() ?? '').trim();
@@ -541,6 +581,18 @@
                     copyToClipboard(cellText);
                     hideMenu();
                 });
+            }
+
+            // Open and Open in New Tab
+            if ($row.find('a[href]').length > 0) {
+                appendMenuAction($menuContainer, labels.open, function (e) {
+                    handleOpenAction(e, $row);
+                });
+                appendMenuAction($menuContainer, labels.openNewTab, function (e) {
+                    handleOpenInNewTabAction(e, $row);
+                });
+                // Add separator after Open/Open in New Tab section
+                $menuContainer.append($('<li class="dt-context-menu-separator"></li>'));
             }
 
             // Toolbar
@@ -577,7 +629,8 @@
                     const $btn = $(this);
                     const btnText = ($btn.text() ?? '').trim();
 
-                    if (btnText?.length > 0) {
+                    // Skip "Open" button since it's already in the dedicated menu items
+                    if (btnText?.length > 0 && btnText.toLowerCase() !== 'open') {
                         renderCustomActionMenuItem($menuContainer, $btn, btnText);
                     }
                 });

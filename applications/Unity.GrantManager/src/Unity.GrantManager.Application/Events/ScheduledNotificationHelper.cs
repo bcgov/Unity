@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Notifications;
 using Unity.Notifications.EmailGroups;
 using Unity.Notifications.Events;
@@ -52,6 +53,12 @@ namespace Unity.GrantManager.Events
             ApplicationForm? applicationForm = null;
             try { applicationForm = application.ApplicationForm; } catch { /* navigation property may not be loaded */ }
 
+            var declineRationale = application.DeclineRational ?? string.Empty;
+            if (AssessmentResultsOptionsList.DeclineRationalActionList.TryGetValue(declineRationale, out var declineRationaleDisplayValue))
+            {
+                declineRationale = declineRationaleDisplayValue;
+            }
+
             return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["applicant_name"]              = applicant?.ApplicantName ?? string.Empty,
@@ -59,12 +66,12 @@ namespace Unity.GrantManager.Events
                 ["organization_name"]           = applicant?.OrgName ?? applicant?.NonRegisteredBusinessName ?? string.Empty,
                 ["submission_number"]           = application.ReferenceNo,
                 ["submission_date"]             = application.SubmissionDate.ToString("yyyy-MM-dd"),
-                ["status"]                      = applicationStatus?.StatusCode.ToString() ?? string.Empty,
+                ["status"]                      = applicationStatus?.InternalStatus.ToString() ?? string.Empty,
                 ["approved_amount"]             = application.ApprovedAmount.ToString("$#,##0.00"),
                 ["requested_amount"]            = application.RequestedAmount.ToString("$#,##0.00"),
                 ["recommended_amount"]          = application.RecommendedAmount.ToString("$#,##0.00"),
                 ["approval_date"]               = application.FinalDecisionDate?.ToString("yyyy-MM-dd") ?? string.Empty,
-                ["decline_rationale"]           = application.DeclineRational ?? string.Empty,
+                ["decline_rationale"]           = declineRationale,
                 ["community"]                   = application.Community ?? string.Empty,
                 ["project_name"]                = application.ProjectName,
                 ["project_summary"]             = application.ProjectSummary ?? string.Empty,
@@ -76,7 +83,7 @@ namespace Unity.GrantManager.Events
                 ["contact_full_name"]           = applicantAgent?.Name ?? string.Empty,
                 ["contact_title"]               = applicantAgent?.Title ?? string.Empty,
                 ["category"]                    = applicationForm?.Category ?? string.Empty,
-                ["today_date"]                  = $"{DateTime.Today.ToString("MMMM d, yyyy")}",
+                ["today_date"]                  = DateTime.Today.ToString("MMMM d, yyyy"),
                 ["unity_application_id"]        = application.UnityApplicationId ?? string.Empty
             };
         }
@@ -85,25 +92,10 @@ namespace Unity.GrantManager.Events
         {
             return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                ["applicant_name"]                   = applicant?.ApplicantName ?? string.Empty,
-                ["applicant_id"]                     = applicant?.UnityApplicantId ?? string.Empty,
-                ["organization_name"]                = applicant?.OrgName ?? string.Empty,
-                ["non_registered_business_name"]     = applicant?.NonRegisteredBusinessName ?? string.Empty,
-                ["organization_number"]              = applicant?.OrgNumber ?? string.Empty,
-                ["business_number"]                  = applicant?.BusinessNumber ?? string.Empty,
-                ["organization_status"]              = applicant?.OrgStatus ?? string.Empty,
-                ["organization_type"]                = applicant?.OrganizationType ?? string.Empty,
-                ["applicant_status"]                 = applicant?.Status ?? string.Empty,
-                ["sector"]                           = applicant?.Sector ?? string.Empty,
-                ["sub_sector"]                       = applicant?.SubSector ?? string.Empty,
-                ["industry_description"]             = applicant?.SectorSubSectorIndustryDesc ?? string.Empty,
-                ["approximate_number_of_employees"]  = applicant?.ApproxNumberOfEmployees ?? string.Empty,
-                ["indigenous_organization"]         = applicant?.IndigenousOrgInd ?? string.Empty,
-                ["fiscal_month"]                     = applicant?.FiscalMonth ?? string.Empty,
-                ["fiscal_day"]                       = applicant?.FiscalDay?.ToString() ?? string.Empty,
-                ["fiscal_year_end"]                  = applicant?.FiscalYearEnd?.ToString("yyyy-MM-dd") ?? string.Empty,
-                ["started_operating_date"]           = applicant?.StartedOperatingDate?.ToString("yyyy-MM-dd") ?? string.Empty,
-                ["today_date"]                       = DateTime.Today.ToString("MMMM d, yyyy")
+                ["applicant_name"]    = applicant?.ApplicantName ?? string.Empty,
+                ["organization_name"] = applicant?.OrgName ?? string.Empty,
+                ["applicant_id"]      = applicant?.UnityApplicantId ?? string.Empty,
+                ["today_date"]        = DateTime.Today.ToString("MMMM d, yyyy")
             };
         }
 

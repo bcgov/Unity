@@ -36,6 +36,7 @@ public class TenantAppService(
     IEnumerable<IPostTenantCreationStep> postTenantCreationSteps) : TenantManagementAppServiceBase, ITenantAppService
 {
     private IIdentityUserRepository IdentityUserRepository => LazyServiceProvider.LazyGetRequiredService<IIdentityUserRepository>();
+    private ITenantPurgeProvider TenantPurgeProvider => LazyServiceProvider.LazyGetRequiredService<ITenantPurgeProvider>();
 
     private const string ExtraPropDisplayName = "DisplayName";
     private const string ExtraPropDivision = "Division";
@@ -51,6 +52,19 @@ public class TenantAppService(
     }
 
     public virtual async Task<PagedResultDto<TenantDto>> GetListAsync(GetTenantsInput input)
+    {
+        if (!input.IncludeDeleted)
+        {
+            return await GetTenantListAsync(input);
+        }
+
+        using (DataFilter.Disable<ISoftDelete>())
+        {
+            return await GetTenantListAsync(input);
+        }
+    }
+
+    private async Task<PagedResultDto<TenantDto>> GetTenantListAsync(GetTenantsInput input)
     {
         if (input.Sorting.IsNullOrWhiteSpace())
         {
@@ -271,6 +285,39 @@ public class TenantAppService(
         }
 
         await tenantRepository.DeleteAsync(tenant);
+    }
+
+    // Second step after DeleteAsync (soft delete). Only UI-created tenants carry a LicencePlate
+    // (their generated T_XXX999 database); seeded tenants point at configured databases and are
+    // refused so a purge can never drop a database that isn't the tenant's own.
+    [Authorize(IdentityConsts.ITAdminPolicyName)]
+    public virtual async Task PurgeAsync(Guid id)
+    {
+        Tenant? tenant;
+        using (DataFilter.Disable<ISoftDelete>())
+        {
+            tenant = await tenantRepository.FindAsync(id, includeDetails: false);
+        }
+
+        if (tenant == null)
+        {
+            throw new UserFriendlyException("Tenant not found.");
+        }
+
+        if (!tenant.IsDeleted)
+        {
+            throw new UserFriendlyException("Delete the tenant before purging it.");
+        }
+
+        var licencePlate = tenant.ExtraProperties.TryGetValue(UnityTenantManagementConsts.TenantLicencePlateExtraPropertyKey, out var value)
+            ? value?.ToString()
+            : null;
+        if (string.IsNullOrWhiteSpace(licencePlate))
+        {
+            throw new UserFriendlyException("Only tenants created with their own database (a licence plate) can be purged.");
+        }
+
+        await TenantPurgeProvider.PurgeAsync(tenant.Id, licencePlate);
     }
 
     [RemoteService(false)]

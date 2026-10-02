@@ -279,6 +279,8 @@
             lengthMenu: [10, 25, 50]
         });
 
+        _openRequestedCreateTenant();
+
         _dataTable.select.style('single');
 
         _dataTable.on('select', function (e, dt, type, indexes) {
@@ -294,6 +296,21 @@
                 manageActionButtons();
             }
         });
+    }
+
+    // ─── Create Tenant requested from the request details page ───────────────
+
+    // Details page links here with ?createTenant={applicationId}; open the modal once, then drop
+    // the parameter so a refresh doesn't reopen it. The server still enforces Approved.
+    let _requestedCreateTenantId = new URLSearchParams(globalThis.location.search).get('createTenant');
+
+    function _openRequestedCreateTenant() {
+        const id = _requestedCreateTenantId;
+        _requestedCreateTenantId = null;
+        if (!id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return;
+
+        globalThis.history.replaceState(null, '', globalThis.location.pathname);
+        _createTenantModal.open({ id: id });
     }
 
     // ─── Action button state ──────────────────────────────────────────────────
@@ -669,8 +686,19 @@
             $sel.append('<option value="' + $('<span>').text(f.key).html() + '">' + $('<span>').text(f.label).html() + '</option>');
         });
         const savedKeyValid = savedKey && fields.some(function (f) { return f.key === savedKey; });
-        const pick = (savedKeyValid ? savedKey : null) || _bestMatch(fields, canonicals);
+        const fieldsWithValue = fields.filter(function (f) { return _hasFieldValue(f.key); });
+        const pick = (savedKeyValid && _hasFieldValue(savedKey) ? savedKey : null)
+            || _bestMatch(fieldsWithValue, canonicals)
+            || (savedKeyValid ? savedKey : null);
         if (pick) $sel.val(pick);
+    }
+
+    function _hasFieldValue(key) {
+        const value = _fieldValues[key];
+        if (value === null || value === undefined) return false;
+        if (Array.isArray(value)) return value.length > 0;
+        const text = String(value).trim();
+        return text !== '' && text !== '[]' && text !== '{}';
     }
 
     // ─── Document ready ───────────────────────────────────────────────────────
