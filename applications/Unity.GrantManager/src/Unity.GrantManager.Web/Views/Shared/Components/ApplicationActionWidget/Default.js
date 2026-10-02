@@ -139,6 +139,7 @@
                 confirmButtonText: 'Confirm',
                 focusConfirm: false,
                 customClass: {
+                    popup: 'unity-action-prompt',
                     confirmButton: 'btn btn-primary',
                     cancelButton: 'btn btn-secondary'
                 },
