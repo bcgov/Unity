@@ -383,7 +383,7 @@ Unity.TenantManagement.HttpApi / .HttpApi.Client → thin controller/proxy wrapp
       <div class="row"><div class="k">Encrypt on write</div><div class="v"><p><span class="code">TenantAppService.CreateAsync</span> / <span class="code">UpdateConnectionStringsAsync</span>.</p></div></div>
       <div class="row"><div class="k">Runtime decrypt</div><div class="v"><p><span class="code">EncryptedTenantConnectionStringResolver</span> — replaces ABP's own resolver via <span class="code">[Dependency(ReplaceServices = true)]</span>; falls back to plain text on decrypt failure.</p></div></div>
       <div class="row"><div class="k">Migration-time decrypt</div><div class="v"><p><span class="code">EntityFrameworkCoreGrantManagerDbSchemaMigrator.cs</span>.</p></div></div>
-      <div class="row"><div class="k">One-time backfill</div><div class="v"><p><span class="code">TenantConnectionStringEncryptionMigrator.cs</span>, run from <span class="code">GrantManagerDbMigrationService.MigrateAsync()</span> at startup.</p></div></div>
+      <div class="row"><div class="k">Plain-text rows</div><div class="v"><p>Not backfilled automatically. Encrypted when the tenant's Configuration modal is saved by a user with <span class="code">Tenants.ManageConnectionStrings</span> (re-submits both strings via <span class="code">UpdateConnectionStringsAsync</span>).</p></div></div>
     </div>
 
     <h3>Credential generation — TenantConnectionStringBuilder</h3>
