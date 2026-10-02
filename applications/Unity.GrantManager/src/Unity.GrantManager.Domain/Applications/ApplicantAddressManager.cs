@@ -96,13 +96,7 @@ public class ApplicantAddressManager(
             return newAddress;
         }
 
-        var applicantAddress = await applicantAddressRepository.GetAsync(input.Id);
-        if (applicantAddress.ApplicantId != applicantId)
-        {
-            throw new BusinessException("Unity:Applicant:AddressNotFound")
-                .WithData("ApplicantId", applicantId)
-                .WithData("AddressId", input.Id);
-        }
+        var applicantAddress = await GetOwnedAsync(applicantId, input.Id);
 
         if (applicantAddress.AddressType != expectedType)
         {
@@ -195,6 +189,82 @@ public class ApplicantAddressManager(
         await applicantAddressRepository.UpdateAsync(trackedAddress);
 
         return trackedAddress.Id;
+    }
+
+    /// <inheritdoc />
+    public virtual async Task<ApplicantAddress> GetOwnedAsync(Guid applicantId, Guid addressId)
+    {
+        var address = await applicantAddressRepository.GetAsync(addressId);
+
+        if (address.ApplicantId != applicantId)
+        {
+            throw new BusinessException("Unity:Applicant:AddressNotFound")
+                .WithData("ApplicantId", applicantId)
+                .WithData("AddressId", addressId);
+        }
+
+        return address;
+    }
+
+    /// <inheritdoc />
+    public virtual async Task<ApplicantAddress> UpdateAsync(
+        Guid applicantId,
+        Guid addressId,
+        ApplicantAddressInput input,
+        AddressType addressType,
+        bool isPrimary)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+
+        var address = await GetOwnedAsync(applicantId, addressId);
+
+        if (address.ApplicationId.HasValue)
+        {
+            throw new BusinessException(GrantManagerDomainErrorCodes.AddressNotEditable)
+                .WithData("AddressId", addressId);
+        }
+
+        if (string.IsNullOrWhiteSpace(input.Street) && string.IsNullOrWhiteSpace(input.Street2))
+        {
+            throw new BusinessException(GrantManagerDomainErrorCodes.AddressStreetRequired);
+        }
+
+        var previousAddressType = address.AddressType;
+        var wasPrimary = address.IsFlaggedPrimary();
+
+        address.Street = input.Street?.Trim() ?? string.Empty;
+        address.Street2 = input.Street2?.Trim() ?? string.Empty;
+        address.Unit = input.Unit?.Trim() ?? string.Empty;
+        address.City = input.City?.Trim() ?? string.Empty;
+        address.Province = input.Province?.Trim() ?? string.Empty;
+        address.Postal = input.PostalCode?.Trim() ?? string.Empty;
+        address.AddressType = addressType;
+        address.SetPrimaryFlag(isPrimary);
+
+        await ApplyPrimaryScopeAsync(
+            applicantId, addressId, previousAddressType, addressType, wasPrimary, isPrimary);
+
+        return await applicantAddressRepository.UpdateAsync(address);
+    }
+
+    /// <inheritdoc />
+    public virtual async Task ApplyPrimaryScopeAsync(
+        Guid applicantId,
+        Guid addressId,
+        AddressType previousAddressType,
+        AddressType currentAddressType,
+        bool wasPrimary,
+        bool isPrimary)
+    {
+        if (isPrimary)
+        {
+            await DemotePrimarySiblingsAsync(applicantId, currentAddressType, addressId);
+        }
+
+        if (wasPrimary && previousAddressType != currentAddressType)
+        {
+            await ElectPrimaryAsync(applicantId, previousAddressType, addressId);
+        }
     }
 
     /// <summary>

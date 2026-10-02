@@ -56,12 +56,15 @@ The invariant is primary-per-type, and `ApplicantAddressManager` owns it:
 |---|---|
 | `DemotePrimarySiblingsAsync(applicantId, addressType, …)` | Clears the primary flag on other addresses of the same type before setting a new one |
 | `ElectPrimaryAsync(applicantId, addressType, …)` | Picks a replacement primary when the current one is removed |
+| `GetOwnedAsync(applicantId, addressId)` | Loads an address and rejects it if it does not belong to the given applicant |
+| `UpdateAsync(applicantId, addressId, input, addressType, isPrimary)` | Applies an edit from the applicant profile and rejects an address that came from a submission |
+| `ApplyPrimaryScopeAsync(…)` | Keeps one primary per type after an edit, including when the edit moves an address to another type |
 
 The manager is written generically over the enum so adding a third address type needs no change to the rule.
 
 Addresses matter beyond correspondence: `ApplicationForm.ElectoralDistrictAddressType` decides *which* address the electoral district is derived from at intake, and `DetermineElectoralDistrictHandler` performs that lookup.
 
-`UpdateApplicantContactAddressesAsync` is gated by `UnitySelector.ApplicantManagement.Addresses.Update`.
+Two write paths are gated by `UnitySelector.ApplicantManagement.Addresses.Update`: `ApplicantAppService.UpdateApplicantContactAddressesAsync`, behind the primary address fields at the top of the Addresses tab, and `IApplicantAddressAppService`, behind the per-row Edit modal. Both delegate to `ApplicantAddressManager`, so the primary-per-type rule lives in one place. The Edit modal refuses an address owned by a submission. Those addresses are edited through the primary address fields or the submission's own Applicant Info form. The Applicant Portal changes addresses through its own `ADDRESS_EDIT_COMMAND` handler, described in [`applicant-portal/grants-portal-rabbitmq-integration.md`](../applicant-portal/grants-portal-rabbitmq-integration.md).
 
 ## Contacts
 

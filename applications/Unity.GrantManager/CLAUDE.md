@@ -8,7 +8,7 @@ All commands run from `applications/Unity.GrantManager/`:
 
 ```bash
 dotnet restore Unity.GrantManager.sln
-dotnet build Unity.GrantManager.sln --no-restore      # ~3 min, 81 projects
+dotnet build Unity.GrantManager.sln --no-restore      # ~3 min, 63 projects
 dotnet test Unity.GrantManager.sln --no-build          # ~470 tests, ~1-2 min
 
 # Single test project
@@ -16,7 +16,7 @@ dotnet test test/Unity.GrantManager.Application.Tests/ --no-build
 ```
 
 - No PostgreSQL setup needed for tests — SQLite in-memory (most projects) or `EFCore.InMemory` (`Unity.GrantManager.Web.Tests`).
-- `Unity.GrantManager.Web/Pages/Dashboard/Index.cshtml.cs` has one expected `CS8604` warning — don't fix it unless asked.
+- The build is not warning-free. It carries pre-existing warnings, mostly nullability warnings in the test projects plus a few in production code such as `Unity.GrantManager.Web/Pages/Error.cshtml`. Judge a change by whether it adds new warnings; don't fix existing ones unless asked. Warnings only show when a project actually compiles, so use `--no-incremental` when you need the full list.
 - `Directory.Build.props` / `common.props` (repo-wide MSBuild props) already suppress `NU1701`, `MSB3277`, `CS1591` — don't re-suppress per-project.
 
 ### Local dev environment

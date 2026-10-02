@@ -51,5 +51,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
         public string Province { get; set; } = string.Empty;
         public string Postal { get; set; } = string.Empty;
         public string Country { get; set; } = string.Empty;
+        /// <summary>
+        /// An address owned by a submission is maintained on that submission's Applicant Info
+        /// form and is not editable from the applicant profile.
+        /// </summary>
+        public bool IsEditable => !ApplicationId.HasValue;
     }
 }

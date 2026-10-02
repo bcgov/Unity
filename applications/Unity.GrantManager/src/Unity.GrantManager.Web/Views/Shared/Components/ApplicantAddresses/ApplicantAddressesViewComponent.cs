@@ -91,13 +91,15 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
                     }).ToList()
             };
 
-            var primaryPhysicalAddress = FindMostRecentAddress(orderedAddresses, GrantApplications.AddressType.PhysicalAddress);
+            var primaryPhysicalAddress = ApplicantAddressPrimaryResolver.Resolve(
+                orderedAddresses, GrantApplications.AddressType.PhysicalAddress);
             if (primaryPhysicalAddress != null)
             {
                 viewModel.PrimaryPhysicalAddress = MapPrimaryAddress(primaryPhysicalAddress);
             }
 
-            var primaryMailingAddress = FindMostRecentAddress(orderedAddresses, GrantApplications.AddressType.MailingAddress);
+            var primaryMailingAddress = ApplicantAddressPrimaryResolver.Resolve(
+                orderedAddresses, GrantApplications.AddressType.MailingAddress);
             if (primaryMailingAddress != null)
             {
                 viewModel.PrimaryMailingAddress = MapPrimaryAddress(primaryMailingAddress);
@@ -105,14 +107,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
 
             return View(viewModel);
 
-        }
-
-        private static ApplicantAddress? FindMostRecentAddress(IEnumerable<ApplicantAddress> addresses, GrantApplications.AddressType addressType)
-        {
-            return addresses
-                .Where(address => address.AddressType == addressType)
-                .OrderByDescending(address => address.LastModificationTime ?? address.CreationTime)
-                .FirstOrDefault();
         }
 
         private static ApplicantPrimaryAddressViewModel MapPrimaryAddress(ApplicantAddress address)
