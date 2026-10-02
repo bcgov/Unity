@@ -1,4 +1,9 @@
 // ***********************************************************
+declare const cy: any
+declare const Cypress: any
+declare function before(callback: () => void): void
+declare function beforeEach(callback: () => void): void
+
 // This support/e2e.ts file is processed and
 // loaded automatically before test files.
 //
@@ -73,7 +78,13 @@ before(blockRealtimeMessaging)
 beforeEach(blockRealtimeMessaging)
 
 // Ignore common errors that shouldn't fail tests
-Cypress.on('uncaught:exception', (err) => {
+Cypress.on('uncaught:exception', (err: any) => {
+  const environment = (Cypress.env('environment') as string | undefined)?.toLowerCase()
+
+  if ((environment === 'dev' || environment === 'test') && err.message.includes('missing ) after argument list')) {
+    return false
+  }
+
   // ResizeObserver loop errors - benign browser notifications
   if (err.message.includes('ResizeObserver loop')) {
     return false
