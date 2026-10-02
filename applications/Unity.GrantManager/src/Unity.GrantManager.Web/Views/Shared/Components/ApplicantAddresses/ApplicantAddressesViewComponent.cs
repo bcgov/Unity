@@ -91,28 +91,35 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.ApplicantAddresses
                     }).ToList()
             };
 
-            var primaryPhysicalAddress = FindMostRecentAddress(orderedAddresses, GrantApplications.AddressType.PhysicalAddress);
+            var primaryPhysicalAddress = ApplicantAddressPrimaryResolver.Resolve(
+                orderedAddresses, GrantApplications.AddressType.PhysicalAddress);
             if (primaryPhysicalAddress != null)
             {
                 viewModel.PrimaryPhysicalAddress = MapPrimaryAddress(primaryPhysicalAddress);
             }
 
-            var primaryMailingAddress = FindMostRecentAddress(orderedAddresses, GrantApplications.AddressType.MailingAddress);
+            var primaryMailingAddress = ApplicantAddressPrimaryResolver.Resolve(
+                orderedAddresses, GrantApplications.AddressType.MailingAddress);
             if (primaryMailingAddress != null)
             {
                 viewModel.PrimaryMailingAddress = MapPrimaryAddress(primaryMailingAddress);
             }
 
+            // Every address type has its own primary, including types without fields above the table.
+            var primaryAddressIds = orderedAddresses
+                .Select(address => address.AddressType)
+                .Distinct()
+                .Select(addressType => ApplicantAddressPrimaryResolver.Resolve(orderedAddresses, addressType)?.Id)
+                .OfType<Guid>()
+                .ToHashSet();
+
+            foreach (var row in viewModel.Addresses)
+            {
+                row.IsPrimary = primaryAddressIds.Contains(row.Id);
+            }
+
             return View(viewModel);
 
-        }
-
-        private static ApplicantAddress? FindMostRecentAddress(IEnumerable<ApplicantAddress> addresses, GrantApplications.AddressType addressType)
-        {
-            return addresses
-                .Where(address => address.AddressType == addressType)
-                .OrderByDescending(address => address.LastModificationTime ?? address.CreationTime)
-                .FirstOrDefault();
         }
 
         private static ApplicantPrimaryAddressViewModel MapPrimaryAddress(ApplicantAddress address)

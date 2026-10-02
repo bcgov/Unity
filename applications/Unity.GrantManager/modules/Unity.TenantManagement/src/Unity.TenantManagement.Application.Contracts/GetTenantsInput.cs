@@ -5,4 +5,5 @@ namespace Unity.TenantManagement;
 public class GetTenantsInput : PagedAndSortedResultRequestDto
 {
     public string Filter { get; set; }
+    public bool IncludeDeleted { get; set; }
 }

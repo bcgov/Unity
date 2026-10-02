@@ -7,4 +7,6 @@ public class DetailsActionBarViewModel
     public Guid ApplicationId { get; set; }
     public bool ExternalStatusVisibility { get; set; }
     public bool CanUpdateExternalStatusVisibility { get; set; }
+    public bool IsOnboardingRequest { get; set; }
+    public bool CanCreateTenant { get; set; }
 }

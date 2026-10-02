@@ -195,6 +195,11 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
         DeclineRational = declineRational;
     }
 
+    public void SetDeclineRational(string? declineRational)
+    {
+        DeclineRational = declineRational;
+    }
+
     public void UpdateEligibleForRenewal(bool eligibleForRenewal)
     {
         EligibleForRenewal = eligibleForRenewal;

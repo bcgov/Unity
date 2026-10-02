@@ -69,6 +69,17 @@ public class TenantController(ITenantAppService tenantAppService) : AbpControlle
         return TenantAppService.DeleteAsync(id);
     }
 
+    [HttpPost]
+    [Route("{id}/purge")]
+    public virtual Task PurgeAsync(Guid id)
+    {
+        if (!ModelState.IsValid)
+        {
+            throw new UserFriendlyException("TenantController->PurgeAsync: ModelState Invalid");
+        }
+        return TenantAppService.PurgeAsync(id);
+    }
+
     [HttpGet]
     [Route("{id}/managers")]
     public virtual Task<List<TenantManagerDto>> GetManagersAsync(Guid id)

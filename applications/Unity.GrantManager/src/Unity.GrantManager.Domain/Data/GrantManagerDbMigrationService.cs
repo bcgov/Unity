@@ -23,21 +23,18 @@ public class GrantManagerDbMigrationService : ITransientDependency
     private readonly IEnumerable<IGrantManagerDbSchemaMigrator> _dbSchemaMigrators;
     private readonly ITenantRepository _tenantRepository;
     private readonly ICurrentTenant _currentTenant;
-    private readonly TenantConnectionStringEncryptionMigrator _connectionStringEncryptionMigrator;
 
     public GrantManagerDbMigrationService(
         IDataSeeder dataSeeder,
         IEnumerable<IGrantManagerDbSchemaMigrator> dbSchemaMigrators,
         ITenantRepository tenantRepository,
         ICurrentTenant currentTenant,
-        TenantConnectionStringEncryptionMigrator connectionStringEncryptionMigrator,
         ILogger<GrantManagerDbMigrationService> logger)
     {
         _dataSeeder = dataSeeder;
         _dbSchemaMigrators = dbSchemaMigrators;
         _tenantRepository = tenantRepository;
         _currentTenant = currentTenant;
-        _connectionStringEncryptionMigrator = connectionStringEncryptionMigrator;
 
         Logger = logger;
     }
@@ -55,8 +52,6 @@ public class GrantManagerDbMigrationService : ITransientDependency
 
         await MigrateDatabaseSchemaAsync();
         await SeedDataAsync();
-
-        await _connectionStringEncryptionMigrator.MigrateAsync();
 
         var tenants = await _tenantRepository.GetListAsync(includeDetails: true);
         Logger.LogInformation("Found {TenantCount} tenants to process.", tenants.Count);

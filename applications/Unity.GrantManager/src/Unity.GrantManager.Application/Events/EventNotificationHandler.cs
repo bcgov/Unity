@@ -56,8 +56,9 @@ namespace Unity.GrantManager.Events
 
             try
             {
-                using var unitOfWork = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
-                var application = await applicationRepository.FindAsync(eventData.ApplicationId, includeDetails: true);
+                using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
+
+                var application = await applicationRepository.GetAsync(eventData.ApplicationId, includeDetails: true);
                 if (application == null)
                 {
                     logger.LogWarning("EventNotificationHandler: Application {ApplicationId} not found.", eventData.ApplicationId);
@@ -92,7 +93,7 @@ namespace Unity.GrantManager.Events
                     await ProcessNotificationAsync(notification, application, applicantAgent, emailFrom);
                 }
 
-                await unitOfWork.CompleteAsync();
+                await uow.CompleteAsync();
             }
             catch (Exception ex)
             {
@@ -133,8 +134,9 @@ namespace Unity.GrantManager.Events
 
             try
             {
-                using var unitOfWork = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
-                var application = await applicationRepository.FindAsync(eventData.ApplicationId, includeDetails: true);
+                using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
+
+                var application = await applicationRepository.GetAsync(eventData.ApplicationId, includeDetails: true);
                 if (application == null)
                 {
                     logger.LogWarning(
@@ -164,7 +166,7 @@ namespace Unity.GrantManager.Events
                     await ProcessNotificationAsync(notification, application, applicantAgent, emailFrom);
                 }
 
-                await unitOfWork.CompleteAsync();
+                await uow.CompleteAsync();
             }
             catch (Exception ex)
             {
