@@ -19,6 +19,7 @@ using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Data;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Features;
+using Volo.Abp.Uow;
 using Volo.Abp.Users;
 
 namespace Unity.Payments.PaymentRequests
@@ -34,7 +35,8 @@ namespace Unity.Payments.PaymentRequests
                 IPaymentRequestQueryManager paymentRequestQueryManager,
                 IPaymentRequestConfigurationManager paymentRequestConfigurationManager,
                 Lazy<IApplicationLinksService> applicationLinksService,
-                ILocalEventBus localEventBus) : PaymentsAppService, IPaymentRequestAppService
+                ILocalEventBus localEventBus,
+                IUnitOfWorkManager unitOfWorkManager) : PaymentsAppService, IPaymentRequestAppService
 
     {
         public async Task<Guid?> GetDefaultAccountCodingId()
@@ -155,16 +157,30 @@ namespace Unity.Payments.PaymentRequests
             };
         }
 
-        private async Task PublishPaymentStatusChangedEventAsync(PaymentRequest payment)
+        private Task PublishPaymentStatusChangedEventAsync(PaymentRequest payment)
         {
-            await localEventBus.PublishAsync(new PaymentStatusChangedEvent
+            var paymentStatusChangedEvent = new PaymentStatusChangedEvent
             {
                 PaymentRequestId = payment.Id,
                 ApplicationId = payment.CorrelationId,
                 Status = payment.Status,
                 CasPaymentStatus = payment.PaymentStatus,
                 TenantId = CurrentTenant.Id
-            });
+            };
+
+            return PublishPaymentStatusChangedEventAfterCommitAsync(paymentStatusChangedEvent);
+        }
+
+        private Task PublishPaymentStatusChangedEventAfterCommitAsync(PaymentStatusChangedEvent paymentStatusChangedEvent)
+        {
+            var unitOfWork = unitOfWorkManager.Current;
+            if (unitOfWork == null)
+            {
+                return localEventBus.PublishAsync(paymentStatusChangedEvent);
+            }
+
+            unitOfWork.OnCompleted(() => localEventBus.PublishAsync(paymentStatusChangedEvent));
+            return Task.CompletedTask;
         }
 
         public async Task<string> GetNextBatchInfoAsync()
@@ -231,7 +247,7 @@ namespace Unity.Payments.PaymentRequests
 
                         if (updatedPayment != null && previousStatus != updatedPayment.Status)
                         {
-                            await localEventBus.PublishAsync(new PaymentStatusChangedEvent
+                            await PublishPaymentStatusChangedEventAfterCommitAsync(new PaymentStatusChangedEvent
                             {
                                 PaymentRequestId = updatedPayment.Id,
                                 ApplicationId = updatedPayment.CorrelationId,
@@ -481,7 +497,7 @@ namespace Unity.Payments.PaymentRequests
 
             var result = await paymentsManager.CancelPaymentAsync(paymentRequestId);
 
-            await localEventBus.PublishAsync(new PaymentStatusChangedEvent
+            await PublishPaymentStatusChangedEventAfterCommitAsync(new PaymentStatusChangedEvent
             {
                 PaymentRequestId = result.Id,
                 ApplicationId = result.CorrelationId,
