@@ -17,8 +17,7 @@ public class OnboardingApplicationManagerTests
     [InlineData(GrantApplicationState.SUBMITTED)]
     [InlineData(GrantApplicationState.GRANT_APPROVED)]
     [InlineData(GrantApplicationState.GRANT_NOT_APPROVED)]
-    [InlineData(GrantApplicationState.CLOSED)]
-    public async Task Should_Permit_Defer_From_EveryOnboardingState(GrantApplicationState state)
+    public async Task Should_Permit_Defer_From_OpenOnboardingStates(GrantApplicationState state)
     {
         var allowed = await OnboardingApplicationManager.IsActionAllowed(
             ApplicationIn(state), GrantApplicationAction.Defer);
@@ -27,16 +26,31 @@ public class OnboardingApplicationManagerTests
     }
 
     [Theory]
-    [InlineData(GrantApplicationAction.Submit)]
-    [InlineData(GrantApplicationAction.Approve)]
-    [InlineData(GrantApplicationAction.Deny)]
-    [InlineData(GrantApplicationAction.Close)]
-    public async Task Should_Permit_ReturnToAnyState_From_Defer(GrantApplicationAction action)
+    [InlineData(GrantApplicationAction.Submit, true)]
+    [InlineData(GrantApplicationAction.Close, true)]
+    [InlineData(GrantApplicationAction.Approve, false)]
+    [InlineData(GrantApplicationAction.Deny, false)]
+    [InlineData(GrantApplicationAction.Defer, false)]
+    public async Task Should_Only_Permit_Submit_Or_Close_From_Defer(GrantApplicationAction action, bool expected)
     {
         var allowed = await OnboardingApplicationManager.IsActionAllowed(
             ApplicationIn(GrantApplicationState.DEFER), action);
 
-        allowed.ShouldBeTrue();
+        allowed.ShouldBe(expected);
+    }
+
+    [Theory]
+    [InlineData(GrantApplicationAction.Submit, true)]
+    [InlineData(GrantApplicationAction.Defer, false)]
+    [InlineData(GrantApplicationAction.Approve, false)]
+    [InlineData(GrantApplicationAction.Deny, false)]
+    [InlineData(GrantApplicationAction.Close, false)]
+    public async Task Should_Only_Permit_Submit_From_Closed(GrantApplicationAction action, bool expected)
+    {
+        var allowed = await OnboardingApplicationManager.IsActionAllowed(
+            ApplicationIn(GrantApplicationState.CLOSED), action);
+
+        allowed.ShouldBe(expected);
     }
 
     [Theory]
@@ -48,10 +62,7 @@ public class OnboardingApplicationManagerTests
     [InlineData(GrantApplicationState.GRANT_APPROVED, GrantApplicationAction.Deny, false)]
     [InlineData(GrantApplicationState.GRANT_NOT_APPROVED, GrantApplicationAction.Close, true)]
     [InlineData(GrantApplicationState.GRANT_NOT_APPROVED, GrantApplicationAction.Approve, false)]
-    [InlineData(GrantApplicationState.CLOSED, GrantApplicationAction.Approve, false)]
-    [InlineData(GrantApplicationState.CLOSED, GrantApplicationAction.Deny, false)]
-    [InlineData(GrantApplicationState.DEFER, GrantApplicationAction.Defer, false)]
-    public async Task Should_MatchExistingTransitions_Alongside_Defer(
+    public async Task Should_Match_Decision_Transitions(
         GrantApplicationState state, GrantApplicationAction action, bool expected)
     {
         var allowed = await OnboardingApplicationManager.IsActionAllowed(ApplicationIn(state), action);

@@ -29,7 +29,10 @@ public class TenantAppService_Tests : AbpTenantManagementApplicationTestBase
             .Returns("acme test connection");
 
         services.AddSingleton(tenantConnectionStringBuilder);
+        services.AddSingleton(_tenantPurgeProvider);
     }
+
+    private readonly ITenantPurgeProvider _tenantPurgeProvider = Substitute.For<ITenantPurgeProvider>();
 
     public TenantAppService_Tests()
     {
@@ -195,5 +198,67 @@ public class TenantAppService_Tests : AbpTenantManagementApplicationTestBase
         {
             dbContext.Tenants.Any(t => t.Id == acme.Id).ShouldBeFalse();
         });
+    }
+
+    [Fact]
+    public async Task Should_Exclude_Deleted_Tenants_From_List_By_Default()
+    {
+        var acme = UsingDbContext(dbContext => dbContext.Tenants.Single(t => t.Name == "acme"));
+        await _tenantAppService.DeleteAsync(acme.Id);
+
+        var result = await _tenantAppService.GetListAsync(new GetTenantsInput());
+
+        result.Items.ShouldNotContain(t => t.Id == acme.Id);
+    }
+
+    [Fact]
+    public async Task Should_Include_Deleted_Tenants_In_List_When_Requested()
+    {
+        var acme = UsingDbContext(dbContext => dbContext.Tenants.Single(t => t.Name == "acme"));
+        await _tenantAppService.DeleteAsync(acme.Id);
+
+        var result = await _tenantAppService.GetListAsync(new GetTenantsInput { IncludeDeleted = true });
+
+        result.Items.ShouldContain(t => t.Id == acme.Id && t.IsDeleted);
+        result.Items.ShouldContain(t => t.Name == "volosoft" && !t.IsDeleted);
+    }
+
+    [Fact]
+    public async Task Should_Purge_Deleted_Tenant_With_LicencePlate()
+    {
+        var tenant = await _tenantAppService.CreateAsync(new TenantCreateDto { Name = "purge-me" });
+        await _tenantAppService.DeleteAsync(tenant.Id);
+
+        await _tenantAppService.PurgeAsync(tenant.Id);
+
+        await _tenantPurgeProvider.Received(1).PurgeAsync(tenant.Id, "T_ABC123");
+    }
+
+    [Fact]
+    public async Task Should_Refuse_Purge_When_Tenant_Not_Deleted()
+    {
+        var tenant = await _tenantAppService.CreateAsync(new TenantCreateDto { Name = "still-active" });
+
+        await Should.ThrowAsync<UserFriendlyException>(() => _tenantAppService.PurgeAsync(tenant.Id));
+
+        await _tenantPurgeProvider.DidNotReceiveWithAnyArgs().PurgeAsync(default, default!);
+    }
+
+    [Fact]
+    public async Task Should_Refuse_Purge_When_Tenant_Has_No_LicencePlate()
+    {
+        // Seeded-style tenant: no LicencePlate, so its database is configured, not its own.
+        var acme = UsingDbContext(dbContext => dbContext.Tenants.Single(t => t.Name == "acme"));
+        await _tenantAppService.DeleteAsync(acme.Id);
+
+        await Should.ThrowAsync<UserFriendlyException>(() => _tenantAppService.PurgeAsync(acme.Id));
+
+        await _tenantPurgeProvider.DidNotReceiveWithAnyArgs().PurgeAsync(default, default!);
+    }
+
+    [Fact]
+    public async Task Should_Refuse_Purge_When_Tenant_Not_Found()
+    {
+        await Should.ThrowAsync<UserFriendlyException>(() => _tenantAppService.PurgeAsync(Guid.NewGuid()));
     }
 }

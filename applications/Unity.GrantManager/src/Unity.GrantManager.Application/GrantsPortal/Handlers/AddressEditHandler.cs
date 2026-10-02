@@ -43,7 +43,7 @@ public class AddressEditHandler(
 
         if (address.ApplicantId.HasValue)
         {
-            await ApplyPrimaryScopeAsync(
+            await applicantAddressManager.ApplyPrimaryScopeAsync(
                 address.ApplicantId.Value,
                 addressId,
                 previousAddressType,
@@ -56,28 +56,5 @@ public class AddressEditHandler(
 
         logger.LogInformation("Address {AddressId} updated successfully", addressId);
         return "Address updated successfully";
-    }
-
-    /// <summary>
-    /// Keeps the "at most one primary per address type" invariant intact after an edit.
-    /// An address that moves to another type contests its new group and vacates the old one.
-    /// </summary>
-    private async Task ApplyPrimaryScopeAsync(
-        Guid applicantId,
-        Guid addressId,
-        AddressType previousAddressType,
-        AddressType currentAddressType,
-        bool wasPrimary,
-        bool isPrimary)
-    {
-        if (isPrimary)
-        {
-            await applicantAddressManager.DemotePrimarySiblingsAsync(applicantId, currentAddressType, addressId);
-        }
-
-        if (wasPrimary && previousAddressType != currentAddressType)
-        {
-            await applicantAddressManager.ElectPrimaryAsync(applicantId, previousAddressType, addressId);
-        }
     }
 }

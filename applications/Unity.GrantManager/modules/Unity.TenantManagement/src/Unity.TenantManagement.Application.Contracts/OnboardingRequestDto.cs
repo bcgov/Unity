@@ -21,6 +21,7 @@ public class OnboardingRequestDto
     public string Ministry { get; set; } = string.Empty;
     public string Division { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
+    public bool IsApproved { get; set; }
     public string Category { get; set; } = string.Empty;
     public DateTime? SubmissionDate { get; set; }
     public Dictionary<string, object?> Fields { get; set; } = [];

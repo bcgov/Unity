@@ -41,4 +41,12 @@ public partial class TenantClientProxy
             { typeof(TenantConnectionStringsDto), input }
         });
     }
+
+    public virtual async Task PurgeAsync(Guid id)
+    {
+        await RequestAsync(nameof(PurgeAsync), new ClientProxyRequestTypeValue
+        {
+            { typeof(Guid), id }
+        });
+    }
 }
