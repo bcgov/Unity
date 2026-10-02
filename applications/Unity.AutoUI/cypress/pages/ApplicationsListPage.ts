@@ -234,13 +234,31 @@ export class ApplicationsListPage extends ApplicationsPage {
   }
 
   /**
-   * Click the OPEN button (external link)
+   * Click the OPEN button (external link) to navigate to application details.
+   *
+   * ActionBar/Default.js's click handler calls
+   * `window.open(applicationUrl, '_blank', 'noopener,noreferrer')`. Cypress
+   * normally redirects a `window.open('_blank', ...)` call into the current
+   * tab so a test can keep following it, but the `noopener` flag defeats
+   * that — it creates a genuinely separate browsing context Cypress has no
+   * handle on, so the click fires but the tab Cypress is watching never
+   * navigates. Stubbing `window.open` on the page before the click (so it
+   * sets `location.href` directly instead of calling the real, un-followable
+   * browser API) is the standard Cypress pattern for this exact limitation —
+   * see https://docs.cypress.io/app/references/trade-offs#Only-one-tab.
    */
   clickOpenButton(): this {
+    cy.window().then((win) => {
+      cy.stub(win, "open").callsFake((url: string) => {
+        win.location.href = url;
+      });
+    });
+
     cy.get("#externalLink", { timeout: this.STANDARD_TIMEOUT })
       .should("exist")
       .should("be.visible")
       .click();
+
     return this;
   }
 
