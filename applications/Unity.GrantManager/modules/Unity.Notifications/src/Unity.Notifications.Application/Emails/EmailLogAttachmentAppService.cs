@@ -7,7 +7,6 @@ using Unity.Notifications.EmailNotifications;
 using Unity.Notifications.Permissions;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
-using Volo.Abp.Authorization;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Users;
 
@@ -17,6 +16,7 @@ namespace Unity.Notifications.Emails;
 [ExposeServices(typeof(EmailLogAttachmentAppService), typeof(IEmailLogAttachmentAppService), typeof(IEmailLogAttachmentUploadService))]
 public class EmailLogAttachmentAppService(
     IEmailLogAttachmentRepository emailLogAttachmentRepository,
+    IEmailLogsRepository emailLogsRepository,
     EmailAttachmentService emailAttachmentService,
     IExternalUserLookupServiceProvider externalUserLookupServiceProvider,
     EmailComposerAccessChecker emailAccessChecker) : ApplicationService, IEmailLogAttachmentAppService, IEmailLogAttachmentUploadService
