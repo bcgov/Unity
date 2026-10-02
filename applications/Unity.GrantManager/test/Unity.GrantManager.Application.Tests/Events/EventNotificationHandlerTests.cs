@@ -120,6 +120,44 @@ public class EventNotificationHandlerTests
             .ShouldHaveSingleItem();
     }
 
+    [Fact]
+    public void PaymentEventNotificationFilter_UsesDestinationStatusesOnly()
+    {
+        var formId = Guid.NewGuid();
+        var notifications = new List<ScheduledNotification>
+        {
+            CreatePaymentNotification(formId, PaymentRequestStatus.Submitted, isActive: true),
+            CreatePaymentNotification(formId, PaymentRequestStatus.L1Pending, isActive: true),
+            new ScheduledNotification
+            {
+                FormId = formId,
+                TriggerType = "Event",
+                IsActive = true,
+                Module = "Payment",
+                EventType = "Validated"
+            },
+            new ScheduledNotification
+            {
+                FormId = formId,
+                TriggerType = "Event",
+                IsActive = true,
+                Module = "Payment",
+                EventType = "SentToCas"
+            }
+        };
+
+        var matches = notifications
+            .AsQueryable()
+            .Where(EventNotificationHandler.PaymentEventNotificationFilter(
+                formId,
+                PaymentRequestStatus.Submitted,
+                "Validated"))
+            .ToList();
+
+        matches.Count.ShouldBe(2);
+        matches.ShouldAllBe(notification => notification.EventType is "Submitted" or "Validated");
+    }
+
     private static ScheduledNotification CreateNotification(
         Guid formId,
         Guid statusId,

@@ -21,4 +21,9 @@ public interface IApplicantAddressAppService : IApplicationService
     /// </summary>
     Task<AddressInfoItemDto> UpdateAsync(
         Guid applicantId, Guid addressId, UpdateApplicantProfileAddressDto input);
+
+    /// <summary>
+    /// Makes an address the applicant's primary address for its own address type, saving immediately.
+    /// </summary>
+    Task<bool> SetPrimaryAsync(Guid applicantId, Guid addressId);
 }

@@ -142,6 +142,13 @@
     outline-offset: 2px;
 }
 
+.applicant-addresses-widget .applicant-address-primary-badge {
+    background-color: var(--bc-colors-grey-pressed);
+    color: var(--bc-colors-blue-text-links);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
 .applicant-addresses-widget .applicant-address-edit-btn {
     border: none;
     box-shadow: none;
