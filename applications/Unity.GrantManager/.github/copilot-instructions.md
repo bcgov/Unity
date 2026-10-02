@@ -58,7 +58,7 @@ dotnet build Unity.GrantManager.sln --no-restore
 ```
 
 - Build takes ~3 minutes. The solution has 63 projects.
-- There is **1 expected warning** in `Unity.GrantManager.Web/Pages/Dashboard/Index.cshtml.cs` (CS8604 null reference). Do not try to fix it unless explicitly asked.
+- The build is not warning-free. It carries pre-existing warnings, mostly nullability warnings in the test projects plus a few in production code such as `Unity.GrantManager.Web/Pages/Error.cshtml`. Judge a change by whether it adds new warnings, and do not try to fix existing ones unless explicitly asked. Warnings only show when a project actually compiles, so use `--no-incremental` when you need the full list.
 - `Directory.Build.props` suppresses NU1701 and MSB3277 warnings globally; do not re-add these suppressions in individual projects.
 - `common.props` sets `<LangVersion>latest</LangVersion>` and suppresses CS1591.
 

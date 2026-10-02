@@ -15,6 +15,16 @@
 }
 
 <input type="hidden" id="actionWidget_ApplicantIsRedStop" value="@Model.IsRedStop.ToString().ToLower()" />
+<input type="hidden" id="actionWidget_FinalDecisionDate" value="@(Model.FinalDecisionDate?.ToString("yyyy-MM-dd"))" />
+<input type="hidden" id="actionWidget_DeclineRational" value="@Model.DeclineRational" />
+<label for="actionWidget_DeclineRationalOptionsTemplate" class="visually-hidden">Decline Rationale Options Template</label>
+<select id="actionWidget_DeclineRationalOptionsTemplate" class="d-none" aria-hidden="true" tabindex="-1">
+    <option value="">Please choose...</option>
+    @foreach (var item in Model.DeclineRationalOptions)
+    {
+        <option value="@item.Value">@item.Text</option>
+    }
+</select>
 <abp-dropdown id="ApplicationActionDropdown">
     <abp-dropdown-button button-type=@(actionButtonType)
         text="@L["GrantApplication:ActionButtonName"].Value"

@@ -135,7 +135,6 @@ $(function () {
                     <button type="button"
                             class="btn btn-sm btn-link p-0 applicant-contact-menu-btn"
                             data-bs-toggle="dropdown"
-                            data-bs-strategy="fixed"
                             aria-expanded="false"
                             data-contact-id="${row.contactId}">
                         <i class="fa-solid fa-ellipsis-vertical" aria-hidden="true"></i>
@@ -212,6 +211,12 @@ $(function () {
                         const existing = bootstrap.Tooltip.getInstance(this);
                         if (existing) { existing.dispose(); }
                         bootstrap.Tooltip.getOrCreateInstance(this);
+                    });
+                    // The table's scroll body clips an absolutely positioned menu, so use Popper's fixed strategy.
+                    $('#ApplicantContactsTable .applicant-contact-menu-btn').each(function () {
+                        bootstrap.Dropdown.getOrCreateInstance(this, {
+                            popperConfig: (config) => ({ ...config, strategy: 'fixed' })
+                        });
                     });
                 },
                 lengthMenu: [[10, 25, 50], [10, 25, 50]],

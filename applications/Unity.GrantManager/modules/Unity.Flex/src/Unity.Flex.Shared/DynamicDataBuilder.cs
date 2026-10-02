@@ -46,7 +46,7 @@ namespace Unity.Flex
                 dataGridColumns.Add(new DataGridColumn(key, name, type, format));
             }
 
-            var jsonArray = JArray.Parse(currentValue);
+            var jsonArray = JArray.Parse(string.IsNullOrWhiteSpace(currentValue) ? "[]" : currentValue);
 
             foreach (var item in jsonArray)
             {

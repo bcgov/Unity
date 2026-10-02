@@ -29,8 +29,11 @@ public class ScheduledNotificationHelperTests
         var values = ScheduledNotificationHelper.BuildTokenValues(application, applicantAgent: null, TemplateTypes.Applicant);
 
         values["applicant_name"].ShouldBe("Northwind Society");
+        values["organization_name"].ShouldBe("Northwind Society");
         values["applicant_id"].ShouldBe("APP-123");
-        values["sector"].ShouldBe("Technology");
+        values["today_date"].ShouldNotBeNullOrWhiteSpace();
+        values.Count.ShouldBe(4);
+        values.ShouldNotContainKey("sector");
         values.ShouldNotContainKey("project_name");
         values.ShouldNotContainKey("submission_number");
         values.ShouldNotContainKey("approved_amount");
@@ -51,6 +54,9 @@ public class ScheduledNotificationHelperTests
         var values = ScheduledNotificationHelper.BuildTokenValues(application, applicantAgent: null);
 
         values["applicant_name"].ShouldBe("Northwind Society");
+        values["organization_name"].ShouldBeEmpty();
+        values["applicant_id"].ShouldBeEmpty();
+        values["today_date"].ShouldNotBeNullOrWhiteSpace();
         values["project_name"].ShouldBe("Community technology project");
         values["submission_number"].ShouldBe("APP-456");
         values["requested_amount"].ShouldBe("$1,250.00");
@@ -68,8 +74,9 @@ public class ScheduledNotificationHelperTests
         var values = ScheduledNotificationHelper.BuildTokenValues(application, applicantAgent: null, TemplateTypes.Applicant);
 
         values["organization_name"].ShouldBeEmpty();
-        values["fiscal_year_end"].ShouldBeEmpty();
-        values["started_operating_date"].ShouldBeEmpty();
+        values["applicant_name"].ShouldBeEmpty();
+        values["applicant_id"].ShouldBeEmpty();
+        values["today_date"].ShouldNotBeNullOrWhiteSpace();
     }
 
     [Fact]

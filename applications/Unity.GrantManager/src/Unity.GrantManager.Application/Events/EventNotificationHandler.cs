@@ -20,12 +20,14 @@ using Volo.Abp.Features;
 using Volo.Abp.Identity.Integration;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Settings;
+using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Events
 {
     internal class EventNotificationHandler(
         IRepository<ScheduledNotification, Guid> scheduledNotificationRepository,
         IApplicationRepository applicationRepository,
+        IApplicationStatusRepository applicationStatusRepository,
         IApplicantAgentRepository applicantAgentRepository,
         ILocalEventBus localEventBus,
         ITemplateService templateService,
@@ -35,6 +37,7 @@ namespace Unity.GrantManager.Events
         IFeatureChecker featureChecker,
         ISettingProvider settingProvider,
         ICurrentTenant currentTenant,
+        IUnitOfWorkManager unitOfWorkManager,
         ScheduledNotificationHelper scheduledNotificationHelper,
         ILogger<EventNotificationHandler> logger)
         : ILocalEventHandler<ApplicationChangedEvent>, ILocalEventHandler<PaymentStatusChangedEvent>, ITransientDependency
@@ -46,8 +49,15 @@ namespace Unity.GrantManager.Events
                 return;
             }
 
+            if (!eventData.ApplicationStatusId.HasValue)
+            {
+                return;
+            }
+
             try
             {
+                using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
+
                 var application = await applicationRepository.GetAsync(eventData.ApplicationId, includeDetails: true);
                 if (application == null)
                 {
@@ -55,8 +65,19 @@ namespace Unity.GrantManager.Events
                     return;
                 }
 
+                var applicationStatus = await applicationStatusRepository.FindAsync(eventData.ApplicationStatusId.Value);
+                if (applicationStatus == null)
+                {
+                    logger.LogWarning("EventNotificationHandler: Application status {ApplicationStatusId} not found.", eventData.ApplicationStatusId);
+                    return;
+                }
+
+                application.ApplicationStatus = applicationStatus;
+
                 var notifications = (await scheduledNotificationRepository.GetListAsync(
-                    ApplicationEventNotificationFilter(application.ApplicationFormId, application.ApplicationStatusId)))
+                    ApplicationEventNotificationFilter(
+                        application.ApplicationFormId,
+                        eventData.ApplicationStatusId.Value)))
                     .ToList();
 
                 if (notifications.Count == 0)
@@ -71,6 +92,8 @@ namespace Unity.GrantManager.Events
                 {
                     await ProcessNotificationAsync(notification, application, applicantAgent, emailFrom);
                 }
+
+                await uow.CompleteAsync();
             }
             catch (Exception ex)
             {
@@ -111,6 +134,8 @@ namespace Unity.GrantManager.Events
 
             try
             {
+                using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
+
                 var application = await applicationRepository.GetAsync(eventData.ApplicationId, includeDetails: true);
                 if (application == null)
                 {
@@ -140,6 +165,8 @@ namespace Unity.GrantManager.Events
                 {
                     await ProcessNotificationAsync(notification, application, applicantAgent, emailFrom);
                 }
+
+                await uow.CompleteAsync();
             }
             catch (Exception ex)
             {

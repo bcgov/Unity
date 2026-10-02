@@ -96,3 +96,67 @@
 .mailing-address-form {
     flex: 1;
 }
+
+.applicant-address-edit-form > .mb-3,
+.applicant-address-edit-form > .form-check,
+.applicant-address-edit-form > .abp-input,
+.applicant-address-edit-form > .abp-select {
+    width: 100%;
+}
+
+.applicant-addresses-widget .applicant-address-source-info {
+    display: inline-flex;
+    align-items: center;
+    cursor: help;
+    color: var(--bc-colors-grey-text-300);
+    font-size: 1rem;
+}
+
+.applicant-addresses-widget .applicant-address-source-info:hover {
+    color: var(--bc-colors-blue-text-links);
+}
+
+.applicant-addresses-widget .applicant-address-menu-btn {
+    border: none;
+    box-shadow: none;
+    transition: none;
+    text-decoration: none;
+    color: var(--bc-colors-grey-text-300);
+}
+
+.applicant-addresses-widget .applicant-address-menu-btn:hover,
+.applicant-addresses-widget .applicant-address-menu-btn:focus {
+    border: none;
+    box-shadow: none;
+    text-decoration: none;
+    color: var(--bc-colors-blue-text-links);
+}
+
+/* Suppress the focus ring for mouse clicks only; keyboard focus keeps a visible indicator. */
+.applicant-addresses-widget .applicant-address-menu-btn:focus:not(:focus-visible) {
+    outline: none;
+}
+
+.applicant-addresses-widget .applicant-address-menu-btn:focus-visible {
+    outline: 2px solid var(--bc-colors-blue-text-links);
+    outline-offset: 2px;
+}
+
+.applicant-addresses-widget .applicant-address-primary-badge {
+    background-color: var(--bc-colors-grey-pressed);
+    color: var(--bc-colors-blue-text-links);
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.applicant-addresses-widget .applicant-address-edit-btn {
+    border: none;
+    box-shadow: none;
+    transition: none;
+}
+
+.applicant-addresses-widget #ApplicantAddressesTable td:last-child,
+.applicant-addresses-widget #ApplicantAddressesTable th:last-child {
+    text-align: center;
+    white-space: nowrap;
+}

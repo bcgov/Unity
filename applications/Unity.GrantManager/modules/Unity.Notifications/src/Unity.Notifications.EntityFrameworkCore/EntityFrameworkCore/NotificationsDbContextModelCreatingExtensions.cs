@@ -60,6 +60,10 @@ public static class NotificationsDbContextModelCreatingExtensions
                 NotificationsDbProperties.DbSchema);
 
             b.ConfigureByConvention();
+            // Existing names over the limit are truncated by the LimitEmailTemplateNameLength tenant migration
+            b.Property(x => x.Name)
+                .HasMaxLength(EmailTemplateConsts.MaxNameLength)
+                .IsRequired();
             b.Property(x => x.TemplateType)
                 .HasMaxLength(64)
                 .HasDefaultValue(TemplateTypes.Application)
@@ -126,6 +130,10 @@ public static class NotificationsDbContextModelCreatingExtensions
             b.HasOne(ts => ts.EmailTemplate)
                 .WithMany()
                 .HasForeignKey(ts => ts.TemplateId);
+
+            b.HasQueryFilter(ts =>
+                ts.EmailTemplate.TenantId == ts.TenantId &&
+                !ts.EmailTemplate.IsDeleted);
 
             b.HasOne(ts => ts.SubscriptionGroup)
                .WithMany() 
