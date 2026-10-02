@@ -188,6 +188,45 @@ function ensureGrantApplicationsPage(timeout: number): void {
 }
 
 /**
+ * Suppresses uncaught exceptions thrown by the BC Gov IDIR/SiteMinder login
+ * page itself (not our code), which Cypress treats as a different origin from
+ * the Unity webapp even with `chromeWebSecurity: false` — a normal
+ * `Cypress.on('uncaught:exception', ...)` in support/e2e.ts does not apply to
+ * it. DEV and TEST both federate through the same shared non-prod broker,
+ * logontest7.gov.bc.ca (confirmed via diagnostics against both — there is no
+ * separate "logondev7" host despite what tier-name guessing would suggest).
+ * That page throws `missing ) after argument list` on every load: a
+ * malformed inline <script> tag that breaks the page's own HTML parsing (its
+ * contents render as literal text in the body rather than executing).
+ * UAT uses its own separate, working broker and has never shown this in
+ * repeated fresh-browser runs, so nothing is registered for it here.
+ *
+ * Pre-registering via a throwaway `cy.origin()` call before the real
+ * navigation (exactly the pattern Cypress's own error message recommends)
+ * makes the handler apply when Keycloak's IDIR redirect lands there for real
+ * later in the same test.
+ *
+ * Note: suppressing the crash is necessary but not sufficient on DEV/TEST —
+ * that page's broken script also appears to be responsible for transforming
+ * the credential form before submission (a bypass via the native DOM
+ * `form.submit()`, skipping all JS, still got silently redisplayed the same
+ * login page), so login does not currently complete on either tier. This is
+ * an external BC Gov SiteMinder defect, not something fixable from this
+ * repo — it would block real users on those tiers too.
+ */
+function suppressIdirLoginPageErrors(): void {
+  const envTier = (Cypress.env("environment") as string | undefined)?.toLowerCase();
+
+  if (envTier !== "dev" && envTier !== "test") {
+    return;
+  }
+
+  cy.origin("https://logontest7.gov.bc.ca", () => {
+    cy.on("uncaught:exception", () => false);
+  });
+}
+
+/**
  * Performs the actual login flow
  */
 function performLogin(options: LoginOptions = {}): void {
@@ -198,6 +237,7 @@ function performLogin(options: LoginOptions = {}): void {
   const useMfa = options.useMfa || false;
   const timeout = options.timeout || 20000;
 
+  suppressIdirLoginPageErrors();
   cy.visit(baseUrl);
 
   cy.get("body", { timeout }).then(($body) => {

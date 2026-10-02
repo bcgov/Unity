@@ -180,16 +180,21 @@ export class ApplicationsListPage extends ApplicationsPage {
   }
 
   /**
-   * Wait for table refresh (spinner to be hidden)
+   * Wait for table refresh (spinner to be hidden or already gone).
+   *
+   * On a fast response the spinner can show and be removed from the DOM
+   * entirely between Cypress's retry polls, so requiring it to exist (the
+   * previous `cy.get(spinner)`) intermittently times out with "never found
+   * it" even though the refresh genuinely completed. Querying through the
+   * body and tolerating zero matches treats "removed" and "hidden" as the
+   * same successful not-loading state.
    */
   waitForTableRefresh(): this {
-    cy.get(this.dateFilters.spinner, { timeout: this.STANDARD_TIMEOUT }).then(
-      ($s: JQuery<HTMLElement>) => {
-        cy.wrap($s)
-          .should("have.attr", "style")
-          .and("contain", "display: none");
-      },
-    );
+    cy.get("body", { timeout: this.STANDARD_TIMEOUT }).should(($body) => {
+      const $spinner = $body.find(this.dateFilters.spinner);
+      const notLoading = $spinner.length === 0 || !$spinner.is(":visible");
+      expect(notLoading, "table-refresh spinner should be hidden or removed").to.be.true;
+    });
     return this;
   }
 
