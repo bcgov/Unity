@@ -584,6 +584,7 @@ $(function () {
 
     PubSub.subscribe('application_assessment_results_saved', (msg, data) => {
         assessmentResultWidgetManager.refresh();
+        applicationActionWidgetManager.refresh();
     });
 
     const summaryWidgetDiv = 'summaryWidgetArea';

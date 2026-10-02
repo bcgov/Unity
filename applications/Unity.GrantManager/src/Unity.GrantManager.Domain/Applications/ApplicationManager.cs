@@ -227,12 +227,12 @@ public class ApplicationManager : DomainService, IApplicationManager
         var application = await _applicationRepository.GetAsync(applicationId);
         var statusChange = application.ApplicationStatus.StatusCode;
 
-        if (finalDecisionDate != null)
+        if ((triggerAction == GrantApplicationAction.Approve || triggerAction == GrantApplicationAction.Deny) && finalDecisionDate != null)
         {
             application.ValidateAndSetFinalDecisionDate(finalDecisionDate);
         }
 
-        if (!declineRational.IsNullOrEmpty())
+        if (triggerAction == GrantApplicationAction.Deny && !declineRational.IsNullOrEmpty())
         {
             application.SetDeclineRational(declineRational);
         }
