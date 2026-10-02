@@ -7,7 +7,6 @@ using Unity.Notifications.EmailNotifications;
 using Unity.Notifications.Permissions;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
-using Volo.Abp.Authorization;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Users;
 
@@ -17,6 +16,7 @@ namespace Unity.Notifications.Emails;
 [ExposeServices(typeof(EmailLogAttachmentAppService), typeof(IEmailLogAttachmentAppService), typeof(IEmailLogAttachmentUploadService))]
 public class EmailLogAttachmentAppService(
     IEmailLogAttachmentRepository emailLogAttachmentRepository,
+    IEmailLogsRepository emailLogsRepository,
     EmailAttachmentService emailAttachmentService,
     IExternalUserLookupServiceProvider externalUserLookupServiceProvider,
     EmailComposerAccessChecker emailAccessChecker) : ApplicationService, IEmailLogAttachmentAppService, IEmailLogAttachmentUploadService
@@ -90,6 +90,7 @@ public class EmailLogAttachmentAppService(
         await emailAccessChecker.CheckEmailAsync(attachment.EmailLogId.Value, NotificationsPermissions.Email.Send, requireDraft: true);
 
         await emailAttachmentService.DeleteAttachmentAsync(attachment);
+        await TouchEmailLogAsync(attachment.EmailLogId.Value);
     }
 
     public async Task<long> GetTotalFileSizeByEmailLogIdAsync(Guid? emailLogId, Guid? templateId)
@@ -120,6 +121,11 @@ public class EmailLogAttachmentAppService(
         }
         var attachment = await emailAttachmentService.UploadUserAttachmentAsync(emailLogId, templateId, tenantId, fileName, content, contentType);
 
+        if (emailLogId.HasValue)
+        {
+            await TouchEmailLogAsync(emailLogId.Value);
+        }
+
         return new EmailLogAttachmentDto
         {
             Id = attachment.Id,
@@ -131,6 +137,14 @@ public class EmailLogAttachmentAppService(
             S3ObjectKey = attachment.S3ObjectKey,
             AttachedBy = await ResolveUserNameAsync(attachment.UserId)
         };
+    }
+
+    // Attachments are a separate aggregate root, so uploading/deleting one doesn't automatically
+    // bump the parent EmailLog's Last Modified stamp - touch it explicitly.
+    private async Task TouchEmailLogAsync(Guid emailLogId)
+    {
+        var emailLog = await emailLogsRepository.GetAsync(emailLogId);
+        await emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
     }
 
     private async Task<string> ResolveUserNameAsync(Guid userId)
