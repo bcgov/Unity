@@ -660,15 +660,32 @@
     const FEATURES_CANONICALS     = ['features', 'feature flags', 'program features', 'modules', 'enabled features', 'features to be enabled'];
     const MATCH_THRESHOLD = 0.85;
 
-    function _bestMatch(fields, canonicals) {
-        // Exact-match short-circuit: a field whose normalized label exactly equals one of the
-        // canonicals is an unambiguous match, so it wins outright without fuzzy scoring. This
-        // avoids e.g. "ProgramManagerEmail" (which shares a "program " prefix with the "program
-        // name" canonical, and so scores highly under Jaro-Winkler's prefix bonus) out-scoring a
-        // field that's literally labeled "Name" — "name" only appears as a *suffix* of every
-        // Tenant Name canonical, so it gets no prefix bonus and loses on fuzzy score alone.
+    // Aliases listed for more than one mapping target (e.g. 'program name' is both a Tenant Name
+    // and a Program Area alias). They are too ambiguous to pick an empty field on label alone.
+    const SHARED_CANONICALS = (function () {
+        const seen = new Set(), shared = new Set();
+        [TENANT_NAME_CANONICALS, DISPLAY_NAME_CANONICALS, PROGRAM_MANAGERS_CANONICALS, MINISTRY_CANONICALS,
+            DIVISION_CANONICALS, BRANCH_CANONICALS, PROGRAM_AREA_CANONICALS, FEATURES_CANONICALS]
+            .forEach(function (list) {
+                new Set(list).forEach(function (c) { (seen.has(c) ? shared : seen).add(c); });
+            });
+        return shared;
+    })();
+
+    // A field whose normalized label exactly equals one of the canonicals is an unambiguous
+    // match, so it wins outright without fuzzy scoring. This avoids e.g. "ProgramManagerEmail"
+    // (which shares a "program " prefix with the "program name" canonical, and so scores highly
+    // under Jaro-Winkler's prefix bonus) out-scoring a field that's literally labeled "Name" —
+    // "name" only appears as a *suffix* of every Tenant Name canonical, so it gets no prefix
+    // bonus and loses on fuzzy score alone.
+    function _exactMatch(fields, canonicals) {
         const exact = fields.find(function (f) { return canonicals.includes(_normalizeLabel(f.label || f.key)); });
-        if (exact) return exact.key;
+        return exact ? exact.key : null;
+    }
+
+    function _bestMatch(fields, canonicals) {
+        const exact = _exactMatch(fields, canonicals);
+        if (exact) return exact;
 
         let best = null, bestScore = 0;
         fields.forEach(function (f) {
@@ -688,6 +705,8 @@
         const savedKeyValid = savedKey && fields.some(function (f) { return f.key === savedKey; });
         const fieldsWithValue = fields.filter(function (f) { return _hasFieldValue(f.key); });
         const pick = (savedKeyValid && _hasFieldValue(savedKey) ? savedKey : null)
+            || _exactMatch(fieldsWithValue, canonicals)
+            || _exactMatch(fields, canonicals.filter(function (c) { return !SHARED_CANONICALS.has(c); }))
             || _bestMatch(fieldsWithValue, canonicals)
             || (savedKeyValid ? savedKey : null);
         if (pick) $sel.val(pick);
