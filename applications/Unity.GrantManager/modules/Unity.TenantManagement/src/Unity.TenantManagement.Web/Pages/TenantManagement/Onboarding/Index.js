@@ -660,6 +660,18 @@
     const FEATURES_CANONICALS     = ['features', 'feature flags', 'program features', 'modules', 'enabled features', 'features to be enabled'];
     const MATCH_THRESHOLD = 0.85;
 
+    // Aliases listed for more than one mapping target (e.g. 'program name' is both a Tenant Name
+    // and a Program Area alias). They are too ambiguous to pick an empty field on label alone.
+    const SHARED_CANONICALS = (function () {
+        const seen = new Set(), shared = new Set();
+        [TENANT_NAME_CANONICALS, DISPLAY_NAME_CANONICALS, PROGRAM_MANAGERS_CANONICALS, MINISTRY_CANONICALS,
+            DIVISION_CANONICALS, BRANCH_CANONICALS, PROGRAM_AREA_CANONICALS, FEATURES_CANONICALS]
+            .forEach(function (list) {
+                new Set(list).forEach(function (c) { (seen.has(c) ? shared : seen).add(c); });
+            });
+        return shared;
+    })();
+
     // A field whose normalized label exactly equals one of the canonicals is an unambiguous
     // match, so it wins outright without fuzzy scoring. This avoids e.g. "ProgramManagerEmail"
     // (which shares a "program " prefix with the "program name" canonical, and so scores highly
@@ -694,7 +706,7 @@
         const fieldsWithValue = fields.filter(function (f) { return _hasFieldValue(f.key); });
         const pick = (savedKeyValid && _hasFieldValue(savedKey) ? savedKey : null)
             || _exactMatch(fieldsWithValue, canonicals)
-            || _exactMatch(fields, canonicals)
+            || _exactMatch(fields, canonicals.filter(function (c) { return !SHARED_CANONICALS.has(c); }))
             || _bestMatch(fieldsWithValue, canonicals)
             || (savedKeyValid ? savedKey : null);
         if (pick) $sel.val(pick);
