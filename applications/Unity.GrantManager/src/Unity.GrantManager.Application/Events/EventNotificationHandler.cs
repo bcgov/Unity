@@ -54,14 +54,21 @@ namespace Unity.GrantManager.Events
 
             try
             {
-                var application = await applicationRepository.GetAsync(eventData.ApplicationId, includeDetails: true);
+                var application = await applicationRepository.FindAsync(eventData.ApplicationId, includeDetails: true);
                 if (application == null)
                 {
                     logger.LogWarning("EventNotificationHandler: Application {ApplicationId} not found.", eventData.ApplicationId);
                     return;
                 }
 
-                application.ApplicationStatus = await applicationStatusRepository.GetAsync(eventData.ApplicationStatusId.Value);
+                var applicationStatus = await applicationStatusRepository.FindAsync(eventData.ApplicationStatusId.Value);
+                if (applicationStatus == null)
+                {
+                    logger.LogWarning("EventNotificationHandler: Application status {ApplicationStatusId} not found.", eventData.ApplicationStatusId);
+                    return;
+                }
+
+                application.ApplicationStatus = applicationStatus;
 
                 var notifications = (await scheduledNotificationRepository.GetListAsync(
                     ApplicationEventNotificationFilter(
@@ -121,7 +128,7 @@ namespace Unity.GrantManager.Events
 
             try
             {
-                var application = await applicationRepository.GetAsync(eventData.ApplicationId, includeDetails: true);
+                var application = await applicationRepository.FindAsync(eventData.ApplicationId, includeDetails: true);
                 if (application == null)
                 {
                     logger.LogWarning(

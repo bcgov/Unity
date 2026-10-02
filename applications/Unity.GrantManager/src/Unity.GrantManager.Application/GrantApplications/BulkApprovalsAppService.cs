@@ -60,14 +60,13 @@ namespace Unity.GrantManager.GrantApplications
 
                     var updatedApplication = await applicationManager.TriggerAction(application.Id, GrantApplicationAction.Approve);
 
-                    await localEventBus.PublishAsync(
+                    uowFields.OnCompleted(() => localEventBus.PublishAsync(
                         new ApplicationChangedEvent
                         {
                             Action = approvalAction,
                             ApplicationId = application.Id,
                             ApplicationStatusId = updatedApplication.ApplicationStatusId
-                        }
-                    );
+                        }));
 
                     await uowFields.CompleteAsync();
 
