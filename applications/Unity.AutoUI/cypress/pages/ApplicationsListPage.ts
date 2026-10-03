@@ -180,16 +180,21 @@ export class ApplicationsListPage extends ApplicationsPage {
   }
 
   /**
-   * Wait for table refresh (spinner to be hidden)
+   * Wait for table refresh (spinner to be hidden or already gone).
+   *
+   * On a fast response the spinner can show and be removed from the DOM
+   * entirely between Cypress's retry polls, so requiring it to exist (the
+   * previous `cy.get(spinner)`) intermittently times out with "never found
+   * it" even though the refresh genuinely completed. Querying through the
+   * body and tolerating zero matches treats "removed" and "hidden" as the
+   * same successful not-loading state.
    */
   waitForTableRefresh(): this {
-    cy.get(this.dateFilters.spinner, { timeout: this.STANDARD_TIMEOUT }).then(
-      ($s: JQuery<HTMLElement>) => {
-        cy.wrap($s)
-          .should("have.attr", "style")
-          .and("contain", "display: none");
-      },
-    );
+    cy.get("body", { timeout: this.STANDARD_TIMEOUT }).should(($body) => {
+      const $spinner = $body.find(this.dateFilters.spinner);
+      const notLoading = $spinner.length === 0 || !$spinner.is(":visible");
+      expect(notLoading, "table-refresh spinner should be hidden or removed").to.be.true;
+    });
     return this;
   }
 
@@ -229,13 +234,31 @@ export class ApplicationsListPage extends ApplicationsPage {
   }
 
   /**
-   * Click the OPEN button (external link)
+   * Click the OPEN button (external link) to navigate to application details.
+   *
+   * ActionBar/Default.js's click handler calls
+   * `window.open(applicationUrl, '_blank', 'noopener,noreferrer')`. Cypress
+   * normally redirects a `window.open('_blank', ...)` call into the current
+   * tab so a test can keep following it, but the `noopener` flag defeats
+   * that — it creates a genuinely separate browsing context Cypress has no
+   * handle on, so the click fires but the tab Cypress is watching never
+   * navigates. Stubbing `window.open` on the page before the click (so it
+   * sets `location.href` directly instead of calling the real, un-followable
+   * browser API) is the standard Cypress pattern for this exact limitation —
+   * see https://docs.cypress.io/app/references/trade-offs#Only-one-tab.
    */
   clickOpenButton(): this {
+    cy.window().then((win) => {
+      cy.stub(win, "open").callsFake((url: string) => {
+        win.location.href = url;
+      });
+    });
+
     cy.get("#externalLink", { timeout: this.STANDARD_TIMEOUT })
       .should("exist")
       .should("be.visible")
       .click();
+
     return this;
   }
 

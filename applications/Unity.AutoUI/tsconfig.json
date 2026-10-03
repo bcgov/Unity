@@ -108,8 +108,10 @@
   // Included or excluded files or folders... https://www.typescriptlang.org/tsconfig
   "include": [
     "cypress/support/**/*.ts",
+    "cypress/support/**/*.d.ts",
     "cypress/e2e/**/*.ts",
     "cypress/pages/**/*.ts",
+    "cypress/utilities/**/*.ts",
     "cypress/regression/**/*.ts",
     "cypress/scripts/**/*.ts"
   ]
