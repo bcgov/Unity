@@ -1,15 +1,15 @@
 {
   "schemaVersion": 2,
   "mode": "report-only",
-  "generatedAt": "2026-09-30T14:45:32.622Z",
+  "generatedAt": "2026-10-03T03:09:52.643Z",
   "summary": {
-    "total": 360,
-    "matched": 147,
+    "total": 364,
+    "matched": 150,
     "missing": 41,
-    "unverified": 81,
+    "unverified": 82,
     "exempt": 91,
     "syntax": {
-      "css": 360,
+      "css": 364,
       "xpath": 0
     }
   },
@@ -22,7 +22,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:67"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:78"
       ],
       "applicationMatches": []
     },
@@ -48,10 +48,10 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:58",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:225",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:63",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:230",
         "applications/Unity.AutoUI/cypress/pages/ListPages.ts:60",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:440"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:466"
       ],
       "applicationMatches": []
     },
@@ -87,13 +87,13 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:72",
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:75",
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:76",
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:77",
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:78",
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:79",
         "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:80",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:83",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:84",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:85",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:86",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:87",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:88",
         "applications/Unity.AutoUI/cypress/pages/BasePage.ts:139"
       ],
       "applicationMatches": []
@@ -156,7 +156,7 @@
       "missingTokens": [],
       "usedBy": [
         "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:50",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:893"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:944"
       ],
       "applicationMatches": []
     },
@@ -168,7 +168,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/support/auth.ts:19"
+        "applications/Unity.AutoUI/cypress/support/auth.ts:25"
       ],
       "applicationMatches": []
     },
@@ -180,11 +180,11 @@
       "status": "exempt",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:446",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:453",
         "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:62",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:166",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:251",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:292"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:192",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:277",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:318"
       ],
       "applicationMatches": []
     },
@@ -196,7 +196,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:418"
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:425"
       ],
       "applicationMatches": []
     },
@@ -208,8 +208,8 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:438",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:454"
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:445",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:461"
       ],
       "applicationMatches": []
     },
@@ -221,7 +221,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:404"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:430"
       ],
       "applicationMatches": []
     },
@@ -233,11 +233,11 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:419",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:376",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:409",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:445",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:471"
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:426",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:402",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:435",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:471",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:497"
       ],
       "applicationMatches": []
     },
@@ -252,12 +252,12 @@
         "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:117",
         "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:119",
         "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:89",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:642",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:649",
         "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:67",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:165",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:241",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:279",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:291"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:191",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:267",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:305",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:317"
       ],
       "applicationMatches": []
     },
@@ -269,8 +269,8 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:650",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:651"
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:657",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:658"
       ],
       "applicationMatches": []
     },
@@ -282,7 +282,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:284"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:310"
       ],
       "applicationMatches": []
     },
@@ -294,7 +294,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:248"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:274"
       ],
       "applicationMatches": []
     },
@@ -306,7 +306,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:238"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:264"
       ],
       "applicationMatches": []
     },
@@ -318,7 +318,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:641"
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:648"
       ],
       "applicationMatches": []
     },
@@ -330,7 +330,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:443"
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:450"
       ],
       "applicationMatches": []
     },
@@ -419,7 +419,7 @@
         "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:106",
         "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:191",
         "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:192",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:638"
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:645"
       ],
       "applicationMatches": []
     },
@@ -438,12 +438,12 @@
         "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:90",
         "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:96",
         "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:98",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:637",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:652",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:644",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:659",
         "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:68",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:164",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:233",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:276"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:190",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:259",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:302"
       ],
       "applicationMatches": []
     },
@@ -455,9 +455,9 @@
       "status": "exempt",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:636",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:272",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:273"
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:643",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:298",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:299"
       ],
       "applicationMatches": []
     },
@@ -469,7 +469,7 @@
       "status": "exempt",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:630"
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:637"
       ],
       "applicationMatches": []
     },
@@ -506,8 +506,8 @@
       "status": "exempt",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:229",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:230"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:255",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:256"
       ],
       "applicationMatches": []
     },
@@ -544,8 +544,8 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:391",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:394"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:417",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:420"
       ],
       "applicationMatches": []
     },
@@ -741,7 +741,7 @@
       "status": "exempt",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:313"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:339"
       ],
       "applicationMatches": []
     },
@@ -769,7 +769,7 @@
         "id:CompleteButton"
       ],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:63"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:74"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ReviewList/Default.cshtml",
@@ -1023,7 +1023,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:117"
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:140"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantInfo/Default.cshtml",
@@ -1223,8 +1223,8 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:119",
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:140"
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:142",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:163"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantInfo/Default.cshtml",
@@ -1239,7 +1239,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:123",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:146",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:104"
       ],
       "applicationMatches": [
@@ -1255,8 +1255,8 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:120",
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:169"
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:143",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:192"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantInfo/Default.cshtml",
@@ -1274,7 +1274,7 @@
       ],
       "usedBy": [
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:29",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:59"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:70"
       ],
       "applicationMatches": []
     },
@@ -1334,7 +1334,7 @@
       ],
       "usedBy": [
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:28",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:58"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:69"
       ],
       "applicationMatches": []
     },
@@ -1349,7 +1349,7 @@
       ],
       "usedBy": [
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:26",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:56"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:67"
       ],
       "applicationMatches": []
     },
@@ -1438,7 +1438,7 @@
       ],
       "usedBy": [
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:27",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:57"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:68"
       ],
       "applicationMatches": []
     },
@@ -1453,7 +1453,7 @@
       ],
       "usedBy": [
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:25",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:55"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:66"
       ],
       "applicationMatches": []
     },
@@ -1523,7 +1523,7 @@
       "missingTokens": [],
       "usedBy": [
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:24",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:54"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:65"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicationActionWidget/Default.cshtml",
@@ -1539,7 +1539,7 @@
       "missingTokens": [],
       "usedBy": [
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:23",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:53"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:64"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicationActionWidget/Default.cshtml",
@@ -1583,7 +1583,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:456"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:482"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Pages/PaymentApprovals/UpdatePaymentRequestStatus.cshtml",
@@ -1614,8 +1614,8 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:66",
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:67",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:72",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:73",
         "applications/Unity.AutoUI/cypress/pages/ListPages.ts:75",
         "applications/Unity.AutoUI/cypress/pages/ListPages.ts:91"
       ],
@@ -1648,7 +1648,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:382",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:405",
         "applications/Unity.AutoUI/cypress/pages/ListPages.ts:90"
       ],
       "applicationMatches": [
@@ -1723,7 +1723,7 @@
       "missingTokens": [],
       "usedBy": [
         "applications/Unity.AutoUI/cypress/pages/ReviewAssessmentPage.ts:81",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:340"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:366"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/AssessmentResults/Default.cshtml"
@@ -1738,7 +1738,7 @@
       "missingTokens": [],
       "usedBy": [
         "applications/Unity.AutoUI/cypress/pages/ReviewAssessmentPage.ts:82",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:346"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:372"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/AssessmentResults/Default.cshtml",
@@ -1818,7 +1818,7 @@
       "missingTokens": [],
       "usedBy": [
         "applications/Unity.AutoUI/cypress/pages/ListPages.ts:87",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:370"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:396"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ActionBar/Default.cshtml",
@@ -1833,7 +1833,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:380"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:406"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260721203242_Initial.Designer.cs",
@@ -2141,7 +2141,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:466"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:492"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Pages/PaymentApprovals/UpdatePaymentRequestStatus.cshtml",
@@ -2174,7 +2174,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:82",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:90",
         "applications/Unity.AutoUI/cypress/pages/ListPages.ts:77"
       ],
       "applicationMatches": [
@@ -2284,7 +2284,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:104",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:125",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:69"
       ],
       "applicationMatches": [
@@ -2314,7 +2314,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:135"
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:158"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantInfo/Default.cshtml"
@@ -2328,7 +2328,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:133"
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:156"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantInfo/Default.cshtml"
@@ -2342,7 +2342,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:136"
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:159"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantInfo/Default.cshtml"
@@ -2356,7 +2356,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:137"
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:160"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantInfo/Default.cshtml"
@@ -2370,7 +2370,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:134"
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:157"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantInfo/Default.cshtml"
@@ -2385,8 +2385,8 @@
       "missingTokens": [],
       "usedBy": [
         "applications/Unity.AutoUI/cypress/pages/ReviewAssessmentPage.ts:85",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:611",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:612"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:637",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:638"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Pages/PaymentConfigurations/Index.js",
@@ -2426,6 +2426,42 @@
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/Applicants/Details.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/GrantApplications/Details.cshtml"
+      ]
+    },
+    {
+      "selector": "#detailsTab",
+      "kind": "id",
+      "syntaxKind": "css",
+      "ownership": "application",
+      "status": "matched",
+      "missingTokens": [],
+      "usedBy": [
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:102"
+      ],
+      "applicationMatches": [
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/Applicants/Details.cshtml",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/Applicants/Details.js",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/GrantApplications/Details.cshtml",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/GrantApplications/Details.js",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ReviewList/ReviewList.js"
+      ]
+    },
+    {
+      "selector": "#detailsTab .nav-link, #detailsTab button, #detailsTab a",
+      "kind": "id",
+      "syntaxKind": "css",
+      "ownership": "application",
+      "status": "matched",
+      "missingTokens": [],
+      "usedBy": [
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:105"
+      ],
+      "applicationMatches": [
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/Applicants/Details.cshtml",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/Applicants/Details.js",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/GrantApplications/Details.cshtml",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/GrantApplications/Details.js",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ReviewList/ReviewList.js"
       ]
     },
     {
@@ -2485,8 +2521,8 @@
       "missingTokens": [],
       "usedBy": [
         "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:41",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:419",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:604"
+        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:442",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:627"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/modules/Unity.AI/src/Unity.AI.Web/Pages/Prompts/Index.cshtml",
@@ -2519,7 +2555,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:407"
+        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:430"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/modules/Unity.AI/src/Unity.AI.Web/Pages/Prompts/Index.cshtml",
@@ -2582,7 +2618,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:102",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:123",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:67"
       ],
       "applicationMatches": [
@@ -2802,8 +2838,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:85",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:235",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:257",
         "applications/Unity.AutoUI/cypress/pages/ListPages.ts:76",
         "applications/Unity.AutoUI/cypress/pages/ListPages.ts:86"
       ],
@@ -2852,7 +2887,7 @@
       "missingTokens": [],
       "usedBy": [
         "applications/Unity.AutoUI/cypress/pages/ListPages.ts:79",
-        "applications/Unity.AutoUI/cypress/support/auth.ts:31"
+        "applications/Unity.AutoUI/cypress/support/auth.ts:37"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/GrantApplications/Index.cshtml",
@@ -2928,6 +2963,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:96",
         "applications/Unity.AutoUI/cypress/pages/ListPages.ts:84"
       ],
       "applicationMatches": [
@@ -3023,7 +3059,24 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:666"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:717"
+      ],
+      "applicationMatches": [
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/Applicants/Details.cshtml",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/Applicants/Details.js",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/GrantApplications/Details.cshtml",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/GrantApplications/Details.js"
+      ]
+    },
+    {
+      "selector": "#main-loading",
+      "kind": "id",
+      "syntaxKind": "css",
+      "ownership": "application",
+      "status": "matched",
+      "missingTokens": [],
+      "usedBy": [
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:101"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/Applicants/Details.cshtml",
@@ -3093,9 +3146,9 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:175",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:198",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:17",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:155"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:166"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Views/Shared/Components/PaymentInfo/Default.js"
@@ -3111,7 +3164,7 @@
         "id:nav-project-info-tab"
       ],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:93",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:112",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:14"
       ],
       "applicationMatches": []
@@ -3139,7 +3192,6 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:88",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:13"
       ],
       "applicationMatches": [
@@ -3170,7 +3222,7 @@
         "id:nav-summery-tab"
       ],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:179",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:204",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:12"
       ],
       "applicationMatches": []
@@ -3183,8 +3235,8 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:458",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:464"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:484",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:490"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Pages/PaymentApprovals/UpdatePaymentRequestStatus.cshtml",
@@ -3234,7 +3286,7 @@
       "status": "exempt",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/support/auth.ts:45"
+        "applications/Unity.AutoUI/cypress/support/auth.ts:51"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/modules/Unity.Reporting/src/Unity.Reporting.Application/Configuration/FormsIoMappingUtils.cs",
@@ -3283,7 +3335,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:820"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:871"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Pages/PaymentApprovals/UpdatePaymentRequestStatus.cshtml",
@@ -3300,7 +3352,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:99",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:120",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:64"
       ],
       "applicationMatches": [
@@ -3315,7 +3367,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:105",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:126",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:70"
       ],
       "applicationMatches": [
@@ -3330,7 +3382,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:106",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:127",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:71"
       ],
       "applicationMatches": [
@@ -3345,7 +3397,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:100",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:121",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:65"
       ],
       "applicationMatches": [
@@ -3360,7 +3412,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:101",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:122",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:66"
       ],
       "applicationMatches": [
@@ -3375,7 +3427,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:107",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:128",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:72"
       ],
       "applicationMatches": [
@@ -3390,7 +3442,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:96",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:117",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:61"
       ],
       "applicationMatches": [
@@ -3405,7 +3457,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:94",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:115",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:59"
       ],
       "applicationMatches": [
@@ -3450,7 +3502,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:103",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:124",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:68"
       ],
       "applicationMatches": [
@@ -3466,7 +3518,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:176"
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:201"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Views/Shared/Components/PaymentInfo/Default.cshtml",
@@ -3499,7 +3551,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:89"
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:108"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/AssessmentResults/Default.cshtml",
@@ -3514,7 +3566,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:97",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:118",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:62"
       ],
       "applicationMatches": [
@@ -3575,14 +3627,13 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:33",
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:45",
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:46",
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:50",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:211",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:35",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:47",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:54",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:216",
         "applications/Unity.AutoUI/cypress/pages/ListPages.ts:46",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:877",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:89"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:100",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:928"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/modules/Unity.AI/src/Unity.AI.Web/Pages/Prompts/Index.cshtml",
@@ -3646,7 +3697,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:428"
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:435"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Views/Shared/Components/SupplierInfo/SupplierInfo.js"
@@ -3660,8 +3711,8 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:664",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:665"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:715",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:716"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Views/Shared/Components/SupplierInfo/Default.cshtml",
@@ -3676,10 +3727,10 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:380",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:391",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:405",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:675"
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:387",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:398",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:412",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:726"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Views/Shared/Components/SupplierInfo/Default.cshtml",
@@ -3696,9 +3747,9 @@
         "id:social-azureidir"
       ],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/support/auth.ts:21",
-        "applications/Unity.AutoUI/cypress/support/auth.ts:96",
-        "applications/Unity.AutoUI/cypress/support/auth.ts:98"
+        "applications/Unity.AutoUI/cypress/support/auth.ts:102",
+        "applications/Unity.AutoUI/cypress/support/auth.ts:104",
+        "applications/Unity.AutoUI/cypress/support/auth.ts:27"
       ],
       "applicationMatches": []
     },
@@ -3716,9 +3767,9 @@
         "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:158",
         "applications/Unity.AutoUI/cypress/e2e/lists.cy.ts:64",
         "applications/Unity.AutoUI/cypress/e2e/lists.cy.ts:65",
-        "applications/Unity.AutoUI/cypress/support/auth.ts:101",
-        "applications/Unity.AutoUI/cypress/support/auth.ts:20",
-        "applications/Unity.AutoUI/cypress/support/auth.ts:99",
+        "applications/Unity.AutoUI/cypress/support/auth.ts:105",
+        "applications/Unity.AutoUI/cypress/support/auth.ts:107",
+        "applications/Unity.AutoUI/cypress/support/auth.ts:26",
         "applications/Unity.AutoUI/cypress_manyEmails/manyEmails.cy.ts:89",
         "applications/Unity.AutoUI/cypress_manyEmails/manyEmails.cy.ts:90"
       ],
@@ -3732,7 +3783,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:95",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:116",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:60"
       ],
       "applicationMatches": [
@@ -3797,7 +3848,9 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:327"
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:327",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:175",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:695"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Views/Shared/Components/PaymentInfo/Default.js",
@@ -3866,7 +3919,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:90"
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:109"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/AssessmentResults/Default.cshtml",
@@ -3881,7 +3934,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:98",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:119",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:63"
       ],
       "applicationMatches": [
@@ -3897,7 +3950,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:457"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:483"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Pages/PaymentApprovals/UpdatePaymentRequestStatus.cshtml",
@@ -3971,8 +4024,8 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:384",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:400"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:410",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:426"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/AssigneeSelection/AssigneeSelection.js",
@@ -3987,7 +4040,7 @@
       "status": "exempt",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/support/auth.ts:44"
+        "applications/Unity.AutoUI/cypress/support/auth.ts:50"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Controllers/UnityMessagingController.cs",
@@ -4066,7 +4119,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:110"
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:131"
       ],
       "applicationMatches": []
     },
@@ -4078,7 +4131,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/support/auth.ts:106"
+        "applications/Unity.AutoUI/cypress/support/auth.ts:112"
       ],
       "applicationMatches": []
     },
@@ -4099,25 +4152,27 @@
         "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:67",
         "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:88",
         "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:95",
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:36",
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:55",
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:65",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:38",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:59",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:71",
         "applications/Unity.AutoUI/cypress/e2e/lists.cy.ts:63",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:339",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:442",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:520",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:526",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:628",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:372",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:449",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:527",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:533",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:635",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsRightTabPage.ts:513",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:477",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:493",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:495",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:499",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:510",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:569",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:673",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:684",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:695",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:193",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:500",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:516",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:518",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:522",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:533",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:592",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:696",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:707",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:718",
         "applications/Unity.AutoUI/cypress/pages/BasePage.ts:87",
         "applications/Unity.AutoUI/cypress/pages/DashboardPage.ts:106",
         "applications/Unity.AutoUI/cypress/pages/DashboardPage.ts:31",
@@ -4125,28 +4180,28 @@
         "applications/Unity.AutoUI/cypress/pages/NavigationPage.ts:43",
         "applications/Unity.AutoUI/cypress/pages/NavigationPage.ts:55",
         "applications/Unity.AutoUI/cypress/pages/NavigationPage.ts:68",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:121",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:210",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:214",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:219",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:258",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:264",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:271",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:289",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:298",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:345",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:389",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:416",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:610",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:642",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:674",
-        "applications/Unity.AutoUI/cypress/support/auth.ts:117",
-        "applications/Unity.AutoUI/cypress/support/auth.ts:149",
-        "applications/Unity.AutoUI/cypress/support/auth.ts:175",
-        "applications/Unity.AutoUI/cypress/support/auth.ts:203",
-        "applications/Unity.AutoUI/cypress/support/auth.ts:218",
-        "applications/Unity.AutoUI/cypress/support/auth.ts:54",
-        "applications/Unity.AutoUI/cypress/support/auth.ts:94",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:132",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:236",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:240",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:245",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:284",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:290",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:297",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:315",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:324",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:371",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:415",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:442",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:636",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:668",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:725",
+        "applications/Unity.AutoUI/cypress/support/auth.ts:100",
+        "applications/Unity.AutoUI/cypress/support/auth.ts:123",
+        "applications/Unity.AutoUI/cypress/support/auth.ts:155",
+        "applications/Unity.AutoUI/cypress/support/auth.ts:181",
+        "applications/Unity.AutoUI/cypress/support/auth.ts:213",
+        "applications/Unity.AutoUI/cypress/support/auth.ts:228",
+        "applications/Unity.AutoUI/cypress/support/auth.ts:60",
         "applications/Unity.AutoUI/cypress/support/commands.ts:146",
         "applications/Unity.AutoUI/cypress/support/commands.ts:163",
         "applications/Unity.AutoUI/cypress/support/commands.ts:180",
@@ -4168,19 +4223,19 @@
       "usedBy": [
         "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:132",
         "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:52",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:367",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:439",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:455",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:643",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:718",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:232",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:446",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:462",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:650",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:741",
         "applications/Unity.AutoUI/cypress/pages/NavigationPage.ts:91",
         "applications/Unity.AutoUI/cypress/pages/ReviewAssessmentPage.ts:415",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:244",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:442",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:825",
-        "applications/Unity.AutoUI/cypress/support/auth.ts:151",
-        "applications/Unity.AutoUI/cypress/support/auth.ts:178",
-        "applications/Unity.AutoUI/cypress/support/auth.ts:213",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:270",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:468",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:876",
+        "applications/Unity.AutoUI/cypress/support/auth.ts:157",
+        "applications/Unity.AutoUI/cypress/support/auth.ts:184",
+        "applications/Unity.AutoUI/cypress/support/auth.ts:223",
         "applications/Unity.AutoUI/cypress_manyEmails/manyEmails.cy.ts:66"
       ],
       "applicationMatches": []
@@ -4193,7 +4248,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:407",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:414",
         "applications/Unity.AutoUI/cypress/support/commands.ts:149",
         "applications/Unity.AutoUI/cypress/support/commands.ts:166"
       ],
@@ -4250,6 +4305,18 @@
       "applicationMatches": []
     },
     {
+      "selector": "button:contains('Ok')",
+      "kind": "css",
+      "syntaxKind": "css",
+      "ownership": "unclassified",
+      "status": "unverified",
+      "missingTokens": [],
+      "usedBy": [
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:373"
+      ],
+      "applicationMatches": []
+    },
+    {
       "selector": "button:contains(\"Continue\")",
       "kind": "css",
       "syntaxKind": "css",
@@ -4257,7 +4324,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/support/auth.ts:150"
+        "applications/Unity.AutoUI/cypress/support/auth.ts:156"
       ],
       "applicationMatches": []
     },
@@ -4269,7 +4336,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/support/auth.ts:39",
+        "applications/Unity.AutoUI/cypress/support/auth.ts:45",
         "applications/Unity.AutoUI/cypress/support/commands.ts:49"
       ],
       "applicationMatches": []
@@ -4294,9 +4361,9 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/support/auth.ts:176",
-        "applications/Unity.AutoUI/cypress/support/auth.ts:30",
-        "applications/Unity.AutoUI/cypress/support/auth.ts:50"
+        "applications/Unity.AutoUI/cypress/support/auth.ts:182",
+        "applications/Unity.AutoUI/cypress/support/auth.ts:36",
+        "applications/Unity.AutoUI/cypress/support/auth.ts:56"
       ],
       "applicationMatches": []
     },
@@ -4308,7 +4375,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:739"
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:746"
       ],
       "applicationMatches": []
     },
@@ -4369,8 +4436,8 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/support/auth.ts:154",
-        "applications/Unity.AutoUI/cypress/support/auth.ts:155"
+        "applications/Unity.AutoUI/cypress/support/auth.ts:160",
+        "applications/Unity.AutoUI/cypress/support/auth.ts:161"
       ],
       "applicationMatches": []
     },
@@ -4382,8 +4449,8 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:73",
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:74"
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:81",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:82"
       ],
       "applicationMatches": []
     },
@@ -4419,7 +4486,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:129"
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:152"
       ],
       "applicationMatches": []
     },
@@ -4431,7 +4498,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:113"
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:136"
       ],
       "applicationMatches": []
     },
@@ -4455,7 +4522,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/support/auth.ts:158"
+        "applications/Unity.AutoUI/cypress/support/auth.ts:164"
       ],
       "applicationMatches": []
     },
@@ -4467,8 +4534,8 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:194",
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:197",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:221",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:224",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:296"
       ],
       "applicationMatches": []
@@ -4831,8 +4898,8 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/support/auth.ts:152",
-        "applications/Unity.AutoUI/cypress/support/auth.ts:153"
+        "applications/Unity.AutoUI/cypress/support/auth.ts:158",
+        "applications/Unity.AutoUI/cypress/support/auth.ts:159"
       ],
       "applicationMatches": []
     },
@@ -4894,7 +4961,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:304"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:330"
       ],
       "applicationMatches": []
     },
@@ -4906,7 +4973,7 @@
       "status": "exempt",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:299"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:325"
       ],
       "applicationMatches": []
     },
@@ -4918,7 +4985,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:73"
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:81"
       ],
       "applicationMatches": []
     },
@@ -4930,7 +4997,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:74"
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:82"
       ],
       "applicationMatches": []
     },
@@ -4967,7 +5034,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:72"
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:80"
       ],
       "applicationMatches": []
     },
@@ -4979,7 +5046,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:77"
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:85"
       ],
       "applicationMatches": []
     },
@@ -4991,7 +5058,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:75"
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:83"
       ],
       "applicationMatches": []
     },
@@ -5003,7 +5070,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:79"
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:87"
       ],
       "applicationMatches": []
     },
@@ -5015,7 +5082,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:76"
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:84"
       ],
       "applicationMatches": []
     },
@@ -5027,7 +5094,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:78"
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:86"
       ],
       "applicationMatches": []
     },
@@ -5039,7 +5106,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:80"
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:88"
       ],
       "applicationMatches": []
     },
@@ -5051,7 +5118,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:320"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:346"
       ],
       "applicationMatches": []
     },
@@ -5216,8 +5283,8 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:37",
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:38",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:39",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:40",
         "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:19"
       ],
       "applicationMatches": [
@@ -5267,11 +5334,11 @@
       "usedBy": [
         "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:74",
         "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:81",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:394",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:395",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:396",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:269",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:899"
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:401",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:402",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:403",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:292",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:950"
       ],
       "applicationMatches": []
     },
@@ -5491,7 +5558,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:895"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:946"
       ],
       "applicationMatches": []
     },
@@ -5503,16 +5570,16 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:57",
-        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:223",
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:61",
+        "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:228",
         "applications/Unity.AutoUI/cypress/pages/ListPages.ts:53",
         "applications/Unity.AutoUI/cypress/pages/ListPages.ts:60",
         "applications/Unity.AutoUI/cypress/pages/ListPages.ts:66",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:438",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:801",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:882",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:898",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:93"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:104",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:464",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:852",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:933",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:949"
       ],
       "applicationMatches": []
     },
@@ -5524,7 +5591,7 @@
       "status": "exempt",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:56"
+        "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:60"
       ],
       "applicationMatches": []
     },
@@ -5536,7 +5603,7 @@
       "status": "exempt",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:122"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:133"
       ],
       "applicationMatches": []
     }
