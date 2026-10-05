@@ -7,7 +7,6 @@ using Unity.Notifications.EmailNotifications;
 using Unity.Notifications.Permissions;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
-using Volo.Abp.Authorization;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Users;
 
@@ -42,7 +41,7 @@ public class EmailLogAttachmentAppService(
         }
         else if (templateId.HasValue)
         {
-            await AuthorizationService.CheckAsync(NotificationsPermissions.Email.Send);
+            await AuthorizationService.CheckAsync(NotificationsPermissions.Email.Default);
             attachments = await emailLogAttachmentRepository.GetByTemplateIdAsync(templateId.Value);
         }
 

@@ -95,12 +95,20 @@ namespace Unity.GrantManager.Intakes
                 RawSubmission = formSubmission
             });
             
-            await localEventBus.PublishAsync(new ApplicationChangedEvent
+            var applicationChangedEvent = new ApplicationChangedEvent
             {
                 Action = GrantApplicationAction.Submit,
                 ApplicationId = application.Id,
                 ApplicationStatusId = application.ApplicationStatusId
-            });
+            };
+            if (_unitOfWorkManager.Current is { } unitOfWork)
+            {
+                unitOfWork.OnCompleted(() => localEventBus.PublishAsync(applicationChangedEvent));
+            }
+            else
+            {
+                await localEventBus.PublishAsync(applicationChangedEvent);
+            }
             await uow.SaveChangesAsync();
             return application.Id;
         }
