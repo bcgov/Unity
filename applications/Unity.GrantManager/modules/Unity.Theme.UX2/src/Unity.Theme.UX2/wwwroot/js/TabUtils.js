@@ -1,11 +1,59 @@
+/**
+ * Configuration for one tab navigation group.
+ * @typedef {Object} TabUtilsGroup
+ * @property {string} id - Unique identifier for this group within the entity.
+ * @property {string} tabListSelector - CSS selector for the group's tab navigation element.
+ * @property {string} contentSelector - CSS selector for the group's tab content container.
+ */
+
+/**
+ * Configuration for restoring tab state for one entity.
+ * @typedef {Object} TabUtilsOptions
+ * @property {string} entityType - Entity category used to isolate stored selections.
+ * @property {string} entityId - Entity identifier used to isolate stored selections.
+ * @property {TabUtilsGroup[]} groups - Tab groups to restore and observe.
+ */
+
+/**
+ * A tab selection stored in localStorage.
+ * @typedef {Object} TabUtilsSelection
+ * @property {string} targetId - ID of the selected tab pane.
+ * @property {number} selectedAt - Selection time in milliseconds since the Unix epoch.
+ */
+
+/**
+ * Manages the state of Bootstrap tabs for specified groups, 
+ * restoring the last selected tab and persisting new selections.
+ * @param {TabUtilsOptions} options - Entity identity and tab group selectors.
+ * @returns {void}
+ * @example
+ * TabUtils.initialize({
+ *     entityType: 'project',
+ *     entityId: '123',
+ *     groups: [
+ *         {
+ *             id: 'main-tabs',
+ *             tabListSelector: '#main-tabs-nav',
+ *             contentSelector: '#main-tabs-content'
+ *         }
+ *     ]
+ * });
+ */
 const TabUtils = (function () {
     'use strict';
 
     const STORAGE_PREFIX = 'Unity.TabUtils:';
-    const MAX_AGE_MS = 8 * 60 * 60 * 1000;
+    const MAX_AGE_MS = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
     const TAB_TOGGLE_SELECTOR = '[data-bs-toggle="tab"]';
     let logoutStarted = false;
 
+    /**
+     * Restores each group's saved tab and persists subsequent selections.
+     * Invalid or unavailable saved tabs are ignored, leaving the page's active
+     * tab in place (or selecting the first available tab when none is active).
+     * @param {TabUtilsOptions} options - Entity identity and tab group selectors.
+     * @returns {void}
+     */
     function initialize(options) {
         if (
             logoutStarted ||
@@ -75,10 +123,23 @@ const TabUtils = (function () {
         });
     }
 
+    /**
+     * Creates the storage key for a specific entity and tab group.
+     * @param {string} entityType - Entity category.
+     * @param {string} entityId - Entity identifier.
+     * @param {string} groupId - Tab group identifier.
+     * @returns {string} Namespaced localStorage key.
+     */
     function getStorageKey(entityType, entityId, groupId) {
         return `${STORAGE_PREFIX}${encodeURIComponent(entityType)}:${encodeURIComponent(entityId)}:${encodeURIComponent(groupId)}`;
     }
 
+    /**
+     * Finds enabled tab controls whose panes belong to the supplied content container.
+     * @param {Element} tabList - Tab navigation element to search.
+     * @param {Element} tabContent - Tab pane container.
+     * @returns {HTMLElement[]} Available tab controls in document order.
+     */
     function getAvailableTabs(tabList, tabContent) {
         return Array.from(tabList.querySelectorAll(TAB_TOGGLE_SELECTOR)).filter((tab) => {
             const targetId = getTargetId(tab);
@@ -87,6 +148,11 @@ const TabUtils = (function () {
         });
     }
 
+    /**
+     * Checks whether a tab control is connected, enabled, and visibly rendered.
+     * @param {HTMLElement} tab - Tab control to inspect.
+     * @returns {boolean} Whether the tab can be selected.
+     */
     function isAvailable(tab) {
         if (
             !tab.isConnected ||
@@ -101,6 +167,11 @@ const TabUtils = (function () {
         return style.display !== 'none' && style.visibility !== 'hidden' && tab.getClientRects().length > 0;
     }
 
+    /**
+     * Gets a tab pane ID from its ARIA relationship or Bootstrap target attribute.
+     * @param {HTMLElement} tab - Tab control to inspect.
+     * @returns {string|null} Target pane ID, or null when no valid target is present.
+     */
     function getTargetId(tab) {
         const ariaControls = tab.getAttribute('aria-controls');
         if (ariaControls) {
@@ -120,6 +191,11 @@ const TabUtils = (function () {
         }
     }
 
+    /**
+     * Reads and validates a saved selection, removing it when malformed or expired.
+     * @param {string} storageKey - localStorage key to read.
+     * @returns {TabUtilsSelection|null} Valid saved selection, or null when unavailable.
+     */
     function readSelection(storageKey) {
         try {
             const serializedSelection = globalThis.localStorage.getItem(storageKey);
@@ -145,6 +221,12 @@ const TabUtils = (function () {
         }
     }
 
+    /**
+     * Saves the selected pane and the time of selection.
+     * @param {string} storageKey - localStorage key to write.
+     * @param {string} targetId - Selected tab pane ID.
+     * @returns {void}
+     */
     function saveSelection(storageKey, targetId) {
         if (logoutStarted) {
             return;
@@ -160,6 +242,11 @@ const TabUtils = (function () {
         }
     }
 
+    /**
+     * Removes a saved selection.
+     * @param {string} storageKey - localStorage key to remove.
+     * @returns {void}
+     */
     function removeSelection(storageKey) {
         try {
             globalThis.localStorage.removeItem(storageKey);
@@ -168,6 +255,10 @@ const TabUtils = (function () {
         }
     }
 
+    /**
+     * Clears all TabUtils selections and prevents further writes in this page.
+     * @returns {void}
+     */
     function clearStoredState() {
         logoutStarted = true;
         try {
@@ -205,6 +296,7 @@ const TabUtils = (function () {
         }
     }, true);
 
+    // Public API
     return {
         initialize: initialize,
         clearStoredState: clearStoredState
