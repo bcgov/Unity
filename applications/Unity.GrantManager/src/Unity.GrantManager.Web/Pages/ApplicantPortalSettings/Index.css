@@ -62,3 +62,51 @@
     display: flex;
     margin-top: 1px;
 }
+
+.portal-message-heading {
+    color: #0066cc;
+    border-bottom: 2px solid #0066cc;
+    padding: 0 0 0.75rem;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+}
+
+.portal-message-toggle {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-left: 0;
+}
+
+.portal-message-toggle .form-check-input {
+    float: none;
+    margin: 0;
+    order: 1;
+}
+
+.portal-message-parameters {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    background-color: #f0f4fa;
+    border: 1px solid #dbe5f4;
+    border-radius: 4px;
+}
+
+.portal-message-token {
+    color: #005bbb;
+    background-color: #e1ecff;
+    font-weight: 600;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+#PortalSettingsSideMenu [role="button"]:focus-visible {
+    outline: 2px solid #0066cc;
+    outline-offset: 2px;
+}
+
+#portal-messages-div .tox-tinymce {
+    border-radius: 4px;
+}
