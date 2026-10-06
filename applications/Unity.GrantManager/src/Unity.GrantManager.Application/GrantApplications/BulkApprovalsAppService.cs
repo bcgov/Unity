@@ -58,15 +58,15 @@ namespace Unity.GrantManager.GrantApplications
                         throw new UnauthorizedAccessException();
                     }
 
-                    _ = await applicationManager.TriggerAction(application.Id, GrantApplicationAction.Approve);
+                    var updatedApplication = await applicationManager.TriggerAction(application.Id, GrantApplicationAction.Approve);
 
-                    await localEventBus.PublishAsync(
+                    uowFields.OnCompleted(() => localEventBus.PublishAsync(
                         new ApplicationChangedEvent
                         {
                             Action = approvalAction,
-                            ApplicationId = application.Id
-                        }
-                    );
+                            ApplicationId = application.Id,
+                            ApplicationStatusId = updatedApplication.ApplicationStatusId
+                        }));
 
                     await uowFields.CompleteAsync();
 

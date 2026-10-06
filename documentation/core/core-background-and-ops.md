@@ -132,8 +132,6 @@ endpoints.MapMetrics().RequireAuthorization(PolicyRegistrant.MetricsAccessPolicy
 
 `MatomoUrlProvider` supplies the Matomo tracking URL from the `ANALYTICS_MATOMO_BASE` dynamic URL, returning nothing unless the `Unity.Analytics` tenant feature is enabled. Note there are **two** copies of this type — `Application/Analytics/` and `Web/Analytics/` — and the web one is the one the layout uses.
 
-`Dashboard/Index.cshtml.cs` carries the one expected `CS8604` build warning called out in `CLAUDE.md` — leave it alone unless asked.
-
 ## Auditing
 
 ABP's audit log, configured in `GrantManagerWebModule` through `AbpAuditingOptions`, `AbpAspNetCoreAuditingOptions` and `AbpSecurityLogOptions`, with `UseAuditing()` in the pipeline. `EfCoreAuditLogRepository` adds the custom queries the History widget needs.

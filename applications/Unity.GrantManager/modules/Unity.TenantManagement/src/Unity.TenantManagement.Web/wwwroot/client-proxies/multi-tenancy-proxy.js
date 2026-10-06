@@ -19,7 +19,7 @@
     };
     unity.tenantManagement.tenant.getList = function(input, ajaxParams) {
       return abp.ajax($.extend(true, {
-        url: abp.appPath + 'api/multi-tenancy/tenants' + abp.utils.buildQueryString([{ name: 'filter', value: input.filter }, { name: 'sorting', value: input.sorting }, { name: 'skipCount', value: input.skipCount }, { name: 'maxResultCount', value: input.maxResultCount }]) + '',
+        url: abp.appPath + 'api/multi-tenancy/tenants' + abp.utils.buildQueryString([{ name: 'filter', value: input.filter }, { name: 'sorting', value: input.sorting }, { name: 'skipCount', value: input.skipCount }, { name: 'maxResultCount', value: input.maxResultCount }, { name: 'includeDeleted', value: input.includeDeleted }]) + '',
         type: 'GET'
       }, ajaxParams));
     };
@@ -55,6 +55,13 @@
         url: abp.appPath + 'api/multi-tenancy/tenants/' + id + '/connection-strings',
         type: 'PUT',
         data: JSON.stringify(input)
+      }, ajaxParams));
+    };
+    unity.tenantManagement.tenant.purge = function(id, ajaxParams) {
+      return abp.ajax($.extend(true, {
+        url: abp.appPath + 'api/multi-tenancy/tenants/' + id + '/purge',
+        type: 'POST',
+        dataType: null
       }, ajaxParams));
     };
 

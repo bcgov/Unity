@@ -15,12 +15,12 @@ Because an onboarding request is an ordinary `Application`, it also has an ordin
 |`SUBMITTED`|`Approve` → `GRANT_APPROVED`, `Deny` → `GRANT_NOT_APPROVED`, `Defer` → `DEFER`|
 |`GRANT_APPROVED`|`Close` → `CLOSED`, `Defer` → `DEFER`|
 |`GRANT_NOT_APPROVED`|`Close` → `CLOSED`, `Defer` → `DEFER`|
-|`CLOSED`|`Defer` → `DEFER`|
-|`DEFER`|`Submit` → `SUBMITTED`, `Approve` → `GRANT_APPROVED`, `Deny` → `GRANT_NOT_APPROVED`, `Close` → `CLOSED`|
+|`CLOSED`|`Submit` → `SUBMITTED`|
+|`DEFER`|`Submit` → `SUBMITTED`, `Close` → `CLOSED`|
 
-Defer is deliberately symmetric: any onboarding state can be deferred, and a deferred request can be returned to any other state. `Submit` exists in this workflow only as the way back out of `DEFER` to `SUBMITTED` — the intake pipeline creates requests directly in `SUBMITTED`, it never fires the trigger.
+`SUBMITTED` is the single re-entry point. `Submit` reopens a closed request (for example, to create its tenant again after the first one was purged) and resumes a deferred one; the intake pipeline itself creates requests directly in `SUBMITTED` and never fires the trigger. Because a deferred request can't return straight to `GRANT_APPROVED`/`GRANT_NOT_APPROVED`, deferring a decision means it has to be made again — so `FinalDecisionDate` always reflects the latest decision.
 
-Note that the "Create Tenant" button in the request queue is enabled only for rows whose status is `Approved` (`Onboarding/Index.js`), so the `CloseApplicationAsync` call at the end of `CreateTenantAsync` (step 7 below) always fires from `GRANT_APPROVED`.
+Create Tenant requires an approved request: `CreateTenantAsync` refuses unless `OnboardingRequestDto.IsApproved` (status `GRANT_APPROVED`), and the queue's "Create Tenant" button is only shown for `Approved` rows (`Onboarding/Index.js`). The request details page offers the same action: `DetailsActionBar` shows a "Create Tenant" button after Status Actions and Publish Status when the tenant has the Onboarding specialization, the user has `ITOperations` and the request `IsApproved` (shown/hidden on `application_status_changed` as the status changes); it opens the queue with `?createTenant={id}`, which opens the Create Tenant modal for that request. So the `CloseApplicationAsync` call at the end of `CreateTenantAsync` (step 7 below) always fires from `GRANT_APPROVED`.
 
 ## The seam: `IOnboardingApplicationProvider`
 
@@ -42,7 +42,7 @@ An onboarding request's visible fields come from two places, merged in `Onboardi
 
 ## Field mapping is admin-configurable, not hardcoded
 
-Which worksheet-field *key* means "tenant name", "display name", "program managers", "branch", "features", "ministry", "division", "program area" is **not** fixed in code — it's stored per-user (falling back to a global default) via `ISettingManager` (`OnboardingColumnConfigSettings`, provider `"U"`). `ReadTenantMappingAsync` / `SaveFieldMappingAsync` / `ResolveFieldMappings` implement this. Practical effect: different onboarding CHEFS forms — with entirely different field keys — can all feed the same tenant-creation flow, as long as an admin maps the relevant columns once through the UI. This is what makes "one onboarding pipeline, many possible intake forms" work without a code change per form revision.
+Which worksheet-field *key* means "tenant name", "display name", "program managers", "branch", "features", "ministry", "division", "program area" is **not** fixed in code — it's stored per-user (falling back to a global default) via `ISettingManager` (`OnboardingColumnConfigSettings`, provider `"U"`). `ReadTenantMappingAsync` / `SaveFieldMappingAsync` / `ResolveFieldMappings` implement this. Practical effect: different onboarding CHEFS forms — with entirely different field keys — can all feed the same tenant-creation flow, as long as an admin maps the relevant columns once through the UI. This is what makes "one onboarding pipeline, many possible intake forms" work without a code change per form revision. Because the saved keys are one set per user rather than per form, the Create Tenant modal (`Onboarding/Index.js` → `_renderMappingDropdown`) only preselects a saved key when that field has a value on the selected request; otherwise it prefers a field whose label exactly matches (a filled one first, then an empty one, so an empty "Program Area" is not replaced by a filled "Program Managers"; aliases listed for more than one target, such as "program name", never select an empty field), then fuzzy-matches among the fields that have a value, and falls back to the saved key only if nothing matches.
 
 ## Validation steps (`IOnboardingValidationStep`)
 
@@ -50,7 +50,7 @@ Same auto-discovery pattern as post-creation steps: `ITransientDependency`, `[Re
 
 |Step|Order|Checks|
 |---|---|---|
-|`TenantNameUniquenessStep`|10|`ITenantRepository.FindByNameAsync(name.ToUpper())` — no existing tenant with this normalized name.|
+|`TenantNameUniquenessStep`|10|`ITenantRepository.FindByNameAsync(name.ToUpper())` with the `ISoftDelete` filter disabled — no existing tenant with this normalized name, **including soft-deleted ones**. A soft-deleted match fails with its own "deleted tenant … still exists" message, since that tenant still holds its database and roles until purged.|
 |`ProgramManagersValidationStep`|20|Parses `request.ProgramManagers` two ways — first as a Formio/CHEFS DataGrid JSON shape (`DataGridRowsValue`, matching a cell whose *key contains* "email", since the DataGrid column key varies per worksheet, e.g. `s03_SuperUserEmail`), falling back to a delimited string (`,`/`;`/`|`). Requires **at least one** email to resolve to a real user via `IOnboardingUserLookup`.|
 
 Both the client (`ValidateAsync`, a pre-check the UI calls before enabling the approve button) and the server (`CreateTenantAsync`, unconditionally) run the same steps — the client result is explicitly not trusted, and is re-verified server-side even if the UI already showed green.
@@ -63,7 +63,7 @@ Both the client (`ValidateAsync`, a pre-check the UI calls before enabling the a
 
 `OnboardingRequestAppService.CreateTenantAsync(id, CreateTenantInputDto?)`:
 
-1. Re-resolves field mappings and re-runs validation (defense in depth against a stale/tampered client state).
+1. Refuses unless the request is approved, then re-resolves field mappings and re-runs validation (defense in depth against a stale/tampered client state).
 2. Parses `ProgramManagers` → email list → resolves each via `IOnboardingUserLookup`; **throws** if zero resolve ("Cannot create tenant without at least one valid program manager").
 3. Resolves feature checkboxes via `OnboardingFeatureMap.ResolveFeatureKeys` — a static dictionary mapping human-readable labels ("Payments", "AI Reporting") and camelCase checkbox-group keys (`aiReporting`) to real ABP feature keys (`Unity.Payments`, `Unity.AIReporting`, ...). Accepts either a JSON checkbox-group array (`[{"key":...,"value":true}]`) or a delimited string — mirroring the same dual-format tolerance as the program-managers parsing.
 4. Calls **`TenantAppService.CreateAsync(new TenantCreateDto{ Name, DisplayName, Branch, Division, Description, UserIdentifier = userGuids[0], FeatureKeys, MetabaseUserEmails = input?.MetabaseUserEmails })`** — the identical app service method the "New Tenant" modal uses, just populated from onboarding-request field data instead of a hand-filled form. There is no separate/elevated tenant-creation path for onboarding.

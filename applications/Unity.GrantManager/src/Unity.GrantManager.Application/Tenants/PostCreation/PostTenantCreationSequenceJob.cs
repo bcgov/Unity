@@ -54,6 +54,19 @@ public class PostTenantCreationSequenceJob(
 
         var step = orderedSteps[args.StepIndex];
 
+        // A tenant deleted (or purged) after this job was queued has nothing left to set up;
+        // returning (not throwing) keeps ABP from retrying the job against a missing tenant.
+        using (currentTenant.Change(null))
+        {
+            if (await tenantRepository.FindAsync(args.TenantId) == null)
+            {
+                logger.LogWarning(
+                    "{Prefix} Skipping step {StepIndex} '{StepName}' - tenant {TenantId} no longer exists",
+                    LogPrefix, args.StepIndex, step.StepName, args.TenantId);
+                return;
+            }
+        }
+
         try
         {
             using (currentTenant.Change(args.TenantId))

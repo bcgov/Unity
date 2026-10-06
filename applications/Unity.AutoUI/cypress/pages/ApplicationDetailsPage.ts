@@ -363,13 +363,20 @@ export class ApplicationDetailsPage extends BasePage {
       .should("be.visible")
       .click({ force: true });
 
-    // Dismiss the "Action Complete" modal that always appears after refresh
-    cy.contains("button", "Ok", { timeout: 20000 })
-      .should("be.visible")
-      .click({ force: true });
+    // The "Action Complete" modal only appears when the refresh actually
+    // finds site data — a supplier number with zero sites for the current
+    // environment (observed on DEV) skips it entirely, so dismissal here is
+    // conditional rather than mandatory. The wait gives the async refresh +
+    // modal a chance to appear before the one-shot DOM check below.
+    cy.wait(3000);
+    cy.get("body").then(($body) => {
+      const $ok = $body.find("button:contains('Ok')").filter(":visible");
+      if ($ok.length > 0) {
+        cy.wrap($ok.first()).click({ force: true });
+        cy.contains("Action Complete").should("not.exist");
+      }
+    });
 
-    // Wait for the modal to be gone before checking the table
-    cy.contains("Action Complete").should("not.exist");
     return this;
   }
 

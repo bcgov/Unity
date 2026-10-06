@@ -275,6 +275,9 @@ public class OnboardingRequestAppService(
         var request = await GetAsync(id)
             ?? throw new UserFriendlyException("Onboarding request not found.");
 
+        if (!request.IsApproved)
+            throw new UserFriendlyException("Only approved onboarding requests can create a tenant.");
+
         await ResolveFieldMappings(request, input?.TenantNameFieldKey, input?.ProgramManagersFieldKey, input?.BranchFieldKey, input?.FeaturesFieldKey, input?.MinistryFieldKey, input?.ProgramAreaFieldKey, input?.DisplayNameFieldKey, input?.DivisionFieldKey);
 
         if (input != null)
@@ -543,6 +546,7 @@ public class OnboardingRequestAppService(
             SubmissionNumber = app.ReferenceNo,
             SubmissionDate = app.SubmissionDate,
             Status = app.Status,
+            IsApproved = app.IsApproved,
             Category = app.Category
         };
 

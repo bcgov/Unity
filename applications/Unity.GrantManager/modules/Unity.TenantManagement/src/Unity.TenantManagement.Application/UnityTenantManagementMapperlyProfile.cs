@@ -35,6 +35,7 @@ public class TenantToTenantDtoMapper : MapperBase<Tenant, TenantDto>
         destination.DisplayName = GetExtraProperty(source, "DisplayName") ?? string.Empty;
         destination.CasClientCode = GetExtraProperty(source, "CasClientCode") ?? string.Empty;
         destination.LicencePlate = GetExtraProperty(source, "LicencePlate") ?? string.Empty;
+        destination.IsDeleted = source.IsDeleted;
         destination.Division = GetExtraProperty(source, "Division") ?? string.Empty;
         destination.Branch = GetExtraProperty(source, "Branch") ?? string.Empty;
         destination.Description = GetExtraProperty(source, "Description") ?? string.Empty;

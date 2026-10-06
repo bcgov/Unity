@@ -57,11 +57,10 @@ public class ScheduledNotificationHelperTests
         values["organization_name"].ShouldBeEmpty();
         values["applicant_id"].ShouldBeEmpty();
         values["today_date"].ShouldNotBeNullOrWhiteSpace();
-        values.Count.ShouldBe(4);
-        values.ShouldNotContainKey("project_name");
-        values.ShouldNotContainKey("submission_number");
-        values.ShouldNotContainKey("requested_amount");
-        values.ShouldNotContainKey("unity_application_id");
+        values["project_name"].ShouldBe("Community technology project");
+        values["submission_number"].ShouldBe("APP-456");
+        values["requested_amount"].ShouldBe("$1,250.00");
+        values["unity_application_id"].ShouldBe("UNITY-456");
     }
 
     [Fact]
