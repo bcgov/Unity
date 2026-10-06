@@ -6,13 +6,29 @@ const vm = require('node:vm');
 
 const source = readFileSync(path.resolve(__dirname,
     '../../../src/Unity.GrantManager.Web/Pages/ApplicantPortalSettings/Messages.js'), 'utf8');
-const defaultHtml = '<p>Multiple applicants. Contact {inboxEmail}.</p>';
+const defaultMessage = {
+    html: '<p>Multiple applicants. Contact {inboxEmail}.</p>',
+    text: 'Multiple applicants. Contact {inboxEmail}.'
+};
+const defaultHtml = defaultMessage.html;
+const savedCustomMessage = { html: '<p>Saved custom</p>', text: 'Saved custom' };
 
 // Run the actual page handlers with adapters for jQuery, TinyMCE, and the API.
-function page({ useDefault = true, html = defaultHtml, customHtml = useDefault ? null : html } = {}) {
+function page({ useDefault = true, message = defaultMessage, customMessage = useDefault ? null : message } = {}) {
     const nodes = new Map();
     const requests = [];
     const editorEvents = new Map();
+    // TinyMCE supplies HTML and plain text separately. Fixtures provide both;
+    // this stub does not parse or sanitize HTML.
+    const plainTextByHtml = new Map();
+    function registerMessage({ html, text }) {
+        assert.equal(typeof html, 'string', 'Message fixtures must provide HTML');
+        assert.equal(typeof text, 'string', 'Message fixtures must provide plain text');
+        plainTextByHtml.set(html, text);
+    }
+    registerMessage(defaultMessage);
+    registerMessage(message);
+    if (customMessage) registerMessage(customMessage);
     let pending;
     function node(selector) {
         if (nodes.has(selector)) return nodes.get(selector);
@@ -44,15 +60,16 @@ function page({ useDefault = true, html = defaultHtml, customHtml = useDefault ?
         };
     }
     $('#PortalMessageForm').attr('data-use-default', String(useDefault)).attr('data-max-html-length', '2048');
-    $('#MultipleIdentitiesMessage').val(html);
+    $('#MultipleIdentitiesMessage').val(message.html);
     $('#DefaultMultipleIdentitiesMessage').val(defaultHtml);
-    $('#CustomMultipleIdentitiesMessage').val(customHtml || '');
+    $('#CustomMultipleIdentitiesMessage').val(customMessage?.html ?? '');
     $('#UseDefaultMultipleIdentitiesMessage').prop('checked', useDefault);
     const editor = {
-        html, currentMode: 'design', undoClears: 0,
+        html: message.html, currentMode: 'design', undoClears: 0,
         getContent(options) {
-            // Approximate plain text for test fixtures, consuming unfinished tags too.
-            return options?.format === 'text' ? this.html.replace(/<[^>]*>?/g, '').replaceAll('&nbsp;', ' ') : this.html;
+            if (options?.format !== 'text') return this.html;
+            assert.ok(plainTextByHtml.has(this.html), 'Missing plain-text fixture for editor content');
+            return plainTextByHtml.get(this.html);
         },
         setContent(value) { this.html = value; },
         on(names, handler) { for (const name of names.split(' ')) editorEvents.set(name, handler); },
@@ -80,7 +97,11 @@ function page({ useDefault = true, html = defaultHtml, customHtml = useDefault ?
     $('#manage-messages-menu-item').trigger('click');
     return {
         $, editor, requests,
-        type(value) { editor.setContent(value); editorEvents.get('input')(); },
+        type(html, text) {
+            registerMessage({ html, text });
+            editor.setContent(html);
+            editorEvents.get('input')();
+        },
         toggle(value) { $('#UseDefaultMultipleIdentitiesMessage').prop('checked', value).trigger('change'); },
         save() { $('#PortalMessageForm').trigger('submit'); },
         async success() { pending.resolve(requests.at(-1)); await new Promise(setImmediate); },
@@ -103,8 +124,8 @@ test('default mode is read-only and switching off starts with the default text',
 });
 
 test('switching default on and off restores the latest custom draft and clears undo history', () => {
-    const view = page({ useDefault: false, html: '<p>Saved custom</p>' });
-    view.type('<p>Unsaved custom</p>');
+    const view = page({ useDefault: false, message: savedCustomMessage });
+    view.type('<p>Unsaved custom</p>', 'Unsaved custom');
     const previousClears = view.editor.undoClears;
     view.toggle(true);
     assert.equal(view.editor.html, defaultHtml);
@@ -115,7 +136,7 @@ test('switching default on and off restores the latest custom draft and clears u
 });
 
 test('a page loaded in default mode restores the retained custom message when switched off', () => {
-    const view = page({ customHtml: '<p>Saved custom</p>' });
+    const view = page({ customMessage: savedCustomMessage });
     assert.equal(view.editor.html, defaultHtml);
     assert.equal(view.editor.currentMode, 'readonly');
     assert.equal(view.$('#SavePortalMessageButton').prop('disabled'), true);
@@ -125,8 +146,8 @@ test('a page loaded in default mode restores the retained custom message when sw
 });
 
 test('saving default mode retains the latest custom draft across a page reload', async () => {
-    const view = page({ useDefault: false, html: '<p>Saved custom</p>' });
-    view.type('<p>Edited custom</p>');
+    const view = page({ useDefault: false, message: savedCustomMessage });
+    view.type('<p>Edited custom</p>', 'Edited custom');
     view.toggle(true);
     view.save();
     assert.equal(view.requests[0].useDefaultMessage, true);
@@ -136,13 +157,15 @@ test('saving default mode retains the latest custom draft across a page reload',
     assert.equal(view.editor.html, defaultHtml);
     assert.equal(view.$('#SavePortalMessageButton').prop('disabled'), true);
 
-    const reloaded = page({ useDefault: true, customHtml: view.requests[0].customMessageHtml });
+    const reloaded = page({ useDefault: true, customMessage: {
+        html: view.requests[0].customMessageHtml, text: 'Edited custom'
+    } });
     reloaded.toggle(false);
     assert.equal(reloaded.editor.html, '<p>Edited custom</p>');
 });
 
 test('Reset in default mode leaves the retained custom message intact', () => {
-    const view = page({ customHtml: '<p>Saved custom</p>' });
+    const view = page({ customMessage: savedCustomMessage });
     view.$('#ResetPortalMessageButton').trigger('click');
     assert.equal(view.$('#UseDefaultMultipleIdentitiesMessage').prop('checked'), true);
     assert.equal(view.editor.html, defaultHtml);
@@ -152,9 +175,9 @@ test('Reset in default mode leaves the retained custom message intact', () => {
 });
 
 test('Cancel restores both default mode and the previously saved custom template', () => {
-    const view = page({ customHtml: '<p>Saved custom</p>' });
+    const view = page({ customMessage: savedCustomMessage });
     view.toggle(false);
-    view.type('<p>Edited custom</p>');
+    view.type('<p>Edited custom</p>', 'Edited custom');
     view.toggle(true);
     view.$('#CancelPortalMessageButton').trigger('click');
     assert.equal(view.editor.html, defaultHtml);
@@ -164,7 +187,7 @@ test('Cancel restores both default mode and the previously saved custom template
 });
 
 test('Reset in custom mode replaces the retained draft with default text across toggles', () => {
-    const view = page({ useDefault: false, html: '<p>Saved custom</p>' });
+    const view = page({ useDefault: false, message: savedCustomMessage });
     view.$('#ResetPortalMessageButton').trigger('click');
     view.toggle(true);
     view.toggle(false);
@@ -174,8 +197,8 @@ test('Reset in custom mode replaces the retained draft with default text across 
 });
 
 test('invalid retained custom text blocks Save and explains how to correct it', () => {
-    const view = page({ useDefault: false, html: '<p>Saved custom</p>' });
-    view.type('<p>' + 'a'.repeat(2048) + '</p>');
+    const view = page({ useDefault: false, message: savedCustomMessage });
+    view.type('<p>' + 'a'.repeat(2048) + '</p>', 'a'.repeat(2048));
     view.toggle(true);
     view.save();
     assert.equal(view.requests.length, 0);
@@ -185,7 +208,7 @@ test('invalid retained custom text blocks Save and explains how to correct it', 
 });
 
 test('Reset restores default text while keeping custom mode, and Cancel restores the saved custom message', () => {
-    const view = page({ useDefault: false, html: '<p>Saved custom</p>' });
+    const view = page({ useDefault: false, message: savedCustomMessage });
     view.$('#ResetPortalMessageButton').trigger('click');
     assert.equal(view.editor.html, defaultHtml);
     assert.equal(view.$('#UseDefaultMultipleIdentitiesMessage').prop('checked'), false);
@@ -200,20 +223,20 @@ test('Reset restores default text while keeping custom mode, and Cancel restores
 test('Save persists the current draft and Cancel subsequently returns to that new baseline', async () => {
     const view = page();
     view.toggle(false);
-    view.type('<p><strong>Custom</strong></p>');
+    view.type('<p><strong>Custom</strong></p>', 'Custom');
     view.save();
     assert.equal(view.requests[0].useDefaultMessage, false);
     assert.equal(view.requests[0].messageHtml, '<p><strong>Custom</strong></p>');
     assert.equal(view.editor.currentMode, 'readonly');
     await view.success();
     assert.equal(view.editor.currentMode, 'design');
-    view.type('<p>Another draft</p>');
+    view.type('<p>Another draft</p>', 'Another draft');
     view.$('#CancelPortalMessageButton').trigger('click');
     assert.equal(view.editor.html, '<p><strong>Custom</strong></p>');
 });
 
 test('Reset followed by Save persists default text in custom mode', async () => {
-    const view = page({ useDefault: false, html: '<p>Saved custom</p>' });
+    const view = page({ useDefault: false, message: savedCustomMessage });
     view.$('#ResetPortalMessageButton').trigger('click');
     view.save();
     assert.equal(view.requests[0].useDefaultMessage, false);
@@ -227,13 +250,19 @@ test('Reset followed by Save persists default text in custom mode', async () => 
 test('Save rejects visually empty HTML and HTML above the storage limit', () => {
     const view = page();
     view.toggle(false);
-    for (const html of ['', ' ', '<p><br></p>', '<p>&nbsp;\u200B</p>', '<p>' + 'a'.repeat(2048) + '</p>']) {
-        view.type(html);
+    for (const [html, text] of [
+        ['', ''],
+        [' ', ' '],
+        ['<p><br></p>', ''],
+        ['<p>&nbsp;\u200B</p>', '\u00A0\u200B'],
+        ['<p>' + 'a'.repeat(2048) + '</p>', 'a'.repeat(2048)]
+    ]) {
+        view.type(html, text);
         view.save();
         assert.equal(view.$('#portal-message-error').prop('hidden'), false);
     }
     assert.equal(view.requests.length, 0);
-    view.type('<p>' + 'a'.repeat(2041) + '</p>');
+    view.type('<p>' + 'a'.repeat(2041) + '</p>', 'a'.repeat(2041));
     view.save();
     assert.equal(view.requests.length, 1);
 });
@@ -241,7 +270,7 @@ test('Save rejects visually empty HTML and HTML above the storage limit', () => 
 test('failed Save preserves the draft, shows an error, and re-enables editing', async () => {
     const view = page();
     view.toggle(false);
-    view.type('<p>Keep this draft</p>');
+    view.type('<p>Keep this draft</p>', 'Keep this draft');
     view.save();
     await view.failure();
     assert.equal(view.editor.html, '<p>Keep this draft</p>');
@@ -253,8 +282,8 @@ test('failed Save preserves the draft, shows an error, and re-enables editing', 
 });
 
 test('switching configuration sections preserves the message draft and sends no save request', () => {
-    const view = page({ useDefault: false, html: '<p>Saved</p>' });
-    view.type('<p>Draft</p>');
+    const view = page({ useDefault: false, message: { html: '<p>Saved</p>', text: 'Saved' } });
+    view.type('<p>Draft</p>', 'Draft');
     view.$('#manage-statuses-menu-item').trigger('click');
     assert.equal(view.$('#portal-messages-div').classes.has('d-none'), true);
     view.$('#manage-messages-menu-item').trigger('click');
