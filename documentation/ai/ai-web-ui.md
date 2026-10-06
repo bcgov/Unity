@@ -14,7 +14,7 @@ The module's own web project is small — a prompts admin area, an embedded repo
 if (!await specializationChecker.IsEnabledAsync(SpecializationConsts.Onboarding))
 {
     await context.AddItemAsync(new ApplicationMenuItem(
-        AIMenus.Prompts, "AI Prompts", "~/Prompts", icon: "fl fl-ai-prompts", order: 900)
+        AIMenus.Prompts, "AI Prompts", "~/Prompts", order: 900)
         .OnlyWhenInRole(IdentityConsts.ITOperationsRoleName));
 }
 ```

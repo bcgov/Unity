@@ -36,7 +36,6 @@ public class AIMenuContributor : IMenuContributor
                 name: AIMenus.Prompts,
                 displayName: "AI Prompts",
                 url: "~/Prompts",
-                icon: "fl fl-ai-prompts",
                 order: 900
             ).OnlyWhenInRole(IdentityConsts.ITOperationsRoleName));
         }
@@ -53,7 +52,6 @@ public class AIMenuContributor : IMenuContributor
                 name: AIMenus.Reporting,
                 displayName: l["Menu:AIReporting"],
                 url: "~/AIReporting",
-                icon: "fl fl-view-dashboard",
                 order: 9,
                 requiredPermissionName: AIPermissions.Reporting.ReportingDefault
             ));

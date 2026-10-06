@@ -80,7 +80,7 @@ $(document).ready(function () {
         columnDefs: columnDefs,
         buttons: [
             {
-                text: '<i class="fl fl-review-user align-middle"></i> <span class="toggle-roles-text">Show Roles</span>',
+                text: '<i class="fa-solid fa-user-check align-middle"></i> <span class="toggle-roles-text">Show Roles</span>',
                 className: 'btn-light rounded-1',
                 action: function (e, dt, button) {
                     showingRoles = !showingRoles;
@@ -97,8 +97,8 @@ $(document).ready(function () {
             },
             {
                 text: isExpanded
-                    ? '<i class="fl fl-back-to-window align-middle"></i> <span>View Simple</span>'
-                    : '<i class="fl fl-fullscreen align-middle"></i> <span>View Expanded</span>',
+                    ? '<i class="fa-solid fa-down-left-and-up-right-to-center align-middle"></i> <span>View Simple</span>'
+                    : '<i class="fa-solid fa-up-right-and-down-left-from-center align-middle"></i> <span>View Expanded</span>',
                 className: 'btn-light rounded-1',
                 action: function () {
                     globalThis.location = isExpanded
