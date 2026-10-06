@@ -14,16 +14,16 @@
 
 #PortalSettingsSideMenu ul {
     padding-left: 0;
-}
-
-#PortalSettingsSideMenu li {
-    height: 40px;
-    padding: 10px;
-    border-radius: 0 100em 100em 0;
+    list-style: none;
 }
 
 #PortalSettingsSideMenu .nav-item {
+    height: 40px;
+    width: 100%;
+    padding: 10px;
+    border-radius: 0 100em 100em 0;
     justify-content: left;
+    text-align: left;
 }
 
 .portal-settings-config {
@@ -102,7 +102,7 @@
     border-radius: 4px;
 }
 
-#PortalSettingsSideMenu [role="button"]:focus-visible {
+#PortalSettingsSideMenu button:focus-visible {
     outline: 2px solid #0066cc;
     outline-offset: 2px;
 }

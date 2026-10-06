@@ -57,7 +57,7 @@
 
     function applyDraft(useDefault) {
         applyingDraft = true;
-        $toggle.prop('checked', useDefault);
+        $toggle.prop('checked', useDefault).attr('aria-checked', String(useDefault));
         editor.setContent(useDefault ? defaultHtml : customDraftHtml ?? defaultHtml);
         if (!useDefault) rememberCustomDraft();
         // Keep undo history within the displayed template, especially after Reset.
@@ -133,11 +133,6 @@
         $('#portal-status-div').toggleClass('d-none', messages);
         $('#portal-messages-div').toggleClass('d-none', !messages);
         if (messages) initializeEditor();
-    }).on('keydown', function (event) {
-        if (event.key === 'Enter' || event.key === ' ') {
-            event.preventDefault();
-            $(this).trigger('click');
-        }
     });
 
     $toggle.on('change', function () {

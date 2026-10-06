@@ -14,7 +14,8 @@
             <div class="col-12 col-lg-6">
                 <div class="form-check form-switch portal-message-toggle">
                     <input id="UseDefaultMultipleIdentitiesMessage" class="form-check-input" type="checkbox" role="switch"
-                           checked="@Model.UseDefaultMessage" aria-describedby="portal-message-default-help" />
+                           checked="@Model.UseDefaultMessage" aria-checked="@Model.UseDefaultMessage.ToString().ToLowerInvariant()"
+                           aria-describedby="portal-message-default-help" />
                     <label class="form-check-label fw-bold" for="UseDefaultMultipleIdentitiesMessage">@L["ApplicantPortalSettings:UseDefaultMessage"]</label>
                 </div>
                 <p id="portal-message-default-help" class="text-muted mt-2">@L["ApplicantPortalSettings:DefaultMessageHelp"]</p>
@@ -30,8 +31,8 @@
         <label class="form-label fw-bold" for="MultipleIdentitiesMessage">@L["ApplicantPortalSettings:Message"] <span class="text-danger" aria-hidden="true">*</span></label>
         <textarea id="MultipleIdentitiesMessage" class="form-control" rows="9" required
                   aria-describedby="portal-message-length portal-message-error">@Model.MessageHtml</textarea>
-        <textarea id="DefaultMultipleIdentitiesMessage" hidden aria-hidden="true">@Model.DefaultMessageHtml</textarea>
-        <textarea id="CustomMultipleIdentitiesMessage" hidden aria-hidden="true">@Model.CustomMessageHtml</textarea>
+        <input id="DefaultMultipleIdentitiesMessage" type="hidden" value="@Model.DefaultMessageHtml" />
+        <input id="CustomMultipleIdentitiesMessage" type="hidden" value="@Model.CustomMessageHtml" />
         <div id="portal-message-length" class="form-text text-end"></div>
         <div id="portal-message-error" class="text-danger mt-2" role="alert" hidden></div>
         <aside class="portal-message-parameters mt-4" aria-labelledby="portal-message-parameters-heading">
