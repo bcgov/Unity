@@ -51,7 +51,8 @@ function page({ useDefault = true, html = defaultHtml, customHtml = useDefault ?
     const editor = {
         html, currentMode: 'design', undoClears: 0,
         getContent(options) {
-            return options?.format === 'text' ? this.html.replace(/<[^>]*>/g, '').replaceAll('&nbsp;', ' ') : this.html;
+            // Approximate plain text for test fixtures, consuming unfinished tags too.
+            return options?.format === 'text' ? this.html.replace(/<[^>]*>?/g, '').replaceAll('&nbsp;', ' ') : this.html;
         },
         setContent(value) { this.html = value; },
         on(names, handler) { for (const name of names.split(' ')) editorEvents.set(name, handler); },
