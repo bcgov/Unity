@@ -159,6 +159,7 @@ public static partial class UnitySelector
     public static partial class Funding
     {
         public const string Default     = "Unity.GrantManager.ApplicationManagement.Funding";
+        public const string UpdatePolicy = "Unity.GrantManager.ApplicationManagement.Funding.UpdatePolicy"; // Custom Policy - Edit Contract OR Funding Agreement tab (worksheet edits)
         public static partial class Agreement
         {
             public const string Default = "Unity.GrantManager.ApplicationManagement.Funding.Agreement";

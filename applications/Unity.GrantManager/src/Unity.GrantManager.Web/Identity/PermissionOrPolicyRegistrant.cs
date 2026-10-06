@@ -34,5 +34,13 @@ internal static class PermissionOrPolicyRegistrant
 
                 // NOTE: This will be replaced when Worksheets are normalized with UnitySelector.Project.Worksheet.Update
                 UnitySelector.Project.Default)));
+
+        // Funding Agreement Logical OR policy
+        authorizationBuilder.AddPolicy(UnitySelector.Funding.UpdatePolicy,
+            policy => policy.AddRequirements(new PermissionOrRequirement(
+                UnitySelector.Funding.Agreement.Update,
+
+                // NOTE: This will be replaced when Worksheets are normalized with UnitySelector.Funding.Worksheet.Update
+                UnitySelector.Funding.Default)));
     }
 }

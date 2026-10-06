@@ -213,7 +213,8 @@
                 @*-------- Applicant Info Section END ---------*@
 
                 @*-------- Funding Agreement Info Section ---------*@
-                @if (IsZoneEnabled(UnitySelector.Funding.Default))
+                @* Tab requires both the zone toggle and the Funding Agreement permission *@
+                @if (await IsZoneVisible(UnitySelector.Funding.Default))
                 {
                     <abp-tab name="nav-funding-agreement-info" title="Funding Agreement">
                         <div class="w-100 px-2 @ZoneCssClass(UnitySelector.Funding.Agreement.Default)" id="FundingAgreementInfoWidget">

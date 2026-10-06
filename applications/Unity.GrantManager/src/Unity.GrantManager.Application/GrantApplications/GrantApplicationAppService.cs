@@ -753,13 +753,21 @@ public class GrantApplicationAppService(
     };
 
 
+    // Requires Edit Contract or the Funding Agreement tab permission (worksheet edits)
+    [Authorize(UnitySelector.Funding.UpdatePolicy)]
     public async Task<GrantApplicationDto> UpdateFundingAgreementInfoAsync(Guid id, CreateUpdateFundingAgreementInfoDto input)
     {
         var application = await applicationRepository.GetAsync(id);
 
+        // Contract fields are only editable with the Edit Contract permission and an enabled Contract zone;
+        // otherwise the fieldset is disabled client-side and its (unposted) values must not overwrite existing data
+        var canUpdateContract = await AuthorizationService.IsGrantedAsync(UnitySelector.Funding.Agreement.Update)
+            && await ZoneChecker.IsEnabledAsync(UnitySelector.Funding.Agreement.Default, application.ApplicationFormId);
+
         // Update simple fields
-        if (application.ContractNumber != input.ContractNumber ||
-            application.ContractExecutionDate != input.ContractExecutionDate)
+        if (canUpdateContract &&
+            (application.ContractNumber != input.ContractNumber ||
+            application.ContractExecutionDate != input.ContractExecutionDate))
         {
             application.ContractNumber = input.ContractNumber;
             application.ContractExecutionDate = input.ContractExecutionDate;
