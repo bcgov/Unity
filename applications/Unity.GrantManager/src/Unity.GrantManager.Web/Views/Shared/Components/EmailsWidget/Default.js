@@ -2312,66 +2312,55 @@ function initializeDraftEmailsWidget() {
         });
     }
 
-    // This widget is the sole subscriber to each of these four topics anywhere in the app (confirmed by
-    // project-wide search) — unsubscribe before re-subscribing so repeated initializeEmailsWidget() calls
-    // don't leave stale handlers (bound to a previous, now-discarded DOM/closure) stacking up alongside the
-    // current one.
-    PubSub.unsubscribe(selectedTopic);
-    PubSub.unsubscribe('applicant_info_updated');
-    PubSub.unsubscribe(deletedTopic);
-    PubSub.unsubscribe('reload_email_attachments_table');
-
-    PubSub.subscribe(selectedTopic, (msg, data) => {
-        console.log("EMAIL SELECTED EVENT FIRED", data);
-        templateAttachmentError = null;
-
-        // Set application context (editing existing emails, not templates)
-        isApplicationEmailContext = true;
-        document.body.classList.add('application-email-context');
-
-        // Determine if this is a draft FIRST, before any field population
+    function getSelectedEmailPermissions(data) {
         const status = (data?.status || '').toString().trim().toLowerCase();
         const isDraftRecord = status === 'draft';
         const isOwnDraft = !!data?.creatorId && String(data.creatorId).toLowerCase() === widgetUserId;
-        // Edit covers any draft; Create only covers drafts the user started.
         const canEditDraft = isDraftRecord && (capabilities.canEdit || (capabilities.canCreate && isOwnDraft));
-        const isDraft = isDraftRecord && (canEditDraft || capabilities.canSend);
-        isViewingDraft = isDraft; // Set flag early to prevent handleDraftChange from enabling buttons
-        console.log('isViewingDraft set to:', isViewingDraft);
 
-        // Store the original selected email data for discard functionality
-        selectedEmailData = structuredClone(data);
+        return {
+            canEditDraft,
+            isDraft: isDraftRecord && (canEditDraft || capabilities.canSend)
+        };
+    }
 
-        if (isNewEmailDraft && newDraftId) {
-            $.ajax({ url: `/api/app/email-notification/${newDraftId}/email`, type: 'DELETE' })
-                .catch(e => console.warn('Failed to delete abandoned draft on email_selected:', e));
-            isNewEmailDraft = false;
-            newDraftId = null;
+    function abandonNewDraftOnSelection() {
+        if (!isNewEmailDraft || !newDraftId) {
+            return;
         }
 
-        const selectedRecordTemplateName = resolveEmailRecordTemplateName(data);
-        activeTemplateId = data?.templateId || data?.emailTemplateId || data?.TemplateId || data?.EmailTemplateId || null;
-        originalTemplateState = {
-            name: selectedRecordTemplateName,
-            id: (activeTemplateId || '').toString()
-        };
+        $.ajax({ url: `/api/app/email-notification/${newDraftId}/email`, type: 'DELETE' })
+            .catch(e => console.warn('Failed to delete abandoned draft on email_selected:', e));
+        isNewEmailDraft = false;
+        newDraftId = null;
+    }
 
-        // Only drafts pick up the current date. Sent and scheduled emails must show the
-        // "Today's Date" value that was frozen into the body when they left the draft state.
-        const displayBody = isDraft && !isApplicantEmail ? refreshTodayDateSpans(data.body) : data.body;
-
-        resetValidationErrors();
-        console.log("data", data)
-        $('#EmailTemplateName').val(selectedRecordTemplateName);
+    function populateSelectedEmailFields(data, displayBody) {
+        $('#EmailTemplateName').val(resolveEmailRecordTemplateName(data));
         UIElements.inputEmailId.val(data.id);
         UIElements.inputOriginalEmailTo.val(data.toAddress);
         UIElements.inputOriginalEmailCC.val(data.cc?.replaceAll(',', '; ') ?? '');
         UIElements.inputOriginalEmailBCC.val(data.bcc?.replaceAll(',', '; ') ?? '');
         UIElements.inputOriginalEmailFrom.val(data.fromAddress);
         UIElements.inputOriginalEmailSubject.val(data.subject);
+        UIElements.inputEmailTo.val(data.toAddress);
+        UIElements.inputEmailCC.val(data.cc?.replaceAll(',', '; ') ?? '');
+        UIElements.inputEmailBCC.val(data.bcc?.replaceAll(',', '; ') ?? '');
+        setEmailFromAddress(data.fromAddress);
+        UIElements.inputEmailSubject.val(data.subject);
+        UIElements.inputEmailBody.val(displayBody);
+        UIElements.inputOriginalEmailBody.val(displayBody);
+    }
+
+    function populateSelectedEmailSchedule(data) {
+        UIElements.inputSendOnDateTime.val(data.sendOnDateTime || '');
+        updateScheduledDateDisplay();
+    }
+
+    function initializeSelectedEmailEditor(displayBody, selectedRecordTemplateName, canEditDraft) {
         resetEmailBody();
         editorInstance = null;
-        tinymce.get("EmailBody")?.remove(); // remove existing instance
+        tinymce.get("EmailBody")?.remove();
 
         tinymce.init({
             license_key: 'gpl',
@@ -2388,72 +2377,48 @@ function initializeDraftEmailsWidget() {
             skin: false,
             ui_container: '.details-scrollable',
             setup: function (editor) {
-                editor.on("input", (e) => {
-                    UIElements.inputEmailBody.val(editor.getContent())
+                editor.on("input", () => {
+                    UIElements.inputEmailBody.val(editor.getContent());
                     handleDraftChange();
                 });
                 editorInstance = editor;
             },
             init_instance_callback: function (editor) {
-                // Set initial content
                 const bodyContent = displayBody || '';
-                if (bodyContent) {
-                    const sanitizedBodyContent = sanitizeTinyMceHtml(bodyContent);
-                    editor.setContent(sanitizedBodyContent);
-                    UIElements.inputEmailBody.val(sanitizedBodyContent);
-                } else {
-                    UIElements.inputEmailBody.val('');
-                }
+                const sanitizedBodyContent = bodyContent ? sanitizeTinyMceHtml(bodyContent) : '';
+                editor.setContent(sanitizedBodyContent);
+                UIElements.inputEmailBody.val(sanitizedBodyContent);
 
-                // Create template label and buttons in label container
                 setTimeout(() => {
                     const $menubar = $(editor.getContainer()).find('.tox-menubar');
                     if (!$menubar.length) return;
 
                     updateSelectedTemplateLabel(selectedRecordTemplateName, activeTemplateId || '');
-
-                    // Templates select - add to TinyMCE menu bar at bottom
                     if (!$menubar.find('.templates-button-container').length) {
                         const $templatesSelect = createTemplateSelect(selectedRecordTemplateName, canEditDraft);
                         bindTemplateSelectEvents($templatesSelect, canEditDraft);
                         $menubar.append($templatesSelect);
                     }
-
-                    // Ensure disabled option text matches selected record after select exists.
                     updateSelectedTemplateLabel(selectedRecordTemplateName, activeTemplateId || '');
                 }, 100);
             }
         });
-        UIElements.inputEmailTo.val(data.toAddress);
-        UIElements.inputEmailCC.val(data.cc?.replaceAll(',', '; ') ?? '');
-        UIElements.inputEmailBCC.val(data.bcc?.replaceAll(',', '; ') ?? '');
-        setEmailFromAddress(data.fromAddress);
-        UIElements.inputEmailSubject.val(data.subject);
-        UIElements.inputEmailBody.val(displayBody);
-        UIElements.inputOriginalEmailBody.val(displayBody);
+    }
 
-        // Load scheduled send date/time if available
-        if (data.sendOnDateTime) {
-            UIElements.inputSendOnDateTime.val(data.sendOnDateTime);
-            updateScheduledDateDisplay();
-        } else {
-            UIElements.inputSendOnDateTime.val('');
-            updateScheduledDateDisplay();
+    function setSelectedEmailTemplate(data) {
+        if (!data.templateName) {
+            return;
         }
 
-        // Set the template dropdown to the current template if available
-        // Find the option by its text (template name) since values are GUIDs
-        if (data.templateName) {
-            const option = $('#EmailTemplate').find('option').filter(function () {
-                return $(this).text() === data.templateName;
-            });
-            if (option.length > 0) {
-                // Set without triggering change to avoid overwriting form fields with template defaults
-                $('#EmailTemplate').val(option.val());
-            }
+        const option = $('#EmailTemplate').find('option').filter(function () {
+            return $(this).text() === data.templateName;
+        });
+        if (option.length > 0) {
+            $('#EmailTemplate').val(option.val());
         }
+    }
 
-        // Always show the template dropdown, but disable it for sent emails
+    function configureSelectedEmailActions(isDraft, canEditDraft) {
         $('#templateListContainer').show();
         $('#EmailTemplate').prop('disabled', !canEditDraft);
 
@@ -2461,29 +2426,67 @@ function initializeDraftEmailsWidget() {
             enableEmail();
             handleDraftChange();
             $('#email_attachment_upload_btn').show();
-        } else if (isDraft) {
-            // Send-only draft: fields stay read-only and the draft goes out exactly as saved.
-            disableEmail();
-            UIElements.btnSend.prop('disabled', !!templateAttachmentError);
-            UIElements.btnSendDropdown.prop('disabled', !!templateAttachmentError);
-            $('#email_attachment_upload_btn').hide();
-        } else {
-            disableEmail();
-            $('#email_attachment_upload_btn').hide();
-            // Don't show clear schedule button for sent emails
-            UIElements.btnClearSchedule.hide();
+            return;
+        }
 
-            // Extra safety: ensure buttons stay disabled for sent emails
+        disableEmail();
+        $('#email_attachment_upload_btn').hide();
+        if (!isDraft) {
+            UIElements.btnClearSchedule.hide();
             setTimeout(() => {
                 if (!isViewingDraft) {
                     UIElements.btnSave.prop('disabled', true);
                     UIElements.btnSend.prop('disabled', true);
                     UIElements.btnSendDropdown.prop('disabled', true);
                     UIElements.btnDiscard.prop('disabled', true);
-                    console.log('Extra safety check: buttons re-disabled for sent email');
                 }
             }, 100);
+            return;
         }
+
+        UIElements.btnSend.prop('disabled', !!templateAttachmentError);
+        UIElements.btnSendDropdown.prop('disabled', !!templateAttachmentError);
+    }
+
+    // This widget is the sole subscriber to each of these four topics anywhere in the app (confirmed by
+    // project-wide search) — unsubscribe before re-subscribing so repeated initializeEmailsWidget() calls
+    // don't leave stale handlers (bound to a previous, now-discarded DOM/closure) stacking up alongside the
+    // current one.
+    PubSub.unsubscribe(selectedTopic);
+    PubSub.unsubscribe('applicant_info_updated');
+    PubSub.unsubscribe(deletedTopic);
+    PubSub.unsubscribe('reload_email_attachments_table');
+
+    PubSub.subscribe(selectedTopic, (msg, data) => {
+        console.log("EMAIL SELECTED EVENT FIRED", data);
+        templateAttachmentError = null;
+        isApplicationEmailContext = true;
+        document.body.classList.add('application-email-context');
+
+        const { canEditDraft, isDraft } = getSelectedEmailPermissions(data);
+        isViewingDraft = isDraft;
+        console.log('isViewingDraft set to:', isViewingDraft);
+        selectedEmailData = structuredClone(data);
+
+        abandonNewDraftOnSelection();
+
+        const selectedRecordTemplateName = resolveEmailRecordTemplateName(data);
+        activeTemplateId = data?.templateId || data?.emailTemplateId || data?.TemplateId || data?.EmailTemplateId || null;
+        originalTemplateState = {
+            name: selectedRecordTemplateName,
+            id: (activeTemplateId || '').toString()
+        };
+
+        // Only drafts pick up the current date. Sent and scheduled emails must show the
+        // "Today's Date" value that was frozen into the body when they left the draft state.
+        const displayBody = isDraft && !isApplicantEmail ? refreshTodayDateSpans(data.body) : data.body;
+
+        resetValidationErrors();
+        populateSelectedEmailFields(data, displayBody);
+        initializeSelectedEmailEditor(displayBody, selectedRecordTemplateName, canEditDraft);
+        populateSelectedEmailSchedule(data);
+        setSelectedEmailTemplate(data);
+        configureSelectedEmailActions(isDraft, canEditDraft);
         $('#email-attachments-section').show();
         initEmailAttachmentsTable(data.id, canEditDraft);
 
