@@ -102,14 +102,14 @@
             button-type="Secondary" />
         }
 
-        @* The bulk-send modal's right panel reuses EmailsWidget, whose edit fieldset/Save button/attachment
-           handling all require Notifications.Email.Send (see EmailsWidget/Default.cshtml and
-           EmailLogAttachmentAppService's class-level [Authorize]). SendBulk and Send are sibling permissions,
-           not nested, so a user could otherwise be granted SendBulk alone and open this feature into a
-           read-only, non-functional right panel. Require both. *@
+        @* The bulk-send modal's right panel reuses EmailsWidget for Application emails, so SendBulk is only usable
+           together with the Application view/create/send rights that panel relies on. *@
         @if (await FeatureChecker.IsEnabledAsync("Unity.Notifications")
-            && await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.Send.SendBulk)
-            && await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.Send.Default))
+            && await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.SendBulk)
+            && await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.Default)
+            && await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.Application.Default)
+            && await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.Application.Create)
+            && await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.Application.Send))
         {
         <div class="btn-group flex-none">
             <abp-button id="sendEmailNotification"

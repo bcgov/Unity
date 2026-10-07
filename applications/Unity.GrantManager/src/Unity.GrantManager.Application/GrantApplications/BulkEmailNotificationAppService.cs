@@ -16,12 +16,12 @@ using Volo.Abp.Users;
 
 namespace Unity.GrantManager.GrantApplications
 {
-    // The right-panel editor reuses EmailsWidget, whose edit fieldset/Save/attachment handling all require
-    // Notifications.Email.Send (a sibling permission, not a parent of SendBulk) — so both are required here
-    // too, not just SendBulk, or a user granted SendBulk alone could reach this API into a state the UI can't
-    // actually support. Two stacked [Authorize] attributes compose as AND per standard ASP.NET Core semantics.
+    // The right-panel editor reuses EmailsWidget, so bulk send needs the Application email rights that panel relies on
+    // (view, create the draft, send it) in addition to SendBulk. Stacked [Authorize] attributes compose as AND.
     [Authorize(NotificationsPermissions.Email.SendBulk)]
-    [Authorize(NotificationsPermissions.Email.Send.Default)]
+    [Authorize(NotificationsPermissions.Email.Application.Default)]
+    [Authorize(NotificationsPermissions.Email.Application.Create)]
+    [Authorize(NotificationsPermissions.Email.Application.Send)]
     public class BulkEmailNotificationAppService(
         IApplicationRepository applicationRepository,
         IEmailLogsRepository emailLogsRepository,

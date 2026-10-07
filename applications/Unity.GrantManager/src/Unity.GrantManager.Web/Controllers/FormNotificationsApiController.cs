@@ -103,7 +103,7 @@ namespace Unity.GrantManager.Web.Controllers
             return Ok(list);
         }
 
-        [Authorize(NotificationsPermissions.Email.Send.Default)]
+        [Authorize(NotificationsPermissions.Email.Default)]
         [HttpGet("templates/{templateId:guid}/applicant-preview")]
         public async Task<ActionResult<ApplicantEmailTemplatePreviewDto>> GetApplicantTemplatePreview(Guid templateId, [FromQuery] Guid applicantId)
         {
@@ -188,14 +188,14 @@ namespace Unity.GrantManager.Web.Controllers
             return Ok(new ResolvedRecipientsDto { EmailTo = string.Empty });
         }
 
-        [Authorize(NotificationsPermissions.Email.Send.Default)]
+        [Authorize(NotificationsPermissions.Email.Default)]
         [HttpPost("email-template/{templateId}/copy-attachments")]
         public async Task<ActionResult<CopyAttachmentsResponseDto>> CopyTemplateAttachments(Guid templateId, [FromBody] CopyAttachmentsInput input)
         {
             if (input.EmailLogId == Guid.Empty)
                 return BadRequest("EmailLogId is required");
 
-            var email = await _emailAccessChecker.CheckEmailAsync(input.EmailLogId, NotificationsPermissions.Email.Send.Default, requireDraft: true);
+            var email = await _emailAccessChecker.CheckDraftEditAsync(input.EmailLogId);
             await _emailAccessChecker.CheckTemplateAsync(templateId, email.ApplicantId);
             var copiedCount = await _emailAttachmentService.ReplaceTemplateAttachmentsAsync(
                 templateId,
@@ -212,11 +212,11 @@ namespace Unity.GrantManager.Web.Controllers
             return NoContent();
         }
 
-        [Authorize(NotificationsPermissions.Email.Send.Default)]
+        [Authorize(NotificationsPermissions.Email.Default)]
         [HttpDelete("email-log/{emailLogId}/origin-attachments")]
         public async Task<ActionResult<CopyAttachmentsResponseDto>> DeleteOriginAttachments(Guid emailLogId)
         {
-            await _emailAccessChecker.CheckEmailAsync(emailLogId, NotificationsPermissions.Email.Send.Default, requireDraft: true);
+            await _emailAccessChecker.CheckDraftEditAsync(emailLogId);
             var deletedCount = await _emailAttachmentService.DeleteOriginAttachmentsAsync(emailLogId);
             return Ok(new CopyAttachmentsResponseDto { AttachmentCount = deletedCount });
         }
