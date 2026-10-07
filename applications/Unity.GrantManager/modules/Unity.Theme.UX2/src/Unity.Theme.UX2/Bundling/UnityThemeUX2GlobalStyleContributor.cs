@@ -8,8 +8,6 @@ public class UnityThemeUX2GlobalStyleContributor : BundleContributor
     public override void ConfigureBundle(BundleConfigurationContext context)
     {
         context.Files.Add("/themes/ux2/fonts.css");
-        context.Files.Add("/themes/ux2/fluentui-icons.css");
-        context.Files.Add("/themes/ux2/fluenticons.min.css");
         context.Files.Add("/themes/ux2/layout.css");
         context.Files.Add("/themes/ux2/unity-styles.css");
         context.Files.Add("/themes/ux2/plugins/tableContextMenu.css");

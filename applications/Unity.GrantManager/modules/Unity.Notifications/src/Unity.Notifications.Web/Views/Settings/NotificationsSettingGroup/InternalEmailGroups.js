@@ -306,7 +306,7 @@ const emailGroupsManager = {
                         .attr({
                             'aria-label': 'Edit Group',
                             'title': 'Edit Group'
-                        }).append($('<i>').addClass('fl fl-edit'));
+                        }).append($('<i>').addClass('fa-solid fa-pencil'));
 
                     $buttonWrapper.append($manageUsersButton);
                     
@@ -320,7 +320,7 @@ const emailGroupsManager = {
                                     ? 'This email group is associated with a scheduled notification and cannot be deleted.'
                                     : 'Delete',
                                 'data-email-group-in-use': row.isUsedByScheduledNotification
-                            }).append($('<i>').addClass('fl fl-delete'));
+                            }).append($('<i>').addClass('fa-regular fa-trash-can'));
                         
                         $buttonWrapper.append($deleteButton);
                     }
