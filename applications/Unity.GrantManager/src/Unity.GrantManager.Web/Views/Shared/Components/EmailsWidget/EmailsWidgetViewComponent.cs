@@ -7,7 +7,6 @@ using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.ApplicantProfile;
 using Unity.Notifications.Emails;
-using Unity.Notifications.Permissions;
 using Volo.Abp.Settings;
 using Unity.Notifications.Settings;
 using System.Threading.Tasks;
@@ -30,7 +29,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
             string emailTo;
             if (applicantId != Guid.Empty)
             {
-                await emailAccessChecker.CheckOwnerAsync(applicationId, applicantId, NotificationsPermissions.Email.Default);
+                await emailAccessChecker.CheckOwnerAsync(applicationId, applicantId, EmailOperation.View);
                 var contacts = await contactQueryService.GetByApplicantIdAsync(applicantId);
                 emailTo = contacts.Contacts.Where(c => c.IsPrimary).OrderByDescending(c => c.CreationTime).FirstOrDefault()?.Email ?? string.Empty;
             }
@@ -53,7 +52,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
                 EmailTo = emailTo,
                 EmailFrom = defaultFromAddress ?? "NoReply@gov.bc.ca",
                 EnableEmailDelay = enableEmailDelay,
-                NoDraftPreviewMode = noDraftPreviewMode
+                NoDraftPreviewMode = noDraftPreviewMode,
+                Capabilities = await emailAccessChecker.GetCapabilitiesAsync(EmailOwnerTypes.FromIds(applicantId))
             };
             await PopulateTemplates(model);
 

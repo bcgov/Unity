@@ -71,15 +71,28 @@ namespace Unity.GrantManager.Permissions
             NotificationsPermissions.Email.Default,
             NotificationsPermissions.Email.Send.Default,
             NotificationsPermissions.Email.SendBulk,
-            NotificationsPermissions.Email.DeleteDraft
+
+            NotificationsPermissions.Email.Application.Default,
+            NotificationsPermissions.Email.Application.Create,
+            NotificationsPermissions.Email.Application.Edit,
+            NotificationsPermissions.Email.Application.Send,
+            NotificationsPermissions.Email.Application.DeleteDraft,
+
+            NotificationsPermissions.Email.Applicant.Default,
+            NotificationsPermissions.Email.Applicant.Create,
+            NotificationsPermissions.Email.Applicant.Edit,
+            NotificationsPermissions.Email.Applicant.Send,
+            NotificationsPermissions.Email.Applicant.DeleteDraft
         ];
 
         public readonly List<string> NotificationsScheduling_CommonPermissions = [
             NotificationsPermissions.Email.NotificationsTab,
-            NotificationsPermissions.Email.CancelScheduled,
             NotificationsPermissions.Email.ScheduleCreate,
             NotificationsPermissions.Email.ScheduleCancel,
-            NotificationsPermissions.Email.Schedule
+            NotificationsPermissions.Email.Application.CancelScheduled,
+            NotificationsPermissions.Email.Application.Schedule,
+            NotificationsPermissions.Email.Applicant.CancelScheduled,
+            NotificationsPermissions.Email.Applicant.Schedule
         ];        
 
         public readonly List<string> Dashboard_CommonPermissions = [
@@ -385,7 +398,9 @@ namespace Unity.GrantManager.Permissions
                     UnitySelector.Payment.Supplier.Default,
                     UnitySelector.Payment.PaymentList.Default,
 
-                    NotificationsPermissions.Email.Default
+                    NotificationsPermissions.Email.Default,
+                    NotificationsPermissions.Email.Application.Default,
+                    NotificationsPermissions.Email.Applicant.Default
                 ], context.TenantId);
 
         }

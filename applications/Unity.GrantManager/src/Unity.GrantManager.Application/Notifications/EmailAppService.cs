@@ -23,24 +23,25 @@ namespace Unity.GrantManager.Notifications
         EmailComposerAccessChecker emailAccessChecker,
         EmailNotificationManager emailNotificationManager) : ApplicationService, IEmailAppService
     {
-        [Authorize(NotificationsPermissions.Email.Send.Default)]
+        [Authorize(NotificationsPermissions.Email.Default)]
         public async Task<Guid> InitializeDraftAsync(Guid applicationId)
         {
-            await emailAccessChecker.CheckOwnerAsync(applicationId, Guid.Empty, NotificationsPermissions.Email.Send.Default);
+            await emailAccessChecker.CheckOwnerAsync(applicationId, Guid.Empty, EmailOperation.Create);
             return await emailNotificationService.InitializeDraftAsync(applicationId);
         }
-        [Authorize(NotificationsPermissions.Email.Send.Default)]
+
+        [Authorize(NotificationsPermissions.Email.Default)]
         public virtual async Task<Guid> InitializeApplicantDraftAsync(Guid applicantId)
         {
-            await emailAccessChecker.CheckOwnerAsync(Guid.Empty, applicantId, NotificationsPermissions.Email.Send.Default);
+            await emailAccessChecker.CheckOwnerAsync(Guid.Empty, applicantId, EmailOperation.Create);
             var email = await emailNotificationManager.CreateDraftEmailLogAsync(Guid.Empty, applicantId);
             return email.Id;
         }
 
-        [Authorize(NotificationsPermissions.Email.Send.Default)]
+        [Authorize(NotificationsPermissions.Email.Default)]
         public async Task<bool> SendAsync(CreateEmailDto dto)
         {
-            await ValidateComposerRequestAsync(dto);
+            await ValidateSendRequestAsync(dto);
             if (dto.SendOnDateTime.HasValue)
             {
                 await emailAccessChecker.CheckScheduleAsync(dto.ApplicantId ?? Guid.Empty);
@@ -59,10 +60,21 @@ namespace Unity.GrantManager.Notifications
             return true;
         }
 
-        [Authorize(NotificationsPermissions.Email.Send.Default)]
+        [Authorize(NotificationsPermissions.Email.Default)]
         public async Task<bool> SaveDraftAsync(CreateEmailDto dto)
         {
-            await ValidateComposerRequestAsync(dto);
+            var applicantId = dto.ApplicantId ?? Guid.Empty;
+            if (dto.EmailId == Guid.Empty)
+            {
+                await emailAccessChecker.CheckOwnerAsync(dto.ApplicationId, applicantId, EmailOperation.Create);
+            }
+            else
+            {
+                var email = await emailAccessChecker.CheckDraftEditAsync(dto.EmailId);
+                EmailOwnership.EnsureDraftOwner(email, dto.ApplicationId, applicantId);
+                dto.TemplateId = ResolveTemplateId(dto, email);
+            }
+            await ValidateTemplateAsync(dto, applicantId);
             if (dto.SendOnDateTime.HasValue)
             {
                 throw new Volo.Abp.BusinessException("Notifications:EmailDraftCannotBeScheduled");
@@ -73,26 +85,53 @@ namespace Unity.GrantManager.Notifications
             return true;
         }
 
-        private async Task ValidateComposerRequestAsync(CreateEmailDto dto)
+        private async Task ValidateSendRequestAsync(CreateEmailDto dto)
         {
             var applicantId = dto.ApplicantId ?? Guid.Empty;
-            await emailAccessChecker.CheckOwnerAsync(dto.ApplicationId, applicantId, NotificationsPermissions.Email.Send.Default);
-            if (dto.EmailId != Guid.Empty)
+            if (dto.EmailId == Guid.Empty)
             {
-                var email = await emailAccessChecker.CheckEmailAsync(dto.EmailId, NotificationsPermissions.Email.Send.Default, requireDraft: true);
+                await emailAccessChecker.CheckOwnerAsync(dto.ApplicationId, applicantId, EmailOperation.Create);
+                await emailAccessChecker.CheckOwnerAsync(dto.ApplicationId, applicantId, EmailOperation.Send);
+            }
+            else
+            {
+                var email = await emailAccessChecker.CheckEmailAsync(dto.EmailId, EmailOperation.Send, requireDraft: true);
                 EmailOwnership.EnsureDraftOwner(email, dto.ApplicationId, applicantId);
-                if (!dto.TemplateId.HasValue || dto.TemplateId == Guid.Empty)
+                dto.TemplateId = ResolveTemplateId(dto, email);
+                if (!await emailAccessChecker.CanEditDraftAsync(email))
                 {
-                    dto.TemplateId = EmailOwnership.GetTemplateId(email);
+                    // Without edit rights the draft goes out exactly as it was saved.
+                    ApplySavedContent(dto, email);
                 }
             }
+            await ValidateTemplateAsync(dto, applicantId);
+        }
+
+        private static Guid? ResolveTemplateId(CreateEmailDto dto, EmailLog email)
+        {
+            return !dto.TemplateId.HasValue || dto.TemplateId == Guid.Empty
+                ? EmailOwnership.GetTemplateId(email)
+                : dto.TemplateId;
+        }
+
+        private static void ApplySavedContent(CreateEmailDto dto, EmailLog email)
+        {
+            dto.EmailTo = email.ToAddress;
+            dto.EmailFrom = email.FromAddress;
+            dto.EmailCC = email.CC;
+            dto.EmailBCC = email.BCC;
+            dto.EmailSubject = email.Subject;
+            dto.EmailBody = email.Body;
+        }
+
+        private async Task ValidateTemplateAsync(CreateEmailDto dto, Guid applicantId)
+        {
             if (dto.TemplateId.HasValue && dto.TemplateId.Value != Guid.Empty)
             {
                 var template = await emailAccessChecker.CheckTemplateAsync(dto.TemplateId.Value, applicantId);
                 dto.EmailTemplateName = template.Name;
             }
         }
-
         private EmailNotificationEvent GetEmailNotificationEvent(CreateEmailDto dto)
         {
             var toList = dto.EmailTo.ParseEmailList() ?? [];

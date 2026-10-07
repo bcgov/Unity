@@ -42,6 +42,18 @@
 
     const enableEmailDelay = $('#EmailHistoryTable').data('enable-email-delay') === true
         || $('#EmailHistoryTable').data('enable-email-delay') === 'true';
+    // Server-computed capabilities; the server still enforces every action.
+    const historyCapabilities = {
+        canCreate: $('#EmailHistoryTable').data('can-create') === true,
+        canEdit: $('#EmailHistoryTable').data('can-edit') === true,
+        canDeleteDraft: $('#EmailHistoryTable').data('can-delete-draft') === true,
+        canCancelScheduled: $('#EmailHistoryTable').data('can-cancel-scheduled') === true
+    };
+    const historyUserId = String(abp.currentUser?.id || '').toLowerCase();
+    const canDeleteDraftRow = function (row) {
+        const isOwnDraft = !!row.creatorId && String(row.creatorId).toLowerCase() === historyUserId;
+        return historyCapabilities.canDeleteDraft && (historyCapabilities.canEdit || (historyCapabilities.canCreate && isOwnDraft));
+    };
 
     let emailHistoryDataTable = $('#EmailHistoryTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
@@ -189,11 +201,11 @@
                         const addWidthClass = enableEmailDelay && hasLoadedEmptyState;
 
                         // Show delete button for drafts
-                        if (data === 'Draft' && abp.auth.isGranted('Notifications.Email.DeleteDraft')) {
+                        if (data === 'Draft' && canDeleteDraftRow(full)) {
                             return generateDeleteButtonContent(full, meta.row, addWidthClass);
                         }
                         // Show cancel button for scheduled sends that haven't passed yet
-                        else if (full.sendOnDateTime && abp.auth.isGranted('Notifications.Email.CancelScheduled')) {
+                        else if (full.sendOnDateTime && historyCapabilities.canCancelScheduled) {
                             const sendOnDateTime = parseUtcDateTime(full.sendOnDateTime);
                             const now = luxon.DateTime.utc();
                             if (sendOnDateTime && sendOnDateTime > now) {

@@ -25,6 +25,14 @@ function initializeDraftEmailsWidget() {
     const refreshTopic = isApplicantEmail ? 'refresh_applicant_emails' : 'refresh_application_emails';
     const selectedTopic = isApplicantEmail ? 'applicant_email_selected' : 'email_selected';
     const deletedTopic = isApplicantEmail ? 'applicant_draft_email_deleted' : 'draft_email_deleted';
+    // Server-computed owner-type capabilities; the server still enforces every action.
+    const $emailsContainer = $('#EmailForm').closest('.emails-container');
+    const capabilities = {
+        canCreate: $emailsContainer.data('can-create') === true,
+        canEdit: $emailsContainer.data('can-edit') === true,
+        canSend: $emailsContainer.data('can-send') === true
+    };
+    const widgetUserId = String(abp.currentUser?.id || '').toLowerCase();
     // Close dropdown menus when clicking outside
     $(document).off('click.emailWidgetDropdown').on('click.emailWidgetDropdown', function (e) {
         if (!$(e.target).closest('.tinymce-menu-button, .custom-dropdown-menu').length) {
@@ -1601,6 +1609,10 @@ function initializeDraftEmailsWidget() {
         UIElements.btnSendDropdown.show();
         UIElements.btnDiscard.show();
         UIElements.btnSendClose.show();
+        if (!capabilities.canSend) {
+            UIElements.btnSend.hide();
+            UIElements.btnSendDropdown.hide();
+        }
         if (isNotificationEmail) {
             UIElements.btnSendClose.hide();
         }
@@ -2319,7 +2331,11 @@ function initializeDraftEmailsWidget() {
 
         // Determine if this is a draft FIRST, before any field population
         const status = (data?.status || '').toString().trim().toLowerCase();
-        const isDraft = status === 'draft' && abp.auth.isGranted('Notifications.Email.Send');
+        const isDraftRecord = status === 'draft';
+        const isOwnDraft = !!data?.creatorId && String(data.creatorId).toLowerCase() === widgetUserId;
+        // Edit covers any draft; Create only covers drafts the user started.
+        const canEditDraft = isDraftRecord && (capabilities.canEdit || (capabilities.canCreate && isOwnDraft));
+        const isDraft = isDraftRecord && (canEditDraft || capabilities.canSend);
         isViewingDraft = isDraft; // Set flag early to prevent handleDraftChange from enabling buttons
         console.log('isViewingDraft set to:', isViewingDraft);
 
@@ -2398,8 +2414,8 @@ function initializeDraftEmailsWidget() {
 
                     // Templates select - add to TinyMCE menu bar at bottom
                     if (!$menubar.find('.templates-button-container').length) {
-                        const $templatesSelect = createTemplateSelect(selectedRecordTemplateName, isDraft);
-                        bindTemplateSelectEvents($templatesSelect, isDraft);
+                        const $templatesSelect = createTemplateSelect(selectedRecordTemplateName, canEditDraft);
+                        bindTemplateSelectEvents($templatesSelect, canEditDraft);
                         $menubar.append($templatesSelect);
                     }
 
@@ -2439,12 +2455,18 @@ function initializeDraftEmailsWidget() {
 
         // Always show the template dropdown, but disable it for sent emails
         $('#templateListContainer').show();
-        $('#EmailTemplate').prop('disabled', !isDraft);
+        $('#EmailTemplate').prop('disabled', !canEditDraft);
 
-        if (isDraft) {
+        if (canEditDraft) {
             enableEmail();
             handleDraftChange();
             $('#email_attachment_upload_btn').show();
+        } else if (isDraft) {
+            // Send-only draft: fields stay read-only and the draft goes out exactly as saved.
+            disableEmail();
+            UIElements.btnSend.prop('disabled', !!templateAttachmentError);
+            UIElements.btnSendDropdown.prop('disabled', !!templateAttachmentError);
+            $('#email_attachment_upload_btn').hide();
         } else {
             disableEmail();
             $('#email_attachment_upload_btn').hide();
@@ -2463,10 +2485,13 @@ function initializeDraftEmailsWidget() {
             }, 100);
         }
         $('#email-attachments-section').show();
-        initEmailAttachmentsTable(data.id, isDraft);
+        initEmailAttachmentsTable(data.id, canEditDraft);
 
         console.log("About to call showModalEmail() - emailForm element:", UIElements.emailForm);
         showModalEmail();
+        if (!canEditDraft) {
+            UIElements.btnSave.hide();
+        }
         console.log("showModalEmail() called successfully");
         resetValidationErrors();
     });

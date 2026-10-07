@@ -44,44 +44,48 @@ public class NotificationsPermissionDefinitionProvider : PermissionDefinitionPro
 }
 
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S125:Sections of code should not be commented out", Justification = "Configuration Code")]
-[System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S1481:Unused local variables should be removed", Justification = "Configuration Code")]
 public static class EmailPermissionDefinitionExtensions
 {
     public static void AddNotifications_Email_Permissions(this PermissionGroupDefinition notificationsPermissionsGroup)
     {
-        var upx_Notifications_Email = notificationsPermissionsGroup.AddPermission(NotificationsPermissions.Email.Default, L($"Permission:{NotificationsPermissions.Email.Default}"));
+        var email = notificationsPermissionsGroup.AddPermission(NotificationsPermissions.Email.Default, L($"Permission:{NotificationsPermissions.Email.Default}"));
 
-        // EMAIL SEND
-        var upx_Notifications_Email_Send                = upx_Notifications_Email.AddUnityChild(NotificationsPermissions.Email.Send.Default);
-        var upx_Notifications_Email_Send_Application    = upx_Notifications_Email.AddUnityChild(NotificationsPermissions.Email.Send.Application);
-        var upx_Notifications_Email_Send_Applicant      = upx_Notifications_Email.AddUnityChild(NotificationsPermissions.Email.Send.Applicant);
-        
-        // NOTE: Should be refactored under upx_Notifications_Email_Send in the future
-        upx_Notifications_Email.AddUnityChild(NotificationsPermissions.Email.SendBulk);
-        
-        // EMAIL CREATE
-        var upx_Notifications_Email_Create                = upx_Notifications_Email.AddUnityChild(NotificationsPermissions.Email.Create.Default);
-        var upx_Notifications_Email_Create_Application    = upx_Notifications_Email.AddUnityChild(NotificationsPermissions.Email.Create.Application);
-        var upx_Notifications_Email_Create_Applicant      = upx_Notifications_Email.AddUnityChild(NotificationsPermissions.Email.Create.Applicant);
+        // Template attachments are not owner-scoped.
+        email.AddUnityChild(NotificationsPermissions.Email.Send.Default);
+        email.AddUnityChild(NotificationsPermissions.Email.SendBulk);
 
-        // EMAIL EDIT
-        var upx_Notifications_Email_Edit                = upx_Notifications_Email.AddUnityChild(NotificationsPermissions.Email.Edit.Default);
-        var upx_Notifications_Email_Edit_Application    = upx_Notifications_Email.AddUnityChild(NotificationsPermissions.Email.Edit.Application);
-        var upx_Notifications_Email_Edit_Applicant      = upx_Notifications_Email.AddUnityChild(NotificationsPermissions.Email.Edit.Applicant);
-    
-        upx_Notifications_Email.AddUnityChild(
-            NotificationsPermissions.Email.DeleteDraft);
+        AddOwnerPermissions(
+            email,
+            NotificationsPermissions.Email.Application.Default,
+            NotificationsPermissions.Email.Application.Create,
+            NotificationsPermissions.Email.Application.Edit,
+            NotificationsPermissions.Email.Application.Send,
+            NotificationsPermissions.Email.Application.Schedule,
+            NotificationsPermissions.Email.Application.DeleteDraft,
+            NotificationsPermissions.Email.Application.CancelScheduled);
 
-        upx_Notifications_Email.AddUnityChild(
-            NotificationsPermissions.Email.CancelScheduled);
-
-        upx_Notifications_Email.AddUnityChild(
-            NotificationsPermissions.Email.Schedule);
+        AddOwnerPermissions(
+            email,
+            NotificationsPermissions.Email.Applicant.Default,
+            NotificationsPermissions.Email.Applicant.Create,
+            NotificationsPermissions.Email.Applicant.Edit,
+            NotificationsPermissions.Email.Applicant.Send,
+            NotificationsPermissions.Email.Applicant.Schedule,
+            NotificationsPermissions.Email.Applicant.DeleteDraft,
+            NotificationsPermissions.Email.Applicant.CancelScheduled);
     }
 
+    private static void AddOwnerPermissions(PermissionDefinition email, string view, params string[] operations)
+    {
+        var owner = email.AddUnityChild(view);
+        foreach (var operation in operations)
+        {
+            owner.AddUnityChild(operation);
+        }
+    }
     public static PermissionDefinition AddUnityChild(this PermissionDefinition parent, string name)
     {
-        return parent.AddChild(name, LocalizableString.Create<NotificationsResource>(name));
+        return parent.AddChild(name, L($"Permission:{name}"));
     }
 
     private static LocalizableString L(string name)
