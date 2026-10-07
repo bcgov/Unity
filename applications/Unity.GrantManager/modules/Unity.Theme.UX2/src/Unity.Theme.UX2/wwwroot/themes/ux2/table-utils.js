@@ -188,6 +188,7 @@ if ($.fn.dataTable !== undefined && $.fn.dataTable.Api) {
  * @param {string} [options.externalSearchId='search'] - ID of external search input element
  * @param {string} [options.externalFilterButtonId='btn-toggle-filter'] - ID of external filter button element
  * @param {boolean} [options.disableColumnSelect=false] - Disable column visibility toggle
+ * @param {string} [options.columnSelectButtonText='Columns'] - Text or HTML for the column visibility button
  * @param {Array<Object>} [options.listColumnDefs] - Additional columnDefs configurations
  * @param {Function} [options.onStateSaveParams] - Hook for additional state save parameters
  * @param {Function} [options.onStateLoadParams] - Hook for additional state load parameters
@@ -225,6 +226,7 @@ function initializeDataTable(options) {
         externalSearchId = 'search',
         externalFilterButtonId='btn-toggle-filter',
         disableColumnSelect = false,
+        columnSelectButtonText = 'Columns',
         listColumnDefs,
         onStateSaveParams, //External hooks for save/load/loaded
         onStateLoadParams,
@@ -244,7 +246,7 @@ function initializeDataTable(options) {
     let defaultSortOrder = getDefaultSortOrder(tableColumns, defaultSortColumn);
 
     // Prepare action buttons
-    let updatedActionButtons = prepareActionButtons(actionButtons, useNullPlaceholder, disableColumnSelect);
+    let updatedActionButtons = prepareActionButtons(actionButtons, useNullPlaceholder, disableColumnSelect, columnSelectButtonText);
 
     // Add CSS to prevent initial column squishing
     addDataTableFixCSS();
@@ -638,9 +640,10 @@ function restoreColumnFilterState(columnHeader, displayIdx, settings, data, dtAp
  * @param {Array<Object>} actionButtons - Original button configurations
  * @param {boolean} useNullPlaceholder - Whether to use csvNoPlaceholder extension
  * @param {boolean} disableColumnSelect - Whether to disable column visibility toggle
+ * @param {string} [columnSelectButtonText='Columns'] - Text or HTML for the column visibility button
  * @returns {Array<Object>} Processed button configurations
  */
-function prepareActionButtons(actionButtons, useNullPlaceholder, disableColumnSelect) {
+function prepareActionButtons(actionButtons, useNullPlaceholder, disableColumnSelect, columnSelectButtonText = 'Columns') {
     let updatedActionButtons = actionButtons.map((button) => {
         if (useNullPlaceholder && button.extend === 'csv') {
             return { ...button, extend: 'csvNoPlaceholder' };
@@ -651,7 +654,7 @@ function prepareActionButtons(actionButtons, useNullPlaceholder, disableColumnSe
     if (!disableColumnSelect) {
         updatedActionButtons.push({
             extend: 'colvisAlpha',
-            text: 'Columns',
+            text: columnSelectButtonText,
             className: 'custom-table-btn flex-none btn btn-secondary',
             columns: ':not(.notexport):not([data-name="select"])',
             columnText: function (dt, idx, title) { return title; },

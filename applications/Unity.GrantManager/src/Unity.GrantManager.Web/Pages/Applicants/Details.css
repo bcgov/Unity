@@ -25,9 +25,13 @@
 
 .details-nav .nav-link {
     display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    height: 42px;
 }
 
-.details-nav .nav-link .fl {
+.details-nav .nav-link i {
     margin-right: 4px;
 }
 

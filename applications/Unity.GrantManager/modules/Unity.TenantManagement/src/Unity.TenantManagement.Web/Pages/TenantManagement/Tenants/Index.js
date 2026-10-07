@@ -522,7 +522,7 @@
                 let html = '<ul class="list-unstyled mb-0">';
                 result.forEach(function (m) {
                     html += '<li class="d-flex align-items-center py-1">' +
-                        '<i class="fl fl-user me-2 text-muted"></i>' +
+                        '<i class="fa-regular fa-user me-2 text-muted"></i>' +
                         '<span>' + $('<span>').text(m.displayName).html() + '</span>' +
                         (m.email ? '<span class="text-muted small ms-2">(' + $('<span>').text(m.email).html() + ')</span>' : '') +
                         '</li>';

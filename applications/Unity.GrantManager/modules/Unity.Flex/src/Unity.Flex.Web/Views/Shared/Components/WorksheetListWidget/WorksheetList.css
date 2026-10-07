@@ -34,6 +34,7 @@
 }
 
 .worksheet-published-icon {
+    box-sizing: content-box;
     border: 2px solid;
     border-radius: 5px;
     padding: 5px;

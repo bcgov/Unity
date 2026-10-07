@@ -38,7 +38,6 @@ public class NotificationLogsUserMenuContributor : IMenuContributor
                 NotificationsMenus.NotificationLogs,
                 l["Menu:NotificationLogs"],
                 "~/NotificationLogs",
-                icon: "fl fl-table",
                 order: 90,
                 requiredPermissionName: IdentityConsts.ITOperationsPermissionName
             )

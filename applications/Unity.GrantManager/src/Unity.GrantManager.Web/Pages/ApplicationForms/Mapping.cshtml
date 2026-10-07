@@ -256,16 +256,16 @@
                             </span>
                         </button>
                     }
-                    <abp-button id="btn-save" text="Save" icon-type="Other" icon="fl fl-save"
+                    <abp-button id="btn-save" text="Save" icon-type="Other" icon="fa-regular fa-floppy-disk"
                                 class="btn unt-btn-primary btn-primary"
                                 style="pointer-events: all;"
                                 abp-tooltip="Save the Scoresheet and the Mapping of Unity fields to CHEFS Fields"
                                 button-type="Primary" />
                     <abp-button id="btn-edit" text="Edit Mapping" icon-type="Other" data-target="#editMappingModal"
-                                icon="fl fl-edit" class="btn unt-btn-primary btn-primary" data-toggle="modal"
+                                icon="fa-solid fa-pencil" class="btn unt-btn-primary btn-primary" data-toggle="modal"
                                 style="pointer-events: all;" abp-tooltip="Edit the Mapping JSON Manually"
                                 button-type="Primary" />
-                    <abp-button id="btn-reset" text="Reset Mapping" icon-type="Other" icon="fl fl-undo"
+                    <abp-button id="btn-reset" text="Reset Mapping" icon-type="Other" icon="fa-solid fa-arrow-rotate-left"
                                 class="btn unt-btn-outline-primary btn-outline-primary"
                                 abp-tooltip="This button resets the mapping to the last saved state" />
                     <abp-button id="btn-back" text="Back"
@@ -298,7 +298,7 @@
                         </select>
                         @if (Model?.ApplicationFormVersionDto?.Published == true)
                         {
-                            <i class="fl fl-tick published-tick" data-toggle="tooltip" title="This form is published"></i>
+                            <i class="fa-solid fa-check published-tick" data-toggle="tooltip" title="This form is published"></i>
                         }
                     </div>
                 </div>
@@ -307,7 +307,7 @@
                     <div class="input-button-wrapper ">
                         <input id="chefsFormVersionId" class="form-control input-width" type="text"
                             value="@Model?.ChefsFormVersionGuid">
-                        <abp-button id="btn-sync" text="Sync" disabled="false" icon-type="Other" icon="fl fl-synch"
+                        <abp-button id="btn-sync" text="Sync" disabled="false" icon-type="Other" icon="fa-solid fa-arrows-rotate"
                             class="btn unt-btn-success btn-success"
                             abp-tooltip="Call out to CHEFS and bring back all the Available CHEFS form Fields. This action requires a Form Version ID to be entered"
                             button-type="Success" />

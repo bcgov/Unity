@@ -1355,7 +1355,7 @@ $(function () {
                 $undoBtn.html($icon.prop('outerHTML') + ' Cancel');
             } else {
                 // If no icon, add one with the text
-                $undoBtn.html('<i class="fl fl-undo"></i> Cancel');
+                $undoBtn.html('<i class="fa-solid fa-arrow-rotate-left"></i> Cancel');
             }
         } else {
             $undoBtn.hide();
@@ -1407,7 +1407,7 @@ $(function () {
         // Check if a view has been generated and warn the user
         const viewStatus = ($('#reportingViewStatus').val() || '').toUpperCase();
         const hasGeneratedView = viewStatus === 'SUCCESS' ||
-            $('.view-status-compact').find('.fl-checkmark').length > 0;
+            $('.view-status-compact').find('[data-view-status="SUCCESS"]').length > 0;
 
         if (hasGeneratedView) {
             Swal.fire({

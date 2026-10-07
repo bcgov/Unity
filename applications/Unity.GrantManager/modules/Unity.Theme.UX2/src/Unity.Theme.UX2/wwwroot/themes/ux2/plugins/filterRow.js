@@ -257,7 +257,7 @@
                             <label class="form-check-label">Show Filter Row</label>
                         </div>
                         <button id="btnClearFilter" class="btn btn-primary" type="button">
-                            CLEAR FILTERS
+                            <i class="fa-solid fa-filter-circle-xmark" aria-hidden="true"></i> CLEAR FILTERS
                         </button>
                     `;
                 },
@@ -328,9 +328,14 @@
             }
 
             if (this.dom.button) {
+                // Keep a leading icon, if the button has one, when replacing the label
+                const $icon = this.dom.button.find('i').first().detach();
                 this.dom.button.text(
                     hasFilters ? this.s.opts.buttonTextActive : this.s.opts.buttonText
                 );
+                if ($icon.length > 0) {
+                    this.dom.button.prepend($icon, ' ');
+                }
             }
         },
 
