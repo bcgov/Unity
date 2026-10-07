@@ -221,7 +221,7 @@ See [`payments/payments-approval-workflow.md`](../payments/payments-approval-wor
 | Listing and reading | `GetListAsync` (250 lines), `GetAsync`, `GetBasicAsync`, `GetApplicationListAsync`, `GetApplicationDetailsListAsync`, `GetAllApplicationsAsync` |
 | Assessment results | `UpdateAssessmentResultsAsync`, `UpdateExternalStatusVisibilityAsync` — `[Authorize(UnitySelector.Review.AssessmentResults.Update.Default)]` |
 | Project info | `UpdateProjectInfoAsync`, `UpdatePartialProjectInfoAsync` — `[Authorize(UnitySelector.Project.UpdatePolicy)]` |
-| Funding agreement | `UpdateFundingAgreementInfoAsync` — `[Authorize(UnitySelector.Funding.UpdatePolicy)]`; contract fields only written with `Funding.Agreement.Update` |
+| Funding agreement | `UpdateFundingAgreementInfoAsync` — `[Authorize(UnitySelector.Funding.Default)]`; contract fields only written with `Funding.Agreement.Update` |
 | Payments seam | `UpdateSupplierNumberAsync` — `[Authorize(UnitySelector.Payment.Supplier.Update)]` |
 | Assignment | `UpdateAssigneesAsync`, `InsertOwnerAsync`, `DeleteOwnerAsync` |
 | Workflow | `GetActions`, `TriggerAction`, `UpdateApplicationStatus` (bulk) |

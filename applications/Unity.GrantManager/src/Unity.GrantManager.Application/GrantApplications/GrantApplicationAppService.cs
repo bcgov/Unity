@@ -755,8 +755,8 @@ public class GrantApplicationAppService(
     };
 
 
-    // Requires Edit Contract or the Funding Agreement tab permission (worksheet edits)
-    [Authorize(UnitySelector.Funding.UpdatePolicy)]
+    // Funding Agreement tab permission is required for worksheet edits; Edit Contract (a child of it) additionally gates the contract fields
+    [Authorize(UnitySelector.Funding.Default)]
     public async Task<GrantApplicationDto> UpdateFundingAgreementInfoAsync(Guid id, CreateUpdateFundingAgreementInfoDto input)
     {
         var application = await applicationRepository.GetAsync(id);
