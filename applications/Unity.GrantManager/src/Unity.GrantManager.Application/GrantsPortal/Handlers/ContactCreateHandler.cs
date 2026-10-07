@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Unity.GrantManager.Contacts;
 using Unity.GrantManager.GrantsPortal.Messages;
 using Unity.GrantManager.GrantsPortal.Messages.Commands;
+using Unity.GrantManager.GrantsPortal.Notifications;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Uow;
@@ -14,6 +15,7 @@ namespace Unity.GrantManager.GrantsPortal.Handlers;
 public class ContactCreateHandler(
     IContactRepository contactRepository,
     IContactLinkRepository contactLinkRepository,
+    IApplicantUpdateNotificationService notificationService,
     ILogger<ContactCreateHandler> logger) : IPortalCommandHandler, ITransientDependency
 {
     private const string ApplicantEntityType = "Applicant";
@@ -80,6 +82,9 @@ public class ContactCreateHandler(
         };
 
         await contactLinkRepository.InsertAsync(contactLink);
+
+        await notificationService.QueueAsync(innerData.ApplicantId,
+            ApplicantUpdateDetails.ContactCreated(contact, contactLink, innerData.ContactType));
 
         logger.LogInformation("Contact {ContactId} created successfully", contactId);
         return "Contact created successfully";

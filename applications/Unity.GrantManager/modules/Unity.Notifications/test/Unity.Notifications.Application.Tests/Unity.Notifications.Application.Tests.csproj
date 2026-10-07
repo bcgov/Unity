@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Unity.GrantManager.Application\Unity.GrantManager.Application.csproj" />
     <ProjectReference Include="..\..\src\Unity.Notifications.Application\Unity.Notifications.Application.csproj" />
     <ProjectReference Include="..\Unity.Notifications.Domain.Tests\Unity.Notifications.Domain.Tests.csproj" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.10" />

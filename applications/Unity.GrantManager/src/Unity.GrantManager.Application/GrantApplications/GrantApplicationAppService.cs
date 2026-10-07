@@ -37,6 +37,7 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
+using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.GrantApplications;
 
@@ -57,7 +58,8 @@ public class GrantApplicationAppService(
     IApplicantSupplierAppService applicantSupplierService,
     IPaymentRequestAppService paymentRequestService,
     IFeatureChecker featureChecker,
-    AIFeatureGuard aiFeatureGuard)
+    AIFeatureGuard aiFeatureGuard,
+    IUnitOfWorkManager unitOfWorkManager)
     : GrantManagerAppService, IGrantApplicationAppService
 #pragma warning restore S107 // Methods should not have too many parameters
 {
@@ -206,7 +208,8 @@ public class GrantApplicationAppService(
                     IndigenousOrgInd = rec.ApplicantIndigenousOrgInd ?? string.Empty,
                     UnityApplicantId = rec.ApplicantUnityApplicantId ?? string.Empty,
                     FiscalDay = rec.ApplicantFiscalDay?.ToString() ?? string.Empty,
-                    FiscalMonth = rec.ApplicantFiscalMonth ?? string.Empty
+                    FiscalMonth = rec.ApplicantFiscalMonth ?? string.Empty,
+                    FiscalYearEnd = rec.ApplicantFiscalYearEnd
                 },
                 OrganizationName = rec.ApplicantOrgName ?? string.Empty,
                 NonRegOrgName = rec.ApplicantNonRegOrgName ?? string.Empty,
@@ -1168,13 +1171,20 @@ public class GrantApplicationAppService(
     /// </summary>
     /// <param name="applicationId">The application</param>
     /// <param name="triggerAction">The action to be invoked on an Application</param>
-    public async Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction)
+    /// <param name="input">Optional values required by the target action</param>
+    public async Task<GrantApplicationDto> TriggerAction(Guid applicationId, GrantApplicationAction triggerAction, TriggerActionInputDto? input = null)
     {
         if (await featureChecker.IsEnabledAsync(SpecializationConsts.Onboarding))
         {
             var onboardingManager = LazyServiceProvider.LazyGetRequiredService<OnboardingApplicationManager>();
             var onboardingApplication = await onboardingManager.TriggerAction(applicationId, triggerAction);
-            await LocalEventBus.PublishAsync(new ApplicationChangedEvent { Action = triggerAction, ApplicationId = applicationId });
+            var applicationChangedEvent = new ApplicationChangedEvent
+            {
+                Action = triggerAction,
+                ApplicationId = applicationId,
+                ApplicationStatusId = onboardingApplication.ApplicationStatusId
+            };
+            await PublishApplicationChangedEventAfterCommitAsync(applicationChangedEvent, unitOfWorkManager);
             return ObjectMapper.Map<Application, GrantApplicationDto>(onboardingApplication);
         }
 
@@ -1191,19 +1201,34 @@ public class GrantApplicationAppService(
             throw new UserFriendlyException(L["GrantApplication:ActionButton.RedStopWarning"]);
         }
 
-        application = await applicationManager.TriggerAction(applicationId, triggerAction);
+        application = await applicationManager.TriggerAction(applicationId, triggerAction, input?.FinalDecisionDate, input?.DeclineRational);
 
-        // After the workflow state change, publish to the local event bus
-        await LocalEventBus.PublishAsync(
+        await PublishApplicationChangedEventAfterCommitAsync(
             new ApplicationChangedEvent
             {
                 ApplicationId = applicationId,
-                Action = triggerAction,  // e.g. GrantApplicationAction.Approve / Deny
+                Action = triggerAction,
+                ApplicationStatusId = application.ApplicationStatusId,
                 TenantId = CurrentTenant.Id
-            }
+            },
+            unitOfWorkManager
         );
 
         return ObjectMapper.Map<Application, GrantApplicationDto>(application);
+    }
+
+    private Task PublishApplicationChangedEventAfterCommitAsync(
+        ApplicationChangedEvent applicationChangedEvent,
+        IUnitOfWorkManager unitOfWorkManager)
+    {
+        var unitOfWork = unitOfWorkManager.Current;
+        if (unitOfWork == null)
+        {
+            return LocalEventBus.PublishAsync(applicationChangedEvent);
+        }
+
+        unitOfWork.OnCompleted(() => LocalEventBus.PublishAsync(applicationChangedEvent));
+        return Task.CompletedTask;
     }
 
     /// <summary>

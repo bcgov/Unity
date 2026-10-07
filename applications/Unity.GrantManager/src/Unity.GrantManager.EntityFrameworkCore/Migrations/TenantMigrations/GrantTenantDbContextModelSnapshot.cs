@@ -3456,6 +3456,9 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<Guid>("ScheduledNotificationId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime?>("TriggerDate")
+                        .HasColumnType("timestamp without time zone");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ApplicationId");
@@ -3464,7 +3467,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasIndex("ScheduledNotificationId");
 
-                    b.HasIndex("ApplicationId", "ScheduledNotificationId", "DateField")
+                    b.HasIndex("ApplicationId", "ScheduledNotificationId", "DateField", "TriggerDate")
                         .IsUnique();
 
                     b.ToTable("ScheduledNotificationTracking", "Notifications");
@@ -3531,12 +3534,11 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TenantId", "EmailAddress", "EmailType")
-                        .IsUnique();
-
                     b.HasIndex("TenantId")
-                        .HasDatabaseName("IX_EmailAddressConfigurations_TenantId_IsDefault")
-                        .HasFilter("\"IsDefault\" = true")
+                        .IsUnique()
+                        .HasFilter("\"IsDefault\" = true");
+
+                    b.HasIndex("TenantId", "EmailAddress", "EmailType")
                         .IsUnique();
 
                     b.ToTable("EmailAddressConfigurations", "Notifications");
@@ -4102,7 +4104,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("RecipientCategory")
                         .HasColumnType("text");
@@ -4117,6 +4120,13 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("Subject")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("TemplateType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasDefaultValue("Application");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
@@ -4323,6 +4333,13 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("TemplateType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasDefaultValue("Applicant");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")

@@ -103,15 +103,15 @@ export class TestDataHelper {
     const tryAction = (): Cypress.Chainable<T> => {
       attempts++;
       if (attempts <= maxAttempts) {
-        return action().then((result: T) => {
-          return result;
-        }).catch((error: Error) => {
-          if (attempts < maxAttempts) {
-            cy.wait(delayMs);
-            return tryAction();
-          }
-          throw error;
-        });
+        return (action().then((result: T) => result) as any).catch(
+          (error: Error) => {
+            if (attempts < maxAttempts) {
+              cy.wait(delayMs);
+              return tryAction();
+            }
+            throw error;
+          },
+        ) as Cypress.Chainable<T>;
       }
       return action();
     };

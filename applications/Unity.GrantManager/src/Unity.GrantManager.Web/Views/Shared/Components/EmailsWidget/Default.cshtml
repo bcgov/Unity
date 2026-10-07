@@ -17,10 +17,12 @@
     var enableScheduleSend = enableEmailDelay && scheduleEmailGranted && !Model.NoDraftPreviewMode;
 }
 
-<div id="emails-div-@(Model.ApplicationId)"
+<div id="emails-div-@(Model.EmailOwnerId)"
     class="mt-2 emails-container emails-widget-scope @(Model.NoDraftPreviewMode ? "no-draft-preview-mode" : string.Empty)"
      data-count="0"
-     data-counttag="application_emails_count"
+     data-counttag="@(Model.ApplicantId == Guid.Empty ? "application_emails_count" : "applicant_emails_count")"
+     data-template-type="@Model.TemplateType"
+     data-applicant-id="@Model.ApplicantId"
      data-no-draft-preview="@Model.NoDraftPreviewMode.ToString().ToLowerInvariant()">
 
     <div id="modal-background"></div>
@@ -74,6 +76,7 @@
 
     <form id="EmailForm" class="email-form" autocomplete="off">
         <abp-input type="hidden" id="ApplicationId" asp-for="@Model.ApplicationId" />
+        <input type="hidden" id="EmailApplicantId" value="@Model.ApplicantId" />
         <input type="hidden" id="NoDraftPreviewMode" value="@Model.NoDraftPreviewMode.ToString().ToLowerInvariant()" />
         <input type="hidden" id="EmailTemplateName" name="EmailTemplateName" value="" />
         <fieldset @emailFieldsetState>

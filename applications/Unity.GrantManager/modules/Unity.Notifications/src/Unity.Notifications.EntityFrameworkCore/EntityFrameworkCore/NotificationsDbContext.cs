@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Unity.Notifications.Emails;
 using Unity.Notifications.Logs;
 using Unity.Notifications.ReadStates;
@@ -35,5 +36,13 @@ public class NotificationsDbContext : AbpDbContext<NotificationsDbContext>, INot
         base.OnModelCreating(modelBuilder);
 
         modelBuilder.ConfigureNotifications();
+    }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        base.OnConfiguring(optionsBuilder);
+
+        optionsBuilder.ConfigureWarnings(warnings => warnings.Ignore(
+            CoreEventId.PossibleIncorrectRequiredNavigationWithQueryFilterInteractionWarning));
     }
 }

@@ -1,4 +1,5 @@
 /// <reference types="cypress" />
+// @ts-nocheck
 
 /**
  * Approval Flow Regression Test - Full Approval Workflow
@@ -15,12 +16,22 @@
  * - Post-approval status and date validation on the Payments table
  */
 
-import { ApplicationsListPage } from "../pages/ApplicationsListPage";
-import { ApplicationDetailsPage } from "../pages/ApplicationDetailsPage";
-import { ReviewAssessmentPage } from "../pages/ReviewAssessmentPage";
-import { ApplicationDetailsRightTabPage } from "../pages/ApplicationDetailsRightTabPage";
-import { NavigationPage } from "../pages/NavigationPage";
-import { loginIfNeeded } from "../support/auth";
+declare const cy: any;
+declare const Cypress: any;
+declare const describe: {
+  (name: string, callback: () => void): void;
+  skip(name: string, callback: () => void): void;
+};
+declare function it(name: string, callback: (...args: any[]) => void): void;
+declare function before(callback: (...args: any[]) => void): void;
+declare function require(moduleName: string): any;
+
+const { ApplicationsListPage } = require("../pages/ApplicationsListPage");
+const { ApplicationDetailsPage } = require("../pages/ApplicationDetailsPage");
+const { ReviewAssessmentPage } = require("../pages/ReviewAssessmentPage");
+const { ApplicationDetailsRightTabPage } = require("../pages/ApplicationDetailsRightTabPage");
+const { NavigationPage } = require("../pages/NavigationPage");
+const { loginIfNeeded } = require("../support/auth");
 
 const isProd =
   (
@@ -109,7 +120,7 @@ const APPLICATIONS_PATH = "GrantApplications";
   function waitForSubmissionToAppearInList(
     attempt = 1,
     maxAttempts = 8,
-  ): Cypress.Chainable<void> {
+  ): void {
     navigateToApplicationsList();
     dismissBlockingModalIfPresent();
 
@@ -118,7 +129,7 @@ const APPLICATIONS_PATH = "GrantApplications";
       .waitForTableRefresh()
       .searchForSubmission(submissionId);
 
-    return cy.get("body").then(($body) => {
+    cy.get("body").then(($body) => {
       const hasRow = $body.find(`tr:contains("${submissionId}")`).length > 0;
 
       if (hasRow) {
@@ -139,7 +150,7 @@ const APPLICATIONS_PATH = "GrantApplications";
       );
       cy.wait(5000);
       cy.reload();
-      return waitForSubmissionToAppearInList(attempt + 1, maxAttempts);
+      waitForSubmissionToAppearInList(attempt + 1, maxAttempts);
     });
   }
 
@@ -155,9 +166,24 @@ const APPLICATIONS_PATH = "GrantApplications";
     cy.get("#nav-payment-info-tab").should("have.class", "active");
     detailsPage.dismissErrorModalIfPresent();
 
-    cy.intercept("GET", "**/api/app/supplier/sites-by-supplier-number**").as("siteRefresh");
-    detailsPage.clickRefreshSiteList();
-    cy.wait("@siteRefresh");
+    // "Configure payment info" retries once on a known transient CAS token
+    // error, but can still occasionally leave SupplierId unset (observed on
+    // DEV). With no supplier number the app has nothing to look up and never
+    // issues the sites-by-supplier-number request at all, so waiting on that
+    // intercept would hang until timeout for no reason — the main test body
+    // already skips gracefully when the sites table ends up empty.
+    cy.get("#SupplierNumber", { timeout: 20000 })
+      .invoke("val")
+      .then((value) => {
+        if (!value) {
+          cy.log("⚠️ SupplierNumber is empty — skipping site list refresh");
+          return;
+        }
+
+        cy.intercept("GET", "**/api/app/supplier/sites-by-supplier-number**").as("siteRefresh");
+        detailsPage.clickRefreshSiteList();
+        cy.wait("@siteRefresh");
+      });
   }
 
   function waitForBlockingUiToClear(): void {
@@ -653,6 +679,31 @@ const APPLICATIONS_PATH = "GrantApplications";
           .clickPaymentInfoSave();
       }
     });
+
+    // The check above can miss a CAS failure that doesn't surface
+    // recognizable error text in time (observed on DEV — no error text, but
+    // SupplierNumber still ended up empty downstream, and payment requests
+    // fail with "supplier information is provided" once that happens).
+    // The input's live value isn't authoritative — it can just echo what was
+    // typed regardless of whether CAS actually confirmed it server-side — so
+    // verify via a reload, the same signal ensureSiteInfoReady() relies on,
+    // and retry the save once more if it's still unset.
+    cy.reload();
+    listPage.waitForNoBlockingOverlay();
+    detailsPage.dismissErrorModalIfPresent();
+    detailsPage.goToPaymentInfoTab();
+    cy.get("#SupplierNumber", { timeout: 20000 })
+      .invoke("val")
+      .then((value) => {
+        if (value) {
+          return;
+        }
+        cy.log("⚠️ SupplierNumber still empty after reload — retrying save once more");
+        detailsPage
+          .enterSupplierNumber(TEST_CONFIG.supplierNumber)
+          .clickElsewhere()
+          .clickPaymentInfoSave();
+      });
   });
 
   // Must use function() (not arrow) so this.skip() is accessible

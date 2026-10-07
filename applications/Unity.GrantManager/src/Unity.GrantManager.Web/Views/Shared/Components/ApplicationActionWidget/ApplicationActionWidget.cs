@@ -2,6 +2,7 @@
 using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 
@@ -25,11 +26,16 @@ public class ApplicationActionWidget : AbpViewComponent
 
     public async Task<IViewComponentResult> InvokeAsync(Guid applicationId)
     {
+        var application = await _applicationAppService.GetAsync(applicationId);
+
         var viewModel = new ApplicationActionWidgetViewModel()
         {
             ApplicationId = applicationId,
             ApplicationActions = await _applicationAppService.GetActions(applicationId),
-            IsRedStop = await _applicationAppService.IsApplicantRedStopAsync(applicationId)
+            IsRedStop = await _applicationAppService.IsApplicantRedStopAsync(applicationId),
+            FinalDecisionDate = application.FinalDecisionDate,
+            DeclineRational = application.DeclineRational,
+            DeclineRationalOptions = AssessmentResultsPageModel.FormatOptionsList(AssessmentResultsOptionsList.DeclineRationalActionList)
         };
 
         return View(viewModel);

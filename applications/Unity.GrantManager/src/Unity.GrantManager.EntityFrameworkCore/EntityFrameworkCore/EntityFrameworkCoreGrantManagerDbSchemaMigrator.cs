@@ -264,7 +264,7 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
     // against this allowlist rather than relying on escaping alone.
     private static readonly Regex SafeIdentifierPattern = new("^[A-Za-z0-9_-]+$", RegexOptions.Compiled);
 
-    private static void EnsureSafeIdentifier(string value, string fieldName)
+    internal static void EnsureSafeIdentifier(string value, string fieldName)
     {
         if (!SafeIdentifierPattern.IsMatch(value))
         {

@@ -5,6 +5,7 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantsPortal.Messages;
 using Unity.GrantManager.GrantsPortal.Messages.Commands;
+using Unity.GrantManager.GrantsPortal.Notifications;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Entities;
@@ -15,6 +16,7 @@ namespace Unity.GrantManager.GrantsPortal.Handlers;
 public class AddressCreateHandler(
     IApplicantAddressRepository applicantAddressRepository,
     IApplicantAddressManager applicantAddressManager,
+    IApplicantUpdateNotificationService notificationService,
     ILogger<AddressCreateHandler> logger) : IPortalCommandHandler, ITransientDependency
 {
     public string DataType => "ADDRESS_CREATE_COMMAND";
@@ -70,6 +72,9 @@ public class AddressCreateHandler(
         }
 
         await applicantAddressRepository.InsertAsync(address);
+
+        await notificationService.QueueAsync(innerData.ApplicantId,
+            ApplicantUpdateDetails.AddressCreated(address, innerData.IsPrimary));
 
         logger.LogInformation("Address {AddressId} created successfully", addressId);
         return "Address created successfully";

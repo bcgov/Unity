@@ -1,4 +1,4 @@
-﻿using System;
+﻿using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
@@ -11,8 +11,11 @@ namespace Unity.GrantManager.Integrations
 {
     [Dependency(ReplaceServices = true)]
     [ExposeServices(typeof(DynamicUrlDataSeeder), typeof(IDataSeedContributor))]
-    public class DynamicUrlDataSeeder(IDynamicUrlRepository DynamicUrlRepository, ICurrentTenant currentTenant) : IDataSeedContributor, ITransientDependency
+    public class DynamicUrlDataSeeder(IDynamicUrlRepository DynamicUrlRepository, ICurrentTenant currentTenant, IConfiguration configuration) : IDataSeedContributor, ITransientDependency
     {
+        // Optional per-key URL used only when a missing row is inserted, e.g. "DynamicUrls:Seed:INTAKE_API_BASE".
+        // Intended for local development (DbMigrator appsettings.secrets.json); deployed migrators leave it unset.
+        public const string SeedConfigSection = "DynamicUrls:Seed";
 
         public async Task SeedAsync(DataSeedContext context)
         {
@@ -22,46 +25,14 @@ namespace Unity.GrantManager.Integrations
         public static class DynamicUrls
         {
             public const string PROTOCOL = "https:";
-            public const string CHEFS_PROD_URL = $"{PROTOCOL}//submit.digital.gov.bc.ca/app/api/v1";
-            public const string CAS_PROD_URL = $"{PROTOCOL}//cfs-systws.cas.gov.bc.ca:7026/ords/cas"; // Not entered for security reasons
-            public const string CHES_PROD_URL = $"{PROTOCOL}//ches.api.gov.bc.ca/api/v1";
-            public const string CHES_PROD_AUTH = $"{PROTOCOL}//loginproxy.gov.bc.ca/auth/realms/comsvcauth/protocol/openid-connect/token";
             public const string ORGBOOK_PROD_URL = $"{PROTOCOL}//orgbook.gov.bc.ca/api";
             public const string CSS_API_BASE_URL = $"{PROTOCOL}//api.loginproxy.gov.bc.ca/api/v1";
             public const string CSS_TOKEN_API_BASE_URL = $"{PROTOCOL}//loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/token";
             public const string GEOCODER_BASE_URL = $"{PROTOCOL}//openmaps.gov.bc.ca/geo/pub/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=";
             public const string GEOCODER_LOCATION_BASE_URL = $"{PROTOCOL}//geocoder.api.gov.bc.ca";
-            public const string REPORTING_AI = $"{PROTOCOL}//reporting.grants.gov.bc.ca";
-            public const string MATOMO_DEV_URL = $"{PROTOCOL}//dev-analytics-matomo.apps.silver.devops.gov.bc.ca";
-            public const string MATOMO_TEST_URL = $"{PROTOCOL}//test-analytics-matomo.apps.silver.devops.gov.bc.ca";
-            public const string MATOMO_PROD_URL = $"{PROTOCOL}//prod-analytics-matomo.apps.silver.devops.gov.bc.ca";
             public const string GITHUB_REPO = $"{PROTOCOL}//github.com/bcgov/Unity";
             public const string GITHUB_GRAPHQL = $"{PROTOCOL}//api.github.com/graphql";
-            // No separate dev2 hostname - dev2 shares the dev Metabase route.
-            public const string METABASE_DEV_URL = $"{PROTOCOL}//dev-unity-reporting.apps.gold.devops.gov.bc.ca";
-            public const string METABASE_TEST_URL = $"{PROTOCOL}//test-unity-reporting.apps.gold.devops.gov.bc.ca";
-            public const string METABASE_PROD_URL = $"{PROTOCOL}//prod-unity-reporting.apps.gold.devops.gov.bc.ca";
         }
-
-        internal static string GetEnvironmentUrl(string? aspNetCoreEnvironment, string devUrl, string testUrl, string prodUrl)
-        {
-            var env = aspNetCoreEnvironment ?? string.Empty;
-            if (string.IsNullOrEmpty(env) || env.StartsWith("dev", StringComparison.OrdinalIgnoreCase))
-                return devUrl;
-            if (env.StartsWith("test", StringComparison.OrdinalIgnoreCase) ||
-                env.Equals("uat", StringComparison.OrdinalIgnoreCase) ||
-                env.Equals("staging", StringComparison.OrdinalIgnoreCase))
-                return testUrl;
-            return prodUrl;
-        }
-
-        private static string GetMatomoUrl() =>
-            GetEnvironmentUrl(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
-                DynamicUrls.MATOMO_DEV_URL, DynamicUrls.MATOMO_TEST_URL, DynamicUrls.MATOMO_PROD_URL);
-
-        private static string GetMetabaseUrl() =>
-            GetEnvironmentUrl(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
-                DynamicUrls.METABASE_DEV_URL, DynamicUrls.METABASE_TEST_URL, DynamicUrls.METABASE_PROD_URL);
 
         private async Task SeedDynamicUrlAsync()
         {
@@ -69,22 +40,26 @@ namespace Unity.GrantManager.Integrations
             {
                 int messageIndex = 0;
                 int webhookIndex = 0;
+                // Only endpoints that are identical in every environment carry a URL. Environment-specific
+                // ones are seeded blank (unless SeedConfigSection supplies one) and set per environment
+                // through Endpoint Management. For local development, put the seed URLs in the gitignored
+                // src/Unity.GrantManager.DbMigrator/appsettings.secrets.json under "DynamicUrls": { "Seed": { ... } }.
                 var dynamicUrls = new List<DynamicUrl>
                 {
                     new() { KeyName = DynamicUrlKeyNames.GEOCODER_API_BASE, Url = DynamicUrls.GEOCODER_BASE_URL, Description = "Geocoder API Base" },
                     new() { KeyName = DynamicUrlKeyNames.GEOCODER_LOCATION_API_BASE, Url = DynamicUrls.GEOCODER_LOCATION_BASE_URL, Description = "Geocoder Location API Base" },
                     new() { KeyName = DynamicUrlKeyNames.CSS_API_BASE, Url = DynamicUrls.CSS_API_BASE_URL, Description = "Common Single Sign-on Services API" },
                     new() { KeyName = DynamicUrlKeyNames.CSS_TOKEN_API_BASE, Url = DynamicUrls.CSS_TOKEN_API_BASE_URL, Description = "Common Single Sign-on Token API" },
-                    new() { KeyName = DynamicUrlKeyNames.PAYMENT_API_BASE, Url = DynamicUrls.CAS_PROD_URL, Description = "BC Corporate Accounting Services API" },
+                    new() { KeyName = DynamicUrlKeyNames.PAYMENT_API_BASE, Url = "", Description = "BC Corporate Accounting Services API" },
                     new() { KeyName = DynamicUrlKeyNames.ORGBOOK_API_BASE, Url = DynamicUrls.ORGBOOK_PROD_URL, Description = "OrgBook Services API" },
-                    new() { KeyName = DynamicUrlKeyNames.INTAKE_API_BASE, Url = DynamicUrls.CHEFS_PROD_URL, Description = "Common Hosted Forms Service API" },
-                    new() { KeyName = DynamicUrlKeyNames.NOTIFICATION_API_BASE, Url = DynamicUrls.CHES_PROD_URL, Description = "Common Hosted Email Service API" },
-                    new() { KeyName = DynamicUrlKeyNames.REPORTING_AI, Url = DynamicUrls.REPORTING_AI, Description = "Reporting AI iFrame Source" },
-                    new() { KeyName = DynamicUrlKeyNames.NOTIFICATION_AUTH, Url = DynamicUrls.CHES_PROD_AUTH, Description = "Common Hosted Email Service OAUTH" },
-                    new() { KeyName = DynamicUrlKeyNames.ANALYTICS_MATOMO_BASE, Url = GetMatomoUrl(), Description = "Matomo Analytics" },
+                    new() { KeyName = DynamicUrlKeyNames.INTAKE_API_BASE, Url = "", Description = "Common Hosted Forms Service API" },
+                    new() { KeyName = DynamicUrlKeyNames.NOTIFICATION_API_BASE, Url = "", Description = "Common Hosted Email Service API" },
+                    new() { KeyName = DynamicUrlKeyNames.REPORTING_AI, Url = "", Description = "Reporting AI iFrame Source" },
+                    new() { KeyName = DynamicUrlKeyNames.NOTIFICATION_AUTH, Url = "", Description = "Common Hosted Email Service OAUTH" },
+                    new() { KeyName = DynamicUrlKeyNames.ANALYTICS_MATOMO_BASE, Url = "", Description = "Matomo Analytics" },
                     new() { KeyName = DynamicUrlKeyNames.GITHUB_REPO, Url = DynamicUrls.GITHUB_REPO, Description = "GitHub Repository" },
                     new() { KeyName = DynamicUrlKeyNames.GITHUB_GRAPHQL, Url = DynamicUrls.GITHUB_GRAPHQL, Description = "GitHub GraphQL Endpoint" },
-                    new() { KeyName = DynamicUrlKeyNames.METABASE_API_BASE, Url = GetMetabaseUrl(), Description = "Metabase Reporting API" },
+                    new() { KeyName = DynamicUrlKeyNames.METABASE_API_BASE, Url = "", Description = "Metabase Reporting API" },
                     new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
                     new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
                     new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
@@ -99,26 +74,13 @@ namespace Unity.GrantManager.Integrations
                     var existing = await DynamicUrlRepository.FirstOrDefaultAsync(s => s.KeyName == dynamicUrl.KeyName);
                     if (existing == null)
                     {
+                        var seedUrl = configuration[$"{SeedConfigSection}:{dynamicUrl.KeyName}"];
+                        if (!string.IsNullOrWhiteSpace(seedUrl))
+                        {
+                            dynamicUrl.Url = seedUrl;
+                        }
+
                         await DynamicUrlRepository.InsertAsync(dynamicUrl);
-                    }
-                    else if (existing.KeyName == DynamicUrlKeyNames.ANALYTICS_MATOMO_BASE &&
-                             existing.Url != dynamicUrl.Url)
-                    {
-                        existing.Url = dynamicUrl.Url;
-                        await DynamicUrlRepository.UpdateAsync(existing);
-                    }
-                    // Unlike Matomo, Metabase is never kept in sync with the environment default
-                    // once a row exists - ops may point it at a different route via the Endpoint
-                    // Management admin page, and that choice must stick. Only fill in the
-                    // env-default value when the existing (host-level) row is still blank, so a
-                    // pre-existing row from before test/prod URLs were known here gets backfilled
-                    // exactly once, and a deliberately-set value is never overwritten.
-                    else if (existing.KeyName == DynamicUrlKeyNames.METABASE_API_BASE &&
-                             string.IsNullOrWhiteSpace(existing.Url) &&
-                             !string.IsNullOrWhiteSpace(dynamicUrl.Url))
-                    {
-                        existing.Url = dynamicUrl.Url;
-                        await DynamicUrlRepository.UpdateAsync(existing);
                     }
                 }
             }

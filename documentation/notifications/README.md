@@ -14,7 +14,8 @@ This folder documents how the module is built and how it is used. Read in this o
 5. **[notifications-scheduled-notifications.md](notifications-scheduled-notifications.md)** — the host-owned `ScheduledNotification` configuration, its event-driven and date-driven triggers, template token substitution, and recipient resolution.
 6. **[notifications-realtime.md](notifications-realtime.md)** — `NotificationHub`, presence tracking, direct/tenant messaging, the notification log, read state, the Redis backplane, and the API-key broadcast endpoints.
 7. **[notifications-web-ui.md](notifications-web-ui.md)** — Razor Pages inventory, menus, the settings tab, the host-side email widget, and permission gating on each surface.
-8. **[notifications-roadmap.md](notifications-roadmap.md)** — known rough edges: dead code, an in-process delay used as a retry backoff, log channels declared but never written, and other gaps worth knowing before extending this module.
+8. **[notifications-template-types-and-variables.md](notifications-template-types-and-variables.md)** — the proposed type-aware template model, Application and Applicant variable scopes, Applicant list field decisions, required versus optional variable metadata, and TinyMCE behavior when the type changes.
+9. **[notifications-roadmap.md](notifications-roadmap.md)** — known rough edges: dead code, an in-process delay used as a retry backoff, log channels declared but never written, and other gaps worth knowing before extending this module.
 
 ## Source location
 

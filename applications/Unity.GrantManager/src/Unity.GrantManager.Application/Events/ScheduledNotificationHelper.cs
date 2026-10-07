@@ -5,20 +5,18 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Notifications;
 using Unity.Notifications.EmailGroups;
-using Unity.Notifications.Emails;
 using Unity.Notifications.Events;
-using Unity.Notifications.Templates;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Identity.Integration;
-using Volo.Abp.MultiTenancy;
 
 namespace Unity.GrantManager.Events
 {
     /// <summary>
     /// Helper service for scheduled notification processing - shared logic between
-    /// event-based (ScheduledNotificationEventHandler) and date-based (DateBasedScheduledNotificationJob) handlers.
+    /// date-based (DateBasedScheduledNotificationJob) notifications.
     /// </summary>
     public partial class ScheduledNotificationHelper(ILoggerFactory loggerFactory)
     {
@@ -34,8 +32,18 @@ namespace Unity.GrantManager.Events
         /// Builds the token-to-value dictionary from the application and applicant agent,
         /// matching the MapTo paths defined in the TemplateVariable seed data.
         /// </summary>
-        public static Dictionary<string, string> BuildTokenValues(Application application, ApplicantAgent? applicantAgent)
+        public static Dictionary<string, string> BuildTokenValues(
+            Application application,
+            ApplicantAgent? applicantAgent,
+            string templateType = "Application")
         {
+            if (string.Equals(templateType, "Applicant", StringComparison.OrdinalIgnoreCase))
+            {
+                Applicant? applicantForApplicantTemplate = null;
+                try { applicantForApplicantTemplate = application.Applicant; } catch { /* navigation property may not be loaded */ }
+                return BuildApplicantTokenValues(applicantForApplicantTemplate);
+            }
+
             Applicant? applicant = null;
             try { applicant = application.Applicant; } catch { /* navigation property may not be loaded */ }
 
@@ -45,6 +53,12 @@ namespace Unity.GrantManager.Events
             ApplicationForm? applicationForm = null;
             try { applicationForm = application.ApplicationForm; } catch { /* navigation property may not be loaded */ }
 
+            var declineRationale = application.DeclineRational ?? string.Empty;
+            if (AssessmentResultsOptionsList.DeclineRationalActionList.TryGetValue(declineRationale, out var declineRationaleDisplayValue))
+            {
+                declineRationale = declineRationaleDisplayValue;
+            }
+
             return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["applicant_name"]              = applicant?.ApplicantName ?? string.Empty,
@@ -52,24 +66,36 @@ namespace Unity.GrantManager.Events
                 ["organization_name"]           = applicant?.OrgName ?? applicant?.NonRegisteredBusinessName ?? string.Empty,
                 ["submission_number"]           = application.ReferenceNo,
                 ["submission_date"]             = application.SubmissionDate.ToString("yyyy-MM-dd"),
-                ["status"]                      = applicationStatus?.StatusCode.ToString() ?? string.Empty,
+                ["status"]                      = applicationStatus?.InternalStatus.ToString() ?? string.Empty,
                 ["approved_amount"]             = application.ApprovedAmount.ToString("$#,##0.00"),
                 ["requested_amount"]            = application.RequestedAmount.ToString("$#,##0.00"),
                 ["recommended_amount"]          = application.RecommendedAmount.ToString("$#,##0.00"),
                 ["approval_date"]               = application.FinalDecisionDate?.ToString("yyyy-MM-dd") ?? string.Empty,
-                ["decline_rationale"]           = application.DeclineRational ?? string.Empty,
+                ["decline_rationale"]           = declineRationale,
                 ["community"]                   = application.Community ?? string.Empty,
                 ["project_name"]                = application.ProjectName,
                 ["project_summary"]             = application.ProjectSummary ?? string.Empty,
                 ["project_start_date"]          = application.ProjectStartDate?.ToString("yyyy-MM-dd") ?? string.Empty,
                 ["project_end_date"]            = application.ProjectEndDate?.ToString("yyyy-MM-dd") ?? string.Empty,
+                ["fiscal_year_end"]             = applicant?.FiscalYearEnd?.ToString("yyyy-MM-dd") ?? string.Empty,
                 ["signing_authority_full_name"] = application.SigningAuthorityFullName ?? string.Empty,
                 ["signing_authority_title"]     = application.SigningAuthorityTitle ?? string.Empty,
                 ["contact_full_name"]           = applicantAgent?.Name ?? string.Empty,
                 ["contact_title"]               = applicantAgent?.Title ?? string.Empty,
                 ["category"]                    = applicationForm?.Category ?? string.Empty,
-                ["today_date"]                  = $"{DateTime.Today.ToString("MMMM d, yyyy")}",
+                ["today_date"]                  = DateTime.Today.ToString("MMMM d, yyyy"),
                 ["unity_application_id"]        = application.UnityApplicationId ?? string.Empty
+            };
+        }
+
+        public static Dictionary<string, string> BuildApplicantTokenValues(Applicant? applicant)
+        {
+            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["applicant_name"]    = applicant?.ApplicantName ?? string.Empty,
+                ["organization_name"] = applicant?.OrgName ?? string.Empty,
+                ["applicant_id"]      = applicant?.UnityApplicantId ?? string.Empty,
+                ["today_date"]        = DateTime.Today.ToString("MMMM d, yyyy")
             };
         }
 

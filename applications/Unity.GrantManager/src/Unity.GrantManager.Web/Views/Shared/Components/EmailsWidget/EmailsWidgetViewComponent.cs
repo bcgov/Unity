@@ -5,11 +5,15 @@ using System;
 using System.Collections.Generic;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.ApplicantProfile;
+using Unity.Notifications.Emails;
+using Unity.Notifications.Permissions;
 using Volo.Abp.Settings;
 using Unity.Notifications.Settings;
 using System.Threading.Tasks;
 using Unity.Notifications.Templates;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Linq;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
 {
@@ -18,13 +22,23 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
         ScriptTypes = [typeof( EmailsWidgetScriptBundleContributor)],
         StyleTypes = [typeof( EmailsWidgetStyleBundleContributor)],
         AutoInitialize = true)]
-    public class EmailsWidgetViewComponent(ISettingProvider settingProvider, IApplicationRepository applicationRepository, ITemplateService templateService) : AbpViewComponent
+    public class EmailsWidgetViewComponent(ISettingProvider settingProvider, IApplicationRepository applicationRepository, ITemplateService templateService, IApplicantContactQueryService contactQueryService, EmailComposerAccessChecker emailAccessChecker) : AbpViewComponent
     {
        
-        public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Guid currentUserId, bool noDraftPreviewMode = false)
+        public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Guid currentUserId, bool noDraftPreviewMode = false, Guid applicantId = default)
         {
-            // Lookup the applicant contact
-            Application application = await applicationRepository.WithBasicDetailsAsync(applicationId);
+            string emailTo;
+            if (applicantId != Guid.Empty)
+            {
+                await emailAccessChecker.CheckOwnerAsync(applicationId, applicantId, NotificationsPermissions.Email.Default);
+                var contacts = await contactQueryService.GetByApplicantIdAsync(applicantId);
+                emailTo = contacts.Contacts.Where(c => c.IsPrimary).OrderByDescending(c => c.CreationTime).FirstOrDefault()?.Email ?? string.Empty;
+            }
+            else
+            {
+                var application = await applicationRepository.WithBasicDetailsAsync(applicationId);
+                emailTo = application?.ApplicantAgent?.Email ?? string.Empty;
+            }
 
             var defaultFromAddress = await settingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
             var enableEmailDelay = string.Equals(
@@ -34,8 +48,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
             EmailsWidgetViewModel model = new()
             {
                 ApplicationId = applicationId,
+                ApplicantId = applicantId,
                 CurrentUserId = currentUserId,
-                EmailTo = application?.ApplicantAgent?.Email ?? string.Empty,
+                EmailTo = emailTo,
                 EmailFrom = defaultFromAddress ?? "NoReply@gov.bc.ca",
                 EnableEmailDelay = enableEmailDelay,
                 NoDraftPreviewMode = noDraftPreviewMode
@@ -46,7 +61,9 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
         }
         private async Task PopulateTemplates(EmailsWidgetViewModel model)
         {
-            var templates = await templateService.GetTemplatesByTenant();
+            var templates = (await templateService.GetTemplatesByTenant())
+                .Where(t => string.Equals(t.TemplateType, model.TemplateType, StringComparison.OrdinalIgnoreCase))
+                .ToList();
 
             templates.ForEach(t =>
            {

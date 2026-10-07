@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 
 using Unity.Notifications.Emails;
 using Unity.Notifications.Logs;
@@ -60,6 +60,14 @@ public static class NotificationsDbContextModelCreatingExtensions
                 NotificationsDbProperties.DbSchema);
 
             b.ConfigureByConvention();
+            // Existing names over the limit are truncated by the LimitEmailTemplateNameLength tenant migration
+            b.Property(x => x.Name)
+                .HasMaxLength(EmailTemplateConsts.MaxNameLength)
+                .IsRequired();
+            b.Property(x => x.TemplateType)
+                .HasMaxLength(64)
+                .HasDefaultValue(TemplateTypes.Application)
+                .IsRequired();
 
         });
         modelBuilder.Entity<Subscriber>(b =>
@@ -97,6 +105,10 @@ public static class NotificationsDbContextModelCreatingExtensions
                 NotificationsDbProperties.DbSchema);
 
             b.ConfigureByConvention();
+            b.Property(x => x.TemplateType)
+                .HasMaxLength(64)
+                .HasDefaultValue(TemplateTypes.Application)
+                .IsRequired();
         });
         modelBuilder.Entity<Trigger>(b =>
         {
@@ -119,6 +131,10 @@ public static class NotificationsDbContextModelCreatingExtensions
                 .WithMany()
                 .HasForeignKey(ts => ts.TemplateId);
 
+            b.HasQueryFilter(ts =>
+                ts.EmailTemplate.TenantId == ts.TenantId &&
+                !ts.EmailTemplate.IsDeleted);
+
             b.HasOne(ts => ts.SubscriptionGroup)
                .WithMany() 
                .HasForeignKey(ts => ts.SubscriptionGroupId);
@@ -129,6 +145,10 @@ public static class NotificationsDbContextModelCreatingExtensions
                 NotificationsDbProperties.DbSchema);
 
             b.ConfigureByConvention();
+            b.Property(x => x.TemplateType)
+                .HasMaxLength(64)
+                .HasDefaultValue(TemplateTypes.Applicant)
+                .IsRequired();
         });
         modelBuilder.Entity<EmailGroup>(b =>
         {

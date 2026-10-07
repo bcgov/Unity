@@ -16,7 +16,15 @@ function initializeEmailsWidget() {
 }
 
 function initializeDraftEmailsWidget() {
+    const l = abp.localization.getResource('GrantManager');
     const BC_PERMANENT_DST_ZONE = 'UTC-7';
+    const emptyGuid = '00000000-0000-0000-0000-000000000000';
+    const applicantId = $('#EmailApplicantId').val() || emptyGuid;
+    const isApplicantEmail = applicantId !== emptyGuid;
+    const templateType = isApplicantEmail ? 'Applicant' : 'Application';
+    const refreshTopic = isApplicantEmail ? 'refresh_applicant_emails' : 'refresh_application_emails';
+    const selectedTopic = isApplicantEmail ? 'applicant_email_selected' : 'email_selected';
+    const deletedTopic = isApplicantEmail ? 'applicant_draft_email_deleted' : 'draft_email_deleted';
     // Close dropdown menus when clicking outside
     $(document).off('click.emailWidgetDropdown').on('click.emailWidgetDropdown', function (e) {
         if (!$(e.target).closest('.tinymce-menu-button, .custom-dropdown-menu').length) {
@@ -25,7 +33,7 @@ function initializeDraftEmailsWidget() {
     });
 
     const UIElements = {
-        applicationId: $('#DetailsViewApplicationId')[0].value,
+        applicationId: $('#EmailForm #ApplicationId').val() || $('#DetailsViewApplicationId').val() || emptyGuid,
         btnSend: $('#btn-send-top'),
         btnSendDropdown: $('#btn-send-dropdown'),
         btnSave: $('#btn-save-top'),
@@ -96,6 +104,7 @@ function initializeDraftEmailsWidget() {
     let mappingConfig;
     let editorInstance;
     let isNewEmailDraft = false;
+    let isDiscardingDraft = false;
     let newDraftId = null;
     let selectedEmailData = null; // Store original email data when selected from table
     let emailAttachmentsTable = null;
@@ -350,7 +359,7 @@ function initializeDraftEmailsWidget() {
     }
 
     async function initTemplateDetails() {
-        applicationDetails = await loadApplicationDetails();
+        applicationDetails = isApplicantEmail ? null : await loadApplicationDetails();
         mappingConfig = await getTemplateVariables();
     }
 
@@ -815,147 +824,138 @@ function initializeDraftEmailsWidget() {
         closeEmailFormUI();
     }
 
-    function handleDiscardEmail() {
-        setTemplateAttachmentError(null);
+    async function handleDiscardEmail(e) {
+        e?.preventDefault();
+        if (isDiscardingDraft) {
+            return;
+        }
 
-        // If it's a new email draft, delete it and reset the form
         if (isNewEmailDraft && newDraftId) {
-            $.ajax({
+            await discardNewEmailDraft();
+            return;
+        }
+
+        restoreEmailDraft();
+    }
+
+    async function discardNewEmailDraft() {
+        isDiscardingDraft = true;
+        disableEmail();
+        UIElements.emailForm.find('fieldset').prop('disabled', true);
+        abp.ui.setBusy();
+        let draftDeleted = false;
+        try {
+            await $.ajax({
                 url: `/api/app/email-notification/${newDraftId}/email`,
                 type: 'DELETE'
-            })
-                .done(() => {
-                    isNewEmailDraft = false;
-                    newDraftId = null;
-                    // Reset all fields to empty
-                    UIElements.inputEmailTo.val('');
-                    UIElements.inputEmailCC.val('');
-                    UIElements.inputEmailBCC.val('');
-                    setEmailFromAddress('');
-                    UIElements.inputEmailSubject.val('');
-                    UIElements.inputEmailBody.val('');
-                    // Reset TinyMCE editor
-                    if (tinymce.get("EmailBody")) {
-                        tinymce.get("EmailBody").setContent('');
-                    }
-                    // Reset original values
-                    UIElements.inputOriginalEmailTo.val('');
-                    UIElements.inputOriginalEmailCC.val('');
-                    UIElements.inputOriginalEmailBCC.val('');
-                    UIElements.inputOriginalEmailFrom.val('');
-                    UIElements.inputOriginalEmailSubject.val('');
-                    UIElements.inputOriginalEmailBody.val('');
-                    // Clear template
-                    $('#EmailTemplate').val('').trigger('change');
-                    $('#EmailTemplateName').val('');
-                    activeTemplateId = null;
-                    originalTemplateState = { name: '', id: '' };
-                    updateSelectedTemplateLabel('', '');
-                    // Reset scheduled send
-                    clearScheduleValue();
-                    // Reset validation errors
-                    resetValidationErrors();
-                    // Reset draft change state
-                    handleDraftChange();
-                    // Reset BCC visibility
-                    toggleBCCVisibility();
-                    // Show success toast
-                    abp.notify.success('Changes discarded', 'Email Reset');
-                })
-                .fail(e => {
-                    console.warn('Failed to delete draft on discard:', e);
-                    // Still reset the form even if delete fails
-                    isNewEmailDraft = false;
-                    newDraftId = null;
-                    // Reset all fields to empty
-                    UIElements.inputEmailTo.val('');
-                    UIElements.inputEmailCC.val('');
-                    UIElements.inputEmailBCC.val('');
-                    setEmailFromAddress('');
-                    UIElements.inputEmailSubject.val('');
-                    UIElements.inputEmailBody.val('');
-                    // Reset TinyMCE editor
-                    if (tinymce.get("EmailBody")) {
-                        tinymce.get("EmailBody").setContent('');
-                    }
-                    // Reset original values
-                    UIElements.inputOriginalEmailTo.val('');
-                    UIElements.inputOriginalEmailCC.val('');
-                    UIElements.inputOriginalEmailBCC.val('');
-                    UIElements.inputOriginalEmailFrom.val('');
-                    UIElements.inputOriginalEmailSubject.val('');
-                    UIElements.inputOriginalEmailBody.val('');
-                    // Clear template
-                    $('#EmailTemplate').val('').trigger('change');
-                    $('#EmailTemplateName').val('');
-                    activeTemplateId = null;
-                    originalTemplateState = { name: '', id: '' };
-                    updateSelectedTemplateLabel('', '');
-                    // Reset scheduled send
-                    clearScheduleValue();
-                    // Reset validation errors
-                    resetValidationErrors();
-                    // Reset draft change state
-                    handleDraftChange();
-                    // Reset BCC visibility
-                    toggleBCCVisibility();
-                });
-        } else {
-            // Reset existing email to stored original data
-            if (selectedEmailData) {
-                const originalTemplateName = originalTemplateState.name;
-                const originalTemplateId = originalTemplateState.id;
+            });
+            draftDeleted = true;
+            // Never leave a deleted ID available to Save, Send, or attachment uploads.
+            UIElements.inputEmailId.val('');
+            isNewEmailDraft = false;
+            newDraftId = null;
 
-                UIElements.inputEmailTo.val(selectedEmailData.toAddress);
-                UIElements.inputEmailCC.val(selectedEmailData.cc?.replaceAll(',', '; ') ?? '');
-                UIElements.inputEmailBCC.val(selectedEmailData.bcc?.replaceAll(',', '; ') ?? '');
-                setEmailFromAddress(selectedEmailData.fromAddress);
-                UIElements.inputEmailSubject.val(selectedEmailData.subject);
-                UIElements.inputEmailBody.val(refreshTodayDateSpans(selectedEmailData.body));
-                $('#EmailTemplateName').val(originalTemplateName);
-                activeTemplateId = originalTemplateId || null;
-                updateSelectedTemplateLabel(originalTemplateName, originalTemplateId);
+            const draftId = await initializeDraft(UIElements.applicationId);
+            UIElements.inputEmailId.val(draftId);
+            isNewEmailDraft = true;
+            newDraftId = draftId;
+            selectedEmailData = null;
 
-                // Reset TinyMCE editor
-                const resetBodyContent = selectedEmailData.body ? refreshTodayDateSpans(selectedEmailData.body) : '';
-                tinymce.get("EmailBody")?.setContent(resetBodyContent || '');
-
-                // Reset scheduled send date/time to original state
-                if (selectedEmailData.sendOnDateTime) {
-                    UIElements.inputSendOnDateTime.val(selectedEmailData.sendOnDateTime);
-                    updateScheduledDateDisplay();
-                } else {
-                    clearScheduleValue();
-                }
-            } else {
-                // Fallback to hidden inputs if selectedEmailData is not available
-                UIElements.inputEmailTo.val(UIElements.inputOriginalEmailTo.val());
-                UIElements.inputEmailCC.val(UIElements.inputOriginalEmailCC.val());
-                UIElements.inputEmailBCC.val(UIElements.inputOriginalEmailBCC.val());
-                setEmailFromAddress(UIElements.inputOriginalEmailFrom.val());
-                UIElements.inputEmailSubject.val(UIElements.inputOriginalEmailSubject.val());
-                UIElements.inputEmailBody.val(UIElements.inputOriginalEmailBody.val());
-                $('#EmailTemplateName').val(originalTemplateState.name || '');
-                activeTemplateId = originalTemplateState.id || null;
-                updateSelectedTemplateLabel(originalTemplateState.name || '', originalTemplateState.id || '');
-
-                // Reset TinyMCE editor
-                const fallbackBodyContent = UIElements.inputOriginalEmailBody.val() || '';
-                tinymce.get("EmailBody")?.setContent(fallbackBodyContent);
-
-                // Reset scheduled send date/time to original state
-                clearScheduleValue();
-            }
-
-            // Clear validation errors
+            UIElements.inputEmailTo.val('');
+            UIElements.inputEmailCC.val('');
+            UIElements.inputEmailBCC.val('');
+            setEmailFromAddress('');
+            UIElements.inputEmailSubject.val('');
+            UIElements.inputEmailBody.val('');
+            tinymce.get('EmailBody')?.setContent('');
+            UIElements.inputOriginalEmailTo.val('');
+            UIElements.inputOriginalEmailCC.val('');
+            UIElements.inputOriginalEmailBCC.val('');
+            UIElements.inputOriginalEmailFrom.val('');
+            UIElements.inputOriginalEmailSubject.val('');
+            UIElements.inputOriginalEmailBody.val('');
+            // Clearing the selection must not request a template with an empty ID.
+            $('#EmailTemplate').val('');
+            $('#EmailTemplateName').val('');
+            activeTemplateId = null;
+            originalTemplateState = { name: '', id: '' };
+            activeTemplateAttachmentCount = 0;
+            setTemplateAttachmentError(null);
+            updateSelectedTemplateLabel('', '');
+            clearScheduleValue();
             resetValidationErrors();
-
-            // Show success toast
+            toggleBCCVisibility();
+            $('#email_attachment_upload').val('');
+            // The table's AJAX callback captures its draft ID, so it must be rebound.
+            initEmailAttachmentsTable(draftId, true);
             abp.notify.success('Changes discarded', 'Email Reset');
-
-            // Disable save and discard buttons since no changes are present
+        } catch {
+            if (draftDeleted) {
+                handleCloseEmail();
+                abp.notify.error(l('Email:ReplacementDraftFailed'));
+            } else {
+                // Keep the current draft and its contents available if deletion failed.
+                abp.notify.error(l('Email:DiscardFailed'));
+            }
+        } finally {
+            isDiscardingDraft = false;
+            UIElements.emailForm.find('fieldset').prop('disabled', false);
+            enableEmail();
             handleDraftChange();
+            abp.ui.clearBusy();
         }
+    }
+
+    function restoreEmailDraft() {
+        setTemplateAttachmentError(null);
+        if (selectedEmailData) {
+            restoreSelectedEmailFields();
+        } else {
+            restoreOriginalEmailFields();
+        }
+
+        const originalTemplateName = originalTemplateState.name || '';
+        const originalTemplateId = originalTemplateState.id || '';
+        $('#EmailTemplateName').val(originalTemplateName);
+        activeTemplateId = originalTemplateId || null;
+        updateSelectedTemplateLabel(originalTemplateName, originalTemplateId);
+        resetValidationErrors();
+        abp.notify.success('Changes discarded', 'Email Reset');
+        handleDraftChange();
+    }
+
+    function restoreSelectedEmailFields() {
+        UIElements.inputEmailTo.val(selectedEmailData.toAddress);
+        UIElements.inputEmailCC.val(selectedEmailData.cc?.replaceAll(',', '; ') ?? '');
+        UIElements.inputEmailBCC.val(selectedEmailData.bcc?.replaceAll(',', '; ') ?? '');
+        setEmailFromAddress(selectedEmailData.fromAddress);
+        UIElements.inputEmailSubject.val(selectedEmailData.subject);
+
+        let body = selectedEmailData.body || '';
+        if (!isApplicantEmail && body) {
+            body = refreshTodayDateSpans(body);
+        }
+        UIElements.inputEmailBody.val(body);
+        tinymce.get('EmailBody')?.setContent(body);
+
+        if (selectedEmailData.sendOnDateTime) {
+            UIElements.inputSendOnDateTime.val(selectedEmailData.sendOnDateTime);
+            updateScheduledDateDisplay();
+        } else {
+            clearScheduleValue();
+        }
+    }
+
+    function restoreOriginalEmailFields() {
+        UIElements.inputEmailTo.val(UIElements.inputOriginalEmailTo.val());
+        UIElements.inputEmailCC.val(UIElements.inputOriginalEmailCC.val());
+        UIElements.inputEmailBCC.val(UIElements.inputOriginalEmailBCC.val());
+        setEmailFromAddress(UIElements.inputOriginalEmailFrom.val());
+        UIElements.inputEmailSubject.val(UIElements.inputOriginalEmailSubject.val());
+        const body = UIElements.inputOriginalEmailBody.val() || '';
+        UIElements.inputEmailBody.val(body);
+        tinymce.get('EmailBody')?.setContent(body);
+        clearScheduleValue();
     }
 
     function handleCancelEmailSend() {
@@ -976,6 +976,16 @@ function initializeDraftEmailsWidget() {
     }
 
     async function initializeDraft(applicationId) {
+        if (isApplicantEmail) {
+            const emailService = unity?.grantManager?.notifications?.email;
+            if (emailService?.initializeApplicantDraft) {
+                return await emailService.initializeApplicantDraft(applicantId);
+            }
+            return await $.ajax({
+                url: `/api/app/email/initialize-applicant-draft?applicantId=${encodeURIComponent(applicantId)}`,
+                type: 'POST'
+            });
+        }
         const emailNotificationService = unity?.notifications?.emailNotifications?.emailNotification;
 
         if (emailNotificationService?.initializeDraft) {
@@ -994,10 +1004,20 @@ function initializeDraftEmailsWidget() {
         UIElements.templateSelectionDropdown.val('');
     }
 
+    function getTemplateIdUrlSegment(templateId) {
+        // Template IDs may come from a dropdown or response; only GUIDs may enter a URL path.
+        const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (typeof templateId !== 'string' || templateId.length !== 36 || !guidPattern.test(templateId)) {
+            throw new TypeError(l('Email:InvalidTemplateId'));
+        }
+        return encodeURIComponent(templateId);
+    }
+
     async function validateTemplateAttachments(templateId) {
         try {
+            const templateIdSegment = getTemplateIdUrlSegment(templateId);
             await $.ajax({
-                url: `/api/form-notifications/email-template/${encodeURIComponent(templateId)}/validate-attachments`,
+                url: `/api/form-notifications/email-template/${templateIdSegment}/validate-attachments`,
                 type: 'GET'
             });
         } catch (error) {
@@ -1008,8 +1028,9 @@ function initializeDraftEmailsWidget() {
 
     async function copyTemplateAttachments(templateId, emailLogId) {
         try {
+            const templateIdSegment = getTemplateIdUrlSegment(templateId);
             const response = await $.ajax({
-                url: `/api/form-notifications/email-template/${templateId}/copy-attachments`,
+                url: `/api/form-notifications/email-template/${templateIdSegment}/copy-attachments`,
                 type: 'POST',
                 data: JSON.stringify({ emailLogId: emailLogId }),
                 contentType: 'application/json'
@@ -1102,7 +1123,7 @@ function initializeDraftEmailsWidget() {
         if (!templates) {
             try {
                 templates = await $.ajax({
-                    url: `/api/form-notifications/templates`,
+                    url: `/api/form-notifications/templates?templateType=${templateType}`,
                     type: 'GET'
                 });
                 cachedTemplates = templates;
@@ -1118,11 +1139,19 @@ function initializeDraftEmailsWidget() {
     }
 
     async function fetchTemplateById(templateId) {
+        if (isApplicantEmail) {
+            const templateIdSegment = getTemplateIdUrlSegment(templateId);
+            return await $.ajax({
+                url: `/api/form-notifications/templates/${templateIdSegment}/applicant-preview`,
+                type: 'GET',
+                data: { applicantId }
+            });
+        }
         let templates = cachedTemplates;
         if (!templates) {
             try {
                 templates = await $.ajax({
-                    url: `/api/form-notifications/templates`,
+                    url: `/api/form-notifications/templates?templateType=${templateType}`,
                     type: 'GET'
                 });
                 cachedTemplates = templates;
@@ -1274,6 +1303,9 @@ function initializeDraftEmailsWidget() {
     }
 
     async function resolveTemplateRecipientEmailsFromApi(template, templateId) {
+        if (isApplicantEmail) {
+            return template?.emailTo || '';
+        }
         const localRecipients = resolveTemplateRecipientEmails(template);
         const resolvedTemplateId = (templateId || template?.id || template?.Id || '').toString().trim();
         const applicationId = (UIElements.applicationId || '').toString().trim();
@@ -1283,8 +1315,9 @@ function initializeDraftEmailsWidget() {
         }
 
         try {
+            const templateIdSegment = getTemplateIdUrlSegment(resolvedTemplateId);
             const response = await $.ajax({
-                url: `/api/form-notifications/templates/${resolvedTemplateId}/resolved-recipients`,
+                url: `/api/form-notifications/templates/${templateIdSegment}/resolved-recipients`,
                 type: 'GET',
                 data: applicationId ? { applicationId } : {}
             });
@@ -1298,6 +1331,10 @@ function initializeDraftEmailsWidget() {
     }
 
     async function processTemplateBody(body) {
+        // Applicant previews are already rendered by the server; saved email content is a snapshot.
+        if (isApplicantEmail) {
+            return body;
+        }
         if (body && applicationDetails && mappingConfig) {
             try {
                 const templateData = extractTemplateData(applicationDetails, mappingConfig);
@@ -1346,7 +1383,7 @@ function initializeDraftEmailsWidget() {
         activeTemplateAttachmentCount = 0;
         updateSelectedTemplateLabel(templateName, selectedTemplateId);
 
-        if (templateRecipients) {
+        if (isApplicantEmail || templateRecipients) {
             UIElements.inputEmailTo.val(templateRecipients).trigger('change');
             UIElements.inputOriginalEmailTo.val(templateRecipients);
         }
@@ -1372,15 +1409,8 @@ function initializeDraftEmailsWidget() {
         closeTemplateSelectionModal();
 
         try {
-            const response = await $.ajax({
-                url: `/api/form-notifications/templates`,
-                type: 'GET'
-            });
-
-            console.log('API Response:', response);
-            console.log('Selected Template ID:', selectedTemplateId);
-
-            const { selectedTemplate, useUpperCase } = findTemplateById(response, selectedTemplateId);
+            const selectedTemplate = await fetchTemplateById(selectedTemplateId);
+            const useUpperCase = !!selectedTemplate?.Id;
 
             if (!selectedTemplate) {
                 abp.notify.error('Selected template not found.');
@@ -1624,6 +1654,8 @@ function initializeDraftEmailsWidget() {
             data: JSON.stringify({
                 emailId: UIElements.inputEmailId[0].value,
                 applicationId: UIElements.applicationId,
+                applicantId: isApplicantEmail ? applicantId : null,
+                templateId: activeTemplateId || null,
                 emailTo: UIElements.inputEmailTo[0].value,
                 emailCC: UIElements.inputEmailCC[0].value,
                 emailBCC: UIElements.inputEmailBCC[0].value,
@@ -1643,7 +1675,7 @@ function initializeDraftEmailsWidget() {
             // Pass along which application this save/send actually belonged to — a listener elsewhere on the
             // page (e.g. a multi-application context switching selection) can't otherwise tell which row this
             // completion is for, since UIElements.applicationId isn't visible outside this closure.
-            PubSub.publish('refresh_application_emails', { applicationId: UIElements.applicationId });
+            PubSub.publish(refreshTopic, { applicationId: UIElements.applicationId, applicantId: isApplicantEmail ? applicantId : null });
             if (isNotificationEmail) {
                 PubSub.publish('notification_email_sent');
             }
@@ -1705,6 +1737,8 @@ function initializeDraftEmailsWidget() {
                 data: JSON.stringify({
                     emailId: UIElements.inputEmailId[0].value,
                     applicationId: UIElements.applicationId,
+                    applicantId: isApplicantEmail ? applicantId : null,
+                    templateId: activeTemplateId || null,
                     emailTo: UIElements.inputEmailTo[0].value,
                     emailCC: UIElements.inputEmailCC[0].value,
                     emailBCC: UIElements.inputEmailBCC[0].value,
@@ -1720,7 +1754,7 @@ function initializeDraftEmailsWidget() {
                 handleCloseEmail();
                 abp.notify.success('Your email has been saved.');
                 // See the matching comment in performSendEmail's success handler above.
-                PubSub.publish('refresh_application_emails', { applicationId: UIElements.applicationId });
+                PubSub.publish(refreshTopic, { applicationId: UIElements.applicationId, applicantId: isApplicantEmail ? applicantId : null });
                 if ($('#NotificationEmailContext').val() === 'true') {
                     PubSub.publish('notification_email_saved');
                 }
@@ -1739,7 +1773,15 @@ function initializeDraftEmailsWidget() {
         let emailValue = fieldElement.value.trim();
 
         // Remove trailing commas, semicolons, or spaces
-        emailValue = emailValue.replace(/[;,\s]+$/, '');
+        let endIndex = emailValue.length;
+        while (endIndex > 0) {
+            const trailingCharacter = emailValue[endIndex - 1];
+            if (trailingCharacter !== ';' && trailingCharacter !== ',' && trailingCharacter.trim() !== '') {
+                break;
+            }
+            endIndex--;
+        }
+        emailValue = emailValue.slice(0, endIndex);
 
         // If the field is empty and not required, clear any existing errors
         if (!isRequired && emailValue === '') {
@@ -1905,6 +1947,9 @@ function initializeDraftEmailsWidget() {
     }
 
     function handleDraftChange() {
+        if (isDiscardingDraft) {
+            return;
+        }
         // Only allow draft changes if we're viewing a draft email
         if (!isViewingDraft) {
             console.log('handleDraftChange: Returning early because isViewingDraft is false');
@@ -1942,6 +1987,10 @@ function initializeDraftEmailsWidget() {
         try {
             resetValidationErrors();
             let templateDetails = await loadTemplateDetails(this.value);
+            if (isApplicantEmail) {
+                await applyTemplateToEmail(templateDetails);
+                return;
+            }
             const templateData = extractTemplateData(applicationDetails, mappingConfig);
             const template = Handlebars.compile(templateDetails.bodyHTML);
 
@@ -1964,7 +2013,7 @@ function initializeDraftEmailsWidget() {
     function getTemplateVariables() {
         return new Promise((resolve, reject) => {
             $.ajax({
-                url: `/api/app/template/template-variables`,
+                url: `/api/app/template/template-variables?templateType=${templateType}`,
                 type: 'GET',
                 success: function (response) {
                     resolve(response);
@@ -1977,6 +2026,9 @@ function initializeDraftEmailsWidget() {
     }
 
     function loadTemplateDetails(templateId) {
+        if (isApplicantEmail) {
+            return fetchTemplateById(templateId);
+        }
         return new Promise((resolve, reject) => {
             $.ajax({
                 url: `/api/app/template/${templateId}/template-by-id`,
@@ -2125,7 +2177,7 @@ function initializeDraftEmailsWidget() {
         }
         UIElements.inputEmailBody.val(body || '');
         setEmailFromAddress(fields.sendFrom || defaultValues.emailFrom);
-        if (templateRecipients) {
+        if (isApplicantEmail || templateRecipients) {
             UIElements.inputEmailTo.val(templateRecipients).trigger('change');
         }
     }
@@ -2134,6 +2186,9 @@ function initializeDraftEmailsWidget() {
     async function applyTemplateToEmail(template) {
         try {
             const currentEmailId = UIElements.inputEmailId.val();
+            if (isApplicantEmail) {
+                template = await fetchTemplateById(template.id || template.Id);
+            }
             const fields = extractTemplateFields(template);
 
             await validateTemplateAttachments(fields.id);
@@ -2181,7 +2236,7 @@ function initializeDraftEmailsWidget() {
         if (cachedTemplates) return;
         try {
             cachedTemplates = await $.ajax({
-                url: `/api/form-notifications/templates`,
+                url: `/api/form-notifications/templates?templateType=${templateType}`,
                 type: 'GET'
             });
         } catch (e) {
@@ -2249,12 +2304,12 @@ function initializeDraftEmailsWidget() {
     // project-wide search) — unsubscribe before re-subscribing so repeated initializeEmailsWidget() calls
     // don't leave stale handlers (bound to a previous, now-discarded DOM/closure) stacking up alongside the
     // current one.
-    PubSub.unsubscribe('email_selected');
+    PubSub.unsubscribe(selectedTopic);
     PubSub.unsubscribe('applicant_info_updated');
-    PubSub.unsubscribe('draft_email_deleted');
+    PubSub.unsubscribe(deletedTopic);
     PubSub.unsubscribe('reload_email_attachments_table');
 
-    PubSub.subscribe('email_selected', (msg, data) => {
+    PubSub.subscribe(selectedTopic, (msg, data) => {
         console.log("EMAIL SELECTED EVENT FIRED", data);
         templateAttachmentError = null;
 
@@ -2264,7 +2319,7 @@ function initializeDraftEmailsWidget() {
 
         // Determine if this is a draft FIRST, before any field population
         const status = (data?.status || '').toString().trim().toLowerCase();
-        const isDraft = status === 'draft';
+        const isDraft = status === 'draft' && abp.auth.isGranted('Notifications.Email.Send');
         isViewingDraft = isDraft; // Set flag early to prevent handleDraftChange from enabling buttons
         console.log('isViewingDraft set to:', isViewingDraft);
 
@@ -2284,6 +2339,10 @@ function initializeDraftEmailsWidget() {
             name: selectedRecordTemplateName,
             id: (activeTemplateId || '').toString()
         };
+
+        // Only drafts pick up the current date. Sent and scheduled emails must show the
+        // "Today's Date" value that was frozen into the body when they left the draft state.
+        const displayBody = isDraft && !isApplicantEmail ? refreshTodayDateSpans(data.body) : data.body;
 
         resetValidationErrors();
         console.log("data", data)
@@ -2321,7 +2380,7 @@ function initializeDraftEmailsWidget() {
             },
             init_instance_callback: function (editor) {
                 // Set initial content
-                const bodyContent = data.body ? refreshTodayDateSpans(data.body) : '';
+                const bodyContent = displayBody || '';
                 if (bodyContent) {
                     const sanitizedBodyContent = sanitizeTinyMceHtml(bodyContent);
                     editor.setContent(sanitizedBodyContent);
@@ -2354,9 +2413,8 @@ function initializeDraftEmailsWidget() {
         UIElements.inputEmailBCC.val(data.bcc?.replaceAll(',', '; ') ?? '');
         setEmailFromAddress(data.fromAddress);
         UIElements.inputEmailSubject.val(data.subject);
-        const bodyContentWithRefresh = refreshTodayDateSpans(data.body);
-        UIElements.inputEmailBody.val(bodyContentWithRefresh);
-        UIElements.inputOriginalEmailBody.val(bodyContentWithRefresh);
+        UIElements.inputEmailBody.val(displayBody);
+        UIElements.inputOriginalEmailBody.val(displayBody);
 
         // Load scheduled send date/time if available
         if (data.sendOnDateTime) {
@@ -2416,7 +2474,7 @@ function initializeDraftEmailsWidget() {
     PubSub.subscribe(
         'applicant_info_updated',
         (_, ApplicantInfoObj) => {
-            if (ApplicantInfoObj + "" !== "undefined"
+            if (!isApplicantEmail && ApplicantInfoObj + "" !== "undefined"
                 && ApplicantInfoObj.ContactEmail + "" != "undefined"
                 && ApplicantInfoObj.ContactEmail !== "") {
                 UIElements.inputEmailTo[0].value = ApplicantInfoObj.ContactEmail;
@@ -2424,7 +2482,7 @@ function initializeDraftEmailsWidget() {
         }
     );
 
-    PubSub.subscribe('draft_email_deleted', (msg, data) => {
+    PubSub.subscribe(deletedTopic, (msg, data) => {
         if (UIElements.inputEmailId.val() === data.id) {
             isNewEmailDraft = false; newDraftId = null;
             closeEmailFormUI();

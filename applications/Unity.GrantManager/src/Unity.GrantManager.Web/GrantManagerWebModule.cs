@@ -481,7 +481,7 @@ public class GrantManagerWebModule : AbpModule
     {
         Configure<AbpBundlingOptions>(options =>
         {
-            options.Mode = BundlingMode.BundleAndMinify;
+            options.Mode = BundlingMode.Bundle;
             options.MinificationIgnoredFiles.Add("/js/notifications-realtime-client.js");
             options.MinificationIgnoredFiles.Add("/Pages/UnityMessaging/Index.js");
             options

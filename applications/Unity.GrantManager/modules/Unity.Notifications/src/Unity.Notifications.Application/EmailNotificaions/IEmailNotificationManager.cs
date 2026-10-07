@@ -19,12 +19,12 @@ namespace Unity.Notifications.EmailNotifications
         /// <summary>
         /// Creates and initializes a new email log with status and optional scheduled notification ID
         /// </summary>
-        Task<EmailLog?> CreateEmailLogAsync(EmailMessageParams email, Guid applicationId, string? status, Guid? scheduledNotificationId = null);
+        Task<EmailLog?> CreateEmailLogAsync(EmailMessageParams email, Guid applicationId, string? status, Guid? scheduledNotificationId = null, Guid applicantId = default);
 
         /// <summary>
         /// Updates an existing email log
         /// </summary>
-        Task<EmailLog?> UpdateEmailLogAsync(Guid emailId, EmailMessageParams email, Guid applicationId, string? status);
+        Task<EmailLog?> UpdateEmailLogAsync(Guid emailId, EmailMessageParams email, Guid applicationId, string? status, Guid applicantId = default);
 
         /// <summary>
         /// Retrieves an email log by ID
@@ -34,7 +34,7 @@ namespace Unity.Notifications.EmailNotifications
         /// <summary>
         /// Creates an empty draft email log for composing
         /// </summary>
-        Task<EmailLog> CreateDraftEmailLogAsync(Guid applicationId);
+        Task<EmailLog> CreateDraftEmailLogAsync(Guid applicationId, Guid applicantId = default);
 
         /// <summary>
         /// Deletes an email log and its S3 attachments

@@ -22,5 +22,6 @@ public class GrantApplicationApplicantDto : AuditedEntityDto<Guid>
     public string UnityApplicantId { get; set; } = string.Empty;
     public string FiscalDay { get; set; } = string.Empty;
     public string FiscalMonth { get; set; } = string.Empty;
+    public DateOnly? FiscalYearEnd { get; set; }
     public string? ElectoralDistrict { get; set; }
 }

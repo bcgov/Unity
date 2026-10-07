@@ -48,8 +48,8 @@ ARG UNITY_BUILD_VERSION
 ARG UNITY_BUILD_REVISION
 RUN dotnet publish "Unity.GrantManager.Web.csproj" \
     -c Release \
-    -p:Version=${UNITY_BUILD_VERSION:-0.0.0} \
-    -p:SourceRevisionId=${UNITY_BUILD_REVISION:-0000000} \
+    -p:Version="${UNITY_BUILD_VERSION:-0.0.0}" \
+    -p:SourceRevisionId="${UNITY_BUILD_REVISION:-0000000}" \
     -p:UseAppHost=false \
     -o /app/publish
 

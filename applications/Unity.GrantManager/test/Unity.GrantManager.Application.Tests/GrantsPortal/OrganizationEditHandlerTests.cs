@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantsPortal.Handlers;
 using Unity.GrantManager.GrantsPortal.Messages;
+using Unity.GrantManager.GrantsPortal.Notifications;
 using Volo.Abp.Domain.Entities;
 using Xunit;
 
@@ -16,6 +17,7 @@ namespace Unity.GrantManager.GrantsPortal;
 public class OrganizationEditHandlerTests
 {
     private readonly IApplicantRepository _applicantRepository;
+    private readonly IApplicantUpdateNotificationService _notifications = Substitute.For<IApplicantUpdateNotificationService>();
     private readonly OrganizationEditHandler _handler;
 
     public OrganizationEditHandlerTests()
@@ -27,6 +29,7 @@ public class OrganizationEditHandlerTests
 
         _handler = new OrganizationEditHandler(
             _applicantRepository,
+            _notifications,
             NullLogger<OrganizationEditHandler>.Instance);
     }
 
@@ -65,6 +68,48 @@ public class OrganizationEditHandlerTests
     }
 
     #region Happy path
+
+    [Fact]
+    public async Task HandleAsync_ShouldNotifyOnlyActualChangesWithPreviousValues()
+    {
+        var applicant = WithId(new Applicant { OrgName = "Old name", FiscalDay = 10 }, Guid.NewGuid());
+        _applicantRepository.GetAsync(applicant.Id, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(applicant);
+        var payload = CreatePayload(applicant.Id, JObject.FromObject(new { name = "New name", fiscalDay = "invalid" }));
+
+        await _handler.HandleAsync(payload);
+
+        await _notifications.Received(1).QueueAsync(applicant, Arg.Is<ApplicantUpdateDetails>(details =>
+            details.IsComparison && details.Fields.Count == 1
+            && details.Fields[0].Name == "Organization name"
+            && details.Fields[0].PreviousValue == "Old name" && details.Fields[0].Value == "New name"));
+        applicant.FiscalDay.ShouldBe(10);
+    }
+
+    [Fact]
+    public async Task HandleAsync_ShouldNotNotifyWhenStoredValuesAreUnchanged()
+    {
+        var applicant = WithId(new Applicant { OrgName = "Same name", FiscalDay = 10 }, Guid.NewGuid());
+        _applicantRepository.GetAsync(applicant.Id, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(applicant);
+
+        await _handler.HandleAsync(CreatePayload(applicant.Id,
+            JObject.FromObject(new { name = "Same name", fiscalDay = "10" })));
+
+        await _notifications.DidNotReceive().QueueAsync(Arg.Any<Applicant>(), Arg.Any<ApplicantUpdateDetails>());
+    }
+
+    [Fact]
+    public async Task HandleAsync_ShouldReportClearedValuesAndOrganizationSizeFallback()
+    {
+        var applicant = WithId(new Applicant { OrgName = "Old name", ApproxNumberOfEmployees = "Small" }, Guid.NewGuid());
+        _applicantRepository.GetAsync(applicant.Id, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(applicant);
+
+        await _handler.HandleAsync(CreatePayload(applicant.Id, JObject.FromObject(new { organizationSize = "Medium" })));
+
+        await _notifications.Received(1).QueueAsync(applicant, Arg.Is<ApplicantUpdateDetails>(details =>
+            details.Fields.Count == 2 && details.Fields[0].PreviousValue == "Old name"
+            && details.Fields[0].Value == null && details.Fields[1].PreviousValue == "Small"
+            && details.Fields[1].Value == "Medium"));
+    }
 
     [Fact]
     public async Task HandleAsync_ShouldUpdateAllApplicantFields()

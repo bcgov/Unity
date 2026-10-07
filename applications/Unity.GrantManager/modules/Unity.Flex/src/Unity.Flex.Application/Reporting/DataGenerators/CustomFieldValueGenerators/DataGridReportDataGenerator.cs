@@ -21,7 +21,9 @@ namespace Unity.Flex.Reporting.DataGenerators.CustomFieldValueGenerators
             var values = new Dictionary<string, List<string>>();
             JObject dataValue = JObject.Parse(value.CurrentValue);
 
-            var rowsValue = JsonSerializer.Deserialize<DataGridRowsValue>(dataValue["value"]?.ToString() ?? string.Empty);
+            var rowsValueJson = dataValue["value"]?.ToString();
+            var rowsValue = JsonSerializer.Deserialize<DataGridRowsValue>(
+                string.IsNullOrWhiteSpace(rowsValueJson) ? "{}" : rowsValueJson);
 
             if (rowsValue == null) return (values, false);
 

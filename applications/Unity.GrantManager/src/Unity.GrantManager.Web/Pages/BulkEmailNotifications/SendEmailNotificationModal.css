@@ -49,12 +49,11 @@
     padding-left: 1rem;
 }
 
-/* Draggable divider between the two panels. The border that used to sit on .bulk-email-edit-panel now lives
-   here instead, since this element is the visual (and interactive) separator between them. */
+/* Reserve the full drag area between panels. Negative margins would overlap the application list
+   scrollbar and intercept scrollbar drags in both email dialogs. */
 .bulk-email-panel-divider {
     flex: 0 0 auto;
     width: 13px;
-    margin: 0 -6px;
     display: flex;
     align-items: center;
     justify-content: center;

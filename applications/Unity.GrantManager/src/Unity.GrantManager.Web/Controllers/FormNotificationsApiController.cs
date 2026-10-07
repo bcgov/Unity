@@ -1,4 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Unity.GrantManager.Notifications.Email;
+using Unity.Notifications.Emails;
+using Unity.Notifications.Permissions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,8 +10,10 @@ using Unity.GrantManager.GrantApplications;
 using Unity.Notifications.EmailGroups;
 using System.Threading.Tasks;
 using Unity.Notifications.EmailNotifications;
+using Unity.Notifications.Templates;
 using Volo.Abp.Users;
 using Unity.GrantManager.Events;
+using Unity.Payments.Codes;
 using Unity.Payments.Enums;
 using Volo.Abp.Identity.Integration;
 
@@ -19,7 +25,7 @@ namespace Unity.GrantManager.Web.Controllers
     {
         private readonly IApplicationStatusService _statusService;
         private readonly IEmailGroupsAppService _emailGroupsAppService;
-        private readonly Unity.Notifications.Templates.ITemplateService _templateService;
+        private readonly ITemplateService _templateService;
         private readonly Notifications.IAutomatedNotificationAppService _automatedNotificationAppService;
         private readonly EmailAttachmentService _emailAttachmentService;
         private readonly ICurrentUser _currentUser;
@@ -27,8 +33,10 @@ namespace Unity.GrantManager.Web.Controllers
         private readonly IIdentityUserIntegrationService _identityUserIntegrationService;
         private readonly IGrantApplicationAppService _grantApplicationAppService;
         private readonly ScheduledNotificationHelper _scheduledNotificationHelper;
+        private readonly IApplicantEmailTemplateAppService _applicantEmailTemplateService;
+        private readonly EmailComposerAccessChecker _emailAccessChecker;
 
-        public FormNotificationsApiController(IApplicationStatusService statusService, IEmailGroupsAppService emailGroupsAppService, Unity.Notifications.Templates.ITemplateService templateService, Unity.GrantManager.Notifications.IAutomatedNotificationAppService automatedNotificationAppService, EmailAttachmentService emailAttachmentService, ICurrentUser currentUser, IEmailGroupUsersAppService emailGroupUsersAppService, IIdentityUserIntegrationService identityUserIntegrationService, IGrantApplicationAppService grantApplicationAppService, ScheduledNotificationHelper scheduledNotificationHelper)
+        public FormNotificationsApiController(IApplicationStatusService statusService, IEmailGroupsAppService emailGroupsAppService, Unity.Notifications.Templates.ITemplateService templateService, Unity.GrantManager.Notifications.IAutomatedNotificationAppService automatedNotificationAppService, EmailAttachmentService emailAttachmentService, ICurrentUser currentUser, IEmailGroupUsersAppService emailGroupUsersAppService, IIdentityUserIntegrationService identityUserIntegrationService, IGrantApplicationAppService grantApplicationAppService, ScheduledNotificationHelper scheduledNotificationHelper, IApplicantEmailTemplateAppService applicantEmailTemplateService, EmailComposerAccessChecker emailAccessChecker)
         {
             _statusService = statusService;
             _emailGroupsAppService = emailGroupsAppService;
@@ -40,23 +48,46 @@ namespace Unity.GrantManager.Web.Controllers
             _identityUserIntegrationService = identityUserIntegrationService;
             _grantApplicationAppService = grantApplicationAppService;
             _scheduledNotificationHelper = scheduledNotificationHelper;
+            _applicantEmailTemplateService = applicantEmailTemplateService;
+            _emailAccessChecker = emailAccessChecker;
         }
 
-                [HttpGet("payment-statuses")]
-                public ActionResult<List<object>> GetPaymentStatuses()
-                {
-                    var statuses = Enum.GetNames<PaymentRequestStatus>()
-                        .Select(status => (object)new { id = status, internalStatus = status })
-                        .ToList();
-                    return Ok(statuses);
-                }
+        [HttpGet("payment-statuses")]
+        public ActionResult<List<object>> GetPaymentStatuses()
+        {
+            var statuses = new List<object>
+            {
+                new { id = PaymentRequestStatus.Cancelled.ToString(), internalStatus = "Canceled", originalSource = "Unity Payment Status" },
+                new { id = PaymentRequestStatus.Failed.ToString(), internalStatus = "Failed", originalSource = "CAS Payment Status" },
+                new { id = CasPaymentRequestStatus.FullyPaid, internalStatus = CasPaymentRequestStatus.FullyPaid, originalSource = "CAS Payment Status" },
+                new { id = PaymentRequestStatus.HistoricalPayment.ToString(), internalStatus = "Historical Payment", originalSource = "Unity Payment Status" },
+                new { id = PaymentRequestStatus.L1Declined.ToString(), internalStatus = "L1 Declined", originalSource = "Unity Payment Status" },
+                new { id = PaymentRequestStatus.L1Pending.ToString(), internalStatus = "L1 Pending", originalSource = "Unity Payment Status" },
+                new { id = PaymentRequestStatus.L2Declined.ToString(), internalStatus = "L2 Declined", originalSource = "Unity Payment Status" },
+                new { id = PaymentRequestStatus.L2Pending.ToString(), internalStatus = "L2 Pending", originalSource = "Unity Payment Status" },
+                new { id = PaymentRequestStatus.L3Declined.ToString(), internalStatus = "L3 Declined", originalSource = "Unity Payment Status" },
+                new { id = PaymentRequestStatus.L3Pending.ToString(), internalStatus = "L3 Pending", originalSource = "Unity Payment Status" },
+                new { id = CasPaymentRequestStatus.NotPaid, internalStatus = CasPaymentRequestStatus.NotPaid, originalSource = "CAS Payment Status" },
+                new { id = PaymentRequestStatus.Paid.ToString(), internalStatus = "Paid", originalSource = "CAS Payment Status" },
+                new { id = PaymentRequestStatus.FSB.ToString(), internalStatus = "Sent to Accounts Payable", originalSource = "Unity Payment Status" },
+                new { id = PaymentRequestStatus.Submitted.ToString(), internalStatus = "Submitted to CAS", originalSource = "Unity Payment Status" }
+            };
+            return Ok(statuses);
+        }
         // In-memory storage removed; persisting to ScheduledNotifications table via IAutomatedNotificationAppService
 
 
         [HttpGet("templates")]
-        public async Task<ActionResult<List<EmailTemplateDto>>> GetTemplates()
+        public async Task<ActionResult<List<EmailTemplateDto>>> GetTemplates([FromQuery] string? templateType = null)
         {
             var templates = await _templateService.GetTemplatesByTenant();
+            if (!string.IsNullOrWhiteSpace(templateType))
+            {
+                templates = templates
+                    .Where(t => string.Equals(t.TemplateType, templateType, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
             var list = templates.Select(t => new EmailTemplateDto
             {
                 Id = t.Id,
@@ -65,10 +96,18 @@ namespace Unity.GrantManager.Web.Controllers
                 Body = t.BodyHTML,
                 SendFrom = t.SendFrom,
                 RecipientCategory = t.RecipientCategory,
-                RecipientIdentifier = t.RecipientIdentifier
+                RecipientIdentifier = t.RecipientIdentifier,
+                TemplateType = t.TemplateType
             }).ToList();
 
             return Ok(list);
+        }
+
+        [Authorize(NotificationsPermissions.Email.Send)]
+        [HttpGet("templates/{templateId:guid}/applicant-preview")]
+        public async Task<ActionResult<ApplicantEmailTemplatePreviewDto>> GetApplicantTemplatePreview(Guid templateId, [FromQuery] Guid applicantId)
+        {
+            return Ok(await _applicantEmailTemplateService.GetPreviewAsync(applicantId, templateId));
         }
 
         [HttpGet("templates/{templateId:guid}/resolved-recipients")]
@@ -149,12 +188,15 @@ namespace Unity.GrantManager.Web.Controllers
             return Ok(new ResolvedRecipientsDto { EmailTo = string.Empty });
         }
 
+        [Authorize(NotificationsPermissions.Email.Send)]
         [HttpPost("email-template/{templateId}/copy-attachments")]
         public async Task<ActionResult<CopyAttachmentsResponseDto>> CopyTemplateAttachments(Guid templateId, [FromBody] CopyAttachmentsInput input)
         {
             if (input.EmailLogId == Guid.Empty)
                 return BadRequest("EmailLogId is required");
 
+            var email = await _emailAccessChecker.CheckEmailAsync(input.EmailLogId, NotificationsPermissions.Email.Send, requireDraft: true);
+            await _emailAccessChecker.CheckTemplateAsync(templateId, email.ApplicantId);
             var copiedCount = await _emailAttachmentService.ReplaceTemplateAttachmentsAsync(
                 templateId,
                 input.EmailLogId,
@@ -170,9 +212,11 @@ namespace Unity.GrantManager.Web.Controllers
             return NoContent();
         }
 
+        [Authorize(NotificationsPermissions.Email.Send)]
         [HttpDelete("email-log/{emailLogId}/origin-attachments")]
         public async Task<ActionResult<CopyAttachmentsResponseDto>> DeleteOriginAttachments(Guid emailLogId)
         {
+            await _emailAccessChecker.CheckEmailAsync(emailLogId, NotificationsPermissions.Email.Send, requireDraft: true);
             var deletedCount = await _emailAttachmentService.DeleteOriginAttachmentsAsync(emailLogId);
             return Ok(new CopyAttachmentsResponseDto { AttachmentCount = deletedCount });
         }
@@ -213,11 +257,11 @@ namespace Unity.GrantManager.Web.Controllers
         {
             if (!Guid.TryParse(formId, out var parsedFormId)) return BadRequest("Invalid form id");
 
-            var listResult = await _automatedNotificationAppService.GetListAsync(new Unity.GrantManager.Notifications.GetNotificationsInput { FormId = parsedFormId, MaxResultCount = 1000 });
+            var listResult = await _automatedNotificationAppService.GetListAsync(new Notifications.GetNotificationsInput { FormId = parsedFormId, MaxResultCount = 1000 });
 
             // Resolve template names and status labels
             var templateIds = listResult.Items.Select(x => x.EmailTemplateId).Where(id => id != Guid.Empty).Distinct().ToList();
-            var templateMap = new Dictionary<Guid, Unity.Notifications.Templates.EmailTemplate?>();
+            var templateMap = new Dictionary<Guid, EmailTemplate?>();
             foreach (var id in templateIds)
             {
                 templateMap[id] = await _templateService.GetTemplateById(id);
@@ -231,6 +275,9 @@ namespace Unity.GrantManager.Web.Controllers
                 Id = e.Id,
                 TemplateId = e.EmailTemplateId,
                 TemplateName = templateMap.TryGetValue(e.EmailTemplateId, out var t) && t != null ? t.Name : string.Empty,
+                TemplateType = templateMap.TryGetValue(e.EmailTemplateId, out var template) && template != null
+                    ? template.TemplateType
+                    : TemplateTypes.Application,
                 TriggerType = e.TriggerType,
                 Module = e.Module ?? (e.TriggerType == "Event" ? "Application" : null),
                 DateType = e.DateField,
@@ -274,6 +321,10 @@ namespace Unity.GrantManager.Web.Controllers
 
             var template = await _templateService.GetTemplateById(input.TemplateId);
             if (template == null) return BadRequest("Template not found");
+            if (!string.Equals(template.TemplateType, TemplateTypes.Application, StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest("Only Application templates can be used for application notifications.");
+            }
             if (!Guid.TryParse(formId, out var parsedFormId)) return BadRequest("Invalid form id");
 
             // Resolve status label if an ApplicationStatusId was provided
@@ -309,6 +360,7 @@ namespace Unity.GrantManager.Web.Controllers
                 Id = created.Id,
                 TemplateId = input.TemplateId,
                 TemplateName = template.Name,
+                TemplateType = template.TemplateType,
                 TriggerType = created.TriggerType,
                 Module = created.Module,
                 DateType = created.DateField,
@@ -398,6 +450,18 @@ namespace Unity.GrantManager.Web.Controllers
             var template = await _templateService.GetTemplateById(input.TemplateId);
             if (template == null) return BadRequest("Template not found");
 
+            var existingNotification = await _automatedNotificationAppService.GetAsync(id);
+            var existingTemplate = await _templateService.GetTemplateById(existingNotification.EmailTemplateId);
+            if (existingTemplate != null &&
+                !string.Equals(template.TemplateType, existingTemplate.TemplateType, StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest("The replacement template must have the same template type as the existing notification.");
+            }
+            if (!string.Equals(template.TemplateType, TemplateTypes.Application, StringComparison.OrdinalIgnoreCase))
+            {
+                return BadRequest("Only Application templates can be used for application notifications.");
+            }
+
             string? statusLabel = null;
             if (input.ApplicationStatusId.HasValue)
             {
@@ -430,6 +494,7 @@ namespace Unity.GrantManager.Web.Controllers
                 Id = updated.Id,
                 TemplateId = input.TemplateId,
                 TemplateName = template.Name,
+                TemplateType = template.TemplateType,
                 TriggerType = updated.TriggerType,
                 Module = updated.Module,
                 DateType = updated.DateField,
@@ -494,6 +559,7 @@ namespace Unity.GrantManager.Web.Controllers
         public string SendFrom { get; init; } = string.Empty;
         public string? RecipientCategory { get; init; }
         public string? RecipientIdentifier { get; init; }
+        public string TemplateType { get; init; } = TemplateTypes.Application;
     }
 
     public record ScheduledNotificationDto
@@ -509,6 +575,7 @@ namespace Unity.GrantManager.Web.Controllers
         public List<Guid> ApplicationStatusIds { get; init; } = new();
         public string? RecipientCategory { get; init; }
         public string? RecipientIdentifier { get; init; }
+        public string TemplateType { get; init; } = TemplateTypes.Application;
         public DateTime CreatedAt { get; init; }
         public bool IsActive { get; init; }
     }

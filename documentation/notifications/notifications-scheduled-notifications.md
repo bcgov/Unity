@@ -120,8 +120,9 @@ The tokens produced:
 |`category`|`ApplicationForm.Category`|
 |`today_date`|`DateTime.Today` as `MMMM d, yyyy`|
 |`unity_application_id`|`UnityApplicationId`|
+|`fiscal_year_end`| `applicant.fiscalYearEnd` |
 
-These must stay in sync with the `TemplateVariable` rows seeded by `NotificationsDataSeedContributor`, which is what the template editor offers the user. The seed's `MapTo` column is documentation of intent — the actual resolution is this hand-written dictionary, not reflection over `MapTo`. Adding a variable therefore takes **two** edits: a seed row and a dictionary entry.
+These must stay in sync with the `TemplateVariable` rows seeded by `NotificationsDataSeedContributor` and the allowed tokens in `TemplateVariableCatalog`, which the variable API uses to filter each type's menu. The seed's `MapTo` column is documentation of intent — the actual resolution is this hand-written dictionary, not reflection over `MapTo`. Adding a variable requires updating the seed definition, the catalog's allowed tokens, and the dictionary entry.
 
 The one seeded variable with no dictionary entry is `today_date`'s `MapTo` (an empty string) — deliberate, since it comes from the clock rather than the application.
 

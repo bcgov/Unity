@@ -85,6 +85,7 @@ public class ApplicationListRecord
     public string? ApplicantIndigenousOrgInd { get; init; }
     public int? ApplicantFiscalDay { get; init; }
     public string? ApplicantFiscalMonth { get; init; }
+    public DateOnly? ApplicantFiscalYearEnd { get; init; }
     public string? ApplicantUnityApplicantId { get; init; }
 
     // ApplicantAgent (left-joined when present)

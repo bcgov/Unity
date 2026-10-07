@@ -24,7 +24,7 @@ A step's exception is always caught and logged, never rethrown — ABP's own bac
 
 ## Status tracking on the tenant
 
-Every outcome (aside from a `CanExecuteAsync`-driven skip — see below) is persisted onto the tenant via `TenantPostCreationSectionsExtensions` (`modules/Unity.SharedKernel/PostTenantCreation/`), read back by the Tenants list UI:
+A job whose tenant no longer exists (deleted or purged after the job was queued) logs a warning and returns without running the step, recording a status or enqueuing the next step, so ABP doesn't retry it. Every other outcome (aside from a `CanExecuteAsync`-driven skip — see below) is persisted onto the tenant via `TenantPostCreationSectionsExtensions` (`modules/Unity.SharedKernel/PostTenantCreation/`), read back by the Tenants list UI:
 
 - `PostTenantCreationStepStatus` — `Waiting | Success | Failure | Error`. `Waiting` is seeded for every step at tenant-creation time (`TenantAppService.CreateAsync` → `SeedPostTenantCreationSections`), so the UI shows something immediately, before the deferred job has even run. `Success`/`Error` are set by `PostTenantCreationSequenceJob` after a step returns/throws. `Failure` is reserved for a future step that reports a handled, non-exception failure — no current step produces it, since the only step today (Metabase registration) either succeeds or throws.
 - A step skipped via `CanExecuteAsync` returning `false` (e.g. no Metabase API key configured) is left as `Waiting`, not marked as any terminal result — it may still run on a later manual re-enqueue once the missing precondition is fixed.

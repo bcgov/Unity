@@ -4,6 +4,7 @@
     {        
         public string? UnityApplicantId { get; set; }
         public string? UnityApplicantName { get; set; }
+        public string? OidcSub { get; set; }
         public bool CreateIfNotExists { get; set; } = false;
     }
 }

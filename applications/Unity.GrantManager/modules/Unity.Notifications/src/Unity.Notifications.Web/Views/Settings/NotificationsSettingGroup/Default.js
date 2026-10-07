@@ -28,9 +28,27 @@ $(function () {
     let dropdownItems = [];
     let emailAttachmentsTable = null;
     let templatesDataTable = null;
+    // Read the limit from the input's maxlength (rendered from EmailTemplateConsts.MaxNameLength) so it is defined in one place
+    const TEMPLATE_NAME_MAX_LENGTH = Number.parseInt($('#templateName').attr('maxlength'), 10) || 50;
     let originalFormValues = {};
     let attachmentChangesPending = false;
     let defaultSendFromAddress = '';
+    let templateVariableRequestVersion = 0;
+    let editorInitializationPromise = Promise.resolve();
+
+    // Attach the shared character counter (CharacterCounter.js) to inputs with data-char-count in the templates tab.
+    // The script is loaded by the Configuration Management page
+    function initializeTemplateNameCounter() {
+        if (window.UnityCharacterCounter) {
+            UnityCharacterCounter.init('#nav-template');
+        }
+    }
+
+    // Using this instead of $('#templateName').val() so the counter stays in sync: the counter only listens for 'input',
+    // which is not raised when a value is set from code. The triggered event also clears any template name error.
+    function setTemplateName(value) {
+        $('#templateName').val(value).trigger('input');
+    }
 
     function init() {
         $('#email-attachments-section').hide();
@@ -38,12 +56,13 @@ $(function () {
         initializeSenderAddressSelector();
         loadActiveEmailAddresses();
         initializeTooltips();
+        initializeTemplateNameCounter();
         initializeTemplateDataTables();
         initializeDivider();
         initializeTabPersistence();
         initializeRecipientSelect();
         checkFormChanges();
-    }      
+    }
 
     function loadActiveEmailAddresses() {
         unity.notifications.emailAddresses.emailAddressConfigurations.getList().then(function (addresses) {
@@ -176,18 +195,18 @@ $(function () {
         return { Sender: 'Sender Address', ReplyTo: 'Reply-to Address', NoReply: 'No-reply Address', Inbound: 'Inbound Address', Support: 'Support Address', Other: 'Other' }[data] || data;
     }
 
-    function escapeHtml(value) {
-        return String(value ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#39;');
-    }
-
     function showEmailAddressModal(address) {
         const id = 'emailAddressModal';
-        $(`#${id}`).remove();
         const item = address || { emailAddress: '', emailType: 'Sender', description: '', isActive: true, isDefault: false };
         const activeDisabled = item.isDefault ? 'disabled' : '';
-        $('body').append(`<div class="modal fade" id="${id}" tabindex="-1"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">${address ? 'Edit' : 'Add'} Email Address</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><form id="configuredEmailForm"><div class="modal-body"><label class="form-label" for="configuredEmailAddress">Email Address</label><input id="configuredEmailAddress" name="configuredEmailAddress" class="email-input from-input form-control" type="text" value="${escapeHtml(item.emailAddress)}" required><label class="form-label mt-3" for="configuredEmailType">Email Type</label><select id="configuredEmailType" class="form-select"><option value="Sender">Sender Address</option><option value="ReplyTo">Reply-to Address</option><option value="NoReply">No-reply Address</option><option value="Inbound">Inbound Address</option><option value="Support">Support Address</option><option value="Other">Other</option></select><label class="form-label mt-3" for="configuredEmailDescription">Description</label><textarea id="configuredEmailDescription" class="form-control">${escapeHtml(item.description)}</textarea><div class="form-check mt-3"><input id="configuredEmailDefault" class="form-check-input" type="checkbox" ${item.isDefault ? 'checked' : ''}><label class="form-check-label" for="configuredEmailDefault">Default</label></div><div class="form-check mt-3"><input id="configuredEmailActive" class="form-check-input" type="checkbox" ${item.isActive ? 'checked' : ''} ${activeDisabled}><label class="form-check-label" for="configuredEmailActive">Active</label></div></div><div class="modal-footer"><button type="submit" class="btn btn-primary" id="saveConfiguredEmail">Save</button><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button></div></form></div></div></div>`);
-        $('#configuredEmailType').val(item.emailType);
-        const modal = new bootstrap.Modal(document.getElementById(id));
+        const $modal = $(`#${id}`);
+        $modal.find('#emailAddressModalTitle').text(`${address ? 'Edit' : 'Add'} Email Address`);
+        $modal.find('#configuredEmailAddress').val(item.emailAddress);
+        $modal.find('#configuredEmailType').val(item.emailType);
+        $modal.find('#configuredEmailDescription').val(item.description);
+        $modal.find('#configuredEmailDefault').prop('checked', item.isDefault);
+        $modal.find('#configuredEmailActive').prop('checked', item.isActive).prop('disabled', Boolean(activeDisabled));
+        const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById(id));
         modal.show();
         const $emailForm = $('#configuredEmailForm');
         const emailInput = $('#configuredEmailAddress');
@@ -224,7 +243,7 @@ $(function () {
                 errorSpan.text(error.text());
             }
         });
-        $defaultInput.on('change', function () {
+        $defaultInput.off('change.configuredEmail').on('change.configuredEmail', function () {
             if (!$(this).prop('checked') && address?.isDefault) {
                 $(this).prop('checked', true);
                 abp.notify.error('There must always be one default email address. Select another email address as the default to change it.');
@@ -232,7 +251,7 @@ $(function () {
             }
             if ($(this).prop('checked')) $activeInput.prop('checked', true);
         });
-        $emailForm.on('submit', function (event) {
+        $emailForm.off('submit.configuredEmail').on('submit.configuredEmail', function (event) {
             event.preventDefault();
             if (!$emailForm.valid()) {
                 return;
@@ -310,12 +329,12 @@ $(function () {
     // ── Tab State Persistence ─────────────────────────────────────────────
     function initializeTabPersistence() {
         const tabContainer = $('#nav-tab');
-        
+
         // Save tab selection when tab changes
         tabContainer.on('shown.bs.tab', 'button[data-bs-toggle="tab"]', function () {
             localStorage.setItem('notifications-active-tab', this.id);
         });
-        
+
         // Handle Templates tab visibility - redraw and reinitialize if needed
         const templateTabButton = tabContainer.find('#nav-template-tab');
         if (templateTabButton.length) {
@@ -329,7 +348,7 @@ $(function () {
                 }
             });
         }
-        
+
         // Restore saved tab on page load - but delay to ensure DOM is ready
         const savedTabId = localStorage.getItem('notifications-active-tab');
         if (savedTabId) {
@@ -461,7 +480,7 @@ $(function () {
     });
 
     // ── Open / close right panel ──────────────────────────────────────────
-    function openRightPanel() {           
+    function openRightPanel() {
         // Activate split layout
         $('#splitContainer').addClass('split-active');
         $('#rightPane').show();
@@ -489,6 +508,7 @@ $(function () {
         originalFormValues = {
             id: data.id,
             name: data.name,
+            templateType: data.templateType || 'Application',
             description: data.description || '',
             sendFrom: data.sendFrom,
             subject: data.subject,
@@ -497,13 +517,14 @@ $(function () {
             recipientCategory: data.recipientCategory || '',
             recipientIdentifier: data.recipientIdentifier || ''
         };
-        
+
         $('#templateId').val(data.id);
-        $('#templateName').val(data.name);
+        setTemplateName(data.name);
+        $('#templateType').val(data.templateType || 'Application');
         setSendFromValue(data.sendFrom);
         $('#subject').val(data.subject);
         $('#templateRecipientCategory').val(data.recipientCategory || '');
-        
+
         // Load recipients if category is set
         if (data.recipientCategory) {
             fetchRecipients(data.recipientCategory)
@@ -519,12 +540,12 @@ $(function () {
             $('#templateRecipientSelect').empty();
             setSelectedTemplateRecipients([]);
         }
-        
+
         UiElements.deleteButton.show();
         $('#email-attachments-section').show();
         attachmentChangesPending = false;
         initEmailAttachmentsTable(data.id);
-        
+
         // Recalculate table columns after initialization
         if (emailAttachmentsTable) {
             setTimeout(() => {
@@ -538,6 +559,7 @@ $(function () {
         originalFormValues = {
             id: '',
             name: '',
+            templateType: 'Application',
             description: '',
             sendFrom: '',
             subject: '',
@@ -546,9 +568,10 @@ $(function () {
             recipientCategory: '',
             recipientIdentifier: ''
         };
-        
+
         $('#templateId').val('');
-        $('#templateName').val('');
+        setTemplateName('');
+        $('#templateType').val('Application');
         setSendFromValue('');
         $('#subject').val('');
         $('#templateRecipientCategory').val('');
@@ -562,16 +585,17 @@ $(function () {
     UiElements.discardButton.on('click', function () {
         if (Object.keys(originalFormValues).length > 0) {
             $('#templateId').val(originalFormValues.id);
-            $('#templateName').val(originalFormValues.name);
+            setTemplateName(originalFormValues.name);
+            $('#templateType').val(originalFormValues.templateType || 'Application');
             setSendFromValue(originalFormValues.sendFrom);
             $('#subject').val(originalFormValues.subject);
             $('#templateRecipientCategory').val(originalFormValues.recipientCategory || '');
-            
+
             const editor = tinymce.get('templateBody');
             if (editor) {
                 editor.setContent(originalFormValues.bodyHTML || '');
             }
-            
+
             // Restore recipients
             if (originalFormValues.recipientCategory) {
                 fetchRecipients(originalFormValues.recipientCategory)
@@ -596,6 +620,7 @@ $(function () {
     UiElements.saveButton.on('click', function () {
         const templateId = $('#templateId').val();
         const templateName = $('#templateName').val();
+        const templateType = $('#templateType').val() || 'Application';
         const sendFrom = $('#sendFrom').val();
         const subject = $('#subject').val();
         const recipientCategory = $('#templateRecipientCategory').val();
@@ -611,6 +636,11 @@ $(function () {
         if (!templateName?.trim()) {
             validationErrors.push('Template name is required.');
             markFieldError('templateName', 'Template name is required.');
+        } else if (templateName.length > TEMPLATE_NAME_MAX_LENGTH) {
+            // Fallback for values that bypass maxlength, such as names set programmatically
+            const lengthMessage = `Template name must be ${TEMPLATE_NAME_MAX_LENGTH} characters or fewer.`;
+            validationErrors.push(lengthMessage);
+            markFieldError('templateName', lengthMessage);
         }
         if (!sendFrom?.trim()) {
             validationErrors.push('Send From is required.');
@@ -642,6 +672,7 @@ $(function () {
 
         const templateData = {
             name: templateName,
+            templateType: templateType,
             description: '',
             sendFrom: sendFrom,
             subject: subject,
@@ -671,7 +702,7 @@ $(function () {
 
     function hasTemplateChanges(templateData) {
         const original = originalFormValues;
-        const fields = ['name', 'description', 'sendFrom', 'subject', 'bodyText', 'bodyHTML', 'recipientCategory', 'recipientIdentifier'];
+        const fields = ['name', 'templateType', 'description', 'sendFrom', 'subject', 'bodyText', 'bodyHTML', 'recipientCategory', 'recipientIdentifier'];
 
         return fields.some(field => String(templateData[field] ?? '') !== String(original[field] ?? ''));
     }
@@ -723,6 +754,7 @@ $(function () {
                     originalFormValues = {
                         id: response.id,
                         name: templateName,
+                        templateType: templateData.templateType,
                         description: '',
                         sendFrom: sendFrom,
                         subject: subject,
@@ -753,6 +785,7 @@ $(function () {
                     originalFormValues = {
                         id: templateId,
                         name: templateName,
+                        templateType: templateData.templateType,
                         description: '',
                         sendFrom: sendFrom,
                         subject: subject,
@@ -771,18 +804,13 @@ $(function () {
     }
 
     UiElements.addTemplateButton.on('click', function () {
-        // Initialize template variables if needed
-        initializeTemplateVariables();
-        
-        // Initialize editor with empty data
-        initializeEditor({ bodyHTML: '' }, dropdownItems);
-        
         // Populate fields with empty values for new template
         populateFieldsForNewTemplate();
-        
+        initializeTemplateEditor({ bodyHTML: '', templateType: 'Application' });
+
         // Highlight nothing in the table
         $('#TemplatesTable tbody tr').removeClass('template-selected');
-        
+
         // Open right panel
         openRightPanel();
     });
@@ -852,7 +880,7 @@ $(function () {
         initiateTemplateDelete(templateId);
     });
 
-    function initializeTemplateDataTables() {                
+    function initializeTemplateDataTables() {
         // ── Table columns ────────────────────────────────────────────────────────
         const listColumns = [
             {
@@ -861,7 +889,7 @@ $(function () {
                 data: 'id',
                 visible: false,
                 index: 0
-            },        
+            },
             {
                 title: 'Name',
                 name: 'name',
@@ -874,7 +902,15 @@ $(function () {
                 name: 'subject',
                 data: 'subject',
                 index: 2,
-                width: '60%'
+                width: '50%'
+            },
+            {
+                title: 'Type',
+                name: 'templateType',
+                data: 'templateType',
+                index: 3,
+                width: '10%',
+                defaultContent: 'Applicant'
             },
             {
                 title: 'Actions',
@@ -882,7 +918,7 @@ $(function () {
                 data: 'id',
                 orderable: false,
                 searchable: false,
-                index: 3,
+                index: 4,
                 width: '130px',
                 render: function (data, type, row) {
                     return `
@@ -896,14 +932,14 @@ $(function () {
                         </div>
                     `;
                 }
-            }       
+            }
         ];
 
-        const responseCallback = (result) => (        
-            {        
-                recordsTotal:    result.length,
+        const responseCallback = (result) => (
+            {
+                recordsTotal: result.length,
                 recordsFiltered: result.length,
-                data:            result
+                data: result
             }
         );
 
@@ -912,7 +948,7 @@ $(function () {
             }
         ];
 
-        const defaultVisibleColumns = ['name', 'subject', 'actions'];
+        const defaultVisibleColumns = ['name', 'subject', 'templateType', 'actions'];
         const dt = $('#TemplatesTable');
 
         templatesDataTable = initializeDataTable({
@@ -943,15 +979,14 @@ $(function () {
                     const $row = $(templatesDataTable.row(i).node());
                     const rowData = templatesDataTable.row(i).data();
                     if (rowData) {
-                        initializeTemplateVariables();
-                        initializeEditor(rowData, dropdownItems);
+                        initializeTemplateEditor(rowData);
                         populateFields(rowData);
-                        
+
                         // Highlight selected row
                         $('#TemplatesTable tbody tr').removeClass('template-selected');
                         $row.addClass('template-selected');
                         openRightPanel();
-                        
+
                         // Publish event for pub/sub listeners
                         PubSub.publish('template_selected_from_email_editor', {
                             templateId: templateId
@@ -966,20 +1001,20 @@ $(function () {
         let hasCheckedAutoSelect = false;
         $('#TemplatesTable').on('draw.dt', function () {
             if (hasCheckedAutoSelect) return; // Only check once
-            
+
             const templateToSelectId = localStorage.getItem('notifications-template-to-select');
             if (!templateToSelectId) return;
-            
+
             hasCheckedAutoSelect = true;
             localStorage.removeItem('notifications-template-to-select');
-            
+
             // Ensure Templates tab is active
             const templateTab = document.getElementById('nav-template-tab');
             if (templateTab && !templateTab.classList.contains('active')) {
                 const tab = new bootstrap.Tab(templateTab);
                 tab.show();
             }
-            
+
             // Wait for tab transition to complete, then find and select the template
             setTimeout(() => {
                 selectTemplateById(templateToSelectId);
@@ -995,13 +1030,12 @@ $(function () {
             if (!rowData) return;
 
             // Initialize the tinymce editor with the selected template data
-            initializeTemplateVariables();
-            initializeEditor(rowData, dropdownItems);
+            initializeTemplateEditor(rowData);
             populateFields(rowData);
 
             // Highlight selected row
             $('#TemplatesTable tbody tr').removeClass('template-selected');
-            $(this).addClass('template-selected');            
+            $(this).addClass('template-selected');
             openRightPanel();
         });
 
@@ -1009,13 +1043,12 @@ $(function () {
         $('#TemplatesTable').on('click', '.template-edit-btn', function (e) {
             e.stopPropagation();
             const rowData = templatesDataTable.row($(this).closest('tr')).data();
-            
+
             if (!rowData) return;
-            
-            initializeTemplateVariables();
-            initializeEditor(rowData, dropdownItems);
+
+            initializeTemplateEditor(rowData);
             populateFields(rowData);
-            
+
             // Highlight selected row
             $('#TemplatesTable tbody tr').removeClass('template-selected');
             $(this).closest('tr').addClass('template-selected');
@@ -1033,23 +1066,74 @@ $(function () {
     }
 
 
-    function initializeTemplateVariables() {
-        $.ajax({
-            url: `/api/app/template/template-variables`,
+    function fetchTemplateVariables(templateType) {
+        return $.ajax({
+            url: `/api/app/template/template-variables?templateType=${encodeURIComponent(templateType)}`,
             type: 'GET',
-            success: function (response) {
-                $.map(response, function (item) {
-                    dropdownItems.push({
-                        text: item.name,
-                        value: item.token
-                    });
-                });
-            },
-            error: function () {
-                // Handle error silently
-            }
+            dataType: 'json'
         });
     }
+
+    function initializeTemplateEditor(data) {
+        const templateType = data?.templateType || 'Application';
+        const requestVersion = ++templateVariableRequestVersion;
+        $('#templateType').val(templateType);
+        dropdownItems = [];
+
+        fetchTemplateVariables(templateType)
+            .done(function (response) {
+                const nextDropdownItems = (response || []).map(function (item) {
+                    return {
+                        text: item.name,
+                        value: item.token
+                    };
+                });
+                editorInitializationPromise = editorInitializationPromise.then(function () {
+                    if (requestVersion !== templateVariableRequestVersion) return;
+                    dropdownItems = nextDropdownItems;
+                    return initializeEditor(data, dropdownItems);
+                });
+            })
+            .fail(function () {
+                if (requestVersion !== templateVariableRequestVersion) return;
+                abp.notify.error('Unable to load template variables.');
+                editorInitializationPromise = editorInitializationPromise.then(function () {
+                    if (requestVersion !== templateVariableRequestVersion) return;
+                    return initializeEditor(data, []);
+                });
+            });
+    }
+
+    $('#templateType').on('change', function () {
+        const selectedType = $(this).val() || 'Applicant';
+        const previousType = originalFormValues.templateType || 'Application';
+        const editor = tinymce.get('templateBody');
+        const bodyHTML = editor ? editor.getContent() : '';
+
+        const reloadEditor = function () {
+            initializeTemplateEditor({
+                bodyHTML: bodyHTML,
+                templateType: selectedType
+            });
+        };
+
+        if (selectedType === previousType || !bodyHTML.trim()) {
+            reloadEditor();
+            return;
+        }
+
+        abp.message.confirm(
+            'Changing the template type will change the available variables. Continue?',
+            'Change Template Type',
+            function (confirmed) {
+                if (confirmed) {
+                    reloadEditor();
+                } else {
+                    $('#templateType').val(previousType);
+                }
+            }
+        );
+    });
 
     function initEmailAttachmentsTable(templateId) {
         // Destroy existing table if it exists
@@ -1265,19 +1349,19 @@ $(function () {
 
     // ── Draggable divider ─────────────────────────────────────────────────────
     function initializeDivider() {
-        
-        const $divider   = $('#divider');
-        const $leftPane  = $('#leftPane');
+
+        const $divider = $('#divider');
+        const $leftPane = $('#leftPane');
         const $rightPane = $('#rightPane');
         const $container = $('#splitContainer');
 
-        let isDragging     = false;
-        let dragStartX     = 0;
-        let dragStartLeft  = 0;
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragStartLeft = 0;
 
         $divider.on('mousedown', function (e) {
-            isDragging    = true;
-            dragStartX    = e.clientX;
+            isDragging = true;
+            dragStartX = e.clientX;
             dragStartLeft = $leftPane.width();
             $divider.addClass('dragging');
             $('body').addClass('split-dragging');
@@ -1287,21 +1371,21 @@ $(function () {
         $(document).on('mousemove.splitDrag', function (e) {
             if (!isDragging) return;
 
-            const totalWidth  = $container.width();
-            const dividerW    = $divider.outerWidth();
-            const delta       = e.clientX - dragStartX;
-            let   newLeft     = dragStartLeft + delta;
-            const minLeft     = totalWidth * 0.2;
-            const maxLeft     = totalWidth * 0.8 - dividerW;
+            const totalWidth = $container.width();
+            const dividerW = $divider.outerWidth();
+            const delta = e.clientX - dragStartX;
+            let newLeft = dragStartLeft + delta;
+            const minLeft = totalWidth * 0.2;
+            const maxLeft = totalWidth * 0.8 - dividerW;
 
             newLeft = Math.max(minLeft, Math.min(maxLeft, newLeft));
 
-            const leftPct  = (newLeft / totalWidth * 100).toFixed(2);
+            const leftPct = (newLeft / totalWidth * 100).toFixed(2);
             const rightPct = ((totalWidth - newLeft - dividerW) / totalWidth * 100).toFixed(2);
 
             $leftPane.css('flex', `0 0 ${leftPct}%`);
             $rightPane.css({ 'flex': 'none', 'width': rightPct + '%' });
-            
+
             // Recalculate table columns while dragging
             if (emailAttachmentsTable) {
                 emailAttachmentsTable.columns.adjust();
@@ -1313,7 +1397,7 @@ $(function () {
                 isDragging = false;
                 $divider.removeClass('dragging');
                 $('body').removeClass('split-dragging');
-                
+
                 // Final recalculation after dragging completes
                 if (emailAttachmentsTable) {
                     emailAttachmentsTable.columns.adjust().draw();
@@ -1360,16 +1444,16 @@ $(function () {
 
 });
 
-function initializeEditor(data, dropdownItems) {     
+function initializeEditor(data, dropdownItems) {
     const templateId = 'templateBody';
-    
+
     // Remove existing editor instance if it exists
     const existingEditor = tinymce.get(templateId);
     if (existingEditor) {
-        tinymce.remove(`#${templateId}`);
+        tinymce.remove(existingEditor);
     }
-    
-    tinymce.init({
+
+    return tinymce.init({
         license_key: 'gpl',
         selector: `#${templateId}`,
         plugins: 'lists link image preview code',
@@ -1382,7 +1466,7 @@ function initializeEditor(data, dropdownItems) {
         promotion: false,
         content_css: false,
         skin: false,
-        setup: function (editor) {                
+        setup: function (editor) {
             setupEditor(editor, templateId, templateId, data, dropdownItems);
         }
     });
@@ -1407,9 +1491,9 @@ function setupEditor(editor, id, editorId, data, dropdownItems) {
         editor.mode.set('design');
         if (data?.bodyHTML !== undefined) {
             editor.setContent(data.bodyHTML);
-        }    
+        }
     });
-}    
+}
 
 function fetchVariablesMenuItems(dropdownItems, editor) {
     return function (callback) {
