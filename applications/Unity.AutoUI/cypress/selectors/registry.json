@@ -2475,6 +2475,7 @@
         "applications/Unity.AutoUI/cypress/pages/ReviewAssessmentPage.ts:14"
       ],
       "applicationMatches": [
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/Applicants/Details.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/GrantApplications/Details.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/AssessmentScoresWidget/Default.js"
       ]

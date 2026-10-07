@@ -130,10 +130,10 @@ $(function () {
                     visible: false,
                 },
                 {
-                    title: '<i class="fl fl-review-user" ></i>',
+                    title: '<i class="fa-solid fa-user-check" ></i>',
                     orderable: false,
                     render: function (data) {
-                        return '<i class="fl fl-review-user" ></i>';
+                        return '<i class="fa-solid fa-user-check" ></i>';
                     },
                 },
                 {

@@ -22,21 +22,21 @@ public class WorksheetWidget : AbpViewComponent
             Worksheet = worksheetDto,
             IconMap = new Dictionary<string, string>()
             {
-                { "String", "fl fl-font" },
-                { "Phone", "fl fl-phone" },
-                { "Date", "fl fl-datetime" },
-                { "Email", "fl fl-mail" },
-                { "Radio", "fl fl-radio" },
-                { "Checkbox", "fl fl-checkbox-checked" },
-                { "CheckboxGroup", "fl fl-multi-select" },
-                { "SelectList", "fl fl-list" },
-                { "BCAddress", "fl fl-globe" },
-                { "TextArea", "fl fl-text-area" },
-                { "Text", "fl fl-font" },
+                { "String", "fa-solid fa-font" },
+                { "Phone", "fa-solid fa-phone" },
+                { "Date", "fa-regular fa-calendar-days" },
+                { "Email", "fa-regular fa-envelope" },
+                { "Radio", "fa-regular fa-circle-dot" },
+                { "Checkbox", "fa-regular fa-square-check" },
+                { "CheckboxGroup", "fa-solid fa-list-check" },
+                { "SelectList", "fa-solid fa-bars-staggered" },
+                { "BCAddress", "fa-solid fa-globe" },
+                { "TextArea", "fa-solid fa-paragraph" },
+                { "Text", "fa-solid fa-font" },
                 { "Currency", "custom-icon-text custom-dollar" },
                 { "YesNo", "custom-icon-text custom-yesno" },
                 { "Numeric", "custom-icon-text custom-numeric" },
-                { "DataGrid", "fl fl-datagrid" }
+                { "DataGrid", "fa-solid fa-table-cells" }
             }
         });
         return View(worksheet);

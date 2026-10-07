@@ -337,6 +337,23 @@ $(function () {
         $($.fn.dataTable.tables(true)).DataTable().columns.adjust();
     });
 
+    TabUtils.initialize({
+        entityType: 'application',
+        entityId: $('#DetailsViewApplicationId').val(),
+        groups: [
+            {
+                id: 'left',
+                tabListSelector: '#detailsTab > .nav-tabs',
+                contentSelector: '#detailsTabContent'
+            },
+            {
+                id: 'right',
+                tabListSelector: '#main-right .details-nav',
+                contentSelector: '#myTabContent'
+            }
+        ]
+    });
+
     $('#printAssessmentPdf').click(function () {
         openScoreSheetDataInNewTab($('#reviewDetails').html());
     });

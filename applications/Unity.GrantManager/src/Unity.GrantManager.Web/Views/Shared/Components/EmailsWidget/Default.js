@@ -2517,12 +2517,12 @@ function initializeDraftEmailsWidget() {
                 ),
                 columnDefs: [
                     {
-                        title: '<i class="fl fl-paperclip"></i>',
+                        title: '<i class="fa-solid fa-paperclip"></i>',
                         width: '40px',
                         className: 'text-center',
                         orderable: false,
                         render: function () {
-                            return '<i class="fl fl-paperclip"></i>';
+                            return '<i class="fa-solid fa-paperclip"></i>';
                         }
                     },
                     {
@@ -2725,7 +2725,7 @@ function initializeDraftEmailsWidget() {
             complete: function () {
                 input.value = '';
                 $('#email_attachment_upload_btn')
-                    .html('<i class="fl fl-plus me-1"></i>Add Attachments')
+                    .html('<i class="fa-solid fa-plus me-1"></i>Add Attachments')
                     .prop('disabled', false);
                 $('#attachment-upload-progress').hide();
             }
@@ -2895,7 +2895,7 @@ function deleteEmailAttachment(attachmentId) {
  */
 function generateEmailAttachmentButtonContent(attachmentId) {
     return `<button class="btn fullWidth" style="margin:10px" type="button" onclick="deleteEmailAttachment('${attachmentId}')">
-                <i class="fl fl-cancel"></i>
+                <i class="fa-solid fa-xmark"></i>
             </button>`;
 }
 
