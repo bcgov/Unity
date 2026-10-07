@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "mode": "report-only",
-  "generatedAt": "2026-10-03T03:09:52.643Z",
+  "generatedAt": "2026-10-05T17:05:24.328Z",
   "summary": {
     "total": 364,
     "matched": 150,
@@ -2475,6 +2475,7 @@
         "applications/Unity.AutoUI/cypress/pages/ReviewAssessmentPage.ts:14"
       ],
       "applicationMatches": [
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/Applicants/Details.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/GrantApplications/Details.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/AssessmentScoresWidget/Default.js"
       ]
