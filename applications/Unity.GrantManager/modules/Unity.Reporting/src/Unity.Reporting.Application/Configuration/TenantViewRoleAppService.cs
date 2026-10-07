@@ -19,12 +19,12 @@ namespace Unity.Reporting.Configuration;
 /// <summary>
 /// Application service for managing tenant-specific view role configurations.
 /// Handles retrieval, updating, and assignment of database roles to reporting views on a per-tenant basis.
-/// Requires IT Admin permissions for all operations to ensure secure configuration management.
+/// Requires the IT Administrator or IT Operations role for all operations.
 /// </summary>
 /// <remarks>
 /// Initializes a new instance of the TenantViewRoleAppService with required dependency injection services.
 /// </remarks>
-[Authorize(IdentityConsts.ITAdminPermissionName)]
+[Authorize(IdentityConsts.ITAdminOrITOperationsPolicyName)]
 public class TenantViewRoleAppService(
     ITenantRepository tenantRepository,
     ISettingManager settingManager,

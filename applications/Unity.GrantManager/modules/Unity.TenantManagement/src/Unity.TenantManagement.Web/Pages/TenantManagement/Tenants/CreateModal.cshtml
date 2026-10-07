@@ -19,6 +19,9 @@
     <abp-modal size="Large">
         <abp-modal-header title="@L["NewTenant"].Value"></abp-modal-header>
         <abp-modal-body>
+            @* Keeps ABP's unsaved-changes check from firing when the Features tab loads - don't remove *@
+            <input type="checkbox" id="create-unsaved-check-placeholder" class="d-none" aria-hidden="true" tabindex="-1" />
+            <label for="create-unsaved-check-placeholder" class="d-none">Unsaved-changes check placeholder</label>
 
             <ul class="nav nav-tabs mb-3" id="createTenantTabs">
                 <li class="nav-item">
@@ -108,12 +111,12 @@
                     <h6 class="text-secondary mb-2">Assign Program Manager</h6>
                     <div class="input-group mb-2">
                         <select id="create-search-field" class="form-select" style="max-width: 170px;" aria-label="Manager search field">
+                            <option value="firstAndLast" selected>First &amp; Last</option>
                             <option value="firstName">First Name</option>
                             <option value="lastName">Last Name</option>
-                            <option value="firstAndLast">First &amp; Last Name</option>
                             <option value="email">Email</option>
                         </select>
-                        <input type="text" id="create-search-value" class="form-control" placeholder="At least 2 characters..." aria-label="Manager search value" />
+                        <input type="text" id="create-search-value" class="form-control" placeholder="e.g. John Smith" aria-label="Manager search value" />
                     </div>
                     <input type="hidden" id="create-tenant-admin-id" asp-for="Tenant.UserIdentifier" />
 
