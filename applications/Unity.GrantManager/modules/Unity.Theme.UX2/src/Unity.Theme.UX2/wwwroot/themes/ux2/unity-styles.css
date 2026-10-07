@@ -1,12 +1,5 @@
 ﻿/** UNITY based custom styles */
 
-@font-face {
-    font-family: 'Segoe-Fluent-Icons';
-    src: url('fonts/icons/Segoe-MDL2-Assets.ttf') format('truetype');
-    font-weight: 400;
-    font-style: normal;
-}
-
 :root {
     /* bc style colors */
     --bc-colors-grey-text-500: #313131;
