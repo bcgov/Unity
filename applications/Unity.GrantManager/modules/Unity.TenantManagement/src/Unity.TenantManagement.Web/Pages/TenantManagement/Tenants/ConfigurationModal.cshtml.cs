@@ -43,6 +43,10 @@ public class ConfigurationModalModel(
 
     public bool CanManageConnectionStrings { get; set; }
 
+    public bool HasTenantConnectionString { get; set; }
+
+    public bool HasReadOnlyConnectionString { get; set; }
+
     public bool CanManageFeatures { get; set; }
 
     public bool CanManageManagers { get; set; }
@@ -67,15 +71,16 @@ public class ConfigurationModalModel(
 
         CanManageManagers = CanManageFeatures;
 
-        // Stricter than CanManageFeatures - this mirrors the reporting database-role admin page's
-        // original ITAdministrator-only gating (IdentityConsts.ITAdminPermissionName on
-        // TenantViewRoleAppService itself), not the broader ITAdminOrITOperations used above.
-        CanManageReporting = (await AuthorizationService
-            .AuthorizeAsync(User, IdentityConsts.ITAdminPolicyName)).Succeeded;
+        CanManageReporting = CanManageFeatures;
 
         if (CanManageConnectionStrings)
         {
-            ConnectionStrings = await tenantAppService.GetConnectionStringsAsync(id);
+            // Only whether each value is set goes into the page. The decrypted values are fetched on
+            // demand through OnPostRevealConnectionStringsAsync, so they are not sent on every open
+            // and each reveal is a POST that ABP audit-logs.
+            var connectionStrings = await tenantAppService.GetConnectionStringsAsync(id);
+            HasTenantConnectionString = !string.IsNullOrWhiteSpace(connectionStrings.TenantConnectionString);
+            HasReadOnlyConnectionString = !string.IsNullOrWhiteSpace(connectionStrings.ReadOnlyConnectionString);
         }
 
         if (CanManageReporting)
@@ -126,6 +131,12 @@ public class ConfigurationModalModel(
         }
 
         return NoContent();
+    }
+
+    // Access check is GetConnectionStringsAsync's ManageConnectionStrings (IT Admin); the page allows IT Ops
+    public virtual async Task<IActionResult> OnPostRevealConnectionStringsAsync(Guid id)
+    {
+        return new JsonResult(await tenantAppService.GetConnectionStringsAsync(id));
     }
 
     public class TenantInfoModel : ExtensibleObject, IHasConcurrencyStamp

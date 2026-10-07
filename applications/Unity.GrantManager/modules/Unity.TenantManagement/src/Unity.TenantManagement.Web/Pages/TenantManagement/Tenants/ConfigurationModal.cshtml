@@ -20,6 +20,9 @@
         <abp-modal-body>
             <input type="hidden" asp-for="Tenant.Id" />
             <input type="hidden" asp-for="Tenant.ConcurrencyStamp" />
+            @* Keeps ABP's unsaved-changes check from firing when the Features tab loads - don't remove *@
+            <input type="checkbox" id="config-unsaved-check-placeholder" class="d-none" aria-hidden="true" tabindex="-1" />
+            <label for="config-unsaved-check-placeholder" class="d-none">Unsaved-changes check placeholder</label>
 
             <ul class="nav nav-tabs mb-3" id="configurationTabs">
                 <li class="nav-item">
@@ -36,16 +39,6 @@
                                 data-bs-target="#pane-managers" type="button"
                                 aria-controls="pane-managers">
                             Program Managers
-                        </button>
-                    </li>
-                }
-                @if (Model.CanManageConnectionStrings)
-                {
-                    <li class="nav-item">
-                        <button class="nav-link" id="tab-connections" data-bs-toggle="tab"
-                                data-bs-target="#pane-connections" type="button"
-                                aria-controls="pane-connections">
-                            Connection Strings
                         </button>
                     </li>
                 }
@@ -66,6 +59,16 @@
                                 data-bs-target="#pane-reporting" type="button"
                                 aria-controls="pane-reporting">
                             Reporting
+                        </button>
+                    </li>
+                }
+                @if (Model.CanManageConnectionStrings)
+                {
+                    <li class="nav-item">
+                        <button class="nav-link" id="tab-connections" data-bs-toggle="tab"
+                                data-bs-target="#pane-connections" type="button"
+                                aria-controls="pane-connections">
+                            Connection Strings
                         </button>
                     </li>
                 }
@@ -141,12 +144,12 @@
                     <h6 class="text-secondary mb-2">Assign Program Manager</h6>
                     <div class="input-group mb-2">
                         <select id="config-search-field" class="form-select" style="max-width: 170px;" aria-label="Manager search field">
+                            <option value="firstAndLast" selected>First &amp; Last</option>
                             <option value="firstName">First Name</option>
                             <option value="lastName">Last Name</option>
-                            <option value="firstAndLast">First &amp; Last Name</option>
                             <option value="email">Email</option>
                         </select>
-                        <input type="text" id="config-search-value" class="form-control" placeholder="At least 2 characters..." aria-label="Manager search value" />
+                        <input type="text" id="config-search-value" class="form-control" placeholder="e.g. John Smith" aria-label="Manager search value" />
                     </div>
                     <input type="hidden" asp-for="SelectedManagerUserIdentifier" id="config-selected-user-identifier" />
 
@@ -162,26 +165,6 @@
                         Selected: <span id="config-selected-user-name" class="fw-semibold text-body"></span>
                     </div>
                 </div>
-                }
-
-                @if (Model.CanManageConnectionStrings)
-                {
-                    <div class="tab-pane fade" id="pane-connections" aria-labelledby="tab-connections">
-                        <div class="form-group mb-3">
-                            <label asp-for="ConnectionStrings.TenantConnectionString">Tenant Connection String</label>
-                            <textarea asp-for="ConnectionStrings.TenantConnectionString"
-                                      class="form-control font-monospace"
-                                      rows="3"></textarea>
-                            <small class="form-text text-muted">Displayed decrypted. Saved encrypted automatically.</small>
-                        </div>
-                        <div class="form-group mb-3">
-                            <label asp-for="ConnectionStrings.ReadOnlyConnectionString">Read-Only Connection String</label>
-                            <textarea asp-for="ConnectionStrings.ReadOnlyConnectionString"
-                                      class="form-control font-monospace"
-                                      rows="3"></textarea>
-                            <small class="form-text text-muted">Displayed decrypted. Saved encrypted automatically.</small>
-                        </div>
-                    </div>
                 }
 
                 @if (Model.CanManageFeatures)
@@ -274,6 +257,41 @@
                                     title="View Database Info">
                                 <i class="fa-solid fa-database"></i> View DB Info
                             </button>
+                        </div>
+                    </div>
+                }
+
+                @if (Model.CanManageConnectionStrings)
+                {
+                    <div class="tab-pane fade" id="pane-connections" aria-labelledby="tab-connections">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <p class="text-muted small mb-0">
+                                Values are hidden. Show loads the current values so you can edit them. Hidden values are kept unchanged on save.
+                            </p>
+                            <button type="button" id="config-toggle-connection-strings-btn" class="btn btn-sm btn-outline-secondary ms-2 text-nowrap"
+                                    data-tenant-id="@Model.Tenant.Id" aria-pressed="false">
+                                <i class="fa-regular fa-eye"></i> Show
+                            </button>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="ConnectionStrings_TenantConnectionString">Tenant Connection String</label>
+                            <textarea id="ConnectionStrings_TenantConnectionString" data-field-name="ConnectionStrings.TenantConnectionString"
+                                      class="form-control font-monospace config-connection-string d-none"
+                                      rows="3"></textarea>
+                            <div class="form-control font-monospace text-muted config-connection-string-mask">
+                                @(Model.HasTenantConnectionString ? "••••••••••••••••" : "Not set")
+                            </div>
+                            <small class="form-text text-muted">Saved encrypted automatically.</small>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="ConnectionStrings_ReadOnlyConnectionString">Read-Only Connection String</label>
+                            <textarea id="ConnectionStrings_ReadOnlyConnectionString" data-field-name="ConnectionStrings.ReadOnlyConnectionString"
+                                      class="form-control font-monospace config-connection-string d-none"
+                                      rows="3"></textarea>
+                            <div class="form-control font-monospace text-muted config-connection-string-mask">
+                                @(Model.HasReadOnlyConnectionString ? "••••••••••••••••" : "Not set")
+                            </div>
+                            <small class="form-text text-muted">Saved encrypted automatically.</small>
                         </div>
                     </div>
                 }
