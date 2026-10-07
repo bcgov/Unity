@@ -9,6 +9,12 @@
         public const string CommunitiesCacheKey = "CommunitiesCache";
         public const double DefaultLocalityCacheHours = 48;
 
+        public static class ApplicantPortal
+        {
+            public const string UseDefaultMultipleIdentitiesMessage = "GrantManager.ApplicantPortal.MultipleIdentities.UseDefaultMessage";
+            public const string MultipleIdentitiesMessageHtml = "GrantManager.ApplicantPortal.MultipleIdentities.MessageHtml";
+        }
+
         public static class UI
         {
             public const string Zones = "GrantManager.UI.Zones";
