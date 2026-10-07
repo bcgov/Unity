@@ -20,7 +20,8 @@
         <abp-modal-header title="@L["NewTenant"].Value"></abp-modal-header>
         <abp-modal-body>
             @* Keeps ABP's unsaved-changes check from firing when the Features tab loads - don't remove *@
-            <input type="checkbox" class="d-none" aria-hidden="true" tabindex="-1" />
+            <input type="checkbox" id="create-unsaved-check-placeholder" class="d-none" aria-hidden="true" tabindex="-1" />
+            <label for="create-unsaved-check-placeholder" class="d-none">Unsaved-changes check placeholder</label>
 
             <ul class="nav nav-tabs mb-3" id="createTenantTabs">
                 <li class="nav-item">

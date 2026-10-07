@@ -21,7 +21,8 @@
             <input type="hidden" asp-for="Tenant.Id" />
             <input type="hidden" asp-for="Tenant.ConcurrencyStamp" />
             @* Keeps ABP's unsaved-changes check from firing when the Features tab loads - don't remove *@
-            <input type="checkbox" class="d-none" aria-hidden="true" tabindex="-1" />
+            <input type="checkbox" id="config-unsaved-check-placeholder" class="d-none" aria-hidden="true" tabindex="-1" />
+            <label for="config-unsaved-check-placeholder" class="d-none">Unsaved-changes check placeholder</label>
 
             <ul class="nav nav-tabs mb-3" id="configurationTabs">
                 <li class="nav-item">
@@ -273,7 +274,7 @@
                             </button>
                         </div>
                         <div class="form-group mb-3">
-                            <label asp-for="ConnectionStrings.TenantConnectionString">Tenant Connection String</label>
+                            <label for="ConnectionStrings_TenantConnectionString">Tenant Connection String</label>
                             <textarea id="ConnectionStrings_TenantConnectionString" data-field-name="ConnectionStrings.TenantConnectionString"
                                       class="form-control font-monospace config-connection-string d-none"
                                       rows="3"></textarea>
@@ -283,7 +284,7 @@
                             <small class="form-text text-muted">Saved encrypted automatically.</small>
                         </div>
                         <div class="form-group mb-3">
-                            <label asp-for="ConnectionStrings.ReadOnlyConnectionString">Read-Only Connection String</label>
+                            <label for="ConnectionStrings_ReadOnlyConnectionString">Read-Only Connection String</label>
                             <textarea id="ConnectionStrings_ReadOnlyConnectionString" data-field-name="ConnectionStrings.ReadOnlyConnectionString"
                                       class="form-control font-monospace config-connection-string d-none"
                                       rows="3"></textarea>
