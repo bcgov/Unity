@@ -17,6 +17,9 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Unity.Modules.Shared.Http;
 using System.Net.Http;
 using Unity.GrantManager.Integrations;
+using Unity.GrantManager.Events;
+using Unity.Modules.Shared.Permissions;
+using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Intakes;
 
@@ -29,9 +32,13 @@ public class SubmissionAppService(
         IStringEncryptionService stringEncryptionService,
     IChefsAttachmentDownloadService chefsAttachmentDownloadService,
     IApplicationRepository applicationRepository,
-    ITenantRepository tenantRepository
+    ITenantRepository tenantRepository,
+    IIntakeSubmissionAppService intakeSubmissionAppService
         ) : GrantManagerAppService, ISubmissionAppService
 {
+
+    // Any value other than the known CHEFS event types routes to CreateIntakeSubmissionAsync
+    private const string ReconciliationSubscriptionEvent = "reconciliation";
 
     protected new ILogger Logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
@@ -148,6 +155,87 @@ public class SubmissionAppService(
         }
 
         return new PagedResultDto<FormSubmissionSummaryDto>(chefsSubmissions.Count, chefsSubmissions);
+    }
+
+    [Authorize(IdentityConsts.ITOperationsPolicyName)]
+    public virtual async Task<List<ReconcileSubmissionResultDto>> ReconcileSubmissionsAsync(ReconcileSubmissionsInput input)
+    {
+        var tenant = (await tenantRepository.GetListAsync())
+            .FirstOrDefault(t => string.Equals(t.Name, input.TenantName, StringComparison.OrdinalIgnoreCase));
+
+        if (tenant == null)
+        {
+            return input.Submissions
+                .Select(s => new ReconcileSubmissionResultDto
+                {
+                    SubmissionId = s.SubmissionId,
+                    ConfirmationId = s.ConfirmationId,
+                    Success = false,
+                    Message = L["Reconciliation:TenantNotFound"]
+                })
+                .ToList();
+        }
+
+        var results = new List<ReconcileSubmissionResultDto>();
+
+        using (CurrentTenant.Change(tenant.Id, tenant.Name))
+        {
+            foreach (var item in input.Submissions.DistinctBy(s => s.SubmissionId))
+            {
+                results.Add(await ReconcileSubmissionAsync(item));
+            }
+        }
+
+        return results;
+    }
+
+    private async Task<ReconcileSubmissionResultDto> ReconcileSubmissionAsync(ReconcileSubmissionItemDto item)
+    {
+        var result = new ReconcileSubmissionResultDto
+        {
+            SubmissionId = item.SubmissionId,
+            ConfirmationId = item.ConfirmationId
+        };
+
+        // Each submission gets its own unit of work so one failure does not roll back the others
+        using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
+        try
+        {
+            var chefsSubmissionGuid = item.SubmissionId.ToString();
+            var alreadyInUnity = await applicationFormSubmissionRepository
+                .AnyAsync(s => s.ChefsSubmissionGuid == chefsSubmissionGuid);
+
+            if (alreadyInUnity)
+            {
+                result.Message = L["Reconciliation:AlreadyInUnity"];
+                return result;
+            }
+
+            // Same payload CHEFS posts to api/chefs/event, processed inline so the outcome can be reported
+            var confirmation = await intakeSubmissionAppService.CreateIntakeSubmissionAsync(new EventSubscriptionDto
+            {
+                FormId = item.FormId,
+                FormVersion = item.FormVersionId,
+                SubmissionId = item.SubmissionId,
+                SubscriptionEvent = ReconciliationSubscriptionEvent
+            });
+
+            if (confirmation.ConfirmationId == null)
+            {
+                result.Message = confirmation.ExceptionMessage;
+                return result;
+            }
+
+            await uow.CompleteAsync();
+            result.Success = true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Reconciliation failed for CHEFS submission {SubmissionId}", item.SubmissionId);
+            result.Message = L["Reconciliation:Failed"];
+        }
+
+        return result;
     }
 
     private static JsonSerializerOptions CreateJsonSerializerOptions()

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Attachments;
 using Volo.Abp.Application.Dtos;
@@ -34,4 +35,10 @@ public interface ISubmissionAppService : IApplicationService
     /// <returns>BlobDto</returns>
     Task<BlobDto> GetChefsFileAttachment(Guid? formSubmissionId, Guid? chefsFileAttachmentId, string name);
 
+    /// <summary>
+    /// Retrieve CHEFS submissions that are missing in Unity and run them through intake for the given tenant
+    /// </summary>
+    /// <param name="input">Tenant name and the CHEFS submissions to reconcile</param>
+    /// <returns>Per-submission reconciliation result</returns>
+    Task<List<ReconcileSubmissionResultDto>> ReconcileSubmissionsAsync(ReconcileSubmissionsInput input);
 }
