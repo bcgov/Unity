@@ -23,21 +23,21 @@ namespace Unity.GrantManager.Notifications
         EmailComposerAccessChecker emailAccessChecker,
         EmailNotificationManager emailNotificationManager) : ApplicationService, IEmailAppService
     {
-        [Authorize(NotificationsPermissions.Email.Send)]
+        [Authorize(NotificationsPermissions.Email.Send.Default)]
         public async Task<Guid> InitializeDraftAsync(Guid applicationId)
         {
-            await emailAccessChecker.CheckOwnerAsync(applicationId, Guid.Empty, NotificationsPermissions.Email.Send);
+            await emailAccessChecker.CheckOwnerAsync(applicationId, Guid.Empty, NotificationsPermissions.Email.Send.Default);
             return await emailNotificationService.InitializeDraftAsync(applicationId);
         }
-        [Authorize(NotificationsPermissions.Email.Send)]
+        [Authorize(NotificationsPermissions.Email.Send.Default)]
         public virtual async Task<Guid> InitializeApplicantDraftAsync(Guid applicantId)
         {
-            await emailAccessChecker.CheckOwnerAsync(Guid.Empty, applicantId, NotificationsPermissions.Email.Send);
+            await emailAccessChecker.CheckOwnerAsync(Guid.Empty, applicantId, NotificationsPermissions.Email.Send.Default);
             var email = await emailNotificationManager.CreateDraftEmailLogAsync(Guid.Empty, applicantId);
             return email.Id;
         }
 
-        [Authorize(NotificationsPermissions.Email.Send)]
+        [Authorize(NotificationsPermissions.Email.Send.Default)]
         public async Task<bool> SendAsync(CreateEmailDto dto)
         {
             await ValidateComposerRequestAsync(dto);
@@ -59,7 +59,7 @@ namespace Unity.GrantManager.Notifications
             return true;
         }
 
-        [Authorize(NotificationsPermissions.Email.Send)]
+        [Authorize(NotificationsPermissions.Email.Send.Default)]
         public async Task<bool> SaveDraftAsync(CreateEmailDto dto)
         {
             await ValidateComposerRequestAsync(dto);
@@ -76,10 +76,10 @@ namespace Unity.GrantManager.Notifications
         private async Task ValidateComposerRequestAsync(CreateEmailDto dto)
         {
             var applicantId = dto.ApplicantId ?? Guid.Empty;
-            await emailAccessChecker.CheckOwnerAsync(dto.ApplicationId, applicantId, NotificationsPermissions.Email.Send);
+            await emailAccessChecker.CheckOwnerAsync(dto.ApplicationId, applicantId, NotificationsPermissions.Email.Send.Default);
             if (dto.EmailId != Guid.Empty)
             {
-                var email = await emailAccessChecker.CheckEmailAsync(dto.EmailId, NotificationsPermissions.Email.Send, requireDraft: true);
+                var email = await emailAccessChecker.CheckEmailAsync(dto.EmailId, NotificationsPermissions.Email.Send.Default, requireDraft: true);
                 EmailOwnership.EnsureDraftOwner(email, dto.ApplicationId, applicantId);
                 if (!dto.TemplateId.HasValue || dto.TemplateId == Guid.Empty)
                 {

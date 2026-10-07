@@ -15,7 +15,7 @@ using Volo.Abp.Identity.Integration;
 
 namespace Unity.GrantManager.Notifications;
 
-[Authorize(NotificationsPermissions.Email.Send)]
+[Authorize(NotificationsPermissions.Email.Send.Default)]
 public class ApplicantEmailTemplateAppService(
     IApplicantRepository applicantRepository,
     IApplicantContactQueryService contactQueryService,
@@ -28,7 +28,7 @@ public class ApplicantEmailTemplateAppService(
 {
     public virtual async Task<ApplicantEmailTemplatePreviewDto> GetPreviewAsync(Guid applicantId, Guid templateId)
     {
-        await emailAccessChecker.CheckOwnerAsync(Guid.Empty, applicantId, NotificationsPermissions.Email.Send);
+        await emailAccessChecker.CheckOwnerAsync(Guid.Empty, applicantId, NotificationsPermissions.Email.Send.Default);
         var template = await emailAccessChecker.CheckTemplateAsync(templateId, applicantId);
         var applicant = await applicantRepository.GetAsync(applicantId);
         var values = ScheduledNotificationHelper.BuildApplicantTokenValues(applicant);

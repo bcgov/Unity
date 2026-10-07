@@ -39,10 +39,10 @@ public class EmailNotificationService(
         IEmailLogsRepository emailLogsRepository) : ApplicationService, IEmailNotificationService
 {
 
-    [Authorize(NotificationsPermissions.Email.Send)]
+    [Authorize(NotificationsPermissions.Email.Send.Default)]
     public async Task<Guid> InitializeDraftAsync(Guid applicationId)
     {
-        await emailAccessChecker.CheckOwnerAsync(applicationId, Guid.Empty, NotificationsPermissions.Email.Send);
+        await emailAccessChecker.CheckOwnerAsync(applicationId, Guid.Empty, NotificationsPermissions.Email.Send.Default);
         var emailLog = await emailNotificationManager.CreateDraftEmailLogAsync(applicationId);
         return emailLog.Id;
     }
@@ -55,7 +55,7 @@ public class EmailNotificationService(
         var isUnsavedOwnDraft = email.Status == EmailStatus.Draft && email.CreatorId == CurrentUser.Id
             && string.IsNullOrEmpty(email.Subject) && string.IsNullOrEmpty(email.Body);
         var permission = email.Status == EmailStatus.Draft
-            ? (isUnsavedOwnDraft ? NotificationsPermissions.Email.Send : NotificationsPermissions.Email.DeleteDraft)
+            ? (isUnsavedOwnDraft ? NotificationsPermissions.Email.Send.Default : NotificationsPermissions.Email.DeleteDraft)
             : NotificationsPermissions.Email.CancelScheduled;
         await emailAccessChecker.CheckOwnerAsync(email.ApplicationId, email.ApplicantId, permission);
         if (email.Status != EmailStatus.Draft && (!email.SendOnDateTime.HasValue || email.SendOnDateTime <= Clock.Now))

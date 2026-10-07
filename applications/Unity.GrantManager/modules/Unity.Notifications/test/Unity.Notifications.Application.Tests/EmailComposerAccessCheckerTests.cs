@@ -37,19 +37,19 @@ public class EmailComposerAccessCheckerTests
 
     [Theory]
     [InlineData(NotificationsPermissions.Email.Default)]
-    [InlineData(NotificationsPermissions.Email.Send)]
+    [InlineData(NotificationsPermissions.Email.Send.Default)]
     [InlineData(UnitySelector.ApplicantManagement.Applicant.Default)]
     public async Task Should_RequireEmailAndApplicantPermissions(string deniedPermission)
     {
         _permissions.IsGrantedAsync(deniedPermission).Returns(false);
-        await Should.ThrowAsync<AbpAuthorizationException>(() => _checker.CheckOwnerAsync(Guid.Empty, Guid.NewGuid(), NotificationsPermissions.Email.Send));
+        await Should.ThrowAsync<AbpAuthorizationException>(() => _checker.CheckOwnerAsync(Guid.Empty, Guid.NewGuid(), NotificationsPermissions.Email.Send.Default));
     }
 
     [Fact]
     public async Task Should_RejectDisabledEmailFeature()
     {
         _features.IsEnabledAsync("Unity.Notifications").Returns(false);
-        await Should.ThrowAsync<AbpAuthorizationException>(() => _checker.CheckOwnerAsync(Guid.Empty, Guid.NewGuid(), NotificationsPermissions.Email.Send));
+        await Should.ThrowAsync<AbpAuthorizationException>(() => _checker.CheckOwnerAsync(Guid.Empty, Guid.NewGuid(), NotificationsPermissions.Email.Send.Default));
     }
 
     [Fact]
@@ -58,7 +58,7 @@ public class EmailComposerAccessCheckerTests
         var foreignId = Guid.NewGuid();
         _applicants.GetAsync(foreignId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromException<Applicant>(new EntityNotFoundException(typeof(Applicant), foreignId)));
-        await Should.ThrowAsync<EntityNotFoundException>(() => _checker.CheckOwnerAsync(Guid.Empty, foreignId, NotificationsPermissions.Email.Send));
+        await Should.ThrowAsync<EntityNotFoundException>(() => _checker.CheckOwnerAsync(Guid.Empty, foreignId, NotificationsPermissions.Email.Send.Default));
     }
 
     [Fact]
@@ -74,6 +74,6 @@ public class EmailComposerAccessCheckerTests
     {
         var email = new EmailLog { Id = Guid.NewGuid(), ApplicantId = Guid.NewGuid(), Status = EmailStatus.Sent };
         _logs.GetAsync(email.Id, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(email);
-        await Should.ThrowAsync<BusinessException>(() => _checker.CheckEmailAsync(email.Id, NotificationsPermissions.Email.Send, requireDraft: true));
+        await Should.ThrowAsync<BusinessException>(() => _checker.CheckEmailAsync(email.Id, NotificationsPermissions.Email.Send.Default, requireDraft: true));
     }
 }

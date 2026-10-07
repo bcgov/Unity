@@ -2,6 +2,7 @@
 
 namespace Unity.Notifications.Permissions;
 
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Critical Code Smell", "S3218:Inner class members should not shadow outer class \"static\" or type members", Justification = "Constants File")]
 public static class NotificationsPermissions
 {
     public const string GroupName = "Notifications";
@@ -10,7 +11,29 @@ public static class NotificationsPermissions
     public static class Email
     {
         public const string Default = "Notifications.Email";
-        public const string Send = "Notifications.Email.Send";
+
+        public static class Send
+        {
+            public const string Default = "Notifications.Email.Send";
+            public const string SendBulk = "Notifications.Email.Send.Bulk";
+            public const string Application = "Notifications.Email.Send.Application";
+            public const string Applicant = "Notifications.Email.Send.Applicant";
+        }
+
+        public static class Create
+        {
+            public const string Default = "Notifications.Email.Create";
+            public const string Application = "Notifications.Email.Create.Application";
+            public const string Applicant = "Notifications.Email.Create.Applicant";
+        }
+
+        public static class Edit
+        {
+            public const string Default = "Notifications.Email.Edit";
+            public const string Application = "Notifications.Email.Edit.Application";
+            public const string Applicant = "Notifications.Email.Edit.Applicant";
+        }
+
         public const string SendBulk = "Notifications.Email.SendBulk";
         public const string DeleteDraft = "Notifications.Email.DeleteDraft";
         public const string CancelScheduled = "Notifications.Email.CancelScheduled";

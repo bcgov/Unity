@@ -1,6 +1,5 @@
 ﻿using Unity.Notifications.Localization;
 using Volo.Abp.Authorization.Permissions;
-using Volo.Abp.Features;
 using Volo.Abp.Localization;
 using Volo.Abp.SettingManagement;
 
@@ -17,8 +16,8 @@ public class NotificationsPermissionDefinitionProvider : PermissionDefinitionPro
                 L($"Permission:{NotificationsPermissions.Email.Default}"));
 
         notificationsPermissions.AddChild(
-            NotificationsPermissions.Email.Send,
-            L($"Permission:{NotificationsPermissions.Email.Send}"));
+            NotificationsPermissions.Email.Send.Default,
+            L($"Permission:{NotificationsPermissions.Email.Send.Default}"));
 
         notificationsPermissions.AddChild(
             NotificationsPermissions.Email.SendBulk,

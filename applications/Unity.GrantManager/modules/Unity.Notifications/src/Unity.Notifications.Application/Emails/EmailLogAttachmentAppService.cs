@@ -65,7 +65,7 @@ public class EmailLogAttachmentAppService(
         return dtos;
     }
 
-    [Authorize(NotificationsPermissions.Email.Send)]
+    [Authorize(NotificationsPermissions.Email.Send.Default)]
     public async Task DeleteAsync(Guid id)
     {
         // Idempotent delete: if already removed by another request, treat as success.
@@ -86,7 +86,7 @@ public class EmailLogAttachmentAppService(
             throw new UserFriendlyException("Invalid email log ID.");
         }
 
-        await emailAccessChecker.CheckEmailAsync(attachment.EmailLogId.Value, NotificationsPermissions.Email.Send, requireDraft: true);
+        await emailAccessChecker.CheckEmailAsync(attachment.EmailLogId.Value, NotificationsPermissions.Email.Send.Default, requireDraft: true);
 
         await emailAttachmentService.DeleteAttachmentAsync(attachment);
     }
@@ -99,7 +99,7 @@ public class EmailLogAttachmentAppService(
         }
         else
         {
-            await AuthorizationService.CheckAsync(NotificationsPermissions.Email.Send);
+            await AuthorizationService.CheckAsync(NotificationsPermissions.Email.Send.Default);
         }
         return await emailAttachmentService.GetTotalFileSizeAsync(emailLogId, templateId);
     }
@@ -109,13 +109,13 @@ public class EmailLogAttachmentAppService(
     // must only ever be reached in-process, via IEmailLogAttachmentUploadService, from a caller
     // (AttachmentController) that has already run those checks - never directly by an HTTP client,
     // which would bypass validation entirely despite still needing the Email.Send permission.
-    [Authorize(NotificationsPermissions.Email.Send)]
+    [Authorize(NotificationsPermissions.Email.Send.Default)]
     [RemoteService(false)]
     public async Task<EmailLogAttachmentDto> UploadAsync(Guid? emailLogId, Guid? templateId, Guid? tenantId, string fileName, byte[] content, string contentType)
     {
         if (emailLogId.HasValue)
         {
-            await emailAccessChecker.CheckEmailAsync(emailLogId.Value, NotificationsPermissions.Email.Send, requireDraft: true);
+            await emailAccessChecker.CheckEmailAsync(emailLogId.Value, NotificationsPermissions.Email.Send.Default, requireDraft: true);
         }
         var attachment = await emailAttachmentService.UploadUserAttachmentAsync(emailLogId, templateId, tenantId, fileName, content, contentType);
 

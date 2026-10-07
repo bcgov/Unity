@@ -108,8 +108,8 @@
            not nested, so a user could otherwise be granted SendBulk alone and open this feature into a
            read-only, non-functional right panel. Require both. *@
         @if (await FeatureChecker.IsEnabledAsync("Unity.Notifications")
-            && await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.SendBulk)
-            && await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.Send))
+            && await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.Send.SendBulk)
+            && await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.Send.Default))
         {
         <div class="btn-group flex-none">
             <abp-button id="sendEmailNotification"

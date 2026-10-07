@@ -21,7 +21,7 @@ namespace Unity.GrantManager.GrantApplications
     // too, not just SendBulk, or a user granted SendBulk alone could reach this API into a state the UI can't
     // actually support. Two stacked [Authorize] attributes compose as AND per standard ASP.NET Core semantics.
     [Authorize(NotificationsPermissions.Email.SendBulk)]
-    [Authorize(NotificationsPermissions.Email.Send)]
+    [Authorize(NotificationsPermissions.Email.Send.Default)]
     public class BulkEmailNotificationAppService(
         IApplicationRepository applicationRepository,
         IEmailLogsRepository emailLogsRepository,
