@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
+using Unity.Notifications.Emails;
 using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Form;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
@@ -56,5 +57,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
 
         /// <summary>Whether the email delay feature is enabled for this tenant.</summary>
         public bool EnableEmailDelay { get; set; }
+
+        public EmailCapabilitiesDto Capabilities { get; set; } = new();
     }
 }
