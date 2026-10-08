@@ -76,6 +76,9 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             //-- PROJECT INFO PERMISSIONS
             grantApplicationPermissionsGroup.AddApplication_ProjectInfo_Permissions();
 
+            //-- FUNDING AGREEMENT PERMISSIONS
+            grantApplicationPermissionsGroup.AddApplication_FundingAgreement_Permissions();
+
             var settingManagement = context.GetGroup(SettingManagementPermissions.GroupName);
             settingManagement.AddPermission(UnitySettingManagementPermissions.UserInterface, L("Permission:UnitySettingManagementPermissions.UserInterface"));
             settingManagement.AddPermission(UnitySettingManagementPermissions.BackgroundJobSettings, L("Permission:UnitySettingManagementPermissions.BackgroundJobs"));
@@ -159,6 +162,18 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             var upx_Project_Location                            = upx_Project.AddUnityChild(UnitySelector.Project.Location.Default);
             var upx_Project_Location_Update                     = upx_Project_Location.AddUnityChild(UnitySelector.Project.Location.Update.Default);
             var upx_Project_Location_UpdateFinalStateFields     = upx_Project_Location_Update.AddUnityChild(UnitySelector.Project.Location.Update.UpdateFinalStateFields);
+            #endregion
+        }
+
+        public static void AddApplication_FundingAgreement_Permissions(this PermissionGroupDefinition grantApplicationPermissionsGroup)
+        {
+            #region FUNDING AGREEMENT GRANULAR PERMISSIONS
+            // Tab: Funding Agreement -> Section: Contract -> Edit Contract
+            // Without Edit Contract the Contract section is read-only
+            var upx_Funding                                     = grantApplicationPermissionsGroup.AddPermission(UnitySelector.Funding.Default, L(UnitySelector.Funding.Default));
+
+            var upx_Funding_Agreement                           = upx_Funding.AddUnityChild(UnitySelector.Funding.Agreement.Default);
+            var upx_Funding_Agreement_Update                    = upx_Funding_Agreement.AddUnityChild(UnitySelector.Funding.Agreement.Update);
             #endregion
         }
 

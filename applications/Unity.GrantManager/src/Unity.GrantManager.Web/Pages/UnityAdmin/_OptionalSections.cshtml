@@ -1,0 +1,15 @@
+@model Unity.GrantManager.Web.Pages.UnityAdmin.IndexModel
+
+@if (Model.ShowAIPrompts)
+{
+    <div id="ai-prompts-div" class="input-area card mb-3 ai-prompts hide">
+        @await Html.PartialAsync("../ConfigurationManagement/_AIPrompts")
+    </div>
+}
+
+@if (Model.ShowEndpoints)
+{
+    <div id="endpoints-div" class="input-area card mb-3 endpoints hide">
+        @await Html.PartialAsync("../ConfigurationManagement/_Endpoints")
+    </div>
+}
