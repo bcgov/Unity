@@ -72,11 +72,13 @@ public class TemplateService : ApplicationService, ITemplateService
         return updatedTemplate;
     }
 
+    [Authorize]
     public async Task<List<EmailTemplate>> GetTemplatesByTenant()
     {
         var tenentId = _currentTenant.Id;
         return await _templatesRepository.GetByTenentIdAsync(tenentId);
     }
+    [Authorize]
     public async Task<EmailTemplate?> GetTemplateById(Guid id)
     {
         return await _templatesRepository.GetAsync(id);
