@@ -59,6 +59,18 @@ public class GrantManagerSettingDefinitionProvider : SettingDefinitionProvider
                 .WithProviders(TenantSettingValueProvider.ProviderName, DefaultValueSettingValueProvider.ProviderName));
 
         AddBackgroundJobSettingDefinition(context);
+
+        AddSettingDefinition(context, SettingsConstants.Retention.CleanupEnabled, "True", includeGlobalProvider: true);
+        AddSettingDefinition(
+            context,
+            SettingsConstants.Retention.AuditLogRetentionDays,
+            SettingsConstants.DefaultAuditLogRetentionDays.ToString(),
+            includeGlobalProvider: true);
+        AddSettingDefinition(
+            context,
+            SettingsConstants.Retention.ExceptionLogRetentionDays,
+            SettingsConstants.DefaultExceptionLogRetentionDays.ToString(),
+            includeGlobalProvider: true);
     }
 
     private static void AddBackgroundJobSettingDefinition(ISettingDefinitionContext currentContext)
@@ -89,10 +101,24 @@ public class GrantManagerSettingDefinitionProvider : SettingDefinitionProvider
 
     }
 
-    private static void AddSettingDefinition(ISettingDefinitionContext currentContext, string settingName, string defaultValue = "True")
+    private static void AddSettingDefinition(
+        ISettingDefinitionContext currentContext,
+        string settingName,
+        string defaultValue = "True",
+        bool includeGlobalProvider = false)
     {
         var displayName = L($"Setting:{settingName}.DisplayName");
         var description = L($"Setting:{settingName}.Description");
+
+        var providers = new List<string>
+        {
+            TenantSettingValueProvider.ProviderName,
+            DefaultValueSettingValueProvider.ProviderName
+        };
+        if (includeGlobalProvider)
+        {
+            providers.Add(GlobalSettingValueProvider.ProviderName);
+        }
 
         currentContext.Add(
             new SettingDefinition(
@@ -102,7 +128,7 @@ public class GrantManagerSettingDefinitionProvider : SettingDefinitionProvider
                 description,
                 isVisibleToClients: true,
                 isInherited: false,
-                isEncrypted: false).WithProviders(TenantSettingValueProvider.ProviderName, DefaultValueSettingValueProvider.ProviderName)
+                isEncrypted: false).WithProviders(providers.ToArray())
         );
     }
 
