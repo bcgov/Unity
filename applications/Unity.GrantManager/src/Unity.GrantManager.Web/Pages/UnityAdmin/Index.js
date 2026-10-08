@@ -3,13 +3,32 @@ $(function () {
     const defaultQuickDateRange = 'last6months';
     const FilterDesc = { Default: 'Filter', With_Filter: 'Filter*' };
     let recDt = null;
+    let auditDt = null;
     let filterData = {};
+    let auditSearchTimer = null;
 
     const UIElements = {
         reconciliationReportMenu: $('#reconciliation-report-menu-item'),
         reconciliationReportDiv: $('#reconciliation-report-div'),
         backgroundJobsMenu: $('#background-jobs-menu-item'),
         backgroundJobsDiv: $('#background-jobs-div'),
+        auditLogsMenu: $('#audit-logs-menu-item'),
+        auditLogsDiv: $('#audit-logs-div'),
+        auditLogSettingsMenu: $('#audit-log-settings-menu-item'),
+        auditLogSettingsDiv: $('#audit-log-settings-div'),
+        aiPromptsMenu: $('#ai-prompts-menu-item'),
+        aiPromptsDiv: $('#ai-prompts-div'),
+        endpointsMenu: $('#endpoints-menu-item'),
+        endpointsDiv: $('#endpoints-div'),
+        auditTable: $('#AuditLogsTable'),
+        auditSearch: $('#audit-search'),
+        auditEntityType: $('#audit-entity-type'),
+        auditChangeType: $('#audit-change-type'),
+        auditQuickDateRange: $('#audit-quick-date-range'),
+        auditCustomDateInputs: $('#audit-custom-date-inputs'),
+        auditFromDate: $('#audit-from-date'),
+        auditToDate: $('#audit-to-date'),
+        auditFilterButton: $('#audit-filter-button'),
         reconciliationTable: $('#ReconciliationTable'),
         tenantFilter: $('#ReconciliationTenantFilter'),
         quickDateRange: $('#quickDateRange'),
@@ -24,26 +43,47 @@ $(function () {
         initializeDateFilters();
         bindUIElements();
         initializeDataTable();
+        initializeAuditDateFilters();
+        initializeAuditDataTable();
+        loadAuditEntityTypes();
     }
 
     function bindUIElements() {
         UIElements.reconciliationReportMenu.on('click', menuItemClick);
         UIElements.backgroundJobsMenu.on('click', menuItemClick);
+        UIElements.auditLogsMenu.on('click', menuItemClick);
+        UIElements.auditLogSettingsMenu.on('click', menuItemClick);
+        UIElements.aiPromptsMenu.on('click', menuItemClick);
+        UIElements.endpointsMenu.on('click', menuItemClick);
         UIElements.tenantFilter.on('change', handleTenantChange);
         UIElements.quickDateRange.on('change', handleQuickDateRangeChange);
         UIElements.submittedFromDate.on('change', handleCustomDateChange);
         UIElements.submittedToDate.on('change', handleCustomDateChange);
+        UIElements.auditQuickDateRange.on('change', handleAuditQuickDateRangeChange);
+        UIElements.auditFromDate.on('change', handleAuditDateChange);
+        UIElements.auditToDate.on('change', handleAuditDateChange);
+        UIElements.auditEntityType.on('change', reloadAuditTable);
+        UIElements.auditChangeType.on('change', reloadAuditTable);
+        UIElements.auditSearch.on('input', handleAuditSearchInput);
     }
 
     // ── Side menu ──
     function removeActiveClassFromMenuItems() {
         UIElements.reconciliationReportMenu.removeClass('active');
         UIElements.backgroundJobsMenu.removeClass('active');
+        UIElements.auditLogsMenu.removeClass('active');
+        UIElements.auditLogSettingsMenu.removeClass('active');
+        UIElements.aiPromptsMenu.removeClass('active');
+        UIElements.endpointsMenu.removeClass('active');
     }
 
     function hideAllContentSections() {
         UIElements.reconciliationReportDiv.addClass('hide');
         UIElements.backgroundJobsDiv.addClass('hide');
+        UIElements.auditLogsDiv.addClass('hide');
+        UIElements.auditLogSettingsDiv.addClass('hide');
+        UIElements.aiPromptsDiv.addClass('hide');
+        UIElements.endpointsDiv.addClass('hide');
     }
 
     function menuItemClick(e) {
@@ -58,7 +98,24 @@ $(function () {
             }
         } else if ($(e.currentTarget).attr('id') === 'background-jobs-menu-item') {
             UIElements.backgroundJobsDiv.removeClass('hide');
+        } else if ($(e.currentTarget).attr('id') === 'audit-logs-menu-item') {
+            UIElements.auditLogsDiv.removeClass('hide');
+            if (auditDt) {
+                auditDt.columns.adjust().draw(false);
+            }
+        } else if ($(e.currentTarget).attr('id') === 'audit-log-settings-menu-item') {
+            UIElements.auditLogSettingsDiv.removeClass('hide');
+        } else if ($(e.currentTarget).attr('id') === 'ai-prompts-menu-item') {
+            UIElements.aiPromptsDiv.removeClass('hide');
+            adjustVisibleDataTables();
+        } else if ($(e.currentTarget).attr('id') === 'endpoints-menu-item') {
+            UIElements.endpointsDiv.removeClass('hide');
+            adjustVisibleDataTables();
         }
+    }
+
+    function adjustVisibleDataTables() {
+        $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust().draw(false);
     }
 
     function initializeDateFilters() {
@@ -132,7 +189,7 @@ $(function () {
                 serverSide: false,
                 paging: true,
                 order: [[0, 'asc']],
-                searching: true,
+                searching: false,
                 externalSearchInputId: '#search',
                 scrollX: true,
                 ajax: abp.libs.datatables.createAjax(
@@ -232,7 +289,170 @@ $(function () {
             table.search($(this).val()).draw();
         });
     }
+
+    function initializeAuditDateFilters() {
+        const range = getDateRange('last6months');
+        setAuditDateRange(range);
+        const today = formatDate(new Date());
+        UIElements.auditToDate.attr('max', today);
+        UIElements.auditFromDate.attr('max', today);
+    }
+
+    function setAuditDateRange(range) {
+        UIElements.auditFromDate.val(range?.fromDate ?? '');
+        UIElements.auditToDate.val(range?.toDate ?? '');
+    }
+
+    function getAuditDateFilters() {
+        return {
+            startTime: UIElements.auditFromDate.val() ? new Date(UIElements.auditFromDate.val()).toISOString() : null,
+            endTime: UIElements.auditToDate.val() ? new Date(`${UIElements.auditToDate.val()}T23:59:59.999`).toISOString() : null
+        };
+    }
+
+    function handleAuditQuickDateRangeChange() {
+        const selectedRange = $(this).val();
+        if (selectedRange === 'custom') {
+            UIElements.auditCustomDateInputs.show();
+        } else {
+            UIElements.auditCustomDateInputs.hide();
+            setAuditDateRange(getDateRange(selectedRange));
+        }
+        reloadAuditTable();
+    }
+
+    function handleAuditDateChange() {
+        UIElements.auditQuickDateRange.val('custom');
+        UIElements.auditCustomDateInputs.show();
+        reloadAuditTable();
+    }
+
+    function handleAuditSearchInput() {
+        clearTimeout(auditSearchTimer);
+        auditSearchTimer = setTimeout(reloadAuditTable, 300);
+    }
+
+    function reloadAuditTable() {
+        if (auditDt) {
+            auditDt.ajax.reload(null, true);
+        }
+    }
+
+    function loadAuditEntityTypes() {
+        unity.grantManager.history.auditLog.getEntityTypeFullNames(getAuditDateFilters()).then(function (types) {
+            UIElements.auditEntityType.find('option:not(:first)').remove();
+            types.forEach(function (type) {
+                UIElements.auditEntityType.append($('<option>', { value: type, text: type }));
+            });
+        });
+    }
+
+    function initializeAuditDataTable() {
+        if ($.fn.dataTable.isDataTable(UIElements.auditTable[0])) {
+            auditDt = UIElements.auditTable.DataTable();
+            return;
+        }
+
+        auditDt = UIElements.auditTable.DataTable(
+            abp.libs.datatables.normalizeConfiguration({
+                serverSide: true,
+                paging: true,
+                order: [[0, 'desc']],
+                searching: false,
+                scrollX: true,
+                ajax: abp.libs.datatables.createAjax(
+                    unity.grantManager.history.auditLog.getList,
+                    function () {
+                        const dates = getAuditDateFilters();
+                        return {
+                            startTime: dates.startTime,
+                            endTime: dates.endTime,
+                            entityTypeFullName: UIElements.auditEntityType.val() || null,
+                            changeType: UIElements.auditChangeType.val() ? Number(UIElements.auditChangeType.val()) : null,
+                            filter: UIElements.auditSearch.val() || null
+                        };
+                    }
+                ),
+                columnDefs: [
+                    { title: 'Change time', data: 'changeTime', render: formatAuditDate },
+                    { title: 'Entity', data: 'entityName', name: 'entityName', searchable: true, orderable: false, render: formatAuditEntityLink },
+                    { title: 'Property', data: 'propertyName' },
+                    { title: 'Original value', data: 'originalValue' },
+                    { title: 'New value', data: 'newValue' },
+                    { title: 'Change', data: 'changeType', render: formatChangeType },
+                    { title: 'Name', data: 'userFirstName' },
+                    { title: 'Surname', data: 'userSurname' },
+                    { title: 'Service', data: 'serviceName' },
+                    { title: 'Method', data: 'methodName' },
+                    { title: 'URL', data: 'url' }
+                ],
+                processing: true
+            })
+        );
+
+        if (typeof $.fn.dataTable.FilterRow === 'function') {
+            new $.fn.dataTable.FilterRow(auditDt.settings()[0], { // NOSONAR - False positive flag on S1848
+                buttonId: 'audit-filter-button',
+                buttonText: FilterDesc.Default,
+                buttonTextActive: FilterDesc.With_Filter,
+                enablePopover: typeof $.fn.popover !== 'undefined'
+            });
+        }
+
+    }
+
+    function formatAuditDate(data) {
+        const formattedDate = data
+            ? luxon.DateTime.fromISO(data, { locale: abp.localization.currentCulture.name }).toLocaleString(luxon.DateTime.DATETIME_MED)
+            : '';
+        return $('<span>', { class: 'audit-change-time', text: formattedDate }).prop('outerHTML');
+    }
+
+    function formatAuditEntityLink(data, renderType, row) {
+        const entityId = String(row?.entityId ?? '').trim();
+        const entityType = String(row?.entityTypeFullName ?? '');
+        const entityName = String(data ?? row?.entityName ?? '').trim() || getAuditEntityName(entityType);
+        if (!entityId) {
+            return $('<span>', { text: entityName }).prop('outerHTML');
+        }
+
+        if (entityId.toLowerCase() === '00000000-0000-0000-0000-000000000000') {
+            return $('<span>', { text: entityName }).prop('outerHTML');
+        }
+
+        let href = String(row?.entityUrl ?? '').trim() || null;
+
+        if (!href && entityType.endsWith('.Applicant')) {
+            href = '/Applicants/Details?ApplicantId=' + encodeURIComponent(entityId);
+        }
+
+        if (!href) {
+            return $('<span>', {
+                text: entityName,
+                title: entityId
+            }).prop('outerHTML');
+        }
+
+        return $('<a>', {
+            href: href,
+            text: entityName,
+            title: entityType
+        }).prop('outerHTML');
+    }
+
 });
+
+function formatChangeType(data) {
+    return ['Created', 'Updated', 'Deleted'][data] ?? data;
+}
+
+function getAuditEntityName(entityType) {
+    const shortName = entityType.split('.').pop() || 'Entity';
+    return shortName
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
+        .replace(/Dto$/, '')
+        .trim();
+}
 
 function formatDate(date) {
     let year = date.getFullYear();

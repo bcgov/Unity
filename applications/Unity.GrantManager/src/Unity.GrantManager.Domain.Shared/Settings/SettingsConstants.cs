@@ -8,6 +8,16 @@
         public const string EconomicRegionsCacheKey = "EconomicRegionCache";
         public const string CommunitiesCacheKey = "CommunitiesCache";
         public const double DefaultLocalityCacheHours = 48;
+        public const int IndefiniteRetentionDays = 0;
+        public const int DefaultAuditLogRetentionDays = 730;
+        public const int DefaultExceptionLogRetentionDays = 90;
+
+        public static class Retention
+        {
+            public const string CleanupEnabled = "GrantManager.Retention.CleanupEnabled";
+            public const string AuditLogRetentionDays = "GrantManager.Retention.AuditLogRetentionDays";
+            public const string ExceptionLogRetentionDays = "GrantManager.Retention.ExceptionLogRetentionDays";
+        }
 
         public static class ApplicantPortal
         {

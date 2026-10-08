@@ -86,7 +86,7 @@
         reorderEnabled: false,
         languageSetValues: {},
         dataTableName: 'EndpointsTable',
-        dynamicButtonContainerId: 'dynamicButtonContainerId',
+        dynamicButtonContainerId: $('#endpoints-dynamic-buttons').length ? 'endpoints-dynamic-buttons' : 'dynamicButtonContainerId',
         useNullPlaceholder: true,
         externalSearchId: 'search-endpoints',
         fixedHeaders: true

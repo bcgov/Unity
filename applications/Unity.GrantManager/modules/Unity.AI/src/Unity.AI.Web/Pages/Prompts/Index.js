@@ -100,7 +100,7 @@ $(function () {
         reorderEnabled: false,
         languageSetValues: {},
         dataTableName: 'AIPromptsTable',
-        dynamicButtonContainerId: 'dynamicButtonContainerId',
+        dynamicButtonContainerId: $('#ai-prompts-dynamic-buttons').length ? 'ai-prompts-dynamic-buttons' : 'dynamicButtonContainerId',
         useNullPlaceholder: true,
         externalSearchId: 'search-prompts',
         fixedHeaders: true

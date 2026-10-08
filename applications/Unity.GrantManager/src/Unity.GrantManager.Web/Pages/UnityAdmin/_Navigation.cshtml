@@ -1,0 +1,30 @@
+@model Unity.GrantManager.Web.Pages.UnityAdmin.IndexModel
+
+<div id="UnityAdminSideMenu" class="side-menu">
+    <ul>
+        <li id="reconciliation-report-menu-item" class="nav-item btn btn-nav active">
+            Reconciliation Report
+        </li>
+        <li id="background-jobs-menu-item" class="nav-item btn btn-nav">
+            Background Jobs
+        </li>
+        <li id="audit-logs-menu-item" class="nav-item btn btn-nav">
+            Audit Logs
+        </li>
+        <li id="audit-log-settings-menu-item" class="nav-item btn btn-nav">
+            Retention Settings
+        </li>
+        @if (Model.ShowAIPrompts)
+        {
+            <li id="ai-prompts-menu-item" class="nav-item btn btn-nav">
+                AI Prompts
+            </li>
+        }
+        @if (Model.ShowEndpoints)
+        {
+            <li id="endpoints-menu-item" class="nav-item btn btn-nav">
+                Endpoints
+            </li>
+        }
+    </ul>
+</div>

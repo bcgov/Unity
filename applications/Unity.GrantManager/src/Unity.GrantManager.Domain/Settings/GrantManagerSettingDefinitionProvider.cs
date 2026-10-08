@@ -59,6 +59,16 @@ public class GrantManagerSettingDefinitionProvider : SettingDefinitionProvider
                 .WithProviders(TenantSettingValueProvider.ProviderName, DefaultValueSettingValueProvider.ProviderName));
 
         AddBackgroundJobSettingDefinition(context);
+
+        AddSettingDefinition(context, SettingsConstants.Retention.CleanupEnabled, "True");
+        AddSettingDefinition(
+            context,
+            SettingsConstants.Retention.AuditLogRetentionDays,
+            SettingsConstants.DefaultAuditLogRetentionDays.ToString());
+        AddSettingDefinition(
+            context,
+            SettingsConstants.Retention.ExceptionLogRetentionDays,
+            SettingsConstants.DefaultExceptionLogRetentionDays.ToString());
     }
 
     private static void AddBackgroundJobSettingDefinition(ISettingDefinitionContext currentContext)

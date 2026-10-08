@@ -1,0 +1,60 @@
+@model Unity.GrantManager.Web.Pages.UnityAdmin.IndexModel
+
+<div id="audit-logs-div" class="input-area card mb-3 audit-logs hide">
+    <div class="container-fluid px-0">
+        <div class="unity-page-titlebar">
+            <h4>Audit Logs</h4>
+        </div>
+        <div class="reconciliation-filter-row">
+            <div class="reconciliation-filter-inputs gap-3 px-1">
+                <div>
+                    <label class="form-label tbl-search-label" for="audit-search">Search</label>
+                    <input type="search" id="audit-search" placeholder="Search" aria-label="Search audit logs" class="tbl-search">
+                </div>
+                <div>
+                    <label class="form-label" for="audit-entity-type">Entity</label>
+                    <select id="audit-entity-type" class="form-control">
+                        <option value="">All entities</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label" for="audit-change-type">Change</label>
+                    <select id="audit-change-type" class="form-control">
+                        <option value="">All changes</option>
+                        <option value="0">Created</option>
+                        <option value="1">Updated</option>
+                        <option value="2">Deleted</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label" for="audit-quick-date-range">Date range</label>
+                    <select id="audit-quick-date-range" class="form-control quick-date-input">
+                        <option value="today">Today</option>
+                        <option value="last7days">Last 7 days</option>
+                        <option value="last30days">Last 30 days</option>
+                        <option value="last3months">Last 3 months</option>
+                        <option value="last6months" selected>Last 6 months</option>
+                        <option value="alltime">All time</option>
+                        <option value="custom">Custom range</option>
+                    </select>
+                </div>
+                <div id="audit-custom-date-inputs" class="custom-date-range-container-div" style="display:none;">
+                    <div class="date-input-filter-div px-1">
+                        <label class="form-label" for="audit-from-date">From</label>
+                        <input type="date" id="audit-from-date" class="form-control input-sm date-input-filter" min="1900-01-01">
+                    </div>
+                    <div class="date-input-filter-div px-1">
+                        <label class="form-label" for="audit-to-date">To</label>
+                        <input type="date" id="audit-to-date" class="form-control input-sm date-input-filter" min="1900-01-01">
+                    </div>
+                </div>
+            </div>
+            <div class="reconciliation-filter-buttons d-flex align-items-center">
+                <button id="audit-filter-button" type="button" class="custom-table-btn flex-none btn btn-secondary">Filter</button>
+            </div>
+        </div>
+        <div class="application-scrollable-content p-3">
+            <abp-table id="AuditLogsTable"></abp-table>
+        </div>
+    </div>
+</div>
