@@ -108,7 +108,7 @@ public class EmailNotificationService(
         await notificationAppService.PostToNotificationsAsync(activityTitle, activitySubtitle);
     }
 
-    public Task<string> GetBaseUrlAsync()
+    private Task<string> GetBaseUrlAsync()
     {
         var selfUrl = configuration["App:SelfUrl"];
         
