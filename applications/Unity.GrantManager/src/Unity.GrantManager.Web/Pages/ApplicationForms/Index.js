@@ -82,7 +82,7 @@
     $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn flex-none';
     let actionButtons = [
         {
-            text: '<i class="fl fl-add-to align-middle"></i> <span>' + l('Common:Command:Create') + '</span>',
+            text: '<i class="fa-solid fa-circle-plus align-middle"></i> <span>' + l('Common:Command:Create') + '</span>',
             titleAttr: l('Common:Command:Create'),
             id: 'CreateApplicationFormButton',
             className: 'btn-light rounded-1',
@@ -90,7 +90,7 @@
         },
         {
             extend: 'collection',
-            text: '<i class="fl fl-settings align-middle"></i> <span>' + l('ApplicationForms:APIConfiguration') + '</span>',
+            text: '<i class="fa-solid fa-gear align-middle"></i> <span>' + l('ApplicationForms:APIConfiguration') + '</span>',
             titleAttr: l('ApplicationForms:APIConfiguration'),
             id: 'FormsManageDropdown',
             className: 'btn-light rounded-1',

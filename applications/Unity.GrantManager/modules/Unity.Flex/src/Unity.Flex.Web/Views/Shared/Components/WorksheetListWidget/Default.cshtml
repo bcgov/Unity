@@ -22,10 +22,10 @@
                         <span class="flex-grow-1 text-start">
                             <span id="worksheet-title-@worksheet.Id" class="worksheet-title">@worksheet.Title</span>
                             (<span id="worksheet-name-@worksheet.Id" class="worksheet-name">@worksheet.Name</span>)
-                            <i id="worksheet-published-@worksheet.Id" class="worksheet-published-icon fl fl-upload @(@worksheet.Published ? "" : "hidden")"></i>
+                            <i id="worksheet-published-@worksheet.Id" class="worksheet-published-icon fa-solid fa-upload @(@worksheet.Published ? "" : "hidden")"></i>
                             @if (worksheet.IsArchived)
                             {
-                                <i class="fl fl-folder"></i>
+                                <i class="fa-solid fa-box-archive"></i>
                             }                            
                         </span>
                         <div class="text-end d-flex align-items-center custom-field-count-info">

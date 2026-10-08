@@ -12,7 +12,7 @@ namespace Unity.Reporting.Web.Pages.ReportingAdmin.Configuration
     /// Razor Page model for the Database Information modal dialog.
     /// Displays database roles and reporting views for a specific tenant.
     /// </summary>
-    [Authorize(IdentityConsts.ITAdminPermissionName)]
+    [Authorize(IdentityConsts.ITAdminOrITOperationsPolicyName)]
     public class DatabaseInfoModalModel : ReportingPageModel
     {
         private readonly ITenantViewRoleAppService _tenantViewRoleAppService;

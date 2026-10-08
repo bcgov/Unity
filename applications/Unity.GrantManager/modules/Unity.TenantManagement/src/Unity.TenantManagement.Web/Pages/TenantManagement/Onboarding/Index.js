@@ -154,7 +154,7 @@
 
         const cacheKey = 'dg-' + (_dataGridCacheId++);
         _dataGridCache[cacheKey] = { grid: parsed, title: columnTitle };
-        return '<button type="button" class="btn btn-icon btn-sm onboarding-datagrid-btn" data-datagrid-key="' + cacheKey + '" title="' + l('Onboarding:ViewDataGrid') + '"><i class="fl fl-datagrid"></i></button>';
+        return '<button type="button" class="btn btn-icon btn-sm onboarding-datagrid-btn" data-datagrid-key="' + cacheKey + '" title="' + l('Onboarding:ViewDataGrid') + '"><i class="fa-solid fa-table-cells"></i></button>';
     }
 
     function _openDataGridModal(grid, title) {
@@ -351,7 +351,7 @@
         $('#onboarding-validation-loading').addClass('d-none');
         if (result.isValid) {
             $('#onboarding-validation-result')
-                .html('<div class="alert alert-success mb-0"><i class="fl fl-check me-1"></i> ' + l('OnboardingModal:ValidationPassed') + '</div>')
+                .html('<div class="alert alert-success mb-0"><i class="fa-solid fa-check me-1"></i> ' + l('OnboardingModal:ValidationPassed') + '</div>')
                 .removeClass('d-none');
             $('#btn-confirm-create-tenant').prop('disabled', false);
         } else {

@@ -1,12 +1,5 @@
 ﻿/** UNITY based custom styles */
 
-@font-face {
-    font-family: 'Segoe-Fluent-Icons';
-    src: url('fonts/icons/Segoe-MDL2-Assets.ttf') format('truetype');
-    font-weight: 400;
-    font-style: normal;
-}
-
 :root {
     /* bc style colors */
     --bc-colors-grey-text-500: #313131;
@@ -351,10 +344,6 @@ thead input {
         border: 1px solid var(--bc-colors-blue-background, #38598A);
     }
 
-.fl-remove-friend:before {
-    content: '\E8F8';
-}
-
 .grey-background {
     background-color: var(--bc-colors-white-background) !important;
 }
@@ -379,40 +368,6 @@ td.dt-editable {
         background-color: #e6eff7;
         color: var(--bc-colors-blue-primary-500);
     }
-
-    td.dt-editable:before {
-        font-family: 'Segoe-Fluent-Icons', sans-serif;
-        font-weight: 100;
-        font-style: normal;
-        font-size: 11px;
-        right: 2px;
-        margin-right: 4px;
-        margin-left: -8px;
-        color: var(--bc-colors-blue-background, #38598A);
-    }
-
-    td.dt-editable:not(:has(span)):before {
-        content: '\E70F';
-    }
-
-.clear-icon:before {
-    content: '\E8BB';
-    color: var(--bc-colors-white-primary-500, #FFF);
-    font-family: 'Segoe-Fluent-Icons', sans-serif;
-    font-size: 9px;
-    padding: 0px;
-    padding-bottom: 14px;
-    text-align: center;
-    height: 16px;
-    width: 16px;
-    font-weight: 400;
-    background-color: var(--bc-colors-blue-background, #38598A);
-    border: 1px solid #1A5A96;
-    border-radius: 17px;
-    cursor: pointer;
-    margin: auto;
-    float: right;
-}
 
 .select-checkbox {
     border-radius: 8px;
@@ -463,10 +418,6 @@ td.dt-editable {
     margin: auto;
 }
 
-th .fl-filter {
-    width: 45px;
-}
-
 tr.selected td div.select-checkbox {
     background: var(--bc-colors-blue-background, #38598A);
 }
@@ -509,10 +460,6 @@ tr.filter th.sorting_asc:after {
 
 th #btn-toggle-filter-heading {
     display: none;
-}
-
-.fl-left {
-    margin-right: 8px;
 }
 
 

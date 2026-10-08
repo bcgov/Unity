@@ -37,6 +37,23 @@ $(document).ready(function () {
         scheduleDeferredLayoutPass();
     });
 
+    TabUtils.initialize({
+        entityType: 'applicant',
+        entityId: $('#DetailsViewApplicantId').val(),
+        groups: [
+            {
+                id: 'left',
+                tabListSelector: '#detailsTab > .nav-tabs',
+                contentSelector: '#detailsTabContent'
+            },
+            {
+                id: 'right',
+                tabListSelector: '#main-right .details-nav',
+                contentSelector: '#myTabContent'
+            }
+        ]
+    });
+
     // Add event listeners for tab clicks to adjust DataTables
     $('#detailsTab > .nav-tabs > li').on('click', function () {
         debouncedAdjustTables('detailsTab');

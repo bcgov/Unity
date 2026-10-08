@@ -50,6 +50,14 @@ public class GrantManagerSettingDefinitionProvider : SettingDefinitionProvider
                 FormSettingValueProvider.ProviderName)
         );
 
+        context.Add(
+            new SettingDefinition(SettingsConstants.ApplicantPortal.UseDefaultMultipleIdentitiesMessage, "True",
+                isVisibleToClients: false, isInherited: false)
+                .WithProviders(TenantSettingValueProvider.ProviderName, DefaultValueSettingValueProvider.ProviderName),
+            new SettingDefinition(SettingsConstants.ApplicantPortal.MultipleIdentitiesMessageHtml, string.Empty,
+                isVisibleToClients: false, isInherited: false)
+                .WithProviders(TenantSettingValueProvider.ProviderName, DefaultValueSettingValueProvider.ProviderName));
+
         AddBackgroundJobSettingDefinition(context);
     }
 

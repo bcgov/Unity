@@ -119,7 +119,7 @@ $(function () {
                     let $editBtn = $('<button>')
                         .addClass('btn btn-sm edit-button px-0 funding-edit-btn')
                         .attr({ 'type': 'button', 'aria-label': 'Edit', 'title': 'Edit' })
-                        .append($('<i>').addClass('fl fl-edit'));
+                        .append($('<i>').addClass('fa-solid fa-pencil'));
 
                     let $deleteBtn = $('<button>')
                         .addClass('btn btn-link p-0 funding-delete-btn')
@@ -153,7 +153,7 @@ $(function () {
                     let $editBtn = $('<button>')
                         .addClass('btn btn-sm edit-button px-0 issue-edit-btn')
                         .attr({ 'type': 'button', 'aria-label': 'Edit', 'title': 'Edit' })
-                        .append($('<i>').addClass('fl fl-edit'));
+                        .append($('<i>').addClass('fa-solid fa-pencil'));
 
                     let $deleteBtn = $('<button>')
                         .addClass('btn btn-link p-0 issue-delete-btn')
@@ -199,7 +199,7 @@ $(function () {
                     let $editBtn = $('<button>')
                         .addClass('btn btn-sm edit-button px-0 audit-edit-btn')
                         .attr({ 'type': 'button', 'aria-label': 'Edit', 'title': 'Edit' })
-                        .append($('<i>').addClass('fl fl-edit'));
+                        .append($('<i>').addClass('fa-solid fa-pencil'));
 
                     let $deleteBtn = $('<button>')
                         .addClass('btn btn-link p-0 audit-delete-btn')
@@ -244,7 +244,7 @@ $(function () {
                     let $editBtn = $('<button>')
                         .addClass('btn btn-sm edit-button px-0 reports-edit-btn')
                         .attr({ 'type': 'button', 'aria-label': 'Edit', 'title': 'Edit' })
-                        .append($('<i>').addClass('fl fl-edit'));
+                        .append($('<i>').addClass('fa-solid fa-pencil'));
 
                     let $deleteBtn = $('<button>')
                         .addClass('btn btn-link p-0 reports-delete-btn')
