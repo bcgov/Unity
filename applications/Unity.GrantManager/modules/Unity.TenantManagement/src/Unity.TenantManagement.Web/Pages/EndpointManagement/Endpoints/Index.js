@@ -1,4 +1,8 @@
 (function () {
+    if ($('#EndpointsTable').length === 0) {
+        return;
+    }
+
     const l = abp.localization.getResource('GrantManager');
     let createModal = new abp.ModalManager(abp.appPath + 'EndpointManagement/Endpoints/CreateModal');
     let updateModal = new abp.ModalManager(abp.appPath + 'EndpointManagement/Endpoints/UpdateModal');

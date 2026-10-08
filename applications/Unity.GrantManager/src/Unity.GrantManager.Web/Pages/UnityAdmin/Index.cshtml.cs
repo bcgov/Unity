@@ -13,7 +13,7 @@ using Volo.Abp.Settings;
 
 namespace Unity.GrantManager.Web.Pages.UnityAdmin
 {
-    [Authorize(IdentityConsts.ITOperationsPolicyName)]
+    [Authorize(IdentityConsts.ITAdminOrITOperationsPolicyName)]
     public partial class IndexModel(
         IUserTenantAppService userTenantAppService,
         ICurrentTenant currentTenant,

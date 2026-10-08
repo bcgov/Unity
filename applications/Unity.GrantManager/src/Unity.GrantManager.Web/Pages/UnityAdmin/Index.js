@@ -189,7 +189,7 @@ $(function () {
                 serverSide: false,
                 paging: true,
                 order: [[0, 'asc']],
-                searching: false,
+                searching: true,
                 externalSearchInputId: '#search',
                 scrollX: true,
                 ajax: abp.libs.datatables.createAjax(
