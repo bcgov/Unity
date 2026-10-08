@@ -94,6 +94,7 @@ public class TemplateService : ApplicationService, ITemplateService
         return data;
     } 
     
+    [Authorize]
     public Task<List<string>> GetTemplateTypes()
     {
         return Task.FromResult(new List<string>
@@ -103,6 +104,7 @@ public class TemplateService : ApplicationService, ITemplateService
         });
     }
 
+    [Authorize]
     public async Task<List<TemplateVariable>> GetTemplateVariables(string? templateType = null)
     {
         var selectedType = NormalizeTemplateType(templateType);
