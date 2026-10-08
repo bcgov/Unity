@@ -76,6 +76,7 @@ public class EmailNotificationService(
         await emailNotificationManager.CancelEmailLogAsync(id);
     }
 
+    [RemoteService(false)]
     public async Task<int> GetEmailsChesWithNoResponseCountAsync()
     {
         return await emailNotificationManager.GetPendingEmailsCountAsync();
