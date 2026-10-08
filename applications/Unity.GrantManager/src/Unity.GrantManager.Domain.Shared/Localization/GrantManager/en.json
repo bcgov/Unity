@@ -822,6 +822,15 @@
     "WrongTenantError:CurrentTenant": "You are currently in Tenant: {0}",
     "WrongTenantError:Instructions": "Please click on the Profile menu at the top right of the corner, click on Switch Grant Programs, and select the correct Tenant before proceeding to view the link.",
     "WrongTenantError:ApplicantNotFoundPossibleTenant": "This applicant was not found in the current Tenant and may exist in another Tenant.",
-    "WrongTenantError:ApplicationNotFoundPossibleTenant": "This application was not found in the current Tenant and may exist in another Tenant."
+    "WrongTenantError:ApplicationNotFoundPossibleTenant": "This application was not found in the current Tenant and may exist in another Tenant.",
+    "Reconciliation:Reconcile": "Reconcile",
+    "Reconciliation:SelectSubmission": "Select Submission",
+    "Reconciliation:ConfirmReconcile": "Retrieve the {0} selected submission(s) from CHEFS and create them in Unity?",
+    "Reconciliation:Reconciled": "Reconciled {0} submission(s): {1}",
+    "Reconciliation:NotReconciled": "Could not reconcile {0} submission(s): {1}",
+    "Reconciliation:NothingReconciled": "No submissions were reconciled.",
+    "Reconciliation:AlreadyInUnity": "Submission already exists in Unity",
+    "Reconciliation:TenantNotFound": "Tenant not found",
+    "Reconciliation:Failed": "Reconciliation failed. See logs for details."
   }
 }

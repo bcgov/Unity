@@ -16,6 +16,7 @@ $(function () {
         customDateInputs: $('#customDateInputs'),
         submittedFromDate: $('#submittedFromDate'),
         submittedToDate: $('#submittedToDate'),
+        reconcileButton: $('#btn-reconcile'),
     };
 
     init();
@@ -33,6 +34,85 @@ $(function () {
         UIElements.quickDateRange.on('change', handleQuickDateRangeChange);
         UIElements.submittedFromDate.on('change', handleCustomDateChange);
         UIElements.submittedToDate.on('change', handleCustomDateChange);
+        UIElements.reconcileButton.on('click', handleReconcileClick);
+        $(document).on('click', '.select-all-reconciliation', function () {
+            if ($(this).is(':checked')) {
+                recDt.rows({ page: 'current', search: 'applied' }).select();
+            } else {
+                recDt.rows({ page: 'current', search: 'applied' }).deselect();
+            }
+        });
+    }
+
+    // ── Reconcile ──
+    function syncSelectionState() {
+        const selectedCount = recDt.rows({ selected: true }).count();
+        const pageRows = recDt.rows({ page: 'current', search: 'applied' });
+        const pageSelectedCount = recDt.rows({ page: 'current', search: 'applied', selected: true }).count();
+
+        UIElements.reconcileButton.prop('disabled', selectedCount === 0);
+        $('.select-all-reconciliation').prop('checked', pageRows.count() > 0 && pageSelectedCount === pageRows.count());
+    }
+
+    function setRowCheckboxes(indexes, checked) {
+        indexes.forEach(index => {
+            $(recDt.row(index).node()).find('.chkbox').prop('checked', checked);
+        });
+    }
+
+    function handleReconcileClick() {
+        const selected = recDt.rows({ selected: true }).data().toArray();
+        if (selected.length === 0) {
+            return;
+        }
+
+        abp.message.confirm(l('Reconciliation:ConfirmReconcile', selected.length), null, function (confirmed) {
+            if (confirmed) {
+                reconcileSubmissions(selected);
+            }
+        });
+    }
+
+    function reconcileSubmissions(rows) {
+        const input = {
+            tenantName: UIElements.tenantFilter.val(),
+            submissions: rows.map(row => ({
+                submissionId: row.submissionId,
+                formId: row.formId,
+                formVersionId: row.formVersionId,
+                confirmationId: row.confirmationId
+            }))
+        };
+
+        abp.ui.setBusy('#reconciliation-report-div');
+        unity.grantManager.intakes.submission.reconcileSubmissions(input)
+            .then(showReconcileResults)
+            .always(function () {
+                abp.ui.clearBusy('#reconciliation-report-div');
+                runRecTableReload();
+            });
+    }
+
+    function showReconcileResults(results) {
+        const reconciled = results.filter(r => r.success);
+        const failed = results.filter(r => !r.success);
+
+        if (reconciled.length > 0) {
+            abp.notify.success(
+                l('Reconciliation:Reconciled', reconciled.length, reconciled.map(r => r.confirmationId).join(', '))
+            );
+        }
+
+        if (failed.length > 0) {
+            abp.notify.warn(
+                l('Reconciliation:NotReconciled', failed.length,
+                    failed.map(r => r.confirmationId + ' (' + r.message + ')').join(', '))
+            );
+        }
+
+        if (reconciled.length === 0 && failed.length === 0) {
+            abp.notify.info(l('Reconciliation:NothingReconciled'));
+        }
     }
 
     // ── Side menu ──
@@ -131,8 +211,12 @@ $(function () {
             abp.libs.datatables.normalizeConfiguration({
                 serverSide: false,
                 paging: true,
-                order: [[0, 'asc']],
+                order: [[1, 'asc']],
                 searching: true,
+                select: {
+                    style: 'multiple',
+                    selector: 'td'
+                },
                 externalSearchInputId: '#search',
                 scrollX: true,
                 ajax: abp.libs.datatables.createAjax(
@@ -148,6 +232,7 @@ $(function () {
                     }
                 ),
                 columnDefs: [
+                    getSelectColumn(l('Reconciliation:SelectSubmission'), 'submissionId', 'reconciliation'),
                     {
                         title: l('Submission #'),
                         data: 'confirmationId',
@@ -226,6 +311,22 @@ $(function () {
                 enablePopover: $.fn.popover !== 'undefined'
             });
         }
+
+        recDt.on('select', function (e, dt, type, indexes) {
+            if (type === 'row') {
+                setRowCheckboxes(indexes, true);
+                syncSelectionState();
+            }
+        });
+
+        recDt.on('deselect', function (e, dt, type, indexes) {
+            if (type === 'row') {
+                setRowCheckboxes(indexes, false);
+                syncSelectionState();
+            }
+        });
+
+        recDt.on('draw', syncSelectionState);
 
         $('#search').on('input', function () {
             let table = $('#ReconciliationTable').DataTable();

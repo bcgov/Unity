@@ -152,7 +152,7 @@ Only then does it open a transactional unit of work and hand off to the mapper.
 
 | Service | Role |
 |---|---|
-| `SubmissionAppService` | Reads a submission from CHEFS on demand; lists submissions per form across tenants for admin screens; serves CHEFS file attachments |
+| `SubmissionAppService` | Reads a submission from CHEFS on demand; lists submissions per form across tenants for admin screens; re-runs intake for selected missing submissions (`ReconcileSubmissionsAsync`, ITOperations only — the Unity Admin Reconciliation tab); serves CHEFS file attachments |
 | `ChefsAttachmentDownloadService` | Downloads attachment content from CHEFS |
 | `ApplicantLookupService` | Resolves an applicant by Unity applicant id or BCeID business name, optionally creating one — used by the applicant portal |
 | `ApplicationIntakeAdminService` | Administrative intake operations |
