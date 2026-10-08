@@ -7,6 +7,8 @@ namespace Unity.Flex.Domain.Scoresheets
 {
     public interface IScoresheetRepository : IBasicRepository<Scoresheet, Guid>
     {
+        Task<List<Scoresheet>> GetListByIdsAsync(IReadOnlyCollection<Guid> ids);
+        Task<List<Scoresheet>> GetListByNameAsync(string filter);
         public Task<List<Scoresheet>> GetListWithChildrenAsync();
         public Task<List<Scoresheet>> GetPublishedListAsync();
         public Task<Scoresheet?> GetWithChildrenAsync(Guid id);

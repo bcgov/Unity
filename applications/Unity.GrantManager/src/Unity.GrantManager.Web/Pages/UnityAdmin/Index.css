@@ -3,8 +3,9 @@
 }
 
 #reconciliation-report-div {
-    width:70%;
-    min-width:700px;
+    width: calc(100% - 221px);
+    min-width: 0;
+    margin-left: 221px;
 }
 
 .reconciliation-report {
@@ -12,8 +13,54 @@
 }
 
 #background-jobs-div {
-    width:70%;
-    min-width:700px;
+    width: calc(100% - 221px);
+    min-width: 0;
+    margin-left: 221px;
+}
+
+#audit-logs-div,
+#ai-prompts-div,
+#endpoints-div {
+    width: calc(100% - 221px);
+    min-width: 0;
+    max-width: none;
+    margin-left: 221px;
+    flex: none;
+}
+
+#audit-log-settings-div {
+    width: calc(100% - 221px);
+    min-width: 0;
+    margin-left: 221px;
+}
+
+#audit-logs-div {
+    margin-left: 221px;
+    padding-left: 0;
+    padding-right: 0;
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 0;
+    min-width: 0;
+    width: auto;
+    max-height: none;
+}
+
+#audit-logs-div .reconciliation-filter-buttons {
+    align-items: flex-end !important;
+    margin-left: auto;
+    padding-top: 10px;
+}
+
+#audit-filter-button {
+    margin-top: 0 !important;
+    align-self: flex-end;
+}
+
+.audit-change-time {
+    display: inline-block;
+    white-space: normal;
+    min-width: 9rem;
 }
 
 .background-jobs {
@@ -68,6 +115,8 @@
 
 .reconciliation-filter-row {
     display: flex;
+    gap: 1rem;
+    align-items: center;
 }
 
 .reconciliation-filter-inputs {
@@ -76,6 +125,8 @@
 
 .reconciliation-filter-buttons {
     display: flex;
+    align-items: center !important;
+    margin-left: auto;
 }
 
 label {
@@ -91,6 +142,15 @@ label {
     display:block;
 }
 
+.tbl-search-label {
+    position: static;
+    display: block;
+    width: auto;
+    height: auto;
+    margin-bottom: 0;
+    visibility: hidden;
+}
+
 .abp-application-layout {
     overflow-y: scroll;
 }
@@ -103,4 +163,46 @@ label {
 
 #btn-toggle-filter {
     margin-right:10px;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+@media (max-width: 900px) {
+    #UnityAdminSideMenu.side-menu {
+        float: none;
+        position: static;
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+
+    #UnityAdminSideMenu ul {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+
+    #UnityAdminSideMenu li {
+        flex: 1 1 180px;
+    }
+
+    #reconciliation-report-div,
+    #background-jobs-div,
+    #audit-logs-div,
+    #ai-prompts-div,
+    #endpoints-div,
+    #audit-log-settings-div {
+        width: 100%;
+        max-width: 100%;
+        margin-left: 0;
+    }
+
+    #audit-logs-div {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .reconciliation-filter-row,
+    .reconciliation-filter-inputs {
+        flex-wrap: wrap;
+    }
 }

@@ -109,16 +109,6 @@ public class GrantManagerMenuContributor : IMenuContributor
             ).ExcludeWhenSpecializations(SpecializationConsts.Onboarding)
         );
 
-        // Displayed in the Grant Manager - Used at Tenant Level for ITAdmin/ITOperations users
-        await context.AddItemAsync(
-            new ApplicationMenuItem(
-                GrantManagerMenus.EndpointManagement,
-                displayName: "Endpoints",
-                "~/EndpointManagement/Endpoints"
-            ).ExcludeWhenSpecializations(SpecializationConsts.Onboarding)
-            .OnlyWhenInRole(IdentityConsts.ITAdminRoleName, IdentityConsts.ITOperationsRoleName)
-        );
-
         // ********************
         // Admin - Tenant Management
         await context.AddItemAsync(

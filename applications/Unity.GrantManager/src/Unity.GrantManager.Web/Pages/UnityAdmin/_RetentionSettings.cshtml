@@ -1,0 +1,68 @@
+@model Unity.GrantManager.Web.Pages.UnityAdmin.IndexModel
+
+<div id="audit-log-settings-div" class="input-area card mb-3 audit-log-settings hide">
+    <div class="container-fluid px-0">
+        <div class="unity-page-titlebar">
+            <h4>General</h4>
+        </div>
+        <form method="post" asp-page-handler="Retention">
+            <div class="p-3">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <div class="form-check mb-2">
+                    <input asp-for="RetentionCleanupEnabled" class="form-check-input" />
+                    <label asp-for="RetentionCleanupEnabled" class="form-check-label">Enable clean up service</label>
+                </div>
+                <p class="text-muted">If this option is enabled, expired audit and exception logs are deleted automatically.</p>
+                <div class="row align-items-center g-2 mb-2">
+                    <div class="col-auto">
+                        <label asp-for="AuditLogRetentionDays" class="form-label mb-0">Audit log retention period</label>
+                    </div>
+                    <div class="col-auto">
+                        <input asp-for="AuditLogRetentionDays" class="form-control" min="1" max="36500" style="width: 120px;" />
+                        <span asp-validation-for="AuditLogRetentionDays" class="text-danger"></span>
+                    </div>
+                    <div class="col-auto">day(s)</div>
+                </div>
+                <div class="form-check mb-2">
+                    <input asp-for="AuditLogRetentionIndefinite" class="form-check-input" />
+                    <label asp-for="AuditLogRetentionIndefinite" class="form-check-label">Retain audit logs indefinitely</label>
+                </div>
+                @if (Model.AuditLogRetentionIndefinite)
+                {
+                    <p class="text-muted fst-italic">Audit logs will be retained indefinitely.</p>
+                }
+                else
+                {
+                    <p class="text-muted fst-italic">Audit logs before @Model.AuditLogCutoffDate?.ToString("M/d/yyyy") will be deleted.</p>
+                }
+                <div class="row align-items-center g-2 mb-2">
+                    <div class="col-auto">
+                        <label asp-for="ExceptionLogRetentionDays" class="form-label mb-0">Exception log retention period</label>
+                    </div>
+                    <div class="col-auto">
+                        <input asp-for="ExceptionLogRetentionDays" class="form-control" min="1" max="36500" style="width: 120px;" />
+                        <span asp-validation-for="ExceptionLogRetentionDays" class="text-danger"></span>
+                    </div>
+                    <div class="col-auto">day(s)</div>
+                </div>
+                <div class="form-check mb-2">
+                    <input asp-for="ExceptionLogRetentionIndefinite" class="form-check-input" />
+                    <label asp-for="ExceptionLogRetentionIndefinite" class="form-check-label">Retain exception logs indefinitely</label>
+                </div>
+                @if (Model.ExceptionLogRetentionIndefinite)
+                {
+                    <p class="text-muted fst-italic">Exception logs will be retained indefinitely.</p>
+                }
+                else
+                {
+                    <p class="text-muted fst-italic">Exception logs before @Model.ExceptionLogCutoffDate?.ToString("M/d/yyyy") will be deleted.</p>
+                }
+            </div>
+            <div class="border-top p-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fl fl-save me-1"></i>Save
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
