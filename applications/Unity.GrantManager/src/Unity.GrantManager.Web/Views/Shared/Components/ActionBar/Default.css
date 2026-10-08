@@ -15,8 +15,9 @@
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-end;
-    align-items: center;
+    align-items: flex-end;
     row-gap: 6px;
+    padding-bottom: 0 !important;
 }
 
 .search-action-bar_search-wrapper {
@@ -25,13 +26,26 @@
 }
 
 #app_custom_buttons {
+    display: flex;
+    align-items: flex-end;
+    width: auto;
     flex-shrink: 0;
+    min-height: 44px;
 }
 
 #dynamicButtonContainerId {
+    width: auto;
     flex-shrink: 0;
     display: flex;
     align-items: flex-end;
+    align-self: flex-end;
+}
+
+#app_custom_buttons #btn-toggle-filter {
+    height: 44px;
+    min-height: 44px;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
 }
 
 .action-bar-btn-unavailable {
