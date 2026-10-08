@@ -14,7 +14,7 @@ The module's own web project is small — a prompts admin area, an embedded repo
 if (!await specializationChecker.IsEnabledAsync(SpecializationConsts.Onboarding))
 {
     await context.AddItemAsync(new ApplicationMenuItem(
-        AIMenus.Prompts, "AI Prompts", "~/Prompts", order: 900)
+        AIMenus.Prompts, "AI Prompts", "~/UnityAdmin", order: 900)
         .OnlyWhenInRole(IdentityConsts.ITOperationsRoleName));
 }
 ```
@@ -36,9 +36,9 @@ Feature **and** setting, **or** the `ITAdmin` role as an override. The item itse
 
 | Route | Page model | Purpose |
 |---|---|---|
-| `~/Prompts` | `Pages/Prompts/Index.cshtml(.cs)` + `Index.js` | Prompt families and versions |
-| `~/Prompts` modals | `Prompts/CreateModal`, `Prompts/EditModal` | Prompt-level create/edit |
-| `~/Prompts` entry modals | `Prompts/Entries/CreateEntryModal`, `Entries/EditEntryModal` | Version-level create/edit |
+| `~/UnityAdmin` AI Prompts section | `Pages/Prompts/Index.cshtml(.cs)` + `Index.js` | Prompt families and versions |
+| `~/UnityAdmin` AI Prompts modals | `Prompts/CreateModal`, `Prompts/EditModal` | Prompt-level create/edit |
+| `~/UnityAdmin` AI Prompts entry modals | `Prompts/Entries/CreateEntryModal`, `Entries/EditEntryModal` | Version-level create/edit |
 | `~/AIReporting` | `Pages/AIReporting/Index.cshtml(.cs)` + `Index.js` | Embedded AI reporting host |
 | `Settings/LegalDisclaimerModal` | `LegalDisclaimerModalModel` | The disclaimer shown before AI is switched on |
 
@@ -58,7 +58,7 @@ If permitted, it resolves the `REPORTING_AI` dynamic URL through the host's `IEn
 
 ### Prompts
 
-`Pages/Prompts/Index.js` (~370 lines) drives the list and the four modals against `api/app/ai/prompts`. Behaviour worth knowing before using it is in [ai-prompts.md](ai-prompts.md#administering-prompts) — in particular that saving a prompt as a tenant creates a **tenant-scoped version that overrides the whole global family**, and that placeholder errors surface at generation time rather than at save.
+The AI Prompts section embedded in `Pages/UnityAdmin/Index.cshtml` drives the list and the four modals against `api/app/ai/prompts`. Behaviour worth knowing before using it is in [ai-prompts.md](ai-prompts.md#administering-prompts) — in particular that saving a prompt as a tenant creates a **tenant-scoped version that overrides the whole global family**, and that placeholder errors surface at generation time rather than at save.
 
 ## Settings group
 

@@ -305,7 +305,7 @@ $(function () {
 
     function getAuditDateFilters() {
         return {
-            startTime: UIElements.auditFromDate.val() ? new Date(UIElements.auditFromDate.val()).toISOString() : null,
+            startTime: UIElements.auditFromDate.val() ? new Date(`${UIElements.auditFromDate.val()}T00:00:00.000`).toISOString() : null,
             endTime: UIElements.auditToDate.val() ? new Date(`${UIElements.auditToDate.val()}T23:59:59.999`).toISOString() : null
         };
     }
@@ -318,12 +318,14 @@ $(function () {
             UIElements.auditCustomDateInputs.hide();
             setAuditDateRange(getDateRange(selectedRange));
         }
+        loadAuditEntityTypes();
         reloadAuditTable();
     }
 
     function handleAuditDateChange() {
         UIElements.auditQuickDateRange.val('custom');
         UIElements.auditCustomDateInputs.show();
+        loadAuditEntityTypes();
         reloadAuditTable();
     }
 
@@ -369,33 +371,36 @@ $(function () {
                             endTime: dates.endTime,
                             entityTypeFullName: UIElements.auditEntityType.val() || null,
                             changeType: UIElements.auditChangeType.val() ? Number(UIElements.auditChangeType.val()) : null,
-                            filter: UIElements.auditSearch.val() || null
+                            filter: UIElements.auditSearch.val() || null,
+                            propertyName: auditDt.column(2).search() || null,
+                            serviceName: auditDt.column(8).search() || null,
+                            methodName: auditDt.column(9).search() || null
                         };
                     }
                 ),
                 columnDefs: [
                     { title: 'Change time', data: 'changeTime', render: formatAuditDate },
                     { title: 'Entity', data: 'entityName', name: 'entityName', searchable: true, orderable: false, render: formatAuditEntityLink },
-                    { title: 'Property', data: 'propertyName' },
-                    { title: 'Original value', data: 'originalValue' },
-                    { title: 'New value', data: 'newValue' },
+                    { title: 'Property', data: 'propertyName', render: $.fn.dataTable.render.text() },
+                    { title: 'Original value', data: 'originalValue', render: $.fn.dataTable.render.text() },
+                    { title: 'New value', data: 'newValue', render: $.fn.dataTable.render.text() },
                     { title: 'Change', data: 'changeType', render: formatChangeType },
-                    { title: 'Name', data: 'userFirstName' },
-                    { title: 'Surname', data: 'userSurname' },
-                    { title: 'Service', data: 'serviceName' },
-                    { title: 'Method', data: 'methodName' },
-                    { title: 'URL', data: 'url' }
+                    { title: 'Name', data: 'userFirstName', render: $.fn.dataTable.render.text() },
+                    { title: 'Surname', data: 'userSurname', render: $.fn.dataTable.render.text() },
+                    { title: 'Service', data: 'serviceName', render: $.fn.dataTable.render.text() },
+                    { title: 'Method', data: 'methodName', render: $.fn.dataTable.render.text() },
+                    { title: 'URL', data: 'url', render: $.fn.dataTable.render.text() }
                 ],
                 processing: true
             })
         );
 
-        if (typeof $.fn.dataTable.FilterRow === 'function') {
+        if ($.fn.dataTable.FilterRow !== undefined) {
             new $.fn.dataTable.FilterRow(auditDt.settings()[0], { // NOSONAR - False positive flag on S1848
                 buttonId: 'audit-filter-button',
                 buttonText: FilterDesc.Default,
                 buttonTextActive: FilterDesc.With_Filter,
-                enablePopover: typeof $.fn.popover !== 'undefined'
+                enablePopover: $.fn.popover !== undefined
             });
         }
 

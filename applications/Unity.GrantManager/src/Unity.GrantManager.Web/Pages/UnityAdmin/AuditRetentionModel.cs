@@ -72,7 +72,7 @@ public partial class IndexModel
 
         if (!ModelState.IsValid)
         {
-            await LoadRetentionSettingsAsync(settingProvider);
+            await LoadAdminPageStateAsync();
             return Page();
         }
 

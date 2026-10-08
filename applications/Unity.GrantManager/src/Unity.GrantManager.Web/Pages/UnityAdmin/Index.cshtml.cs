@@ -30,6 +30,12 @@ namespace Unity.GrantManager.Web.Pages.UnityAdmin
 
         public async Task OnGetAsync()
         {
+            await LoadAdminPageStateAsync();
+            await LoadRetentionSettingsAsync(settingProvider);
+        }
+
+        private async Task LoadAdminPageStateAsync()
+        {
             var isOnboarding = await specializationChecker.IsEnabledAsync(SpecializationConsts.Onboarding);
             ShowAIPrompts = !isOnboarding && User.IsInRole(IdentityConsts.ITOperationsRoleName);
             ShowEndpoints = !isOnboarding
@@ -41,8 +47,6 @@ namespace Unity.GrantManager.Web.Pages.UnityAdmin
                 .Where(t => t.TenantName != null)
                 .Select(t => t.TenantName!)
                 .ToList();
-
-            await LoadRetentionSettingsAsync(settingProvider);
         }
     }
 }

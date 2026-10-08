@@ -74,6 +74,8 @@ namespace Unity.GrantManager.Repositories
             string? serviceName,
             string? methodName,
             string? filter,
+            string? sorting,
+            string? propertyName,
             IReadOnlyCollection<string>? entityIds,
             int skipCount,
             int maxResultCount,
@@ -103,6 +105,8 @@ namespace Unity.GrantManager.Repositories
                         || y.EntityId.Contains(filter!)
                         || y.EntityTypeFullName.Contains(filter!)
                         || entityIds != null && entityIds.Contains(y.EntityTypeFullName + ":" + y.EntityId))
+                    .Where(y => string.IsNullOrWhiteSpace(propertyName)
+                        || y.PropertyChanges.Any(p => p.PropertyName.Contains(propertyName!)))
                     .SelectMany(y => y.PropertyChanges.Select(p => new AuditLogEntityChange
                     {
                         AuditLogId = x.Id,
@@ -132,13 +136,33 @@ namespace Unity.GrantManager.Repositories
                     })));
 
             var totalCount = await query.LongCountAsync(GetCancellationToken(cancellationToken));
-            var items = await query
-                .OrderByDescending(x => x.ChangeTime)
+            var sortedQuery = ApplySorting(query, sorting);
+            var items = await sortedQuery
                 .Skip(skipCount)
                 .Take(maxResultCount)
                 .ToListAsync(GetCancellationToken(cancellationToken));
 
             return (totalCount, items);
+        }
+
+        private static IOrderedQueryable<AuditLogEntityChange> ApplySorting(
+            IQueryable<AuditLogEntityChange> query,
+            string? sorting)
+        {
+            return sorting?.Trim().ToLowerInvariant() switch
+            {
+                "changetime asc" => query.OrderBy(x => x.ChangeTime),
+                "entitytypefullname asc" => query.OrderBy(x => x.EntityTypeFullName),
+                "propertyname asc" => query.OrderBy(x => x.PropertyName),
+                "changetype asc" => query.OrderBy(x => x.ChangeType),
+                "username asc" => query.OrderBy(x => x.UserName),
+                "changetime desc" => query.OrderByDescending(x => x.ChangeTime),
+                "entitytypefullname desc" => query.OrderByDescending(x => x.EntityTypeFullName),
+                "propertyname desc" => query.OrderByDescending(x => x.PropertyName),
+                "changetype desc" => query.OrderByDescending(x => x.ChangeType),
+                "username desc" => query.OrderByDescending(x => x.UserName),
+                _ => query.OrderByDescending(x => x.ChangeTime)
+            };
         }
 
         public virtual async Task<List<string>> GetEntityTypeFullNamesAsync(

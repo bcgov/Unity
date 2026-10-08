@@ -7,6 +7,7 @@
         </div>
         <form method="post" asp-page-handler="Retention">
             <div class="p-3">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                 <div class="form-check mb-2">
                     <input asp-for="RetentionCleanupEnabled" class="form-check-input" />
                     <label asp-for="RetentionCleanupEnabled" class="form-check-label">Enable clean up service</label>
@@ -18,6 +19,7 @@
                     </div>
                     <div class="col-auto">
                         <input asp-for="AuditLogRetentionDays" class="form-control" min="1" max="36500" style="width: 120px;" />
+                        <span asp-validation-for="AuditLogRetentionDays" class="text-danger"></span>
                     </div>
                     <div class="col-auto">day(s)</div>
                 </div>
@@ -39,6 +41,7 @@
                     </div>
                     <div class="col-auto">
                         <input asp-for="ExceptionLogRetentionDays" class="form-control" min="1" max="36500" style="width: 120px;" />
+                        <span asp-validation-for="ExceptionLogRetentionDays" class="text-danger"></span>
                     </div>
                     <div class="col-auto">day(s)</div>
                 </div>

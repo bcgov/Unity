@@ -77,14 +77,6 @@ $(function () {
             processing: true
         }));
 
-        if (typeof $.fn.dataTable.FilterRow === 'function') {
-            new $.fn.dataTable.FilterRow(auditTable.settings()[0], {
-                buttonId: 'audit-filter-button',
-                buttonText: 'Filter',
-                buttonTextActive: 'Filter*',
-                enablePopover: $.fn.popover !== 'undefined'
-            });
-        }
     }
 
     function loadEntityTypes() {

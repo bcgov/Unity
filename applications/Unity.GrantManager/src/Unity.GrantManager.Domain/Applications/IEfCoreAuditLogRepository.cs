@@ -19,6 +19,8 @@ public interface IExtendedAuditLogRepository : IAuditLogRepository
         string? serviceName,
         string? methodName,
         string? filter,
+        string? sorting,
+        string? propertyName,
         IReadOnlyCollection<string>? entityIds,
         int skipCount,
         int maxResultCount,

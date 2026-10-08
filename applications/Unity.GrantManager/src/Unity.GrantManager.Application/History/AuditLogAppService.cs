@@ -50,6 +50,8 @@ public class AuditLogAppService(
             input.ServiceName,
             input.MethodName,
             input.Filter,
+            input.Sorting,
+            input.PropertyName,
             await GetEntityIdsMatchingNameAsync(input.Filter),
             input.SkipCount,
             input.MaxResultCount);
