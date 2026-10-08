@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Events;
+using Unity.GrantManager.Exceptions;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.TenantManagement;
 using Xunit;
@@ -62,6 +63,19 @@ public class SubmissionAppServiceReconcileTests(ITestOutputHelper outputHelper) 
 
         results[0].Success.ShouldBeFalse();
         results[0].Message.ShouldBe("An Error Occured Validating the Chefs Submission");
+    }
+
+    [Fact]
+    public async Task Should_Report_Validation_Message_When_Form_Not_Registered()
+    {
+        _intakeSubmissionAppService.CreateIntakeSubmissionAsync(Arg.Any<EventSubscriptionDto>())
+            .ThrowsAsync(new ApplicationFormSetupException("Application Form Not Registered"));
+
+        var results = await GetRequiredService<ISubmissionAppService>()
+            .ReconcileSubmissionsAsync(CreateInput(CreateItem("FAA0B483")));
+
+        results[0].Success.ShouldBeFalse();
+        results[0].Message.ShouldBe("Application Form Not Registered");
     }
 
     [Fact]

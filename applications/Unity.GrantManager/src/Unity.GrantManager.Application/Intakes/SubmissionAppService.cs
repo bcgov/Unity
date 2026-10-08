@@ -20,6 +20,7 @@ using Unity.GrantManager.Integrations;
 using Unity.GrantManager.Events;
 using Unity.Modules.Shared.Permissions;
 using Volo.Abp.Uow;
+using Volo.Abp.Validation;
 
 namespace Unity.GrantManager.Intakes;
 
@@ -229,8 +230,20 @@ public class SubmissionAppService(
             await uow.CompleteAsync();
             result.Success = true;
         }
-        catch (Exception ex)
+        catch (AbpValidationException ex)
         {
+            // Form not registered / invalid CHEFS submission data raised by intake
+            Logger.LogWarning(ex, "Reconciliation rejected for CHEFS submission {SubmissionId}", item.SubmissionId);
+            result.Message = ex.ValidationErrors.FirstOrDefault()?.ErrorMessage ?? L["Reconciliation:Failed"];
+        }
+        catch (HttpRequestException ex)
+        {
+            Logger.LogError(ex, "CHEFS request failed reconciling submission {SubmissionId}", item.SubmissionId);
+            result.Message = L["Reconciliation:Failed"];
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            // one bad submission does not stop the rest of the batch
             Logger.LogError(ex, "Reconciliation failed for CHEFS submission {SubmissionId}", item.SubmissionId);
             result.Message = L["Reconciliation:Failed"];
         }
