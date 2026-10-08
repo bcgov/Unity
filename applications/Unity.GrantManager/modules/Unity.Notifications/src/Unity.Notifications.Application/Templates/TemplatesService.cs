@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.MultiTenancy;
@@ -31,6 +32,7 @@ public class TemplateService : ApplicationService, ITemplateService
         _templateVariablesRepository = templateVariablesRepository;
     }
 
+    [Authorize]
     public async Task<EmailTemplate?> CreateAsync(EmailTempateDto templateDto)
     {
         var templateType = NormalizeTemplateType(templateDto.TemplateType);
@@ -49,6 +51,7 @@ public class TemplateService : ApplicationService, ITemplateService
             templateType));
     }
 
+    [Authorize]
     public async Task<EmailTemplate?> UpdateTemplate(Guid id, EmailTempateDto templateDto)
     {
         
@@ -79,10 +82,12 @@ public class TemplateService : ApplicationService, ITemplateService
         return await _templatesRepository.GetAsync(id);
     }
 
+    [Authorize]
     public async Task DeleteTemplate(Guid id)
     {
         await _templatesRepository.DeleteAsync(id);
     }
+    [Authorize]
     public async Task<EmailTemplate?> GetTemplateByName(string name)
     {
         var data =  await _templatesRepository.GetByNameAsync(name);
