@@ -1,4 +1,8 @@
 (function () {
+    if ($('#EndpointsTable').length === 0) {
+        return;
+    }
+
     const l = abp.localization.getResource('GrantManager');
     let createModal = new abp.ModalManager(abp.appPath + 'EndpointManagement/Endpoints/CreateModal');
     let updateModal = new abp.ModalManager(abp.appPath + 'EndpointManagement/Endpoints/UpdateModal');
@@ -86,7 +90,7 @@
         reorderEnabled: false,
         languageSetValues: {},
         dataTableName: 'EndpointsTable',
-        dynamicButtonContainerId: 'dynamicButtonContainerId',
+        dynamicButtonContainerId: $('#endpoints-dynamic-buttons').length ? 'endpoints-dynamic-buttons' : 'dynamicButtonContainerId',
         useNullPlaceholder: true,
         externalSearchId: 'search-endpoints',
         fixedHeaders: true
