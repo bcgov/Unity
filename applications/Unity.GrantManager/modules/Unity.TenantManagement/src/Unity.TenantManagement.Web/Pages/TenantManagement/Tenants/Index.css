@@ -7,6 +7,12 @@
     background-color: transparent;
 }
 
+.action-bar.search-action-bar {
+    padding-bottom: 8px !important;
+    display: flex !important;
+    align-items: flex-end !important;
+}
+
 #TenantsTable_filter label {
     font-size: var(--bc-font-size-sm);
     color: var(--bc-colors-grey-text-300);
@@ -23,6 +29,47 @@
 
 #TenantsWrapper {
     background-color: transparent;
+}
+
+#TenantsTable_wrapper .dt-scroll-head table tr:nth-child(2) {
+    display: table-row !important;
+    height: 37px !important;
+}
+
+#TenantsTable_wrapper .dt-scroll-head table tr:nth-child(2) td {
+    height: 37px !important;
+    padding: 3px 5px !important;
+    vertical-align: middle !important;
+    box-sizing: border-box;
+}
+
+#TenantsTable_wrapper .dt-scroll-head .custom-filter-input {
+    height: 30px !important;
+    width: 100% !important;
+    padding: 2px 8px !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+}
+
+#tenantCreateButtonContainer,
+#tenantCreateButtonContainer + .btn-group,
+#dynamicButtonContainerId {
+    height: auto;
+    min-height: 36.5px;
+}
+
+#tenantCreateButtonContainer + .btn-group #btn-toggle-filter,
+#dynamicButtonContainerId button.custom-table-btn.buttons-collection.dropdown-toggle {
+    height: 36.5px !important;
+    min-height: 36.5px !important;
+    max-height: 36.5px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box !important;
+    vertical-align: middle;
 }
 
 #UserSearchTable tbody tr {

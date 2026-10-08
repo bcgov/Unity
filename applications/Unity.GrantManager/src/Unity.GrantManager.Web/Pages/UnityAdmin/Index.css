@@ -116,7 +116,8 @@
 .reconciliation-filter-row {
     display: flex;
     gap: 1rem;
-    align-items: center;
+    align-items: flex-end !important;
+    padding-bottom: 0 !important;
 }
 
 .reconciliation-filter-inputs {
@@ -125,8 +126,11 @@
 
 .reconciliation-filter-buttons {
     display: flex;
-    align-items: center !important;
+    align-items: flex-end !important;
     margin-left: auto;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    min-height: 44px;
 }
 
 label {
@@ -162,6 +166,8 @@ label {
 }
 
 #btn-toggle-filter {
+    height: 44px;
+    min-height: 44px;
     margin-right:10px;
     margin-top: 0 !important;
     margin-bottom: 0 !important;
