@@ -257,9 +257,9 @@
     "Unity.GrantManager.ApplicationManagement.Applicant.AdditionalContact.Create": "Add Additional Contact(s)",
     "Unity.GrantManager.ApplicationManagement.Applicant.AdditionalContact.Update": "Edit Additional Contact(s)",
 
-    "Unity.GrantManager.ApplicationManagement.Funding": "Funding",
-    "Unity.GrantManager.ApplicationManagement.Funding.Agreement": "Funding Agreement",
-    "Unity.GrantManager.ApplicationManagement.Funding.Agreement.Update": "Edit Funding Agreement",
+    "Unity.GrantManager.ApplicationManagement.Funding": "Funding Agreement",
+    "Unity.GrantManager.ApplicationManagement.Funding.Agreement": "Contract",
+    "Unity.GrantManager.ApplicationManagement.Funding.Agreement.Update": "Edit Contract",
 
     "Unity.GrantManager.ApplicationManagement.Payment": "Payment Info",
     "Unity.GrantManager.ApplicationManagement.Payment.Summary": "Payment Summary",

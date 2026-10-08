@@ -60,6 +60,13 @@ namespace Unity.GrantManager.Permissions
             UnitySelector.Project.Location.Update.Default,
         ];
 
+        // Funding Agreement tab, Contract section and Edit Contract
+        public readonly List<string> FundingAgreement_CommonPermissions = [
+            UnitySelector.Funding.Default,
+            UnitySelector.Funding.Agreement.Default,
+            UnitySelector.Funding.Agreement.Update,
+        ];
+
         public readonly List<string> PaymentInfo_CommonPermissions = [
             UnitySelector.Payment.Default,
             UnitySelector.Payment.Summary.Default,
@@ -177,6 +184,7 @@ namespace Unity.GrantManager.Permissions
                     .. ReviewAndAssessment_CommonPermissions,
                     .. ApplicantInfo_CommonPermissions,
                     .. ProjectInfo_CommonPermissions,
+                    .. FundingAgreement_CommonPermissions,
                     .. PaymentInfo_CommonPermissions,
                     UnitySelector.Payment.Supplier.Update,
                     .. Notifications_CommonPermissions,
@@ -202,6 +210,7 @@ namespace Unity.GrantManager.Permissions
                     .. ReviewAndAssessment_CommonPermissions,
                     .. ApplicantInfo_CommonPermissions,
                     .. ProjectInfo_CommonPermissions,
+                    .. FundingAgreement_CommonPermissions,
                     .. PaymentInfo_CommonPermissions,
                     .. Notifications_CommonPermissions,
                     .. Dashboard_CommonPermissions
@@ -219,6 +228,7 @@ namespace Unity.GrantManager.Permissions
                     .. ReviewAndAssessment_CommonPermissions,
                     .. ApplicantInfo_CommonPermissions,
                     .. ProjectInfo_CommonPermissions,
+                    .. FundingAgreement_CommonPermissions,
                     .. PaymentInfo_CommonPermissions,
                     .. Notifications_CommonPermissions,
                     .. Dashboard_CommonPermissions,
@@ -244,6 +254,7 @@ namespace Unity.GrantManager.Permissions
                     .. ApplicantInfo_CommonPermissions,
                     UnitySelector.Applicant.Summary.Update_AssignApplicant,
                     .. ProjectInfo_CommonPermissions,
+                    .. FundingAgreement_CommonPermissions,
                     .. PaymentInfo_CommonPermissions,
                     UnitySelector.Payment.Supplier.Update,
                     .. Notifications_CommonPermissions,
@@ -270,6 +281,7 @@ namespace Unity.GrantManager.Permissions
                     .. ReviewAndAssessment_CommonPermissions,
                     .. ApplicantInfo_CommonPermissions,
                     .. ProjectInfo_CommonPermissions,
+                    .. FundingAgreement_CommonPermissions,
                     .. PaymentInfo_CommonPermissions,
                     .. Notifications_CommonPermissions,
                     .. Dashboard_CommonPermissions
@@ -291,6 +303,7 @@ namespace Unity.GrantManager.Permissions
                     .. ReviewAndAssessment_CommonPermissions,
                     .. ApplicantInfo_CommonPermissions,
                     .. ProjectInfo_CommonPermissions,
+                    .. FundingAgreement_CommonPermissions,
                     .. PaymentInfo_CommonPermissions,
                     UnitySelector.Payment.Supplier.Update,
                     .. Notifications_CommonPermissions,
@@ -316,6 +329,7 @@ namespace Unity.GrantManager.Permissions
                     .. ReviewAndAssessment_CommonPermissions,
                     .. ApplicantInfo_CommonPermissions,
                     .. ProjectInfo_CommonPermissions,
+                    .. FundingAgreement_CommonPermissions,
                     .. PaymentInfo_CommonPermissions,
                     .. Notifications_CommonPermissions,
                     .. Dashboard_CommonPermissions
@@ -332,6 +346,7 @@ namespace Unity.GrantManager.Permissions
                     .. ReviewAndAssessment_CommonPermissions,
                     .. ApplicantInfo_CommonPermissions,
                     .. ProjectInfo_CommonPermissions,
+                    .. FundingAgreement_CommonPermissions,
                     .. PaymentInfo_CommonPermissions,
                     .. Notifications_CommonPermissions,
                     .. Dashboard_CommonPermissions
@@ -348,6 +363,7 @@ namespace Unity.GrantManager.Permissions
                     .. ReviewAndAssessment_CommonPermissions,
                     .. ApplicantInfo_CommonPermissions,
                     .. ProjectInfo_CommonPermissions,
+                    .. FundingAgreement_CommonPermissions,
                     .. PaymentInfo_CommonPermissions,
                     .. Notifications_CommonPermissions,
                     .. Dashboard_CommonPermissions
@@ -379,6 +395,10 @@ namespace Unity.GrantManager.Permissions
                     UnitySelector.Project.Default,
                     UnitySelector.Project.Summary.Default,
                     UnitySelector.Project.Location.Default,
+
+                    // Funding Agreement read-only (no Edit Contract)
+                    UnitySelector.Funding.Default,
+                    UnitySelector.Funding.Agreement.Default,
 
                     UnitySelector.Payment.Default,
                     UnitySelector.Payment.Summary.Default,

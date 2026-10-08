@@ -3,15 +3,25 @@
 @using Unity.GrantManager.Flex
 @using Unity.GrantManager.Localization
 @using Unity.GrantManager.Web.Views.Shared.Components.FundingAgreementInfo;
+@using Unity.Modules.Shared
 @using Unity.Modules.Shared.Correlation
-@using Volo.Abp.Features
+@using Volo.Abp.Authorization.Permissions
 
-@inject IFeatureChecker FeatureChecker
+@inject IPermissionChecker PermissionChecker
 @inject IStringLocalizer<GrantManagerResource> L
 
 @model FundingAgreementInfoViewModel
 @{
     Layout = null;
+    var updatePermissionResult = await PermissionChecker.IsGrantedAsync(
+        new[]
+        {
+            UnitySelector.Funding.Agreement.Update,
+            UnitySelector.Funding.Default // NOTE: Will be removed when worksheet permissions added
+        });
+
+    // Save is shown when the user can edit at least one section of the tab
+    bool IsViewEditable = !updatePermissionResult.AllProhibited;
 }
 
 <input type="hidden" id="FundingAgreementInfoViewApplicationId" value="@Model.ApplicationId" />
@@ -23,29 +33,31 @@
             <h6 class="ps-1 fw-bold">@L["FundingAgreementInfoView:FundingAgreementInfoTitle"].Value</h6>
         </div>
         <abp-button text="Save" id="saveFundingAgreementInfoBtn" class="floating-save-btn" icon-type="Other"
-                    icon="fa-regular fa-floppy-disk" button-type="Primary" disabled="true" />
+                    icon="fa-regular fa-floppy-disk" button-type="Primary" disabled="true" abp-if="@IsViewEditable" />
     </abp-column>
     <form id="fundingAgreementInfoForm">
-        <abp-row class="m-0 p-0">
-            <abp-column size="_12" class="d-inline-flex justify-content-between pb-3 pt-2 project-location">
-                <div id="FundingAgreementInfoContractTitleRegion" class="d-flex align-items-stretch justify-content-start">
-                    <h6 class="ps-1 fw-bold">@L["FundingAgreementInfoView:FundingAgreementInfoContract"].Value</h6>
-                </div>
-            </abp-column>
-        </abp-row>
-        <abp-row class="m-0 project-info-location">
-            <abp-row class="m-0 p-0">
-                <abp-column size="_4" class="px-1">
-                    <abp-input asp-for="@Model.FundingAgreementInfo.ContractNumber" onchange="enableFundingAgreementInfoSaveBtn(this)" />
-                </abp-column>
-                <abp-column size="_4" class="px-1">
-                    <abp-input type="date" asp-for="@Model.FundingAgreementInfo.ContractExecutionDate" onchange="enableFundingAgreementInfoSaveBtn(this)" abp-data-datepicker="false">
-                    </abp-input>
-                </abp-column>
+        @* Zone Section : Funding Agreement Contract - read-only unless Edit Contract is granted *@
+        <zone-fieldset id="@UnitySelector.Funding.Agreement.Default" form-id="@Model.ApplicationFormId"
+                       show-legend="true" update-permission-requirement="@UnitySelector.Funding.Agreement.Update">
+            <abp-row class="m-0 project-info-location">
+                <abp-row class="m-0 p-0">
+                    <abp-column size="_4" class="px-1">
+                        <abp-input asp-for="@Model.FundingAgreementInfo.ContractNumber"
+                                   onchange="enableFundingAgreementInfoSaveBtn(this)" />
+                    </abp-column>
+                    <abp-column size="_4" class="px-1">
+                        <abp-input type="date" asp-for="@Model.FundingAgreementInfo.ContractExecutionDate"
+                                   onchange="enableFundingAgreementInfoSaveBtn(this)" abp-data-datepicker="false">
+                        </abp-input>
+                    </abp-column>
+                </abp-row>
             </abp-row>
-        </abp-row>
-        @if (await FeatureChecker.IsEnabledAsync("Unity.Flex"))
-        {
+        </zone-fieldset>
+
+        @* Zone Section : Worksheet - gated by the Funding Agreement tab permission *@
+        <zone id="Unity_GrantManager_ApplicationManagement_Funding_Worksheet"
+              zone-requirement="@UnitySelector.Funding.Default" permission-requirement="@UnitySelector.Funding.Default"
+              feature-requirement="Unity.Flex" form-id="@Model.ApplicationFormId">
             @await Component.InvokeAsync(typeof(WorksheetInstanceWidget),
                 new
                 {
@@ -55,7 +67,6 @@
                     sheetCorrelationProvider = CorrelationConsts.FormVersion,
                     uiAnchor = FlexConsts.FundingAgreementInfoUiAnchor
                 })
-        }
+        </zone>
     </form>
 </abp-row>
-
