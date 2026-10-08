@@ -372,9 +372,9 @@ $(function () {
                             entityTypeFullName: UIElements.auditEntityType.val() || null,
                             changeType: UIElements.auditChangeType.val() ? Number(UIElements.auditChangeType.val()) : null,
                             filter: UIElements.auditSearch.val() || null,
-                            propertyName: auditDt.column(2).search() || null,
-                            serviceName: auditDt.column(8).search() || null,
-                            methodName: auditDt.column(9).search() || null
+                            propertyName: getAuditColumnSearch(2),
+                            serviceName: getAuditColumnSearch(8),
+                            methodName: getAuditColumnSearch(9)
                         };
                     }
                 ),
@@ -404,6 +404,10 @@ $(function () {
             });
         }
 
+    }
+
+    function getAuditColumnSearch(index) {
+        return auditDt ? auditDt.column(index).search() || null : null;
     }
 
     function formatAuditDate(data) {
