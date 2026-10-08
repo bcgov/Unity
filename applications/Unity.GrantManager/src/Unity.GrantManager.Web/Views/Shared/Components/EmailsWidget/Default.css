@@ -611,7 +611,7 @@
     border: 1px solid var(--bc-colors-blue-primary);
 }
 
-.emails-widget-scope .fl-cancel {
+.emails-widget-scope .fa-xmark {
     color: var(--bc-colors-blue-primary);
 }
 

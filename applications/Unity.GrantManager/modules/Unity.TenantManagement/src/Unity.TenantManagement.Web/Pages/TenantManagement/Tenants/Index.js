@@ -328,6 +328,12 @@
             $('#create-selected-user-display').hide();
             $('#create-tenant-btn').attr('disabled', true);
         });
+        $('#create-search-value').on('keypress', function (e) {
+            if (e.which === 13) {
+                e.preventDefault();
+                $('#TenantAdminSearchButton').click();
+            }
+        });
 
         $('#cancel-tenant-btn').click(function (e) {
             _createModal.close();
@@ -522,7 +528,7 @@
                 let html = '<ul class="list-unstyled mb-0">';
                 result.forEach(function (m) {
                     html += '<li class="d-flex align-items-center py-1">' +
-                        '<i class="fl fl-user me-2 text-muted"></i>' +
+                        '<i class="fa-regular fa-user me-2 text-muted"></i>' +
                         '<span>' + $('<span>').text(m.displayName).html() + '</span>' +
                         (m.email ? '<span class="text-muted small ms-2">(' + $('<span>').text(m.email).html() + ')</span>' : '') +
                         '</li>';
@@ -551,7 +557,6 @@
             $('#config-features-loading').hide();
             $('#config-features-content').html(_renderFeatureGroups(result.groups));
             $('#config-features-actions').show();
-            _captureFeaturesToForm();
         }).fail(function () {
             $('#config-features-loading').hide();
             $('#config-features-content').html('<div class="alert alert-danger">Failed to load features. Please try again.</div>');
@@ -593,7 +598,6 @@
         }).done(function (result) {
             $('#create-features-loading').hide();
             $('#create-features-content').html(_renderFeatureGroups(result.groups));
-            _captureCreateFeaturesToForm();
         }).fail(function () {
             $('#create-features-loading').hide();
             $('#create-features-content').html('<div class="alert alert-danger">Failed to load features. Please try again.</div>');
@@ -702,11 +706,60 @@
         });
     }
 
+    // ─── Configuration modal: Connection Strings tab (reveal on demand) ───────
+
+    function _wireConnectionStringsToggle() {
+        let loaded = false;
+        let $btn = $('#config-toggle-connection-strings-btn');
+
+        // Unnamed until edited, so a reveal alone doesn't trip ABP's unsaved-changes check or post
+        $('#pane-connections .config-connection-string').off('input').on('input', function () {
+            $(this).attr('name', $(this).data('field-name'));
+        });
+
+        function setVisible(visible) {
+            $('#pane-connections .config-connection-string').toggleClass('d-none', !visible);
+            $('#pane-connections .config-connection-string-mask').toggleClass('d-none', visible);
+            $btn.attr('aria-pressed', visible ? 'true' : 'false')
+                .html(visible
+                    ? '<i class="fa-regular fa-eye-slash"></i> Hide'
+                    : '<i class="fa-regular fa-eye"></i> Show');
+        }
+
+        $btn.off('click').on('click', function () {
+            let isVisible = $btn.attr('aria-pressed') === 'true';
+            if (isVisible || loaded) {
+                setVisible(!isVisible);
+                return;
+            }
+
+            $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Loading...');
+            abp.ajax({
+                url: abp.appPath + 'TenantManagement/Tenants/ConfigurationModal?handler=RevealConnectionStrings&id=' +
+                    encodeURIComponent($btn.data('tenant-id')),
+                type: 'POST'
+            })
+                .done(function (result) {
+                    $('#ConnectionStrings_TenantConnectionString').val(result?.tenantConnectionString || '');
+                    $('#ConnectionStrings_ReadOnlyConnectionString').val(result?.readOnlyConnectionString || '');
+                    loaded = true;
+                    setVisible(true);
+                })
+                .fail(function () {
+                    setVisible(false);
+                })
+                .always(function () {
+                    $btn.prop('disabled', false);
+                });
+        });
+    }
+
     function _configurationModalInitModal(publicApi, args) {
         _configTenantId = args.id;
 
         _loadManagersTab(_configTenantId);
         _wireReportingTabHandlers(_configTenantId);
+        _wireConnectionStringsToggle();
 
         _configFilterDataTable = $('#ConfigUserSearchTable').DataTable(
             abp.libs.datatables.normalizeConfiguration({
@@ -750,6 +803,13 @@
             _configFilterDataTable.ajax.reload();
             $('#config-selected-user-identifier').val('');
             $('#config-selected-user-display').hide();
+        });
+        // Enter in the search box searches instead of submitting (saving) the modal form
+        $('#config-search-value').on('keypress', function (e) {
+            if (e.which === 13) {
+                e.preventDefault();
+                $('#ConfigTenantAdminSearchButton').click();
+            }
         });
 
         _configFilterDataTable.on('select', function (e, dt, type, indexes) {

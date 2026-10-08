@@ -34,7 +34,6 @@ public class GrantManagerMenuContributor : IMenuContributor
                 TenantManagementMenuNames.Onboarding,
                 l["Menu:Onboarding"],
                 "~/TenantManagement/Onboarding",
-                icon: "fl fl-other-user",
                 order: 1
             ).OnlyWhenSpecializations(SpecializationConsts.Onboarding)
             .OnlyWhenInRole(IdentityConsts.ITOperationsRoleName)
@@ -45,7 +44,6 @@ public class GrantManagerMenuContributor : IMenuContributor
                 GrantManagerMenus.Applications,
                 l["Menu:Applications"],
                 "~/GrantApplications",
-                icon: "fl fl-other-user",
                 order: 1,
                 requiredPermissionName: GrantManagerPermissions.Default
             ).ExcludeWhenSpecializations(SpecializationConsts.Onboarding)
@@ -56,7 +54,6 @@ public class GrantManagerMenuContributor : IMenuContributor
                 GrantManagerMenus.Applicants,
                 l["Menu:Applicants"],
                 "~/GrantApplicants",
-                icon: "fl fl-other-user",
                 order: 2,
                 requiredPermissionName: UnitySelector.ApplicantManagement.Applicant.Default
             ).ExcludeWhenSpecializations(SpecializationConsts.Onboarding)
@@ -67,7 +64,6 @@ public class GrantManagerMenuContributor : IMenuContributor
                 UnityIdentityMenuNames.Roles,
                 l["Menu:Roles"],
                 "~/Identity/Roles",
-                icon: "fl fl-settings",
                 order: 3,
                 requiredPermissionName: IdentityPermissions.Roles.Default
             )
@@ -78,7 +74,6 @@ public class GrantManagerMenuContributor : IMenuContributor
                 UnityIdentityMenuNames.Users,
                 l["Menu:Users"],
                 "~/Identity/Users",
-                icon: "fl fl-other-user",
                 order: 4,
                 requiredPermissionName: IdentityPermissions.Users.Default
             )
@@ -89,7 +84,6 @@ public class GrantManagerMenuContributor : IMenuContributor
                 GrantManagerMenus.Intakes,
                 l["Menu:Intakes"],
                 "~/Intakes",
-                icon: "fl fl-settings",
                 order: 5,
                 requiredPermissionName: GrantManagerPermissions.Intakes.Default
             )
@@ -100,7 +94,6 @@ public class GrantManagerMenuContributor : IMenuContributor
                 GrantManagerMenus.ApplicationForms,
                 l["Menu:ApplicationForms"],
                 "~/ApplicationForms",
-                icon: "fl fl-settings",
                 order: 6,
                 requiredPermissionName: GrantManagerPermissions.ApplicationForms.Default
             )
@@ -111,7 +104,6 @@ public class GrantManagerMenuContributor : IMenuContributor
                 GrantManagerMenus.Dashboard,
                 l["Menu:Dashboard"],
                 "~/Dashboard",
-                icon: "fl fl-view-dashboard",
                 order: 7,
                 requiredPermissionName: GrantApplicationPermissions.Dashboard.Default
             ).ExcludeWhenSpecializations(SpecializationConsts.Onboarding)
@@ -134,7 +126,6 @@ public class GrantManagerMenuContributor : IMenuContributor
                 TenantManagementMenuNames.Tenants,
                 l["Menu:TenantManagement"],
                 "~/TenantManagement/Tenants",
-                icon: "fl fl-view-dashboard",
                 order: 8
             ).ExcludeWhenSpecializations(SpecializationConsts.Onboarding)
             .OnlyWhenInRole(IdentityConsts.ITAdminRoleName, IdentityConsts.ITOperationsRoleName)
@@ -146,7 +137,6 @@ public class GrantManagerMenuContributor : IMenuContributor
                 TenantManagementMenuNames.Tenants,
                 l["Menu:TenantManagement"],
                 "~/TenantManagement/Tenants",
-                icon: "fl fl-view-dashboard",
                 order: 8
             ).OnlyWhenSpecializations(SpecializationConsts.Onboarding)
             .OnlyWhenInRole(IdentityConsts.ITOperationsRoleName)

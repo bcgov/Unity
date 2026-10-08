@@ -64,12 +64,14 @@
     <div class="btn-group" id="app_custom_buttons">
 
         <abp-button id="externalLink"
+            icon-type="Other" icon="fa-solid fa-folder-open"
             text="@L["ApplicationList:OpenButton"].Value"
             data-selector="applications-table-actions"
             class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
             button-type="Secondary" />
 
         <abp-button id="assignApplication"
+            icon-type="Other" icon="fa-regular fa-hand-point-right"
             data-selector="applications-table-actions"
             button-type="Secondary"
             class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
@@ -78,6 +80,7 @@
         @if (await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Approvals.BulkApplicationApproval))
         { 
         <abp-button id="approveApplications"
+            icon-type="Other" icon="fa-solid fa-file-signature"
             data-selector="applications-table-actions"
             button-type="Secondary"
             class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
@@ -87,6 +90,7 @@
         @if (await PermissionChecker.IsGrantedAsync(UnitySelector.Application.Status.BulkPublish))
         {
         <abp-button id="openBulkPublishModal"
+            icon-type="Other" icon="fa-solid fa-share"
             text="Publish Status"
             data-selector="applications-table-actions"
             class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
@@ -96,6 +100,7 @@
         @if(await PermissionChecker.IsGrantedAsync(UnitySelector.Application.Tags.Create) || await PermissionChecker.IsGrantedAsync(UnitySelector.Application.Tags.Delete))
         {
         <abp-button id="tagApplication"
+            icon-type="Other" icon="fa-solid fa-tags"
             data-selector="applications-table-actions"
             text="@L["ApplicationList:TagButton"].Value"
             class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
@@ -113,6 +118,7 @@
         {
         <div class="btn-group flex-none">
             <abp-button id="sendEmailNotification"
+                icon-type="Other" icon="fa-solid fa-envelopes-bulk"
                 data-selector="applications-table-actions"
                 text="@L["ApplicationList:SendEmailButton"].Value"
                 class="custom-table-btn btn btn-secondary action-bar-btn-unavailable"
@@ -148,6 +154,7 @@
             && await PermissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.RequestPayment))
         {
         <abp-button id="applicationPaymentRequest"
+                    icon-type="Other" icon="fa-solid fa-hand-holding-dollar"
                     data-selector="applications-table-actions"
                     text="Payment"
                     class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
@@ -158,6 +165,7 @@
             && await PermissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.AddHistoricalPayment))
         {
         <abp-button id="applicationHistoricalPaymentRequest"
+                    icon-type="Other" icon="fa-solid fa-file-invoice-dollar"
                     data-selector="applications-table-actions"
                     text="Add Historical Payment"
                     class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
@@ -165,13 +173,15 @@
         }
 
         <abp-button id="applicationLink"
+                    icon-type="Other" icon="fa-solid fa-circle-info"
                     text="@L["ApplicationList:InfoButton"].Value"
                     data-selector="applications-table-actions"
                     class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
                     button-type="Secondary" />
 
         <abp-button id="btn-toggle-filter"
-                    text="Filter"                    
+                    icon-type="Other" icon="fa-solid fa-filter"
+                    text="Filter"
                     class="custom-table-btn flex-none btn btn-secondary"
                     button-type="Secondary" />
     </div>

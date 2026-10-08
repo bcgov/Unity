@@ -32,11 +32,11 @@ $(function () {
             ),
             columnDefs: [
                 {
-                    title: '<i class="fl fl-paperclip" ></i>',
+                    title: '<i class="fa-solid fa-paperclip" ></i>',
                     width: '40px',
                     className: 'text-center',
                     render: function (data) {
-                        return '<i class="fl fl-paperclip" ></i>';
+                        return '<i class="fa-solid fa-paperclip" ></i>';
                     },
                     orderable: false
                 },

@@ -18,7 +18,7 @@ function generateAttachmentButtonContent(data, type, full, meta, attachmentType)
     let html = `
         <div class="dropdown" style="float:right;">
             <button class="btn btn-light dropbtn" type="button">
-                <i class="fl fl-attachment-more"></i>
+                <i class="fa-solid fa-ellipsis"></i>
             </button>
             <div class="dropdown-content">
                 <button class="btn fullWidth js-preview-attachment" style="margin:10px;margin-left:8px;" type="button" data-attachment-type="${escapedAttachmentType}" data-owner-id="${escapedOwnerId}" data-file-name="${escapedFileName}" data-display-name="${escapedDisplayName}">
@@ -26,14 +26,14 @@ function generateAttachmentButtonContent(data, type, full, meta, attachmentType)
                 </button>
                 <a href="${downloadUrl}" target="_blank" download="${data}" class="fullwidth">
                     <button class="btn fullWidth" style="margin:10px" type="button">
-                        <i class="fl fl-download"></i><span>Download Attachment</span>
+                        <i class="fa-solid fa-download"></i><span>Download Attachment</span>
                     </button>
                 </a>
                 <button class="btn fullWidth" style="margin:10px" type="button" ${`onclick="updateAttachmentMetadata('${attachmentType}','${full.id}')"`}>
-                    <i class="fl fl-edit"></i><span>Edit Attachment</span>
+                    <i class="fa-solid fa-pencil"></i><span>Edit Attachment</span>
                 </button>
                 <button class="btn fullWidth" style="margin:10px" type="button" ${isCreator ? `onclick="deleteAttachment('${attachmentType}','${data}','${full.fileName}')"` : 'disabled'}>
-                    <i class="fl fl-cancel"></i><span>Delete Attachment</span>
+                    <i class="fa-solid fa-xmark"></i><span>Delete Attachment</span>
                 </button>
             </div>
         </div>
