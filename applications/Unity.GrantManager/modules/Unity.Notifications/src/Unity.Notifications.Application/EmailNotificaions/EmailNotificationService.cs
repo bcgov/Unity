@@ -121,6 +121,7 @@ public class EmailNotificationService(
         return Task.FromResult(selfUrl.TrimEnd('/'));
     }
 
+    [Authorize]
     public async Task<HttpResponseMessage> SendCommentNotification(EmailCommentDto input)
     {
         HttpResponseMessage res = new();
