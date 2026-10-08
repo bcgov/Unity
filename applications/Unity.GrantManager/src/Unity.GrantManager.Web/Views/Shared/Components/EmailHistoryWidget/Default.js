@@ -47,7 +47,7 @@
         abp.libs.datatables.normalizeConfiguration({
             dom: 'Bfrtip',
             serverSide: false,
-            order: [[2, 'desc']],
+            order: [[5, 'desc']],
             searching: false,
             paging: false,
             select: {
@@ -91,23 +91,6 @@
                     width: '12%'
                 },
                 {
-                    title: 'Created',
-                    data: 'creationTime',
-                    className: 'data-table-header',
-                    width: '12%',
-                    render: function (data) {
-                        return data ? luxon.DateTime.fromISO(data, {
-                            locale: abp.localization.currentCulture.name,
-                        }).toLocaleString({
-                            day: "numeric",
-                            year: "numeric",
-                            month: "numeric",
-                            hour: "numeric",
-                            minute: "numeric"
-                        }) : '—';
-                    }
-                },
-                {
                     title: 'Sent Date',
                     data: 'sentDateTime',
                     className: 'data-table-header',
@@ -126,8 +109,8 @@
                     }
                 },
                 {
-                    title: 'Sent By',
-                    data: 'sentBy',
+                    title: 'Last Modified By',
+                    data: 'lastModifiedBy',
                     className: 'data-table-header',
                     width: enableEmailDelay ? '10%' : '16%',
                     render: function (data, type, full) {
@@ -136,6 +119,28 @@
                         }
                         return data ? data.name + ' ' + data.surname : '—';
                     },
+                },
+                {
+                    title: 'Last Modified Date',
+                    data: 'lastModificationTime',
+                    className: 'data-table-header',
+                    width: '12%',
+                    render: function (data, type) {
+                        if (type === 'sort' || type === 'type') {
+                            // Support sorting
+                            return data ? luxon.DateTime.fromISO(data).toMillis() : 0;
+                        }
+
+                        return data ? luxon.DateTime.fromISO(data, {
+                            locale: abp.localization.currentCulture.name,
+                        }).toLocaleString({
+                            day: "numeric",
+                            year: "numeric",
+                            month: "numeric",
+                            hour: "numeric",
+                            minute: "numeric"
+                        }) : '—';
+                    }
                 },
                 {
                     title: 'Scheduled Send',
@@ -236,7 +241,7 @@
         let row = emailHistoryDataTable.row(tr);
         let column = emailHistoryDataTable.column(this);
 
-        if (column.index() > 0 && column.index() < 4) {
+        if (column.index() > 0 && column.index() < 3) {
             const data = row.data();
             const normalizedSelectedRow = {
                 ...data,

@@ -249,14 +249,16 @@ public class EmailNotificationService(
             dto.TemplateId = templatesByEmail[dto.Id];
         }
 
-        var sentByUserIds = dtoList
-            .Where(d => d.CreatorId.HasValue)
-            .Select(d => d.CreatorId!.Value)
+        // Last modifier if the email has been edited since creation, otherwise the creator
+        var lastModifiedByUserIds = dtoList
+            .Select(d => d.LastModifierId ?? d.CreatorId)
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
             .Distinct();
 
         var userDictionary = new Dictionary<Guid, EmailHistoryUserDto>();
 
-        foreach (var userId in sentByUserIds)
+        foreach (var userId in lastModifiedByUserIds)
         {
             var userInfo = await externalUserLookupServiceProvider.FindByIdAsync(userId);
             if (userInfo != null)
@@ -268,10 +270,14 @@ public class EmailNotificationService(
 
         foreach (var item in dtoList)
         {
-            if (item.CreatorId.HasValue && userDictionary.TryGetValue(item.CreatorId.Value, out var userDto))
+            var effectiveModifierId = item.LastModifierId ?? item.CreatorId;
+            if (effectiveModifierId.HasValue && userDictionary.TryGetValue(effectiveModifierId.Value, out var userDto))
             {
-                item.SentBy = userDto;
+                item.LastModifiedBy = userDto;
             }
+
+            // Never-edited emails have no LastModificationTime yet - fall back to creation time
+            item.LastModificationTime ??= item.CreationTime;
         }
 
         return dtoList;
