@@ -20,7 +20,8 @@
 
 #audit-logs-div,
 #ai-prompts-div,
-#endpoints-div {
+#endpoints-div,
+#exception-logs-div {
     width: calc(100% - 221px);
     min-width: 0;
     max-width: none;
@@ -86,6 +87,7 @@
     position: absolute;
     left: 0px;
     top: 150px;
+    z-index: 1000;
 }
 
 #UnityAdminSideMenu ul {
@@ -196,6 +198,7 @@ label {
     #audit-logs-div,
     #ai-prompts-div,
     #endpoints-div,
+    #exception-logs-div,
     #audit-log-settings-div {
         width: 100%;
         max-width: 100%;

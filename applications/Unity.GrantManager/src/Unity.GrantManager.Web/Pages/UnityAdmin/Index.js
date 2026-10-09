@@ -20,6 +20,8 @@ $(function () {
         aiPromptsDiv: $('#ai-prompts-div'),
         endpointsMenu: $('#endpoints-menu-item'),
         endpointsDiv: $('#endpoints-div'),
+        exceptionLogsMenu: $('#exception-logs-menu-item'),
+        exceptionLogsDiv: $('#exception-logs-div'),
         auditTable: $('#AuditLogsTable'),
         auditSearch: $('#audit-search'),
         auditEntityType: $('#audit-entity-type'),
@@ -55,6 +57,7 @@ $(function () {
         UIElements.auditLogSettingsMenu.on('click', menuItemClick);
         UIElements.aiPromptsMenu.on('click', menuItemClick);
         UIElements.endpointsMenu.on('click', menuItemClick);
+        UIElements.exceptionLogsMenu.on('click', menuItemClick);
         UIElements.tenantFilter.on('change', handleTenantChange);
         UIElements.quickDateRange.on('change', handleQuickDateRangeChange);
         UIElements.submittedFromDate.on('change', handleCustomDateChange);
@@ -75,6 +78,7 @@ $(function () {
         UIElements.auditLogSettingsMenu.removeClass('active');
         UIElements.aiPromptsMenu.removeClass('active');
         UIElements.endpointsMenu.removeClass('active');
+        UIElements.exceptionLogsMenu.removeClass('active');
     }
 
     function hideAllContentSections() {
@@ -84,6 +88,7 @@ $(function () {
         UIElements.auditLogSettingsDiv.addClass('hide');
         UIElements.aiPromptsDiv.addClass('hide');
         UIElements.endpointsDiv.addClass('hide');
+        UIElements.exceptionLogsDiv.addClass('hide');
     }
 
     function menuItemClick(e) {
@@ -110,6 +115,9 @@ $(function () {
             adjustVisibleDataTables();
         } else if ($(e.currentTarget).attr('id') === 'endpoints-menu-item') {
             UIElements.endpointsDiv.removeClass('hide');
+            adjustVisibleDataTables();
+        } else if ($(e.currentTarget).attr('id') === 'exception-logs-menu-item') {
+            UIElements.exceptionLogsDiv.removeClass('hide');
             adjustVisibleDataTables();
         }
     }
