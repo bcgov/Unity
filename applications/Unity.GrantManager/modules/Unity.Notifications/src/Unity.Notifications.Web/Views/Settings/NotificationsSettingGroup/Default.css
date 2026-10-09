@@ -84,6 +84,18 @@ body {
     width: 100% !important;
 }
 
+.manage-users-btn,
+.delete-group-btn {
+    width: 67px;
+    min-height: 2.13rem;
+    padding: 4px 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    border-radius: 3px;
+}
+
 /* Add User Button Styling */
 .btn-add-user {
     background-color: white !important;

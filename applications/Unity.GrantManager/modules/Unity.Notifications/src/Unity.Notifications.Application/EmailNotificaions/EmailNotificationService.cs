@@ -76,6 +76,7 @@ public class EmailNotificationService(
         await emailNotificationManager.CancelEmailLogAsync(id);
     }
 
+    [RemoteService(false)]
     public async Task<int> GetEmailsChesWithNoResponseCountAsync()
     {
         return await emailNotificationManager.GetPendingEmailsCountAsync();
@@ -107,7 +108,7 @@ public class EmailNotificationService(
         await notificationAppService.PostToNotificationsAsync(activityTitle, activitySubtitle);
     }
 
-    public Task<string> GetBaseUrlAsync()
+    private Task<string> GetBaseUrlAsync()
     {
         var selfUrl = configuration["App:SelfUrl"];
         
@@ -121,6 +122,7 @@ public class EmailNotificationService(
         return Task.FromResult(selfUrl.TrimEnd('/'));
     }
 
+    [Authorize]
     public async Task<HttpResponseMessage> SendCommentNotification(EmailCommentDto input)
     {
         HttpResponseMessage res = new();
