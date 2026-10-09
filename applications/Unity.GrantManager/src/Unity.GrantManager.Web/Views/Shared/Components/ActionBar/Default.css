@@ -44,8 +44,7 @@
 #app_custom_buttons #btn-toggle-filter {
     height: 44px;
     min-height: 44px;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
+    margin: 0 0 0 -1px !important;
 }
 
 .action-bar-btn-unavailable {

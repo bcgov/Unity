@@ -302,7 +302,7 @@ const emailGroupsManager = {
 
                     // Manage Users button (always shown) - using pencil icon
                     const $manageUsersButton = $('<button>')
-                        .addClass('btn btn-sm manage-users-btn px-0 float-end')
+                        .addClass('btn btn-sm manage-users-btn float-end')
                         .attr({
                             'aria-label': 'Edit Group',
                             'title': 'Edit Group'
@@ -313,7 +313,7 @@ const emailGroupsManager = {
                     // Delete button (only shown for Dynamic groups)
                     if (!isStatic) {
                         const $deleteButton = $('<button>')
-                            .addClass('btn btn-sm delete-group-btn px-0 float-end')
+                            .addClass('btn btn-sm delete-group-btn float-end')
                             .attr({
                                 'aria-label': 'Delete',
                                 'title': row.isUsedByScheduledNotification

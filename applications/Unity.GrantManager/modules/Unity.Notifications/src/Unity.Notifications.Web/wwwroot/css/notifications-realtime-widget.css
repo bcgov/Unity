@@ -438,6 +438,9 @@
 .rt-widget-mode-tab {
     display: flex;
     align-items: center;
+    justify-content: center;
+    height: 34.39px;
+    box-sizing: border-box;
     flex: 0 0 auto;
     border: 1px solid #ced4da;
     background: #fff;
