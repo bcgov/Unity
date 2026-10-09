@@ -27,6 +27,7 @@ namespace Unity.GrantManager.Web.Pages.UnityAdmin
         public bool IsRestricted { get; set; } = true;
         public bool ShowAIPrompts { get; set; }
         public bool ShowEndpoints { get; set; }
+        public bool ShowExceptionLogs { get; set; }
 
         public async Task OnGetAsync()
         {
@@ -40,6 +41,7 @@ namespace Unity.GrantManager.Web.Pages.UnityAdmin
             ShowAIPrompts = !isOnboarding && User.IsInRole(IdentityConsts.ITOperationsRoleName);
             ShowEndpoints = !isOnboarding
                 && (User.IsInRole(IdentityConsts.ITAdminRoleName) || User.IsInRole(IdentityConsts.ITOperationsRoleName));
+            ShowExceptionLogs = !isOnboarding && User.IsInRole(IdentityConsts.ITOperationsRoleName);
 
             IsRestricted = !string.IsNullOrEmpty(CurrentSelectedTenant);
             var userTenants = await userTenantAppService.GetListAsync();

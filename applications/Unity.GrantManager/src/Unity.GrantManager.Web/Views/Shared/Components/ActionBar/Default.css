@@ -10,6 +10,11 @@
     gap: 0.5rem;
 }
 
+.action-bar {
+    align-items: flex-end !important;
+    padding-bottom: 0 !important;
+}
+
 
 .search-action-bar {
     display: flex;
@@ -28,9 +33,11 @@
 #app_custom_buttons {
     display: flex;
     align-items: flex-end;
+    align-self: flex-end !important;
     width: auto;
     flex-shrink: 0;
     min-height: 44px;
+    margin-bottom: 0;
 }
 
 #dynamicButtonContainerId {
@@ -38,14 +45,36 @@
     flex-shrink: 0;
     display: flex;
     align-items: flex-end;
-    align-self: flex-end;
+    align-self: flex-end !important;
+    margin-bottom: 0;
+}
+
+#dynamicButtonContainerId .btn {
+    height: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#app_custom_buttons .btn {
+    height: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 #app_custom_buttons #btn-toggle-filter {
     height: 44px;
     min-height: 44px;
+    margin: 0 0 0 -1px !important;
+}
+
+#app_custom_buttons > .btn {
     margin-top: 0 !important;
     margin-bottom: 0 !important;
+    align-self: stretch;
 }
 
 .action-bar-btn-unavailable {

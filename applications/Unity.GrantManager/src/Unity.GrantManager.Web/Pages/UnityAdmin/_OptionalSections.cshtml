@@ -13,3 +13,10 @@
         @await Html.PartialAsync("../ConfigurationManagement/_Endpoints")
     </div>
 }
+
+@if (Model.ShowExceptionLogs)
+{
+    <div id="exception-logs-div" class="input-area card mb-3 exception-logs hide">
+        @await Html.PartialAsync("../ExceptionLogs/_ExceptionLogs")
+    </div>
+}
