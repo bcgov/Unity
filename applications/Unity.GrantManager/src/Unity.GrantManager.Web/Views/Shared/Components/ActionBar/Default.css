@@ -77,6 +77,10 @@
     align-self: stretch;
 }
 
+#app_custom_buttons .action-bar-btn-unavailable {
+    display: none;
+}
+
 .action-bar-btn-unavailable {
     display: none;
 }
