@@ -41,7 +41,7 @@ namespace Unity.GrantManager.Events
         private readonly IApplicantAgentRepository _applicantAgentRepository;
         private readonly ITenantRepository _tenantRepository;
         private readonly ILocalEventBus _localEventBus;
-        private readonly ITemplateService _templateService;
+        private readonly ITemplatesRepository _templatesRepository;
         private readonly IEmailGroupsAppService _emailGroupsAppService;
         private readonly IEmailGroupUsersAppService _emailGroupUsersAppService;
         private readonly IIdentityUserIntegrationService _identityUserIntegrationService;
@@ -58,7 +58,7 @@ namespace Unity.GrantManager.Events
             IApplicantAgentRepository applicantAgentRepository,
             ITenantRepository tenantRepository,
             ILocalEventBus localEventBus,
-            ITemplateService templateService,
+            ITemplatesRepository templatesRepository,
             IEmailGroupsAppService emailGroupsAppService,
             IEmailGroupUsersAppService emailGroupUsersAppService,
             IIdentityUserIntegrationService identityUserIntegrationService,
@@ -75,7 +75,7 @@ namespace Unity.GrantManager.Events
             _applicantAgentRepository = applicantAgentRepository;
             _tenantRepository = tenantRepository;
             _localEventBus = localEventBus;
-            _templateService = templateService;
+            _templatesRepository = templatesRepository;
             _emailGroupsAppService = emailGroupsAppService;
             _emailGroupUsersAppService = emailGroupUsersAppService;
             _identityUserIntegrationService = identityUserIntegrationService;
@@ -222,7 +222,7 @@ namespace Unity.GrantManager.Events
 
                 // OPTIMIZATION: Batch load all needed templates upfront instead of querying per notification (N+1 problem)
                 var uniqueTemplateIds = notifications.Select(n => n.EmailTemplateId).Distinct().ToHashSet();
-                var templatesDict = (await _templateService.GetTemplatesByTenant())
+                var templatesDict = (await _templatesRepository.GetByTenentIdAsync(_currentTenant.Id))
                     .Where(t => uniqueTemplateIds.Contains(t.Id))
                     .ToDictionary(t => t.Id);
 
