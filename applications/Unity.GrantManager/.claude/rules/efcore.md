@@ -1,5 +1,6 @@
 ---
-globs: "**/EntityFrameworkCore/**/*.cs"
+paths:
+  - "**/EntityFrameworkCore/**/*.cs"
 ---
 
 # EF Core Conventions for Unity Grant Manager
