@@ -37,6 +37,7 @@ $(function () {
         customDateInputs: $('#customDateInputs'),
         submittedFromDate: $('#submittedFromDate'),
         submittedToDate: $('#submittedToDate'),
+        reconcileButton: $('#btn-reconcile'),
     };
 
     init();
@@ -68,6 +69,115 @@ $(function () {
         UIElements.auditEntityType.on('change', reloadAuditTable);
         UIElements.auditChangeType.on('change', reloadAuditTable);
         UIElements.auditSearch.on('input', handleAuditSearchInput);
+        UIElements.reconcileButton.on('click', handleReconcileClick);
+        // Delegated: scrollX clones the header, so the select-all checkbox is not a stable element
+        $(document).on('click', '.select-all-reconciliation', function () {
+            if ($(this).is(':checked')) {
+                recDt.rows({ page: 'current', search: 'applied' }).select();
+            } else {
+                recDt.rows({ page: 'current', search: 'applied' }).deselect();
+            }
+        });
+    }
+
+    // ── Reconcile ──
+    // Enables Reconcile only when rows are selected and keeps the header checkbox in step with the current page
+    function syncSelectionState() {
+        const selectedCount = recDt.rows({ selected: true }).count();
+        const pageRows = recDt.rows({ page: 'current', search: 'applied' });
+        const pageSelectedCount = recDt.rows({ page: 'current', search: 'applied', selected: true }).count();
+
+        UIElements.reconcileButton.prop('disabled', selectedCount === 0);
+        $('.select-all-reconciliation').prop('checked', pageRows.count() > 0 && pageSelectedCount === pageRows.count());
+    }
+
+    // Mirrors DataTables row selection onto the row checkboxes rendered by getSelectColumn
+    function setRowCheckboxes(indexes, checked) {
+        indexes.forEach(index => {
+            $(recDt.row(index).node()).find('.chkbox').prop('checked', checked);
+        });
+    }
+
+    // Same rule as the Status column: only submitted CHEFS submissions are Missing, everything else is a Draft
+    function isMissingSubmission(row) {
+        return row.formSubmissionStatusCode === 'SUBMITTED';
+    }
+
+    // Only Missing rows are reconciled; selected Drafts are skipped and reported back to the user
+    function handleReconcileClick() {
+        const selected = recDt.rows({ selected: true }).data().toArray();
+        if (selected.length === 0) {
+            return;
+        }
+
+        const missing = selected.filter(isMissingSubmission);
+        const drafts = selected.filter(row => !isMissingSubmission(row));
+        const draftIds = drafts.map(row => row.confirmationId).join(', ');
+
+        if (missing.length === 0) {
+            abp.notify.warn(l('Reconciliation:DraftsNotReconciled', drafts.length, draftIds));
+            return;
+        }
+
+        let confirmMessage = l('Reconciliation:ConfirmReconcile', missing.length);
+        if (drafts.length > 0) {
+            confirmMessage += ' ' + l('Reconciliation:DraftsWillBeSkipped', drafts.length);
+        }
+
+        abp.message.confirm(confirmMessage, null, function (confirmed) {
+            if (confirmed) {
+                reconcileSubmissions(missing, drafts.length > 0 ? l('Reconciliation:DraftsNotReconciled', drafts.length, draftIds) : null);
+            }
+        });
+    }
+
+    // Sends the selected CHEFS submissions to the server, which runs each one through intake
+    // (same as the CHEFS webhook), then reloads the list so reconciled rows drop off.
+    // draftsMessage, when set, is shown alongside the results to report skipped Drafts.
+    function reconcileSubmissions(rows, draftsMessage) {
+        const input = {
+            tenantName: UIElements.tenantFilter.val(),
+            submissions: rows.map(row => ({
+                submissionId: row.submissionId,
+                formId: row.formId,
+                formVersionId: row.formVersionId,
+                confirmationId: row.confirmationId
+            }))
+        };
+
+        abp.ui.setBusy('#reconciliation-report-div');
+        unity.grantManager.intakes.submission.reconcileSubmissions(input)
+            .then(showReconcileResults)
+            .always(function () {
+                if (draftsMessage) {
+                    abp.notify.warn(draftsMessage);
+                }
+                abp.ui.clearBusy('#reconciliation-report-div');
+                runRecTableReload();
+            });
+    }
+
+    // One success toast listing reconciled Submission #s, one warning toast listing failures with reasons
+    function showReconcileResults(results) {
+        const reconciled = results.filter(r => r.success);
+        const failed = results.filter(r => !r.success);
+
+        if (reconciled.length > 0) {
+            abp.notify.success(
+                l('Reconciliation:Reconciled', reconciled.length, reconciled.map(r => r.confirmationId).join(', '))
+            );
+        }
+
+        if (failed.length > 0) {
+            abp.notify.warn(
+                l('Reconciliation:NotReconciled', failed.length,
+                    failed.map(r => r.confirmationId + ' (' + r.message + ')').join(', '))
+            );
+        }
+
+        if (reconciled.length === 0 && failed.length === 0) {
+            abp.notify.info(l('Reconciliation:NothingReconciled'));
+        }
     }
 
     // ── Side menu ──
@@ -196,8 +306,12 @@ $(function () {
             abp.libs.datatables.normalizeConfiguration({
                 serverSide: false,
                 paging: true,
-                order: [[0, 'asc']],
+                order: [[1, 'asc']],
                 searching: true,
+                select: {
+                    style: 'multiple',
+                    selector: 'td'
+                },
                 externalSearchInputId: '#search',
                 scrollX: true,
                 ajax: abp.libs.datatables.createAjax(
@@ -213,6 +327,7 @@ $(function () {
                     }
                 ),
                 columnDefs: [
+                    getSelectColumn(l('Reconciliation:SelectSubmission'), 'submissionId', 'reconciliation'),
                     {
                         title: l('Submission #'),
                         data: 'confirmationId',
@@ -256,7 +371,7 @@ $(function () {
                         title: l('GrantApplicationStatus'),
                         data: 'status',
                         render: function (data, type, row) {
-                            return (row.formSubmissionStatusCode === 'SUBMITTED') ? 'Missing' : 'Draft';
+                            return isMissingSubmission(row) ? 'Missing' : 'Draft';
                         }
                     },
                 ],
@@ -291,6 +406,22 @@ $(function () {
                 enablePopover: $.fn.popover !== 'undefined'
             });
         }
+
+        recDt.on('select', function (e, dt, type, indexes) {
+            if (type === 'row') {
+                setRowCheckboxes(indexes, true);
+                syncSelectionState();
+            }
+        });
+
+        recDt.on('deselect', function (e, dt, type, indexes) {
+            if (type === 'row') {
+                setRowCheckboxes(indexes, false);
+                syncSelectionState();
+            }
+        });
+
+        recDt.on('draw', syncSelectionState);
 
         $('#search').on('input', function () {
             let table = $('#ReconciliationTable').DataTable();
