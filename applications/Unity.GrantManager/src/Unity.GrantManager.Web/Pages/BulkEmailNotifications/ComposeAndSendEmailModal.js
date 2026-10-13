@@ -966,14 +966,16 @@
             .off('click.compose', '.compose-application-row')
             .on('click.compose', '.compose-application-row', function (event) {
                 if ($(event.target).closest('.compose-remove-application').length) return;
-                selectApplication($(this).data('application-id'));
+                void selectApplication($(this).data('application-id'))
+                    .catch(error => console.error('Failed to select application:', error));
             })
             .off('keydown.compose', '.compose-application-row')
             .on('keydown.compose', '.compose-application-row', function (event) {
                 if ($(event.target).closest('.compose-remove-application').length) return;
                 if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault();
-                    selectApplication($(this).data('application-id'));
+                    void selectApplication($(this).data('application-id'))
+                        .catch(error => console.error('Failed to select application:', error));
                 }
             })
             .off('click.compose', '.compose-remove-application')

@@ -199,7 +199,7 @@
         </abp-modal-body>
         <abp-modal-footer>
             <abp-button id="btnSubmitHistoricalPayment" class="btn btn-primary" text="@L["ApplicationHistoricalPaymentRequest:SubmitButtonText"].Value" onclick="submitHistoricalPayments()" onkeydown='if(event.key==="Enter") { event.preventDefault(); submitHistoricalPayments(); }' disabled="@Model.DisableSubmit" type="button"></abp-button>
-            <abp-button class="btn btn-secondary" text="@L["ApplicationHistoricalPaymentRequest:CancelButtonText"].Value" data-dismiss="modal" onclick="closeHistoricalPaymentModal()" onkeydown='if(event.key==="Enter") { event.preventDefault(); closeHistoricalPaymentModal(); }'></abp-button>
+            <abp-button class="btn btn-secondary" text="@L["ApplicationHistoricalPaymentRequest:CancelButtonText"].Value" data-bs-dismiss="modal" onclick="closeHistoricalPaymentModal()" onkeydown='if(event.key==="Enter") { event.preventDefault(); closeHistoricalPaymentModal(); }'></abp-button>
         </abp-modal-footer>
     </abp-modal>
 </form>

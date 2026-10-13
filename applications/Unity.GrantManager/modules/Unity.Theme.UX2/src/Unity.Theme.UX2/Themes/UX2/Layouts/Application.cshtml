@@ -88,7 +88,7 @@
         @(await Component.InvokeAsync<TopbarViewComponent>())
     }
 
-    <div class="@containerClass unity-app-container p-0">
+    <main id="main-content" class="@containerClass unity-app-container p-0">
         @await Component.InvokeLayoutHookAsync(LayoutHooks.PageContent.First, StandardLayouts.Application)
         <div class="d-flex">
             <div class="flex-fill @applicationContainerClass">
@@ -109,7 +109,7 @@
             </div>
         </div>
         @await Component.InvokeLayoutHookAsync(LayoutHooks.PageContent.Last, StandardLayouts.Application)
-    </div>
+    </main>
 
     <abp-script-bundle name="@UnityThemeUX2Bundles.Scripts.Global" />
     <script src="~/js/notifications-realtime-client.js"></script>
