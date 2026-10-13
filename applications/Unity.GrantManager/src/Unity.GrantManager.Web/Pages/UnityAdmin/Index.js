@@ -63,22 +63,43 @@ $(function () {
         });
     }
 
+    // Same rule as the Status column: only submitted CHEFS submissions are Missing, everything else is a Draft
+    function isMissingSubmission(row) {
+        return row.formSubmissionStatusCode === 'SUBMITTED';
+    }
+
+    // Only Missing rows are reconciled; selected Drafts are skipped and reported back to the user
     function handleReconcileClick() {
         const selected = recDt.rows({ selected: true }).data().toArray();
         if (selected.length === 0) {
             return;
         }
 
-        abp.message.confirm(l('Reconciliation:ConfirmReconcile', selected.length), null, function (confirmed) {
+        const missing = selected.filter(isMissingSubmission);
+        const drafts = selected.filter(row => !isMissingSubmission(row));
+        const draftIds = drafts.map(row => row.confirmationId).join(', ');
+
+        if (missing.length === 0) {
+            abp.notify.warn(l('Reconciliation:DraftsNotReconciled', drafts.length, draftIds));
+            return;
+        }
+
+        let confirmMessage = l('Reconciliation:ConfirmReconcile', missing.length);
+        if (drafts.length > 0) {
+            confirmMessage += ' ' + l('Reconciliation:DraftsWillBeSkipped', drafts.length);
+        }
+
+        abp.message.confirm(confirmMessage, null, function (confirmed) {
             if (confirmed) {
-                reconcileSubmissions(selected);
+                reconcileSubmissions(missing, drafts.length > 0 ? l('Reconciliation:DraftsNotReconciled', drafts.length, draftIds) : null);
             }
         });
     }
 
     // Sends the selected CHEFS submissions to the server, which runs each one through intake
-    // (same as the CHEFS webhook), then reloads the list so reconciled rows drop off
-    function reconcileSubmissions(rows) {
+    // (same as the CHEFS webhook), then reloads the list so reconciled rows drop off.
+    // draftsMessage, when set, is shown alongside the results to report skipped Drafts.
+    function reconcileSubmissions(rows, draftsMessage) {
         const input = {
             tenantName: UIElements.tenantFilter.val(),
             submissions: rows.map(row => ({
@@ -93,6 +114,9 @@ $(function () {
         unity.grantManager.intakes.submission.reconcileSubmissions(input)
             .then(showReconcileResults)
             .always(function () {
+                if (draftsMessage) {
+                    abp.notify.warn(draftsMessage);
+                }
                 abp.ui.clearBusy('#reconciliation-report-div');
                 runRecTableReload();
             });
@@ -282,7 +306,7 @@ $(function () {
                         title: l('GrantApplicationStatus'),
                         data: 'status',
                         render: function (data, type, row) {
-                            return (row.formSubmissionStatusCode === 'SUBMITTED') ? 'Missing' : 'Draft';
+                            return isMissingSubmission(row) ? 'Missing' : 'Draft';
                         }
                     },
                 ],
