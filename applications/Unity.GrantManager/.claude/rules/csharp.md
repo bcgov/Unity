@@ -1,5 +1,6 @@
 ---
-globs: "**/*.cs"
+paths:
+  - "**/*.cs"
 ---
 
 # C# Conventions for Unity Grant Manager

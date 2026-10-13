@@ -1,5 +1,16 @@
 ---
-globs: "**/modules/Unity.Flex/**, **/modules/Unity.TenantManagement/**, **/modules/Unity.Reporting/**, **/modules/Unity.SharedKernel/PostTenantCreation/**, **/Unity.GrantManager.Application/TenantManagement/**, **/Unity.GrantManager.Application/Tenants/PostCreation/**, **/Unity.GrantManager.Application/Reporting/**, **/Unity.GrantManager.Application/ApplicantProfile/**, **/Unity.GrantManager.Application/Messaging/**, **/Unity.GrantManager.Domain/Messaging/**, **/Unity.GrantManager.Domain/Applications/OnboardingApplicationManager.cs"
+paths:
+  - "**/modules/Unity.Flex/**"
+  - "**/modules/Unity.TenantManagement/**"
+  - "**/modules/Unity.Reporting/**"
+  - "**/modules/Unity.SharedKernel/PostTenantCreation/**"
+  - "**/Unity.GrantManager.Application/TenantManagement/**"
+  - "**/Unity.GrantManager.Application/Tenants/PostCreation/**"
+  - "**/Unity.GrantManager.Application/Reporting/**"
+  - "**/Unity.GrantManager.Application/ApplicantProfile/**"
+  - "**/Unity.GrantManager.Application/Messaging/**"
+  - "**/Unity.GrantManager.Domain/Messaging/**"
+  - "**/Unity.GrantManager.Domain/Applications/OnboardingApplicationManager.cs"
 ---
 
 # Documentation Freshness
