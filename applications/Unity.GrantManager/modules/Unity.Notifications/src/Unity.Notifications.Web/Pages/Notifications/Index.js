@@ -8,9 +8,14 @@ $(function () {
     const STORAGE_KEYS = {
         quickRange: 'Notifications_QuickRange',
         fromDate: 'Notifications_FromDate',
-        toDate: 'Notifications_ToDate'
+        toDate: 'Notifications_ToDate',
+        view: 'Notifications_View'
     };
     let notificationTableFilters = { dateFrom: null, dateTo: null };
+    const savedNotificationView = localStorage.getItem(STORAGE_KEYS.view);
+    let notificationViewMode = ['both', 'application', 'applicant'].includes(savedNotificationView)
+        ? savedNotificationView
+        : 'both';
     // The Date From/To inputs are hidden by default and revealed by the Filter toggle
     // (or when 'Custom Ranges' is selected). The Quick Range dropdown is always visible.
     let dateInputsForcedByFilter = false;
@@ -18,9 +23,11 @@ $(function () {
     const UIElements = {
         quickDateRange: $('#quickDateRange'),
         inputFilter: $('.date-input-filter'),
+        notificationView: $('#notificationView'),
         submittedFromInput: $('#submittedFromDate'),
         submittedToInput: $('#submittedToDate')
     };
+    UIElements.notificationView.val(notificationViewMode);
 
     const listColumns = getColumns();
     const defaultVisibleColumns = [
@@ -70,7 +77,14 @@ $(function () {
                         const selectedEmailElement = document.getElementById('notificationSelectedEmail');
                         if (selectedEmailElement?.textContent) {
                             window.EmailsWidget?.reinitialize?.();
-                            PubSub.publish('email_selected', JSON.parse(selectedEmailElement.textContent));
+                            const selectedEmail = JSON.parse(selectedEmailElement.textContent);
+                            const selectedApplicationId = selectedRows[0].applicationId;
+                            const isApplicantEmail = !selectedApplicationId
+                                || selectedApplicationId === '00000000-0000-0000-0000-000000000000';
+                            const selectedEmailTopic = isApplicantEmail
+                                ? 'applicant_email_selected'
+                                : 'email_selected';
+                            PubSub.publish(selectedEmailTopic, selectedEmail);
                         }
                         bootstrap.Modal.getOrCreateInstance(document.getElementById('notificationEmailModal')).show();
                     })
@@ -107,7 +121,15 @@ $(function () {
                 dateTo: notificationTableFilters.dateTo
             };
         },
-        responseCallback,
+        responseCallback: function (result) {
+            const items = result.items.filter(item => {
+                const isApplicantNotification = !item.applicationId || item.applicationId === '00000000-0000-0000-0000-000000000000';
+                return notificationViewMode === 'both'
+                    || (notificationViewMode === 'applicant' && isApplicantNotification)
+                    || (notificationViewMode === 'application' && !isApplicantNotification);
+            });
+            return responseCallback({ ...result, items });
+        },
         actionButtons,
         pagingEnabled: true,
         reorderEnabled: true,
@@ -117,6 +139,8 @@ $(function () {
         useNullPlaceholder: true,
         fixedHeaders: true
     });
+
+    updateSubmissionColumnVisibility();
 
     function updateOpenButtonState() {
         const selectedRows = dataTable.rows({ selected: true }).data().toArray();
@@ -164,6 +188,13 @@ $(function () {
 
     UIElements.quickDateRange.on('change', handleQuickDateRangeChange);
     UIElements.inputFilter.on('change', handleInputFilterChange);
+    UIElements.notificationView.on('change', function () {
+        notificationViewMode = $(this).val() || 'both';
+        localStorage.setItem(STORAGE_KEYS.view, notificationViewMode);
+        updateSubmissionColumnVisibility();
+        dataTable.rows().deselect();
+        dataTable.ajax.reload(null, true);
+    });
     // Reveal the Date From/To inputs together with the per-column filter row. filterRow.js emits
     // "filterRow-visibility" when the user flips the "Show Filter Row" toggle in the Filter popover.
     dataTable.on('filterRow-visibility', function (e, visible) {
@@ -279,13 +310,17 @@ $(function () {
 
     // ============================ Columns ============================
 
+    function updateSubmissionColumnVisibility() {
+        dataTable.column('submissionReferenceNo:name').visible(notificationViewMode !== 'applicant');
+    }
+
     function getColumns() {
         let columnIndex = 1;
         const columns = [
             getSelectColumn('Select Notification', 'id', 'notifications'),
             getNotificationIdColumn(columnIndex++),
             getSubmissionIdColumn(columnIndex++),
-            getTextColumn(columnIndex++, l('NotificationList:ApplicantName'), 'applicantName'),
+            getApplicantNameColumn(columnIndex++),
             getSentDateColumn(columnIndex++),
             getTextColumn(columnIndex++, l('NotificationList:Status'), 'status', { width: '7rem', className: 'data-table-header text-nowrap' }),
             getTextColumn(columnIndex++, l('NotificationList:From'), 'fromAddress'),
@@ -326,6 +361,23 @@ $(function () {
                     return `<a href="/GrantApplications/Details?ApplicationId=${encodeURIComponent(appId)}">${safe}</a>`;
                 }
                 return safe || null;
+            }
+        };
+    }
+
+    function getApplicantNameColumn(columnIndex) {
+        return {
+            title: l('NotificationList:ApplicantName'),
+            name: 'applicantName',
+            data: 'applicantName',
+            className: 'data-table-header text-nowrap',
+            index: columnIndex,
+            render: function (data, type, row) {
+                const safe = $.fn.dataTable.render.text().display(data || '');
+                if (type !== 'display' || !data || !row.applicantId || !guidPattern.test(row.applicantId)) {
+                    return safe || null;
+                }
+                return `<a href="/GrantApplicants/Details?ApplicantId=${encodeURIComponent(row.applicantId)}">${safe}</a>`;
             }
         };
     }
