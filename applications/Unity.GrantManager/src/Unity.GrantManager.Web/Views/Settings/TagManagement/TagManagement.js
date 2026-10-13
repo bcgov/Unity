@@ -58,7 +58,7 @@ function defineTagSummaryColumnDefs() {
                     'aria-label': 'Edit',
                     'title': 'Edit',
                     'disabled': !userCanUpdate
-                }).append($('<i>').addClass('fl fl-edit'));
+                }).append($('<i>').addClass('fa-solid fa-pencil'));
 
             let $deleteButton = $('<button>')
                 .addClass('btn btn-sm delete-button px-0 float-end')
@@ -66,7 +66,7 @@ function defineTagSummaryColumnDefs() {
                     'aria-label': 'Delete',
                     'title': 'Delete',
                     'disabled': !userCanDelete
-                }).append($('<i>').addClass('fl fl-delete'));
+                }).append($('<i>').addClass('fa-regular fa-trash-can'));
 
             $buttonWrapper.append($editButton);
             $buttonWrapper.append($deleteButton);

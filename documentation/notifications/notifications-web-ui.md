@@ -25,11 +25,11 @@ Two contributors, both registered in `NotificationsWebModule`.
 
 Runs only when the `Unity.Notifications` feature is enabled and the menu is `StandardMenus.Main`:
 
-|Item|Path|Icon|Order|Required permission|
-|---|---|---|---|---|
-|`Notifications.NotificationList`|`~/Notifications`|`fl fl-mail`|9|`Notifications.NotificationList.View`|
-|`Notifications.NotificationLogs`|`~/NotificationLogs`|`fl fl-table`|10|`ITOperations`|
-|`Notifications.UnityMessaging`|`~/UnityMessaging`|`fl fl-users`|11|`ITOperations`|
+|Item|Path|Order|Required permission|
+|---|---|---|---|
+|`Notifications.NotificationList`|`~/Notifications`|9|`Notifications.NotificationList.View`|
+|`Notifications.NotificationLogs`|`~/NotificationLogs`|10|`ITOperations`|
+|`Notifications.UnityMessaging`|`~/UnityMessaging`|11|`ITOperations`|
 
 The third is added only when `DirectMessaging` is also enabled.
 

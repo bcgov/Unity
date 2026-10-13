@@ -11,8 +11,8 @@
     {
         return status switch
         {
-            ViewStatus.SUCCESS => "fl fl-checkmark",
-            ViewStatus.FAILED => "fl fl-cross",
+            ViewStatus.SUCCESS => "fa-solid fa-check",
+            ViewStatus.FAILED => "fa-solid fa-xmark",
             ViewStatus.GENERATING => "", // No icon for generating, use text instead
             _ => ""
         };
@@ -53,6 +53,7 @@
         @if (!string.IsNullOrEmpty(statusIcon))
         {
             <i class="@statusIcon"
+               data-view-status="@Model.ViewStatus.Value"
                data-bs-toggle="tooltip"
                data-bs-placement="top"
                data-bs-original-title="@statusTooltip"

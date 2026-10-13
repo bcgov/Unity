@@ -80,7 +80,8 @@ public class UnitydentityWebModule : AbpModule
                 {
                     toolbar.AddButton(
                         LocalizableString.Create<AbpTenantManagementResource>("Import"),
-                        icon: " fl fl-add-to",
+                        icon: "fa-solid fa-circle-plus",
+                        iconType: Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.FontIconType.Other,
                         name: "ImportUser",
                         requiredPolicyName: IdentityPermissions.Users.Create,
                         type: Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Button.AbpButtonType.Light
@@ -93,7 +94,8 @@ public class UnitydentityWebModule : AbpModule
                 {
                     toolbar.AddButton(
                         LocalizableString.Create<AbpTenantManagementResource>("NewRole"),
-                        icon: " fl fl-add-to",
+                        icon: "fa-solid fa-circle-plus",
+                        iconType: Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.FontIconType.Other,
                         name: "CreateRole",
                         requiredPolicyName: IdentityPermissions.Roles.Create,
                         type: Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Button.AbpButtonType.Light

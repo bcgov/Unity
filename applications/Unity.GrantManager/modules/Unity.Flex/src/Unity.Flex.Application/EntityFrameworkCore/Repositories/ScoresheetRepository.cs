@@ -11,6 +11,22 @@ namespace Unity.Flex.EntityFrameworkCore.Repositories
 {
     public class ScoresheetRepository(IDbContextProvider<FlexDbContext> dbContextProvider) : EfCoreRepository<FlexDbContext, Scoresheet, Guid>(dbContextProvider), IScoresheetRepository
     {
+        public async Task<List<Scoresheet>> GetListByIdsAsync(IReadOnlyCollection<Guid> ids)
+        {
+            var dbSet = await GetDbSetAsync();
+            return await dbSet
+                .Where(scoresheet => ids.Contains(scoresheet.Id))
+                .ToListAsync();
+        }
+
+        public async Task<List<Scoresheet>> GetListByNameAsync(string filter)
+        {
+            var dbSet = await GetDbSetAsync();
+            return await dbSet
+                .Where(scoresheet => scoresheet.Name.Contains(filter) || scoresheet.Title.Contains(filter))
+                .ToListAsync();
+        }
+
         public async Task<Scoresheet> GetAsync(Guid id, bool includeDetails = true)
         {
             var dbSet = await GetDbSetAsync();

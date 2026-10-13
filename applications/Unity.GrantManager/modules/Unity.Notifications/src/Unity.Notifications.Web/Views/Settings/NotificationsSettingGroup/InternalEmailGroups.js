@@ -302,25 +302,25 @@ const emailGroupsManager = {
 
                     // Manage Users button (always shown) - using pencil icon
                     const $manageUsersButton = $('<button>')
-                        .addClass('btn btn-sm manage-users-btn px-0 float-end')
+                        .addClass('btn btn-sm manage-users-btn float-end')
                         .attr({
                             'aria-label': 'Edit Group',
                             'title': 'Edit Group'
-                        }).append($('<i>').addClass('fl fl-edit'));
+                        }).append($('<i>').addClass('fa-solid fa-pencil'));
 
                     $buttonWrapper.append($manageUsersButton);
                     
                     // Delete button (only shown for Dynamic groups)
                     if (!isStatic) {
                         const $deleteButton = $('<button>')
-                            .addClass('btn btn-sm delete-group-btn px-0 float-end')
+                            .addClass('btn btn-sm delete-group-btn float-end')
                             .attr({
                                 'aria-label': 'Delete',
                                 'title': row.isUsedByScheduledNotification
                                     ? 'This email group is associated with a scheduled notification and cannot be deleted.'
                                     : 'Delete',
                                 'data-email-group-in-use': row.isUsedByScheduledNotification
-                            }).append($('<i>').addClass('fl fl-delete'));
+                            }).append($('<i>').addClass('fa-regular fa-trash-can'));
                         
                         $buttonWrapper.append($deleteButton);
                     }

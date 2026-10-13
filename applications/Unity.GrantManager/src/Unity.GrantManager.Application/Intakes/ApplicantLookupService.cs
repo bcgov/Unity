@@ -113,9 +113,16 @@ namespace Unity.GrantManager.Intakes
             // Fetch all applicant addresses at once
             List<ApplicantAddress>? applicantAddresses = await applicantAddressRepository.FindByApplicantIdAsync(applicant.Id);
 
-            // Filter physical and mailing addresses from the sorted list
-            ApplicantAddress? applicantPhysicalAgent = applicantAddresses?.FirstOrDefault(x => x.AddressType == GrantApplications.AddressType.PhysicalAddress);
-            ApplicantAddress? applicantMailingAgent = applicantAddresses?.FirstOrDefault(x => x.AddressType == GrantApplications.AddressType.MailingAddress);
+            // Order exactly as the applicant details page does, so the resolver breaks ties (duplicate primary
+            // flags, identical creation times) the same way and both return the same primary addresses.
+            var orderedAddresses = (applicantAddresses ?? [])
+                .OrderByDescending(a => a.LastModificationTime ?? a.CreationTime)
+                .ToList();
+
+            // Resolve the primary physical and mailing addresses with the same rule as the applicant details page
+            // and the applicant portal: the flagged primary wins, otherwise the newest by creation time.
+            ApplicantAddress? applicantPhysicalAgent = ApplicantAddressPrimaryResolver.Resolve(orderedAddresses, GrantApplications.AddressType.PhysicalAddress);
+            ApplicantAddress? applicantMailingAgent = ApplicantAddressPrimaryResolver.Resolve(orderedAddresses, GrantApplications.AddressType.MailingAddress);
 
             ApplicantAgent? applicantAgent = await applicantAgentRepository.FirstOrDefaultAsync(x => x.ApplicantId == applicant.Id);
 

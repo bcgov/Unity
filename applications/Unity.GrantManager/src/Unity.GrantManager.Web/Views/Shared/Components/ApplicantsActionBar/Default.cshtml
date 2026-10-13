@@ -23,24 +23,28 @@
 
     <div class="btn-group" id="app_custom_buttons">
         <abp-button id="openApplicant"
+                    icon-type="Other" icon="fa-solid fa-folder-open"
                     text="@L["ApplicationList:OpenButton"].Value"
                     data-selector="applicants-table-actions"
                     class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
                     button-type="Secondary"
                     abp-if="@hasViewApplicant" />
         <abp-button id="mergeApplicants"
+                    icon-type="Other" icon="fa-solid fa-people-arrows"
                     text="@L["ApplicantMerge:Merge"].Value"
                     data-selector="applicants-table-actions"
                     class="custom-table-btn flex-none btn btn-secondary d-none"
                     button-type="Secondary"
                     abp-if="@hasMergeApplicant" />
         <abp-button id="unmergeApplicants"
+                    icon-type="Other" icon="fa-solid fa-link-slash"
                     text="@L["ApplicantMerge:Unmerge"].Value"
                     data-selector="applicants-table-actions"
                     class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
                     button-type="Secondary"
                     abp-if="@hasUnmergeApplicant" />
         <abp-button id="deleteApplicant"
+                    icon-type="Other" icon="fa-solid fa-person-circle-xmark"
                     text="Delete"
                     data-selector="applicants-table-actions"
                     class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"

@@ -56,6 +56,7 @@
         @if(await PermissionChecker.IsGrantedAsync(UnitySelector.Payment.Tags.Create) || await PermissionChecker.IsGrantedAsync(UnitySelector.Payment.Tags.Delete))
         {
         <abp-button id="tagPayment"
+                    icon-type="Other" icon="fa-solid fa-tags"
                     data-selector="batch-payment-table-actions"
                     text="Tags"
                     class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"

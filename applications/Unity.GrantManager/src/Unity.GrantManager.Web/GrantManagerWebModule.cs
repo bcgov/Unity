@@ -242,6 +242,31 @@ public class GrantManagerWebModule : AbpModule
                  }
                 )
             );
+
+            options.EntityHistorySelectors.Add(
+                new NamedTypeSelector(
+                    "GrantManagerWorkflowEntities",
+                    type => type == typeof(Assessments.Assessment)
+                        || type == typeof(Applications.ApplicationAssignment)
+                        || type == typeof(Applications.ApplicationFormVersion)
+                )
+            );
+
+            options.EntityHistorySelectors.Add(
+                new NamedTypeSelector(
+                    "GrantManagerCoreEntities",
+                    type => type == typeof(Applications.Applicant)
+                        || type == typeof(Applications.Application)
+                        || type == typeof(Applications.ApplicationContact)
+                        || type == typeof(Applications.ApplicationFormSubmission)
+                        || type == typeof(Applications.ApplicationLink)
+                        || type == typeof(Applications.ApplicationScoresheetAnswers)
+                        || type == typeof(Applications.ApplicationStatus)
+                        || type == typeof(Assessments.Assessment)
+                        || type == typeof(Intakes.Intake)
+                        || type == typeof(Notifications.ScheduledNotification)
+                )
+            );
         });
 
         Configure<AbpSecurityLogOptions>(x =>

@@ -12,7 +12,7 @@
         : $"{Model.Field.Name}.{Model.Name}.{Model.Field.Id}";
     
     <div class="custom-input-group">
-        <span class="custom-input-append"><i class="fl fl-datetime"></i></span>
+        <span class="custom-input-append"><i class="fa-regular fa-calendar-days"></i></span>
         <input type="@Model.Field.Type.ConvertInputType()"
                class="@Model.Field.Type.ApplyCssClass()"
                value="@Model.Field.CurrentValue?.ConvertInputValueOrNull(Model.Field.Type)"

@@ -54,6 +54,7 @@ public class UnityThemeUX2GlobalScriptContributor : BundleContributor
         context.Files.Add("/themes/ux2/table-utils.js");
         context.Files.Add("/themes/ux2/json-editor.js");
         context.Files.Add("/js/DateUtils.js");
+        context.Files.Add("/js/TabUtils.js");
         context.Files.Add("/js/AnalyticsUtils.js");
         context.Files.Add("/js/TimezoneUtils.js");
     }

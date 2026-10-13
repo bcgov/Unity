@@ -240,8 +240,8 @@ $(function () {
 
         previewDiv.innerHTML = `
             <div class="save-button-container" id="previewScoresheetActions">
-                <button type="button" class="btn unt-btn-link btn-link floating-save-btn" id="previewDiscardAllBtn" disabled onclick="discardAllPreviewSections()"><i class="fl fl-undo"></i> Discard Changes</button>
-                <button type="button" class="btn unt-btn-primary btn-primary floating-save-btn" id="previewSaveAllBtn" disabled onclick="savePreviewAllSections()"><i class="fl fl-save"></i> Save Changes</button>
+                <button type="button" class="btn unt-btn-link btn-link floating-save-btn" id="previewDiscardAllBtn" disabled onclick="discardAllPreviewSections()"><i class="fa-solid fa-arrow-rotate-left"></i> Discard Changes</button>
+                <button type="button" class="btn unt-btn-primary btn-primary floating-save-btn" id="previewSaveAllBtn" disabled onclick="savePreviewAllSections()"><i class="fa-regular fa-floppy-disk"></i> Save Changes</button>
             </div>
             <div class="accordion unt-accordion" id="accordion-preview">
                 <div class="d-flex justify-content-end m-3">

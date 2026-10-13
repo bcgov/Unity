@@ -101,7 +101,7 @@ function getCheckboxGroupRowTemplate(key, label) {
     return `<tr>
         <td><input type="text" class="form-control key-input" name="CheckboxKeys" value="${key}" minlength="1" maxlength="60" required pattern="[a-zA-Z0-9 ]+" id="new-chk-key-${key}" /></td>
         <td><input type="text" class="form-control" name="CheckboxLabels" value="${label}" maxlength="100" required id="new-chk-label-${key}" /></td>
-        <td><button id="data-btn-${key}" class="delete-checkbox-option btn btn-danger" type="button" data-busy-text="Processing..." data-bs-toggle="tooltip" data-bs-placement="top" aria-label="Delete" data-bs-original-title="Delete"><i class="fl fl-delete"></i></button></td>
+        <td><button id="data-btn-${key}" class="delete-checkbox-option btn btn-danger" type="button" data-busy-text="Processing..." data-bs-toggle="tooltip" data-bs-placement="top" aria-label="Delete" data-bs-original-title="Delete"><i class="fa-regular fa-trash-can"></i></button></td>
     </tr>`;
 }
 

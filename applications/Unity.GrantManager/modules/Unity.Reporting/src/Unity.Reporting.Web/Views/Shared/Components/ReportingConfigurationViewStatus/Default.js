@@ -30,9 +30,9 @@ $(function () {
         if ($('.view-status-compact .status-text-only').length > 0 && 
             $('.view-status-compact .status-text-only').text().includes('Generating')) {
             return 'GENERATING';
-        } else if ($('.view-status-compact .fl-checkmark').length > 0) {
+        } else if ($('.view-status-compact [data-view-status="SUCCESS"]').length > 0) {
             return 'SUCCESS';
-        } else if ($('.view-status-compact .fl-cross').length > 0) {
+        } else if ($('.view-status-compact [data-view-status="FAILED"]').length > 0) {
             return 'FAILED';
         }
         return null;
