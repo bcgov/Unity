@@ -283,7 +283,7 @@ function initializeDraftEmailsWidget() {
         defaultValues.emailBCC = UIElements.inputOriginalEmailBCC.val() || '';
         initializeSenderAddressSelector();
         loadActiveSenderAddresses();
-        preloadTemplates(); // Pre-fetch templates on page load
+        void preloadTemplates(); // Pre-fetch templates on page load
         initTemplateDetails();
         $('#templateTextContainer').hide();
         $('#scheduled-delay-section').hide();

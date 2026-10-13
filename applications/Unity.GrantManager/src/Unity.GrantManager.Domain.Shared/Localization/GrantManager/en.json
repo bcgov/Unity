@@ -595,6 +595,11 @@
     "FundingAgreementInfoView:FundingAgreementInfo.ContractExecutionDate": "Execution Date",
 
     "UnityIdentity:ImportUser": "Import User",
+    "UnityIdentity:RenameUser": "Rename User",
+    "UnityIdentity:CurrentUser": "Current User",
+    "UnityIdentity:Replace": "Replace",
+    "UnityIdentity:UserHasNotChanged": "The user has not changed.",
+    "UnityIdentity:NoMatchingDirectoryUser": "No matching directory user was found.",
     "UnityIdentity:FirstName": "First Name",
     "UnityIdentity:LastName": "Last Name",
     "UnityIdentity:Import": "Import",
@@ -822,6 +827,17 @@
     "WrongTenantError:CurrentTenant": "You are currently in Tenant: {0}",
     "WrongTenantError:Instructions": "Please click on the Profile menu at the top right of the corner, click on Switch Grant Programs, and select the correct Tenant before proceeding to view the link.",
     "WrongTenantError:ApplicantNotFoundPossibleTenant": "This applicant was not found in the current Tenant and may exist in another Tenant.",
-    "WrongTenantError:ApplicationNotFoundPossibleTenant": "This application was not found in the current Tenant and may exist in another Tenant."
+    "WrongTenantError:ApplicationNotFoundPossibleTenant": "This application was not found in the current Tenant and may exist in another Tenant.",
+    "Reconciliation:Reconcile": "Reconcile",
+    "Reconciliation:SelectSubmission": "Select Submission",
+    "Reconciliation:ConfirmReconcile": "Retrieve the {0} selected submission(s) from CHEFS and create them in Unity?",
+    "Reconciliation:Reconciled": "Reconciled {0} submission(s): {1}",
+    "Reconciliation:NotReconciled": "Could not reconcile {0} submission(s): {1}",
+    "Reconciliation:NothingReconciled": "No submissions were reconciled.",
+    "Reconciliation:DraftsWillBeSkipped": "{0} selected Draft submission(s) will not be reconciled.",
+    "Reconciliation:DraftsNotReconciled": "Draft submissions are not reconciled. Skipped {0}: {1}",
+    "Reconciliation:AlreadyInUnity": "Submission already exists in Unity",
+    "Reconciliation:TenantNotFound": "Tenant not found",
+    "Reconciliation:Failed": "Reconciliation failed. See logs for details."
   }
 }

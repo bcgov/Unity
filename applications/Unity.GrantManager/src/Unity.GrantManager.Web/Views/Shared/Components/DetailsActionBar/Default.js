@@ -282,7 +282,7 @@ $(function () {
 
             let nextPublishedState = !isPublished;
 
-            unity.grantManager.grantApplications.grantApplication
+                return unity.grantManager.grantApplications.grantApplication
                 .updateExternalStatusVisibility(selectedApplicationIds, nextPublishedState)
                 .then(function () {
                     $publishButton.attr('data-is-published', nextPublishedState.toString());

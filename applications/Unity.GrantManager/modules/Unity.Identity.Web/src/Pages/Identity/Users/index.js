@@ -82,7 +82,7 @@ $(function () {
         });
 
         _filterDataTable.on('deselect', function (e, dt, type, indexes) {
-            $('#import-user-id').val();
+            $('#import-user-id').val('');
             $('#import-user-btn').attr('disabled', true);
         });
 
@@ -114,6 +114,10 @@ $(function () {
         viewUrl: abp.appPath + 'Identity/Users/ImportModal',
         modalClass: "importUser"
     });
+    let _renameModal = new abp.ModalManager({
+        viewUrl: abp.appPath + 'Identity/Users/RenameModal',
+        modalClass: "renameUser"
+    });
 
     let dataTable = null;
 
@@ -129,6 +133,15 @@ $(function () {
                         action: function (data) {
                             _editModal.open({
                                 id: data.record.id,
+                            });
+                        },
+                    },
+                    {
+                        text: lg('UnityIdentity:RenameUser'),
+                        visible: abp.auth.isGranted('AbpIdentity.Users.Update'),
+                        action: function (data) {
+                            _renameModal.open({
+                                userId: data.record.id
                             });
                         },
                     },
@@ -279,6 +292,10 @@ $(function () {
     });
 
     _editModal.onResult(function () {
+        dataTable.ajax.reload();
+    });
+
+    _renameModal.onResult(function () {
         dataTable.ajax.reload();
     });
 });

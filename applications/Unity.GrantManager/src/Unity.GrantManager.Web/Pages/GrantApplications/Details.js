@@ -91,7 +91,7 @@ $(function () {
 
     function renderSubmission() {
         const shadowRoot = initializeShadowDOM();
-        getSubmission(shadowRoot);
+        void getSubmission(shadowRoot).catch(error => console.error('Failed to load submission:', error));
     }
 
 
