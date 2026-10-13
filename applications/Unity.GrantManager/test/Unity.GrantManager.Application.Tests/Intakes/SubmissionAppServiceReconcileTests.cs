@@ -14,6 +14,10 @@ using Xunit.Abstractions;
 
 namespace Unity.GrantManager.Intakes;
 
+/// <summary>
+/// Tests for <see cref="SubmissionAppService.ReconcileSubmissionsAsync"/>. The tenant repository and the
+/// intake service are substituted so no CHEFS calls are made.
+/// </summary>
 public class SubmissionAppServiceReconcileTests(ITestOutputHelper outputHelper) : GrantManagerApplicationTestBase(outputHelper)
 {
     private const string TenantName = "CGG";
@@ -46,7 +50,7 @@ public class SubmissionAppServiceReconcileTests(ITestOutputHelper outputHelper) 
         results.Count.ShouldBe(1);
         results[0].Success.ShouldBeTrue();
         results[0].ConfirmationId.ShouldBe("FAA0B483");
-        await _intakeSubmissionAppService.Received(1).CreateIntakeSubmissionAsync(Arg.Is<EventSubscriptionDto>(e =>
+        await _intakeSubmissionAppService.Received(1).CreateIntakeSubmissionAsync(Arg.Is<EventSubscriptionDto>(e => e != null &&
             e.FormId == item.FormId &&
             e.FormVersion == item.FormVersionId &&
             e.SubmissionId == item.SubmissionId));
@@ -83,9 +87,9 @@ public class SubmissionAppServiceReconcileTests(ITestOutputHelper outputHelper) 
     {
         var failing = CreateItem("FAIL0001");
         var passing = CreateItem("PASS0001");
-        _intakeSubmissionAppService.CreateIntakeSubmissionAsync(Arg.Is<EventSubscriptionDto>(e => e.SubmissionId == failing.SubmissionId))
+        _intakeSubmissionAppService.CreateIntakeSubmissionAsync(Arg.Is<EventSubscriptionDto>(e => e != null && e.SubmissionId == failing.SubmissionId))
             .ThrowsAsync(new InvalidOperationException("CHEFS unavailable"));
-        _intakeSubmissionAppService.CreateIntakeSubmissionAsync(Arg.Is<EventSubscriptionDto>(e => e.SubmissionId == passing.SubmissionId))
+        _intakeSubmissionAppService.CreateIntakeSubmissionAsync(Arg.Is<EventSubscriptionDto>(e => e != null && e.SubmissionId == passing.SubmissionId))
             .Returns(new EventSubscriptionConfirmationDto { ConfirmationId = Guid.NewGuid() });
 
         var results = await GetRequiredService<ISubmissionAppService>()

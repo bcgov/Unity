@@ -35,6 +35,7 @@ $(function () {
         UIElements.submittedFromDate.on('change', handleCustomDateChange);
         UIElements.submittedToDate.on('change', handleCustomDateChange);
         UIElements.reconcileButton.on('click', handleReconcileClick);
+        // Delegated: scrollX clones the header, so the select-all checkbox is not a stable element
         $(document).on('click', '.select-all-reconciliation', function () {
             if ($(this).is(':checked')) {
                 recDt.rows({ page: 'current', search: 'applied' }).select();
@@ -45,6 +46,7 @@ $(function () {
     }
 
     // ── Reconcile ──
+    // Enables Reconcile only when rows are selected and keeps the header checkbox in step with the current page
     function syncSelectionState() {
         const selectedCount = recDt.rows({ selected: true }).count();
         const pageRows = recDt.rows({ page: 'current', search: 'applied' });
@@ -54,6 +56,7 @@ $(function () {
         $('.select-all-reconciliation').prop('checked', pageRows.count() > 0 && pageSelectedCount === pageRows.count());
     }
 
+    // Mirrors DataTables row selection onto the row checkboxes rendered by getSelectColumn
     function setRowCheckboxes(indexes, checked) {
         indexes.forEach(index => {
             $(recDt.row(index).node()).find('.chkbox').prop('checked', checked);
@@ -73,6 +76,8 @@ $(function () {
         });
     }
 
+    // Sends the selected CHEFS submissions to the server, which runs each one through intake
+    // (same as the CHEFS webhook), then reloads the list so reconciled rows drop off
     function reconcileSubmissions(rows) {
         const input = {
             tenantName: UIElements.tenantFilter.val(),
@@ -93,6 +98,7 @@ $(function () {
             });
     }
 
+    // One success toast listing reconciled Submission #s, one warning toast listing failures with reasons
     function showReconcileResults(results) {
         const reconciled = results.filter(r => r.success);
         const failed = results.filter(r => !r.success);

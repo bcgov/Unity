@@ -158,9 +158,15 @@ public class SubmissionAppService(
         return new PagedResultDto<FormSubmissionSummaryDto>(chefsSubmissions.Count, chefsSubmissions);
     }
 
+    /// <summary>
+    /// Re-runs intake for CHEFS submissions that never reached Unity (missed webhooks),
+    /// in the tenant named by <see cref="ReconcileSubmissionsInput.TenantName"/>.
+    /// Each submission is processed independently and gets its own result.
+    /// </summary>
     [Authorize(IdentityConsts.ITOperationsPolicyName)]
     public virtual async Task<List<ReconcileSubmissionResultDto>> ReconcileSubmissionsAsync(ReconcileSubmissionsInput input)
     {
+        // Same case-insensitive tenant lookup as GetSubmissionsListAsync, which produced the rows being reconciled
         var tenant = (await tenantRepository.GetListAsync())
             .FirstOrDefault(t => string.Equals(t.Name, input.TenantName, StringComparison.OrdinalIgnoreCase));
 
@@ -190,6 +196,10 @@ public class SubmissionAppService(
         return results;
     }
 
+    /// <summary>
+    /// Creates a Unity application for one CHEFS submission, unless it already exists.
+    /// Must run inside the target tenant context. 
+    /// </summary>
     private async Task<ReconcileSubmissionResultDto> ReconcileSubmissionAsync(ReconcileSubmissionItemDto item)
     {
         var result = new ReconcileSubmissionResultDto
@@ -202,6 +212,7 @@ public class SubmissionAppService(
         using var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
         try
         {
+            // Intake has no duplicate guard, so check here to avoid creating a second application
             var chefsSubmissionGuid = item.SubmissionId.ToString();
             var alreadyInUnity = await applicationFormSubmissionRepository
                 .AnyAsync(s => s.ChefsSubmissionGuid == chefsSubmissionGuid);
@@ -221,6 +232,7 @@ public class SubmissionAppService(
                 SubscriptionEvent = ReconciliationSubscriptionEvent
             });
 
+            // Intake returns no ConfirmationId when validation fails (draft submission, unknown form version)
             if (confirmation.ConfirmationId == null)
             {
                 result.Message = confirmation.ExceptionMessage;
