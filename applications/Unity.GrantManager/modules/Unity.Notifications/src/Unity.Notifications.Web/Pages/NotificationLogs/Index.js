@@ -104,7 +104,7 @@ $(function () {
         }
     });
 
-    connectRealtime(dataTable);
+    void connectRealtime(dataTable);
 
     function initializeTypeFilter() {
         const typeFilter = $('#typeFilter');
