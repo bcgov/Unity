@@ -1,5 +1,6 @@
 ---
-globs: "**/test/**/*.cs"
+paths:
+  - "**/test/**/*.cs"
 ---
 
 # Testing Conventions for Unity Grant Manager

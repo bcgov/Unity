@@ -1,5 +1,6 @@
 ---
-globs: "**/*.js"
+paths:
+  - "**/*.js"
 ---
 
 # JavaScript Development Standards
