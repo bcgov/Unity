@@ -511,12 +511,13 @@ div.dt-buttons div.dt-button-collection {
     text-transform: uppercase;
     background-color: transparent;
     border-radius: 5px !important;
+    border: 2px solid transparent !important;
 }
 
-    .custom-table-btn:hover {
-        box-shadow: none;
-        border: 2px solid var(--bc-colors-blue-primary);
-    }
+.custom-table-btn:hover {
+    box-shadow: none;
+    border-color: var(--bc-colors-blue-primary) !important;
+}
 
 .dt-scroll-headInner {
     padding-right: 0 !important;

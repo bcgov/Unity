@@ -3,8 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Unity.AI.Localization;
 using Unity.AI.Permissions;
 using Unity.AI.Settings;
-using Unity.Modules.Shared.Navigation;
-using Unity.Modules.Shared.Specializations;
 using Unity.Modules.Shared.Permissions;
 using Volo.Abp.Features;
 using Volo.Abp.Settings;
@@ -28,17 +26,6 @@ public class AIMenuContributor : IMenuContributor
         var l = context.GetLocalizer<AIResource>();
         var featureChecker = context.ServiceProvider.GetRequiredService<IFeatureChecker>();
         var settingProvider = context.ServiceProvider.GetRequiredService<ISettingProvider>();
-
-        var specializationChecker = context.ServiceProvider.GetRequiredService<ISpecializationChecker>();
-        if (!await specializationChecker.IsEnabledAsync(SpecializationConsts.Onboarding))
-        {
-            await context.AddItemAsync(new ApplicationMenuItem(
-                name: AIMenus.Prompts,
-                displayName: "AI Prompts",
-                url: "~/Prompts",
-                order: 900
-            ).OnlyWhenInRole(IdentityConsts.ITOperationsRoleName));
-        }
 
         var currentUser = context.ServiceProvider.GetRequiredService<ICurrentUser>();
         var isItAdmin = currentUser.IsInRole(IdentityConsts.ITAdminRoleName);

@@ -1,4 +1,8 @@
 $(function () {
+    if ($('#AIPromptsTable').length === 0) {
+        return;
+    }
+
     const l = abp.localization.getResource('AI');
 
     // Prompt-level modals (create / edit prompt rows)
@@ -100,7 +104,7 @@ $(function () {
         reorderEnabled: false,
         languageSetValues: {},
         dataTableName: 'AIPromptsTable',
-        dynamicButtonContainerId: 'dynamicButtonContainerId',
+        dynamicButtonContainerId: $('#ai-prompts-dynamic-buttons').length ? 'ai-prompts-dynamic-buttons' : 'dynamicButtonContainerId',
         useNullPlaceholder: true,
         externalSearchId: 'search-prompts',
         fixedHeaders: true
