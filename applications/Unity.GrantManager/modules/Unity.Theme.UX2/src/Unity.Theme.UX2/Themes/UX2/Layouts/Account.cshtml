@@ -59,7 +59,7 @@
 
     @(await Component.InvokeAsync<MainNavbarViewComponent>())
 
-    <div class="@containerClass">
+    <main id="main-content" class="@containerClass">
         <abp-row>
             <abp-column class="col mx-auto" style="max-width: 440px">
                 @if (MultiTenancyOptions.Value.IsEnabled &&
@@ -97,7 +97,7 @@
                 @await Component.InvokeLayoutHookAsync(LayoutHooks.PageContent.Last, StandardLayouts.Account)
             </abp-column>
         </abp-row>
-    </div>
+    </main>
 
     <abp-script-bundle name="@UnityThemeUX2Bundles.Scripts.Global" />
 

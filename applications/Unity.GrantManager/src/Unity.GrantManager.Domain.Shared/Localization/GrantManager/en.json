@@ -595,6 +595,11 @@
     "FundingAgreementInfoView:FundingAgreementInfo.ContractExecutionDate": "Execution Date",
 
     "UnityIdentity:ImportUser": "Import User",
+    "UnityIdentity:RenameUser": "Rename User",
+    "UnityIdentity:CurrentUser": "Current User",
+    "UnityIdentity:Replace": "Replace",
+    "UnityIdentity:UserHasNotChanged": "The user has not changed.",
+    "UnityIdentity:NoMatchingDirectoryUser": "No matching directory user was found.",
     "UnityIdentity:FirstName": "First Name",
     "UnityIdentity:LastName": "Last Name",
     "UnityIdentity:Import": "Import",

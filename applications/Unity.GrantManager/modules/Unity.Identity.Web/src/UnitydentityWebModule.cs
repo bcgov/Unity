@@ -14,7 +14,6 @@ using Volo.Abp.UI.Navigation;
 using Volo.Abp.VirtualFileSystem;
 using Volo.Abp.Threading;
 using Volo.Abp.Identity;
-using Volo.Abp.Identity.Web;
 using Unity.Identity.Web.Navigation;
 using Volo.Abp.TenantManagement.Localization;
 using Unity.AspNetCore.Mvc.UI.Theme.UX2;
@@ -59,7 +58,8 @@ public class UnitydentityWebModule : AbpModule
         Configure<RazorPagesOptions>(options =>
         {
             options.Conventions.AuthorizePage("/Identity/Users/Index", IdentityPermissions.Users.Default);
-            options.Conventions.AuthorizePage("/Identity/Users/ImportModal", IdentityPermissions.Users.Create);
+            options.Conventions.AuthorizePage("/Identity/Users/ImportModal", IdentityPermissions.Users.Default);
+            options.Conventions.AuthorizePage("/Identity/Users/RenameModal", IdentityPermissions.Users.Update);
             options.Conventions.AuthorizePage("/Identity/Users/EditModal", IdentityPermissions.Users.Update);
             options.Conventions.AuthorizePage("/Identity/Roles/Index", IdentityPermissions.Roles.Default);
             options.Conventions.AuthorizePage("/Identity/Roles/CreateModal", IdentityPermissions.Roles.Create);

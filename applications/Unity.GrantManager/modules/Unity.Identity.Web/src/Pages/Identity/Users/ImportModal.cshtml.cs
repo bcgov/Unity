@@ -2,7 +2,6 @@ using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Volo.Abp.ObjectExtending;
-using Volo.Abp.Identity;
 using Unity.GrantManager.Identity;
 using System.ComponentModel;
 
@@ -13,14 +12,10 @@ public class ImportModalModel : IdentityPageModel
     [BindProperty]
     public UserImportViewModel UserInfo { get; set; }
 
-    protected IIdentityUserAppService IdentityUserAppService { get; }
-
     private readonly IUserImportAppService _userImportAppService;
 
-    public ImportModalModel(IIdentityUserAppService identityUserAppService,
-        IUserImportAppService userImportAppService)
+    public ImportModalModel(IUserImportAppService userImportAppService)
     {
-        IdentityUserAppService = identityUserAppService;
         _userImportAppService = userImportAppService;
     }
 
@@ -31,13 +26,13 @@ public class ImportModalModel : IdentityPageModel
         return Page();
     }
 
-    public virtual async Task<NoContentResult> OnPostAsync()
+    public virtual async Task<IActionResult> OnPostAsync()
     {
         ValidateModel();
 
         await _userImportAppService.ImportUserAsync(new ImportUserDto() { Directory = UserInfo.Directory, Guid = UserInfo.UserIdentifier });
 
-        return NoContent();
+        return new NoContentResult();
     }
 
     public class UserImportViewModel : ExtensibleObject
