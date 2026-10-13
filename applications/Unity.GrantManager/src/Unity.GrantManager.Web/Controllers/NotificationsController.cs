@@ -47,6 +47,7 @@ public class NotificationsController(
                 ApplicantId = emailLog.ApplicantId,
                 TenantId = emailLog.TenantId,
                 BodyType = emailLog.BodyType,
+                CurrentUserId = currentUser.Id ?? Guid.Empty,
                 SelectedEmail = new EmailHistoryDto
                 {
                     Id = emailLog.Id,
