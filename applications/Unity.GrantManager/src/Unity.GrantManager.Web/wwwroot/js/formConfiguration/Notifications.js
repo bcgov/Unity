@@ -161,7 +161,7 @@
             opt.text = `${t.name} — ${t.subject}`;
             sel.appendChild(opt);
             });
-        updatePreview();
+        void updatePreview().catch(err => console.error('Failed to update notification preview:', err));
         return list;
     }
 

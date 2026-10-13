@@ -55,7 +55,7 @@ $(function () {
                     userId: $('#rename-user-id').val(),
                     directory: 'IDIR'
                 }).then(function (users) {
-                    if (users && users.length === 1) {
+                    if (users?.length === 1) {
                         $('#rename-user-candidate-id').val(users[0].userGuid);
                         showRenameDifferences(users[0]);
                     } else {
