@@ -96,7 +96,9 @@
         void loadRecipients(document.getElementById('cf_recipientCategory')?.value || 'Internal')
             .catch(error => console.error('Failed to load notification recipients:', error));
 
-        document.getElementById('cf_template')?.addEventListener('change', updatePreview);
+        document.getElementById('cf_template')?.addEventListener('change', () => {
+            void updatePreview().catch(error => console.error('Failed to update notification preview:', error));
+        });
         document.getElementById('cf_recipientCategory')?.addEventListener('change', (e) => {
             void loadRecipients(e.target.value)
                 .catch(error => console.error('Failed to load notification recipients:', error));
@@ -228,10 +230,10 @@
     function onDeleteButtonClick(event) {
         const id = $(this).data('id');
         if (!id) return;
-        abp.message.confirm(`Delete this notification?`).then(function (confirmed) {
+        void abp.message.confirm(`Delete this notification?`).then(function (confirmed) {
             if (!confirmed) return;
             handleDeleteConfirmed(id);
-        });
+        }).catch(error => console.error('Failed to confirm notification deletion:', error));
     }
 
     document.addEventListener('DOMContentLoaded', init);
