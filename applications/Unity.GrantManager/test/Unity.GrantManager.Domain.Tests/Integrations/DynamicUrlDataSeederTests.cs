@@ -128,6 +128,18 @@ public class DynamicUrlDataSeederTests : GrantManagerDomainTestBase
         after.ShouldBe(before);
     }
 
+    [Theory]
+    [InlineData(DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX)]
+    [InlineData(DynamicUrlKeyNames.WEBHOOK_KEY_PREFIX)]
+    public async Task Should_Not_Seed_Teams_Webhook_Rows(string keyPrefix)
+    {
+        await WithUnitOfWorkAsync(async () =>
+        {
+            var rows = await _dynamicUrlRepository.GetListAsync(s => s.KeyName.StartsWith(keyPrefix));
+            rows.ShouldBeEmpty();
+        });
+    }
+
     private DynamicUrlDataSeeder CreateSeederWithSeedUrl(string keyName, string url)
     {
         var configuration = new ConfigurationBuilder()
