@@ -46,7 +46,9 @@
             let tempTextarea = $('<textarea>');
             $('body').append(textToCopy);
             tempTextarea.val(textToCopy).select();
-            navigator.clipboard.writeText(tempTextarea[0].value);
+            void navigator.clipboard.writeText(tempTextarea[0].value).catch(() => {
+                abp.notify.error('Unable to copy to clipboard.');
+            });
             tempTextarea.remove();
             abp.notify.success(
                 'Copied to clipboard.'

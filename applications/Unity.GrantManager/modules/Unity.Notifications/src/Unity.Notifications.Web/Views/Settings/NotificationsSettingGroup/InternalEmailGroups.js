@@ -526,7 +526,7 @@ const emailGroupsManager = {
                     unity.notifications.emailGroups.emailGroupUsers.insert({ userId: u.userId, groupId: result.id })
                 );
 
-                Promise.all(ops).then(() => {
+                return Promise.all(ops).then(() => {
                     abp.notify.success(`Email group created with ${selectedUsers.length} users`);
                     modal.hide();
                     emailGroupsTable?.ajax.reload();
@@ -916,7 +916,7 @@ const emailGroupsManager = {
                 })
             );
 
-            Promise.all(userPromises).then(function (usersWithDetails) {
+            return Promise.all(userPromises).then(function (usersWithDetails) {
                 // Create unique list based on userId to prevent duplicates
                 const uniqueUsers = [];
                 const seenUserIds = new Set();

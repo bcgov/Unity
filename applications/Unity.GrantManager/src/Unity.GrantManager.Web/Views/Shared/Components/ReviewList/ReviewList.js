@@ -231,7 +231,7 @@ $(function () {
     }
 
     if (abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Review.AssessmentReviewList.Create')) {
-        CreateAssessmentButton();
+        void CreateAssessmentButton().catch(error => console.error('Failed to create assessment buttons:', error));
     }
 
     function GenerateAiAssessmentButton() {
