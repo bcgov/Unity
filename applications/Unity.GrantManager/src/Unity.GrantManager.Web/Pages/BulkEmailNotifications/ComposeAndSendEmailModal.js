@@ -950,9 +950,13 @@
 
         $('#EmailTo, #EmailCC, #EmailBCC, #EmailFrom, #EmailSubject')
             .off('input.compose change.compose')
-            .on('input.compose change.compose', function () {
+            .on('input.compose change.compose', function (event) {
                 syncCurrentState();
                 if (currentStep === 2 && selectedApplicationId) {
+                    // A committed edit (change fires on blur) surfaces inline field errors for this application.
+                    if (event.type === 'change') {
+                        rightPanelValidatedApplications.add(selectedApplicationId);
+                    }
                     const errors = updateRowValidation(selectedApplicationId);
                     if (rightPanelValidatedApplications.has(selectedApplicationId)) {
                         showStepTwoErrors(errors);
@@ -1107,9 +1111,12 @@
                         };
                     }
                 });
-                tinyEditor.on('input change undo redo', function () {
+                tinyEditor.on('input change undo redo', function (event) {
                     syncCurrentState();
                     if (currentStep === 2 && selectedApplicationId) {
+                        if (event.type === 'change') {
+                            rightPanelValidatedApplications.add(selectedApplicationId);
+                        }
                         const errors = updateRowValidation(selectedApplicationId);
                         if (rightPanelValidatedApplications.has(selectedApplicationId)) {
                             showStepTwoErrors(errors);
