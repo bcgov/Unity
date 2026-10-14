@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.MultiTenancy;
@@ -57,7 +58,7 @@ public class TemplateService : ApplicationService, ITemplateService
     [Authorize]
     public async Task<EmailTemplate?> UpdateTemplate(Guid id, EmailTempateDto templateDto)
     {
-        
+
         EmailTemplate template = await _templatesRepository.GetAsync(id);
 
         template.Description = templateDto.Description;
@@ -91,7 +92,8 @@ public class TemplateService : ApplicationService, ITemplateService
     public async Task DeleteTemplate(Guid id)
     {
         // Enforce server-side reference check so a client-side preflight failure cannot bypass the in-use safeguard.
-var inUse = await _scheduledNotificationsRepository.AnyAsync((Unity.GrantManager.Notifications.ScheduledNotification x) => x.EmailTemplateId == id);
+        var scheduledQuery = await _scheduledNotificationsRepository.GetQueryableAsync();
+        var inUse = await scheduledQuery.AnyAsync(x => x.EmailTemplateId == id);
         if (inUse)
         {
             throw new Volo.Abp.BusinessException("Notifications:TemplateInUse", "Template is referenced by scheduled notifications and cannot be deleted.");
@@ -104,8 +106,8 @@ var inUse = await _scheduledNotificationsRepository.AnyAsync((Unity.GrantManager
     {
         var data =  await _templatesRepository.GetByNameAsync(name);
         return data;
-    } 
-    
+    }
+
     [Authorize]
     public Task<List<string>> GetTemplateTypes()
     {
