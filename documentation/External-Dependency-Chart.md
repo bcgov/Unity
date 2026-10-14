@@ -56,16 +56,15 @@ graph TD
 | 3 | **CSS Token** | CSS OAuth Token | `CSS_TOKEN_API_BASE` | `https://loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/token` | OAuth2 client_credentials | POST token for CSS API auth | Application / CssApiService |
 | 4 | **CHES** | Notification Email Service | `NOTIFICATION_API_BASE` | `https://ches.api.gov.bc.ca/api/v1` | REST | POST /email, GET /status, DELETE /cancel | Unity.Notifications / ChesClientService |
 | 5 | **CHES Auth** | CHES OAuth Token | `NOTIFICATION_AUTH` | `https://loginproxy.gov.bc.ca/auth/realms/comsvcauth/protocol/openid-connect/token` | OAuth2 client_credentials | POST token for CHES API auth | Unity.Notifications / ChesClientService |
-| 6 | **MS Teams Webhooks** | Direct Messages (Teams) | `DIRECT_MESSAGE_0`, `DIRECT_MESSAGE_1`, … | `https://bcgov.webhook.office.com/webhookb2/…` | HTTPS POST | POST adaptive card / message payloads | Unity.Notifications / TeamsNotificationService |
-| 7 | **CAS / CFS** | Payment System (Payments) | `PAYMENT_API_BASE` | `https://cfs-prodws.cas.gov.bc.ca:7121/ords/cas` | REST/OAuth | POST /oauth/token, GET supplier, POST invoice | Unity.Payments / CasTokenService, SupplierService, InvoiceService |
-| 8 | **BC Geocoder** | Address Lookup | `GEOCODER_LOCATION_API_BASE` | `https://geocoder.api.gov.bc.ca` | REST | GET address search, district/region lookups | Application / GeocoderApiService |
-| 9 | **OpenMaps / WFS** | Geospatial Features | `GEOCODER_API_BASE` | `https://openmaps.gov.bc.ca/geo/pub/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=` | WFS/OGC | GET geographic boundary features | Application / GeocoderApiService |
-| 10 | **OrgBook** | Business Registry Lookup | `ORGBOOK_API_BASE` | `https://orgbook.gov.bc.ca/api` | REST | GET search/autocomplete, GET topic/credential details | Application / OrgBookService |
-| 11 | **CHEFS / Intake** | Form Submissions (CHEFS) | `INTAKE_API_BASE` | `https://submit.digital.gov.bc.ca/app/api/v1` | REST | GET forms, GET versions, GET submissions | Application / FormsApiService, SubmissionAppService |
-| 12 | **Azure OpenAI** | AI Analysis & Scoring | `OpenAI:Endpoint` + `OpenAI:ApiKey` (Vault) | Azure-hosted endpoint (configured per env) | HTTPS / Azure SDK | Chat completions for AttachmentSummary, ApplicationAnalysis, ApplicationScoring | Unity.AI / OpenAITransportService |
-| 13 | **Reporting AI Dashboard** | AI Reporting (Metabase-based) | `REPORTING_AI` | `https://prod-unity-ai-reporting-d18498-prod.apps.gold.devops.gov.bc.ca` | iFrame embed only (no backend HTTP call) | Embedded analytics dashboard | Unity.AI / AIReporting page |
-| 14 | **Matomo Analytics** | Web Analytics | `ANALYTICS_MATOMO_BASE` | `https://prod-analytics-matomo.apps.silver.devops.gov.bc.ca` | Browser JS tag | Page views, user events | Web (frontend JS) |
-| 15 | **HashiCorp Vault** | Secrets Management | (platform) | `https://vault.developer.gov.bc.ca` | Vault API / ExternalSecrets operator | API keys, DB credentials, OAuth secrets | Platform |
+| 6 | **CAS / CFS** | Payment System (Payments) | `PAYMENT_API_BASE` | `https://cfs-prodws.cas.gov.bc.ca:7121/ords/cas` | REST/OAuth | POST /oauth/token, GET supplier, POST invoice | Unity.Payments / CasTokenService, SupplierService, InvoiceService |
+| 7 | **BC Geocoder** | Address Lookup | `GEOCODER_LOCATION_API_BASE` | `https://geocoder.api.gov.bc.ca` | REST | GET address search, district/region lookups | Application / GeocoderApiService |
+| 8 | **OpenMaps / WFS** | Geospatial Features | `GEOCODER_API_BASE` | `https://openmaps.gov.bc.ca/geo/pub/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=` | WFS/OGC | GET geographic boundary features | Application / GeocoderApiService |
+| 9 | **OrgBook** | Business Registry Lookup | `ORGBOOK_API_BASE` | `https://orgbook.gov.bc.ca/api` | REST | GET search/autocomplete, GET topic/credential details | Application / OrgBookService |
+| 10 | **CHEFS / Intake** | Form Submissions (CHEFS) | `INTAKE_API_BASE` | `https://submit.digital.gov.bc.ca/app/api/v1` | REST | GET forms, GET versions, GET submissions | Application / FormsApiService, SubmissionAppService |
+| 11 | **Azure OpenAI** | AI Analysis & Scoring | `OpenAI:Endpoint` + `OpenAI:ApiKey` (Vault) | Azure-hosted endpoint (configured per env) | HTTPS / Azure SDK | Chat completions for AttachmentSummary, ApplicationAnalysis, ApplicationScoring | Unity.AI / OpenAITransportService |
+| 12 | **Reporting AI Dashboard** | AI Reporting (Metabase-based) | `REPORTING_AI` | `https://prod-unity-ai-reporting-d18498-prod.apps.gold.devops.gov.bc.ca` | iFrame embed only (no backend HTTP call) | Embedded analytics dashboard | Unity.AI / AIReporting page |
+| 13 | **Matomo Analytics** | Web Analytics | `ANALYTICS_MATOMO_BASE` | `https://prod-analytics-matomo.apps.silver.devops.gov.bc.ca` | Browser JS tag | Page views, user events | Web (frontend JS) |
+| 14 | **HashiCorp Vault** | Secrets Management | (platform) | `https://vault.developer.gov.bc.ca` | Vault API / ExternalSecrets operator | API keys, DB credentials, OAuth secrets | Platform |
 
 ---
 
@@ -100,7 +99,6 @@ Unity Grant Manager (UGM)
 ├── CSS ───────────────────► api.loginproxy.gov.bc.ca    [IDIR user search]
 │
 ├── NOTIFICATIONS ─────────► ches.api.gov.bc.ca          [Email via CHES]
-│                └─────────► bcgov.webhook.office.com     [Teams direct messages]
 │
 ├── PAYMENTS ──────────────► cfs-prodws.cas.gov.bc.ca     [CFS/CAS invoices & suppliers]
 │
@@ -156,7 +154,6 @@ Unity Applicant Portal (UAP)
 | `CSS_TOKEN_API_BASE` | `https://loginproxy.gov.bc.ca/auth/realms/standard/protocol/openid-connect/token` | UGM |
 | `NOTIFICATION_API_BASE` | `https://ches.api.gov.bc.ca/api/v1` | UGM |
 | `NOTIFICATION_AUTH` | `https://loginproxy.gov.bc.ca/auth/realms/comsvcauth/protocol/openid-connect/token` | UGM |
-| `DIRECT_MESSAGE_0` | `https://bcgov.webhook.office.com/webhookb2/d7f6b10c-…` | UGM |
 | `PAYMENT_API_BASE` | `https://cfs-prodws.cas.gov.bc.ca:7121/ords/cas` | UGM |
 | `GEOCODER_LOCATION_API_BASE` | `https://geocoder.api.gov.bc.ca` | UGM |
 | `GEOCODER_API_BASE` | `https://openmaps.gov.bc.ca/geo/pub/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=` | UGM |
@@ -184,7 +181,6 @@ Unity Applicant Portal (UAP)
 
 - **CSS** = Common Single Sign-On — used by UGM only for IDIR staff directory lookups; OIDC login itself goes directly through Keycloak.
 - **CHES** = Common Hosted Email Service — all notification emails route through CHES; it has its own OAuth realm (`comsvcauth`), separate from the standard user-auth realm.
-- **Teams** = Multiple webhook URLs supported (`DIRECT_MESSAGE_0`, `DIRECT_MESSAGE_1`, …) stored as dynamic URL settings in the database, seeded by `DynamicUrlDataSeeder`.
 - **CAS/CFS** = Corporate Accounting System / Common Financial System — handles supplier registration and invoice creation for grant payments.
 - **CHEFS** = Common Hosted Examination and Form Service — UGM pulls form definitions and submission data from CHEFS to populate intake records.
 - **Azure OpenAI** = UGM's operational AI (NOT the Reporting AI). Makes live chat completion calls for: AttachmentSummary, ApplicationAnalysis, ApplicationScoring. Configured via `OpenAI:Endpoint` + `OpenAI:ApiKey` stored in Vault/secrets. Models: `gpt-4o-mini`, `gpt-5-mini`.
