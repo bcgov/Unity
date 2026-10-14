@@ -147,11 +147,11 @@ namespace Unity.GrantManager.Events
                 // Process each tenant separately
                 foreach (var tenant in allTenants)
                 {
-                    using (_currentTenant.Change(tenant.Id))
+                    await ExecuteInTenantAuditScopeAsync(tenant.Id, async () =>
                     {
                         _logger.LogDebug("DateBasedScheduledNotificationJob: Processing notifications for tenant '{TenantName}' ({TenantId}).", tenant.Name, tenant.Id);
                         await ProcessTenantNotificationsAsync();
-                    }
+                    });
                 }
 
                 _logger.LogInformation("DateBasedScheduledNotificationJob: Completed execution.");

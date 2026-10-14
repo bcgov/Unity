@@ -114,7 +114,7 @@ public abstract class InboxWorkerBase : UnityQuartzBackgroundWorkerBase
             inboxMsg.MessageId, inboxMsg.Source, inboxMsg.DataType, inboxMsg.TenantId);
 
         string ackStatus;
-        string details;
+        string details = string.Empty;
 
         try
         {
@@ -149,12 +149,15 @@ public abstract class InboxWorkerBase : UnityQuartzBackgroundWorkerBase
             else
             {
                 // Switch to tenant context ONLY for the domain handler execution
-                using (currentTenant.Change(inboxMsg.TenantId))
+                await ExecuteInTenantAuditScopeAsync(inboxMsg.TenantId, async () =>
                 {
-                    using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
-                    details = await handler.HandleAsync(inboxMsg.Payload);
-                    await uow.CompleteAsync();
-                }
+                    using (currentTenant.Change(inboxMsg.TenantId))
+                    {
+                        using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
+                        details = await handler.HandleAsync(inboxMsg.Payload);
+                        await uow.CompleteAsync();
+                    }
+                });
                 ackStatus = "SUCCESS";
             }
         }

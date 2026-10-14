@@ -65,15 +65,18 @@ namespace Unity.GrantManager.Intakes.BackgroundWorkers
 
             foreach (var tenant in tenants)
             {
-                using (_currentTenant.Change(tenant.Id, tenant.Name))
+                await ExecuteInTenantAuditScopeAsync(tenant.Id, async () =>
                 {
-                    var (missingSubmissions, submissionReport) = await _applicationFormSynchronizationService.GetMissingSubmissions(numberDaysBack);
-                    if (missingSubmissions?.Count > 0) 
+                    using (_currentTenant.Change(tenant.Id, tenant.Name))
                     {
-                        emailBodyBuilder.AppendLine($"<br><br>Tenant: {tenant.Name}<br>{submissionReport}");
-                        sendEmail = true;
+                        var (missingSubmissions, submissionReport) = await _applicationFormSynchronizationService.GetMissingSubmissions(numberDaysBack);
+                        if (missingSubmissions?.Count > 0) 
+                        {
+                            emailBodyBuilder.AppendLine($"<br><br>Tenant: {tenant.Name}<br>{submissionReport}");
+                            sendEmail = true;
+                        }
                     }
-                }
+                });
             }
 
             emailBodyBuilder.AppendLine("<br> Bests");

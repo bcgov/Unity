@@ -50,20 +50,26 @@ public static class BackgroundJobContext
         var principalDisposable = principalAccessor.Change(principal);
         
         // NOW start auditing - it will see the correct tenant/user context
-        var auditingDisposable = auditingManager.BeginScope();
-        
-        // Ensure the current audit log has the user ID set for entity change tracking
-        if (auditingManager.Current != null)
-        {
-            auditingManager.Current.Log.UserId = backgroundJobPersonId;
-            auditingManager.Current.Log.UserName = BackgroundJobConstants.BackgroundJobUserName;
-            auditingManager.Current.Log.TenantId = tenantId;
-        }
+        var auditingDisposable = BeginAuditScope(auditingManager, tenantId);
 
         // Dispose in LIFO order: last registered is disposed first.
         // audit scope closes first (while tenant/user context is still valid),
         // then principal, then tenant.
         return new CompositeDisposable(auditingDisposable, principalDisposable, tenantDisposable);
+    }
+
+    public static IDisposable BeginAuditScope(IAuditingManager auditingManager, Guid? tenantId)
+    {
+        var auditingDisposable = auditingManager.BeginScope();
+
+        if (auditingManager.Current != null)
+        {
+            auditingManager.Current.Log.UserId = BackgroundJobConstants.BackgroundJobPersonId;
+            auditingManager.Current.Log.UserName = BackgroundJobConstants.BackgroundJobUserName;
+            auditingManager.Current.Log.TenantId = tenantId;
+        }
+
+        return auditingDisposable;
     }
 
     /// <summary>

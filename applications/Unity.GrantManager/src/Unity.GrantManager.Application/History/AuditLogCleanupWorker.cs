@@ -122,7 +122,7 @@ public class AuditLogCleanupWorker : UnityQuartzBackgroundWorkerBase, ITransient
         {
             try
             {
-                await cleanup(scope.ServiceProvider);
+                await ExecuteInTenantAuditScopeAsync(tenantId, () => cleanup(scope.ServiceProvider));
             }
             catch (Exception ex)
             {

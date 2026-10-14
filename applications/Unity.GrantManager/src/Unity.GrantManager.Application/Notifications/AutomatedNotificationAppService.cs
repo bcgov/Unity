@@ -6,14 +6,16 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Unity.GrantManager.Permissions;
 
 namespace Unity.GrantManager.Notifications
 {
-    [Authorize]
+    [Authorize(GrantManagerPermissions.NotificationScheduler.Default)]
     public class AutomatedNotificationAppService(IRepository<ScheduledNotification, Guid> repository) : ApplicationService, IAutomatedNotificationAppService
     {
         private readonly IRepository<ScheduledNotification, Guid> _repository = repository;
 
+        [Authorize(GrantManagerPermissions.NotificationScheduler.ManageSchedules)]
         public async Task<NotificationDto> CreateAsync(CreateUpdateNotificationDto input)
         {
             var entity = new ScheduledNotification
@@ -53,11 +55,13 @@ namespace Unity.GrantManager.Notifications
             };
         }
 
+        [Authorize(GrantManagerPermissions.NotificationScheduler.ManageSchedules)]
         public async Task DeleteAsync(Guid id)
         {
             await _repository.DeleteAsync(id, autoSave: true);
         }
 
+        [Authorize(GrantManagerPermissions.NotificationScheduler.ManageSchedules)]
         public async Task CancelAsync(Guid id)
         {
             var entity = await _repository.GetAsync(id);
@@ -127,6 +131,7 @@ namespace Unity.GrantManager.Notifications
             return new PagedResultDto<NotificationDto>(total, items);
         }
 
+        [Authorize(GrantManagerPermissions.NotificationScheduler.ManageSchedules)]
         public async Task<NotificationDto> UpdateAsync(Guid id, CreateUpdateNotificationDto input)
         {
             var e = await _repository.GetAsync(id);

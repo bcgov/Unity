@@ -129,7 +129,7 @@ public class CasPaymentRequestCoordinatorTests
         var unitOfWorkManager = Substitute.For<IUnitOfWorkManager>();
         unitOfWorkManager.Begin(Arg.Any<AbpUnitOfWorkOptions>(), Arg.Any<bool>()).Returns(unitOfWork);
 
-        var coordinator = new TestableCasPaymentRequestCoordinator(
+        var coordinator = new CasPaymentRequestCoordinator(
             paymentQueueService: null!,
             paymentRequestsRepository: repository,
             unitOfWorkManager: unitOfWorkManager,
@@ -145,22 +145,6 @@ public class CasPaymentRequestCoordinatorTests
             ?.SetValue(coordinator, lazyServiceProvider);
         return coordinator;
     }
-
-    private sealed class TestableCasPaymentRequestCoordinator(
-        PaymentQueueService paymentQueueService,
-        IPaymentRequestRepository paymentRequestsRepository,
-        IUnitOfWorkManager unitOfWorkManager,
-        ITenantRepository tenantRepository,
-        ICurrentTenant currentTenant,
-        ILocalEventBus localEventBus)
-        : CasPaymentRequestCoordinator(
-            paymentQueueService,
-            paymentRequestsRepository,
-            unitOfWorkManager,
-            tenantRepository,
-            currentTenant,
-            localEventBus)
-    { }
 
     private static PaymentRequest CreatePaymentRequest(
         string? invoiceStatus = null,

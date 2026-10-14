@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
@@ -37,7 +38,26 @@ public abstract class UnityQuartzBackgroundWorkerBase : QuartzBackgroundWorkerBa
         }
     }
 
-    private void AddWorkerAuditAction(IAuditingManager auditingManager, IJobExecutionContext context)
+    protected async Task ExecuteInTenantAuditScopeAsync(Guid? tenantId, Func<Task> action)
+    {
+        var auditingManager = ServiceProvider.GetRequiredService<IAuditingManager>();
+        var auditingStore = ServiceProvider.GetRequiredService<IAuditingStore>();
+        var currentTenant = ServiceProvider.GetRequiredService<ICurrentTenant>();
+
+        using (currentTenant.Change(tenantId))
+        using (BackgroundJobContext.BeginAuditScope(auditingManager, tenantId))
+        {
+            AddWorkerAuditAction(auditingManager, null);
+            await action();
+
+            if (auditingManager.Current?.Log is { EntityChanges.Count: > 0 } log)
+            {
+                await auditingStore.SaveAsync(log);
+            }
+        }
+    }
+
+    private void AddWorkerAuditAction(IAuditingManager auditingManager, IJobExecutionContext? context)
     {
         if (auditingManager.Current?.Log == null)
         {
@@ -48,7 +68,7 @@ public abstract class UnityQuartzBackgroundWorkerBase : QuartzBackgroundWorkerBa
         {
             ServiceName = GetType().FullName ?? GetType().Name,
             MethodName = nameof(ExecuteInBackgroundAsync),
-            Parameters = System.Text.Json.JsonSerializer.Serialize(new { context.FireInstanceId }),
+            Parameters = context == null ? "{}" : System.Text.Json.JsonSerializer.Serialize(new { context.FireInstanceId }),
             ExecutionTime = DateTime.UtcNow
         });
     }

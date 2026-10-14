@@ -14,7 +14,7 @@ using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Integrations.Endpoints
 {
-    [Authorize(IdentityConsts.ITOperationsPolicyName)]
+    [Authorize(IdentityConsts.ITAdminOrITOperationsPolicyName)]
     public class EndpointManagementAppService(
         IRepository<DynamicUrl, Guid> repository,
         IDistributedCache cache,

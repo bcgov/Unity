@@ -13,13 +13,14 @@ using Unity.Notifications.EmailNotifications;
 using Unity.Notifications.Templates;
 using Volo.Abp.Users;
 using Unity.GrantManager.Events;
+using Unity.GrantManager.Permissions;
 using Unity.Payments.Codes;
 using Unity.Payments.Enums;
 using Volo.Abp.Identity.Integration;
 
 namespace Unity.GrantManager.Web.Controllers
 {
-    [Authorize]
+    [Authorize(GrantManagerPermissions.NotificationScheduler.Default)]
     [Route("api/form-notifications")]
     [ApiController]
     public class FormNotificationsApiController(IApplicationStatusService statusService, 
@@ -277,6 +278,7 @@ namespace Unity.GrantManager.Web.Controllers
             return Ok(items);
         }
 
+        [Authorize(GrantManagerPermissions.NotificationScheduler.ManageSchedules)]
         [HttpPost("{formId}")]
         public async Task<ActionResult<ScheduledNotificationDto>> CreateForForm(string formId, [FromBody] CreateScheduledNotificationInput input)
         {
@@ -359,6 +361,7 @@ namespace Unity.GrantManager.Web.Controllers
             return CreatedAtAction(nameof(GetForForm), new { formId }, dto);
         }
 
+        [Authorize(GrantManagerPermissions.NotificationScheduler.ManageSchedules)]
         [HttpDelete("{formId}/{id:guid}")]
         public async Task<IActionResult> Delete(string formId, Guid id)
         {
@@ -366,6 +369,7 @@ namespace Unity.GrantManager.Web.Controllers
             return NoContent();
         }
 
+        [Authorize(GrantManagerPermissions.NotificationScheduler.ManageSchedules)]
         [HttpPatch("{formId}/{id:guid}/cancel")]
         public async Task<IActionResult> CancelNotification(string formId, Guid id)
         {
@@ -423,6 +427,7 @@ namespace Unity.GrantManager.Web.Controllers
             return Ok(new { notificationPlanNames = planNames });
         }
 
+        [Authorize(GrantManagerPermissions.NotificationScheduler.ManageSchedules)]
         [HttpPut("{formId}/{id:guid}")]
         public async Task<ActionResult<ScheduledNotificationDto>> UpdateForForm(string formId, Guid id, [FromBody] CreateScheduledNotificationInput input)
         {

@@ -52,11 +52,14 @@ public class ApplicantUpdateEmailRecoveryWorker : UnityQuartzBackgroundWorkerBas
         {
             try
             {
-                using var tenantScope = _serviceProvider.CreateScope();
-                using (tenantScope.ServiceProvider.GetRequiredService<ICurrentTenant>().Change(tenant.Id))
+                await ExecuteInTenantAuditScopeAsync(tenant.Id, async () =>
                 {
-                    await RecoverTenantAsync(tenantScope.ServiceProvider);
-                }
+                    using var tenantScope = _serviceProvider.CreateScope();
+                    using (tenantScope.ServiceProvider.GetRequiredService<ICurrentTenant>().Change(tenant.Id))
+                    {
+                        await RecoverTenantAsync(tenantScope.ServiceProvider);
+                    }
+                });
             }
             catch (Exception ex)
             {
