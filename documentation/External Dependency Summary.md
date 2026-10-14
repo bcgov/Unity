@@ -1,6 +1,6 @@
 # Unity Platform External Dependency Summary
 
-## Unity Grant Manager (UGM): 15 External Dependencies
+## Unity Grant Manager (UGM): 14 External Dependencies
 
 | # | Service | Key | URL | Purpose |
 |---|---|---|---|---|
@@ -9,16 +9,15 @@
 | 3 | CSS Token | CSS_TOKEN_API_BASE | .../realms/standard/.../token | OAuth token for CSS |
 | 4 | CHES | NOTIFICATION_API_BASE | ches.api.gov.bc.ca/api/v1 | Send/status/cancel emails |
 | 5 | CHES Auth | NOTIFICATION_AUTH | .../realms/comsvcauth/.../token | OAuth token for CHES |
-| 6 | Teams Webhooks | DIRECT_MESSAGE_0...N | bcgov.webhook.office.com/... | Direct Teams channel messages |
-| 7 | CAS / CFS | PAYMENT_API_BASE | cfs-prodws.cas.gov.bc.ca:7121/ords/cas | Supplier lookup + invoice creation |
-| 8 | BC Geocoder | GEOCODER_LOCATION_API_BASE | geocoder.api.gov.bc.ca | Address/region lookups |
-| 9 | OpenMaps WFS | GEOCODER_API_BASE | openmaps.gov.bc.ca/geo/pub/ows?... | Geospatial boundary features |
-| 10 | OrgBook | ORGBOOK_API_BASE | orgbook.gov.bc.ca/api | Business registry search |
-| 11 | CHEFS | INTAKE_API_BASE | submit.digital.gov.bc.ca/app/api/v1 | Form definitions + submissions |
-| 12 | Azure OpenAI | OpenAI:Endpoint + OpenAI:ApiKey (Vault) | Azure-hosted (per env) | AI: AttachmentSummary, ApplicationAnalysis, ApplicationScoring |
-| 13 | Reporting AI | REPORTING_AI | prod-unity-ai-reporting-d18498-prod.apps.gold.devops.gov.bc.ca | iFrame embed only — no backend HTTP call |
-| 14 | Matomo Analytics | ANALYTICS_MATOMO_BASE | {env}-analytics-matomo.apps.silver.devops.gov.bc.ca | Browser-side page tracking |
-| 15 | HashiCorp Vault | (platform / ExternalSecrets) | vault.developer.gov.bc.ca | All API keys, OAuth secrets, DB credentials |
+| 6 | CAS / CFS | PAYMENT_API_BASE | cfs-prodws.cas.gov.bc.ca:7121/ords/cas | Supplier lookup + invoice creation |
+| 7 | BC Geocoder | GEOCODER_LOCATION_API_BASE | geocoder.api.gov.bc.ca | Address/region lookups |
+| 8 | OpenMaps WFS | GEOCODER_API_BASE | openmaps.gov.bc.ca/geo/pub/ows?... | Geospatial boundary features |
+| 9 | OrgBook | ORGBOOK_API_BASE | orgbook.gov.bc.ca/api | Business registry search |
+| 10 | CHEFS | INTAKE_API_BASE | submit.digital.gov.bc.ca/app/api/v1 | Form definitions + submissions |
+| 11 | Azure OpenAI | OpenAI:Endpoint + OpenAI:ApiKey (Vault) | Azure-hosted (per env) | AI: AttachmentSummary, ApplicationAnalysis, ApplicationScoring |
+| 12 | Reporting AI | REPORTING_AI | prod-unity-ai-reporting-d18498-prod.apps.gold.devops.gov.bc.ca | iFrame embed only — no backend HTTP call |
+| 13 | Matomo Analytics | ANALYTICS_MATOMO_BASE | {env}-analytics-matomo.apps.silver.devops.gov.bc.ca | Browser-side page tracking |
+| 14 | HashiCorp Vault | (platform / ExternalSecrets) | vault.developer.gov.bc.ca | All API keys, OAuth secrets, DB credentials |
 
 ## Unity Applicant Portal (UAP): 4 External Dependencies
 
