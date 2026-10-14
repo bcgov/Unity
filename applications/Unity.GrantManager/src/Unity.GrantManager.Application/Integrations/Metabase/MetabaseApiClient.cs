@@ -152,19 +152,19 @@ public class MetabaseApiClient(
         var membershipsToken = await ReadJsonTokenAsync(
             await GetRawAsync("/api/permissions/membership", cancellationToken), "/api/permissions/membership");
 
-        // /api/permissions/membership normally returns an object keyed by group id
-        // ({"<groupId>": [...members...]}), but - like /api/permissions/group and /api/collection
-        // (see the comment on FindIdByNameAsync) - Metabase can return a raw JSON array instead
-        // (observed for a brand-new group with no memberships yet: []). GetAsync's hard cast to
+        // /api/permissions/membership normally returns an object keyed by USER id
+        // ({"<userId>": [{"group_id": .., "user_id": .., "membership_id": ..}]}), but - like
+        // /api/permissions/group and /api/collection (see the comment on FindIdByNameAsync) -
+        // Metabase can return a raw JSON array instead (observed: []). GetAsync's hard cast to
         // JObject throws on that shape, so read the raw token and handle both here.
-        var groupMembers = membershipsToken switch
+        var memberships = membershipsToken switch
         {
-            JObject membershipsByGroup => membershipsByGroup[groupId.ToString(CultureInfo.InvariantCulture)] as JArray,
+            JObject membershipsByUser => membershipsByUser[userId.ToString(CultureInfo.InvariantCulture)] as JArray,
             JArray flatMemberships => flatMemberships,
             _ => null
         };
 
-        return groupMembers?.Any(m => m.Value<int>("user_id") == userId) ?? false;
+        return memberships?.Any(m => m.Value<int?>("group_id") == groupId && m.Value<int?>("user_id") == userId) ?? false;
     }
 
     public Task GrantGroupDatabaseAccessAsync(int groupId, int databaseId, CancellationToken cancellationToken = default) =>

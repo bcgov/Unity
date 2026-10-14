@@ -41,7 +41,8 @@ public class MetabaseTenantAppService(
             StatusUpdatedAt = entry?.UpdatedAt,
             DatabaseId = tenant.GetProperty<int?>(MetabaseTenantProvisioner.DatabaseIdProperty),
             GroupId = tenant.GetProperty<int?>(MetabaseTenantProvisioner.GroupIdProperty),
-            CollectionId = tenant.GetProperty<int?>(MetabaseTenantProvisioner.CollectionIdProperty)
+            CollectionId = tenant.GetProperty<int?>(MetabaseTenantProvisioner.CollectionIdProperty),
+            ConcurrencyStamp = tenant.ConcurrencyStamp
         };
 
         // The same checks the post-creation job makes, in the tenant's context so the

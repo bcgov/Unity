@@ -107,6 +107,7 @@ public class MetabaseTenantAppServiceTests
         status.ConnectionOk.ShouldBe(true);
         status.ConnectionMessage.ShouldBeNull();
         status.MetabaseUrl.ShouldBe("https://metabase.example");
+        status.ConcurrencyStamp.ShouldBe(f.Tenant.ConcurrencyStamp);
     }
 
     [Fact]
