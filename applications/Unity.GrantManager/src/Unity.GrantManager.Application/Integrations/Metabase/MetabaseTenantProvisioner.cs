@@ -72,12 +72,12 @@ public class MetabaseTenantProvisioner(
         }
 
         var encryptedReadOnlyConnectionString = tenant.FindConnectionString(TenantReadOnlyConnectionStringName);
+        // Throwing (not returning) so the caller records an error: without this connection
+        // string nothing can be provisioned.
         if (string.IsNullOrWhiteSpace(encryptedReadOnlyConnectionString))
         {
-            logger.LogWarning(
-                "{Prefix} No readonly connection string found for tenant {TenantId} ('{TenantName}') - skipping.",
-                LogPrefix, tenantId, tenant.Name);
-            return;
+            throw new InvalidOperationException(
+                $"Tenant '{tenant.Name}' has no {TenantReadOnlyConnectionStringName} connection string, so it cannot be registered in Metabase.");
         }
 
         var (host, port, dbName, username, password) =

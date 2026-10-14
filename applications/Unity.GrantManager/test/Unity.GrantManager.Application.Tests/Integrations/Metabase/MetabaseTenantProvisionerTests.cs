@@ -102,11 +102,13 @@ public class MetabaseTenantProvisionerTests
     }
 
     [Fact]
-    public async Task SetupAsync_NoReadonlyConnectionString_SkipsWithoutCallingMetabase()
+    public async Task SetupAsync_NoReadonlyConnectionString_ThrowsWithoutCallingMetabase()
     {
         var f = CreateProvisioner(encryptedReadOnlyConnectionString: null);
 
-        await f.Provisioner.SetupAsync(f.Tenant.Id);
+        var ex = await Should.ThrowAsync<InvalidOperationException>(() => f.Provisioner.SetupAsync(f.Tenant.Id));
+
+        ex.Message.ShouldContain(ReadOnlyConnectionStringName);
 
         await f.MetabaseApiClient.DidNotReceiveWithAnyArgs().FindOrCreateDatabaseAsync(default!, default!, default, default!, default!, default!, default);
     }
