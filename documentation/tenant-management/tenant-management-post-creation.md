@@ -37,12 +37,13 @@ The DTO surfaced to the browser (`TenantDto.Sections`) is still a JSON array str
 
 ## The only step today: Metabase registration
 
-`MetabaseTenantRegistrationStep` (`Unity.GrantManager.Application/Tenants/PostCreation/Steps/`, `Order = 1`, `Key = "MetabaseSync"`, `ContinueOnError = true`) does everything the old manual deployment runbook did by hand:
+`MetabaseTenantRegistrationStep` (`Unity.GrantManager.Application/Tenants/PostCreation/Steps/`, `Order = 1`, `Key = "MetabaseSync"`, `ContinueOnError = true`) holds the checks below; its `ExecuteAsync` calls `MetabaseTenantProvisioner.SetupAsync` (`Unity.GrantManager.Application/Integrations/Metabase/`), which does everything the old manual deployment runbook did by hand:
 
 1. Decrypts the tenant's `Tenant_Readonly` connection string, `FindOrCreateDatabaseAsync`s a Metabase database connection named after the tenant, triggers a schema sync + value rescan.
-2. `FindOrCreateGroupAsync`s a Metabase permissions group named after the tenant, adds the configured member emails (from the per-tenant `MetabaseSettings.UserEmails` snapshot — see [tenant-management-application-services.md](tenant-management-application-services.md#metabase-settings)) via `AddGroupMemberAsync`. A user not found in Metabase (never logged in via LDAP, no Admin > People entry) is skipped with a logged warning, not a hard failure.
+2. `FindOrCreateGroupAsync`s a Metabase permissions group named after the tenant, adds the tenant's members via `AddGroupMemberAsync`: the emails of its active users with the `program_manager` role, plus the per-tenant `MetabaseSettings.UserEmails` list (see [tenant-management-application-services.md](tenant-management-application-services.md#metabase-settings)), de-duplicated case-insensitively. A user not found in Metabase (never logged in via LDAP, no Admin > People entry) is skipped with a logged warning, not a hard failure.
 3. Grants that group unrestricted view/query access to the new database connection.
 4. `FindOrCreateCollectionAsync`s a Metabase collection for the tenant and grants the group write access.
+5. Stores the database, group and collection IDs on the tenant as flat `ExtraProperties` scalars: `MetabaseDatabaseId`, `MetabaseGroupId`, `MetabaseCollectionId`. On a tenant registered before the IDs were stored, the find-or-create calls return the existing resources by name, so running Setup again backfills the IDs.
 
 `CanExecuteAsync` checks, in order: `TenantCreation:Steps:Metabase:Enabled` off → `Skipped` (this environment doesn't use Metabase); the tenant lacks the `Unity.Reporting` feature → `Skipped` (it never uses Metabase, so missing configuration doesn't matter to it); no API key, or a missing or blank `METABASE_API_BASE` endpoint → `Failure` with the reason; otherwise the step runs. Every Metabase call is designed to be idempotent (find-or-create by name, membership checks before writing), so a manual re-enqueue after a partial failure is safe.
 
