@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using Unity.Modules.Shared.Permissions;
 using Volo.Abp;
 using Volo.Abp.AuditLogging;
 using Volo.Abp.Data;
@@ -12,7 +11,7 @@ using Volo.Abp.Identity;
 
 namespace Unity.GrantManager.History;
 
-[Authorize(IdentityConsts.ITOperationsPolicyName)]
+[Authorize]
 public class HistoryAppService(
     IAuditLogRepository auditLogRepository,
     IIdentityUserRepository identityUserRepository,

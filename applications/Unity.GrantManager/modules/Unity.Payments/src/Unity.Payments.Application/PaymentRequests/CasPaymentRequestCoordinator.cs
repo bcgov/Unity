@@ -145,6 +145,23 @@ namespace Unity.Payments.PaymentRequests
                     originalCasValues ??= GetCurrentCasValues(paymentRequest);
 
                     var casValues = GetCasValues(paymentRequest, result);
+                    if (attempt > 1)
+                    {
+                        var currentCasValues = GetCurrentCasValues(paymentRequest);
+                        if (currentCasValues == casValues)
+                        {
+                            return paymentRequest;
+                        }
+
+                        if (currentCasValues != originalCasValues)
+                        {
+                            Logger.LogWarning(
+                                "Rejecting stale CAS result for payment request {PaymentRequestId}; the payment has a different CAS state.",
+                                PaymentRequestId);
+                            return paymentRequest;
+                        }
+                    }
+
                     ApplyCasValues(paymentRequest, casValues);
 
                     await paymentRequestsRepository.UpdateAsync(paymentRequest, autoSave: false);

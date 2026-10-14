@@ -9,7 +9,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Integrations.Cas;
 using Unity.Notifications.Integrations.RabbitMQ;
-using Unity.Payments.PaymentRequests;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
@@ -68,6 +67,26 @@ public class CasPaymentRequestCoordinatorTests
         var repository = Substitute.For<IPaymentRequestRepository>();
         repository.GetAsync(PaymentRequestId)
             .Returns(CreatePaymentRequest(), CreatePaymentRequest(invoiceStatus: "Paid"));
+        var unitOfWork = Substitute.For<IUnitOfWork>();
+        unitOfWork.CompleteAsync().Returns(Task.FromException(new AbpDbConcurrencyException()));
+        var coordinator = CreateCoordinator(repository, unitOfWork);
+
+        var result = await coordinator.UpdatePaymentRequestStatus(TenantId, PaymentRequestId, CreateCasResult());
+
+        result!.InvoiceStatus.ShouldBe("Paid");
+        _ = repository.Received(1).UpdateAsync(Arg.Any<PaymentRequest>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+        _ = unitOfWork.Received(1).CompleteAsync();
+    }
+
+    [Fact]
+    public async Task UpdatePaymentRequestStatus_RejectsStateChangedBeforeRetryLoad()
+    {
+        var repository = Substitute.For<IPaymentRequestRepository>();
+        repository.GetAsync(PaymentRequestId)
+            .Returns(
+                CreatePaymentRequest(),
+                CreatePaymentRequest(),
+                CreatePaymentRequest(invoiceStatus: "Paid"));
         var unitOfWork = Substitute.For<IUnitOfWork>();
         unitOfWork.CompleteAsync().Returns(Task.FromException(new AbpDbConcurrencyException()));
         var coordinator = CreateCoordinator(repository, unitOfWork);
