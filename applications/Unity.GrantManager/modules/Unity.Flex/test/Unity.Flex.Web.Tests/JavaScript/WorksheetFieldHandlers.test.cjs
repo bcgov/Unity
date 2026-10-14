@@ -31,8 +31,8 @@ function handlerFor(markup) {
 }
 
 function invokeHandler(context, handler, field) {
-    context.field = field;
-    vm.runInContext(`(function () { ${handler} }).call(field);`, context);
+    assert.equal(handler, 'notifyFieldChange(this.dataset.worksheetName, this.dataset.uiAnchor, this)');
+    context.notifyFieldChange(field.dataset.worksheetName, field.dataset.uiAnchor, field);
     assert.equal(context.xssExecuted, false, 'Metadata must not execute as JavaScript');
 }
 
@@ -46,8 +46,8 @@ const metadataCases = [
     { worksheetName: '', uiAnchor: '' }
 ];
 
-// These checks inspect Razor bindings and run actual handler source with decoded
-// dataset values. They do not render Razor or parse HTML in a browser.
+// These checks verify the exact fixed Razor handler, then invoke its target with
+// decoded dataset values. They do not render Razor or parse HTML in a browser.
 for (const widget of widgets) {
     test(`${widget.name} forwards metadata as data in every field branch`, () => {
         const controls = controlsFor(widget);
@@ -89,6 +89,8 @@ function notificationHarness() {
             }
         }
     });
+    // Trusted test input: only Details.js from the fixed repository path above.
+    // Metadata is passed as function arguments, never as evaluated source code.
     vm.runInContext(detailsSource, context, { filename: 'Details.js' });
     return {
         events,

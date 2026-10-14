@@ -48,11 +48,17 @@ function preview(options, previewId = 'scoresheet-preview') {
                 return [];
             }
         },
-        Sortable: class {},
+        Sortable: class {
+            constructor(element) {
+                assert.ok(element, 'Sortable must receive an existing preview element');
+            }
+        },
         abp: { ModalManager: class { onResult() {} } },
         PubSub: { subscribe(topic, handler) { subscriptions.set(topic, handler); } },
         updateSubtotal() {}
     };
+    // Trusted test input: only Scoresheet.js from the fixed repository path above.
+    // Test option values stay in dataset data, never in the evaluated source.
     vm.runInNewContext(source, context, { filename: 'Scoresheet.js' });
     readyHandlers.forEach(handler => handler());
     return {

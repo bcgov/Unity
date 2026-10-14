@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 const { readFileSync } = require('node:fs');
 const path = require('node:path');
-const { test } = require('node:test');
+const { before, test } = require('node:test');
 const vm = require('node:vm');
 
 const componentDirectory = path.resolve(__dirname,
@@ -9,9 +9,12 @@ const componentDirectory = path.resolve(__dirname,
 const view = readFileSync(path.join(componentDirectory, 'Default.cshtml'), 'utf8');
 const source = readFileSync(path.join(componentDirectory, 'Scoresheet.js'), 'utf8');
 const buttonMarkup = view.match(/<button\b[^>]*\bid="export_scoresheet_btn"[^>]*>/s)?.[0];
-assert.ok(buttonMarkup, 'The shared scoresheet view must contain the export button');
-const clickHandler = buttonMarkup.match(/\bonclick="([^"]*)"/)?.[1];
-assert.ok(clickHandler, 'The export button must have a click handler');
+const clickHandler = buttonMarkup?.match(/\bonclick="([^"]*)"/)?.[1];
+
+before(() => {
+    assert.ok(buttonMarkup, 'The shared scoresheet view must contain the export button');
+    assert.ok(clickHandler, 'The export button must have a click handler');
+});
 
 test('export metadata uses Razor-encoded data attributes instead of JavaScript interpolation', () => {
     assert.match(buttonMarkup, /\bdata-scoresheet-id="@scoresheet\.Id"/);
@@ -20,9 +23,9 @@ test('export metadata uses Razor-encoded data attributes instead of JavaScript i
     assert.doesNotMatch(clickHandler, /@/);
 });
 
-// Execute the view's actual handler and production export function. These DOM
-// adapters receive decoded dataset values; they do not render Razor, parse HTML,
-// or simulate browser downloads. Attribute encoding remains a manual check.
+// Verify the view's fixed handler, then call the production export function with
+// decoded dataset values. These adapters do not render Razor, parse HTML, or
+// simulate browser downloads. Attribute encoding remains a manual check.
 function exportsHarness() {
     const requests = [];
     const downloads = [];
@@ -57,12 +60,15 @@ function exportsHarness() {
         }
     };
     vm.createContext(context);
+    // Trusted test input: only Scoresheet.js from the fixed repository path above.
+    // VM separates browser globals; it is not a sandbox for untrusted source code.
     vm.runInContext(source, context, { filename: 'Scoresheet.js' });
     return {
         requests, downloads, revokedUrls,
         async click(dataset) {
-            context.button = { dataset };
-            vm.runInContext(`(function () { ${clickHandler} }).call(button);`, context);
+            assert.equal(clickHandler,
+                'exportScoresheet(this.dataset.scoresheetId, this.dataset.scoresheetName, this.dataset.scoresheetTitle);');
+            context.exportScoresheet(dataset.scoresheetId, dataset.scoresheetName, dataset.scoresheetTitle);
             await new Promise(resolve => setImmediate(resolve));
             assert.equal(context.xssExecuted, false, 'Metadata must not execute as JavaScript');
         }

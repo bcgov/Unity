@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 const { readFileSync } = require('node:fs');
 const path = require('node:path');
-const { test } = require('node:test');
+const { before, test } = require('node:test');
 const vm = require('node:vm');
 
 const webRoot = path.resolve(__dirname, '../../../src/Unity.GrantManager.Web');
@@ -15,7 +15,9 @@ const dataTablesSource = readFileSync(path.join(webRoot, 'node_modules/datatable
 const escapeSource = dataTablesSource.match(/var _escapeHtml = function \( d \) \{[\s\S]*?\n\t\};/)?.[0];
 const textSource = dataTablesSource.match(/text: function \(\) \{[\s\S]*?\n\t\t\}/)?.[0];
 const writeCellSource = dataTablesSource.match(/function _fnWriteCell\(td, val\)[\s\S]*?\n\t\}/)?.[0];
-assert.ok(escapeSource && textSource && writeCellSource, 'Locate the installed DataTables implementations');
+before(() => {
+    assert.ok(escapeSource && textSource && writeCellSource, 'Locate the installed DataTables implementations');
+});
 
 const owners = {
     Assessment: ['#AssessmentId', 'assessment-owner'],
