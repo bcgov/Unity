@@ -91,7 +91,7 @@ public class TemplateService : ApplicationService, ITemplateService
     public async Task DeleteTemplate(Guid id)
     {
         // Enforce server-side reference check so a client-side preflight failure cannot bypass the in-use safeguard.
-        var inUse = await _scheduledNotificationsRepository.AnyAsync(x => x.EmailTemplateId == id);
+var inUse = await _scheduledNotificationsRepository.AnyAsync((Unity.GrantManager.Notifications.ScheduledNotification x) => x.EmailTemplateId == id);
         if (inUse)
         {
             throw new Volo.Abp.BusinessException("Notifications:TemplateInUse", "Template is referenced by scheduled notifications and cannot be deleted.");
