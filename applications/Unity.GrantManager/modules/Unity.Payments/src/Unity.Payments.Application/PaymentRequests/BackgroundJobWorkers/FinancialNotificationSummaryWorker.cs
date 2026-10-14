@@ -47,7 +47,12 @@ public class FinancialNotificationSummaryWorker : UnityQuartzBackgroundWorkerBas
     protected override async Task ExecuteInBackgroundAsync(IJobExecutionContext context)
     {
         Logger.LogInformation("FinancialNotificationSummary Execute");
-        await _financialSummaryNotifier.NotifyFailedPayments(_strategies);
+            foreach (var tenantId in await _financialSummaryNotifier.GetTenantIdsAsync())
+            {
+                await ExecuteInTenantAuditScopeAsync(
+                    tenantId,
+                    () => _financialSummaryNotifier.NotifyFailedPaymentsForTenantAsync(tenantId, _strategies));
+            }
     }
 
     private static string ResolveCronExpression(ISettingManager settingManager, ILogger logger)

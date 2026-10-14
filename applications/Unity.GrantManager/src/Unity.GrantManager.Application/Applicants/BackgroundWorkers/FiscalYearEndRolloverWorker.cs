@@ -16,6 +16,8 @@ namespace Unity.GrantManager.Applicants.BackgroundWorkers;
 [DisallowConcurrentExecution]
 public class FiscalYearEndRolloverWorker : UnityQuartzBackgroundWorkerBase
 {
+    protected override bool UsesTenantAuditScopes => true;
+
     private readonly ILogger<FiscalYearEndRolloverWorker> _logger;
     private readonly IServiceProvider _serviceProvider;
     private readonly ITenantRepository _tenantRepository;

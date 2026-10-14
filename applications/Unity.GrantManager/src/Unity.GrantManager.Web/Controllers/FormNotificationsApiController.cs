@@ -20,7 +20,6 @@ using Volo.Abp.Identity.Integration;
 
 namespace Unity.GrantManager.Web.Controllers
 {
-    [Authorize(GrantManagerPermissions.NotificationScheduler.Default)]
     [Route("api/form-notifications")]
     [ApiController]
     public class FormNotificationsApiController(IApplicationStatusService statusService, 
@@ -37,6 +36,7 @@ namespace Unity.GrantManager.Web.Controllers
     {
 
 
+        [Authorize(NotificationsPermissions.Email.Send)]
         [HttpGet("payment-statuses")]
         public ActionResult<List<object>> GetPaymentStatuses()
         {
@@ -62,6 +62,7 @@ namespace Unity.GrantManager.Web.Controllers
         // In-memory storage removed; persisting to ScheduledNotifications table via IAutomatedNotificationAppService
 
 
+        [Authorize(NotificationsPermissions.Email.Send)]
         [HttpGet("templates")]
         public async Task<ActionResult<List<EmailTemplateDto>>> GetTemplates([FromQuery] string? templateType = null)
         {
@@ -95,6 +96,7 @@ namespace Unity.GrantManager.Web.Controllers
             return Ok(await applicantEmailTemplateService.GetPreviewAsync(applicantId, templateId));
         }
 
+        [Authorize(NotificationsPermissions.Email.Send)]
         [HttpGet("templates/{templateId:guid}/resolved-recipients")]
         public async Task<ActionResult<ResolvedRecipientsDto>> GetResolvedTemplateRecipients(Guid templateId, [FromQuery] Guid? applicationId = null)
         {
@@ -190,6 +192,7 @@ namespace Unity.GrantManager.Web.Controllers
             return Ok(new CopyAttachmentsResponseDto { AttachmentCount = copiedCount });
         }
 
+        [Authorize(NotificationsPermissions.Email.Send)]
         [HttpGet("email-template/{templateId}/validate-attachments")]
         public async Task<IActionResult> ValidateTemplateAttachments(Guid templateId)
         {
@@ -206,6 +209,7 @@ namespace Unity.GrantManager.Web.Controllers
             return Ok(new CopyAttachmentsResponseDto { AttachmentCount = deletedCount });
         }
 
+        [Authorize(NotificationsPermissions.Email.Send)]
         [HttpGet("statuses")]
         public async Task<ActionResult<List<object>>> GetApplicationStatuses()
         {
@@ -214,6 +218,7 @@ namespace Unity.GrantManager.Web.Controllers
             return Ok(list);
         }
 
+        [Authorize(NotificationsPermissions.Email.Send)]
         [HttpGet("recipients")]
         public async Task<ActionResult<List<RecipientDto>>> GetRecipients([FromQuery] string category)
         {
@@ -237,6 +242,7 @@ namespace Unity.GrantManager.Web.Controllers
             return Ok(new List<RecipientDto>());
         }
 
+        [Authorize(GrantManagerPermissions.NotificationScheduler.Default)]
         [HttpGet("{formId}")]
         public async Task<ActionResult<List<ScheduledNotificationDto>>> GetForForm(string formId)
         {
@@ -378,6 +384,7 @@ namespace Unity.GrantManager.Web.Controllers
             return NoContent();
         }
 
+        [Authorize(GrantManagerPermissions.NotificationScheduler.Default)]
         [HttpGet("can-delete-template/{templateId:guid}")]
         public async Task<ActionResult<object>> CanDeleteTemplate(Guid templateId)
         {
@@ -408,6 +415,7 @@ namespace Unity.GrantManager.Web.Controllers
             return Ok(new { canDelete = true, errorMessage = (string?)null, notificationPlanNames = Array.Empty<string>() });
         }
 
+        [Authorize(GrantManagerPermissions.NotificationScheduler.Default)]
         [HttpGet("template-notification-plans/{templateId:guid}")]
         public async Task<ActionResult<object>> GetTemplateNotificationPlans(Guid templateId)
         {

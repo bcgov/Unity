@@ -16,6 +16,8 @@ namespace Unity.GrantManager.HealthChecks.BackgroundWorkers
     [DisallowConcurrentExecution]
     public class DataHealthCheckWorker : UnityQuartzBackgroundWorkerBase
     {
+        protected override bool UsesTenantAuditScopes => true;
+
         private readonly ICurrentTenant _currentTenant;
         private readonly ITenantRepository _tenantRepository;
         private readonly IEmailNotificationService _emailNotificationService;

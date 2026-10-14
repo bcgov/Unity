@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Quartz;
 using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.Auditing;
@@ -15,6 +16,8 @@ namespace Unity.Modules.Shared.Utils;
 /// </summary>
 public abstract class UnityQuartzBackgroundWorkerBase : QuartzBackgroundWorkerBase
 {
+    protected virtual bool UsesTenantAuditScopes => false;
+
     public sealed override async Task Execute(IJobExecutionContext context)
     {
         var auditingManager = ServiceProvider.GetRequiredService<IAuditingManager>();
@@ -23,16 +26,34 @@ public abstract class UnityQuartzBackgroundWorkerBase : QuartzBackgroundWorkerBa
         var currentTenant = ServiceProvider.GetRequiredService<ICurrentTenant>();
 
         using (BackgroundJobExecutionContext.Use())
-        using (BackgroundJobContext.Set(auditingManager, principalAccessor, currentTenant, tenantId: null))
         {
-            AddWorkerAuditAction(auditingManager, context);
-            await ExecuteInBackgroundAsync(context);
-
-            if (auditingManager.Current?.Log is { EntityChanges.Count: > 0 } log)
+            if (UsesTenantAuditScopes)
             {
-                using (currentTenant.Change(null))
+                using (BackgroundJobContext.SetExecutionContext(principalAccessor, currentTenant, tenantId: null))
                 {
-                    await auditingStore.SaveAsync(log);
+                    await ExecuteInBackgroundAsync(context);
+                }
+                return;
+            }
+
+            using (BackgroundJobContext.Set(auditingManager, principalAccessor, currentTenant, tenantId: null))
+            {
+                AddWorkerAuditAction(auditingManager, context);
+                await ExecuteInBackgroundAsync(context);
+
+                if (auditingManager.Current?.Log is { EntityChanges.Count: > 0 } log)
+                {
+                    try
+                    {
+                        using (currentTenant.Change(null))
+                        {
+                            await auditingStore.SaveAsync(log);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError(ex, "Failed to persist audit log for background worker {WorkerName}; worker work was already committed.", GetType().Name);
+                    }
                 }
             }
         }
@@ -43,16 +64,23 @@ public abstract class UnityQuartzBackgroundWorkerBase : QuartzBackgroundWorkerBa
         var auditingManager = ServiceProvider.GetRequiredService<IAuditingManager>();
         var auditingStore = ServiceProvider.GetRequiredService<IAuditingStore>();
         var currentTenant = ServiceProvider.GetRequiredService<ICurrentTenant>();
+        var principalAccessor = ServiceProvider.GetRequiredService<ICurrentPrincipalAccessor>();
 
-        using (currentTenant.Change(tenantId))
-        using (BackgroundJobContext.BeginAuditScope(auditingManager, tenantId))
+        using (BackgroundJobContext.Set(auditingManager, principalAccessor, currentTenant, tenantId))
         {
             AddWorkerAuditAction(auditingManager, null);
             await action();
 
             if (auditingManager.Current?.Log is { EntityChanges.Count: > 0 } log)
             {
-                await auditingStore.SaveAsync(log);
+                try
+                {
+                    await auditingStore.SaveAsync(log);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Failed to persist audit log for tenant {TenantId}; worker work was already committed.", tenantId);
+                }
             }
         }
     }

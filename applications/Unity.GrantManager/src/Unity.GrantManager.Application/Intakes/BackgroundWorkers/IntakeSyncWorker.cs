@@ -15,6 +15,8 @@ namespace Unity.GrantManager.Intakes.BackgroundWorkers
     [DisallowConcurrentExecution]
     public class IntakeSyncWorker : UnityQuartzBackgroundWorkerBase
     {
+        protected override bool UsesTenantAuditScopes => true;
+
         private readonly ICurrentTenant _currentTenant;
         private readonly ITenantRepository _tenantRepository;
         private readonly IApplicationFormSycnronizationService _applicationFormSynchronizationService;

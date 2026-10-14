@@ -55,7 +55,30 @@ public static class BackgroundJobContext
         // Dispose in LIFO order: last registered is disposed first.
         // audit scope closes first (while tenant/user context is still valid),
         // then principal, then tenant.
-        return new CompositeDisposable(auditingDisposable, principalDisposable, tenantDisposable);
+        return new CompositeDisposable(tenantDisposable, principalDisposable, auditingDisposable);
+    }
+
+    public static IDisposable SetExecutionContext(
+        ICurrentPrincipalAccessor principalAccessor,
+        ICurrentTenant currentTenant,
+        Guid? tenantId)
+    {
+        var backgroundJobPersonId = BackgroundJobConstants.BackgroundJobPersonId;
+        var claims = new[]
+        {
+            new Claim(AbpClaimTypes.UserId, backgroundJobPersonId.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, backgroundJobPersonId.ToString()),
+            new Claim(AbpClaimTypes.UserName, BackgroundJobConstants.BackgroundJobUserName),
+            new Claim(AbpClaimTypes.Email, BackgroundJobConstants.BackgroundJobEmail),
+            new Claim(AbpClaimTypes.TenantId, tenantId?.ToString() ?? Guid.Empty.ToString()),
+            new Claim(AbpClaimTypes.Name, BackgroundJobConstants.BackgroundJobName)
+        };
+
+        var principal = new ClaimsPrincipal(new ClaimsIdentity(
+            claims, "BackgroundJob", AbpClaimTypes.UserName, AbpClaimTypes.Role));
+        var tenantDisposable = currentTenant.Change(tenantId);
+        var principalDisposable = principalAccessor.Change(principal);
+        return new CompositeDisposable(tenantDisposable, principalDisposable);
     }
 
     public static IDisposable BeginAuditScope(IAuditingManager auditingManager, Guid? tenantId)

@@ -19,6 +19,8 @@ namespace Unity.GrantManager.History;
 [DisallowConcurrentExecution]
 public class AuditLogCleanupWorker : UnityQuartzBackgroundWorkerBase, ITransientDependency
 {
+    protected override bool UsesTenantAuditScopes => true;
+
     private readonly IServiceProvider _serviceProvider;
     private readonly ITenantRepository _tenantRepository;
     private readonly ISettingProvider _settingProvider;

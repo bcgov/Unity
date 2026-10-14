@@ -34,6 +34,8 @@ namespace Unity.GrantManager.Events
     [DisallowConcurrentExecution]
     public class DateBasedScheduledNotificationJob : UnityQuartzBackgroundWorkerBase, ITransientDependency
     {
+        protected override bool UsesTenantAuditScopes => true;
+
         private readonly IRepository<ScheduledNotification, Guid> _scheduledNotificationRepository;
         private readonly IApplicationRepository _applicationRepository;
         private readonly IRepository<ScheduledNotificationTracking, Guid> _trackingRepository;

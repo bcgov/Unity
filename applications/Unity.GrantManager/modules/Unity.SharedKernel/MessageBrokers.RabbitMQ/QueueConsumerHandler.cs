@@ -194,7 +194,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
         /// audit persistence are handled here so individual consumers stay free of
         /// infrastructure concerns.
         /// </summary>
-        private static async Task ConsumeWithAuditingAsync(IServiceScope consumerScope, ITenantedQueueMessage tenantedMessage, TQueueMessage message)
+        private async Task ConsumeWithAuditingAsync(IServiceScope consumerScope, ITenantedQueueMessage tenantedMessage, TQueueMessage message)
         {
             var auditingManager = consumerScope.ServiceProvider.GetRequiredService<IAuditingManager>();
             var principalAccessor = consumerScope.ServiceProvider.GetRequiredService<ICurrentPrincipalAccessor>();
@@ -214,7 +214,16 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                 // so this call happens after the consumer's unit of work completes.
                 if (auditingManager.Current?.Log is { EntityChanges.Count: > 0 } log)
                 {
-                    await auditingStore.SaveAsync(log);
+                    try
+                    {
+                        await auditingStore.SaveAsync(log);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex,
+                            "Failed to persist audit log for message {MessageId}; consumer work was already committed.",
+                            message.MessageId);
+                    }
                 }
             }
         }

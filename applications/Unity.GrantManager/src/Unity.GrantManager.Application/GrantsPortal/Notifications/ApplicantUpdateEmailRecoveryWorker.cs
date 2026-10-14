@@ -23,6 +23,8 @@ namespace Unity.GrantManager.GrantsPortal.Notifications;
 [DisallowConcurrentExecution]
 public class ApplicantUpdateEmailRecoveryWorker : UnityQuartzBackgroundWorkerBase
 {
+    protected override bool UsesTenantAuditScopes => true;
+
     private readonly IServiceProvider _serviceProvider;
 
     public ApplicantUpdateEmailRecoveryWorker(IServiceProvider serviceProvider)

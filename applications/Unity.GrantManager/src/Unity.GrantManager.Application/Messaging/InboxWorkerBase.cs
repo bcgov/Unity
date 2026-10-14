@@ -21,6 +21,8 @@ namespace Unity.GrantManager.Messaging;
 [DisallowConcurrentExecution]
 public abstract class InboxWorkerBase : UnityQuartzBackgroundWorkerBase
 {
+    protected override bool UsesTenantAuditScopes => true;
+
     private readonly IServiceProvider _serviceProvider;
 
     /// <summary>
