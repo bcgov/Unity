@@ -33,9 +33,11 @@ public class MetabaseTenantRegistrationStep(
     IFeatureChecker featureChecker)
     : IPostTenantCreationStep, ITransientDependency
 {
+    public const string StepKey = "MetabaseSync";
+
     public int Order => 1;
 
-    public string Key => "MetabaseSync";
+    public string Key => StepKey;
 
     public string StepName => "Metabase Tenant Registration";
 

@@ -34,11 +34,20 @@ public class MetabaseApiClient(
     // (same immediate-retry approach as UpdateGraphWithRetryAsync below - no artificial delay).
     private const int MaxDatabaseSyncAttempts = 3;
 
+    public Task<string> GetSiteUrlAsync() => GetBaseUrlAsync();
+
+    public async Task<bool> CheckConnectionAsync(CancellationToken cancellationToken = default)
+    {
+        var currentUser = await GetAsync("/api/user/current", cancellationToken);
+        return currentUser.Value<bool?>("is_superuser") ?? false;
+    }
+
     public async Task<int> FindOrCreateDatabaseAsync(string name, string host, int port, string dbName, string username, string password, bool ssl, CancellationToken cancellationToken = default)
     {
         var existingId = await FindIdByNameAsync("/api/database", name, cancellationToken);
         if (existingId != null)
         {
+            await UpdateDatabaseDetailsAsync(existingId.Value, host, port, dbName, username, password, ssl, cancellationToken);
             return existingId.Value;
         }
 
@@ -51,6 +60,17 @@ public class MetabaseApiClient(
         };
         var result = await PostAsync("/api/database", body, cancellationToken);
         return result.Value<int>("id");
+    }
+
+    public async Task UpdateDatabaseDetailsAsync(int databaseId, string host, int port, string dbName, string username, string password, bool ssl, CancellationToken cancellationToken = default)
+    {
+        var path = $"/api/database/{databaseId}";
+        var body = new
+        {
+            engine = "postgres",
+            details = new { host, port, dbname = dbName, user = username, password, ssl }
+        };
+        await ReadJsonTokenAsync(await PutRawAsync(path, body, cancellationToken), path);
     }
 
     public Task SyncDatabaseSchemaAsync(int databaseId, CancellationToken cancellationToken = default) =>

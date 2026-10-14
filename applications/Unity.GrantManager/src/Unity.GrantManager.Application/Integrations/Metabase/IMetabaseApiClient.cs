@@ -16,7 +16,24 @@ namespace Unity.GrantManager.Integrations.Metabase;
 /// </summary>
 public interface IMetabaseApiClient
 {
+    /// <summary>
+    /// The Metabase site URL (the METABASE_API_BASE endpoint), for links into Metabase.
+    /// </summary>
+    Task<string> GetSiteUrlAsync();
+
+    /// <summary>
+    /// Calls <c>GET /api/user/current</c> with the configured API key. Returns whether the key
+    /// belongs to a Metabase administrator; throws when Metabase is unreachable or rejects the key.
+    /// </summary>
+    Task<bool> CheckConnectionAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Finds the database connection by name, or creates it. When it already exists, its
+    /// connection details are updated (<see cref="UpdateDatabaseDetailsAsync"/>) so a changed
+    /// password or host is picked up on a rerun.
+    /// </summary>
     Task<int> FindOrCreateDatabaseAsync(string name, string host, int port, string dbName, string username, string password, bool ssl, CancellationToken cancellationToken = default);
+    Task UpdateDatabaseDetailsAsync(int databaseId, string host, int port, string dbName, string username, string password, bool ssl, CancellationToken cancellationToken = default);
     Task SyncDatabaseSchemaAsync(int databaseId, CancellationToken cancellationToken = default);
     Task RescanDatabaseValuesAsync(int databaseId, CancellationToken cancellationToken = default);
     Task<int> FindOrCreateGroupAsync(string name, CancellationToken cancellationToken = default);

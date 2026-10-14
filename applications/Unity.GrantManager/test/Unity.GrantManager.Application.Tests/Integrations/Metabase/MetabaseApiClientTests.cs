@@ -38,6 +38,62 @@ public class MetabaseApiClientTests
             .Returns(responses[0], responses[1..]);
 
     [Fact]
+    public async Task FindOrCreateDatabaseAsync_Existing_UpdatesConnectionDetailsAndReturnsId()
+    {
+        var (client, http) = CreateClient();
+        SetupHttpSequence(http,
+            JsonResponse(HttpStatusCode.OK, "{\"data\":[{\"id\":7,\"name\":\"AG-MARB\"}]}"),
+            JsonResponse(HttpStatusCode.OK, "{\"id\":7}"));
+
+        var id = await client.FindOrCreateDatabaseAsync("AG-MARB", "db-host", 5432, "T_ABC123", "t_abc123_readonly", "new-pw", true);
+
+        id.ShouldBe(7);
+        await http.Received(1).HttpAsync(
+            HttpMethod.Put, $"{BaseUrl}/api/database/7", Arg.Any<object?>(), Arg.Any<string?>(),
+            Arg.Any<(string username, string password)?>(), Arg.Any<HttpCompletionOption>(),
+            Arg.Any<System.Collections.Generic.IReadOnlyDictionary<string, string>?>(), Arg.Any<CancellationToken>());
+        await http.DidNotReceive().HttpAsync(
+            HttpMethod.Post, Arg.Any<string>(), Arg.Any<object?>(), Arg.Any<string?>(),
+            Arg.Any<(string username, string password)?>(), Arg.Any<HttpCompletionOption>(),
+            Arg.Any<System.Collections.Generic.IReadOnlyDictionary<string, string>?>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task FindOrCreateDatabaseAsync_UpdateRejected_Throws()
+    {
+        var (client, http) = CreateClient();
+        SetupHttpSequence(http,
+            JsonResponse(HttpStatusCode.OK, "{\"data\":[{\"id\":7,\"name\":\"AG-MARB\"}]}"),
+            JsonResponse(HttpStatusCode.BadRequest, "{\"message\":\"password incorrect\"}"));
+
+        await Should.ThrowAsync<IntegrationServiceException>(
+            () => client.FindOrCreateDatabaseAsync("AG-MARB", "db-host", 5432, "T_ABC123", "t_abc123_readonly", "bad-pw", true));
+    }
+
+    [Theory]
+    [InlineData("{\"is_superuser\":true}", true)]
+    [InlineData("{\"is_superuser\":false}", false)]
+    [InlineData("{}", false)]
+    public async Task CheckConnectionAsync_ReturnsWhetherKeyIsAdministrators(string body, bool expected)
+    {
+        var (client, http) = CreateClient();
+        SetupHttpSequence(http, JsonResponse(HttpStatusCode.OK, body));
+
+        (await client.CheckConnectionAsync()).ShouldBe(expected);
+    }
+
+    [Fact]
+    public async Task CheckConnectionAsync_KeyRejected_ThrowsWithStatus()
+    {
+        var (client, http) = CreateClient();
+        SetupHttpSequence(http, JsonResponse(HttpStatusCode.Unauthorized, "Unauthenticated"));
+
+        var ex = await Should.ThrowAsync<IntegrationServiceException>(() => client.CheckConnectionAsync());
+
+        ex.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
     public async Task GrantGroupDatabaseAccessAsync_NoConflict_SucceedsOnFirstAttempt()
     {
         var (client, http) = CreateClient();
@@ -125,23 +181,6 @@ public class MetabaseApiClientTests
     }
 
     // /api/database wraps its list in {"data": [...]}.
-    [Fact]
-    public async Task FindOrCreateDatabaseAsync_DatabaseWithSameNameAlreadyExists_ReturnsExistingIdWithoutCreating()
-    {
-        var (client, http) = CreateClient();
-        SetupHttpSequence(http,
-            JsonResponse(HttpStatusCode.OK, "{\"data\":[{\"id\":11,\"name\":\"AG-MARB\"}]}"));
-
-        var databaseId = await client.FindOrCreateDatabaseAsync(
-            "AG-MARB", "host", 5432, "db", "user", "pass", ssl: true);
-
-        databaseId.ShouldBe(11);
-        await http.Received(1).HttpAsync(
-            Arg.Any<HttpMethod>(), Arg.Any<string>(), Arg.Any<object?>(), Arg.Any<string?>(),
-            Arg.Any<(string username, string password)?>(), Arg.Any<HttpCompletionOption>(),
-            Arg.Any<System.Collections.Generic.IReadOnlyDictionary<string, string>?>(), Arg.Any<CancellationToken>());
-    }
-
     [Fact]
     public async Task FindOrCreateDatabaseAsync_NoDatabaseWithThatName_CreatesNewDatabase()
     {

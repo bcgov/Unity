@@ -20,7 +20,7 @@ public interface IPostTenantCreationStep
 
 `PostTenantCreationSequenceJob` (`Unity.GrantManager.Application/Tenants/PostCreation/`) runs the registered steps **one per job execution**, in ascending `Order`, self-re-enqueuing (`IBackgroundJobManager.EnqueueAsync`) for the next `StepIndex` — so the whole sequence is driven entirely by ABP's background job queue, not a long-running loop. `TenantCreatedEventHandler` kicks it off with `StepIndex = 0` right after synchronous provisioning completes.
 
-A step's exception is always caught and logged, never rethrown — ABP's own background-job retry only engages when `ExecuteAsync` throws, and that's deliberately not the recovery mechanism here. `ContinueOnError = true` means a failed step is logged and the sequence moves on to the next step anyway; `false` stops the sequence entirely. Either way, the failed step itself gets no further automatic attempt — recovery is a manual re-enqueue of a `PostTenantCreationStepArgs` for that step index (there's currently no UI button for this; an operator does it directly).
+A step's exception is always caught and logged, never rethrown — ABP's own background-job retry only engages when `ExecuteAsync` throws, and that's deliberately not the recovery mechanism here. `ContinueOnError = true` means a failed step is logged and the sequence moves on to the next step anyway; `false` stops the sequence entirely. Either way, the failed step itself gets no further automatic attempt — recovery is a re-enqueue of a `PostTenantCreationStepArgs` for that step index. For the Metabase step that's the Set up / Resync button on the Configuration modal's Reporting tab (below); there is no generic retry button for a step.
 
 ## Status tracking on the tenant
 
@@ -39,13 +39,20 @@ The DTO surfaced to the browser (`TenantDto.Sections`) is still a JSON array str
 
 `MetabaseTenantRegistrationStep` (`Unity.GrantManager.Application/Tenants/PostCreation/Steps/`, `Order = 1`, `Key = "MetabaseSync"`, `ContinueOnError = true`) holds the checks below; its `ExecuteAsync` calls `MetabaseTenantProvisioner.SetupAsync` (`Unity.GrantManager.Application/Integrations/Metabase/`), which does everything the old manual deployment runbook did by hand:
 
-1. Decrypts the tenant's `Tenant_Readonly` connection string, `FindOrCreateDatabaseAsync`s a Metabase database connection named after the tenant, triggers a schema sync + value rescan.
+1. Decrypts the tenant's `Tenant_Readonly` connection string (throws if there is none, so the job records `Error`), `FindOrCreateDatabaseAsync`s a Metabase database connection named after the tenant, triggers a schema sync + value rescan. When the connection already exists, `FindOrCreateDatabaseAsync` updates its details with `PUT /api/database/{id}`, so a rerun picks up a changed password or host.
 2. `FindOrCreateGroupAsync`s a Metabase permissions group named after the tenant, adds the tenant's members via `AddGroupMemberAsync`: the emails of its active users with the `program_manager` role, plus the per-tenant `MetabaseSettings.UserEmails` list (see [tenant-management-application-services.md](tenant-management-application-services.md#metabase-settings)), de-duplicated case-insensitively. A user not found in Metabase (never logged in via LDAP, no Admin > People entry) is skipped with a logged warning, not a hard failure.
 3. Grants that group unrestricted view/query access to the new database connection.
 4. `FindOrCreateCollectionAsync`s a Metabase collection for the tenant and grants the group write access.
 5. Stores the database, group and collection IDs on the tenant as flat `ExtraProperties` scalars: `MetabaseDatabaseId`, `MetabaseGroupId`, `MetabaseCollectionId`. On a tenant registered before the IDs were stored, the find-or-create calls return the existing resources by name, so running Setup again backfills the IDs.
 
-`CanExecuteAsync` checks, in order: `TenantCreation:Steps:Metabase:Enabled` off → `Skipped` (this environment doesn't use Metabase); the tenant lacks the `Unity.Reporting` feature → `Skipped` (it never uses Metabase, so missing configuration doesn't matter to it); no API key, or a missing or blank `METABASE_API_BASE` endpoint → `Failure` with the reason; otherwise the step runs. Every Metabase call is designed to be idempotent (find-or-create by name, membership checks before writing), so a manual re-enqueue after a partial failure is safe.
+`CanExecuteAsync` checks, in order: `TenantCreation:Steps:Metabase:Enabled` off → `Skipped` (this environment doesn't use Metabase); the tenant lacks the `Unity.Reporting` feature → `Skipped` (it never uses Metabase, so missing configuration doesn't matter to it); no API key, or a missing or blank `METABASE_API_BASE` endpoint → `Failure` with the reason; otherwise the step runs. Every Metabase call is designed to be idempotent (find-or-create by name, membership checks before writing), so a rerun after a partial failure is safe.
+
+### Set up and Resync from the Reporting tab
+
+`IMetabaseTenantAppService` (`Unity.GrantManager.Application.Contracts/Integrations/Metabase/`, implemented by `MetabaseTenantAppService`, `ITAdminOrITOperationsPolicyName`) backs the Metabase section of the tenant Configuration modal's Reporting tab:
+
+- `GetAsync(tenantId)` returns the step's last status, the stored IDs (shown as links into Metabase), and the result of the same `CanExecuteAsync` checks. When those pass it also calls `GET /api/user/current` with the API key (`IMetabaseApiClient.CheckConnectionAsync`) to confirm Metabase is reachable and the key belongs to an administrator.
+- `SetupAsync(tenantId)` marks the step `Waiting` and enqueues `PostTenantCreationStepArgs` at the Metabase step's index, so it runs through `PostTenantCreationSequenceJob` like the original registration. Steps ordered after it would run again too; there are none. The button reads **Set up** when the tenant has no stored IDs and **Resync** when it has; both run the same idempotent Setup.
 
 ## `MetabaseApiClient` — handling Metabase's API inconsistencies
 
