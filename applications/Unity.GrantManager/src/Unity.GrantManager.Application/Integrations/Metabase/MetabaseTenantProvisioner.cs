@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -99,17 +97,24 @@ public class MetabaseTenantProvisioner(
 
         var groupId = await metabaseApiClient.FindOrCreateGroupAsync(tenant.Name);
 
+        var notFoundCount = 0;
         foreach (var email in await GetMemberEmailsAsync(tenantId))
         {
             var userId = await metabaseApiClient.FindUserIdByEmailAsync(email);
             if (userId == null)
             {
-                logger.LogWarning(
-                    "{Prefix} User (hash {EmailHash}) not found in Metabase for tenant {TenantId} - they must log in via LDAP or be created under Admin > People before they can be added to a group.",
-                    LogPrefix, HashEmail(email), tenantId);
+                notFoundCount++;
                 continue;
             }
             await metabaseApiClient.AddGroupMemberAsync(groupId, userId.Value);
+        }
+
+        // A count, not who: email addresses (even hashed) don't belong in logs.
+        if (notFoundCount > 0)
+        {
+            logger.LogWarning(
+                "{Prefix} {NotFoundCount} member(s) not found in Metabase for tenant {TenantId} - they must log in via LDAP or be created under Admin > People before they can be added to the group.",
+                LogPrefix, notFoundCount, tenantId);
         }
 
         await metabaseApiClient.GrantGroupDatabaseAccessAsync(groupId, databaseId);
@@ -158,14 +163,6 @@ public class MetabaseTenantProvisioner(
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
-
-    // Avoids writing a user's email address to logs (CodeQL: exposure of private information).
-    // A substring/mask still contains real characters from the source string, so CodeQL's
-    // dataflow analysis still treats it as the same private data - a one-way hash is what's
-    // actually recognized as breaking that taint, while still letting an admin correlate repeated
-    // "not found" warnings against a known list of emails (by hashing candidates themselves).
-    private static string HashEmail(string email) =>
-        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(email.Trim().ToLowerInvariant())))[..8];
 
     private static (string Host, int Port, string DbName, string Username, string Password) ParseConnectionString(string connectionString)
     {
