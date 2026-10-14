@@ -367,7 +367,7 @@
             }
         }).then((result) => {
             if (!result.isConfirmed) return;
-            fetch('/api/form-notifications/' + encodeURIComponent(formId) + '/' + encodeURIComponent(id) + '/cancel', {
+                return fetch('/api/form-notifications/' + encodeURIComponent(formId) + '/' + encodeURIComponent(id) + '/cancel', {
                     method: 'PATCH',
                     headers: { 'RequestVerificationToken': abp.security.antiForgery.getToken() }
                 })
@@ -629,7 +629,7 @@
         if (sel === null || preview === null) return;
         const val = sel.value;
         updateTemplateAttachments(val);
-        fetch('/api/form-notifications/templates?templateType=Application').then(r => r.json()).then(list => {
+        return fetch('/api/form-notifications/templates?templateType=Application').then(r => r.json()).then(list => {
             const t = list.find(x => String(x.id) === String(val));
             renderTemplatePreview(preview, t);
         });
@@ -874,7 +874,7 @@
             });
         }
 
-        fetchTemplates().then(populateTemplates);
+        void fetchTemplates().then(populateTemplates).catch(error => console.error('Failed to load notification templates:', error));
         initNotificationsTable();
         bindTabVisibilityResize();
         // In case the widget is already visible on load (not inside a hidden tab pane)
@@ -933,7 +933,7 @@
                 const moduleSelect = document.getElementById('moduleSelect');
                 const statusSelect = document.getElementById('statusSelect');
                 if (moduleSelect?.value) {
-                    loadStatusesForModule(moduleSelect.value);
+                    void loadStatusesForModule(moduleSelect.value).catch(error => console.error('Failed to load module statuses:', error));
                 } else if (statusSelect) {
                     statusSelect.disabled = true;
                 }
@@ -957,7 +957,10 @@
         document.getElementById('recipientCategory')?.addEventListener('change', (e) => {
             const cat = e.target.value;
             e.target.classList.remove('is-invalid');
-            if (cat) fetchRecipients(cat).then(populateRecipients);
+            if (cat) {
+                void fetchRecipients(cat).then(populateRecipients)
+                    .catch(error => console.error('Failed to load notification recipients:', error));
+            }
         });
 
     function handleSaveNotification(e) {
@@ -1054,11 +1057,11 @@
         init();
         
         // Load statuses and initial recipients
-        fetchStatuses().then(statuses => {
+        void fetchStatuses().then(statuses => {
             populateStatuses(statuses);
             populateDateStatuses(statuses);
             reloadTable();
-        });
+        }).catch(error => console.error('Failed to load notification statuses:', error));
     });
 
     function configureSubmitOnlyValidation() {
