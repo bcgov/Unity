@@ -21,21 +21,19 @@ public static class BackgroundJobContext
     /// <param name="principalAccessor">The current principal accessor for setting user identity</param>
     /// <param name="currentTenant">The current tenant accessor for setting tenant context</param>
     /// <param name="tenantId">The tenant ID to set context for</param>
-    /// <param name="userId">Optional user ID. If null, uses BackgroundJobConstants.BackgroundJobPersonId</param>
     /// <returns>IDisposable that restores previous context when disposed (LIFO order)</returns>
     public static IDisposable Set(
         IAuditingManager auditingManager,
         ICurrentPrincipalAccessor principalAccessor,
         ICurrentTenant currentTenant,
-        Guid? tenantId,
-        Guid? userId = null)
+        Guid? tenantId)
     {
-        var effectiveUserId = userId ?? BackgroundJobConstants.BackgroundJobPersonId;
+        var backgroundJobPersonId = BackgroundJobConstants.BackgroundJobPersonId;
 
         var claims = new[]
         {
-            new Claim(AbpClaimTypes.UserId, effectiveUserId.ToString()),
-            new Claim(ClaimTypes.NameIdentifier, effectiveUserId.ToString()), // Standard claim for user ID
+            new Claim(AbpClaimTypes.UserId, backgroundJobPersonId.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, backgroundJobPersonId.ToString()), // Standard claim for user ID
             new Claim(AbpClaimTypes.UserName, BackgroundJobConstants.BackgroundJobUserName),
             new Claim(AbpClaimTypes.Email, BackgroundJobConstants.BackgroundJobEmail),
             new Claim(AbpClaimTypes.TenantId, tenantId?.ToString() ?? Guid.Empty.ToString()),
@@ -57,7 +55,7 @@ public static class BackgroundJobContext
         // Ensure the current audit log has the user ID set for entity change tracking
         if (auditingManager.Current != null)
         {
-            auditingManager.Current.Log.UserId = effectiveUserId;
+            auditingManager.Current.Log.UserId = backgroundJobPersonId;
             auditingManager.Current.Log.UserName = BackgroundJobConstants.BackgroundJobUserName;
             auditingManager.Current.Log.TenantId = tenantId;
         }

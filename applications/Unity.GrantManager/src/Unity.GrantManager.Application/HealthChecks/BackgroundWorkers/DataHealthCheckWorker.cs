@@ -7,7 +7,6 @@ using Unity.Modules.Shared.Utils;
 using Unity.Notifications.EmailNotifications;
 using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Enums;
-using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
@@ -15,7 +14,7 @@ using Volo.Abp.TenantManagement;
 namespace Unity.GrantManager.HealthChecks.BackgroundWorkers
 {
     [DisallowConcurrentExecution]
-    public class DataHealthCheckWorker : QuartzBackgroundWorkerBase
+    public class DataHealthCheckWorker : UnityQuartzBackgroundWorkerBase
     {
         private readonly ICurrentTenant _currentTenant;
         private readonly ITenantRepository _tenantRepository;
@@ -49,7 +48,7 @@ namespace Unity.GrantManager.HealthChecks.BackgroundWorkers
                 .Build();
         }
 
-        public override async Task Execute(IJobExecutionContext context)
+        protected override async Task ExecuteInBackgroundAsync(IJobExecutionContext context)
         {
             Logger.LogInformation("Executing DataHealthCheckWorker...");
 

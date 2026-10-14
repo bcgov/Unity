@@ -1,5 +1,7 @@
 ﻿@using Unity.GrantManager.Analytics;
+@using System.Globalization;
 @using System.Reflection;
+@using Microsoft.Extensions.Hosting;
 @using Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;
 @using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.ContentTitle;
 @using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.MainNavbar;
@@ -19,6 +21,7 @@
 @inject IBrandingProvider BrandingProvider
 @inject IPageLayout PageLayout
 @inject IAbpAntiForgeryManager AbpAntiForgeryManager
+@inject IHostEnvironment HostEnvironment
 @{
     Layout = null;    
     var containerClass = "container-fluid";
@@ -158,5 +161,9 @@
     </script>
 
     @await Component.InvokeLayoutHookAsync(LayoutHooks.Body.Last, StandardLayouts.Application)
+    @if (HostEnvironment.IsDevelopment())
+    {
+        <script src="/_framework/aspnetcore-browser-refresh.js"></script>
+    }
 </body>
 </html>

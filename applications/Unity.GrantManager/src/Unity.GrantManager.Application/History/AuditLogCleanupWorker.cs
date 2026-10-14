@@ -7,7 +7,7 @@ using System.Threading;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Logs;
 using Unity.GrantManager.Settings;
-using Volo.Abp.BackgroundWorkers.Quartz;
+using Unity.Modules.Shared.Utils;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
@@ -17,7 +17,7 @@ using Volo.Abp.TenantManagement;
 namespace Unity.GrantManager.History;
 
 [DisallowConcurrentExecution]
-public class AuditLogCleanupWorker : QuartzBackgroundWorkerBase, ITransientDependency
+public class AuditLogCleanupWorker : UnityQuartzBackgroundWorkerBase, ITransientDependency
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ITenantRepository _tenantRepository;
@@ -45,7 +45,7 @@ public class AuditLogCleanupWorker : QuartzBackgroundWorkerBase, ITransientDepen
             .Build();
     }
 
-    public override async Task Execute(IJobExecutionContext context)
+    protected override async Task ExecuteInBackgroundAsync(IJobExecutionContext context)
     {
         var enabled = await _settingProvider.GetAsync(
             SettingsConstants.Retention.CleanupEnabled,

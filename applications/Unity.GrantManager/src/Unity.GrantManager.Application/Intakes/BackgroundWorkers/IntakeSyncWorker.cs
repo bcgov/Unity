@@ -6,7 +6,6 @@ using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Settings;
 using Unity.Modules.Shared.Utils;
 using Unity.Notifications.EmailNotifications;
-using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
@@ -14,7 +13,7 @@ using Volo.Abp.TenantManagement;
 namespace Unity.GrantManager.Intakes.BackgroundWorkers
 {
     [DisallowConcurrentExecution]
-    public class IntakeSyncWorker : QuartzBackgroundWorkerBase
+    public class IntakeSyncWorker : UnityQuartzBackgroundWorkerBase
     {
         private readonly ICurrentTenant _currentTenant;
         private readonly ITenantRepository _tenantRepository;
@@ -49,7 +48,7 @@ namespace Unity.GrantManager.Intakes.BackgroundWorkers
                 .Build();
         }
 
-        public override async Task Execute(IJobExecutionContext context)
+        protected override async Task ExecuteInBackgroundAsync(IJobExecutionContext context)
         {
             Logger.LogInformation("Executing IntakeSyncWorker...");
             var tenants = await _tenantRepository.GetListAsync();

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Quartz;
-using Volo.Abp.BackgroundWorkers.Quartz;
+using Unity.Modules.Shared.Utils;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
 
@@ -19,7 +19,7 @@ namespace Unity.GrantManager.Messaging;
 /// Handlers are resolved from DI as <see cref="IInboxMessageHandler"/> filtered by <see cref="SourceName"/>.
 /// </summary>
 [DisallowConcurrentExecution]
-public abstract class InboxWorkerBase : QuartzBackgroundWorkerBase
+public abstract class InboxWorkerBase : UnityQuartzBackgroundWorkerBase
 {
     private readonly IServiceProvider _serviceProvider;
 
@@ -68,7 +68,7 @@ public abstract class InboxWorkerBase : QuartzBackgroundWorkerBase
         _serviceProvider = serviceProvider;
     }
 
-    public override async Task Execute(IJobExecutionContext context)
+    protected override async Task ExecuteInBackgroundAsync(IJobExecutionContext context)
     {        
         try
         {

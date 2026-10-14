@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Settings;
 using Unity.Modules.Shared.Utils;
-using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
@@ -15,7 +14,7 @@ using Volo.Abp.Uow;
 namespace Unity.GrantManager.Applicants.BackgroundWorkers;
 
 [DisallowConcurrentExecution]
-public class FiscalYearEndRolloverWorker : QuartzBackgroundWorkerBase
+public class FiscalYearEndRolloverWorker : UnityQuartzBackgroundWorkerBase
 {
     private readonly ILogger<FiscalYearEndRolloverWorker> _logger;
     private readonly IServiceProvider _serviceProvider;
@@ -71,7 +70,7 @@ public class FiscalYearEndRolloverWorker : QuartzBackgroundWorkerBase
             .Build();
     }
 
-    public override async Task Execute(IJobExecutionContext context)
+    protected override async Task ExecuteInBackgroundAsync(IJobExecutionContext context)
     {
         _logger.LogInformation("Executing FiscalYearEndRolloverWorker...");
 

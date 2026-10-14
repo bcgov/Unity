@@ -14,7 +14,6 @@ using Unity.Notifications.Emails;
 using Unity.Notifications.Events;
 using Unity.Notifications.Settings;
 using Unity.Notifications.Templates;
-using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
@@ -33,7 +32,7 @@ namespace Unity.GrantManager.Events
     /// ContractExecutionDate, FiscalYearEnd) have passed and sends emails accordingly.
     /// </summary>
     [DisallowConcurrentExecution]
-    public class DateBasedScheduledNotificationJob : QuartzBackgroundWorkerBase, ITransientDependency
+    public class DateBasedScheduledNotificationJob : UnityQuartzBackgroundWorkerBase, ITransientDependency
     {
         private readonly IRepository<ScheduledNotification, Guid> _scheduledNotificationRepository;
         private readonly IApplicationRepository _applicationRepository;
@@ -128,7 +127,7 @@ namespace Unity.GrantManager.Events
                 }
         }
 
-        public override async Task Execute(IJobExecutionContext context)
+        protected override async Task ExecuteInBackgroundAsync(IJobExecutionContext context)
         {
             try
             {

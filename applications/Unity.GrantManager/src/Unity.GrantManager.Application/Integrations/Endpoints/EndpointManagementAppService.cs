@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Unity.Modules.Shared.Permissions;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -13,6 +14,7 @@ using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Integrations.Endpoints
 {
+    [Authorize(IdentityConsts.ITOperationsPolicyName)]
     public class EndpointManagementAppService(
         IRepository<DynamicUrl, Guid> repository,
         IDistributedCache cache,
