@@ -117,12 +117,15 @@ public class MetabaseTenantProvisioner(
         var collectionId = await metabaseApiClient.FindOrCreateCollectionAsync(tenant.Name);
         await metabaseApiClient.GrantGroupCollectionAccessAsync(groupId, collectionId);
 
+        // Reload rather than reuse the tenant from the start: the Metabase calls take minutes, and
+        // a save in between (e.g. the Configuration modal) would fail this update's concurrency check.
         using (currentTenant.Change(null))
         {
-            tenant.SetProperty(DatabaseIdProperty, databaseId);
-            tenant.SetProperty(GroupIdProperty, groupId);
-            tenant.SetProperty(CollectionIdProperty, collectionId);
-            await tenantRepository.UpdateAsync(tenant);
+            var current = await tenantRepository.GetAsync(tenantId);
+            current.SetProperty(DatabaseIdProperty, databaseId);
+            current.SetProperty(GroupIdProperty, groupId);
+            current.SetProperty(CollectionIdProperty, collectionId);
+            await tenantRepository.UpdateAsync(current);
         }
 
         logger.LogInformation(

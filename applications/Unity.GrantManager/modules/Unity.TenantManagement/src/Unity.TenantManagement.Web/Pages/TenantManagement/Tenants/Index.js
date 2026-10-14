@@ -736,7 +736,17 @@
 
         _metabaseTenantService.get(tenantId)
             .done(function (status) {
+                $section.closest('form').find('input[name="Tenant.ConcurrencyStamp"]').val(status.concurrencyStamp);
                 _renderMetabaseSection(tenantId, status);
+
+                // The job saves the tenant again when it finishes, so keep polling until then.
+                if (status.status === 'Waiting') {
+                    setTimeout(function () {
+                        if ($.contains(document, $section[0])) {
+                            _loadMetabaseSection(tenantId);
+                        }
+                    }, 3000);
+                }
             })
             .fail(function () {
                 $section.html('<div class="text-danger small">' + _escape(lGm('TenantMetabase:LoadFailed')) + '</div>');

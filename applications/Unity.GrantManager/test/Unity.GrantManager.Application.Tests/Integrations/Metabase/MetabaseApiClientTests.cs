@@ -295,7 +295,7 @@ public class MetabaseApiClientTests
     {
         var (client, http) = CreateClient();
         SetupHttpSequence(http,
-            JsonResponse(HttpStatusCode.OK, "{\"5\":[{\"user_id\":101,\"membership_id\":1}]}"));
+            JsonResponse(HttpStatusCode.OK, "{\"101\":[{\"membership_id\":1,\"group_id\":5,\"user_id\":101}]}"));
 
         await client.AddGroupMemberAsync(groupId: 5, userId: 101);
 
@@ -306,11 +306,45 @@ public class MetabaseApiClientTests
     }
 
     [Fact]
+    public async Task AddGroupMemberAsync_MembershipMapIsKeyedByUserId_DoesNotPostExistingMembership()
+    {
+        var (client, http) = CreateClient();
+        SetupHttpSequence(http,
+            JsonResponse(HttpStatusCode.OK,
+                "{\"5\":[{\"membership_id\":7,\"group_id\":9,\"user_id\":5}]," +
+                "\"101\":[{\"membership_id\":1,\"group_id\":2,\"user_id\":101},{\"membership_id\":8,\"group_id\":5,\"user_id\":101}]}"));
+
+        await client.AddGroupMemberAsync(groupId: 5, userId: 101);
+
+        await http.Received(1).HttpAsync(
+            Arg.Any<HttpMethod>(), Arg.Any<string>(), Arg.Any<object?>(), Arg.Any<string?>(),
+            Arg.Any<(string username, string password)?>(), Arg.Any<HttpCompletionOption>(),
+            Arg.Any<System.Collections.Generic.IReadOnlyDictionary<string, string>?>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task AddGroupMemberAsync_UserInOtherGroupsOnly_PostsMembership()
+    {
+        var (client, http) = CreateClient();
+        SetupHttpSequence(http,
+            JsonResponse(HttpStatusCode.OK, "{\"101\":[{\"membership_id\":1,\"group_id\":2,\"user_id\":101}]}"),
+            JsonResponse(HttpStatusCode.OK, "{}"));
+
+        await client.AddGroupMemberAsync(groupId: 5, userId: 101);
+
+        await http.Received(1).HttpAsync(
+            HttpMethod.Post, Arg.Is<string>(url => url != null && url.EndsWith("/api/permissions/membership", StringComparison.Ordinal)),
+            Arg.Any<object?>(), Arg.Any<string?>(), Arg.Any<(string username, string password)?>(),
+            Arg.Any<HttpCompletionOption>(), Arg.Any<System.Collections.Generic.IReadOnlyDictionary<string, string>?>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task AddGroupMemberAsync_UserNotYetAMember_PostsMembership()
     {
         var (client, http) = CreateClient();
         SetupHttpSequence(http,
-            JsonResponse(HttpStatusCode.OK, "{\"5\":[{\"user_id\":101,\"membership_id\":1}]}"),
+            JsonResponse(HttpStatusCode.OK, "{\"101\":[{\"membership_id\":1,\"group_id\":5,\"user_id\":101}]}"),
             JsonResponse(HttpStatusCode.OK, "{}"));
 
         await client.AddGroupMemberAsync(groupId: 5, userId: 202);
@@ -334,7 +368,7 @@ public class MetabaseApiClientTests
     {
         var (client, http) = CreateClient();
         SetupHttpSequence(http,
-            JsonResponse(HttpStatusCode.OK, "{\"5\":[]}"),                                  // pre-check: not a member yet
+            JsonResponse(HttpStatusCode.OK, "{}"),                                  // pre-check: not a member yet
             JsonResponse(HttpStatusCode.OK, "[{\"id\":9,\"group_id\":5,\"user_id\":202}]")); // POST response: raw array
 
         await Should.NotThrowAsync(() => client.AddGroupMemberAsync(groupId: 5, userId: 202));
@@ -368,7 +402,7 @@ public class MetabaseApiClientTests
     {
         var (client, http) = CreateClient();
         SetupHttpSequence(http,
-            JsonResponse(HttpStatusCode.OK, "[{\"user_id\":101,\"membership_id\":1}]"));
+            JsonResponse(HttpStatusCode.OK, "[{\"membership_id\":1,\"group_id\":5,\"user_id\":101}]"));
 
         await client.AddGroupMemberAsync(groupId: 5, userId: 101);
 
@@ -390,9 +424,9 @@ public class MetabaseApiClientTests
     {
         var (client, http) = CreateClient();
         SetupHttpSequence(http,
-            JsonResponse(HttpStatusCode.OK, "{\"5\":[]}"),                                          // pre-check: not a member yet
+            JsonResponse(HttpStatusCode.OK, "{}"),                                          // pre-check: not a member yet
             JsonResponse(HttpStatusCode.InternalServerError, "{\"message\":\"duplicate key\"}"),      // POST fails (e.g. race)
-            JsonResponse(HttpStatusCode.OK, "{\"5\":[{\"user_id\":101,\"membership_id\":1}]}"));     // re-check: now a member
+            JsonResponse(HttpStatusCode.OK, "{\"101\":[{\"membership_id\":1,\"group_id\":5,\"user_id\":101}]}"));     // re-check: now a member
 
         await Should.NotThrowAsync(() => client.AddGroupMemberAsync(groupId: 5, userId: 101));
 
@@ -407,9 +441,9 @@ public class MetabaseApiClientTests
     {
         var (client, http) = CreateClient();
         SetupHttpSequence(http,
-            JsonResponse(HttpStatusCode.OK, "{\"5\":[]}"),                                     // pre-check: not a member
+            JsonResponse(HttpStatusCode.OK, "{}"),                                     // pre-check: not a member
             JsonResponse(HttpStatusCode.InternalServerError, "{\"message\":\"boom\"}"),         // POST fails for a real reason
-            JsonResponse(HttpStatusCode.OK, "{\"5\":[]}"));                                     // re-check: still not a member
+            JsonResponse(HttpStatusCode.OK, "{}"));                                     // re-check: still not a member
 
         await Should.ThrowAsync<IntegrationServiceException>(
             () => client.AddGroupMemberAsync(groupId: 5, userId: 101));
