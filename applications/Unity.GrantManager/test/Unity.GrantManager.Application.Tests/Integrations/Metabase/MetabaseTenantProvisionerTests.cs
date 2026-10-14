@@ -145,6 +145,22 @@ public class MetabaseTenantProvisionerTests
         await f.TenantRepository.Received(1).UpdateAsync(f.Tenant, Arg.Any<bool>(), Arg.Any<CancellationToken>());
     }
 
+    // The Metabase calls take minutes; saving the tenant loaded at the start would fail the
+    // concurrency check if anything saved the tenant meanwhile (e.g. the Configuration modal).
+    [Fact]
+    public async Task SetupAsync_StoresIdsOnTenantReloadedAfterMetabaseCalls()
+    {
+        var f = CreateProvisioner();
+        var reloaded = CreateTenant(f.Tenant.Name);
+        f.TenantRepository.GetAsync(f.Tenant.Id, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(f.Tenant, reloaded);
+
+        await f.Provisioner.SetupAsync(f.Tenant.Id);
+
+        reloaded.GetProperty<int>(MetabaseTenantProvisioner.DatabaseIdProperty).ShouldBe(11);
+        await f.TenantRepository.Received(1).UpdateAsync(reloaded, Arg.Any<bool>(), Arg.Any<CancellationToken>());
+        await f.TenantRepository.DidNotReceive().UpdateAsync(f.Tenant, Arg.Any<bool>(), Arg.Any<CancellationToken>());
+    }
+
     [Fact]
     public async Task SetupAsync_ExistingTenantWithoutStoredIds_BackfillsIdsOfExistingResources()
     {
