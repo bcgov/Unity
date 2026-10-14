@@ -5,8 +5,13 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NSubstitute;
 using Shouldly;
+using Unity.GrantManager.Integrations;
 using Unity.GrantManager.Integrations.Metabase;
+using Unity.Modules.Shared.Features;
+using Unity.Modules.Shared.PostTenantCreation;
 using Unity.TenantManagement.Metabase;
+using Volo.Abp;
+using Volo.Abp.Features;
 using Volo.Abp.Security.Encryption;
 using Volo.Abp.Settings;
 using Volo.Abp.SettingManagement;
@@ -33,7 +38,8 @@ public class MetabaseTenantRegistrationStepTests
     }
 
     private static (MetabaseTenantRegistrationStep Step, IMetabaseApiClient MetabaseApiClient, ISettingManager SettingManager, Tenant Tenant)
-        CreateStep(string? encryptedReadOnlyConnectionString = "encrypted-blob", string? apiKey = "test-api-key", string? dbHostOverride = null, bool? dbSslOverride = null)
+        CreateStep(string? encryptedReadOnlyConnectionString = "encrypted-blob", string? apiKey = "test-api-key", string? dbHostOverride = null, bool? dbSslOverride = null,
+            bool enabled = true, bool metabaseUrlConfigured = true, bool reportingEnabled = true)
     {
         var tenant = CreateTenant("AG-MARB");
         if (encryptedReadOnlyConnectionString != null)
@@ -51,13 +57,23 @@ public class MetabaseTenantRegistrationStepTests
         var metabaseApiClient = Substitute.For<IMetabaseApiClient>();
         var metabaseOptions = Options.Create(new MetabaseOptions
         {
+            Enabled = enabled,
             ApiKey = apiKey ?? string.Empty,
             DbHostOverride = dbHostOverride ?? string.Empty,
             DbSslOverride = dbSslOverride
         });
 
+        var endpointManagementAppService = Substitute.For<IEndpointManagementAppService>();
+        endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.METABASE_API_BASE).Returns(metabaseUrlConfigured
+            ? Task.FromResult("https://metabase.example")
+            : Task.FromException<string>(new UserFriendlyException("URL for key 'METABASE_API_BASE' not configured.")));
+
+        var featureChecker = Substitute.For<IFeatureChecker>();
+        featureChecker.IsEnabledAsync(FeatureConsts.Reporting).Returns(Task.FromResult(reportingEnabled));
+
         var step = new MetabaseTenantRegistrationStep(
             metabaseApiClient, tenantRepository, encryptionService, settingManager, metabaseOptions,
+            endpointManagementAppService, featureChecker,
             Substitute.For<ILogger<MetabaseTenantRegistrationStep>>());
 
         return (step, metabaseApiClient, settingManager, tenant);
@@ -71,23 +87,74 @@ public class MetabaseTenantRegistrationStepTests
         step.ContinueOnError.ShouldBeTrue();
     }
 
+    [Fact]
+    public async Task CanExecuteAsync_MetabaseDisabled_Skips()
+    {
+        // Disabled wins even when nothing else is configured: the environment doesn't use Metabase.
+        var (step, _, _, tenant) = CreateStep(enabled: false, apiKey: null, metabaseUrlConfigured: false, reportingEnabled: false);
+
+        var check = await step.CanExecuteAsync(tenant.Id);
+
+        check.CanExecute.ShouldBeFalse();
+        check.Status.ShouldBe(PostTenantCreationStepStatus.Skipped);
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public async Task CanExecuteAsync_NoApiKeyConfigured_ReturnsFalse(string? apiKey)
+    public async Task CanExecuteAsync_EnabledButNoApiKeyConfigured_Fails(string? apiKey)
     {
         var (step, _, _, tenant) = CreateStep(apiKey: apiKey);
 
-        (await step.CanExecuteAsync(tenant.Id)).ShouldBeFalse();
+        var check = await step.CanExecuteAsync(tenant.Id);
+
+        check.CanExecute.ShouldBeFalse();
+        check.Status.ShouldBe(PostTenantCreationStepStatus.Failure);
+        check.Reason.ShouldNotBeNullOrWhiteSpace();
     }
 
     [Fact]
-    public async Task CanExecuteAsync_ApiKeyConfigured_ReturnsTrue()
+    public async Task CanExecuteAsync_EnabledButMetabaseUrlNotSet_Fails()
+    {
+        var (step, _, _, tenant) = CreateStep(metabaseUrlConfigured: false);
+
+        var check = await step.CanExecuteAsync(tenant.Id);
+
+        check.CanExecute.ShouldBeFalse();
+        check.Status.ShouldBe(PostTenantCreationStepStatus.Failure);
+        check.Reason!.ShouldContain(DynamicUrlKeyNames.METABASE_API_BASE);
+    }
+
+    [Fact]
+    public async Task CanExecuteAsync_TenantWithoutReportingFeature_Skips()
+    {
+        var (step, _, _, tenant) = CreateStep(reportingEnabled: false);
+
+        var check = await step.CanExecuteAsync(tenant.Id);
+
+        check.CanExecute.ShouldBeFalse();
+        check.Status.ShouldBe(PostTenantCreationStepStatus.Skipped);
+        check.Reason!.ShouldContain(FeatureConsts.Reporting);
+    }
+
+    [Fact]
+    public async Task CanExecuteAsync_TenantWithoutReportingFeature_SkipsEvenWhenConfigMissing()
+    {
+        var (step, _, _, tenant) = CreateStep(apiKey: null, metabaseUrlConfigured: false, reportingEnabled: false);
+
+        var check = await step.CanExecuteAsync(tenant.Id);
+
+        check.Status.ShouldBe(PostTenantCreationStepStatus.Skipped);
+        check.Reason!.ShouldContain(FeatureConsts.Reporting);
+    }
+
+    [Fact]
+    public async Task CanExecuteAsync_EnabledConfiguredAndReportingOn_Runs()
     {
         var (step, _, _, tenant) = CreateStep();
 
-        (await step.CanExecuteAsync(tenant.Id)).ShouldBeTrue();
+        (await step.CanExecuteAsync(tenant.Id)).CanExecute.ShouldBeTrue();
     }
 
     [Fact]
@@ -105,8 +172,7 @@ public class MetabaseTenantRegistrationStepTests
     {
         var (step, metabaseApiClient, settingManager, tenant) = CreateStep();
         settingManager.GetOrNullAsync(MetabaseSettings.UserEmails, TenantSettingValueProvider.ProviderName, tenant.Id.ToString())
-            .Returns((string?)null);
-        settingManager.GetOrNullGlobalAsync(MetabaseSettings.UserEmails).Returns("user1@gov.bc.ca,user2@gov.bc.ca");
+            .Returns("user1@gov.bc.ca,user2@gov.bc.ca");
 
         metabaseApiClient.FindOrCreateDatabaseAsync(
                 tenant.Name, "dev-crunchy-postgres-primary.ce395f-dev.svc", 5432, "T_ABC123", "t_abc123_readonly", "s3cr3t", true)
@@ -132,7 +198,6 @@ public class MetabaseTenantRegistrationStepTests
         var (step, metabaseApiClient, settingManager, tenant) = CreateStep(dbHostOverride: "host.docker.internal");
         settingManager.GetOrNullAsync(MetabaseSettings.UserEmails, TenantSettingValueProvider.ProviderName, tenant.Id.ToString())
             .Returns((string?)null);
-        settingManager.GetOrNullGlobalAsync(MetabaseSettings.UserEmails).Returns((string?)null);
         metabaseApiClient.FindOrCreateGroupAsync(tenant.Name).Returns(22);
         metabaseApiClient.FindOrCreateCollectionAsync(tenant.Name).Returns(33);
 
@@ -148,7 +213,6 @@ public class MetabaseTenantRegistrationStepTests
         var (step, metabaseApiClient, settingManager, tenant) = CreateStep(dbSslOverride: false);
         settingManager.GetOrNullAsync(MetabaseSettings.UserEmails, TenantSettingValueProvider.ProviderName, tenant.Id.ToString())
             .Returns((string?)null);
-        settingManager.GetOrNullGlobalAsync(MetabaseSettings.UserEmails).Returns((string?)null);
         metabaseApiClient.FindOrCreateGroupAsync(tenant.Name).Returns(22);
         metabaseApiClient.FindOrCreateCollectionAsync(tenant.Name).Returns(33);
 
@@ -159,7 +223,7 @@ public class MetabaseTenantRegistrationStepTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_TenantScopedUserEmailsSetting_TakesPrecedenceOverGlobalDefault()
+    public async Task ExecuteAsync_UsesTenantScopedUserEmailsSetting_NeverTheGlobalDefault()
     {
         var (step, metabaseApiClient, settingManager, tenant) = CreateStep();
         settingManager.GetOrNullAsync(MetabaseSettings.UserEmails, TenantSettingValueProvider.ProviderName, tenant.Id.ToString())
@@ -170,6 +234,20 @@ public class MetabaseTenantRegistrationStepTests
         await step.ExecuteAsync(tenant.Id);
 
         await metabaseApiClient.Received(1).FindUserIdByEmailAsync("tenant-scoped@gov.bc.ca");
+        await settingManager.DidNotReceive().GetOrNullGlobalAsync(MetabaseSettings.UserEmails);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_NoTenantScopedUserEmails_AddsNoMembersAndNeverReadsGlobalDefault()
+    {
+        var (step, metabaseApiClient, settingManager, tenant) = CreateStep();
+        settingManager.GetOrNullAsync(MetabaseSettings.UserEmails, TenantSettingValueProvider.ProviderName, tenant.Id.ToString())
+            .Returns((string?)null);
+        metabaseApiClient.FindOrCreateGroupAsync(tenant.Name).Returns(22);
+
+        await step.ExecuteAsync(tenant.Id);
+
+        await metabaseApiClient.DidNotReceiveWithAnyArgs().FindUserIdByEmailAsync(default!);
         await settingManager.DidNotReceive().GetOrNullGlobalAsync(MetabaseSettings.UserEmails);
     }
 }

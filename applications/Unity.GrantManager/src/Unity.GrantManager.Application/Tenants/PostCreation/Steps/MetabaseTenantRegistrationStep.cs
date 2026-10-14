@@ -7,11 +7,14 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Unity.GrantManager.Integrations;
 using Unity.GrantManager.Integrations.Metabase;
+using Unity.Modules.Shared.Features;
 using Unity.Modules.Shared.PostTenantCreation;
 using Unity.TenantManagement.Metabase;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Features;
 using Volo.Abp.Security.Encryption;
 using Volo.Abp.Settings;
 using Volo.Abp.SettingManagement;
@@ -36,11 +39,12 @@ namespace Unity.GrantManager.Tenants.PostCreation.Steps;
 ///    just this tenant's data.
 /// 4. Finds or creates a Metabase collection for the tenant and grants the group write access to it.
 ///
-/// The member email list comes from ABP Settings: a Global "default" list (editable via the New
-/// Tenant modal's Metabase tab) plus any ad-hoc emails added just for this tenant. The resolved
-/// list is snapshotted into a tenant-scoped setting at tenant-creation time (by
-/// TenantCreatedEventHandler), so this step reads a stable list even if the Global default
-/// changes before this (async, queued) step actually runs.
+/// The member email list is the tenant-scoped <see cref="MetabaseSettings.UserEmails"/> setting;
+/// there is no Global default to fall back to.
+///
+/// <see cref="CanExecuteAsync"/> records the step as Skipped when Metabase is disabled for the
+/// environment or the tenant lacks the Unity.Reporting feature, and as Failure when a Reporting
+/// tenant needs Metabase but its API key or METABASE_API_BASE endpoint is missing.
 ///
 /// <see cref="ContinueOnError"/> is true - a Metabase outage is logged but doesn't block tenant
 /// creation or later post-creation steps. Recovery from a partial failure is a manual re-enqueue
@@ -56,6 +60,8 @@ public class MetabaseTenantRegistrationStep(
     IStringEncryptionService stringEncryptionService,
     ISettingManager settingManager,
     IOptions<MetabaseOptions> metabaseOptions,
+    IEndpointManagementAppService endpointManagementAppService,
+    IFeatureChecker featureChecker,
     ILogger<MetabaseTenantRegistrationStep> logger)
     : IPostTenantCreationStep, ITransientDependency
 {
@@ -71,17 +77,48 @@ public class MetabaseTenantRegistrationStep(
     // A Metabase outage shouldn't block other post-creation steps from running.
     public bool ContinueOnError => true;
 
-    public virtual Task<bool> CanExecuteAsync(Guid tenantId)
+    // Runs inside the tenant's context (PostTenantCreationSequenceJob), so the feature check
+    // reads this tenant's Unity.Reporting value.
+    public virtual async Task<PostTenantCreationStepCheck> CanExecuteAsync(Guid tenantId)
     {
-        if (string.IsNullOrWhiteSpace(metabaseOptions.Value.ApiKey))
+        if (!metabaseOptions.Value.Enabled)
         {
-            logger.LogInformation(
-                "{Prefix} No Metabase API key configured - skipping registration for tenant {TenantId}.",
-                LogPrefix, tenantId);
-            return Task.FromResult(false);
+            return PostTenantCreationStepCheck.Skip("Metabase is not enabled for this environment.");
         }
 
-        return Task.FromResult(true);
+        // Before the config checks: a tenant without Reporting never uses Metabase, so a missing
+        // key or URL isn't a failure for it.
+        if (!await featureChecker.IsEnabledAsync(FeatureConsts.Reporting))
+        {
+            return PostTenantCreationStepCheck.Skip($"The tenant does not have the {FeatureConsts.Reporting} feature.");
+        }
+
+        if (string.IsNullOrWhiteSpace(metabaseOptions.Value.ApiKey))
+        {
+            return PostTenantCreationStepCheck.Fail("Metabase is enabled but no API key is configured.");
+        }
+
+        if (!await IsMetabaseUrlConfiguredAsync())
+        {
+            return PostTenantCreationStepCheck.Fail(
+                $"Metabase is enabled but the {DynamicUrlKeyNames.METABASE_API_BASE} endpoint is not set.");
+        }
+
+        return PostTenantCreationStepCheck.Run;
+    }
+
+    private async Task<bool> IsMetabaseUrlConfiguredAsync()
+    {
+        try
+        {
+            // Throws when the endpoint row is missing or its URL is blank.
+            await endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.METABASE_API_BASE);
+            return true;
+        }
+        catch (UserFriendlyException)
+        {
+            return false;
+        }
     }
 
     public virtual async Task ExecuteAsync(Guid tenantId)
@@ -141,8 +178,7 @@ public class MetabaseTenantRegistrationStep(
 
     private async Task<List<string>> GetUserEmailsAsync(Guid tenantId)
     {
-        var raw = await settingManager.GetOrNullAsync(MetabaseSettings.UserEmails, TenantSettingValueProvider.ProviderName, tenantId.ToString())
-            ?? await settingManager.GetOrNullGlobalAsync(MetabaseSettings.UserEmails);
+        var raw = await settingManager.GetOrNullAsync(MetabaseSettings.UserEmails, TenantSettingValueProvider.ProviderName, tenantId.ToString());
 
         return (raw ?? string.Empty)
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)

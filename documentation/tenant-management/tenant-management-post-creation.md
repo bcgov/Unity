@@ -13,7 +13,7 @@ public interface IPostTenantCreationStep
     string Key { get; }        // stable, machine-readable — must not change once shipped
     string StepName { get; }   // human-readable, used in logs and the status UI
     bool ContinueOnError { get; }
-    Task<bool> CanExecuteAsync(Guid tenantId) => Task.FromResult(true);
+    Task<PostTenantCreationStepCheck> CanExecuteAsync(Guid tenantId) => Task.FromResult(PostTenantCreationStepCheck.Run);
     Task ExecuteAsync(Guid tenantId);
 }
 ```
@@ -24,10 +24,10 @@ A step's exception is always caught and logged, never rethrown — ABP's own bac
 
 ## Status tracking on the tenant
 
-A job whose tenant no longer exists (deleted or purged after the job was queued) logs a warning and returns without running the step, recording a status or enqueuing the next step, so ABP doesn't retry it. Every other outcome (aside from a `CanExecuteAsync`-driven skip — see below) is persisted onto the tenant via `TenantPostCreationSectionsExtensions` (`modules/Unity.SharedKernel/PostTenantCreation/`), read back by the Tenants list UI:
+A job whose tenant no longer exists (deleted or purged after the job was queued) logs a warning and returns without running the step, recording a status or enqueuing the next step, so ABP doesn't retry it. Every other outcome is persisted onto the tenant via `TenantPostCreationSectionsExtensions` (`modules/Unity.SharedKernel/PostTenantCreation/`), read back by the Tenants list UI:
 
-- `PostTenantCreationStepStatus` — `Waiting | Success | Failure | Error`. `Waiting` is seeded for every step at tenant-creation time (`TenantAppService.CreateAsync` → `SeedPostTenantCreationSections`), so the UI shows something immediately, before the deferred job has even run. `Success`/`Error` are set by `PostTenantCreationSequenceJob` after a step returns/throws. `Failure` is reserved for a future step that reports a handled, non-exception failure — no current step produces it, since the only step today (Metabase registration) either succeeds or throws.
-- A step skipped via `CanExecuteAsync` returning `false` (e.g. no Metabase API key configured) is left as `Waiting`, not marked as any terminal result — it may still run on a later manual re-enqueue once the missing precondition is fixed.
+- `PostTenantCreationStepStatus` — `Waiting | Success | Failure | Error | Skipped`. `Waiting` is seeded for every step at tenant-creation time (`TenantAppService.CreateAsync` → `SeedPostTenantCreationSections`), so the UI shows something immediately, before the deferred job has even run. `Success`/`Error` are set by `PostTenantCreationSequenceJob` after a step returns/throws. `Skipped` and `Failure` come from `CanExecuteAsync` (next bullet).
+- `CanExecuteAsync` returns a `PostTenantCreationStepCheck` (`modules/Unity.SharedKernel/PostTenantCreation/`): `Run`, `Skip(reason)` or `Fail(reason)`. The job records a skip as `Skipped` (the step does not apply) and a fail as `Failure` (the step should apply but cannot run), with the reason as the status message, and does not run the step. A `Failure` stops the sequence when the step's `ContinueOnError` is false, the same as an error. Either can be run again by a manual re-enqueue once the cause is fixed.
 
 ### Why flat `ExtraProperties`, not a JSON blob
 
@@ -44,7 +44,7 @@ The DTO surfaced to the browser (`TenantDto.Sections`) is still a JSON array str
 3. Grants that group unrestricted view/query access to the new database connection.
 4. `FindOrCreateCollectionAsync`s a Metabase collection for the tenant and grants the group write access.
 
-`CanExecuteAsync` returns `false` (skip, not failure) when no Metabase API key is configured — lets the whole feature be a no-op in environments without Metabase wired up. Every Metabase call is designed to be idempotent (find-or-create by name, membership checks before writing), so a manual re-enqueue after a partial failure is safe.
+`CanExecuteAsync` checks, in order: `TenantCreation:Steps:Metabase:Enabled` off → `Skipped` (this environment doesn't use Metabase); the tenant lacks the `Unity.Reporting` feature → `Skipped` (it never uses Metabase, so missing configuration doesn't matter to it); no API key, or a missing or blank `METABASE_API_BASE` endpoint → `Failure` with the reason; otherwise the step runs. Every Metabase call is designed to be idempotent (find-or-create by name, membership checks before writing), so a manual re-enqueue after a partial failure is safe.
 
 ## `MetabaseApiClient` — handling Metabase's API inconsistencies
 
@@ -60,6 +60,6 @@ All three behaviors are covered by tests in `test/Unity.GrantManager.Application
 
 `modules/Unity.TenantManagement/src/Unity.TenantManagement.Web/Pages/TenantManagement/Tenants/Index.js`:
 
-- A "Setup Status" column renders a single aggregate icon per tenant, rolled up from all tracked steps: green check (all succeeded), red X (nothing succeeded and at least one failed), amber warning (a mix), gray clock (nothing has finished yet). A tenant with **no** tracked steps at all (i.e. `PostCreationStepKeys` was never seeded — a legacy tenant created before this feature shipped) renders **no icon**, rather than a permanent "Waiting" clock that would never resolve.
+- A "Setup Status" column renders a single aggregate icon per tenant, rolled up from all tracked steps: green check (every step that applies succeeded), gray minus (every step was skipped), red X (nothing succeeded and at least one failed), amber warning (a mix), gray clock (nothing has finished yet). Skipped steps count as finished, neither succeeded nor failed. A tenant with **no** tracked steps at all (i.e. `PostCreationStepKeys` was never seeded — a legacy tenant created before this feature shipped) renders **no icon**, rather than a permanent "Waiting" clock that would never resolve.
 - Clicking the icon opens a SweetAlert2 (`Swal.fire({ html: ... })`) dialog listing every step's name, status, message, and timestamp — pulled from the DataTable's own row data (`_dataTable.row(...).data()`) on click, not embedded as a `data-*` HTML attribute, because the sections JSON contains double quotes that break a naively-escaped double-quoted attribute (`$('<span>').text(json).html()` only escapes for element *content*, not attribute-value context). `abp.message.info` was tried first and rejected — in this app it's just a thin wrapper over the browser's native `alert()`, which can't render markup at all.
 - Both the column header and the per-row icon carry a hint tooltip ("click for details") — a native `title` attribute rather than a Bootstrap tooltip, so it works without needing to re-run ABP's tooltip auto-init after every DataTable redraw.

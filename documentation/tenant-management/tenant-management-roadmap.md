@@ -32,10 +32,6 @@ Deleting a tenant is two steps: `DeleteAsync` soft-deletes it, and `TenantAppSer
 
 `TenantManagement/Reconciliation/Index.cshtml.cs` uses a plain `[Authorize]` with no specific policy — every other page in this module names an explicit permission or IT role. Not necessarily a security problem (any authenticated user reaching it still needs whatever backs the underlying data), but inconsistent with the rest of the module and worth a deliberate decision either way.
 
-## `PostTenantCreationStepStatus.Failure` is reserved, not reachable
-
-The status enum has four values (`Waiting`, `Success`, `Failure`, `Error`), but only three are currently reachable — the one step that exists today (Metabase registration) either succeeds or throws (`Error`); nothing currently returns a handled, non-exception `Failure`. It's kept in the enum for a future step that needs to report "I ran, and determined this can't succeed" without that being an unhandled exception — not dead code, just unused by the current step count of one.
-
 ## No UI for retrying a failed post-creation step
 
 Recovering a failed step (`ContinueOnError = true` logged it and moved on, or `false` stopped the sequence) currently requires an operator to manually re-enqueue a `PostTenantCreationStepArgs` for that tenant/step index directly — there's no button on the Tenants list or the status detail dialog to trigger this. A "retry" action reachable from that dialog would be a natural addition, now that step failures are visible in the UI at all.
