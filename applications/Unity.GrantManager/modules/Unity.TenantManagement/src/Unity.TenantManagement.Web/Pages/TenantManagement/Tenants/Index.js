@@ -641,6 +641,108 @@
         });
     }
 
+    // ─── Configuration modal: Reporting tab (Metabase) ────────────────────────
+
+    let _metabaseTenantService = unity.grantManager.integrations.metabase.metabaseTenant;
+
+    let _metabaseStatusIcons = {
+        Waiting: 'fa-clock text-secondary',
+        Success: 'fa-circle-check text-success',
+        Failure: 'fa-circle-xmark text-danger',
+        Error: 'fa-circle-xmark text-danger',
+        Skipped: 'fa-circle-minus text-secondary'
+    };
+
+    function _escape(text) {
+        return $('<span>').text(text || '').html();
+    }
+
+    function _metabaseLink(baseUrl, path, label, id) {
+        let text = _escape(label) + ' #' + id;
+        return baseUrl
+            ? '<a href="' + _escape(baseUrl + path) + '" target="_blank" rel="noopener noreferrer">' + text + '</a>'
+            : text;
+    }
+
+    function _renderMetabaseSection(tenantId, s) {
+        let html = '<h6>' + _escape(lGm('TenantMetabase:Title')) + '</h6>' +
+            '<p class="text-muted small">' + _escape(lGm('TenantMetabase:Description')) + '</p>';
+
+        let statusText = s.status ? lGm('TenantList:PostCreationStatus:' + s.status) : lGm('TenantMetabase:NeverRun');
+        html += '<div class="small mb-1">' + _escape(lGm('TenantMetabase:LastResult')) + ': ' +
+            (s.status ? '<i class="fa-solid ' + _metabaseStatusIcons[s.status] + '"></i> ' : '') + _escape(statusText) +
+            (s.statusUpdatedAt ? ' <span class="text-muted">(' + _escape(new Date(s.statusUpdatedAt).toLocaleString()) + ')</span>' : '') +
+            '</div>';
+        if (s.statusMessage) {
+            html += '<div class="text-muted small mb-1">' + _escape(s.statusMessage) + '</div>';
+        }
+
+        if (!s.canRun) {
+            html += '<div class="alert ' + (s.notRunIsFailure ? 'alert-danger' : 'alert-secondary') + ' small py-2 mt-2">' +
+                _escape(s.notRunReason) + '</div>';
+        } else {
+            html += '<div class="small mb-1">' + _escape(lGm('TenantMetabase:Connection')) + ': ' +
+                (s.connectionOk
+                    ? '<span class="text-success"><i class="fa-solid fa-circle-check"></i> ' + _escape(lGm('TenantMetabase:Connected')) + '</span>'
+                    : '<span class="text-danger"><i class="fa-solid fa-circle-xmark"></i> ' + _escape(lGm('TenantMetabase:ConnectionFailed')) + '</span>') +
+                '</div>';
+            if (s.connectionMessage) {
+                html += '<div class="alert ' + (s.connectionOk ? 'alert-warning' : 'alert-danger') + ' small py-2">' +
+                    _escape(s.connectionMessage) + '</div>';
+            }
+        }
+
+        html += s.isSetUp
+            ? '<div class="small mb-2">' +
+                _metabaseLink(s.metabaseUrl, '/admin/databases/' + s.databaseId, lGm('TenantMetabase:Database'), s.databaseId) + ' · ' +
+                _metabaseLink(s.metabaseUrl, '/admin/people/groups/' + s.groupId, lGm('TenantMetabase:Group'), s.groupId) + ' · ' +
+                _metabaseLink(s.metabaseUrl, '/collection/' + s.collectionId, lGm('TenantMetabase:Collection'), s.collectionId) +
+                '</div>'
+            : '<div class="text-muted small mb-2">' + _escape(lGm('TenantMetabase:NotSetUp')) + '</div>';
+
+        let canSetUp = s.canRun && s.connectionOk && s.status !== 'Waiting';
+        let setupLabel = lGm(s.isSetUp ? 'TenantMetabase:Resync' : 'TenantMetabase:SetUp');
+        let setupHint = lGm(s.isSetUp ? 'TenantMetabase:ResyncHint' : 'TenantMetabase:SetUpHint');
+        html += '<div class="d-flex gap-2">' +
+            '<button type="button" id="config-metabase-setup-btn" class="btn btn-sm btn-outline-primary"' +
+            (canSetUp ? '' : ' disabled') + ' title="' + _escape(setupHint) + '">' +
+            '<i class="fa-solid fa-rotate"></i> ' + _escape(setupLabel) + '</button>' +
+            '<button type="button" id="config-metabase-refresh-btn" class="btn btn-sm btn-outline-secondary">' +
+            '<i class="fa-solid fa-arrows-rotate"></i> ' + _escape(lGm('TenantMetabase:Refresh')) + '</button>' +
+            '</div>';
+
+        let $section = $('#config-metabase-section').html(html);
+
+        $section.find('#config-metabase-refresh-btn').on('click', function () {
+            _loadMetabaseSection(tenantId);
+        });
+        $section.find('#config-metabase-setup-btn').on('click', function () {
+            $(this).prop('disabled', true);
+            _metabaseTenantService.setup(tenantId)
+                .done(function () {
+                    abp.notify.info(lGm('TenantMetabase:Queued'));
+                    _loadMetabaseSection(tenantId);
+                })
+                .fail(function () {
+                    _loadMetabaseSection(tenantId);
+                });
+        });
+    }
+
+    function _loadMetabaseSection(tenantId) {
+        let $section = $('#config-metabase-section');
+        $section.html('<div class="text-muted small"><i class="fa-solid fa-spinner fa-spin"></i> ' +
+            _escape(lGm('TenantMetabase:Loading')) + '</div>');
+
+        _metabaseTenantService.get(tenantId)
+            .done(function (status) {
+                _renderMetabaseSection(tenantId, status);
+            })
+            .fail(function () {
+                $section.html('<div class="text-danger small">' + _escape(lGm('TenantMetabase:LoadFailed')) + '</div>');
+            });
+    }
+
     // ─── Configuration modal: Connection Strings tab (reveal on demand) ───────
 
     function _wireConnectionStringsToggle() {
@@ -760,6 +862,14 @@
         _configFilterDataTable.on('deselect', function () {
             $('#config-selected-user-identifier').val('');
             $('#config-selected-user-display').hide();
+        });
+
+        let metabaseLoaded = false;
+        $('#tab-reporting').on('shown.bs.tab', function () {
+            if (!metabaseLoaded) {
+                metabaseLoaded = true;
+                _loadMetabaseSection(_configTenantId);
+            }
         });
 
         _featuresLoaded = false;
