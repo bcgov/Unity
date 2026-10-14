@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -18,18 +18,21 @@ public class TemplateService : ApplicationService, ITemplateService
     private readonly ITemplatesRepository _templatesRepository;
     private readonly ICurrentTenant _currentTenant;
     private readonly ITemplateVariablesRepository _templateVariablesRepository;
+    private readonly Volo.Abp.Domain.Repositories.IRepository<Unity.GrantManager.Notifications.ScheduledNotification, System.Guid> _scheduledNotificationsRepository;
 
 
     public TemplateService(
          ITemplatesRepository templatesRepository,
         ICurrentTenant currentTenant,
-         ITemplateVariablesRepository templateVariablesRepository
+         ITemplateVariablesRepository templateVariablesRepository,
+         Volo.Abp.Domain.Repositories.IRepository<Unity.GrantManager.Notifications.ScheduledNotification, System.Guid> scheduledNotificationsRepository
 
         )
     {
         _templatesRepository = templatesRepository;
         _currentTenant = currentTenant;
         _templateVariablesRepository = templateVariablesRepository;
+        _scheduledNotificationsRepository = scheduledNotificationsRepository;
     }
 
     [Authorize]
@@ -87,6 +90,13 @@ public class TemplateService : ApplicationService, ITemplateService
     [Authorize]
     public async Task DeleteTemplate(Guid id)
     {
+        // Enforce server-side reference check so a client-side preflight failure cannot bypass the in-use safeguard.
+        var inUse = await _scheduledNotificationsRepository.AnyAsync(x => x.EmailTemplateId == id);
+        if (inUse)
+        {
+            throw new Volo.Abp.BusinessException("Notifications:TemplateInUse", "Template is referenced by scheduled notifications and cannot be deleted.");
+        }
+
         await _templatesRepository.DeleteAsync(id);
     }
     [Authorize]

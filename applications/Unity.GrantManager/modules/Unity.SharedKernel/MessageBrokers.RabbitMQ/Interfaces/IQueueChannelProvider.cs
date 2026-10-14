@@ -20,9 +20,11 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces
 
         /// <summary>
         /// Republishes a failed delivery to a delayed retry queue. The returned task completes
-        /// only after RabbitMQ confirms the retry publish.
+        /// only after RabbitMQ confirms the retry publish. Returns true when the retry handoff
+        /// was accepted by the broker; false if the original delivery was requeued or channel recovery
+        /// was arranged due to a publishing failure.
         /// </summary>
-        Task PublishRetryAsync(IChannel channel, BasicDeliverEventArgs delivery, int retryCount, TimeSpan delay, CancellationToken cancellationToken = default);
+        Task<bool> PublishRetryAsync(IChannel channel, BasicDeliverEventArgs delivery, int retryCount, TimeSpan delay, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Returns a channel obtained from <see cref="GetChannelAsync"/> so it can be pooled

@@ -844,10 +844,8 @@ $(function () {
     }
 
     function handleDeleteCanCheckError(templateId) {
-        // If check fails, proceed with deletion
-        proceedWithDelete(templateId, function () {
-            PubSub.publish('reload_templates_table_with_close');
-        });
+        // If check fails, do not proceed with deletion. Let the user know the preflight check failed.
+        abp.notify.error('Unable to verify whether this template can be safely deleted. Deletion has been cancelled.');
     }
 
     function checkCanDeleteTemplate(templateId) {

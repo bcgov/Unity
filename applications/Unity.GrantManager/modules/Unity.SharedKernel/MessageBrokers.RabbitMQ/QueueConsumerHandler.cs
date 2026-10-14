@@ -151,8 +151,16 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                     _queueName,
                     delay);
 
-                await channelProvider.PublishRetryAsync(consumingChannel, ea, nextRetryCount, delay);
-                await consumingChannel.BasicAckAsync(ea.DeliveryTag, multiple: false);
+                var retryAccepted = await channelProvider.PublishRetryAsync(consumingChannel, ea, nextRetryCount, delay);
+                if (retryAccepted)
+                {
+                    await consumingChannel.BasicAckAsync(ea.DeliveryTag, multiple: false);
+                }
+                else
+                {
+                    // Retry publish failed; the provider requeued the original delivery or arranged channel recovery.
+                    // Do not acknowledge the original delivery here so it will be redelivered.
+                }
             }
         }
 

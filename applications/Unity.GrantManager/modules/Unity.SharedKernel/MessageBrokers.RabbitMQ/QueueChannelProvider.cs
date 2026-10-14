@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
@@ -72,7 +72,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
             }
         }
 
-        public async Task PublishRetryAsync(
+        public async Task<bool> PublishRetryAsync(
             IChannel channel,
             BasicDeliverEventArgs delivery,
             int retryCount,
@@ -95,13 +95,60 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                 }
             };
 
-            await channel.BasicPublishAsync(
-                exchange: retryExchange,
-                routingKey: retryQueue,
-                mandatory: false,
-                basicProperties: properties,
-                body: delivery.Body,
-                cancellationToken: cancellationToken);
+            // Use mandatory=true so unroutable publishes are reported by publisher-confirms.
+            // Retry publish failures are handled explicitly: retry with backoff, and if all attempts fail
+            // requeue the original delivery (or close the channel to force broker redelivery) so the
+            // message is not lost.
+            var attempts = 0;
+            const int maxAttempts = 3;
+            var backoff = TimeSpan.FromMilliseconds(100);
+            while (true)
+            {
+                attempts++;
+                try
+                {
+                    await channel.BasicPublishAsync(
+                        exchange: retryExchange,
+                        routingKey: retryQueue,
+                        mandatory: true,
+                        basicProperties: properties,
+                        body: delivery.Body,
+                        cancellationToken: cancellationToken);
+
+                    return true;
+                }
+                catch (Exception ex) when (attempts < maxAttempts)
+                {
+                    _logger.LogWarning(ex, "Retry publish attempt {Attempt} failed for message {MessageId}; backing off {Backoff} before retrying.", attempts, delivery.BasicProperties?.MessageId, backoff);
+                    try
+                    {
+                        await Task.Delay(backoff, cancellationToken);
+                    }
+                    catch (OperationCanceledException) { }
+                    backoff = TimeSpan.FromTicks(backoff.Ticks * 2);
+                    continue;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Retry publish failed for message {MessageId}; attempting to requeue original delivery.", delivery.BasicProperties?.MessageId);
+                    try
+                    {
+                        // Requeue the original delivery so it will be redelivered when the broker recovers.
+                        await channel.BasicNackAsync(delivery.DeliveryTag, multiple: false, requeue: true);
+                    }
+                    catch (Exception nackEx)
+                    {
+                        _logger.LogError(nackEx, "Failed to BasicNack original delivery after retry publish failure for message {MessageId}. Closing channel to force redelivery.", delivery.BasicProperties?.MessageId);
+                        try
+                        {
+                             await channel.CloseAsync();
+                        }
+                        catch { }
+                    }
+
+                    return false;
+                }
+            }
         }
 
         public void ReturnChannel(IChannel channel)
@@ -183,7 +230,9 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                             { "x-queue-type", "quorum" },
                             { "x-message-ttl", checked((int)retryDelay.TotalMilliseconds) },
                             { "x-dead-letter-exchange", $"{_queueName}.exchange" },
-                            { "x-dead-letter-routing-key", _queueName }
+                            { "x-dead-letter-routing-key", _queueName },
+                            { "x-overflow", "reject-publish" },
+                            { "x-dead-letter-strategy", "at-least-once" }
                         });
                     await channel.QueueBindAsync(retryQueue, retryExchange, retryQueue, arguments: null);
                 }
