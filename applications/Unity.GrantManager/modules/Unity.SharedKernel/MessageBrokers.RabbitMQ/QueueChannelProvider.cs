@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Constants;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
 
@@ -71,6 +72,38 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
             }
         }
 
+        public async Task PublishRetryAsync(
+            IChannel channel,
+            BasicDeliverEventArgs delivery,
+            int retryCount,
+            TimeSpan delay,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(channel);
+            ArgumentNullException.ThrowIfNull(delivery);
+
+            var retryExchange = $"{_queueName}{QueueingConstants.RetryAddition}";
+            var retryQueue = $"{retryExchange}.{GetRetryDelayKey(delay)}";
+            var properties = new BasicProperties
+            {
+                Persistent = true,
+                Type = delivery.BasicProperties.Type,
+                MessageId = delivery.BasicProperties.MessageId,
+                Headers = new Dictionary<string, object?>
+                {
+                    [QueueingConstants.RetryCountHeader] = retryCount
+                }
+            };
+
+            await channel.BasicPublishAsync(
+                exchange: retryExchange,
+                routingKey: retryQueue,
+                mandatory: false,
+                basicProperties: properties,
+                body: delivery.Body,
+                cancellationToken: cancellationToken);
+        }
+
         public void ReturnChannel(IChannel channel)
         {
             if (channel?.IsOpen == true && !_disposed)
@@ -122,6 +155,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
             {
                 var dlxName = $"{_queueName}.dlx";
                 var dlqName = $"{_queueName}{QueueingConstants.DeadletterAddition}";
+                var retryExchange = $"{_queueName}{QueueingConstants.RetryAddition}";
 
                 // Ensure DLX exchange exists
                 await channel.ExchangeDeclareAsync(dlxName, ExchangeType.Direct, durable: true, autoDelete: false, arguments: null);
@@ -134,6 +168,25 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                         { "x-overflow", "reject-publish" }
                     });
                 await channel.QueueBindAsync(dlqName, dlxName, dlqName, arguments: null);
+
+                await channel.ExchangeDeclareAsync(retryExchange, ExchangeType.Direct, durable: true, autoDelete: false, arguments: null);
+                foreach (var retryDelay in QueueingConstants.RetryDelays)
+                {
+                    var retryQueue = $"{retryExchange}.{GetRetryDelayKey(retryDelay)}";
+                    await channel.QueueDeclareAsync(
+                        retryQueue,
+                        durable: true,
+                        exclusive: false,
+                        autoDelete: false,
+                        arguments: new Dictionary<string, object?>
+                        {
+                            { "x-queue-type", "quorum" },
+                            { "x-message-ttl", checked((int)retryDelay.TotalMilliseconds) },
+                            { "x-dead-letter-exchange", $"{_queueName}.exchange" },
+                            { "x-dead-letter-routing-key", _queueName }
+                        });
+                    await channel.QueueBindAsync(retryQueue, retryExchange, retryQueue, arguments: null);
+                }
 
                 // Declare main queue with DLX args
                 await channel.QueueDeclareAsync(
@@ -171,6 +224,9 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                 }
             }
         }
+
+        private static string GetRetryDelayKey(TimeSpan delay) =>
+            $"{(int)delay.TotalSeconds}s";
 
         private async Task BindToExchangeAsync(IChannel channel)
         {

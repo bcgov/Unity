@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
 
 #pragma warning disable CA1005 // Avoid excessive parameters on generic types
 #pragma warning disable S2326
@@ -15,6 +17,12 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces
         /// Gets a channel for publishing or consuming messages.
         /// </summary>
         Task<IChannel> GetChannelAsync();
+
+        /// <summary>
+        /// Republishes a failed delivery to a delayed retry queue. The returned task completes
+        /// only after RabbitMQ confirms the retry publish.
+        /// </summary>
+        Task PublishRetryAsync(IChannel channel, BasicDeliverEventArgs delivery, int retryCount, TimeSpan delay, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Returns a channel obtained from <see cref="GetChannelAsync"/> so it can be pooled

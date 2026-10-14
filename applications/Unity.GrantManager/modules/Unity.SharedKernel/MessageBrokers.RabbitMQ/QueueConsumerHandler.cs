@@ -1,12 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Exceptions;
+using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Constants;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
 using Unity.Modules.Shared.Utils;
 using Volo.Abp.Auditing;
@@ -126,9 +127,65 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing message on {Queue}", _queueName);
-                await consumingChannel.BasicRejectAsync(ea.DeliveryTag, requeue: false);
+                var retryCount = GetRetryCount(ea.BasicProperties.Headers);
+                if (IsPermanentFailure(ex) || retryCount >= QueueingConstants.MaxMessageRetries)
+                {
+                    _logger.LogError(ex,
+                        "Permanently rejecting message {MessageId} on {Queue} after {RetryCount} retries",
+                        ea.BasicProperties.MessageId,
+                        _queueName,
+                        retryCount);
+                    await consumingChannel.BasicRejectAsync(ea.DeliveryTag, requeue: false);
+                    return;
+                }
+
+                var nextRetryCount = retryCount + 1;
+                var delay = QueueingConstants.RetryDelays[retryCount];
+                var channelProvider = consumerScope.ServiceProvider
+                    .GetRequiredService<IQueueChannelProvider<TQueueMessage>>();
+
+                _logger.LogWarning(ex,
+                    "Scheduling retry {RetryCount} for message {MessageId} on {Queue} in {Delay}",
+                    nextRetryCount,
+                    ea.BasicProperties.MessageId,
+                    _queueName,
+                    delay);
+
+                await channelProvider.PublishRetryAsync(consumingChannel, ea, nextRetryCount, delay);
+                await consumingChannel.BasicAckAsync(ea.DeliveryTag, multiple: false);
             }
+        }
+
+        private static int GetRetryCount(IDictionary<string, object?>? headers)
+        {
+            if (headers == null || !headers.TryGetValue(QueueingConstants.RetryCountHeader, out var value))
+            {
+                return 0;
+            }
+
+            return value switch
+            {
+                int count => Math.Max(count, 0),
+                long count => Math.Max((int)count, 0),
+                byte[] bytes when int.TryParse(Encoding.UTF8.GetString(bytes), out var count) => Math.Max(count, 0),
+                _ when int.TryParse(value?.ToString(), out var count) => Math.Max(count, 0),
+                _ => 0
+            };
+        }
+
+        private static bool IsPermanentFailure(Exception exception)
+        {
+            for (var current = exception; current != null; current = current.InnerException)
+            {
+                if (current is ArgumentException ||
+                    current is Volo.Abp.Validation.AbpValidationException ||
+                    current is Volo.Abp.Domain.Entities.EntityNotFoundException)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <summary>
