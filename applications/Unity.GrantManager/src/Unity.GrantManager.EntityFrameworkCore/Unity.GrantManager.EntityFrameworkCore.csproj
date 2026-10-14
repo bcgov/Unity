@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<Import Project="..\..\common.props" />
 
@@ -104,6 +104,7 @@
 		<PackageReference Include="Volo.Abp.TenantManagement.EntityFrameworkCore" Version="10.5.0" />
 		<PackageReference Include="Volo.Abp.FeatureManagement.EntityFrameworkCore" Version="10.5.0" />
 		<PackageReference Include="Volo.Abp.OpenIddict.EntityFrameworkCore" Version="10.5.0" />
+		<PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.13" />
 		<ProjectReference Include="..\..\modules\Unity.Notifications\src\Unity.Notifications.EntityFrameworkCore\Unity.Notifications.EntityFrameworkCore.csproj" /></ItemGroup>
 
 

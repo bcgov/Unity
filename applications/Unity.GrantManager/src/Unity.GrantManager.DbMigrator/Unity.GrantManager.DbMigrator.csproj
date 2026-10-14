@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\common.props" />
 
@@ -33,6 +33,7 @@
 
   <ItemGroup>
     <PackageReference Include="Volo.Abp.Autofac" Version="10.5.0" />
+    <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.13" />
     <ProjectReference Include="..\..\modules\Unity.AI\src\Unity.AI.Application\Unity.AI.Application.csproj" />
     <ProjectReference Include="..\..\modules\Unity.Reporting\src\Unity.Reporting.Application\Unity.Reporting.Application.csproj" />
     <ProjectReference Include="..\..\modules\Unity.TenantManagement\src\Unity.TenantManagement.Application\Unity.TenantManagement.Application.csproj" />
