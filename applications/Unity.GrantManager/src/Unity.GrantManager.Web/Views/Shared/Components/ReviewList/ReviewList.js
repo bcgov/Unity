@@ -358,8 +358,8 @@ function refreshActionButtons(dataTableContext, assessmentId, selectedData) {
         }
     }
 
-    updateCloneButtonState(dataTableContext);
-    updateCreateButtonState(dataTableContext);
+    void updateCloneButtonState(dataTableContext).catch(error => console.error('Failed to update clone button state:', error));
+    void updateCreateButtonState(dataTableContext).catch(error => console.error('Failed to update create button state:', error));
 }
 
 function renderApproval(data) {

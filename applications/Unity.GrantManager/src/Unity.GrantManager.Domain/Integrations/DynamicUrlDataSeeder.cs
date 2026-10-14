@@ -38,8 +38,6 @@ namespace Unity.GrantManager.Integrations
         {
             if (currentTenant == null || currentTenant.Id == null)
             {
-                int messageIndex = 0;
-                int webhookIndex = 0;
                 // Only endpoints that are identical in every environment carry a URL. Environment-specific
                 // ones are seeded blank (unless SeedConfigSection supplies one) and set per environment
                 // through Endpoint Management. For local development, put the seed URLs in the gitignored
@@ -60,13 +58,6 @@ namespace Unity.GrantManager.Integrations
                     new() { KeyName = DynamicUrlKeyNames.GITHUB_REPO, Url = DynamicUrls.GITHUB_REPO, Description = "GitHub Repository" },
                     new() { KeyName = DynamicUrlKeyNames.GITHUB_GRAPHQL, Url = DynamicUrls.GITHUB_GRAPHQL, Description = "GitHub GraphQL Endpoint" },
                     new() { KeyName = DynamicUrlKeyNames.METABASE_API_BASE, Url = "", Description = "Metabase Reporting API" },
-                    new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
-                    new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
-                    new() { KeyName = $"{DynamicUrlKeyNames.DIRECT_MESSAGE_KEY_PREFIX}{messageIndex++}", Url = "", Description = $"Direct message webhook {messageIndex}" },
-                    new() { KeyName = $"{DynamicUrlKeyNames.WEBHOOK_KEY_PREFIX}{webhookIndex++}", Url = "", Description = $"Webhook {webhookIndex}" },
-                    new() { KeyName = $"{DynamicUrlKeyNames.WEBHOOK_KEY_PREFIX}{webhookIndex++}", Url = "", Description = $"Webhook {webhookIndex}" },
-                    new() { KeyName = $"{DynamicUrlKeyNames.WEBHOOK_KEY_PREFIX}{webhookIndex++}", Url = "", Description = $"Webhook {webhookIndex}" },
-                    
                 };
 
                 foreach (var dynamicUrl in dynamicUrls)

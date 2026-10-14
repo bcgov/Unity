@@ -7,6 +7,7 @@ namespace Unity.GrantManager.Notifications;
 public class NotificationSummaryDto : EntityDto<Guid>
 {
     public Guid ApplicationId { get; set; }
+    public Guid ApplicantId { get; set; }
     public string SubmissionReferenceNo { get; set; } = string.Empty;
     public string ApplicantName { get; set; } = string.Empty;
     public DateTime? SentDateTime { get; set; }
