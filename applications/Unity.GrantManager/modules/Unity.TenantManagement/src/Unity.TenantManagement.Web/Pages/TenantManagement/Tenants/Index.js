@@ -488,13 +488,13 @@
     }
 
     function _renderFeatureItem(feature) {
-        let id = 'ft-' + feature.name.replaceAll('.', '-');
+        let id = abp.utils.htmlEscape('ft-' + feature.name.replaceAll('.', '-'));
         let checked = (feature.value || '').toLowerCase() === 'true' ? ' checked' : '';
         return '<div class="form-check form-switch mb-2">' +
             '<input class="form-check-input" type="checkbox" id="' + id + '"' +
-            ' data-feature-name="' + feature.name + '"' + checked + '>' +
+            ' data-feature-name="' + abp.utils.htmlEscape(feature.name) + '"' + checked + '>' +
             '<label class="form-check-label" for="' + id + '">' +
-            (feature.displayName || feature.name) + '</label>' +
+            abp.utils.htmlEscape(feature.displayName || feature.name) + '</label>' +
             '</div>';
     }
 
@@ -504,8 +504,8 @@
         }
         let html = '';
         groups.forEach(function (group) {
-            html += '<div class="mb-4" data-feature-group="' + group.name + '">';
-            html += '<h6 class="mb-2 text-secondary">' + (group.displayName || group.name) + '</h6>';
+            html += '<div class="mb-4" data-feature-group="' + abp.utils.htmlEscape(group.name) + '">';
+            html += '<h6 class="mb-2 text-secondary">' + abp.utils.htmlEscape(group.displayName || group.name) + '</h6>';
             group.features?.forEach(function (feature) {
                 html += _renderFeatureItem(feature);
             });

@@ -9,12 +9,14 @@
 
 function generateAttachmentButtonContent(data, type, full, meta, attachmentType) {
     let ownerId = getAttachmentOwnerId(attachmentType);
-    let downloadUrl = `/api/app/attachment/${attachmentType}/${encodeURIComponent(ownerId)}/download/${encodeURIComponent(full.fileName)}`;
+    let downloadUrl = `/api/app/attachment/${encodeURIComponent(attachmentType)}/${encodeURIComponent(ownerId)}/download/${encodeURIComponent(full.fileName)}`;
     let isCreator = abp.currentUser.id == full.creatorId;
     let escapedAttachmentType = escapeHtmlAttribute(attachmentType);
     let escapedOwnerId = escapeHtmlAttribute(ownerId);
     let escapedFileName = escapeHtmlAttribute(full.fileName);
     let escapedDisplayName = escapeHtmlAttribute(full.displayName || full.fileName);
+    let escapedObjectKey = escapeHtmlAttribute(data);
+    let escapedAttachmentId = escapeHtmlAttribute(full.id);
     let html = `
         <div class="dropdown" style="float:right;">
             <button class="btn btn-light dropbtn" type="button">
@@ -24,15 +26,15 @@ function generateAttachmentButtonContent(data, type, full, meta, attachmentType)
                 <button class="btn fullWidth js-preview-attachment" style="margin:10px;margin-left:8px;" type="button" data-attachment-type="${escapedAttachmentType}" data-owner-id="${escapedOwnerId}" data-file-name="${escapedFileName}" data-display-name="${escapedDisplayName}">
                     <i class="fa-regular fa-eye p-0"></i><span>Preview Attachment</span>
                 </button>
-                <a href="${downloadUrl}" target="_blank" download="${data}" class="fullwidth">
+                <a href="${escapeHtmlAttribute(downloadUrl)}" target="_blank" download="${escapedObjectKey}" class="fullwidth">
                     <button class="btn fullWidth" style="margin:10px" type="button">
                         <i class="fa-solid fa-download"></i><span>Download Attachment</span>
                     </button>
                 </a>
-                <button class="btn fullWidth" style="margin:10px" type="button" ${`onclick="updateAttachmentMetadata('${attachmentType}','${full.id}')"`}>
+                <button class="btn fullWidth" style="margin:10px" type="button" data-attachment-type="${escapedAttachmentType}" data-attachment-id="${escapedAttachmentId}" onclick="updateAttachmentMetadata(this.dataset.attachmentType, this.dataset.attachmentId)">
                     <i class="fa-solid fa-pencil"></i><span>Edit Attachment</span>
                 </button>
-                <button class="btn fullWidth" style="margin:10px" type="button" ${isCreator ? `onclick="deleteAttachment('${attachmentType}','${data}','${full.fileName}')"` : 'disabled'}>
+                <button class="btn fullWidth" style="margin:10px" type="button" data-attachment-type="${escapedAttachmentType}" data-s3-object-key="${escapedObjectKey}" data-file-name="${escapedFileName}" ${isCreator ? 'onclick="deleteAttachment(this.dataset.attachmentType, this.dataset.s3ObjectKey, this.dataset.fileName)"' : 'disabled'}>
                     <i class="fa-solid fa-xmark"></i><span>Delete Attachment</span>
                 </button>
             </div>

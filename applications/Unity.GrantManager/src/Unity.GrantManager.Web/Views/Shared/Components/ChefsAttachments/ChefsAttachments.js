@@ -11,6 +11,7 @@ $(function () {
     let chefsDataTable;
     let selectedAttachmentIds = [];
     const nullPlaceholder = '—';
+    const textRenderer = $.fn.dataTable.render.text();
 
     let inputAction = function (requestData, dataTableSettings) {
         return getApplicationId();
@@ -106,6 +107,7 @@ $(function () {
             title: 'Document Name',
             name: 'chefsFileName',
             data: 'fileName',
+            render: textRenderer,
             className: 'data-table-header text-break',
             index: 1,
             orderable: false,
@@ -119,8 +121,9 @@ $(function () {
             data: 'displayName',
             className: 'data-table-header text-break',
             width: '35%',
-            render: function (data) {
-                return data ?? nullPlaceholder;
+            render: function (data, type) {
+                const value = data ?? nullPlaceholder;
+                return type === 'display' || type === 'filter' ? textRenderer[type](value) : value;
             },
         };
     }
@@ -472,7 +475,8 @@ function getChefsFileDownloadColumn() {
                 '<i class="fa-solid fa-download"></i><span>Download Attachment</span>' +
                 '</button>' +
                 '<button class="btn fullWidth" style="margin:10px" type="button"' +
-                ' onclick="updateAttachmentMetadata(\'CHEFS\',\'' + full.id + '\')">' +
+                ' data-attachment-type="CHEFS" data-attachment-id="' + escapeHtmlAttribute(full.id) + '"' +
+                ' onclick="updateAttachmentMetadata(this.dataset.attachmentType, this.dataset.attachmentId)">' +
                 '<i class="fa-solid fa-pencil"></i><span>Edit Attachment</span>' +
                 '</button>' +
                 '</div>' +
