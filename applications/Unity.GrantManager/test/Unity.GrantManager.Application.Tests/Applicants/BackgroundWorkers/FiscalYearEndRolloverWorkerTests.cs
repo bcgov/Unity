@@ -109,7 +109,10 @@ public class FiscalYearEndRolloverWorkerTests
         var auditingStore = Substitute.For<IAuditingStore>();
         auditingStore.SaveAsync(Arg.Any<AuditLogInfo>()).Returns(callInfo =>
         {
-            savedLogs.Add(callInfo.Arg<AuditLogInfo>());
+            if (callInfo.Arg<AuditLogInfo>() is { } auditLog)
+            {
+                savedLogs.Add(auditLog);
+            }
             return Task.CompletedTask;
         });
         applicantRepository.RollOverFiscalYearEndAsync().Returns(_ =>
