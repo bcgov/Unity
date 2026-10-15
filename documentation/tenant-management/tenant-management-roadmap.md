@@ -9,9 +9,7 @@ Unlike Flex's roadmap (one specific, aspirational feature), this module's outsta
 
 Combined: if a tenant's readonly (or read-write) password is ever changed after the role's first creation — via that operator edit, or via any re-run of tenant-creation logic against a pre-existing role name — the actual Postgres role silently keeps its **original** password while the encrypted connection string (and everything downstream that decrypts and uses it, including the Metabase registration step) reflects the **new** one. The next thing that tries to actually connect fails with an authentication error that gives no hint the mismatch is the cause.
 
-3. **Metabase's own database record compounds this further.** `MetabaseApiClient.FindOrCreateDatabaseAsync` only sends `password` (and the rest of `details`) on the create path — if a Metabase database record for the tenant already exists (the expected, idempotent-by-design case on a re-enqueued/retried registration step), the existing record's stored credentials are never refreshed, even if the tenant's actual readonly password has since changed. There is no `PUT /api/database/{id}` call anywhere in `MetabaseApiClient` to update `details` on an existing record.
-
-None of these three read as bugs in isolation — each is a reasonable "create-only, idempotent-on-existing" implementation. Together, they mean a password change made through the UI silently fails to propagate to either of the two systems that actually need it, with no error at the time of the change — only later, and only if something tries to connect.
+Neither reads as a bug in isolation — each is a reasonable "create-only, idempotent-on-existing" implementation. Together, they mean a password change made through the UI silently fails to reach the Postgres role, with no error at the time of the change — only later, and only if something tries to connect. Metabase Resync (Reporting tab) copies the stored connection string's details onto Metabase's database record, which doesn't help while the role still has the old password.
 
 ## Tenant deletion: what purge does not clean up
 
@@ -32,10 +30,6 @@ Deleting a tenant is two steps: `DeleteAsync` soft-deletes it, and `TenantAppSer
 
 `TenantManagement/Reconciliation/Index.cshtml.cs` uses a plain `[Authorize]` with no specific policy — every other page in this module names an explicit permission or IT role. Not necessarily a security problem (any authenticated user reaching it still needs whatever backs the underlying data), but inconsistent with the rest of the module and worth a deliberate decision either way.
 
-## `PostTenantCreationStepStatus.Failure` is reserved, not reachable
-
-The status enum has four values (`Waiting`, `Success`, `Failure`, `Error`), but only three are currently reachable — the one step that exists today (Metabase registration) either succeeds or throws (`Error`); nothing currently returns a handled, non-exception `Failure`. It's kept in the enum for a future step that needs to report "I ran, and determined this can't succeed" without that being an unhandled exception — not dead code, just unused by the current step count of one.
-
 ## No UI for retrying a failed post-creation step
 
-Recovering a failed step (`ContinueOnError = true` logged it and moved on, or `false` stopped the sequence) currently requires an operator to manually re-enqueue a `PostTenantCreationStepArgs` for that tenant/step index directly — there's no button on the Tenants list or the status detail dialog to trigger this. A "retry" action reachable from that dialog would be a natural addition, now that step failures are visible in the UI at all.
+The Metabase step can be re-run from the Configuration modal's Reporting tab (Set up / Resync), but there's no retry action on the Tenants list or in the Setup Status dialog, and none for a step in general. Any future step would need its own way to be re-run, or a generic "retry" action reachable from that dialog.

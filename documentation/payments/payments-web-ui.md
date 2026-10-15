@@ -64,7 +64,7 @@ contactNumber · invoiceNumber · payGroup · amount · status · requestedOn ·
 l1ApprovalDate · l2ApprovalDate · l3ApprovalDate · CASResponse · accountCodingDisplay
 ```
 
-Also available but hidden by default: supplier name, submission confirmation code, description, invoice status, payment status, L1/L2/L3 approver names, payment requester name, note, tags, `fsbApNotified`, category, and the three cancellation columns (Cancelled, Cancelled By, Cancelled On).
+Also available but hidden by default: supplier name, submission confirmation code, description, invoice status, payment status, L1/L2/L3 approver names, payment requester name, note, tags, `fsbApNotified`, category, and the two cancellation columns (Cancelled By, Cancelled On). Cancelled requests display "Cancelled" in the Status column.
 
 `ErrorSummary` (set by `ApplyErrorSummary` whenever `CasResponse` is present and not `"SUCCEEDED"`) drives the clickable CAS Response cell, which opens the `CasPaymentRequestResponse` modal.
 

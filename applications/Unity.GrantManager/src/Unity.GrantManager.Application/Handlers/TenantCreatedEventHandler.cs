@@ -71,29 +71,20 @@ namespace Unity.GrantManager.Handlers
             });
         }
 
-        // Captures the Metabase user list chosen at creation time as a per-tenant setting
-        // snapshot, so the (async, later-running) Metabase step reads a stable list even if the
-        // Global default changes in the meantime.
+        // Captures the Metabase user list passed at creation time as the tenant's setting, read
+        // later by the (async) Metabase step.
         private async Task SaveMetabaseUserEmailsAsync(TenantCreatedEto eto, Guid tenantId)
         {
-            var emails = await ResolveMetabaseUserEmailsAsync(
-                eto.Properties, () => _settingManager.GetOrNullGlobalAsync(MetabaseSettings.UserEmails));
-
             await _settingManager.SetAsync(
-                MetabaseSettings.UserEmails, emails, TenantSettingValueProvider.ProviderName, tenantId.ToString());
+                MetabaseSettings.UserEmails, ResolveMetabaseUserEmails(eto.Properties),
+                TenantSettingValueProvider.ProviderName, tenantId.ToString());
         }
 
         // TenantAppService.CreateAsync only adds "MetabaseUserEmails" to eto.Properties when the
-        // caller explicitly set it (even to an empty string - a deliberate "no Metabase users for
-        // this tenant" choice, which must still be persisted as-is). When the property is absent -
-        // an older/API caller that never set it - snapshot the *current* Global default here
-        // rather than leaving the tenant setting unset, so the step reads a stable list even if the
-        // Global default changes before it (async, queued) actually runs.
-        internal static async Task<string> ResolveMetabaseUserEmailsAsync(
-            IReadOnlyDictionary<string, string> etoProperties, Func<Task<string?>> getGlobalDefaultAsync) =>
-            etoProperties.TryGetValue("MetabaseUserEmails", out var emailsRaw)
-                ? emailsRaw
-                : await getGlobalDefaultAsync() ?? string.Empty;
+        // caller explicitly set it. The create modals no longer collect Metabase emails, and there
+        // is no Global default to fall back to, so an absent property means an empty list.
+        internal static string ResolveMetabaseUserEmails(IReadOnlyDictionary<string, string> etoProperties) =>
+            etoProperties.TryGetValue("MetabaseUserEmails", out var emailsRaw) ? emailsRaw : string.Empty;
 
         private async Task EnableRequestedFeaturesAsync(TenantCreatedEto eto, Guid tenantId)
         {

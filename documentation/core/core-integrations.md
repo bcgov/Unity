@@ -34,7 +34,7 @@ No external base URL is a constant or a configuration key. Every one is a **row 
 | `DIRECT_MESSAGE_` *(prefix)* | Teams direct-message webhooks, numerically incremented |
 | `WEBHOOK_` *(prefix)* | General webhooks, numerically incremented |
 
-The two prefixes are the exception to one-key-one-row: multiple rows share a prefix with an incrementing suffix, so an operator can add another Teams channel without a code change.
+The two prefixes are retired: no working code path posts to these webhooks, `DynamicUrlDataSeeder` does not seed rows under them, and host migration `RemoveTeamsWebhookDynamicUrls` deletes the six rows it used to seed.
 
 `EndpointManagementAppService` (211 lines) resolves them, with typed helpers such as `GetChefsApiBaseUrlAsync()` alongside the generic `GetUgmUrlByKeyNameAsync(keyName)`. A missing row (or, for `GetUgmUrlByKeyNameAsync`, a blank URL) raises `UserFriendlyException`, which is why several callers wrap the lookup and degrade rather than fail — the AI Reporting page renders empty, `SupplierService` throws only when actually used.
 

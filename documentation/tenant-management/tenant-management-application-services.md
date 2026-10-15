@@ -72,7 +72,7 @@ The schema **supports** per-tenant URL overrides via the nullable `TenantId`, bu
 
 `MetabaseSettings.UserEmails` (`Application.Contracts/Metabase/MetabaseSettings.cs` + `MetabaseSettingDefinitionProvider`) — a comma-separated default email list, settable **globally** and **per-tenant** (`TenantSettingValueProvider`). Two write paths:
 
-- `TenantCreatedEventHandler.SaveMetabaseUserEmailsAsync` snapshots the resolved list into a **per-tenant** setting at creation time, so the later, asynchronous Metabase registration step reads a stable list even if the global default changes in the meantime.
-- `OnboardingRequestAppService`'s Metabase handling (`UpdateMetabaseDefaultUserEmailsAsync`) folds newly-added/removed emails into the **global** default list when an operator checks "save as default" while approving an onboarding request — the same mechanism the "New Tenant" modal's Metabase tab exposes.
+- `TenantCreatedEventHandler.SaveMetabaseUserEmailsAsync` saves the `MetabaseUserEmails` passed to `TenantAppService.CreateAsync` as the **per-tenant** setting (the tenant's Additional members) that `MetabaseTenantProvisioner` adds to the Metabase group alongside the tenant's program managers. When none is passed the setting is empty; there is no fallback to the global value.
+- `OnboardingRequestAppService`'s Metabase handling (`UpdateMetabaseDefaultUserEmailsAsync`) folds `MetabaseNewDefaultUserEmails` / `MetabaseRemovedDefaultUserEmails` into the **global** list when an API caller passes them. Neither create modal has a Metabase tab, and nothing reads the global value.
 
 See [tenant-management-post-creation.md](tenant-management-post-creation.md) for how this setting is actually consumed by the Metabase registration step.

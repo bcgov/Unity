@@ -475,6 +475,7 @@ table.dataTable tfoot td {
 .nav-item>a {
     padding: 10px 20px;
     width: 100%;
+    min-height: 44px;
     height: 100%;
     display: flex;
     justify-content: center;

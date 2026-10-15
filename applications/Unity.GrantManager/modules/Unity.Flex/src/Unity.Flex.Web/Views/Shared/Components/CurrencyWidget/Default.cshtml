@@ -22,7 +22,9 @@
                placeholder="@Model.Field.Definition?.ConvertDefinition(Model.Field.Type)?.Placeholder"
                id="@fieldId"
                name="@fieldId"
-               onchange="@($"notifyFieldChange('{Model.Name}', '{Model.Field?.UiAnchor}', this)")"/>
+               data-worksheet-name="@Model.Name"
+               data-ui-anchor="@Model.Field?.UiAnchor"
+               onchange="notifyFieldChange(this.dataset.worksheetName, this.dataset.uiAnchor, this)"/>
         <span id="@fieldId-error" class="text-danger field-validation-error"></span>
     </div>
 }

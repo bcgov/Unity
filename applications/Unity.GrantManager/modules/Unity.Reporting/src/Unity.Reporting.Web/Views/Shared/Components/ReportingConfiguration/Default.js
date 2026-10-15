@@ -1790,7 +1790,7 @@ $(function () {
             
             if (viewName?.trim()) {
                 // Update the view name in the list item and show it
-                $deleteViewListItem.html(`The associated database view (${viewName})`);
+                $deleteViewListItem.text(`The associated database view (${viewName})`);
                 $deleteViewListItem.show();
             } else {
                 // Hide the view deletion item if no view exists

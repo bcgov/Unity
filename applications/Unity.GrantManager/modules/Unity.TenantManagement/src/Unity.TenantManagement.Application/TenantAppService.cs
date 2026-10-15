@@ -231,8 +231,8 @@ public class TenantAppService(
 
         // Distinguish "field omitted" (input.MetabaseUserEmails is null - an older/API caller
         // that never set it) from "explicitly cleared" (empty string - a deliberate "no Metabase
-        // users for this tenant" choice) - only the latter should be persisted as an override.
-        // TenantCreatedEventHandler falls back to the Global default when the property is absent.
+        // users for this tenant" choice). TenantCreatedEventHandler saves an empty list when the
+        // property is absent; there is no Global default to fall back to.
         if (input.MetabaseUserEmails != null)
         {
             tenantCreatedEto.Properties["MetabaseUserEmails"] = input.MetabaseUserEmails;

@@ -13,6 +13,19 @@
 .search-action-bar_search-wrapper {
     flex: 1;
     min-width: 220px;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 1rem;
+}
+
+.notification-filter-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: flex-end;
+    margin-bottom: 0 !important;
+    gap: 1rem;
 }
 
 .date-input-filter-div {
@@ -24,9 +37,10 @@
     padding-bottom: 0px !important;
 }
 
-.date-input-filter-div label.form-label {
-    font-size: 13.6px;
-    margin-bottom: 0.3rem;
+.date-input-filter-div label.form-label,
+.notification-view-filter label.form-label {
+    font-size: 13.6px !important;
+    margin-bottom: 0.3rem !important;
 }
 
 .custom-date-range-container-div {
@@ -41,6 +55,28 @@
     border-radius: var(--bc-layout-margin-small) !important;
     border: 2px solid var(--bc-colors-blue-primary);
     text-overflow: ellipsis;
+}
+
+#notificationView,
+#quickDateRange {
+    border: 2px solid #2e5dd7 !important;
+    border-radius: 8px !important;
+}
+
+.notification-view-filter {
+    flex: 0 0 auto;
+}
+
+.notification-view-filter select {
+    width: max-content;
+    min-width: 5rem;
+}
+
+#search {
+    flex: 1 1 auto;
+    height: 39.2px !important;
+    margin-top: 0 !important;
+    margin-bottom: 4.8px !important;
 }
 
 #dynamicButtonContainerId {
@@ -99,6 +135,11 @@
 }
 
 @media (max-width: 768px) {
+    .search-action-bar_search-wrapper,
+    .notification-filter-row {
+        flex-wrap: wrap;
+    }
+
     #notificationEmailModal .modal-dialog {
         width: calc(100vw - 1rem);
         margin: 0.5rem auto;

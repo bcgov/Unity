@@ -323,7 +323,7 @@ function cancelScheduledEmail(id, rowIndex) {
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            $.ajax({
+            return $.ajax({
                 url: `/api/app/email-notification/${id}/email`,
                 type: "DELETE",
             })
@@ -356,7 +356,7 @@ function deleteDraftEmail(id, rowIndex) {
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            $.ajax(
+            return $.ajax(
                 {
                     url: `/api/app/email-notification/${id}/email`,
                     type: "DELETE",
@@ -526,5 +526,5 @@ function openEmailPrintInNewTab(emailPrintHtml, printTitle) {
             doc.head.appendChild(printScript);
         };
         doc.head.appendChild(jqueryScript);
-    });
+    }).catch(error => console.error('Failed to prepare email for printing:', error));
 }

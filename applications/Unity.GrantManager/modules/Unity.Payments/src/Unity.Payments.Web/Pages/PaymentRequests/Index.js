@@ -739,7 +739,6 @@ $(function () {
             getNoteColumn(columnIndex++),
             getAccountDistributionColumn(columnIndex++),
             getFsbNotifiedColumn(columnIndex++),
-            getCancelledColumn(columnIndex++),
             getCancelledByColumn(columnIndex++),
             getCancelledOnColumn(columnIndex++),
         ]
@@ -1385,19 +1384,6 @@ function setActionButtonState(buttonApi, enabled) {
         buttonApi.disable();
     }
     buttonApi.nodes().toggleClass('action-bar-btn-unavailable', !enabled);
-}
-
-function getCancelledColumn(columnIndex) {
-    return {
-        title: 'Cancelled',
-        name: 'cancelled',
-        data: null,
-        className: 'data-table-header',
-        index: columnIndex,
-        render: function (data, type, row) {
-            return row.status === 'Cancelled' ? 'Cancelled' : '';
-        }
-    };
 }
 
 function getCancelledByColumn(columnIndex) {
