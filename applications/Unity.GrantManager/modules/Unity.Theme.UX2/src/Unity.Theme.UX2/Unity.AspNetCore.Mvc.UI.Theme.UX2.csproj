@@ -14,8 +14,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="wwwroot\**\*.*" />
-    <EmbeddedResource Include="Themes\**\*.cshtml" />
-    <RazorGenerate Include="Themes\**\*.cshtml" />
+    <EmbeddedResource Include="Themes\**\*.cshtml" />    
   </ItemGroup>
 
   <ItemGroup>

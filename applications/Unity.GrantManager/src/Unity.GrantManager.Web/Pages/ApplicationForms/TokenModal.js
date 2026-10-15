@@ -45,7 +45,9 @@
             try {
                 await navigator.clipboard.writeText(String(value));
             } catch (err) {
-                console.error('Copy failed', err);
+                 console.error('Copy failed', err);
+                 abp.notify.error('Unable to copy to clipboard.');
+                 return;
             }
             abp.notify.success(
                 'Copied to clipboard.'

@@ -125,7 +125,7 @@ public class EntityFrameworkCoreTenantDatabasePurger(
             value = raw;
         }
 
-        return [with(value)];
+        return new NpgsqlConnectionStringBuilder(value);
     }
 
     // Metabase resources are not removed here: their IDs aren't stored and dev/dev2 share one

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -144,6 +145,22 @@ namespace Unity.GrantManager.Notifications
             }).ToList();
 
             return new PagedResultDto<NotificationDto>(total, items);
+        }
+
+        // Limited lookup for template editors (delete/edit preflights); does not expose the schedule list.
+        [Authorize(NotificationsPermissions.Email.Send)]
+        public async Task<List<TemplateNotificationReferenceDto>> GetTemplateReferencesAsync(Guid templateId)
+        {
+            var query = await _repository.GetQueryableAsync();
+            return await AsyncExecuter.ToListAsync(query
+                .Where(x => x.EmailTemplateId == templateId)
+                .OrderByDescending(x => x.CreationTime)
+                .Select(x => new TemplateNotificationReferenceDto
+                {
+                    TriggerType = x.TriggerType,
+                    TriggerDetail = x.TriggerDetail,
+                    IsActive = x.IsActive
+                }));
         }
 
         [Authorize(NotificationsPermissions.Email.Schedule)]

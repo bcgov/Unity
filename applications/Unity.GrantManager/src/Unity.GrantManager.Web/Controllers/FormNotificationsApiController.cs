@@ -242,7 +242,6 @@ namespace Unity.GrantManager.Web.Controllers
             return Ok(new List<RecipientDto>());
         }
 
-        [Authorize(GrantManagerPermissions.NotificationScheduler.Default)]
         [HttpGet("{formId}")]
         public async Task<ActionResult<List<ScheduledNotificationDto>>> GetForForm(string formId)
         {
@@ -384,15 +383,13 @@ namespace Unity.GrantManager.Web.Controllers
             return NoContent();
         }
 
-        [Authorize(GrantManagerPermissions.NotificationScheduler.Default)]
+        [Authorize(NotificationsPermissions.Email.Send)]
         [HttpGet("can-delete-template/{templateId:guid}")]
         public async Task<ActionResult<object>> CanDeleteTemplate(Guid templateId)
         {
-            var result = await automatedNotificationAppService.GetListAsync(
-                new Notifications.GetNotificationsInput { MaxResultCount = 1000 });
+            var references = await automatedNotificationAppService.GetTemplateReferencesAsync(templateId);
 
-            var associatedPlans = result.Items
-                .Where(n => n.EmailTemplateId == templateId)
+            var associatedPlans = references
                 .Select(n =>
                     string.IsNullOrWhiteSpace(n.TriggerDetail)
                         ? $"{n.TriggerType} notification"
@@ -415,17 +412,16 @@ namespace Unity.GrantManager.Web.Controllers
             return Ok(new { canDelete = true, errorMessage = (string?)null, notificationPlanNames = Array.Empty<string>() });
         }
 
-        [Authorize(GrantManagerPermissions.NotificationScheduler.Default)]
+        [Authorize(NotificationsPermissions.Email.Send)]
         [HttpGet("template-notification-plans/{templateId:guid}")]
         public async Task<ActionResult<object>> GetTemplateNotificationPlans(Guid templateId)
         {
-            var result = await automatedNotificationAppService.GetListAsync(
-                new Notifications.GetNotificationsInput { MaxResultCount = 1000 });
+            var references = await automatedNotificationAppService.GetTemplateReferencesAsync(templateId);
             var template = await templateService.GetTemplateById(templateId);
 
             var templateName = template?.Name ?? "Template";
-            var planNames = result.Items
-                .Where(n => n.IsActive && n.EmailTemplateId == templateId)
+            var planNames = references
+                .Where(n => n.IsActive)
                 .Select(n => string.IsNullOrWhiteSpace(n.TriggerDetail)
                     ? $"{templateName} - {n.TriggerType} notification"
                     : $"{templateName} - {n.TriggerType} notification - {n.TriggerDetail}")

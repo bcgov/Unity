@@ -81,7 +81,6 @@
     <!-- Override transitive Swashbuckle.AspNetCore to ensure Microsoft.OpenApi >= 2.7.5 (fixes GHSA-v5pm-xwqc-g5wc).
          Remove this once Volo.Abp.Swashbuckle depends on Swashbuckle.AspNetCore >= 10.2.3 transitively. -->
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
-    <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.13" />
   </ItemGroup>
 
   <!-- Static Assets Copy -->
