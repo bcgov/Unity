@@ -16,7 +16,7 @@ namespace Unity.GrantManager.Tenants.PostCreation;
 
 public class PostTenantCreationSequenceJobTests
 {
-    private sealed class FakeStep(int order, string name, bool continueOnError, Func<Guid, Task>? onExecute = null, bool canExecute = true)
+    private sealed class FakeStep(int order, string name, bool continueOnError, Func<Guid, Task>? onExecute = null, PostTenantCreationStepCheck? check = null)
         : IPostTenantCreationStep
     {
         public int Order { get; } = order;
@@ -25,7 +25,7 @@ public class PostTenantCreationSequenceJobTests
         public bool ContinueOnError { get; } = continueOnError;
         public bool Executed { get; private set; }
 
-        public Task<bool> CanExecuteAsync(Guid tenantId) => Task.FromResult(canExecute);
+        public Task<PostTenantCreationStepCheck> CanExecuteAsync(Guid tenantId) => Task.FromResult(check ?? PostTenantCreationStepCheck.Run);
 
         public async Task ExecuteAsync(Guid tenantId)
         {
@@ -132,9 +132,9 @@ public class PostTenantCreationSequenceJobTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_CanExecuteAsyncReturnsFalse_SkipsExecuteButStillEnqueuesNextStep()
+    public async Task ExecuteAsync_CheckSkips_SkipsExecuteButStillEnqueuesNextStep()
     {
-        var step0 = new FakeStep(0, "Step0", continueOnError: false, canExecute: false);
+        var step0 = new FakeStep(0, "Step0", continueOnError: false, check: PostTenantCreationStepCheck.Skip("not applicable"));
         var step1 = new FakeStep(1, "Step1", continueOnError: false);
         var (job, enqueued, tenant, _) = CreateJob([step0, step1]);
 
@@ -216,13 +216,51 @@ public class PostTenantCreationSequenceJobTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_CanExecuteAsyncReturnsFalse_LeavesStepStatusUnrecorded()
+    public async Task ExecuteAsync_CheckSkips_RecordsSkippedStatusWithReason()
     {
-        var step = new FakeStep(0, "Step0", continueOnError: false, canExecute: false);
+        var step = new FakeStep(0, "Step0", continueOnError: false, check: PostTenantCreationStepCheck.Skip("not applicable"));
         var (job, _, tenant, _) = CreateJob([step]);
 
         await job.ExecuteAsync(new PostTenantCreationStepArgs { TenantId = tenant.Id, StepIndex = 0 });
 
-        tenant.GetPostTenantCreationSections().ShouldBeEmpty();
+        var section = tenant.GetPostTenantCreationSections().ShouldHaveSingleItem();
+        section.Status.ShouldBe(PostTenantCreationStepStatus.Skipped);
+        section.Message.ShouldBe("not applicable");
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_CheckFails_RecordsFailureStatusWithReasonWithoutExecuting()
+    {
+        var step = new FakeStep(0, "Step0", continueOnError: true, check: PostTenantCreationStepCheck.Fail("no API key"));
+        var (job, _, tenant, _) = CreateJob([step]);
+
+        await job.ExecuteAsync(new PostTenantCreationStepArgs { TenantId = tenant.Id, StepIndex = 0 });
+
+        step.Executed.ShouldBeFalse();
+        var section = tenant.GetPostTenantCreationSections().ShouldHaveSingleItem();
+        section.Status.ShouldBe(PostTenantCreationStepStatus.Failure);
+        section.Message.ShouldBe("no API key");
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_CheckFails_ContinueOnErrorTrue_StillEnqueuesNextStep()
+    {
+        var step = new FakeStep(0, "Step0", continueOnError: true, check: PostTenantCreationStepCheck.Fail("no API key"));
+        var (job, enqueued, tenant, _) = CreateJob([step]);
+
+        await job.ExecuteAsync(new PostTenantCreationStepArgs { TenantId = tenant.Id, StepIndex = 0 });
+
+        enqueued.ShouldHaveSingleItem().StepIndex.ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_CheckFails_ContinueOnErrorFalse_StopsSequence()
+    {
+        var step = new FakeStep(0, "Step0", continueOnError: false, check: PostTenantCreationStepCheck.Fail("no API key"));
+        var (job, enqueued, tenant, _) = CreateJob([step]);
+
+        await job.ExecuteAsync(new PostTenantCreationStepArgs { TenantId = tenant.Id, StepIndex = 0 });
+
+        enqueued.ShouldBeEmpty();
     }
 }

@@ -181,6 +181,10 @@
                 @if (Model.CanManageReporting)
                 {
                     <div class="tab-pane fade" id="pane-reporting" aria-labelledby="tab-reporting">
+                        @* Filled by Index.js when the tab is first shown, so opening the modal doesn't wait on Metabase *@
+                        <div id="config-metabase-section" class="mb-3"></div>
+                        <hr />
+
                         <p class="text-muted small">
                             Configure the database role granted SELECT access to this tenant's reporting views.
                         </p>

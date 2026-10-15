@@ -34,11 +34,20 @@ public class MetabaseApiClient(
     // (same immediate-retry approach as UpdateGraphWithRetryAsync below - no artificial delay).
     private const int MaxDatabaseSyncAttempts = 3;
 
+    public Task<string> GetSiteUrlAsync() => GetBaseUrlAsync();
+
+    public async Task<bool> CheckConnectionAsync(CancellationToken cancellationToken = default)
+    {
+        var currentUser = await GetAsync("/api/user/current", cancellationToken);
+        return currentUser.Value<bool?>("is_superuser") ?? false;
+    }
+
     public async Task<int> FindOrCreateDatabaseAsync(string name, string host, int port, string dbName, string username, string password, bool ssl, CancellationToken cancellationToken = default)
     {
         var existingId = await FindIdByNameAsync("/api/database", name, cancellationToken);
         if (existingId != null)
         {
+            await UpdateDatabaseDetailsAsync(existingId.Value, host, port, dbName, username, password, ssl, cancellationToken);
             return existingId.Value;
         }
 
@@ -51,6 +60,17 @@ public class MetabaseApiClient(
         };
         var result = await PostAsync("/api/database", body, cancellationToken);
         return result.Value<int>("id");
+    }
+
+    public async Task UpdateDatabaseDetailsAsync(int databaseId, string host, int port, string dbName, string username, string password, bool ssl, CancellationToken cancellationToken = default)
+    {
+        var path = $"/api/database/{databaseId}";
+        var body = new
+        {
+            engine = "postgres",
+            details = new { host, port, dbname = dbName, user = username, password, ssl }
+        };
+        await ReadJsonTokenAsync(await PutRawAsync(path, body, cancellationToken), path);
     }
 
     public Task SyncDatabaseSchemaAsync(int databaseId, CancellationToken cancellationToken = default) =>
@@ -132,19 +152,19 @@ public class MetabaseApiClient(
         var membershipsToken = await ReadJsonTokenAsync(
             await GetRawAsync("/api/permissions/membership", cancellationToken), "/api/permissions/membership");
 
-        // /api/permissions/membership normally returns an object keyed by group id
-        // ({"<groupId>": [...members...]}), but - like /api/permissions/group and /api/collection
-        // (see the comment on FindIdByNameAsync) - Metabase can return a raw JSON array instead
-        // (observed for a brand-new group with no memberships yet: []). GetAsync's hard cast to
+        // /api/permissions/membership normally returns an object keyed by USER id
+        // ({"<userId>": [{"group_id": .., "user_id": .., "membership_id": ..}]}), but - like
+        // /api/permissions/group and /api/collection (see the comment on FindIdByNameAsync) -
+        // Metabase can return a raw JSON array instead (observed: []). GetAsync's hard cast to
         // JObject throws on that shape, so read the raw token and handle both here.
-        var groupMembers = membershipsToken switch
+        var memberships = membershipsToken switch
         {
-            JObject membershipsByGroup => membershipsByGroup[groupId.ToString(CultureInfo.InvariantCulture)] as JArray,
+            JObject membershipsByUser => membershipsByUser[userId.ToString(CultureInfo.InvariantCulture)] as JArray,
             JArray flatMemberships => flatMemberships,
             _ => null
         };
 
-        return groupMembers?.Any(m => m.Value<int>("user_id") == userId) ?? false;
+        return memberships?.Any(m => m.Value<int?>("group_id") == groupId && m.Value<int?>("user_id") == userId) ?? false;
     }
 
     public Task GrantGroupDatabaseAccessAsync(int groupId, int databaseId, CancellationToken cancellationToken = default) =>

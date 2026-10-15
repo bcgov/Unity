@@ -20,5 +20,7 @@
               maxlength="@(fieldDef?.MaxLength)"
               placeholder="@fieldDef?.Placeholder"
               class="form-control"              
-              onchange="@($"notifyFieldChange('{Model.Name}', '{Model.Field?.UiAnchor}', this)")">@Model?.Field?.CurrentValue?.ConvertInputValueOrNull(Model.Field.Type)</textarea>
+              data-worksheet-name="@Model.Name"
+              data-ui-anchor="@Model.Field?.UiAnchor"
+              onchange="notifyFieldChange(this.dataset.worksheetName, this.dataset.uiAnchor, this)">@Model?.Field?.CurrentValue?.ConvertInputValueOrNull(Model.Field.Type)</textarea>
 }

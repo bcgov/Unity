@@ -32,7 +32,7 @@ DataGrid columns support a curated subset of `CustomFieldType` (not all fifteen)
 
 - `DataGridDefinition.SummaryOption`: `None` / `Above` / `Below` — controls whether, and where, a summary row renders relative to the grid.
 - Only **Numeric** and **Currency** columns are summable (`DataGridWidget._validTotalSummaryTypes`) — each gets its own `Total: {ColumnName}` summary field.
-- `DataGridWidget.SumCells` sums every row's cell for that column as `decimal` (stripping `$` and `,` before parsing), clamped at `decimal.MaxValue` to avoid overflow rather than throwing.
+- `DataGridWidget.SumCells` sums every row's **raw stored** cell value for that column (not the presentation-formatted value, e.g. `CA$ 567.00`, which would not parse) as `decimal` (stripping `$` and `,` before parsing), clamped at `decimal.MaxValue` to avoid overflow rather than throwing.
 - A dynamic grid with no resolvable columns yet shows a placeholder `Total: Dynamic` summary field in preview, since real column types aren't known until CHEFS data is actually mapped.
 
 ## Reporting behavior
