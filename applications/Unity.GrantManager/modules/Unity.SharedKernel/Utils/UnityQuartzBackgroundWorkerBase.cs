@@ -52,7 +52,9 @@ public abstract class UnityQuartzBackgroundWorkerBase : QuartzBackgroundWorkerBa
                     }
                     catch (Exception ex)
                     {
-                        Logger.LogError(ex, "Failed to persist audit log for background worker {WorkerName}; worker work was already committed.", GetType().Name);
+                        // Audit persistence failures after transaction commit should not cause worker to retry.
+                        // The business transaction already succeeded; audit logging is non-critical.
+                        Logger.LogWarning(ex, "Failed to persist audit log for background worker {WorkerName}; worker work was already committed (not retrying).", GetType().Name);
                     }
                 }
             }
@@ -79,7 +81,9 @@ public abstract class UnityQuartzBackgroundWorkerBase : QuartzBackgroundWorkerBa
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError(ex, "Failed to persist audit log for tenant {TenantId}; worker work was already committed.", tenantId);
+                    // Audit persistence failures after transaction commit should not cause worker to retry.
+                    // The business transaction already succeeded; audit logging is non-critical.
+                    Logger.LogWarning(ex, "Failed to persist audit log for tenant {TenantId}; worker work was already committed (not retrying).", tenantId);
                 }
             }
         }

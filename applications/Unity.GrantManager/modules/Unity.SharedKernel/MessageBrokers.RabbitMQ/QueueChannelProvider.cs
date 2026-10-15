@@ -138,12 +138,11 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                     }
                     catch (Exception nackEx)
                     {
-                        _logger.LogError(nackEx, "Failed to BasicNack original delivery after retry publish failure for message {MessageId}. Closing channel to force redelivery.", delivery.BasicProperties?.MessageId);
-                        try
-                        {
-                             await channel.CloseAsync();
-                        }
-                        catch { }
+                        // BasicNack failure means the channel is compromised. Do NOT close it here - if it's an active consumer channel,
+                        // closing it will interrupt message delivery. Log the error and return false to signal failure; the consumer
+                        // handler or connection recovery will handle channel state. The broker will eventually redeliver the message
+                        // via its internal recovery mechanisms even if this immediate nack fails.
+                        _logger.LogError(nackEx, "Failed to BasicNack original delivery after retry publish failure for message {MessageId}. Channel may require recovery by consumer handler.", delivery.BasicProperties?.MessageId);
                     }
 
                     return false;

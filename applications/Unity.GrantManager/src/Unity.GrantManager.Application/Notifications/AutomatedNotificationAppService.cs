@@ -6,16 +6,16 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
-using Unity.GrantManager.Permissions;
+using Unity.Notifications.Permissions;
 
 namespace Unity.GrantManager.Notifications
 {
-    [Authorize(GrantManagerPermissions.NotificationScheduler.Default)]
+    [Authorize]
     public class AutomatedNotificationAppService(IRepository<ScheduledNotification, Guid> repository) : ApplicationService, IAutomatedNotificationAppService
     {
         private readonly IRepository<ScheduledNotification, Guid> _repository = repository;
 
-        [Authorize(GrantManagerPermissions.NotificationScheduler.ManageSchedules)]
+        [Authorize(NotificationsPermissions.Email.ScheduleCreate)]
         public async Task<NotificationDto> CreateAsync(CreateUpdateNotificationDto input)
         {
             var entity = new ScheduledNotification
@@ -55,13 +55,13 @@ namespace Unity.GrantManager.Notifications
             };
         }
 
-        [Authorize(GrantManagerPermissions.NotificationScheduler.ManageSchedules)]
+        [Authorize(NotificationsPermissions.Email.ScheduleCancel)]
         public async Task DeleteAsync(Guid id)
         {
             await _repository.DeleteAsync(id, autoSave: true);
         }
 
-        [Authorize(GrantManagerPermissions.NotificationScheduler.ManageSchedules)]
+        [Authorize(NotificationsPermissions.Email.ScheduleCancel)]
         public async Task CancelAsync(Guid id)
         {
             var entity = await _repository.GetAsync(id);
@@ -69,6 +69,7 @@ namespace Unity.GrantManager.Notifications
             await _repository.UpdateAsync(entity, autoSave: true);
         }
 
+        [Authorize(NotificationsPermissions.Email.NotificationsTab)]
         public async Task<NotificationDto> GetAsync(Guid id)
         {
             var e = await _repository.GetAsync(id);
@@ -92,6 +93,7 @@ namespace Unity.GrantManager.Notifications
             };
         }
 
+        [Authorize(NotificationsPermissions.Email.NotificationsTab)]
         public async Task<PagedResultDto<NotificationDto>> GetListAsync(GetNotificationsInput input)
         {
             var query = await _repository.GetQueryableAsync();
@@ -131,7 +133,7 @@ namespace Unity.GrantManager.Notifications
             return new PagedResultDto<NotificationDto>(total, items);
         }
 
-        [Authorize(GrantManagerPermissions.NotificationScheduler.ManageSchedules)]
+        [Authorize(NotificationsPermissions.Email.Schedule)]
         public async Task<NotificationDto> UpdateAsync(Guid id, CreateUpdateNotificationDto input)
         {
             var e = await _repository.GetAsync(id);
