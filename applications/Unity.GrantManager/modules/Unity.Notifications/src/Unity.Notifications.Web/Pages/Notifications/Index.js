@@ -216,7 +216,7 @@ $(function () {
         setDateRangeFilters(selectedRange, range);
         setDateRangeLocalStorage(selectedRange, range);
         updateDateInputsVisibility();
-        notificationsTable.ajax.reload(null, true);
+        dataTable.ajax.reload(null, true);
     }
 
     function handleInputFilterChange() {
@@ -230,8 +230,7 @@ $(function () {
         localStorage.setItem(STORAGE_KEYS.quickRange, 'custom');
         localStorage.setItem(STORAGE_KEYS.fromDate, notificationTableFilters.dateFrom || '');
         localStorage.setItem(STORAGE_KEYS.toDate, notificationTableFilters.dateTo || '');
-
-        notificationsTable.ajax.reload(null, true);
+        dataTable.ajax.reload(null, true);
     }
 
     function setDateRangeFilters(quickDateRange, range) {

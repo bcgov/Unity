@@ -7,17 +7,29 @@ using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Unity.Notifications.Permissions;
+using Unity.Notifications.Templates;
+using Volo.Abp.Uow;
+using Volo.Abp;
 
 namespace Unity.GrantManager.Notifications
 {
     [Authorize]
-    public class AutomatedNotificationAppService(IRepository<ScheduledNotification, Guid> repository) : ApplicationService, IAutomatedNotificationAppService
+    public class AutomatedNotificationAppService(
+        IRepository<ScheduledNotification, Guid> repository,
+        ITemplatesRepository templatesRepository,
+        IUnitOfWorkManager unitOfWorkManager) : ApplicationService, IAutomatedNotificationAppService
     {
         private readonly IRepository<ScheduledNotification, Guid> _repository = repository;
 
         [Authorize(NotificationsPermissions.Email.ScheduleCreate)]
         public async Task<NotificationDto> CreateAsync(CreateUpdateNotificationDto input)
         {
+            using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
+            if (await templatesRepository.LockActiveAsync(input.EmailTemplateId) == null)
+            {
+                throw new BusinessException("Notifications:TemplateNotAvailable");
+            }
+
             var entity = new ScheduledNotification
             {
                 FormId = input.FormId,
@@ -36,6 +48,7 @@ namespace Unity.GrantManager.Notifications
             };
 
             await _repository.InsertAsync(entity, autoSave: true);
+            await uow.CompleteAsync();
 
             return new NotificationDto
             {
@@ -136,7 +149,13 @@ namespace Unity.GrantManager.Notifications
         [Authorize(NotificationsPermissions.Email.Schedule)]
         public async Task<NotificationDto> UpdateAsync(Guid id, CreateUpdateNotificationDto input)
         {
+            using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
             var e = await _repository.GetAsync(id);
+            if (await templatesRepository.LockActiveAsync(input.EmailTemplateId) == null)
+            {
+                throw new BusinessException("Notifications:TemplateNotAvailable");
+            }
+
             e.EmailTemplateId = input.EmailTemplateId;
             e.TriggerType = input.TriggerType;
             e.Module = input.Module;
@@ -151,6 +170,7 @@ namespace Unity.GrantManager.Notifications
             e.RecipientIdentifier = input.RecipientIdentifier;
 
             await _repository.UpdateAsync(e, autoSave: true);
+            await uow.CompleteAsync();
 
             return new NotificationDto
             {

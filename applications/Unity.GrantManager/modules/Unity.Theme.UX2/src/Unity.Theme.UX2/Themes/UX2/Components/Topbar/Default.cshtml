@@ -25,7 +25,7 @@
    <div class="unity-container-fluid">
         <div class="px-3 d-flex align-items-center">
             <div class="unity-user-initials">
-                @Html.Raw(CurrentUser.FindClaimValue("Badge"))
+                @CurrentUser.FindClaimValue("Badge")
             </div>
         </div>
     </div>

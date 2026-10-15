@@ -53,6 +53,7 @@ public class TemplatesServiceTests
             Substitute.For<ITemplatesRepository>(),
             Substitute.For<ICurrentTenant>(),
             variablesRepository,
+            Substitute.For<Volo.Abp.Uow.IUnitOfWorkManager>(),
 Substitute.For<Volo.Abp.Domain.Repositories.IRepository<Unity.GrantManager.Notifications.ScheduledNotification, System.Guid>>());
     }
 }

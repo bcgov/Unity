@@ -41,13 +41,12 @@
                 });
         }
 
-        function copyToClipboard(value) {
-            let textToCopy = value;
-            let tempTextarea = $('<textarea>');
-            $('body').append(textToCopy);
-            tempTextarea.val(textToCopy).select();
-            navigator.clipboard.writeText(tempTextarea[0].value);
-            tempTextarea.remove();
+        async function copyToClipboard(value) {
+            try {
+                await navigator.clipboard.writeText(String(value));
+            } catch (err) {
+                console.error('Copy failed', err);
+            }
             abp.notify.success(
                 'Copied to clipboard.'
             );
