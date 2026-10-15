@@ -45,7 +45,7 @@
         const sel = document.getElementById('cf_template');
         const preview = document.getElementById('previewCard');
         if (!sel || !preview) return;
-        fetch('/api/form-notifications/templates').then(r => r.json()).then(list => {
+        return fetch('/api/form-notifications/templates').then(r => r.json()).then(list => {
             const t = list.find(x => String(x.id) === sel.value);
             globalThis.renderNotificationTemplatePreview(preview, t);
         });
@@ -87,16 +87,22 @@
     }
 
     function init() {
-        loadTemplates();
-        loadStatuses().then(() => {
+        void loadTemplates().catch(error => console.error('Failed to load notification templates:', error));
+        void loadStatuses().then(() => {
             if (dataTable) {
                 dataTable.rows().invalidate().draw();
             }
-        });
-        loadRecipients(document.getElementById('cf_recipientCategory')?.value || 'Internal');
+        }).catch(error => console.error('Failed to load notification statuses:', error));
+        void loadRecipients(document.getElementById('cf_recipientCategory')?.value || 'Internal')
+            .catch(error => console.error('Failed to load notification recipients:', error));
 
-        document.getElementById('cf_template')?.addEventListener('change', updatePreview);
-        document.getElementById('cf_recipientCategory')?.addEventListener('change', (e) => loadRecipients(e.target.value));
+        document.getElementById('cf_template')?.addEventListener('change', () => {
+            void updatePreview().catch(error => console.error('Failed to update notification preview:', error));
+        });
+        document.getElementById('cf_recipientCategory')?.addEventListener('change', (e) => {
+            void loadRecipients(e.target.value)
+                .catch(error => console.error('Failed to load notification recipients:', error));
+        });
 
         document.getElementById('triggerEvent')?.addEventListener('change', () => toggleTriggerSections());
         document.getElementById('triggerDate')?.addEventListener('change', () => toggleTriggerSections());
@@ -155,7 +161,7 @@
             opt.text = `${t.name} — ${t.subject}`;
             sel.appendChild(opt);
             });
-        updatePreview();
+        void updatePreview().catch(err => console.error('Failed to update notification preview:', err));
         return list;
     }
 
@@ -224,10 +230,10 @@
     function onDeleteButtonClick(event) {
         const id = $(this).data('id');
         if (!id) return;
-        abp.message.confirm(`Delete this notification?`).then(function (confirmed) {
+        void abp.message.confirm(`Delete this notification?`).then(function (confirmed) {
             if (!confirmed) return;
             handleDeleteConfirmed(id);
-        });
+        }).catch(error => console.error('Failed to confirm notification deletion:', error));
     }
 
     document.addEventListener('DOMContentLoaded', init);

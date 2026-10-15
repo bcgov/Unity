@@ -993,7 +993,7 @@ $(function () {
         // Validate existing Parent/Child links on load
         const hasParentChildLinks = state.currentLinks.some(link => link.linkType !== 'Related');
         if (hasParentChildLinks) {
-            ValidationService.validateAllLinks(state);
+            void ValidationService.validateAllLinks(state);
         }
     }
 });

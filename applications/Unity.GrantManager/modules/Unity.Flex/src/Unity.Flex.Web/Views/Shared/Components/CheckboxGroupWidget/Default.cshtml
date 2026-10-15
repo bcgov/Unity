@@ -24,7 +24,9 @@
                         <input type="@Model.Field?.Type.ConvertInputType()"
                                id="@optionId"
                                name="@optionId"
-                               onchange="@($"notifyFieldChange('{Model.Name}', '{Model.Field?.UiAnchor}', this)")"
+                               data-worksheet-name="@Model.Name"
+                               data-ui-anchor="@Model.Field?.UiAnchor"
+                               onchange="notifyFieldChange(this.dataset.worksheetName, this.dataset.uiAnchor, this)"
                                checked />
                     }
                     else
@@ -32,7 +34,9 @@
                         <input type="@Model.Field?.Type.ConvertInputType()"
                                id="@optionId"
                                name="@optionId"
-                               onchange="@($"notifyFieldChange('{Model.Name}','{Model.Field?.UiAnchor}', this)")" />
+                               data-worksheet-name="@Model.Name"
+                               data-ui-anchor="@Model.Field?.UiAnchor"
+                               onchange="notifyFieldChange(this.dataset.worksheetName, this.dataset.uiAnchor, this)" />
                     }
                     <label for="@optionId">@($"{option.Label}")</label>
                 </div>

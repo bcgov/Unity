@@ -2,6 +2,7 @@
 $(function () {
     const l = abp.localization.getResource('GrantManager');
     const nullPlaceholder = '—';
+    const textRenderer = $.fn.dataTable.render.text();
 
     let inputAction = function (requestData, dataTableSettings) {
         const urlParams = new URL(window.location.toLocaleString()).searchParams;
@@ -49,6 +50,7 @@ $(function () {
                 {
                     title: l('AssessmentResultAttachments:DocumentName'),
                     data: 'fileName',
+                    render: textRenderer,
                     className: 'data-table-header text-break',
                     width: '30%',
                 },
@@ -57,8 +59,9 @@ $(function () {
                     data: 'displayName',
                     className: 'data-table-header text-break',
                     width: '20%',
-                    render: function (data) {
-                        return data ?? nullPlaceholder;
+                    render: function (data, type) {
+                        const value = data ?? nullPlaceholder;
+                        return type === 'display' || type === 'filter' ? textRenderer[type](value) : value;
                     }
                 },
                 {
@@ -76,6 +79,7 @@ $(function () {
                 {
                     title: l('AssessmentResultAttachments:AttachedBy'),
                     data: 'attachedBy',
+                    render: textRenderer,
                     className: 'data-table-header',
                     width: '25%',
                 },

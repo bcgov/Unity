@@ -1,5 +1,8 @@
 ---
-globs: "**/*.cs, **/*.cshtml, **/*.js"
+paths:
+  - "**/*.cs"
+  - "**/*.cshtml"
+  - "**/*.js"
 ---
 
 # Security Standards

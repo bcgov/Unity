@@ -53,11 +53,11 @@ $(function () {
     const STATUS_GREEN_MS = 10 * 60 * 1000;
     const STATUS_ORANGE_MS = 30 * 60 * 1000;
 
-    initializeRealtime().then(() => {
-        loadOnlineUsers();
-    });
+    void initializeRealtime()
+        .then(() => loadOnlineUsers())
+        .catch(error => console.error('Failed to initialize realtime messaging:', error));
 
-    loadTenants();
+    void loadTenants().catch(error => console.error('Failed to load messaging tenants:', error));
 
     setInterval(() => renderUsers(lastKnownUsers), 30 * 1000);
 
@@ -295,7 +295,7 @@ $(function () {
             .build();
 
         connection.on('onlineUsersUpdated', function (users) {
-            loadOnlineUsers();
+            void loadOnlineUsers().catch(error => console.error('Failed to refresh online users:', error));
         });
 
         connection.on('directMessageReceived', function (eventData) {

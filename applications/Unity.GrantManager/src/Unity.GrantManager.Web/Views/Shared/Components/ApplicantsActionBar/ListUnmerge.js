@@ -154,7 +154,7 @@
 
     $(function () {
         PubSub.subscribe('open_applicant_unmerge', (message, applicant) => {
-            openModal(applicant);
+            void openModal(applicant);
         });
 
         $(document).on('change', 'input[name="applicantUnmergeOperation"]', function () {
