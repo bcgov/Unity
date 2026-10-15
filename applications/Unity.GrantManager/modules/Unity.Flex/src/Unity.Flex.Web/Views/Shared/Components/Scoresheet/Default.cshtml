@@ -62,7 +62,12 @@
                                     <i class="fa-solid fa-upload"></i> <span>@L["Scoresheet:Configuration:PublishScoresheetButtonText"].Value</span>
                                 </button>
                             }
-                            <button id="export_scoresheet_btn" onclick="exportScoresheet('@scoresheet.Id','@scoresheet.Name','@scoresheet.Title');" class="btn btn-light" type="button">
+                            <button id="export_scoresheet_btn"
+                                    data-scoresheet-id="@scoresheet.Id"
+                                    data-scoresheet-name="@scoresheet.Name"
+                                    data-scoresheet-title="@scoresheet.Title"
+                                    onclick="exportScoresheet(this.dataset.scoresheetId, this.dataset.scoresheetName, this.dataset.scoresheetTitle);"
+                                    class="btn btn-light" type="button">
                                 <i class="fa-solid fa-file-export"></i> <span>@L["Scoresheet:Configuration:ExportScoresheetButtonText"].Value</span>
                             </button>
                             <button data-scoresheet-id="@scoresheet.Id" data-is-archived="false" class="btn btn-light archive-scoresheet-btn" type="button">

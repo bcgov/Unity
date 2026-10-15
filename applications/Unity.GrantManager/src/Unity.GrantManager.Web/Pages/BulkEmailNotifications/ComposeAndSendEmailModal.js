@@ -15,6 +15,7 @@
     let editor = null;
     let variablesButtonApi = null;
     let sendConfirmed = false;
+    let isHydratingEditor = false;
     let rightPanelValidatedApplications = new Set();
 
     function parseApplications() {
@@ -97,14 +98,20 @@
     }
 
     function writeVisibleEditor(state) {
-        $('#EmailTo').val(state.emailTo || '');
-        $('#EmailCC').val(state.emailCC || '');
-        $('#EmailBCC').val(state.emailBCC || '');
-        setEmailFromValue(state.emailFrom || '');
-        $('#EmailSubject').val(state.emailSubject || '');
-        $('#EmailTemplate').val(state.templateId || '');
-        $('#EmailTemplateName').val(state.templateName || '');
-        setEditorBody(state.emailBody || '');
+        // setEmailFromValue triggers a change event; flag it so loading an application isn't treated as a user edit.
+        isHydratingEditor = true;
+        try {
+            $('#EmailTo').val(state.emailTo || '');
+            $('#EmailCC').val(state.emailCC || '');
+            $('#EmailBCC').val(state.emailBCC || '');
+            setEmailFromValue(state.emailFrom || '');
+            $('#EmailSubject').val(state.emailSubject || '');
+            $('#EmailTemplate').val(state.templateId || '');
+            $('#EmailTemplateName').val(state.templateName || '');
+            setEditorBody(state.emailBody || '');
+        } finally {
+            isHydratingEditor = false;
+        }
         $('#btn-save-top').prop('disabled', true);
     }
 
@@ -950,9 +957,13 @@
 
         $('#EmailTo, #EmailCC, #EmailBCC, #EmailFrom, #EmailSubject')
             .off('input.compose change.compose')
-            .on('input.compose change.compose', function () {
+            .on('input.compose change.compose', function (event) {
                 syncCurrentState();
                 if (currentStep === 2 && selectedApplicationId) {
+                    // A committed edit (change fires on blur) surfaces inline field errors for this application.
+                    if (event.type === 'change' && !isHydratingEditor) {
+                        rightPanelValidatedApplications.add(selectedApplicationId);
+                    }
                     const errors = updateRowValidation(selectedApplicationId);
                     if (rightPanelValidatedApplications.has(selectedApplicationId)) {
                         showStepTwoErrors(errors);
@@ -1107,9 +1118,12 @@
                         };
                     }
                 });
-                tinyEditor.on('input change undo redo', function () {
+                tinyEditor.on('input change undo redo', function (event) {
                     syncCurrentState();
                     if (currentStep === 2 && selectedApplicationId) {
+                        if (event.type === 'change' && !isHydratingEditor) {
+                            rightPanelValidatedApplications.add(selectedApplicationId);
+                        }
                         const errors = updateRowValidation(selectedApplicationId);
                         if (rightPanelValidatedApplications.has(selectedApplicationId)) {
                             showStepTwoErrors(errors);
