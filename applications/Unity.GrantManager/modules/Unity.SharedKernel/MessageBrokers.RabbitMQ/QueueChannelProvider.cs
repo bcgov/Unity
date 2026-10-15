@@ -107,13 +107,21 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                 attempts++;
                 try
                 {
-                    await channel.BasicPublishAsync(
-                        exchange: retryExchange,
-                        routingKey: retryQueue,
-                        mandatory: true,
-                        basicProperties: properties,
-                        body: delivery.Body,
-                        cancellationToken: cancellationToken);
+                    var publisherChannel = await GetChannelAsync();
+                    try
+                    {
+                        await publisherChannel.BasicPublishAsync(
+                            exchange: retryExchange,
+                            routingKey: retryQueue,
+                            mandatory: true,
+                            basicProperties: properties,
+                            body: delivery.Body,
+                            cancellationToken: cancellationToken);
+                    }
+                    finally
+                    {
+                        ReturnChannel(publisherChannel);
+                    }
 
                     return true;
                 }
