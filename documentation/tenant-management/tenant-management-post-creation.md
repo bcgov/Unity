@@ -13,21 +13,21 @@ public interface IPostTenantCreationStep
     string Key { get; }        // stable, machine-readable — must not change once shipped
     string StepName { get; }   // human-readable, used in logs and the status UI
     bool ContinueOnError { get; }
-    Task<bool> CanExecuteAsync(Guid tenantId) => Task.FromResult(true);
+    Task<PostTenantCreationStepCheck> CanExecuteAsync(Guid tenantId) => Task.FromResult(PostTenantCreationStepCheck.Run);
     Task ExecuteAsync(Guid tenantId);
 }
 ```
 
 `PostTenantCreationSequenceJob` (`Unity.GrantManager.Application/Tenants/PostCreation/`) runs the registered steps **one per job execution**, in ascending `Order`, self-re-enqueuing (`IBackgroundJobManager.EnqueueAsync`) for the next `StepIndex` — so the whole sequence is driven entirely by ABP's background job queue, not a long-running loop. `TenantCreatedEventHandler` kicks it off with `StepIndex = 0` right after synchronous provisioning completes.
 
-A step's exception is always caught and logged, never rethrown — ABP's own background-job retry only engages when `ExecuteAsync` throws, and that's deliberately not the recovery mechanism here. `ContinueOnError = true` means a failed step is logged and the sequence moves on to the next step anyway; `false` stops the sequence entirely. Either way, the failed step itself gets no further automatic attempt — recovery is a manual re-enqueue of a `PostTenantCreationStepArgs` for that step index (there's currently no UI button for this; an operator does it directly).
+A step's exception is always caught and logged, never rethrown — ABP's own background-job retry only engages when `ExecuteAsync` throws, and that's deliberately not the recovery mechanism here. `ContinueOnError = true` means a failed step is logged and the sequence moves on to the next step anyway; `false` stops the sequence entirely. Either way, the failed step itself gets no further automatic attempt — recovery is a re-enqueue of a `PostTenantCreationStepArgs` for that step index. For the Metabase step that's the Set up / Resync button on the Configuration modal's Reporting tab (below); there is no generic retry button for a step.
 
 ## Status tracking on the tenant
 
-A job whose tenant no longer exists (deleted or purged after the job was queued) logs a warning and returns without running the step, recording a status or enqueuing the next step, so ABP doesn't retry it. Every other outcome (aside from a `CanExecuteAsync`-driven skip — see below) is persisted onto the tenant via `TenantPostCreationSectionsExtensions` (`modules/Unity.SharedKernel/PostTenantCreation/`), read back by the Tenants list UI:
+A job whose tenant no longer exists (deleted or purged after the job was queued) logs a warning and returns without running the step, recording a status or enqueuing the next step, so ABP doesn't retry it. Every other outcome is persisted onto the tenant via `TenantPostCreationSectionsExtensions` (`modules/Unity.SharedKernel/PostTenantCreation/`), read back by the Tenants list UI:
 
-- `PostTenantCreationStepStatus` — `Waiting | Success | Failure | Error`. `Waiting` is seeded for every step at tenant-creation time (`TenantAppService.CreateAsync` → `SeedPostTenantCreationSections`), so the UI shows something immediately, before the deferred job has even run. `Success`/`Error` are set by `PostTenantCreationSequenceJob` after a step returns/throws. `Failure` is reserved for a future step that reports a handled, non-exception failure — no current step produces it, since the only step today (Metabase registration) either succeeds or throws.
-- A step skipped via `CanExecuteAsync` returning `false` (e.g. no Metabase API key configured) is left as `Waiting`, not marked as any terminal result — it may still run on a later manual re-enqueue once the missing precondition is fixed.
+- `PostTenantCreationStepStatus` — `Waiting | Success | Failure | Error | Skipped`. `Waiting` is seeded for every step at tenant-creation time (`TenantAppService.CreateAsync` → `SeedPostTenantCreationSections`), so the UI shows something immediately, before the deferred job has even run. `Success`/`Error` are set by `PostTenantCreationSequenceJob` after a step returns/throws. `Skipped` and `Failure` come from `CanExecuteAsync` (next bullet).
+- `CanExecuteAsync` returns a `PostTenantCreationStepCheck` (`modules/Unity.SharedKernel/PostTenantCreation/`): `Run`, `Skip(reason)` or `Fail(reason)`. The job records a skip as `Skipped` (the step does not apply) and a fail as `Failure` (the step should apply but cannot run), with the reason as the status message, and does not run the step. A `Failure` stops the sequence when the step's `ContinueOnError` is false, the same as an error. Either can be run again by a manual re-enqueue once the cause is fixed.
 
 ### Why flat `ExtraProperties`, not a JSON blob
 
@@ -37,14 +37,22 @@ The DTO surfaced to the browser (`TenantDto.Sections`) is still a JSON array str
 
 ## The only step today: Metabase registration
 
-`MetabaseTenantRegistrationStep` (`Unity.GrantManager.Application/Tenants/PostCreation/Steps/`, `Order = 1`, `Key = "MetabaseSync"`, `ContinueOnError = true`) does everything the old manual deployment runbook did by hand:
+`MetabaseTenantRegistrationStep` (`Unity.GrantManager.Application/Tenants/PostCreation/Steps/`, `Order = 1`, `Key = "MetabaseSync"`, `ContinueOnError = true`) holds the checks below; its `ExecuteAsync` calls `MetabaseTenantProvisioner.SetupAsync` (`Unity.GrantManager.Application/Integrations/Metabase/`), which does everything the old manual deployment runbook did by hand:
 
-1. Decrypts the tenant's `Tenant_Readonly` connection string, `FindOrCreateDatabaseAsync`s a Metabase database connection named after the tenant, triggers a schema sync + value rescan.
-2. `FindOrCreateGroupAsync`s a Metabase permissions group named after the tenant, adds the configured member emails (from the per-tenant `MetabaseSettings.UserEmails` snapshot — see [tenant-management-application-services.md](tenant-management-application-services.md#metabase-settings)) via `AddGroupMemberAsync`. A user not found in Metabase (never logged in via LDAP, no Admin > People entry) is skipped with a logged warning, not a hard failure.
+1. Decrypts the tenant's `Tenant_Readonly` connection string (throws if there is none, so the job records `Error`), `FindOrCreateDatabaseAsync`s a Metabase database connection named after the tenant, triggers a schema sync + value rescan. When the connection already exists, `FindOrCreateDatabaseAsync` updates its details with `PUT /api/database/{id}`, so a rerun picks up a changed password or host.
+2. `FindOrCreateGroupAsync`s a Metabase permissions group named after the tenant, adds the tenant's members via `AddGroupMemberAsync`: the emails of its active users with the `program_manager` role, plus the per-tenant `MetabaseSettings.UserEmails` list (see [tenant-management-application-services.md](tenant-management-application-services.md#metabase-settings)), de-duplicated case-insensitively. A user not found in Metabase (never logged in via LDAP, no Admin > People entry) is skipped with a logged warning, not a hard failure.
 3. Grants that group unrestricted view/query access to the new database connection.
 4. `FindOrCreateCollectionAsync`s a Metabase collection for the tenant and grants the group write access.
+5. Stores the database, group and collection IDs on the tenant as flat `ExtraProperties` scalars: `MetabaseDatabaseId`, `MetabaseGroupId`, `MetabaseCollectionId`. On a tenant registered before the IDs were stored, the find-or-create calls return the existing resources by name, so running Setup again backfills the IDs.
 
-`CanExecuteAsync` returns `false` (skip, not failure) when no Metabase API key is configured — lets the whole feature be a no-op in environments without Metabase wired up. Every Metabase call is designed to be idempotent (find-or-create by name, membership checks before writing), so a manual re-enqueue after a partial failure is safe.
+`CanExecuteAsync` checks, in order: `TenantCreation:Steps:Metabase:Enabled` off → `Skipped` (this environment doesn't use Metabase); the tenant lacks the `Unity.Reporting` feature → `Skipped` (it never uses Metabase, so missing configuration doesn't matter to it); no API key, or a missing or blank `METABASE_API_BASE` endpoint → `Failure` with the reason; otherwise the step runs. Every Metabase call is designed to be idempotent (find-or-create by name, membership checks before writing), so a rerun after a partial failure is safe.
+
+### Set up and Resync from the Reporting tab
+
+`IMetabaseTenantAppService` (`Unity.GrantManager.Application.Contracts/Integrations/Metabase/`, implemented by `MetabaseTenantAppService`, `ITAdminOrITOperationsPolicyName`) backs the Metabase section of the tenant Configuration modal's Reporting tab:
+
+- `GetAsync(tenantId)` returns the step's last status, the stored IDs (shown as links into Metabase), and the result of the same `CanExecuteAsync` checks. When those pass it also calls `GET /api/user/current` with the API key (`IMetabaseApiClient.CheckConnectionAsync`) to confirm Metabase is reachable and the key belongs to an administrator.
+- `SetupAsync(tenantId)` marks the step `Waiting` and enqueues `PostTenantCreationStepArgs` at the Metabase step's index, so it runs through `PostTenantCreationSequenceJob` like the original registration. Steps ordered after it would run again too; there are none. The button reads **Set up** when the tenant has no stored IDs and **Resync** when it has; both run the same idempotent Setup.
 
 ## `MetabaseApiClient` — handling Metabase's API inconsistencies
 
@@ -60,6 +68,6 @@ All three behaviors are covered by tests in `test/Unity.GrantManager.Application
 
 `modules/Unity.TenantManagement/src/Unity.TenantManagement.Web/Pages/TenantManagement/Tenants/Index.js`:
 
-- A "Setup Status" column renders a single aggregate icon per tenant, rolled up from all tracked steps: green check (all succeeded), red X (nothing succeeded and at least one failed), amber warning (a mix), gray clock (nothing has finished yet). A tenant with **no** tracked steps at all (i.e. `PostCreationStepKeys` was never seeded — a legacy tenant created before this feature shipped) renders **no icon**, rather than a permanent "Waiting" clock that would never resolve.
+- A "Setup Status" column renders a single aggregate icon per tenant, rolled up from all tracked steps: green check (every step that applies succeeded), gray minus (every step was skipped), red X (nothing succeeded and at least one failed), amber warning (a mix), gray clock (nothing has finished yet). Skipped steps count as finished, neither succeeded nor failed. A tenant with **no** tracked steps at all (i.e. `PostCreationStepKeys` was never seeded — a legacy tenant created before this feature shipped) renders **no icon**, rather than a permanent "Waiting" clock that would never resolve.
 - Clicking the icon opens a SweetAlert2 (`Swal.fire({ html: ... })`) dialog listing every step's name, status, message, and timestamp — pulled from the DataTable's own row data (`_dataTable.row(...).data()`) on click, not embedded as a `data-*` HTML attribute, because the sections JSON contains double quotes that break a naively-escaped double-quoted attribute (`$('<span>').text(json).html()` only escapes for element *content*, not attribute-value context). `abp.message.info` was tried first and rejected — in this app it's just a thin wrapper over the browser's native `alert()`, which can't render markup at all.
 - Both the column header and the per-row icon carry a hint tooltip ("click for details") — a native `title` attribute rather than a Bootstrap tooltip, so it works without needing to re-run ABP's tooltip auto-init after every DataTable redraw.

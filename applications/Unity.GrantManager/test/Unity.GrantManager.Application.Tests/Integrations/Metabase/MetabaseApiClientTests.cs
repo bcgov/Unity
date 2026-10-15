@@ -38,6 +38,62 @@ public class MetabaseApiClientTests
             .Returns(responses[0], responses[1..]);
 
     [Fact]
+    public async Task FindOrCreateDatabaseAsync_Existing_UpdatesConnectionDetailsAndReturnsId()
+    {
+        var (client, http) = CreateClient();
+        SetupHttpSequence(http,
+            JsonResponse(HttpStatusCode.OK, "{\"data\":[{\"id\":7,\"name\":\"AG-MARB\"}]}"),
+            JsonResponse(HttpStatusCode.OK, "{\"id\":7}"));
+
+        var id = await client.FindOrCreateDatabaseAsync("AG-MARB", "db-host", 5432, "T_ABC123", "t_abc123_readonly", "new-pw", true);
+
+        id.ShouldBe(7);
+        await http.Received(1).HttpAsync(
+            HttpMethod.Put, $"{BaseUrl}/api/database/7", Arg.Any<object?>(), Arg.Any<string?>(),
+            Arg.Any<(string username, string password)?>(), Arg.Any<HttpCompletionOption>(),
+            Arg.Any<System.Collections.Generic.IReadOnlyDictionary<string, string>?>(), Arg.Any<CancellationToken>());
+        await http.DidNotReceive().HttpAsync(
+            HttpMethod.Post, Arg.Any<string>(), Arg.Any<object?>(), Arg.Any<string?>(),
+            Arg.Any<(string username, string password)?>(), Arg.Any<HttpCompletionOption>(),
+            Arg.Any<System.Collections.Generic.IReadOnlyDictionary<string, string>?>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task FindOrCreateDatabaseAsync_UpdateRejected_Throws()
+    {
+        var (client, http) = CreateClient();
+        SetupHttpSequence(http,
+            JsonResponse(HttpStatusCode.OK, "{\"data\":[{\"id\":7,\"name\":\"AG-MARB\"}]}"),
+            JsonResponse(HttpStatusCode.BadRequest, "{\"message\":\"password incorrect\"}"));
+
+        await Should.ThrowAsync<IntegrationServiceException>(
+            () => client.FindOrCreateDatabaseAsync("AG-MARB", "db-host", 5432, "T_ABC123", "t_abc123_readonly", "bad-pw", true));
+    }
+
+    [Theory]
+    [InlineData("{\"is_superuser\":true}", true)]
+    [InlineData("{\"is_superuser\":false}", false)]
+    [InlineData("{}", false)]
+    public async Task CheckConnectionAsync_ReturnsWhetherKeyIsAdministrators(string body, bool expected)
+    {
+        var (client, http) = CreateClient();
+        SetupHttpSequence(http, JsonResponse(HttpStatusCode.OK, body));
+
+        (await client.CheckConnectionAsync()).ShouldBe(expected);
+    }
+
+    [Fact]
+    public async Task CheckConnectionAsync_KeyRejected_ThrowsWithStatus()
+    {
+        var (client, http) = CreateClient();
+        SetupHttpSequence(http, JsonResponse(HttpStatusCode.Unauthorized, "Unauthenticated"));
+
+        var ex = await Should.ThrowAsync<IntegrationServiceException>(() => client.CheckConnectionAsync());
+
+        ex.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
     public async Task GrantGroupDatabaseAccessAsync_NoConflict_SucceedsOnFirstAttempt()
     {
         var (client, http) = CreateClient();
@@ -125,23 +181,6 @@ public class MetabaseApiClientTests
     }
 
     // /api/database wraps its list in {"data": [...]}.
-    [Fact]
-    public async Task FindOrCreateDatabaseAsync_DatabaseWithSameNameAlreadyExists_ReturnsExistingIdWithoutCreating()
-    {
-        var (client, http) = CreateClient();
-        SetupHttpSequence(http,
-            JsonResponse(HttpStatusCode.OK, "{\"data\":[{\"id\":11,\"name\":\"AG-MARB\"}]}"));
-
-        var databaseId = await client.FindOrCreateDatabaseAsync(
-            "AG-MARB", "host", 5432, "db", "user", "pass", ssl: true);
-
-        databaseId.ShouldBe(11);
-        await http.Received(1).HttpAsync(
-            Arg.Any<HttpMethod>(), Arg.Any<string>(), Arg.Any<object?>(), Arg.Any<string?>(),
-            Arg.Any<(string username, string password)?>(), Arg.Any<HttpCompletionOption>(),
-            Arg.Any<System.Collections.Generic.IReadOnlyDictionary<string, string>?>(), Arg.Any<CancellationToken>());
-    }
-
     [Fact]
     public async Task FindOrCreateDatabaseAsync_NoDatabaseWithThatName_CreatesNewDatabase()
     {
@@ -256,7 +295,7 @@ public class MetabaseApiClientTests
     {
         var (client, http) = CreateClient();
         SetupHttpSequence(http,
-            JsonResponse(HttpStatusCode.OK, "{\"5\":[{\"user_id\":101,\"membership_id\":1}]}"));
+            JsonResponse(HttpStatusCode.OK, "{\"101\":[{\"membership_id\":1,\"group_id\":5,\"user_id\":101}]}"));
 
         await client.AddGroupMemberAsync(groupId: 5, userId: 101);
 
@@ -267,11 +306,45 @@ public class MetabaseApiClientTests
     }
 
     [Fact]
+    public async Task AddGroupMemberAsync_MembershipMapIsKeyedByUserId_DoesNotPostExistingMembership()
+    {
+        var (client, http) = CreateClient();
+        SetupHttpSequence(http,
+            JsonResponse(HttpStatusCode.OK,
+                "{\"5\":[{\"membership_id\":7,\"group_id\":9,\"user_id\":5}]," +
+                "\"101\":[{\"membership_id\":1,\"group_id\":2,\"user_id\":101},{\"membership_id\":8,\"group_id\":5,\"user_id\":101}]}"));
+
+        await client.AddGroupMemberAsync(groupId: 5, userId: 101);
+
+        await http.Received(1).HttpAsync(
+            Arg.Any<HttpMethod>(), Arg.Any<string>(), Arg.Any<object?>(), Arg.Any<string?>(),
+            Arg.Any<(string username, string password)?>(), Arg.Any<HttpCompletionOption>(),
+            Arg.Any<System.Collections.Generic.IReadOnlyDictionary<string, string>?>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task AddGroupMemberAsync_UserInOtherGroupsOnly_PostsMembership()
+    {
+        var (client, http) = CreateClient();
+        SetupHttpSequence(http,
+            JsonResponse(HttpStatusCode.OK, "{\"101\":[{\"membership_id\":1,\"group_id\":2,\"user_id\":101}]}"),
+            JsonResponse(HttpStatusCode.OK, "{}"));
+
+        await client.AddGroupMemberAsync(groupId: 5, userId: 101);
+
+        await http.Received(1).HttpAsync(
+            HttpMethod.Post, Arg.Is<string>(url => url != null && url.EndsWith("/api/permissions/membership", StringComparison.Ordinal)),
+            Arg.Any<object?>(), Arg.Any<string?>(), Arg.Any<(string username, string password)?>(),
+            Arg.Any<HttpCompletionOption>(), Arg.Any<System.Collections.Generic.IReadOnlyDictionary<string, string>?>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task AddGroupMemberAsync_UserNotYetAMember_PostsMembership()
     {
         var (client, http) = CreateClient();
         SetupHttpSequence(http,
-            JsonResponse(HttpStatusCode.OK, "{\"5\":[{\"user_id\":101,\"membership_id\":1}]}"),
+            JsonResponse(HttpStatusCode.OK, "{\"101\":[{\"membership_id\":1,\"group_id\":5,\"user_id\":101}]}"),
             JsonResponse(HttpStatusCode.OK, "{}"));
 
         await client.AddGroupMemberAsync(groupId: 5, userId: 202);
@@ -295,7 +368,7 @@ public class MetabaseApiClientTests
     {
         var (client, http) = CreateClient();
         SetupHttpSequence(http,
-            JsonResponse(HttpStatusCode.OK, "{\"5\":[]}"),                                  // pre-check: not a member yet
+            JsonResponse(HttpStatusCode.OK, "{}"),                                  // pre-check: not a member yet
             JsonResponse(HttpStatusCode.OK, "[{\"id\":9,\"group_id\":5,\"user_id\":202}]")); // POST response: raw array
 
         await Should.NotThrowAsync(() => client.AddGroupMemberAsync(groupId: 5, userId: 202));
@@ -329,7 +402,7 @@ public class MetabaseApiClientTests
     {
         var (client, http) = CreateClient();
         SetupHttpSequence(http,
-            JsonResponse(HttpStatusCode.OK, "[{\"user_id\":101,\"membership_id\":1}]"));
+            JsonResponse(HttpStatusCode.OK, "[{\"membership_id\":1,\"group_id\":5,\"user_id\":101}]"));
 
         await client.AddGroupMemberAsync(groupId: 5, userId: 101);
 
@@ -351,9 +424,9 @@ public class MetabaseApiClientTests
     {
         var (client, http) = CreateClient();
         SetupHttpSequence(http,
-            JsonResponse(HttpStatusCode.OK, "{\"5\":[]}"),                                          // pre-check: not a member yet
+            JsonResponse(HttpStatusCode.OK, "{}"),                                          // pre-check: not a member yet
             JsonResponse(HttpStatusCode.InternalServerError, "{\"message\":\"duplicate key\"}"),      // POST fails (e.g. race)
-            JsonResponse(HttpStatusCode.OK, "{\"5\":[{\"user_id\":101,\"membership_id\":1}]}"));     // re-check: now a member
+            JsonResponse(HttpStatusCode.OK, "{\"101\":[{\"membership_id\":1,\"group_id\":5,\"user_id\":101}]}"));     // re-check: now a member
 
         await Should.NotThrowAsync(() => client.AddGroupMemberAsync(groupId: 5, userId: 101));
 
@@ -368,9 +441,9 @@ public class MetabaseApiClientTests
     {
         var (client, http) = CreateClient();
         SetupHttpSequence(http,
-            JsonResponse(HttpStatusCode.OK, "{\"5\":[]}"),                                     // pre-check: not a member
+            JsonResponse(HttpStatusCode.OK, "{}"),                                     // pre-check: not a member
             JsonResponse(HttpStatusCode.InternalServerError, "{\"message\":\"boom\"}"),         // POST fails for a real reason
-            JsonResponse(HttpStatusCode.OK, "{\"5\":[]}"));                                     // re-check: still not a member
+            JsonResponse(HttpStatusCode.OK, "{}"));                                     // re-check: still not a member
 
         await Should.ThrowAsync<IntegrationServiceException>(
             () => client.AddGroupMemberAsync(groupId: 5, userId: 101));

@@ -58,7 +58,6 @@ public class CreateTenantInfoToTenantCreateDtoMapper : MapperBase<CreateModalMod
         destination.CasClientCode = source.CasClientCode ?? string.Empty;
         destination.UserIdentifier = source.UserIdentifier;
         destination.FeatureKeys = source.FeatureKeys;
-        destination.MetabaseUserEmails = source.MetabaseUserEmails;
         TenantExtraPropertiesCopier.Copy(source, destination);
     }
 }

@@ -493,7 +493,7 @@ if (await _permissionChecker.IsGrantedAsync(context.User, requirement.Permission
       <div class="k">CAS client code</div>
       <div><span class="code">ICasClientCodeLookupService</span> fronts the host-owned <span class="code">CasClientCode</span> entity — this module's role is purely "let an admin attach the right code," the real CAS integration lives entirely in <span class="code">Unity.Payments</span>.</div>
       <div class="k">Metabase settings</div>
-      <div><span class="code">MetabaseSettings.UserEmails</span> — global default + per-tenant snapshot at creation time, so the async registration step (§07) reads a stable list even if the global default changes meanwhile.</div>
+      <div><span class="code">MetabaseSettings.UserEmails</span> — the per-tenant Additional members list. The registration step (§07) adds these and the tenant's program managers to its Metabase group; there is no global default fallback.</div>
     </div>
   </section>
 
@@ -528,7 +528,7 @@ if (await _permissionChecker.IsGrantedAsync(context.User, requirement.Permission
       <div class="row"><div class="k">3 · Resolve features</div><div class="v"><p><span class="code">OnboardingFeatureMap.ResolveFeatureKeys</span> — static dictionary mapping human labels/checkbox keys to real ABP feature keys.</p></div></div>
       <div class="row"><div class="k">4 · Create the tenant</div><div class="v"><p><span class="code">TenantAppService.CreateAsync(...)</span> — the exact same call the "New Tenant" modal makes, populated from request field data.</p></div></div>
       <div class="row"><div class="k">5 · Extra managers</div><div class="v"><p>Any resolved program managers beyond the first become tenant managers via <span class="code">AssignManagerAsync</span>.</p></div></div>
-      <div class="row"><div class="k">6 · Metabase defaults</div><div class="v"><p>Optionally folds new/removed emails into the global default list ("save as default" on the approval modal).</p></div></div>
+      <div class="row"><div class="k">6 · Metabase defaults</div><div class="v"><p>Folds new/removed emails into the global list only when an API caller passes them; the approval modal has no Metabase tab.</p></div></div>
       <div class="row"><div class="k">7 · Close the request</div><div class="v"><p><span class="code">CloseApplicationAsync</span> — the source <span class="code">Application</span> drops out of the pending-onboarding queue.</p></div></div>
     </div>
 
@@ -548,13 +548,13 @@ if (await _permissionChecker.IsGrantedAsync(context.User, requirement.Permission
   string Key { get; }        // stable, machine-readable — must not change once shipped
   string StepName { get; }   // human-readable, used in logs and the status UI
   bool ContinueOnError { get; }
-  Task&lt;bool&gt; CanExecuteAsync(Guid tenantId) =&gt; Task.FromResult(true);
+  Task&lt;PostTenantCreationStepCheck&gt; CanExecuteAsync(Guid tenantId) =&gt; Task.FromResult(PostTenantCreationStepCheck.Run);
   Task ExecuteAsync(Guid tenantId);
 }</div>
-    <p><span class="code">PostTenantCreationSequenceJob</span> runs steps one per job execution, ascending <span class="code">Order</span>, self-re-enqueuing for the next index — driven entirely by ABP's background job queue. A step's exception is always caught and logged, never rethrown; ABP's own job retry never engages. <span class="code">ContinueOnError = true</span> logs and moves to the next step; <span class="code">false</span> stops the sequence. Recovery from a failure is currently a <strong>manual</strong> re-enqueue — no retry button exists yet (§09).</p>
+    <p><span class="code">PostTenantCreationSequenceJob</span> runs steps one per job execution, ascending <span class="code">Order</span>, self-re-enqueuing for the next index — driven entirely by ABP's background job queue. A step's exception is always caught and logged, never rethrown; ABP's own job retry never engages. <span class="code">ContinueOnError = true</span> logs and moves to the next step; <span class="code">false</span> stops the sequence. Recovery is a re-enqueue of that step; for Metabase that's Set up / Resync on the Configuration modal's Reporting tab. There's no generic retry button (§09).</p>
 
-    <h3>Status tracking — Waiting / Success / Failure / Error</h3>
-    <p><span class="code">Waiting</span> is seeded for every step at tenant-creation time, so the UI shows something immediately. <span class="code">Success</span>/<span class="code">Error</span> are set after a step returns/throws. <span class="code">Failure</span> is reserved for a future step reporting a handled non-exception failure — unreachable today since the one step either succeeds or throws. A step skipped via <span class="code">CanExecuteAsync</span> returning <span class="code">false</span> stays <span class="code">Waiting</span>, not a terminal result — it may still run on a later manual re-enqueue.</p>
+    <h3>Status tracking — Waiting / Success / Failure / Error / Skipped</h3>
+    <p><span class="code">Waiting</span> is seeded for every step at tenant-creation time, so the UI shows something immediately. <span class="code">Success</span>/<span class="code">Error</span> are set after a step returns/throws. <span class="code">CanExecuteAsync</span> returns a <span class="code">PostTenantCreationStepCheck</span>: <span class="code">Skip</span> records <span class="code">Skipped</span> (the step does not apply, e.g. Metabase disabled or no Reporting feature) and <span class="code">Fail</span> records <span class="code">Failure</span> (it should apply but cannot run, e.g. no API key), with the reason as the message. Either can run again on a later manual re-enqueue.</p>
 
     <h3>Why flat ExtraProperties, not a JSON blob</h3>
     <p>Status is stored as one flat scalar key per field — <span class="code">PostCreationStepKeys</span> (comma-separated) plus <span class="code">PostCreationStep_{key}_Name/Status/Message/UpdatedAt</span> per step — matching how every other <span class="code">ExtraProperties</span> entry in this module is a flat string. This matters: <span class="code">Tenant.ExtraProperties</span> round-trips through EF Core via ABP's own Newtonsoft-based change-tracking, and a string value that itself parses as a JSON array makes the <em>next</em> save of that tenant throw <span class="code">Unable to cast object of type 'JArray' to type 'JObject'</span> — a real, reproducible failure mode. Keeping every value a plain scalar avoids it entirely.</p>
@@ -582,7 +582,7 @@ if (await _permissionChecker.IsGrantedAsync(context.User, requirement.Permission
       <div class="row"><div class="k">Index<span class="sub">TenantsOrITOps</span></div><div class="v"><p>The Tenants admin list — DataTable with the post-creation "Setup Status" icon.</p></div></div>
       <div class="row"><div class="k">CreateModal<span class="sub">ITAdministrator only</span></div><div class="v"><p>"New Tenant" form. See §04 for why this is tightened off the shared OR policy.</p></div></div>
       <div class="row"><div class="k">EditModal<span class="sub">Tenants.Update</span></div><div class="v"><p>Rename + edit display metadata.</p></div></div>
-      <div class="row"><div class="k">ConfigurationModal<span class="sub">TenantsOrITOps + tab-level gates</span></div><div class="v"><p>Connection strings, Features/Metabase, Reporting view-role, managers list.</p></div></div>
+      <div class="row"><div class="k">ConfigurationModal<span class="sub">TenantsOrITOps + tab-level gates</span></div><div class="v"><p>Connection strings, Features, Reporting (Metabase status with Set up / Resync, and the view role), managers list.</p></div></div>
       <div class="row"><div class="k">AssignManagerModal<span class="sub">Tenants.Create</span></div><div class="v"><p>Attach an additional manager to an existing tenant.</p></div></div>
     </div>
 
@@ -605,13 +605,12 @@ if (await _permissionChecker.IsGrantedAsync(context.User, requirement.Permission
     <div class="sec-head"><span class="sec-num">09</span><h2>Known rough edges</h2></div>
     <p class="lede">Worth knowing before you touch this code.</p>
     <div class="rowlist">
-      <div class="row"><div class="k"><span class="tag warn">Real risk</span></div><div class="v"><p><strong>Connection-string password desync, three layers deep.</strong> The Postgres role's password is never <span class="code">ALTER</span>'d if the role already exists (§03); <span class="code">UpdateConnectionStringsAsync</span> only rewrites the encrypted DB row and never touches Postgres; and Metabase's own database record is never refreshed with a new password on a re-enqueued/retried registration (no <span class="code">PUT /api/database/{id}</span> exists in <span class="code">MetabaseApiClient</span> at all). A password change made through the UI can silently fail to propagate to either system that actually needs it, with no error until something tries to connect.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Real risk</span></div><div class="v"><p><strong>Connection-string password desync, two layers deep.</strong> The Postgres role's password is never <span class="code">ALTER</span>'d if the role already exists (§03) and <span class="code">UpdateConnectionStringsAsync</span> only rewrites the encrypted DB row and never touches Postgres. A password change made through the UI can silently fail to reach the Postgres role, with no error until something tries to connect. Metabase Resync copies the stored details onto Metabase's database record, which doesn't help while the role keeps the old password.</p></div></div>
       <div class="row"><div class="k"><span class="tag warn">Real risk</span></div><div class="v"><p><strong>Tenant purge doesn't deregister Metabase.</strong> <span class="code">DeleteAsync</span> soft-deletes the tenant; <span class="code">PurgeAsync</span> then drops its Postgres database, roles and host records, but the Metabase database connection, group and collection stay behind.</p></div></div>
       <div class="row"><div class="k"><span class="tag accent">Unenforced</span></div><div class="v"><p><span class="code">Tenants.ManageFeatures</span>/<span class="code">ManageEndpoints</span> are declared but not found wired to any <span class="code">[Authorize]</span> in this module — reserved/scaffold constants, not active gates.</p></div></div>
       <div class="row"><div class="k"><span class="tag accent">Unused capability</span></div><div class="v"><p><span class="code">DynamicUrl.TenantId</span> supports per-tenant endpoint overrides in the schema; every actual call site passes <span class="code">tenantSpecific: false</span> today — global-only in practice.</p></div></div>
       <div class="row"><div class="k"><span class="tag warn">Inconsistent</span></div><div class="v"><p>The Reconciliation page uses a plain <span class="code">[Authorize]</span> with no specific policy — every other page in this module names an explicit permission or IT role.</p></div></div>
-      <div class="row"><div class="k"><span class="tag accent">By design</span></div><div class="v"><p><span class="code">PostTenantCreationStepStatus.Failure</span> is reserved for a future step reporting a handled non-exception failure — unreachable today since the one step (Metabase) either succeeds or throws.</p></div></div>
-      <div class="row"><div class="k"><span class="tag warn">Missing</span></div><div class="v"><p>No UI to retry a failed post-creation step — an operator must manually re-enqueue a <span class="code">PostTenantCreationStepArgs</span> directly. A "retry" action reachable from the status detail dialog (§07) would be a natural addition, now that step failures are visible in the UI at all.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Missing</span></div><div class="v"><p>No generic retry for a failed post-creation step. The Metabase step can be re-run from the Reporting tab (Set up / Resync), but there's no retry action in the status detail dialog (§07) or for any other step.</p></div></div>
     </div>
   </section>
 
