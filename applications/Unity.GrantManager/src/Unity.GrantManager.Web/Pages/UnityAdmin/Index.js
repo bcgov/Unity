@@ -235,6 +235,14 @@ $(function () {
         $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust().draw(false);
     }
 
+    // Size the scroll body so the table footer sits at the bottom of the viewport,
+    // matching initializeDataTable({ fixedHeaders: true }) used by the other admin tables.
+    function enableScrollResize(dt) {
+        if ($.fn.dataTable.ScrollResize) {
+            dt.settings()[0]._scrollResize = new $.fn.dataTable.ScrollResize(dt);
+        }
+    }
+
     function initializeDateFilters() {
         let range = getDateRange(defaultQuickDateRange);
         setDateRangeFilters(defaultQuickDateRange, range);
@@ -313,6 +321,8 @@ $(function () {
                 },
                 externalSearchInputId: '#search',
                 scrollX: true,
+                scrollY: 'calc(100vh - 325px)', // Initial value – ScrollResize recalculates dynamically
+                scrollCollapse: true,
                 ajax: abp.libs.datatables.createAjax(
                     unity.grantManager.intakes.submission.getSubmissionsList,
                     function () {
@@ -395,6 +405,8 @@ $(function () {
                 }
             })
         );
+
+        enableScrollResize(recDt);
 
         // Initialize FilterRow plugin on the button
         if ($.fn.dataTable.FilterRow !== 'undefined') {
@@ -563,6 +575,8 @@ $(function () {
                 order: [[0, 'desc']],
                 searching: false,
                 scrollX: true,
+                scrollY: 'calc(100vh - 325px)', // Initial value – ScrollResize recalculates dynamically
+                scrollCollapse: true,
                 ajax: abp.libs.datatables.createAjax(
                     unity.grantManager.history.auditLog.getList,
                     function () {
@@ -593,6 +607,8 @@ $(function () {
                 processing: true
             })
         );
+
+        enableScrollResize(auditDt);
 
         if ($.fn.dataTable.FilterRow !== undefined) {
             new $.fn.dataTable.FilterRow(auditDt.settings()[0], { // NOSONAR - False positive flag on S1848

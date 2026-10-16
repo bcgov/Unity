@@ -54,12 +54,6 @@
     margin-top: 10px;
 }
 
-#reconciliation-report-div,
-#audit-logs-div,
-#audit-log-settings-div {
-    margin-top: 0;
-}
-
 #audit-logs-div .reconciliation-filter-inputs {
     align-items: center;
 }
@@ -117,6 +111,17 @@
     max-height: 80vh;
     overflow: scroll;
     margin-top:20px;
+}
+
+/* DataTable sections: ScrollResize sizes the scroll body to the viewport so the
+   table footer sits at the bottom of the page; the card must not clip or scroll it. */
+#reconciliation-report-div,
+#audit-logs-div,
+#ai-prompts-div,
+#endpoints-div,
+#exception-logs-div {
+    max-height: none;
+    overflow: visible;
 }
 
 .unity-app-main-container {
