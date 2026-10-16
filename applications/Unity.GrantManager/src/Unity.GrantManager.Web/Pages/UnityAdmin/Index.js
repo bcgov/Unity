@@ -5,7 +5,6 @@ $(function () {
     let recDt = null;
     let auditDt = null;
     let filterData = {};
-    let auditSearchTimer = null;
 
     const UIElements = {
         reconciliationReportMenu: $('#reconciliation-report-menu-item'),
@@ -468,9 +467,52 @@ $(function () {
         reloadAuditTable();
     }
 
+    // Client-side only: hides loaded rows that don't contain the search text, without a server round trip
     function handleAuditSearchInput() {
-        clearTimeout(auditSearchTimer);
-        auditSearchTimer = setTimeout(reloadAuditTable, 300);
+        if (!auditDt) {
+            return;
+        }
+
+        const term = (UIElements.auditSearch.val() || '').trim().toLowerCase();
+        const rows = $(auditDt.rows({ page: 'current' }).nodes());
+        let visibleCount = 0;
+        rows.each(function () {
+            const isMatch = !term || $(this).text().toLowerCase().includes(term);
+            $(this).toggle(isMatch);
+            if (isMatch) {
+                visibleCount++;
+            }
+        });
+
+        // Paging and totals come from the server, so describe the search result in terms of the current page
+        const container = $(auditDt.table().container());
+        const info = container.find('.dt-info, .dataTables_info');
+        info.find('.audit-search-info').remove();
+        info.children().not('.audit-search-info').show();
+
+        const body = $(auditDt.table().body());
+        body.find('.audit-search-empty').remove();
+
+        if (!term) {
+            return;
+        }
+
+        if (info.children().length === 0) {
+            info.wrapInner('<span></span>');
+        }
+        info.children().hide();
+        info.append($('<span>', {
+            class: 'audit-search-info',
+            text: `Showing ${visibleCount} of ${rows.length} entries on this page matching "${UIElements.auditSearch.val().trim()}"`
+        }));
+
+        if (visibleCount === 0 && rows.length > 0) {
+            body.append($('<tr>', { class: 'audit-search-empty' }).append($('<td>', {
+                class: 'dt-empty',
+                colspan: auditDt.columns(':visible').count(),
+                text: 'No matching records on this page'
+            })));
+        }
     }
 
     function reloadAuditTable() {
@@ -510,7 +552,6 @@ $(function () {
                             endTime: dates.endTime,
                             entityTypeFullName: UIElements.auditEntityType.val() || null,
                             changeType: UIElements.auditChangeType.val() ? Number(UIElements.auditChangeType.val()) : null,
-                            filter: UIElements.auditSearch.val() || null,
                             propertyName: getAuditColumnSearch(2),
                             serviceName: getAuditColumnSearch(7),
                             methodName: getAuditColumnSearch(8)
@@ -542,6 +583,8 @@ $(function () {
             });
         }
 
+        // Re-apply the search to each newly loaded page
+        auditDt.on('draw', handleAuditSearchInput);
     }
 
     function getAuditColumnSearch(index) {

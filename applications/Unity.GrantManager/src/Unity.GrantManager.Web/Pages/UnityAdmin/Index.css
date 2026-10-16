@@ -73,8 +73,9 @@
 #audit-search {
     display: block;
     width: 100%;
-    margin-top: 2px;
     padding: 6px 12px;
+    margin-top: 0;
+    align-self: flex-end;    
 }
 
 #audit-logs-div .reconciliation-filter-buttons {
