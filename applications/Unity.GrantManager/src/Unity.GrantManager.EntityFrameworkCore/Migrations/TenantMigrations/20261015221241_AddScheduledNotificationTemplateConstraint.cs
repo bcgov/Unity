@@ -30,21 +30,24 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                       FROM ""Notifications"".""EmailTemplates"" AS template
                       WHERE template.""Id"" = scheduled.""EmailTemplateId"");");
 
-            migrationBuilder.CreateIndex(
-                name: "IX_ScheduledNotifications_EmailTemplateId",
-                schema: "Notifications",
-                table: "ScheduledNotifications",
-                column: "EmailTemplateId");
+            migrationBuilder.Sql(
+                @"CREATE INDEX IF NOT EXISTS ""IX_ScheduledNotifications_EmailTemplateId""
+                  ON ""Notifications"".""ScheduledNotifications"" (""EmailTemplateId"");");
 
-            migrationBuilder.AddForeignKey(
-                name: "FK_ScheduledNotifications_EmailTemplates_EmailTemplateId",
-                schema: "Notifications",
-                table: "ScheduledNotifications",
-                column: "EmailTemplateId",
-                principalSchema: "Notifications",
-                principalTable: "EmailTemplates",
-                principalColumn: "Id",
-                onDelete: ReferentialAction.Restrict);
+            migrationBuilder.Sql(
+                @"DO $$
+                  BEGIN
+                      IF NOT EXISTS (
+                          SELECT 1 FROM pg_constraint
+                          WHERE conname = 'FK_ScheduledNotifications_EmailTemplates_EmailTemplateId'
+                            AND conrelid = '""Notifications"".""ScheduledNotifications""'::regclass) THEN
+                          ALTER TABLE ""Notifications"".""ScheduledNotifications""
+                              ADD CONSTRAINT ""FK_ScheduledNotifications_EmailTemplates_EmailTemplateId""
+                              FOREIGN KEY (""EmailTemplateId"")
+                              REFERENCES ""Notifications"".""EmailTemplates"" (""Id"")
+                              ON DELETE RESTRICT;
+                      END IF;
+                  END $$;");
         }
 
         /// <inheritdoc />
