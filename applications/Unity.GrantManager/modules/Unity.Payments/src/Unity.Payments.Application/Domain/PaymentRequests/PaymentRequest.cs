@@ -163,6 +163,19 @@ namespace Unity.Payments.Domain.PaymentRequests
             return this;
         }
 
+        public void SetLevel3ApprovalRequired(bool required, Guid approvalId)
+        {
+            var level3Approval = ExpenseApprovals.FirstOrDefault(x => x.Type == ExpenseApprovalType.Level3);
+            if (required && level3Approval == null)
+            {
+                ExpenseApprovals.Add(new ExpenseApproval(approvalId, ExpenseApprovalType.Level3));
+            }
+            else if (!required && level3Approval != null)
+            {
+                ExpenseApprovals.Remove(level3Approval);
+            }
+        }
+
         public PaymentRequest SetInvoiceStatus(string status)
         {
             InvoiceStatus = status;

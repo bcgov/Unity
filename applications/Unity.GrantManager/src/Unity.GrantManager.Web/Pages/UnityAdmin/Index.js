@@ -5,7 +5,6 @@ $(function () {
     let recDt = null;
     let auditDt = null;
     let filterData = {};
-    let auditSearchTimer = null;
 
     const UIElements = {
         reconciliationReportMenu: $('#reconciliation-report-menu-item'),
@@ -236,6 +235,14 @@ $(function () {
         $.fn.dataTable.tables({ visible: true, api: true }).columns.adjust().draw(false);
     }
 
+    // Size the scroll body so the table footer sits at the bottom of the viewport,
+    // matching initializeDataTable({ fixedHeaders: true }) used by the other admin tables.
+    function enableScrollResize(dt) {
+        if ($.fn.dataTable.ScrollResize) {
+            dt.settings()[0]._scrollResize = new $.fn.dataTable.ScrollResize(dt);
+        }
+    }
+
     function initializeDateFilters() {
         let range = getDateRange(defaultQuickDateRange);
         setDateRangeFilters(defaultQuickDateRange, range);
@@ -314,6 +321,8 @@ $(function () {
                 },
                 externalSearchInputId: '#search',
                 scrollX: true,
+                scrollY: 'calc(100vh - 325px)', // Initial value – ScrollResize recalculates dynamically
+                scrollCollapse: true,
                 ajax: abp.libs.datatables.createAjax(
                     unity.grantManager.intakes.submission.getSubmissionsList,
                     function () {
@@ -397,6 +406,8 @@ $(function () {
             })
         );
 
+        enableScrollResize(recDt);
+
         // Initialize FilterRow plugin on the button
         if ($.fn.dataTable.FilterRow !== 'undefined') {
             new $.fn.dataTable.FilterRow(recDt.settings()[0], { // NOSONAR - False positive flag on S1848
@@ -468,9 +479,72 @@ $(function () {
         reloadAuditTable();
     }
 
+    // Client-side only: hides loaded rows that don't contain the search text, without a server round trip
     function handleAuditSearchInput() {
-        clearTimeout(auditSearchTimer);
-        auditSearchTimer = setTimeout(reloadAuditTable, 300);
+        if (!auditDt) {
+            return;
+        }
+
+        const term = (UIElements.auditSearch.val() || '').trim().toLowerCase();
+        const rows = $(auditDt.rows({ page: 'current' }).nodes());
+        let visibleCount = 0;
+        rows.each(function () {
+            const isMatch = !term || $(this).text().toLowerCase().includes(term);
+            $(this).toggle(isMatch);
+            if (isMatch) {
+                visibleCount++;
+            }
+        });
+
+        // Paging and totals come from the server, so describe the search result in terms of the current page
+        const container = $(auditDt.table().container());
+        const info = container.find('.dt-info, .dataTables_info');
+        info.find('.audit-search-info').remove();
+        info.children().not('.audit-search-info').show();
+
+        const body = $(auditDt.table().body());
+        body.find('.audit-search-empty').remove();
+
+        if (!term) {
+            return;
+        }
+
+        if (info.children().length === 0) {
+            info.wrapInner('<span></span>');
+        }
+        // Use the table's own language strings so the info and empty row read like a standard DataTables search
+        const settings = auditDt.settings()[0];
+        const lang = settings.oLanguage;
+        info.children().hide();
+        info.append($('<span>', {
+            class: 'audit-search-info',
+            text: formatAuditSearchInfo(settings, visibleCount ? lang.sInfo : lang.sInfoEmpty, visibleCount)
+                + ' ' + formatAuditSearchInfo(settings, lang.sInfoFiltered, visibleCount, rows.length)
+        }));
+
+        if (visibleCount === 0 && rows.length > 0) {
+            body.append($('<tr>', { class: 'audit-search-empty' }).append($('<td>', {
+                class: 'dt-empty',
+                colspan: auditDt.columns(':visible').count(),
+                text: lang.sZeroRecords
+            })));
+        }
+    }
+
+    // Mirrors DataTables' own info macros, scoped to the rows on the current page
+    function formatAuditSearchInfo(settings, template, count, max) {
+        const total = max ?? count;
+        const format = number => settings.fnFormatNumber(number);
+        const entries = number => settings.api.i18n('entries', '', number);
+        return (template || '')
+            .replaceAll('_START_', format(count ? 1 : 0))
+            .replaceAll('_END_', format(count))
+            .replaceAll('_MAX_', format(total))
+            .replaceAll('_TOTAL_', format(count))
+            .replaceAll('_ENTRIES_', entries(count))
+            .replaceAll('_ENTRIES-MAX_', entries(total))
+            .replaceAll('_ENTRIES-TOTAL_', entries(count))
+            .trim();
     }
 
     function reloadAuditTable() {
@@ -501,6 +575,8 @@ $(function () {
                 order: [[0, 'desc']],
                 searching: false,
                 scrollX: true,
+                scrollY: 'calc(100vh - 325px)', // Initial value – ScrollResize recalculates dynamically
+                scrollCollapse: true,
                 ajax: abp.libs.datatables.createAjax(
                     unity.grantManager.history.auditLog.getList,
                     function () {
@@ -510,10 +586,9 @@ $(function () {
                             endTime: dates.endTime,
                             entityTypeFullName: UIElements.auditEntityType.val() || null,
                             changeType: UIElements.auditChangeType.val() ? Number(UIElements.auditChangeType.val()) : null,
-                            filter: UIElements.auditSearch.val() || null,
                             propertyName: getAuditColumnSearch(2),
-                            serviceName: getAuditColumnSearch(8),
-                            methodName: getAuditColumnSearch(9)
+                            serviceName: getAuditColumnSearch(7),
+                            methodName: getAuditColumnSearch(8)
                         };
                     }
                 ),
@@ -521,18 +596,19 @@ $(function () {
                     { title: 'Change time', data: 'changeTime', render: formatAuditDate },
                     { title: 'Entity', data: 'entityName', name: 'entityName', searchable: true, orderable: false, render: formatAuditEntityLink },
                     { title: 'Property', data: 'propertyName', render: $.fn.dataTable.render.text() },
-                    { title: 'Original value', data: 'originalValue', render: $.fn.dataTable.render.text() },
-                    { title: 'New value', data: 'newValue', render: $.fn.dataTable.render.text() },
+                    { title: 'Original value', data: 'originalValue', orderable: false, render: $.fn.dataTable.render.text() },
+                    { title: 'New value', data: 'newValue', orderable: false, render: $.fn.dataTable.render.text() },
                     { title: 'Change', data: 'changeType', render: formatChangeType },
-                    { title: 'Name', data: 'userFirstName', render: $.fn.dataTable.render.text() },
-                    { title: 'Surname', data: 'userSurname', render: $.fn.dataTable.render.text() },
-                    { title: 'Service', data: 'serviceName', render: $.fn.dataTable.render.text() },
-                    { title: 'Method', data: 'methodName', render: $.fn.dataTable.render.text() },
-                    { title: 'URL', data: 'url', render: $.fn.dataTable.render.text() }
+                    { title: 'User', data: 'userFirstName', render: formatAuditUser },
+                    { title: 'Service', data: 'serviceName', orderable: false, render: $.fn.dataTable.render.text() },
+                    { title: 'Method', data: 'methodName', orderable: false, render: $.fn.dataTable.render.text() },
+                    { title: 'URL', data: 'url', orderable: false, render: $.fn.dataTable.render.text() }
                 ],
                 processing: true
             })
         );
+
+        enableScrollResize(auditDt);
 
         if ($.fn.dataTable.FilterRow !== undefined) {
             new $.fn.dataTable.FilterRow(auditDt.settings()[0], { // NOSONAR - False positive flag on S1848
@@ -543,10 +619,17 @@ $(function () {
             });
         }
 
+        // Re-apply the search to each newly loaded page
+        auditDt.on('draw', handleAuditSearchInput);
     }
 
     function getAuditColumnSearch(index) {
         return auditDt ? auditDt.column(index).search() || null : null;
+    }
+
+    function formatAuditUser(data, renderType, row) {
+        const fullName = [row?.userFirstName, row?.userSurname].filter(Boolean).join(' ');
+        return $('<span>', { text: fullName }).prop('outerHTML');
     }
 
     function formatAuditDate(data) {

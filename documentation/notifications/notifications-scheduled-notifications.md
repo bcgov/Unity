@@ -19,6 +19,8 @@ Both triggers converge on the same output: an `EmailNotificationEvent` published
 
 `FullAuditedAggregateRoot<Guid>`, tenant-scoped.
 
+Schedule creation and updates lock the referenced active `EmailTemplate` row inside the write transaction. Template deletion takes the same lock before checking for schedules and soft-deleting the template. This prevents a schedule from being saved between the reference check and the soft delete; a missing or soft-deleted template is rejected when saving a schedule.
+
 |Field|Meaning|
 |---|---|
 |`FormId`|The application form this configuration applies to|

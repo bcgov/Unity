@@ -1,10 +1,11 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Constants;
 using Unity.Modules.Shared.MessageBrokers.RabbitMQ.Interfaces;
 
@@ -60,14 +61,99 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
                 }
 
                 // Create new channel
-                var channel = await _channelProvider.GetChannelAsync() ?? throw new InvalidOperationException("Channel cannot be null.");
-                await EnsureQueueDeclaredAsync(channel);
-                return channel;
+                await EnsureQueueDeclaredAsync();
+                return await _channelProvider.GetChannelAsync() ?? throw new InvalidOperationException("Channel cannot be null.");
             }
             catch
             {
                 _channelSemaphore.Release();
                 throw;
+            }
+        }
+
+        public async Task<bool> PublishRetryAsync(
+            IChannel channel,
+            BasicDeliverEventArgs delivery,
+            int retryCount,
+            TimeSpan delay,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(channel);
+            ArgumentNullException.ThrowIfNull(delivery);
+
+            var retryExchange = $"{_queueName}{QueueingConstants.RetryAddition}";
+            var retryQueue = $"{retryExchange}.{GetRetryDelayKey(delay)}";
+            var properties = new BasicProperties
+            {
+                Persistent = true,
+                Type = delivery.BasicProperties.Type,
+                MessageId = delivery.BasicProperties.MessageId,
+                Headers = new Dictionary<string, object?>
+                {
+                    [QueueingConstants.RetryCountHeader] = retryCount
+                }
+            };
+
+            // Use mandatory=true so unroutable publishes are reported by publisher-confirms.
+            // Retry publish failures are handled explicitly: retry with backoff, and if all attempts fail
+            // requeue the original delivery (or close the channel to force broker redelivery) so the
+            // message is not lost.
+            var attempts = 0;
+            const int maxAttempts = 3;
+            var backoff = TimeSpan.FromMilliseconds(100);
+            while (true)
+            {
+                attempts++;
+                try
+                {
+                    var publisherChannel = await GetChannelAsync();
+                    try
+                    {
+                        await publisherChannel.BasicPublishAsync(
+                            exchange: retryExchange,
+                            routingKey: retryQueue,
+                            mandatory: true,
+                            basicProperties: properties,
+                            body: delivery.Body,
+                            cancellationToken: cancellationToken);
+                    }
+                    finally
+                    {
+                        ReturnChannel(publisherChannel);
+                    }
+
+                    return true;
+                }
+                catch (Exception ex) when (attempts < maxAttempts)
+                {
+                    _logger.LogWarning(ex, "Retry publish attempt {Attempt} failed for message {MessageId}; backing off {Backoff} before retrying.", attempts, delivery.BasicProperties?.MessageId, backoff);
+                    try
+                    {
+                        await Task.Delay(backoff, cancellationToken);
+                    }
+                    catch (OperationCanceledException) { }
+                    backoff = TimeSpan.FromTicks(backoff.Ticks * 2);
+                    continue;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Retry publish failed for message {MessageId}; attempting to requeue original delivery.", delivery.BasicProperties?.MessageId);
+                    try
+                    {
+                        // Requeue the original delivery so it will be redelivered when the broker recovers.
+                        await channel.BasicNackAsync(delivery.DeliveryTag, multiple: false, requeue: true);
+                    }
+                    catch (Exception nackEx)
+                    {
+                        // BasicNack failure means the channel is compromised. Do NOT close it here - if it's an active consumer channel,
+                        // closing it will interrupt message delivery. Log the error and return false to signal failure; the consumer
+                        // handler or connection recovery will handle channel state. The broker will eventually redeliver the message
+                        // via its internal recovery mechanisms even if this immediate nack fails.
+                        _logger.LogError(nackEx, "Failed to BasicNack original delivery after retry publish failure for message {MessageId}. Channel may require recovery by consumer handler.", delivery.BasicProperties?.MessageId);
+                    }
+
+                    return false;
+                }
             }
         }
 
@@ -93,7 +179,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
             }
         }
 
-        private async Task EnsureQueueDeclaredAsync(IChannel channel)
+        private async Task EnsureQueueDeclaredAsync()
         {
             if (_queueDeclared) return;
 
@@ -102,7 +188,7 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
             {
                 if (_queueDeclared) return;
 
-                await DeclareQueueAsync(channel);
+                await DeclareQueueAsync();
                 _queueDeclared = true;
             }
             catch (Exception ex)
@@ -116,61 +202,143 @@ namespace Unity.Modules.Shared.MessageBrokers.RabbitMQ
             }
         }
 
-        private async Task DeclareQueueAsync(IChannel channel)
+        // Every declaration runs on its own short-lived channel: a 406 PRECONDITION_FAILED closes the
+        // channel it happened on, so it must never be a channel handed back to a publisher or consumer,
+        // nor one reused for the next declaration.
+        private async Task DeclareQueueAsync()
         {
+            var dlxName = $"{_queueName}.dlx";
+            var dlqName = $"{_queueName}{QueueingConstants.DeadletterAddition}";
+
+            // Main topology (DLX, DLQ, main queue) is required for publishing and consuming.
             try
             {
-                var dlxName = $"{_queueName}.dlx";
-                var dlqName = $"{_queueName}{QueueingConstants.DeadletterAddition}";
+                await WithDeclarationChannelAsync(async channel =>
+                {
+                    await channel.ExchangeDeclareAsync(dlxName, ExchangeType.Direct, durable: true, autoDelete: false, arguments: null);
 
-                // Ensure DLX exchange exists
-                await channel.ExchangeDeclareAsync(dlxName, ExchangeType.Direct, durable: true, autoDelete: false, arguments: null);
+                    await channel.QueueDeclareAsync(dlqName, durable: true, exclusive: false, autoDelete: false,
+                        arguments: new Dictionary<string, object?>
+                        {
+                            { "x-queue-type", "quorum" },
+                            { "x-overflow", "reject-publish" }
+                        });
+                    await channel.QueueBindAsync(dlqName, dlxName, dlqName, arguments: null);
 
-                // Ensure DLQ exists and is bound to DLX
-                await channel.QueueDeclareAsync(dlqName, durable: true, exclusive: false, autoDelete: false,
-                    arguments: new Dictionary<string, object?>
-                    {
-                        { "x-queue-type", "quorum" },
-                        { "x-overflow", "reject-publish" }
-                    });
-                await channel.QueueBindAsync(dlqName, dlxName, dlqName, arguments: null);
-
-                // Declare main queue with DLX args
-                await channel.QueueDeclareAsync(
-                    _queueName,
-                    durable: true,
-                    exclusive: false,
-                    autoDelete: false,
-                    arguments: new Dictionary<string, object?>
-                    {
-                        { "x-queue-type", "quorum" },
-                        { "x-overflow", "reject-publish" },
-                        { "x-dead-letter-exchange", dlxName },
-                        { "x-dead-letter-routing-key", dlqName },
-                        { "x-dead-letter-strategy", "at-least-once" },
-                        { "x-delivery-limit", 10 }
-                    });
-
-                await BindToExchangeAsync(channel);
+                    await channel.QueueDeclareAsync(
+                        _queueName,
+                        durable: true,
+                        exclusive: false,
+                        autoDelete: false,
+                        arguments: new Dictionary<string, object?>
+                        {
+                            { "x-queue-type", "quorum" },
+                            { "x-overflow", "reject-publish" },
+                            { "x-dead-letter-exchange", dlxName },
+                            { "x-dead-letter-routing-key", dlqName },
+                            { "x-dead-letter-strategy", "at-least-once" },
+                            { "x-delivery-limit", 10 }
+                        });
+                });
             }
-            catch (global::RabbitMQ.Client.Exceptions.OperationInterruptedException ex)
+            catch (global::RabbitMQ.Client.Exceptions.OperationInterruptedException ex) when (IsInequivalentArgs(ex))
             {
-                if (ex.ShutdownReason?.ReplyCode == 406 &&
-                    ex.ShutdownReason.ReplyText.Contains("inequivalent arg"))
+                _logger.LogWarning(
+                    ex,
+                    "Queue {QueueName} exists with incompatible config. Using existing queue in compatibility mode.",
+                    _queueName);
+            }
+
+            await WithDeclarationChannelAsync(BindToExchangeAsync);
+
+            // Retry topology is best-effort: a mismatch here must not block the main publish/consume path.
+            await DeclareRetryQueuesAsync();
+        }
+
+        private async Task DeclareRetryQueuesAsync()
+        {
+            var retryExchange = $"{_queueName}{QueueingConstants.RetryAddition}";
+
+            try
+            {
+                await WithDeclarationChannelAsync(channel =>
+                    channel.ExchangeDeclareAsync(retryExchange, ExchangeType.Direct, durable: true, autoDelete: false, arguments: null));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to declare retry exchange {RetryExchange}; failed messages cannot be scheduled for retry.", retryExchange);
+                return;
+            }
+
+            foreach (var retryDelay in QueueingConstants.RetryDelays)
+            {
+                var retryQueue = $"{retryExchange}.{GetRetryDelayKey(retryDelay)}";
+                try
+                {
+                    await WithDeclarationChannelAsync(async channel =>
+                    {
+                        await channel.QueueDeclareAsync(
+                            retryQueue,
+                            durable: true,
+                            exclusive: false,
+                            autoDelete: false,
+                            arguments: new Dictionary<string, object?>
+                            {
+                                { "x-queue-type", "quorum" },
+                                { "x-message-ttl", checked((int)retryDelay.TotalMilliseconds) },
+                                { "x-dead-letter-exchange", $"{_queueName}.exchange" },
+                                { "x-dead-letter-routing-key", _queueName },
+                                { "x-overflow", "reject-publish" },
+                                { "x-dead-letter-strategy", "at-least-once" }
+                            });
+                    });
+                }
+                catch (global::RabbitMQ.Client.Exceptions.OperationInterruptedException ex) when (IsInequivalentArgs(ex))
                 {
                     _logger.LogWarning(
                         ex,
-                        "Queue {QueueName} exists with incompatible config. Using existing queue in compatibility mode.",
-                        _queueName);
-
-                    await BindToExchangeAsync(channel);
+                        "Retry queue {RetryQueue} exists with incompatible config; using it as-is. Delete the queue to have it redeclared with current arguments.",
+                        retryQueue);
                 }
-                else
+                catch (Exception ex)
                 {
-                    throw;
+                    _logger.LogError(ex, "Failed to declare retry queue {RetryQueue}.", retryQueue);
+                    continue;
+                }
+
+                try
+                {
+                    await WithDeclarationChannelAsync(channel =>
+                        channel.QueueBindAsync(retryQueue, retryExchange, retryQueue, arguments: null));
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to bind retry queue {RetryQueue} to {RetryExchange}.", retryQueue, retryExchange);
                 }
             }
         }
+
+        private async Task WithDeclarationChannelAsync(Func<IChannel, Task> declare)
+        {
+            var channel = await _channelProvider.GetChannelAsync()
+                ?? throw new InvalidOperationException($"Unable to obtain a channel to declare topology for queue {_queueName}.");
+            try
+            {
+                await declare(channel);
+            }
+            finally
+            {
+                // The underlying provider disposes the channel instead of pooling it if a 406 closed it.
+                _channelProvider.ReturnChannel(channel);
+            }
+        }
+
+        private static bool IsInequivalentArgs(global::RabbitMQ.Client.Exceptions.OperationInterruptedException ex) =>
+            ex.ShutdownReason?.ReplyCode == 406 &&
+            ex.ShutdownReason.ReplyText.Contains("inequivalent arg");
+
+        private static string GetRetryDelayKey(TimeSpan delay) =>
+            $"{(int)delay.TotalSeconds}s";
 
         private async Task BindToExchangeAsync(IChannel channel)
         {

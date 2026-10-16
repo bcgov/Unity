@@ -2,7 +2,6 @@ using Quartz;
 using System;
 using System.Threading.Tasks;
 using Unity.Payments.PaymentRequests.Notifications;
-using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.SettingManagement;
 using Microsoft.Extensions.Logging;
 using Unity.Payments.PaymentRequests.BackgroundJobWorkers;
@@ -13,7 +12,7 @@ using Unity.Payments.Settings;
 namespace Unity.Payments.PaymentRequests;
 
 [DisallowConcurrentExecution]
-public class FinancialNotificationSummaryWorker : QuartzBackgroundWorkerBase
+public class FinancialNotificationSummaryWorker : UnityQuartzBackgroundWorkerBase
 {
     private readonly FinancialSummaryNotifier _financialSummaryNotifier;
     private readonly IEnumerable<IEmailRecipientStrategy> _strategies;
@@ -45,10 +44,15 @@ public class FinancialNotificationSummaryWorker : QuartzBackgroundWorkerBase
             .Build();
     }
 
-    public override async Task Execute(IJobExecutionContext context)
+    protected override async Task ExecuteInBackgroundAsync(IJobExecutionContext context)
     {
         Logger.LogInformation("FinancialNotificationSummary Execute");
-        await _financialSummaryNotifier.NotifyFailedPayments(_strategies);
+            foreach (var tenantId in await _financialSummaryNotifier.GetTenantIdsAsync())
+            {
+                await ExecuteInTenantAuditScopeAsync(
+                    tenantId,
+                    () => _financialSummaryNotifier.NotifyFailedPaymentsForTenantAsync(tenantId, _strategies));
+            }
     }
 
     private static string ResolveCronExpression(ISettingManager settingManager, ILogger logger)

@@ -40,9 +40,9 @@ using Unity.GrantManager.Zones;
 using Unity.GrantManager.Infrastructure;
 using Medallion.Threading;
 using Unity.GrantManager.Locks;
-using JsonSerializerOptions = System.Text.Json.JsonSerializerOptions;
 using Unity.GrantManager.Integrations.Chefs;
 using Unity.Modules.Shared.Http;
+using Unity.Modules.Shared.Utils;
 using Unity.GrantManager.Integrations.Geocoder;
 using Unity.GrantManager.GrantsPortal;
 using Unity.GrantManager.GrantsPortal.Configuration;
@@ -153,6 +153,10 @@ public class GrantManagerApplicationModule : AbpModule
         });
 
         context.Services.AddSingleton<IAuthorizationHandler, AssessmentAuthorizationHandler>();
+        context.Services.AddSingleton<IAuthorizationHandler, BackgroundExecutionAuthorizationHandler>();
+        context.Services.AddAuthorizationBuilder()
+            .AddPolicy(BackgroundExecutionPolicy.Name, policy =>
+                policy.Requirements.Add(new BackgroundExecutionRequirement()));
         context.Services.AddTransient<IResilientHttpRequest, ResilientHttpRequest>();
         context.Services.AddTransient<IFormsApiService, FormsApiService>();
         context.Services.AddTransient<IAIGenerationOperationExecutor, ApplicationAnalysisOperationExecutor>();
