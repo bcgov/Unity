@@ -179,6 +179,12 @@ namespace Unity.GrantManager.Web.Controllers
                         !string.IsNullOrWhiteSpace(application.SigningAuthorityEmail))
                     {
                         emailAddresses.Add(application.SigningAuthorityEmail);
+                        continue;
+                    }
+
+                    if (string.Equals(identifier, "AdditionalContact", StringComparison.OrdinalIgnoreCase))
+                    {
+                        emailAddresses.UnionWith(await _scheduledNotificationHelper.GetAdditionalContactEmailsAsync(applicationId.Value));
                     }
                 }
 
@@ -240,11 +246,12 @@ namespace Unity.GrantManager.Web.Controllers
                 return Ok(list);
             }
 
-            // For external recipients we expose the two choices required by the UI
+            // For external recipients we expose the contact choices required by the UI
             var externalContacts = new List<RecipientDto>
             {
                 new() { Id = "ApplicationContact", DisplayName = "Application Contact" },
-                new() { Id = "SigningAuthority", DisplayName = "Signing Authority" }
+                new() { Id = "SigningAuthority", DisplayName = "Signing Authority" },
+                new() { Id = "AdditionalContact", DisplayName = "Additional Contacts" }
             };
 
             if (string.Equals(category, "External", StringComparison.OrdinalIgnoreCase)) return Ok(externalContacts);
