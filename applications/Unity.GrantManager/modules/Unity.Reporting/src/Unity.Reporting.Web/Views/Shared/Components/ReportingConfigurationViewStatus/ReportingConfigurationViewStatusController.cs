@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
 using Unity.Reporting.Configuration;
+using Unity.GrantManager.ApplicationForms;
 using Volo.Abp.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 
@@ -20,7 +21,10 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfigurationView
     /// <param name="reportMappingService">The service for managing report mappings and view operations.</param>
     [ApiExplorerSettings(IgnoreApi = true)]
     [Route("ApplicationForms/ReportingConfigurationViewStatus")]
-    public class ReportingConfigurationViewStatusController(IReportMappingService reportMappingService) : AbpController
+    public class ReportingConfigurationViewStatusController(
+        IReportMappingService reportMappingService,
+        IApplicationFormAppService applicationFormAppService,
+        IApplicationFormVersionAppService applicationFormVersionAppService) : AbpController
     {
         /// <summary>
         /// Handles AJAX requests to refresh the ReportingConfigurationViewStatus view component with updated status information.
@@ -32,7 +36,7 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfigurationView
         /// <returns>A ViewComponent result containing the updated status display or a default component on validation failure.</returns>
         [HttpGet]
         [Route("Refresh")]
-        public IActionResult Refresh(Guid versionId, string provider)
+        public async Task<IActionResult> Refresh(Guid versionId, string provider)
         {
             if (!ModelState.IsValid)
             {
@@ -40,6 +44,26 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfigurationView
                 return ViewComponent("ReportingConfigurationViewStatus");
             }
             
+            Guid? formId = null;
+            if (provider == Providers.FormVersionConsolidated || provider == Providers.WorksheetConsolidated)
+            {
+                formId = versionId;
+            }
+            else if (provider == Providers.FormVersion || provider == Providers.Worksheet)
+            {
+                var version = await applicationFormVersionAppService.GetAsync(versionId);
+                formId = version.ApplicationFormId;
+            }
+
+            if (formId.HasValue)
+            {
+                var form = await applicationFormAppService.GetAsync(formId.Value);
+                if (form.IsHiddenFromList)
+                {
+                    return NotFound();
+                }
+            }
+
             return ViewComponent("ReportingConfigurationViewStatus", new { versionId, provider });
         }
 
