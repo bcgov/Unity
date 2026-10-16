@@ -9,14 +9,11 @@
 @model ApplicationMenu
 <div class="dropdown">
     <button type="button" class="nav-link dropdown-toggle" id="userMenuDropdownMenuLink" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-        @if (CurrentUser.TenantId != null)
+        @if (CurrentTenant.IsAvailable)
         {
-            <small><i>@CurrentTenant.Name</i>\</small>@CurrentUser.UserName
+            <small><i>@CurrentTenant.Name</i>\</small>
         }
-        else
-        {
-            @CurrentUser.UserName
-        }
+        @CurrentUser.UserName
     </button>
 
     @if (Model.Items.Any())

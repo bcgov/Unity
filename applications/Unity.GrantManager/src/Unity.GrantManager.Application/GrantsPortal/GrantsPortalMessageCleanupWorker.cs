@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 using Quartz;
 using Unity.GrantManager.GrantsPortal.Configuration;
 using Unity.GrantManager.Messaging;
-using Volo.Abp.BackgroundWorkers.Quartz;
+using Unity.Modules.Shared.Utils;
 using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.GrantsPortal;
@@ -16,7 +16,7 @@ namespace Unity.GrantManager.GrantsPortal;
 /// Runs against the central host database.
 /// </summary>
 [DisallowConcurrentExecution]
-public class GrantsPortalMessageCleanupWorker : QuartzBackgroundWorkerBase
+public class GrantsPortalMessageCleanupWorker : UnityQuartzBackgroundWorkerBase
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly int _retentionDays;
@@ -43,7 +43,7 @@ public class GrantsPortalMessageCleanupWorker : QuartzBackgroundWorkerBase
             .Build();
     }
 
-    public override async Task Execute(IJobExecutionContext context)
+    protected override async Task ExecuteInBackgroundAsync(IJobExecutionContext context)
     {
         Logger.LogDebug("GrantsPortalMessageCleanupWorker executing (retention={RetentionDays} days)...", _retentionDays);
 

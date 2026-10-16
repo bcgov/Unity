@@ -9,6 +9,7 @@ using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Notifications;
 using Unity.Notifications.EmailGroups;
 using Unity.Notifications.Events;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.EventBus.Local;
 using Volo.Abp.Identity.Integration;
 
@@ -18,7 +19,9 @@ namespace Unity.GrantManager.Events
     /// Helper service for scheduled notification processing - shared logic between
     /// date-based (DateBasedScheduledNotificationJob) notifications.
     /// </summary>
-    public partial class ScheduledNotificationHelper(ILoggerFactory loggerFactory)
+    public partial class ScheduledNotificationHelper(
+        ILoggerFactory loggerFactory,
+        IRepository<ApplicationContact, Guid> applicationContactRepository)
     {
         private readonly ILogger<ScheduledNotificationHelper> _logger = loggerFactory.CreateLogger<ScheduledNotificationHelper>();
 
@@ -151,7 +154,8 @@ namespace Unity.GrantManager.Events
         }
 
         /// <summary>
-        /// External category: RecipientIdentifier is a comma-separated list of "ApplicationContact" and/or "SigningAuthority".
+        /// External category: RecipientIdentifier is a comma-separated list of "ApplicationContact",
+        /// "SigningAuthority" and/or "AdditionalContact".
         /// Resolve the emails from the application record for each recipient type.
         /// </summary>
         public async Task PublishToExternalRecipientAsync(
@@ -181,6 +185,20 @@ namespace Unity.GrantManager.Events
             foreach (var recipientId in recipientIdentifiers)
             {
                 string? emailTo = null;
+
+                if (string.Equals(recipientId, "AdditionalContact", StringComparison.OrdinalIgnoreCase))
+                {
+                    var additionalEmails = await GetAdditionalContactEmailsAsync(application.Id);
+                    if (additionalEmails.Count == 0)
+                    {
+                        _logger.LogWarning(
+                            "ScheduledNotificationHelper: No email address found for '{Identifier}' on application {ApplicationId}, skipping identifier.",
+                            recipientId, application.Id);
+                    }
+
+                    emailAddresses.UnionWith(additionalEmails);
+                    continue;
+                }
 
                 if (string.Equals(recipientId, "ApplicationContact", StringComparison.OrdinalIgnoreCase))
                 {
@@ -219,6 +237,23 @@ namespace Unity.GrantManager.Events
 
             emailEvent.EmailAddressList = [.. emailAddresses];
             await localEventBus.PublishAsync(emailEvent);
+        }
+
+        /// <summary>
+        /// Returns the email addresses of the application's "Additional Contact" contacts.
+        /// </summary>
+        public async Task<List<string>> GetAdditionalContactEmailsAsync(Guid applicationId)
+        {
+            var contacts = await applicationContactRepository.GetListAsync(c =>
+                c.ApplicationId == applicationId
+                && c.ContactType == ApplicationContactOptionList.AdditionalContact);
+
+            return contacts
+                .Select(c => c.ContactEmail?.Trim())
+                .Where(e => !string.IsNullOrWhiteSpace(e))
+                .Select(e => e!)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
         }
 
         /// <summary>
