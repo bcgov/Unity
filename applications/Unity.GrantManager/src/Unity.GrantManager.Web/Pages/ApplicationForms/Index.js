@@ -37,21 +37,18 @@
                         {
                             text: l('ApplicationForms:DeleteForm'),
                             visible: abp.auth.isGranted('GrantManagerManagement.ApplicationForms.Delete'),
-                            action: function (data) {
-                                abp.message.confirm(
+                            action: async function (data) {
+                                const confirmed = await abp.message.confirm(
                                     l('ApplicationForms:DeleteConfirmation', data.record.applicationFormName),
                                     l('ApplicationForms:DeleteForm')
-                                ).then(function (confirmed) {
-                                    if (!confirmed) {
-                                        return;
-                                    }
+                                );
+                                if (!confirmed) {
+                                    return;
+                                }
 
-                                    unity.grantManager.applicationForms.applicationForm.delete(data.record.id)
-                                        .then(function () {
-                                            abp.notify.success(l('ApplicationForms:DeletedSuccessfully'));
-                                            dataTable.ajax.reload(null, false);
-                                        });
-                                });
+                                await unity.grantManager.applicationForms.applicationForm.delete(data.record.id);
+                                abp.notify.success(l('ApplicationForms:DeletedSuccessfully'));
+                                dataTable.ajax.reload(null, false);
                             }
                         }
                     ]

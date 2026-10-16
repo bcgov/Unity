@@ -26,8 +26,7 @@ function initialize({ granted = true, confirmed = true, deletionFails = false } 
             getList() {},
             delete(id) {
                 calls.deletes.push(id);
-                // ABP presents request errors globally; a failed request never invokes the success handler.
-                return { then(success) { if (!deletionFails) success(); } };
+                return deletionFails ? Promise.reject(new Error('Deletion failed')) : Promise.resolve();
             }
         } } } },
         commonTableActionButtons: () => [],
@@ -46,16 +45,14 @@ test('Delete Form visibility uses the Delete Forms permission', () => {
 
 test('cancelling deletion keeps the row and makes no request', async () => {
     const { action, calls } = initialize({ confirmed: false });
-    action.action({ record: { id: 'form-id', applicationFormName: 'Existing form' } });
-    await new Promise(setImmediate);
+    await action.action({ record: { id: 'form-id', applicationFormName: 'Existing form' } });
     assert.deepEqual(calls.deletes, []);
     assert.equal(calls.reloads, 0);
 });
 
 test('confirmed deletion refreshes the list and shows success', async () => {
     const { action, calls } = initialize();
-    action.action({ record: { id: 'form-id', applicationFormName: 'Existing form' } });
-    await new Promise(setImmediate);
+    await action.action({ record: { id: 'form-id', applicationFormName: 'Existing form' } });
     assert.deepEqual(calls.deletes, ['form-id']);
     assert.equal(calls.reloads, 1);
     assert.deepEqual(calls.notifications, ['ApplicationForms:DeletedSuccessfully']);
@@ -63,8 +60,10 @@ test('confirmed deletion refreshes the list and shows success', async () => {
 
 test('a failed deletion keeps the row and does not show success', async () => {
     const { action, calls } = initialize({ deletionFails: true });
-    action.action({ record: { id: 'form-id', applicationFormName: 'Existing form' } });
-    await new Promise(setImmediate);
+    await assert.rejects(
+        action.action({ record: { id: 'form-id', applicationFormName: 'Existing form' } }),
+        /Deletion failed/
+    );
     assert.equal(calls.reloads, 0);
     assert.deepEqual(calls.notifications, []);
 });
