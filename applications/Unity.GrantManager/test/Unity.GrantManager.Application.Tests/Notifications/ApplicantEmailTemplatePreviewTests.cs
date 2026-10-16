@@ -39,7 +39,7 @@ public class ApplicantEmailTemplatePreviewTests
         var features = Substitute.For<IFeatureChecker>();
         features.IsEnabledAsync("Unity.Notifications").Returns(true);
         var access = new EmailComposerAccessChecker(Substitute.For<IEmailLogsRepository>(), templates, applicants, applications,
-            permissions, features, Substitute.For<ISettingProvider>());
+            permissions, features, Substitute.For<ISettingProvider>(), Substitute.For<Volo.Abp.Users.ICurrentUser>());
         var contacts = Substitute.For<IApplicantContactQueryService>();
         contacts.GetByApplicantIdAsync(applicantId).Returns(new ApplicantContactInfoDto
         {
