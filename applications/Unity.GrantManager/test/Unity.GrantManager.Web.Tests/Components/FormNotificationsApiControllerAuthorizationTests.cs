@@ -3,6 +3,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using NSubstitute;
 using Shouldly;
 using Unity.GrantManager.Permissions;
 using Unity.GrantManager.Web.Controllers;
