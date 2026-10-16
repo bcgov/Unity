@@ -512,8 +512,8 @@ $(function () {
                             changeType: UIElements.auditChangeType.val() ? Number(UIElements.auditChangeType.val()) : null,
                             filter: UIElements.auditSearch.val() || null,
                             propertyName: getAuditColumnSearch(2),
-                            serviceName: getAuditColumnSearch(8),
-                            methodName: getAuditColumnSearch(9)
+                            serviceName: getAuditColumnSearch(7),
+                            methodName: getAuditColumnSearch(8)
                         };
                     }
                 ),
@@ -521,14 +521,13 @@ $(function () {
                     { title: 'Change time', data: 'changeTime', render: formatAuditDate },
                     { title: 'Entity', data: 'entityName', name: 'entityName', searchable: true, orderable: false, render: formatAuditEntityLink },
                     { title: 'Property', data: 'propertyName', render: $.fn.dataTable.render.text() },
-                    { title: 'Original value', data: 'originalValue', render: $.fn.dataTable.render.text() },
-                    { title: 'New value', data: 'newValue', render: $.fn.dataTable.render.text() },
+                    { title: 'Original value', data: 'originalValue', orderable: false, render: $.fn.dataTable.render.text() },
+                    { title: 'New value', data: 'newValue', orderable: false, render: $.fn.dataTable.render.text() },
                     { title: 'Change', data: 'changeType', render: formatChangeType },
-                    { title: 'Name', data: 'userFirstName', render: $.fn.dataTable.render.text() },
-                    { title: 'Surname', data: 'userSurname', render: $.fn.dataTable.render.text() },
-                    { title: 'Service', data: 'serviceName', render: $.fn.dataTable.render.text() },
-                    { title: 'Method', data: 'methodName', render: $.fn.dataTable.render.text() },
-                    { title: 'URL', data: 'url', render: $.fn.dataTable.render.text() }
+                    { title: 'User', data: 'userFirstName', render: formatAuditUser },
+                    { title: 'Service', data: 'serviceName', orderable: false, render: $.fn.dataTable.render.text() },
+                    { title: 'Method', data: 'methodName', orderable: false, render: $.fn.dataTable.render.text() },
+                    { title: 'URL', data: 'url', orderable: false, render: $.fn.dataTable.render.text() }
                 ],
                 processing: true
             })
@@ -547,6 +546,11 @@ $(function () {
 
     function getAuditColumnSearch(index) {
         return auditDt ? auditDt.column(index).search() || null : null;
+    }
+
+    function formatAuditUser(data, renderType, row) {
+        const fullName = [row?.userFirstName, row?.userSurname].filter(Boolean).join(' ');
+        return $('<span>', { text: fullName }).prop('outerHTML');
     }
 
     function formatAuditDate(data) {

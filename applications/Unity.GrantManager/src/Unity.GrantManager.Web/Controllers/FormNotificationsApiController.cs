@@ -170,7 +170,7 @@ namespace Unity.GrantManager.Web.Controllers
 
                     if (string.Equals(identifier, "AdditionalContact", StringComparison.OrdinalIgnoreCase))
                     {
-                        emailAddresses.UnionWith(await _scheduledNotificationHelper.GetAdditionalContactEmailsAsync(applicationId.Value));
+                        emailAddresses.UnionWith(await scheduledNotificationHelper.GetAdditionalContactEmailsAsync(applicationId.Value));
                     }
                 }
 

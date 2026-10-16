@@ -47,6 +47,36 @@
     max-height: none;
 }
 
+#audit-logs-div .reconciliation-filter-inputs {
+    align-items: center;
+}
+
+#audit-logs-div .reconciliation-filter-inputs > div:has(> #audit-search) {
+    display: flex;
+    align-items: center;
+    align-self: center;
+    width: 250px;
+    height: auto;
+    margin: 0 10px;
+}
+
+#audit-logs-div .tbl-search-label {
+    display: none;
+}
+
+#audit-search,
+#audit-entity-type {
+    height: 38px;
+    box-sizing: border-box;
+}
+
+#audit-search {
+    display: block;
+    width: 100%;
+    margin-top: 2px;
+    padding: 6px 12px;
+}
+
 #audit-logs-div .reconciliation-filter-buttons {
     align-items: flex-end !important;
     margin-left: auto;
