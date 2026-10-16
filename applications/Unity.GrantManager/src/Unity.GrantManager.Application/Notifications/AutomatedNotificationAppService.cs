@@ -163,7 +163,7 @@ namespace Unity.GrantManager.Notifications
                 }));
         }
 
-        [Authorize(NotificationsPermissions.Email.Schedule)]
+        [Authorize(NotificationsPermissions.Email.ScheduleCreate)]
         public async Task<NotificationDto> UpdateAsync(Guid id, CreateUpdateNotificationDto input)
         {
             using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: true);

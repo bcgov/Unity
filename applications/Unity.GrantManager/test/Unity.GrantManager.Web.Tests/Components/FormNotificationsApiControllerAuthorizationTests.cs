@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using NSubstitute;
 using Shouldly;
-using Unity.GrantManager.Permissions;
 using Unity.GrantManager.Web.Controllers;
 using Unity.Notifications.Permissions;
 using Xunit;
@@ -29,10 +28,18 @@ public class FormNotificationsApiControllerAuthorizationTests
     }
 
     [Fact]
-    public void Should_Keep_Schedule_List_Protected_By_Scheduler_Permission()
+    public void Should_Authorize_Schedule_Actions_With_Notification_Email_Permissions()
     {
         PoliciesOf(nameof(FormNotificationsApiController.GetForForm))
-            .ShouldBe([GrantManagerPermissions.NotificationScheduler.Default]);
+            .ShouldBe([NotificationsPermissions.Email.NotificationsTab]);
+        PoliciesOf(nameof(FormNotificationsApiController.CreateForForm))
+            .ShouldBe([NotificationsPermissions.Email.ScheduleCreate]);
+        PoliciesOf(nameof(FormNotificationsApiController.UpdateForForm))
+            .ShouldBe([NotificationsPermissions.Email.ScheduleCreate]);
+        PoliciesOf(nameof(FormNotificationsApiController.Delete))
+            .ShouldBe([NotificationsPermissions.Email.ScheduleCancel]);
+        PoliciesOf(nameof(FormNotificationsApiController.CancelNotification))
+            .ShouldBe([NotificationsPermissions.Email.ScheduleCancel]);
     }
 
     [Fact]
