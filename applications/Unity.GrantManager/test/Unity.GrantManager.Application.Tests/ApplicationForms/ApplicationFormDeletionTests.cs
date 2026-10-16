@@ -60,9 +60,17 @@ public class ApplicationFormDeletionTests : GrantManagerApplicationTestBase
     {
         var form = await CreateFormAsync("Form with existing application");
         var applications = GetRequiredService<IApplicationRepository>();
-        var application = await applications.GetAsync(GrantManagerTestData.Application1_Id);
-        application.ApplicationFormId = form.Id;
-        await applications.UpdateAsync(application, autoSave: true);
+        var seededApplication = await applications.GetAsync(GrantManagerTestData.Application1_Id, includeDetails: false);
+        var application = await applications.InsertAsync(new Application
+        {
+            ApplicationFormId = form.Id,
+            ApplicantId = seededApplication.ApplicantId,
+            ApplicationStatusId = seededApplication.ApplicationStatusId,
+            ProjectName = "Application retained after hiding its form",
+            ReferenceNo = "FORM-VISIBILITY-TEST",
+            SubmissionDate = seededApplication.SubmissionDate,
+            Payload = "{}"
+        }, autoSave: true);
         var versions = GetRequiredService<IApplicationFormVersionRepository>();
         var version = await versions.InsertAsync(new ApplicationFormVersion
         {
@@ -81,10 +89,19 @@ public class ApplicationFormDeletionTests : GrantManagerApplicationTestBase
             Submission = "{\"field\":\"original value\"}"
         }, autoSave: true);
 
+        var beforeDeletion = await applications.GetWithFullDetailsByIdAsync(application.Id);
+        beforeDeletion.ShouldNotBeNull();
+        beforeDeletion.ApplicationFormId.ShouldBe(form.Id);
+        beforeDeletion.ApplicationForm.Id.ShouldBe(form.Id);
+        beforeDeletion.ApplicationForm.IsHiddenFromList.ShouldBeFalse();
+
         await _service.DeleteAsync(form.Id);
 
-        var loaded = await applications.WithBasicDetailsAsync(application.Id);
+        var loaded = await applications.GetWithFullDetailsByIdAsync(application.Id);
+        loaded.ShouldNotBeNull();
+        loaded.ApplicationFormId.ShouldBe(form.Id);
         loaded.ApplicationForm.Id.ShouldBe(form.Id);
+        loaded.ApplicationForm.IsHiddenFromList.ShouldBeTrue();
         loaded.IsDeleted.ShouldBeFalse();
         (await versions.GetAsync(version.Id)).SubmissionHeaderMapping.ShouldBe(version.SubmissionHeaderMapping);
         (await submissions.GetAsync(submission.Id)).Submission.ShouldBe(submission.Submission);
