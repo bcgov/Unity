@@ -33,6 +33,23 @@
                             action: function (data) {
                                 location.href = '/ApplicationForms/Mapping?ApplicationId=' + data.record.id
                             }
+                        },
+                        {
+                            text: l('ApplicationForms:DeleteForm'),
+                            visible: abp.auth.isGranted('GrantManagerManagement.ApplicationForms.Delete'),
+                            action: async function (data) {
+                                const confirmed = await abp.message.confirm(
+                                    l('ApplicationForms:DeleteConfirmation', data.record.applicationFormName),
+                                    l('ApplicationForms:DeleteForm')
+                                );
+                                if (!confirmed) {
+                                    return;
+                                }
+
+                                await unity.grantManager.applicationForms.applicationForm.delete(data.record.id);
+                                abp.notify.success(l('ApplicationForms:DeletedSuccessfully'));
+                                dataTable.ajax.reload(null, false);
+                            }
                         }
                     ]
             }

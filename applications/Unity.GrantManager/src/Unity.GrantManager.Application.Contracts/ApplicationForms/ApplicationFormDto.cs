@@ -7,6 +7,7 @@ namespace Unity.GrantManager.ApplicationForms
 {
     public class ApplicationFormDto : EntityDto<Guid>
     {
+        public bool IsHiddenFromList { get; set; }
         public Guid IntakeId { get; set; }
         public string? ApplicationFormName { get; set; } = string.Empty;
         public string? ApplicationFormDescription { get; set; }
