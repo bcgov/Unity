@@ -41,10 +41,23 @@
     padding-right: 0;
     flex-grow: 1;
     flex-shrink: 1;
-    flex-basis: 0;
+    flex-basis: auto;
     min-width: 0;
     width: auto;
     max-height: none;
+}
+
+/* The Endpoints stylesheet bundled on this page forces #AbpContentToolbar visible;
+   keep it tight so the admin sections sit directly beneath it. */
+#AbpContentToolbar {
+    padding: 0;
+    margin-top: 10px;
+}
+
+#reconciliation-report-div,
+#audit-logs-div,
+#audit-log-settings-div {
+    margin-top: 0;
 }
 
 #audit-logs-div .reconciliation-filter-inputs {

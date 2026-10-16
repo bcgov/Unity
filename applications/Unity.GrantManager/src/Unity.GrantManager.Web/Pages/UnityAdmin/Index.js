@@ -522,16 +522,16 @@ $(function () {
     // Mirrors DataTables' own info macros, scoped to the rows on the current page
     function formatAuditSearchInfo(settings, template, count, max) {
         const total = max ?? count;
-        const format = number => settings.fnFormatNumber.call(settings, number);
+        const format = number => settings.fnFormatNumber(number);
         const entries = number => settings.api.i18n('entries', '', number);
         return (template || '')
-            .replace(/_START_/g, format(count ? 1 : 0))
-            .replace(/_END_/g, format(count))
-            .replace(/_MAX_/g, format(total))
-            .replace(/_TOTAL_/g, format(count))
-            .replace(/_ENTRIES_/g, entries(count))
-            .replace(/_ENTRIES-MAX_/g, entries(total))
-            .replace(/_ENTRIES-TOTAL_/g, entries(count))
+            .replaceAll('_START_', format(count ? 1 : 0))
+            .replaceAll('_END_', format(count))
+            .replaceAll('_MAX_', format(total))
+            .replaceAll('_TOTAL_', format(count))
+            .replaceAll('_ENTRIES_', entries(count))
+            .replaceAll('_ENTRIES-MAX_', entries(total))
+            .replaceAll('_ENTRIES-TOTAL_', entries(count))
             .trim();
     }
 
