@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "mode": "report-only",
-  "generatedAt": "2026-10-08T20:47:48.557Z",
+  "generatedAt": "2026-10-16T22:08:25.092Z",
   "summary": {
     "total": 364,
     "matched": 150,
@@ -1789,11 +1789,11 @@
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260902202447_AddEmailAddressDefault.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260917183045_AddTemplateTypes.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260928201123_LimitEmailTemplateNameLength.Designer.cs",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20261015221241_AddScheduledNotificationTemplateConstraint.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/GrantTenantDbContextModelSnapshot.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/GrantApplications/Details.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/GrantApplications/Details.js",
-        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/AssessmentResultAttachments/AssessmentResultAttachments.js",
-        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/AssessmentScoresWidget/Default.cshtml"
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/AssessmentResultAttachments/AssessmentResultAttachments.js"
       ]
     },
     {
@@ -1852,6 +1852,7 @@
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260902202447_AddEmailAddressDefault.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260917183045_AddTemplateTypes.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260928201123_LimitEmailTemplateNameLength.Designer.cs",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20261015221241_AddScheduledNotificationTemplateConstraint.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/GrantTenantDbContextModelSnapshot.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/AssigneeSelection/AssigneeSelectionModal.cshtml"
       ]
@@ -3256,11 +3257,11 @@
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260902202447_AddEmailAddressDefault.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260917183045_AddTemplateTypes.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260928201123_LimitEmailTemplateNameLength.Designer.cs",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20261015221241_AddScheduledNotificationTemplateConstraint.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/GrantTenantDbContextModelSnapshot.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/ApplicantHistory/ReportsHistoryModalViewModel.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantHistory/Default.js",
-        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/CustomFields/Default.js",
-        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/PaymentConfiguration/Default.js"
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/CustomFields/Default.js"
       ]
     },
     {
@@ -3539,10 +3540,10 @@
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260902202447_AddEmailAddressDefault.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260917183045_AddTemplateTypes.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260928201123_LimitEmailTemplateNameLength.Designer.cs",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20261015221241_AddScheduledNotificationTemplateConstraint.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/GrantTenantDbContextModelSnapshot.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/GrantApplications/Index.js",
-        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantSubmissions/Default.js",
-        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/AssessmentResults/Default.js"
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantSubmissions/Default.js"
       ]
     },
     {
@@ -3872,6 +3873,7 @@
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260902202447_AddEmailAddressDefault.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260917183045_AddTemplateTypes.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20260928201123_LimitEmailTemplateNameLength.Designer.cs",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/20261015221241_AddScheduledNotificationTemplateConstraint.Designer.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/TenantMigrations/GrantTenantDbContextModelSnapshot.cs",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantInfo/Default.js"
       ]
