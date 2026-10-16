@@ -243,6 +243,7 @@ namespace Unity.GrantManager.Web.Controllers
         }
 
         [HttpGet("{formId}")]
+        [Authorize(GrantManagerPermissions.NotificationScheduler.Default)]
         public async Task<ActionResult<List<ScheduledNotificationDto>>> GetForForm(string formId)
         {
             if (!Guid.TryParse(formId, out var parsedFormId)) return BadRequest("Invalid form id");
