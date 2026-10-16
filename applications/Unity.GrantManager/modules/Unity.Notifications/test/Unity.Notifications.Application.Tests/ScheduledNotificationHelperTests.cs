@@ -64,6 +64,35 @@ public class ScheduledNotificationHelperTests
     }
 
     [Fact]
+    public void BuildTokenValues_ForDeclinedApplication_MapsDisplayDeclineRationale()
+    {
+        var application = new Application
+        {
+            Applicant = new Applicant { ApplicantName = "VelangTest2", OrgName = "DEC DESIGN" },
+            ApplicationStatus = new ApplicationStatus { InternalStatus = "Declined" },
+            ApplicationForm = new ApplicationForm { Category = "Community" },
+            ReferenceNo = "SUB-123",
+            DeclineRational = "INELIGIBLE_PROJECT",
+            ProjectName = "Test project",
+            RequestedAmount = 1000m,
+            UnityApplicationId = "UNITY-123"
+        };
+        var applicantAgent = new ApplicantAgent { Name = "Test Contact", Title = "Director" };
+
+        var values = ScheduledNotificationHelper.BuildTokenValues(application, applicantAgent);
+
+        values["applicant_name"].ShouldBe("VelangTest2");
+        values["organization_name"].ShouldBe("DEC DESIGN");
+        values["decline_rationale"].ShouldBe("Ineligible Project");
+        values["status"].ShouldBe("Declined");
+        values["contact_full_name"].ShouldBe("Test Contact");
+        values["contact_title"].ShouldBe("Director");
+        values["category"].ShouldBe("Community");
+        values["submission_number"].ShouldBe("SUB-123");
+        values["unity_application_id"].ShouldBe("UNITY-123");
+    }
+
+    [Fact]
     public void BuildTokenValues_ForApplicantTemplate_RendersMissingOptionalValuesAsEmpty()
     {
         var application = new Application

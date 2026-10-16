@@ -6,7 +6,6 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.ApplicationForms;
-using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Domain.Services;
 using Unity.Payments.Domain.Shared;
 using Unity.Payments.Enums;
@@ -28,7 +27,6 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
                         IPaymentsManager paymentsManager,
                         IPaymentRequestAppService paymentRequestAppService,
                         IApplicationFormAppService applicationFormAppService,
-                        IPaymentRequestRepository paymentRepository,
                         IPaymentConfigurationAppService paymentConfigurationAppService,
                         IPermissionCheckerService permissionCheckerService,
                         PaymentIdsCacheService cacheService) : AbpPageModel
@@ -113,7 +111,7 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
                     PaymentThreshold = 0m;
                 }
 
-                var approvalModel = await CreateApprovalModel(payment);
+                var approvalModel = CreateApprovalModel(payment);
                 ValidateApprovalModel(approvalModel);
 
                 if (await VerifyPermissionsAsync(payment.Status, approvalModel))
@@ -125,10 +123,9 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
             return paymentApprovals;
         }
 
-        private async Task<PaymentsApprovalModel> CreateApprovalModel(PaymentDetailsDto payment)
+        private PaymentsApprovalModel CreateApprovalModel(PaymentDetailsDto payment)
         {
             bool isL3ApprovalRequired = payment.Amount > PaymentThreshold;
-            await UpdateExpenseApprovalsAsync(payment, isL3ApprovalRequired);
 
             return new PaymentsApprovalModel
             {
@@ -146,29 +143,6 @@ namespace Unity.Payments.Web.Pages.PaymentApprovals
                 HasUserPaymentThreshold = UserPaymentThreshold.HasValue,
                 PreviousL1Approver = payment.ExpenseApprovals.FirstOrDefault(x => x.Type == ExpenseApprovalType.Level1)?.DecisionUserId
             };
-        }
-
-        private async Task UpdateExpenseApprovalsAsync(PaymentDetailsDto payment, bool isL3ApprovalRequired)
-        {
-            if (payment.Status == PaymentRequestStatus.L2Pending)
-            {
-                var l3Approval = payment.ExpenseApprovals.FirstOrDefault(x => x.Type == ExpenseApprovalType.Level3);
-                PaymentRequest paymentEntity = await paymentRepository.GetAsync(payment.Id);
-                if (isL3ApprovalRequired && l3Approval == null)
-                {
-                    paymentEntity.ExpenseApprovals.Add(new ExpenseApproval(Guid.NewGuid(), ExpenseApprovalType.Level3));
-                }
-                else if (!isL3ApprovalRequired && l3Approval != null)
-                {
-                    var l3ApprovalEntity = paymentEntity.ExpenseApprovals.FirstOrDefault(x => x.Type == ExpenseApprovalType.Level3);
-                    if (l3ApprovalEntity != null)
-                    {
-                        paymentEntity.ExpenseApprovals.Remove(l3ApprovalEntity);
-                    }
-                }
-
-                await paymentRepository.UpdateAsync(paymentEntity);
-            }
         }
 
         private void ValidateApprovalModel(PaymentsApprovalModel request)

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -9,6 +10,7 @@ namespace Unity.GrantManager.Notifications
     {
         Task<PagedResultDto<NotificationDto>> GetListAsync(GetNotificationsInput input);
         Task<NotificationDto> GetAsync(Guid id);
+        Task<List<TemplateNotificationReferenceDto>> GetTemplateReferencesAsync(Guid templateId);
         Task<NotificationDto> CreateAsync(CreateUpdateNotificationDto input);
         Task<NotificationDto> UpdateAsync(Guid id, CreateUpdateNotificationDto input);
         Task DeleteAsync(Guid id);
