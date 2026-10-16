@@ -31,7 +31,7 @@ Both triggers converge on the same output: an `EmailNotificationEvent` published
 |`DateField`|Date trigger: `"DueDate"`, `"NotificationDate"`, `"ContractNotificationDate"`, etc.|
 |`TriggerDetail`|Free-text detail carried for the UI|
 |`RecipientCategory`|`"Internal"` or `"External"` — decides how `RecipientIdentifier` is interpreted|
-|`RecipientIdentifier`|Comma-separated. For `Internal`: email **group names**. For `External`: `ApplicationContact` and/or `SigningAuthority`|
+|`RecipientIdentifier`|Comma-separated. For `Internal`: email **group names**. For `External`: any of `ApplicationContact`, `SigningAuthority`, `AdditionalContact`|
 
 `RecipientCategory` is doing double duty: it selects the recipient resolution strategy *and*, once the email exists, it is what `EmailNotificationHandler.StampClassificationAsync` reads back to set `EmailLog.Recipient`.
 
@@ -144,12 +144,13 @@ Because the link is **by group name**, renaming an email group silently detaches
 
 ### External — `PublishToExternalRecipientAsync`
 
-`RecipientIdentifier` is a comma-separated list of two recognized literals:
+`RecipientIdentifier` is a comma-separated list of three recognized literals:
 
 |Identifier|Resolves to|
 |---|---|
 |`ApplicationContact`|`ApplicantAgent.Email`|
 |`SigningAuthority`|`Application.SigningAuthorityEmail`|
+|`AdditionalContact`|`ContactEmail` of every `ApplicationContact` row on the application with `ContactType = ADDITIONAL_CONTACT`|
 
 Anything else logs a warning and is skipped. A recognized identifier with no address on this particular application is also logged and skipped. Zero resolvable addresses → nothing published.
 
