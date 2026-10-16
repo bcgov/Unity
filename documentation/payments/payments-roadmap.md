@@ -26,10 +26,6 @@ Both number generators are also O(n) on a table that only grows.
 
 `UpdateStatusAsync` wraps each payment in `try { … } catch (Exception ex) { Logger.LogException(ex); }`. A payment that fails to transition is omitted from the returned list with no error surfaced to the user — the modal simply reports success for the ones that worked. This is what hides the declined-payment bug above.
 
-## Level 3 approval rows are created during a GET
-
-`UpdatePaymentRequestStatus.UpdateExpenseApprovalsAsync` inserts or deletes the Level 3 `ExpenseApproval` row while **rendering the approval modal** (`OnGetAsync`), based on whether the amount exceeds the threshold. Opening and closing the modal without approving anything therefore mutates the payment. The decision also duplicates logic that `PaymentRequestAppService.GetLevel2ApprovalActionAsync` re-derives independently when the approval is actually submitted.
-
 ## The state machine validates but does not decide
 
 `PaymentsManager.TriggerAction` runs the workflow against a **local copy** of the status purely to check that the transition is permitted, then computes the real destination with a separate `if/else` ladder and assigns it to the entity. The two can drift: the machine says `L2Approve` leads to `L3Pending`, and the ladder independently sets `L3Pending`. `Submit` is the clearest case — the machine always says `Submitted`, the ladder may choose `FSB`.

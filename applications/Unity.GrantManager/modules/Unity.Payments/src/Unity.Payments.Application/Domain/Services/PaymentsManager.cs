@@ -127,6 +127,7 @@ namespace Unity.Payments.Domain.Services
             {
                 var index = paymentRequest.ExpenseApprovals.FindIndex(i => i.Type == ExpenseApprovalType.Level2);
                 paymentRequest.ExpenseApprovals[index].Approve(currentUserId);
+                paymentRequest.SetLevel3ApprovalRequired(true, GuidGenerator.Create());
                 statusChangedTo = PaymentRequestStatus.L3Pending;
 
             }
@@ -150,6 +151,7 @@ namespace Unity.Payments.Domain.Services
                 {
                     var index = paymentRequest.ExpenseApprovals.FindIndex(i => i.Type == ExpenseApprovalType.Level2);
                     paymentRequest.ExpenseApprovals[index].Approve(currentUserId);
+                    paymentRequest.SetLevel3ApprovalRequired(false, GuidGenerator.Create());
                 }
                 else if (await HasPermissionAsync(PaymentsPermissions.Payments.L3ApproveOrDecline) && paymentRequest.Status == PaymentRequestStatus.L3Pending)
                 {

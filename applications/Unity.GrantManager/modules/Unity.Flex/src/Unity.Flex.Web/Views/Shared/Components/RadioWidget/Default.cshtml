@@ -28,7 +28,9 @@
                                id="@optionId"
                                name="@fieldBaseName"
                                value="@($"{option.Value}")"
-                               onchange="@($"notifyFieldChange('{Model.Name}', '{Model.Field?.UiAnchor}', this)")"
+                               data-worksheet-name="@Model.Name"
+                               data-ui-anchor="@Model.Field?.UiAnchor"
+                               onchange="notifyFieldChange(this.dataset.worksheetName, this.dataset.uiAnchor, this)"
                                checked />
                     }
                     else
@@ -37,7 +39,9 @@
                                id="@optionId"
                                name="@fieldBaseName"
                                value="@($"{option.Value}")"
-                               onchange="@($"notifyFieldChange('{Model.Name}', '{Model.Field?.UiAnchor}', this)")" />
+                               data-worksheet-name="@Model.Name"
+                               data-ui-anchor="@Model.Field?.UiAnchor"
+                               onchange="notifyFieldChange(this.dataset.worksheetName, this.dataset.uiAnchor, this)" />
                     }
                     <label for="@optionId">@($"{option.Label}")</label>
                 }

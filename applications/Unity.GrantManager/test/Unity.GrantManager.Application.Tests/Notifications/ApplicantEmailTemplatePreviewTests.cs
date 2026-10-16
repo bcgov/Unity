@@ -12,6 +12,7 @@ using Unity.Notifications.EmailGroups;
 using Unity.Notifications.Emails;
 using Unity.Notifications.Templates;
 using Volo.Abp.Authorization.Permissions;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
 using Volo.Abp.Identity.Integration;
 using Volo.Abp.Settings;
@@ -46,7 +47,7 @@ public class ApplicantEmailTemplatePreviewTests
             Contacts = [new ContactInfoItemDto { IsPrimary = true, Email = "contact@example.test" }]
         });
         var service = new ApplicantEmailTemplateAppService(applicants, contacts, access,
-            new ScheduledNotificationHelper(NullLoggerFactory.Instance), Substitute.For<IEmailGroupsAppService>(),
+            new ScheduledNotificationHelper(NullLoggerFactory.Instance, Substitute.For<IRepository<ApplicationContact, Guid>>()), Substitute.For<IEmailGroupsAppService>(),
             Substitute.For<IEmailGroupUsersAppService>(), Substitute.For<IIdentityUserIntegrationService>());
 
         var preview = await service.GetPreviewAsync(applicantId, template.Id);

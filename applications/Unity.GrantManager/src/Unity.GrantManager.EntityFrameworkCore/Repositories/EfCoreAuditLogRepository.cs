@@ -136,13 +136,55 @@ namespace Unity.GrantManager.Repositories
                     })));
 
             var totalCount = await query.LongCountAsync(GetCancellationToken(cancellationToken));
-            var sortedQuery = ApplySorting(query, sorting);
+            var userOrder = await GetUserOrderAsync(sorting, cancellationToken);
+            var sortedQuery = userOrder != null
+                ? ApplyUserSorting(query, userOrder, sorting!)
+                : ApplySorting(query, sorting);
             var items = await sortedQuery
                 .Skip(skipCount)
                 .Take(maxResultCount)
                 .ToListAsync(GetCancellationToken(cancellationToken));
 
             return (totalCount, items);
+        }
+
+        private static bool IsUserSorting(string? sorting, out bool bySurname, out bool descending)
+        {
+            var parts = (sorting ?? string.Empty).Trim().ToLowerInvariant().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var field = parts.Length > 0 ? parts[0] : string.Empty;
+            bySurname = field == "usersurname";
+            descending = parts.Length > 1 && parts[1] == "desc";
+            return field is "userfirstname" or "usersurname";
+        }
+
+        // Identity users live in a different DbContext, so users are ranked in memory and the rank is translated to array_position.
+        private async Task<Guid[]?> GetUserOrderAsync(string? sorting, CancellationToken cancellationToken)
+        {
+            if (!IsUserSorting(sorting, out var bySurname, out _))
+            {
+                return null;
+            }
+
+            var users = await identityUserRepository.GetListAsync(
+                sorting: null, maxResultCount: int.MaxValue, skipCount: 0, includeDetails: false,
+                cancellationToken: GetCancellationToken(cancellationToken));
+
+            var ordered = bySurname
+                ? users.OrderBy(u => u.Surname ?? string.Empty, StringComparer.OrdinalIgnoreCase).ThenBy(u => u.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                : users.OrderBy(u => u.Name ?? string.Empty, StringComparer.OrdinalIgnoreCase).ThenBy(u => u.Surname ?? string.Empty, StringComparer.OrdinalIgnoreCase);
+
+            return ordered.Select(u => u.Id).ToArray();
+        }
+
+        private static IOrderedQueryable<AuditLogEntityChange> ApplyUserSorting(
+            IQueryable<AuditLogEntityChange> query,
+            Guid[] userOrder,
+            string sorting)
+        {
+            IsUserSorting(sorting, out _, out var descending);
+            return descending
+                ? query.OrderByDescending(x => x.UserId == null ? -1 : Array.IndexOf(userOrder, x.UserId.Value)).ThenByDescending(x => x.ChangeTime)
+                : query.OrderBy(x => x.UserId == null ? -1 : Array.IndexOf(userOrder, x.UserId.Value)).ThenByDescending(x => x.ChangeTime);
         }
 
         private static IOrderedQueryable<AuditLogEntityChange> ApplySorting(

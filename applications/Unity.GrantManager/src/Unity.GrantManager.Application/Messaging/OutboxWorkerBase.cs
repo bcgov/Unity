@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Quartz;
-using Volo.Abp.BackgroundWorkers.Quartz;
+using Unity.Modules.Shared.Utils;
 using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Messaging;
@@ -17,7 +17,7 @@ namespace Unity.GrantManager.Messaging;
 /// via <see cref="PublishMessageAsync"/>.
 /// </summary>
 [DisallowConcurrentExecution]
-public abstract class OutboxWorkerBase : QuartzBackgroundWorkerBase
+public abstract class OutboxWorkerBase : UnityQuartzBackgroundWorkerBase
 {
     private readonly IServiceProvider _serviceProvider;
 
@@ -44,7 +44,7 @@ public abstract class OutboxWorkerBase : QuartzBackgroundWorkerBase
         _serviceProvider = serviceProvider;
     }
 
-    public override async Task Execute(IJobExecutionContext context)
+    protected override async Task ExecuteInBackgroundAsync(IJobExecutionContext context)
     {        
         try
         {

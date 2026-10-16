@@ -6,7 +6,6 @@ using Unity.GrantManager.ApplicationForms;
 using Unity.GrantManager.Settings;
 using Unity.Modules.Shared.Utils;
 using Unity.Notifications.EmailNotifications;
-using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
@@ -14,8 +13,10 @@ using Volo.Abp.TenantManagement;
 namespace Unity.GrantManager.Intakes.BackgroundWorkers
 {
     [DisallowConcurrentExecution]
-    public class IntakeSyncWorker : QuartzBackgroundWorkerBase
+    public class IntakeSyncWorker : UnityQuartzBackgroundWorkerBase
     {
+        protected override bool UsesTenantAuditScopes => true;
+
         private readonly ICurrentTenant _currentTenant;
         private readonly ITenantRepository _tenantRepository;
         private readonly IApplicationFormSycnronizationService _applicationFormSynchronizationService;
@@ -49,7 +50,7 @@ namespace Unity.GrantManager.Intakes.BackgroundWorkers
                 .Build();
         }
 
-        public override async Task Execute(IJobExecutionContext context)
+        protected override async Task ExecuteInBackgroundAsync(IJobExecutionContext context)
         {
             Logger.LogInformation("Executing IntakeSyncWorker...");
             var tenants = await _tenantRepository.GetListAsync();
@@ -66,15 +67,18 @@ namespace Unity.GrantManager.Intakes.BackgroundWorkers
 
             foreach (var tenant in tenants)
             {
-                using (_currentTenant.Change(tenant.Id, tenant.Name))
+                await ExecuteInTenantAuditScopeAsync(tenant.Id, async () =>
                 {
-                    var (missingSubmissions, submissionReport) = await _applicationFormSynchronizationService.GetMissingSubmissions(numberDaysBack);
-                    if (missingSubmissions?.Count > 0) 
+                    using (_currentTenant.Change(tenant.Id, tenant.Name))
                     {
-                        emailBodyBuilder.AppendLine($"<br><br>Tenant: {tenant.Name}<br>{submissionReport}");
-                        sendEmail = true;
+                        var (missingSubmissions, submissionReport) = await _applicationFormSynchronizationService.GetMissingSubmissions(numberDaysBack);
+                        if (missingSubmissions?.Count > 0) 
+                        {
+                            emailBodyBuilder.AppendLine($"<br><br>Tenant: {tenant.Name}<br>{submissionReport}");
+                            sendEmail = true;
+                        }
                     }
-                }
+                });
             }
 
             emailBodyBuilder.AppendLine("<br> Bests");

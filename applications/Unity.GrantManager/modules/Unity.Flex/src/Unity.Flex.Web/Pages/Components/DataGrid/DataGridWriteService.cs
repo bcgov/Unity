@@ -279,7 +279,7 @@ namespace Unity.Flex.Web.Pages.Flex
             };
         }
 
-        internal async Task DeleteRowAsync(Guid valueId, uint row, Guid worksheetInstanceId)
+        public async Task DeleteRowAsync(Guid valueId, uint row, Guid worksheetInstanceId)
         {
             var currentValue = await customFieldValueAppService.GetAsync(valueId);
             var dataGridValue = DataGridServiceUtils.DeserializeDataGridValue(currentValue.CurrentValue);

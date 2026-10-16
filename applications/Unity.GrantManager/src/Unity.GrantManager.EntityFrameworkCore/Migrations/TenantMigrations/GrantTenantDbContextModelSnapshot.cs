@@ -3426,6 +3426,8 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("EmailTemplateId");
+
                     b.HasIndex("TenantId");
 
                     b.ToTable("ScheduledNotifications", "Notifications");
@@ -4339,7 +4341,7 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)")
-                        .HasDefaultValue("Applicant");
+                        .HasDefaultValue("Application");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uuid")
@@ -5627,6 +5629,15 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                         .WithMany()
                         .HasForeignKey("ContactId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Unity.GrantManager.Notifications.ScheduledNotification", b =>
+                {
+                    b.HasOne("Unity.Notifications.Templates.EmailTemplate", null)
+                        .WithMany()
+                        .HasForeignKey("EmailTemplateId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
