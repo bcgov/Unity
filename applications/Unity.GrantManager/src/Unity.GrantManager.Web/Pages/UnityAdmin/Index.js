@@ -500,19 +500,39 @@ $(function () {
         if (info.children().length === 0) {
             info.wrapInner('<span></span>');
         }
+        // Use the table's own language strings so the info and empty row read like a standard DataTables search
+        const settings = auditDt.settings()[0];
+        const lang = settings.oLanguage;
         info.children().hide();
         info.append($('<span>', {
             class: 'audit-search-info',
-            text: `Showing ${visibleCount} of ${rows.length} entries on this page matching "${UIElements.auditSearch.val().trim()}"`
+            text: formatAuditSearchInfo(settings, visibleCount ? lang.sInfo : lang.sInfoEmpty, visibleCount)
+                + ' ' + formatAuditSearchInfo(settings, lang.sInfoFiltered, visibleCount, rows.length)
         }));
 
         if (visibleCount === 0 && rows.length > 0) {
             body.append($('<tr>', { class: 'audit-search-empty' }).append($('<td>', {
                 class: 'dt-empty',
                 colspan: auditDt.columns(':visible').count(),
-                text: 'No matching records on this page'
+                text: lang.sZeroRecords
             })));
         }
+    }
+
+    // Mirrors DataTables' own info macros, scoped to the rows on the current page
+    function formatAuditSearchInfo(settings, template, count, max) {
+        const total = max ?? count;
+        const format = number => settings.fnFormatNumber.call(settings, number);
+        const entries = number => settings.api.i18n('entries', '', number);
+        return (template || '')
+            .replace(/_START_/g, format(count ? 1 : 0))
+            .replace(/_END_/g, format(count))
+            .replace(/_MAX_/g, format(total))
+            .replace(/_TOTAL_/g, format(count))
+            .replace(/_ENTRIES_/g, entries(count))
+            .replace(/_ENTRIES-MAX_/g, entries(total))
+            .replace(/_ENTRIES-TOTAL_/g, entries(count))
+            .trim();
     }
 
     function reloadAuditTable() {
