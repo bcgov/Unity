@@ -70,6 +70,35 @@ public class MetabaseApiClientTests
             () => client.FindOrCreateDatabaseAsync("AG-MARB", "db-host", 5432, "T_ABC123", "t_abc123_readonly", "bad-pw", true));
     }
 
+    [Fact]
+    public async Task RenameGroupAsync_PutsNameToGroup()
+    {
+        var (client, http) = CreateClient();
+        SetupHttpSequence(http, JsonResponse(HttpStatusCode.OK, "{\"id\":140,\"name\":\"NEW-NAME\"}"));
+
+        await client.RenameGroupAsync(140, "NEW-NAME");
+
+        await http.Received(1).HttpAsync(
+            HttpMethod.Put, $"{BaseUrl}/api/permissions/group/140", Arg.Any<object?>(), Arg.Any<string?>(),
+            Arg.Any<(string username, string password)?>(), Arg.Any<HttpCompletionOption>(),
+            Arg.Any<System.Collections.Generic.IReadOnlyDictionary<string, string>?>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RenameCollectionAsync_Missing_ThrowsNotFound()
+    {
+        var (client, http) = CreateClient();
+        SetupHttpSequence(http, JsonResponse(HttpStatusCode.NotFound, "Not found."));
+
+        var ex = await Should.ThrowAsync<IntegrationServiceException>(() => client.RenameCollectionAsync(130, "NEW-NAME"));
+
+        ex.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        await http.Received(1).HttpAsync(
+            HttpMethod.Put, $"{BaseUrl}/api/collection/130", Arg.Any<object?>(), Arg.Any<string?>(),
+            Arg.Any<(string username, string password)?>(), Arg.Any<HttpCompletionOption>(),
+            Arg.Any<System.Collections.Generic.IReadOnlyDictionary<string, string>?>(), Arg.Any<CancellationToken>());
+    }
+
     [Theory]
     [InlineData("{\"is_superuser\":true}", true)]
     [InlineData("{\"is_superuser\":false}", false)]

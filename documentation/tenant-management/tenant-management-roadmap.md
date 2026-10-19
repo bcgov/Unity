@@ -32,4 +32,4 @@ Deleting a tenant is two steps: `DeleteAsync` soft-deletes it, and `TenantAppSer
 
 ## No UI for retrying a failed post-creation step
 
-The Metabase step can be re-run from the Configuration modal's Reporting tab (Set up / Resync), but there's no retry action on the Tenants list or in the Setup Status dialog, and none for a step in general. Any future step would need its own way to be re-run, or a generic "retry" action reachable from that dialog.
+The Metabase step can be re-run from the Configuration modal's Reporting tab (Setup / Resync), but there's no retry action on the Tenants list or in the Setup Status dialog, and none for a step in general. Any future step would need its own way to be re-run, or a generic "retry" action reachable from that dialog.

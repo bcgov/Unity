@@ -439,7 +439,7 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
             }
         }
 
-        public async Task<List<string>> GetDatabaseRolesAsync()
+        public async Task<List<ReportingViewGrant>> GetReportingViewGrantsAsync(string? role)
         {
             var dbContext = await GetDbContextAsync();
             var connection = dbContext.Database.GetDbConnection();
@@ -447,98 +447,67 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
 
             try
             {
+                // has_table_privilege counts grants inherited through role membership and PUBLIC,
+                // i.e. whether the role can actually read the view. It is strict, so a null role
+                // yields NULL (reported as not granted); a non-existent role raises an error.
                 using var command = connection.CreateCommand();
                 command.CommandText = @"
-                    SELECT 
-                        rolname || CASE 
-                            WHEN rolcanlogin THEN ' (Login Role)'
-                            ELSE ' (Group Role)'
-                        END as role_display
-                    FROM pg_roles 
-                    WHERE rolname NOT LIKE 'pg_%' 
-                    AND rolname NOT LIKE 'rds%'
-                    AND rolname NOT IN ('postgres', 'azure_superuser', 'public', 'azure_pg_admin')
-                    ORDER BY rolcanlogin DESC, rolname";
+                    SELECT v.viewname,
+                        COALESCE(has_table_privilege(@role, format('%I.%I', v.schemaname, v.viewname), 'SELECT'), false)
+                    FROM pg_views v
+                    WHERE v.schemaname = 'Reporting'
+                    ORDER BY v.viewname";
 
-                var roles = new List<string>();
+                var parameter = command.CreateParameter();
+                parameter.ParameterName = "@role";
+                parameter.DbType = System.Data.DbType.String;
+                parameter.Value = (object?)role ?? DBNull.Value;
+                command.Parameters.Add(parameter);
+
+                var views = new List<ReportingViewGrant>();
                 using var reader = await command.ExecuteReaderAsync();
-                
+
                 while (await reader.ReadAsync())
                 {
-                    roles.Add(reader.GetString(0));
-                }
-
-                return roles;
-            }
-            finally
-            {
-                await dbContext.Database.CloseConnectionAsync();
-            }
-        }
-
-        public async Task<List<string>> GetRoleMembershipsAsync()
-        {
-            var dbContext = await GetDbContextAsync();
-            var connection = dbContext.Database.GetDbConnection();
-            await dbContext.Database.OpenConnectionAsync();
-
-            try
-            {
-                using var command = connection.CreateCommand();
-                command.CommandText = @"
-                    SELECT 
-                        member_role.rolname || ' → member of → ' || parent_role.rolname as membership_info
-                    FROM pg_roles member_role
-                    JOIN pg_auth_members m ON member_role.oid = m.member
-                    JOIN pg_roles parent_role ON parent_role.oid = m.roleid
-                    WHERE member_role.rolname NOT LIKE 'pg_%' 
-                    AND member_role.rolname NOT LIKE 'rds%'
-                    AND member_role.rolname NOT IN ('postgres', 'azure_superuser', 'public', 'azure_pg_admin')
-                    AND parent_role.rolname NOT LIKE 'pg_%' 
-                    AND parent_role.rolname NOT LIKE 'rds%'
-                    AND parent_role.rolname NOT IN ('postgres', 'azure_superuser', 'public', 'azure_pg_admin')
-                    ORDER BY member_role.rolname, parent_role.rolname";
-
-                var memberships = new List<string>();
-                using var reader = await command.ExecuteReaderAsync();
-                
-                while (await reader.ReadAsync())
-                {
-                    memberships.Add(reader.GetString(0));
-                }
-
-                return memberships;
-            }
-            finally
-            {
-                await dbContext.Database.CloseConnectionAsync();
-            }
-        }
-
-        public async Task<List<string>> GetReportingViewsAsync()
-        {
-            var dbContext = await GetDbContextAsync();
-            var connection = dbContext.Database.GetDbConnection();
-            await dbContext.Database.OpenConnectionAsync();
-
-            try
-            {
-                using var command = connection.CreateCommand();
-                command.CommandText = @"
-                    SELECT table_name
-                    FROM information_schema.views
-                    WHERE table_schema = 'Reporting'
-                    ORDER BY table_name";
-
-                var views = new List<string>();
-                using var reader = await command.ExecuteReaderAsync();
-                
-                while (await reader.ReadAsync())
-                {
-                    views.Add(reader.GetString(0));
+                    views.Add(new ReportingViewGrant(reader.GetString(0), reader.GetBoolean(1)));
                 }
 
                 return views;
+            }
+            finally
+            {
+                await dbContext.Database.CloseConnectionAsync();
+            }
+        }
+
+        public async Task<ReportingRoleAccess?> GetRoleAccessAsync(string role)
+        {
+            var dbContext = await GetDbContextAsync();
+            var connection = dbContext.Database.GetDbConnection();
+            await dbContext.Database.OpenConnectionAsync();
+
+            try
+            {
+                // has_schema_privilege errors on a schema that doesn't exist, so check for it first.
+                using var command = connection.CreateCommand();
+                command.CommandText = @"
+                    SELECT r.rolcanlogin,
+                        CASE WHEN EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = 'Reporting')
+                            THEN has_schema_privilege(r.rolname, 'Reporting', 'USAGE')
+                            ELSE false
+                        END
+                    FROM pg_roles r
+                    WHERE r.rolname = @role";
+
+                var parameter = command.CreateParameter();
+                parameter.ParameterName = "@role";
+                parameter.Value = role;
+                command.Parameters.Add(parameter);
+
+                using var reader = await command.ExecuteReaderAsync();
+                return await reader.ReadAsync()
+                    ? new ReportingRoleAccess(reader.GetBoolean(0), reader.GetBoolean(1))
+                    : null;
             }
             finally
             {
