@@ -98,7 +98,8 @@ public class MetabaseTenantProvisioner(
         }
 
         // Metabase reads as this role, so it's the one the generated reporting views must be
-        // granted to (AssignViewRoleBackgroundJob reads this setting and skips when it's unset).
+        // granted to (TenantViewRoleManager reads this setting, falling back to {LicencePlate}_readonly
+        // when it's unset).
         using (currentTenant.Change(null))
         {
             await settingManager.SetAsync(
