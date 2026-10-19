@@ -254,10 +254,27 @@ public class TenantAppService(
         }
     }
 
+    // Extracted, like StripPrivilegedFieldsUnlessAuthorized, so the decision is unit-testable.
+    internal static void EnsureRenameAllowed(bool callerIsAuthorized)
+    {
+        if (!callerIsAuthorized)
+        {
+            throw new UserFriendlyException("Only IT Admin and IT Operations can change a tenant's name.");
+        }
+    }
+
     [Authorize(TenantManagementPermissions.Policies.TenantsUpdateOrITOps)]
     public virtual async Task<TenantDto> UpdateAsync(Guid id, TenantUpdateDto input)
     {
         var tenant = await tenantRepository.GetAsync(id);
+
+        // TenantsUpdateOrITOps also admits the plain Tenants.Update permission. Renaming is limited
+        // to IT Admin/Operations because Metabase names its database, group and collection after the
+        // tenant, and only those roles can run the Resync that renames them to match.
+        if (!string.Equals(tenant.Name, input.Name, StringComparison.Ordinal))
+        {
+            EnsureRenameAllowed(await AuthorizationService.IsGrantedAsync(IdentityConsts.ITAdminOrITOperationsPolicyName));
+        }
 
         await tenantManager.ChangeNameAsync(tenant, input.Name);
 
