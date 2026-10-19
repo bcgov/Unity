@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
-using Unity.Flex.Domain.Exceptions;
 using Unity.Flex.Domain.ScoresheetInstances;
 using Unity.Flex.Reporting;
 using Volo.Abp;
@@ -64,7 +63,7 @@ namespace Unity.Flex.Domain.Scoresheets
 
                 if (sectionByNewName != null)
                 {
-                    throw new BusinessException(ErrorConsts.DuplicateSectionName).WithData("duplicateName", newName);
+                    throw new BusinessException(FlexErrorCodes.DuplicateSectionName).WithData("duplicateName", newName);
                 }
 
                 section.SetName(newName);

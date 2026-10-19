@@ -594,7 +594,7 @@ public class GrantApplicationAppService(
 
         if (!hasSummaryZone || !hasLocationZone)
         {
-            throw new BusinessException("The Project Info zones are not enabled for this application form.");
+            throw new BusinessException(GrantManagerDomainErrorCodes.ProjectInfoZonesNotEnabled);
         }
 
         SanitizeProjectInfoDisabledInputs(input, application);

@@ -100,7 +100,7 @@ public class ApplicantAddressManager(
 
         if (applicantAddress.AddressType != expectedType)
         {
-            throw new BusinessException("Unity:Applicant:AddressTypeMismatch")
+            throw new BusinessException(GrantManagerDomainErrorCodes.AddressNotFound)
                 .WithData("ApplicantId", applicantId)
                 .WithData("AddressId", input.Id)
                 .WithData("ExpectedType", expectedType.ToString());
@@ -198,7 +198,7 @@ public class ApplicantAddressManager(
 
         if (address.ApplicantId != applicantId)
         {
-            throw new BusinessException("Unity:Applicant:AddressNotFound")
+            throw new BusinessException(GrantManagerDomainErrorCodes.AddressNotFound)
                 .WithData("ApplicantId", applicantId)
                 .WithData("AddressId", addressId);
         }
