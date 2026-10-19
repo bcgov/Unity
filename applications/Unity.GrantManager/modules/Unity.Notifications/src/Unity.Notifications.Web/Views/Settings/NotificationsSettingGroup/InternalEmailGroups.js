@@ -499,7 +499,7 @@ const emailGroupsManager = {
             }
         });
 
-        $('#saveNewGroup').on('click', function () {
+        $('#saveNewGroup').on('click', async function () {
             const name = $('#groupName').val();
             const description = $('#groupDescription').val();
 
@@ -514,26 +514,24 @@ const emailGroupsManager = {
                 type: 'Dynamic'
             };
 
-            unity.notifications.emailGroups.emailGroups.create(dto).then(async result => {
-                if (!(result?.id && selectedUsers?.length)) {
+            try {
+                const result = await unity.notifications.emailGroups.emailGroups.create(dto);
+                if (result?.id && selectedUsers?.length) {
+                    const ops = selectedUsers.map(u =>
+                        unity.notifications.emailGroups.emailGroupUsers.insert({ userId: u.userId, groupId: result.id })
+                    );
+
+                    await Promise.all(ops);
+                    abp.notify.success(`Email group created with ${selectedUsers.length} users`);
+                } else {
                     abp.notify.success('Email group created successfully');
-                    modal.hide();
-                    emailGroupsTable?.ajax.reload();
-                    return;
                 }
-
-                const ops = selectedUsers.map(u =>
-                    unity.notifications.emailGroups.emailGroupUsers.insert({ userId: u.userId, groupId: result.id })
-                );
-
-                await Promise.all(ops);
-                abp.notify.success(`Email group created with ${selectedUsers.length} users`);
                 modal.hide();
                 emailGroupsTable?.ajax.reload();
-            }).catch(err => {
+            } catch (err) {
                 console.error('Failed to create email group:', err);
                 abp.notify.error('Failed to create email group');
-            });
+            }
         });
 
         $('#createGroupModal').on('hidden.bs.modal', function () {
@@ -701,11 +699,16 @@ const emailGroupsManager = {
             groupUsersTable.row(rowElement).remove().draw();
         };
 
-        $('#manageUsersModal').one('shown.bs.modal', () => {
-            groupUsersTable = $('#groupUsersTable').DataTable(
-                abp.libs.datatables.normalizeConfiguration(emailGroupsManager.utils.getStandardDataTableConfig([]))
-            );
-            emailGroupsManager.loadGroupUsersForTable(group.id, groupUsersTable);
+        $('#manageUsersModal').one('shown.bs.modal', async () => {
+            try {
+                groupUsersTable = $('#groupUsersTable').DataTable(
+                    abp.libs.datatables.normalizeConfiguration(emailGroupsManager.utils.getStandardDataTableConfig([]))
+                );
+                await emailGroupsManager.loadGroupUsersForTable(group.id, groupUsersTable);
+            } catch (error) {
+                console.error('Failed to load group users:', error);
+                abp.notify.error('Failed to load group users');
+            }
         });
 
         // Initialize user search with shared utility and custom filtering for existing group users
@@ -878,64 +881,60 @@ const emailGroupsManager = {
     },
 
 
-    loadGroupUsersForTable: function (groupId, dataTable) {
+    loadGroupUsersForTable: async function (groupId, dataTable) {
+        const groupUsers = await unity.notifications.emailGroups.emailGroupUsers.getEmailGroupUsersByGroupId(groupId);
 
-        unity.notifications.emailGroups.emailGroupUsers.getEmailGroupUsersByGroupId(groupId).then(async function (groupUsers) {
+        if (!groupUsers || groupUsers.length === 0) {
+            dataTable.clear().draw();
+            return;
+        }
 
-            if (!groupUsers || groupUsers.length === 0) {
-                dataTable.clear().draw();
-                return;
-            }
-
-            // Fetch user details for each group user
-            const userPromises = groupUsers.map(gu =>
-                $.ajax({
+        // Fetch user details for each group user
+        const userPromises = groupUsers.map(async gu => {
+            try {
+                const user = await $.ajax({
                     url: `/api/identity/users/${gu.userId}`,
                     method: 'GET'
-                }).then(function (user) {
-                    return {
-                        id: gu.id,
-                        userId: gu.userId,
-                        groupId: gu.groupId,
-                        userName: user.userName || user.name,
-                        email: user.email,
-                        firstName: user.name ? user.name.split(' ')[0] : '',
-                        lastName: user.surname || ''
-                    };
-                }).catch(function () {
-                    return {
-                        id: gu.id,
-                        userId: gu.userId,
-                        groupId: gu.groupId,
-                        userName: 'Unknown User',
-                        email: '',
-                        firstName: '',
-                        lastName: ''
-                    };
-                })
-            );
-
-            const usersWithDetails = await Promise.all(userPromises);
-
-            // Create unique list based on userId to prevent duplicates
-            const uniqueUsers = [];
-            const seenUserIds = new Set();
-
-            usersWithDetails.forEach(user => {
-                if (!seenUserIds.has(user.userId)) {
-                    seenUserIds.add(user.userId);
-                    uniqueUsers.push(user);
-                }
-            });
-
-            // Update DataTable with users
-            dataTable.clear();
-            dataTable.rows.add(uniqueUsers);
-            dataTable.draw();
-        }).catch(function (error) {
-            console.error('Failed to load group users:', error);
-            abp.notify.error('Failed to load group users');
+                });
+                return {
+                    id: gu.id,
+                    userId: gu.userId,
+                    groupId: gu.groupId,
+                    userName: user.userName || user.name,
+                    email: user.email,
+                    firstName: user.name ? user.name.split(' ')[0] : '',
+                    lastName: user.surname || ''
+                };
+            } catch {
+                return {
+                    id: gu.id,
+                    userId: gu.userId,
+                    groupId: gu.groupId,
+                    userName: 'Unknown User',
+                    email: '',
+                    firstName: '',
+                    lastName: ''
+                };
+            }
         });
+
+        const usersWithDetails = await Promise.all(userPromises);
+
+        // Create unique list based on userId to prevent duplicates
+        const uniqueUsers = [];
+        const seenUserIds = new Set();
+
+        usersWithDetails.forEach(user => {
+            if (!seenUserIds.has(user.userId)) {
+                seenUserIds.add(user.userId);
+                uniqueUsers.push(user);
+            }
+        });
+
+        // Update DataTable with users
+        dataTable.clear();
+        dataTable.rows.add(uniqueUsers);
+        dataTable.draw();
     },
 
 };
