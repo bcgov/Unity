@@ -1,7 +1,35 @@
 @page
+@using Unity.Reporting.Configuration
 @model Unity.Reporting.Web.Pages.ReportingAdmin.Configuration.DatabaseInfoModalModel
 @{
     Layout = null;
+    var info = Model.DatabaseInfo;
+    var views = info?.Views ?? new List<ReportingViewStatusDto>();
+    var issueCount = views.Count(v => v.Issue != ReportingViewIssue.None);
+    var notGrantedCount = views.Count(v => v.Issue == ReportingViewIssue.NotGranted);
+    var role = info?.Role;
+
+    (string Icon, string Text) IssueDisplay(ReportingViewIssue issue) => issue switch
+    {
+        ReportingViewIssue.GenerationFailed => ("fa-circle-xmark text-danger", "Generation failed"),
+        ReportingViewIssue.Generating => ("fa-clock text-warning", "Still generating"),
+        ReportingViewIssue.Missing => ("fa-circle-xmark text-danger", "Not in database"),
+        ReportingViewIssue.Unmapped => ("fa-circle-question text-warning", "No mapping uses this view"),
+        ReportingViewIssue.NotGranted => ("fa-lock text-danger", "View role cannot read"),
+        _ => ("fa-circle-check text-success", "OK")
+    };
+}
+@functions {
+    private static Microsoft.AspNetCore.Html.IHtmlContent Check(bool ok, string okText, string failText)
+    {
+        var builder = new Microsoft.AspNetCore.Html.HtmlContentBuilder();
+        builder.AppendHtml(ok
+            ? "<span class=\"text-success ms-1\"><i class=\"fa-solid fa-circle-check\"></i> "
+            : "<span class=\"text-danger ms-1\"><i class=\"fa-solid fa-circle-xmark\"></i> ");
+        builder.Append(ok ? okText : failText);
+        builder.AppendHtml("</span>");
+        return builder;
+    }
 }
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 @addTagHelper *, Volo.Abp.AspNetCore.Mvc.UI
@@ -12,47 +40,110 @@
     <abp-modal size="ExtraLarge">
         <abp-modal-header title="@($"Database Information - {Model.TenantName}")"></abp-modal-header>
         <abp-modal-body>
-            <div class="row">
-                <div class="col-md-6">
-                    <h6>Available Database Roles</h6>
-                    <div id="databaseRolesList" class="border rounded p-3" style="max-height: 400px; overflow-y: auto; background-color: #f8f9fa; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 0.875rem;">
-                        @if (Model.DatabaseInfo?.DatabaseRoles?.Any() == true)
+            @if (!string.IsNullOrEmpty(info?.Error))
+            {
+                <div class="alert alert-danger py-2 small">@info.Error</div>
+            }
+
+            <div class="mb-3 small">
+                @if (role != null)
+                {
+                    <div>
+                        <strong>View role:</strong>
+                        @if (role.ViewRole == null)
                         {
-                            <ul class="list-unstyled mb-0">
-                                @foreach (var role in Model.DatabaseInfo.DatabaseRoles)
-                                {
-                                    <li class="py-1" style="border-bottom: 1px solid #e9ecef; padding: 0.5rem;">
-                                        <i class="fa-solid fa-circle-user text-muted me-2"></i>@role
-                                    </li>
-                                }
-                            </ul>
+                            <span class="text-danger">none</span><span class="text-muted"> (no saved role and no licence plate)</span>
                         }
                         else
                         {
-                            <div class="text-muted">No custom database roles found.</div>
+                            <code>@role.ViewRole</code>
+                            @Check(role.ViewRoleExists, "exists", "does not exist in this tenant's database, so nothing below can be checked")
+                            @if (role.ExpectedReadOnlyRole != null && role.ViewRole != role.ExpectedReadOnlyRole)
+                            {
+                                <span class="text-muted ms-1">(saved role; differs from <code>@role.ExpectedReadOnlyRole</code>)</span>
+                            }
                         }
                     </div>
-                </div>
-                <div class="col-md-6">
-                    <h6>Reporting Views</h6>
-                    <div id="reportingViewsList" class="border rounded p-3" style="max-height: 400px; overflow-y: auto; background-color: #f8f9fa; font-family: 'Consolas', 'Monaco', 'Courier New', monospace; font-size: 0.875rem;">
-                        @if (Model.DatabaseInfo?.ReportingViews?.Any() == true)
+                    @if (role.ViewRoleExists)
+                    {
+                        <div>
+                            <strong>Can log in:</strong>
+                            @Check(info!.ViewRoleCanLogin, "yes", "no - Metabase connects as this role and will fail")
+                        </div>
+                        <div>
+                            <strong>Reporting schema access:</strong>
+                            @Check(info.ViewRoleHasSchemaUsage, "yes", "no USAGE on the Reporting schema - view grants have no effect")
+                        </div>
+                    }
+                    <div>
+                        <strong>Licence-plate roles:</strong>
+                        @if (role.LicencePlate == null)
                         {
-                            <ul class="list-unstyled mb-0">
-                                @foreach (var view in Model.DatabaseInfo.ReportingViews)
-                                {
-                                    <li class="py-1" style="border-bottom: 1px solid #e9ecef; padding: 0.5rem;">
-                                        <i class="fa-solid fa-table text-muted me-2"></i>@view
-                                    </li>
-                                }
-                            </ul>
+                            <span class="text-muted">none (tenant has no licence plate)</span>
                         }
                         else
                         {
-                            <div class="text-muted">No reporting views found.</div>
+                            <code>@role.LicencePlate</code>@Check(role.MainRoleExists, "", "missing")
+                            <span class="mx-1">&middot;</span>
+                            <code>@role.ExpectedReadOnlyRole</code>@Check(role.ReadOnlyRoleExists, "", "missing")
                         }
                     </div>
+                }
+                <div>
+                    <strong>Views:</strong> @views.Count
+                    @if (issueCount > 0)
+                    {
+                        <span class="text-danger"> &middot; @issueCount need attention</span>
+                    }
+                    else if (views.Count > 0)
+                    {
+                        <span class="text-success"> &middot; all OK</span>
+                    }
                 </div>
+                @if (notGrantedCount > 0)
+                {
+                    <div class="text-muted">Use <strong>Assign to Views</strong> on the Reporting tab to grant the view role on all views.</div>
+                }
+                @if (views.Any(v => v.Issue is ReportingViewIssue.GenerationFailed or ReportingViewIssue.Generating or ReportingViewIssue.Missing))
+                {
+                    <div class="text-muted">Failed, stuck, or missing views can be rebuilt with <strong>Generate View</strong> on their Reporting Configuration.</div>
+                }
+            </div>
+
+            <div class="border rounded" style="max-height: 400px; overflow-y: auto;">
+                @if (views.Any())
+                {
+                    <table class="table table-sm table-hover mb-0 small">
+                        <thead class="table-light" style="position: sticky; top: 0;">
+                            <tr>
+                                <th>View</th>
+                                <th>Source</th>
+                                <th>Generation</th>
+                                <th>In DB</th>
+                                <th>Granted</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var view in views)
+                            {
+                                var display = IssueDisplay(view.Issue);
+                                <tr>
+                                    <td style="font-family: 'Consolas', 'Monaco', 'Courier New', monospace;">@view.ViewName</td>
+                                    <td>@(view.CorrelationProvider ?? "-")</td>
+                                    <td>@(view.ViewStatus?.ToString() ?? "-")</td>
+                                    <td>@(view.InDatabase ? "Yes" : "No")</td>
+                                    <td>@(view.Granted switch { true => "Yes", false => "No", null => "-" })</td>
+                                    <td class="text-nowrap"><i class="fa-solid @display.Icon me-1"></i>@display.Text</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="text-muted p-3">No reporting views found.</div>
+                }
             </div>
         </abp-modal-body>
         <abp-modal-footer buttons="Close"></abp-modal-footer>

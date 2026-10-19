@@ -1,13 +1,17 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using Shouldly;
 using Unity.GrantManager.Identity;
+using Unity.GrantManager.Integrations.Exceptions;
+using Unity.Reporting.Settings;
 using Unity.TenantManagement.Metabase;
 using Volo.Abp.Data;
 using Volo.Abp.Identity;
@@ -133,6 +137,17 @@ public class MetabaseTenantProvisionerTests
     }
 
     [Fact]
+    public async Task SetupAsync_SavesReadOnlyUsernameAsTenantViewRole()
+    {
+        var f = CreateProvisioner();
+
+        await f.Provisioner.SetupAsync(f.Tenant.Id);
+
+        await f.SettingManager.Received(1).SetAsync(
+            ReportingSettings.TenantViewRole, "t_abc123_readonly", TenantSettingValueProvider.ProviderName, f.Tenant.Id.ToString(), Arg.Any<bool>());
+    }
+
+    [Fact]
     public async Task SetupAsync_StoresDatabaseGroupAndCollectionIdsOnTenant()
     {
         var f = CreateProvisioner();
@@ -178,6 +193,58 @@ public class MetabaseTenantProvisionerTests
         f.Tenant.GetProperty<int>(MetabaseTenantProvisioner.DatabaseIdProperty).ShouldBe(5);
         f.Tenant.GetProperty<int>(MetabaseTenantProvisioner.GroupIdProperty).ShouldBe(6);
         f.Tenant.GetProperty<int>(MetabaseTenantProvisioner.CollectionIdProperty).ShouldBe(7);
+    }
+
+    [Fact]
+    public async Task SetupAsync_StoredIds_RenamesThemToTenantNameInsteadOfFindingByName()
+    {
+        // A tenant renamed after Setup: the stored resources are renamed, not duplicated.
+        var f = CreateProvisioner();
+        f.Tenant.SetProperty(MetabaseTenantProvisioner.DatabaseIdProperty, 46);
+        f.Tenant.SetProperty(MetabaseTenantProvisioner.GroupIdProperty, 140);
+        f.Tenant.SetProperty(MetabaseTenantProvisioner.CollectionIdProperty, 130);
+
+        await f.Provisioner.SetupAsync(f.Tenant.Id);
+
+        await f.MetabaseApiClient.Received(1).UpdateDatabaseDetailsAsync(
+            46, f.Tenant.Name, "dev-crunchy-postgres-primary.ce395f-dev.svc", 5432, "T_ABC123", "t_abc123_readonly", "s3cr3t", true);
+        await f.MetabaseApiClient.Received(1).RenameGroupAsync(140, f.Tenant.Name);
+        await f.MetabaseApiClient.Received(1).RenameCollectionAsync(130, f.Tenant.Name);
+        await f.MetabaseApiClient.DidNotReceiveWithAnyArgs().FindOrCreateDatabaseAsync(default!, default!, default, default!, default!, default!, default);
+        await f.MetabaseApiClient.DidNotReceiveWithAnyArgs().FindOrCreateGroupAsync(default!);
+        await f.MetabaseApiClient.DidNotReceiveWithAnyArgs().FindOrCreateCollectionAsync(default!);
+        await f.MetabaseApiClient.Received(1).GrantGroupDatabaseAccessAsync(140, 46);
+        await f.MetabaseApiClient.Received(1).GrantGroupCollectionAccessAsync(140, 130);
+        f.Tenant.GetProperty<int>(MetabaseTenantProvisioner.DatabaseIdProperty).ShouldBe(46);
+        f.Tenant.GetProperty<int>(MetabaseTenantProvisioner.GroupIdProperty).ShouldBe(140);
+        f.Tenant.GetProperty<int>(MetabaseTenantProvisioner.CollectionIdProperty).ShouldBe(130);
+    }
+
+    [Fact]
+    public async Task SetupAsync_StoredGroupDeletedInMetabase_FallsBackToFindOrCreate()
+    {
+        var f = CreateProvisioner();
+        f.Tenant.SetProperty(MetabaseTenantProvisioner.GroupIdProperty, 140);
+        f.MetabaseApiClient.RenameGroupAsync(140, f.Tenant.Name).ThrowsAsync(
+            new IntegrationServiceException("Metabase API call to '/api/permissions/group/140' failed with status NotFound") { StatusCode = HttpStatusCode.NotFound });
+
+        await f.Provisioner.SetupAsync(f.Tenant.Id);
+
+        await f.MetabaseApiClient.Received(1).FindOrCreateGroupAsync(f.Tenant.Name);
+        f.Tenant.GetProperty<int>(MetabaseTenantProvisioner.GroupIdProperty).ShouldBe(22);
+    }
+
+    [Fact]
+    public async Task SetupAsync_StoredIdRenameFailsOtherThanNotFound_Throws()
+    {
+        var f = CreateProvisioner();
+        f.Tenant.SetProperty(MetabaseTenantProvisioner.CollectionIdProperty, 130);
+        f.MetabaseApiClient.RenameCollectionAsync(130, f.Tenant.Name).ThrowsAsync(
+            new IntegrationServiceException("Metabase API call to '/api/collection/130' failed with status Forbidden") { StatusCode = HttpStatusCode.Forbidden });
+
+        await Should.ThrowAsync<IntegrationServiceException>(() => f.Provisioner.SetupAsync(f.Tenant.Id));
+
+        await f.MetabaseApiClient.DidNotReceiveWithAnyArgs().FindOrCreateCollectionAsync(default!);
     }
 
     [Fact]

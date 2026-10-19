@@ -11,6 +11,7 @@ using Unity.GrantManager.Integrations.Exceptions;
 using Unity.GrantManager.Tenants.PostCreation;
 using Unity.GrantManager.Tenants.PostCreation.Steps;
 using Unity.Modules.Shared.PostTenantCreation;
+using Volo.Abp;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
@@ -186,5 +187,88 @@ public class MetabaseTenantAppServiceTests
         enqueued.TenantId.ShouldBe(f.Tenant.Id);
         enqueued.StepIndex.ShouldBe(1);
         f.Tenant.GetPostTenantCreationSections().ShouldHaveSingleItem().Status.ShouldBe(PostTenantCreationStepStatus.Waiting);
+    }
+
+    [Fact]
+    public async Task ResyncIfSetUpAsync_SetUpTenant_QueuesResync()
+    {
+        var f = CreateService();
+        f.Tenant.SetProperty(MetabaseTenantProvisioner.DatabaseIdProperty, 46);
+
+        var queued = await f.Service.ResyncIfSetUpAsync(f.Tenant.Id);
+
+        queued.ShouldBeTrue();
+        await f.BackgroundJobManager.Received(1).EnqueueAsync(
+            Arg.Is<PostTenantCreationStepArgs>(a => a.TenantId == f.Tenant.Id && a.StepIndex == 1),
+            Arg.Any<BackgroundJobPriority>(), Arg.Any<TimeSpan?>());
+    }
+
+    [Fact]
+    public async Task ResyncIfSetUpAsync_NotSetUp_DoesNothing()
+    {
+        var f = CreateService();
+
+        var queued = await f.Service.ResyncIfSetUpAsync(f.Tenant.Id);
+
+        queued.ShouldBeFalse();
+        await f.BackgroundJobManager.DidNotReceiveWithAnyArgs().EnqueueAsync<PostTenantCreationStepArgs>(default!);
+        f.Tenant.GetPostTenantCreationSections().ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task ResyncIfSetUpAsync_SetupCannotRun_DoesNothing()
+    {
+        var f = CreateService(PostTenantCreationStepCheck.Skip("Metabase is not enabled for this environment."));
+        f.Tenant.SetProperty(MetabaseTenantProvisioner.DatabaseIdProperty, 46);
+
+        var queued = await f.Service.ResyncIfSetUpAsync(f.Tenant.Id);
+
+        queued.ShouldBeFalse();
+        await f.BackgroundJobManager.DidNotReceiveWithAnyArgs().EnqueueAsync<PostTenantCreationStepArgs>(default!);
+    }
+
+    [Fact]
+    public async Task SyncSchemaAsync_SetUpTenant_SyncsStoredDatabase()
+    {
+        var f = CreateService();
+        f.Tenant.SetProperty(MetabaseTenantProvisioner.DatabaseIdProperty, 11);
+
+        await f.Service.SyncSchemaAsync(f.Tenant.Id);
+
+        await f.MetabaseApiClient.Received(1).SyncDatabaseSchemaAsync(11, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RescanValuesAsync_SetUpTenant_RescansStoredDatabase()
+    {
+        var f = CreateService();
+        f.Tenant.SetProperty(MetabaseTenantProvisioner.DatabaseIdProperty, 11);
+
+        await f.Service.RescanValuesAsync(f.Tenant.Id);
+
+        await f.MetabaseApiClient.Received(1).RescanDatabaseValuesAsync(11, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task SyncSchemaAsync_NotSetUp_ThrowsWithoutCallingMetabase()
+    {
+        var f = CreateService();
+
+        await Should.ThrowAsync<UserFriendlyException>(() => f.Service.SyncSchemaAsync(f.Tenant.Id));
+
+        await f.MetabaseApiClient.DidNotReceiveWithAnyArgs().SyncDatabaseSchemaAsync(default);
+    }
+
+    [Fact]
+    public async Task RescanValuesAsync_DatabaseDeletedInMetabase_SuggestsResync()
+    {
+        var f = CreateService();
+        f.Tenant.SetProperty(MetabaseTenantProvisioner.DatabaseIdProperty, 11);
+        f.MetabaseApiClient.RescanDatabaseValuesAsync(11, Arg.Any<CancellationToken>()).ThrowsAsync(
+            new IntegrationServiceException("Metabase API call to '/api/database/11/rescan_values' failed with status NotFound") { StatusCode = HttpStatusCode.NotFound });
+
+        var ex = await Should.ThrowAsync<UserFriendlyException>(() => f.Service.RescanValuesAsync(f.Tenant.Id));
+
+        ex.Message.ShouldContain("Resync");
     }
 }

@@ -535,7 +535,7 @@ GenerateViewBackgroundJob (in tenant context)
 
     <div class="kv-grid">
       <div class="k">GrantManager.Reporting.TenantViewRole</div>
-      <div>Tenant-scoped (<span class="code">"T"</span>) setting naming the PostgreSQL role. The current mechanism.</div>
+      <div>Tenant-scoped (<span class="code">"T"</span>) setting naming the PostgreSQL role. The current mechanism. Metabase Setup writes it with the <span class="code">Tenant_Readonly</span> connection's username.</div>
       <div class="k">GrantManager.Reporting.ViewRole</div>
       <div>Host-level. <strong>Deprecated</strong> — kept for backward compatibility only, with no fallback from the tenant setting to it.</div>
     </div>
@@ -545,10 +545,9 @@ GenerateViewBackgroundJob (in tenant context)
 
     <h3>TenantViewRoleAppService</h3>
     <div class="rowlist">
-      <div class="row"><div class="k">GetAsync</div><div class="v"><p>Returns the saved role, or infers one: <span class="code">{LicencePlate}_readonly</span> from the tenant's <span class="code">LicencePlate</span> extra property, falling back to <span class="code">{tenantname}_readonly</span> when there is no licence plate at all. An explicitly saved role always wins — which is how legacy tenants with non-conforming role names keep working. Also reports live existence of both the read-write and read-only roles.</p></div></div>
-      <div class="row"><div class="k">UpdateAsync</div><div class="v"><p>Saves the setting, but only after <span class="code">EnsureRoleExistsAsync</span> confirms the role is real — otherwise <span class="code">UserFriendlyException</span>.</p></div></div>
+      <div class="row"><div class="k">GetAsync</div><div class="v"><p>Returns the role <span class="code">TenantViewRoleManager</span> resolves: the saved setting (written by Metabase Setup, or saved by hand for legacy tenants), otherwise <span class="code">{LicencePlate}_readonly</span> from the tenant's <span class="code">LicencePlate</span> extra property, otherwise none. Also reports live existence of that role and of both licence-plate roles. The role can't be edited from the UI.</p></div></div>
       <div class="row"><div class="k">AssignRoleToViewsAsync</div><div class="v"><p>Queues the all-views job. It re-checks role existence first <em>deliberately</em>: the background job's own check only logs and silently no-ops, so without this the queue call would report success for a role that doesn't exist.</p></div></div>
-      <div class="row"><div class="k">GetTenantDatabaseInfoAsync</div><div class="v"><p>Backs the <strong>View DB Info</strong> modal — database roles, role memberships, and every view currently in the <span class="code">Reporting</span> schema. Catches and logs on failure, returning empty lists so the UI still renders.</p></div></div>
+      <div class="row"><div class="k">GetTenantDatabaseInfoAsync</div><div class="v"><p>Backs the <strong>View DB Info</strong> modal — the resolved view role, and every <span class="code">Reporting</span> view reconciled against the <span class="code">ReportColumnsMap</span> rows, each flagged as failed, generating, missing, unmapped, or not readable by the view role. Catches and logs on failure, returning an <span class="code">Error</span> message so the UI still renders.</p></div></div>
     </div>
 
     <div class="rowlist" style="margin-top:24px;">
@@ -639,7 +638,7 @@ GenerateViewBackgroundJob (in tenant context)
     <p class="lede">Worth knowing before you touch this code.</p>
     <div class="rowlist">
       <div class="row"><div class="k"><span class="tag warn">Real risk</span></div><div class="v"><p><strong>The all-views grant aborts on a legacy view name.</strong> Covered in §06 — one hyphenated auto-generated view in the schema is enough to make "assign role to all views" throw, silently leaving later views ungranted. Removing the deprecated path fixes this permanently.</p></div></div>
-      <div class="row"><div class="k"><span class="tag warn">Silent</span></div><div class="v"><p><span class="code">AssignViewRoleBackgroundJob</span> returns quietly when no role is configured or the role does not exist. <span class="code">TenantViewRoleAppService</span> guards the two paths a user can reach, but a generation-triggered grant has no such guard — a view can be <span class="code">SUCCESS</span> and still unreadable by Metabase.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Silent</span></div><div class="v"><p><span class="code">AssignViewRoleBackgroundJob</span> returns quietly when there is no role (no saved setting and no licence plate) or the role does not exist. <span class="code">TenantViewRoleAppService</span> guards the two paths a user can reach, but a generation-triggered grant has no such guard — a view can be <span class="code">SUCCESS</span> and still unreadable by Metabase.</p></div></div>
       <div class="row"><div class="k"><span class="tag accent">Asymmetric</span></div><div class="v"><p>Duplicate keys and duplicate paths each only warn; only the two together throw. Deliberate — providers legitimately produce repeated keys across worksheets — but it means a save can succeed with warnings an administrator never sees.</p></div></div>
       <div class="row"><div class="k"><span class="tag accent">Confusing</span></div><div class="v"><p>The UI column labelled <strong>Path</strong> shows <span class="code">DataPath</span>, not <span class="code">Path</span>. The real <span class="code">Path</span> is the row-identity key and is never displayed. This trips people up when reading a mapping JSON export against the screen.</p></div></div>
       <div class="row"><div class="k"><span class="tag accent">Partial cleanup</span></div><div class="v"><p><span class="code">DeleteAsync</span> and the rename path both downgrade a failed <span class="code">DROP VIEW</span> to a warning. A view can outlive the mapping that created it, after which its name reads as "available" to the correlation-aware check but conflicts on the actual <span class="code">CREATE</span>.</p></div></div>

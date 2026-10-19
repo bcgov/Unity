@@ -2,10 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Unity.GrantManager.Identity;
+using Unity.GrantManager.Integrations.Exceptions;
+using Unity.Reporting.Settings;
 using Unity.TenantManagement.Metabase;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
@@ -25,8 +28,9 @@ namespace Unity.GrantManager.Integrations.Metabase;
 /// them automatically at tenant creation):
 ///
 /// 1. Connects the tenant's data as a read-only source - decrypts the tenant's stored
-///    Tenant_Readonly connection string and calls the Metabase API to find or create a database
-///    connection named after the tenant, then triggers a schema sync + value rescan.
+///    Tenant_Readonly connection string, saves its username as the tenant's reporting view role
+///    (<see cref="ReportingSettings.TenantViewRole"/>), and calls the Metabase API to find or create
+///    a database connection named after the tenant, then triggers a schema sync + value rescan.
 /// 2. Finds or creates a Metabase permissions group named after the tenant and adds the tenant's
 ///    members to it (see <see cref="GetMemberEmailsAsync"/>). A user who isn't already a Metabase
 ///    user (via LDAP login or Admin &gt; People) is skipped with a warning, not a hard failure.
@@ -37,9 +41,13 @@ namespace Unity.GrantManager.Integrations.Metabase;
 ///    registered before the IDs were stored, the find-or-create calls return the existing
 ///    resources, so running Setup again backfills the IDs without creating anything.
 ///
+/// Once IDs are stored, a rerun updates those resources by ID and renames them to the tenant's
+/// current name, so renaming a tenant and running Resync renames its Metabase resources instead
+/// of creating a second set. Find-or-create by name is only the fallback for a missing ID.
+///
 /// Every Metabase call (via <see cref="IMetabaseApiClient"/>) is idempotent by design
-/// (find-or-create by tenant name, membership/permission checks before writing), so a rerun is
-/// always safe.
+/// (update by stored ID or find-or-create by tenant name, membership/permission checks before
+/// writing), so a rerun is always safe.
 /// </summary>
 public class MetabaseTenantProvisioner(
     IMetabaseApiClient metabaseApiClient,
@@ -89,13 +97,31 @@ public class MetabaseTenantProvisioner(
             host = metabaseOptions.Value.DbHostOverride;
         }
 
+        // Metabase reads as this role, so it's the one the generated reporting views must be
+        // granted to (AssignViewRoleBackgroundJob reads this setting and skips when it's unset).
+        using (currentTenant.Change(null))
+        {
+            await settingManager.SetAsync(
+                ReportingSettings.TenantViewRole, username, TenantSettingValueProvider.ProviderName, tenantId.ToString());
+        }
+
         var ssl = metabaseOptions.Value.DbSslOverride ?? true;
 
-        var databaseId = await metabaseApiClient.FindOrCreateDatabaseAsync(tenant.Name, host, port, dbName, username, password, ssl);
+        // Stored IDs win over the name lookup: after a tenant rename, finding by the new name would
+        // create a second database, group and collection and orphan the first set.
+        var databaseId = await ReuseOrFindOrCreateAsync(
+            tenant.GetProperty<int?>(DatabaseIdProperty),
+            id => metabaseApiClient.UpdateDatabaseDetailsAsync(id, tenant.Name, host, port, dbName, username, password, ssl),
+            () => metabaseApiClient.FindOrCreateDatabaseAsync(tenant.Name, host, port, dbName, username, password, ssl),
+            "database", tenantId);
         await metabaseApiClient.SyncDatabaseSchemaAsync(databaseId);
         await metabaseApiClient.RescanDatabaseValuesAsync(databaseId);
 
-        var groupId = await metabaseApiClient.FindOrCreateGroupAsync(tenant.Name);
+        var groupId = await ReuseOrFindOrCreateAsync(
+            tenant.GetProperty<int?>(GroupIdProperty),
+            id => metabaseApiClient.RenameGroupAsync(id, tenant.Name),
+            () => metabaseApiClient.FindOrCreateGroupAsync(tenant.Name),
+            "group", tenantId);
 
         var notFoundCount = 0;
         foreach (var email in await GetMemberEmailsAsync(tenantId))
@@ -119,7 +145,11 @@ public class MetabaseTenantProvisioner(
 
         await metabaseApiClient.GrantGroupDatabaseAccessAsync(groupId, databaseId);
 
-        var collectionId = await metabaseApiClient.FindOrCreateCollectionAsync(tenant.Name);
+        var collectionId = await ReuseOrFindOrCreateAsync(
+            tenant.GetProperty<int?>(CollectionIdProperty),
+            id => metabaseApiClient.RenameCollectionAsync(id, tenant.Name),
+            () => metabaseApiClient.FindOrCreateCollectionAsync(tenant.Name),
+            "collection", tenantId);
         await metabaseApiClient.GrantGroupCollectionAccessAsync(groupId, collectionId);
 
         // Reload rather than reuse the tenant from the start: the Metabase calls take minutes, and
@@ -136,6 +166,32 @@ public class MetabaseTenantProvisioner(
         logger.LogInformation(
             "{Prefix} Registration complete for tenant {TenantId} ('{TenantName}'): database={DatabaseId}, group={GroupId}, collection={CollectionId}",
             LogPrefix, tenantId, tenant.Name, databaseId, groupId, collectionId);
+    }
+
+    /// <summary>
+    /// Updates (and renames to the tenant's current name) the resource the tenant already stores
+    /// an ID for; finds or creates one by name only when there's no stored ID, or Metabase no
+    /// longer has it (deleted by hand).
+    /// </summary>
+    private async Task<int> ReuseOrFindOrCreateAsync(
+        int? storedId, Func<int, Task> update, Func<Task<int>> findOrCreate, string resource, Guid tenantId)
+    {
+        if (storedId.HasValue)
+        {
+            try
+            {
+                await update(storedId.Value);
+                return storedId.Value;
+            }
+            catch (IntegrationServiceException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+            {
+                logger.LogWarning(
+                    "{Prefix} Stored Metabase {Resource} #{Id} for tenant {TenantId} no longer exists - finding or creating one by name.",
+                    LogPrefix, resource, storedId.Value, tenantId);
+            }
+        }
+
+        return await findOrCreate();
     }
 
     /// <summary>
