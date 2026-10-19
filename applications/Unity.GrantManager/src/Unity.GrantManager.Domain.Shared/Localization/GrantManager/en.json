@@ -328,6 +328,7 @@
     "GrantManager:ProjectInfoZonesNotEnabled": "The Project Info zones are not enabled for this application form.",
     "GrantManager:AttachmentResyncFailed": "Attachments could not be resynced from CHEFS. The existing attachments are unchanged.",
     "GrantManager:TagNameAlreadyExists": "Another tag with the same name already exists.",
+    "GrantManager:TagNameUnchanged": "New tag cannot be the same as the original tag.",
     "GrantManager:ContactNotFound": "The contact could not be found. Refresh the page and try again.",
     "GrantManager:AddressNotFound": "The address could not be found. Refresh the page and try again.",
     "GrantManager:AssessmentUserAssignmentAlreadyExists":"Business Exception: You cannot create two assessments on an application for the same user.",

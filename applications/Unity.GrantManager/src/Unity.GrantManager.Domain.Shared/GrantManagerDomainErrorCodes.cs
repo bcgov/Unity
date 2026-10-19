@@ -18,6 +18,7 @@ public static class GrantManagerDomainErrorCodes
 
     /* TAGS */
     public const string TagNameAlreadyExists = "GrantManager:TagNameAlreadyExists";
+    public const string TagNameUnchanged = "GrantManager:TagNameUnchanged";
 
     /* CONTACTS */
     public const string ContactNotFound = "GrantManager:ContactNotFound";
