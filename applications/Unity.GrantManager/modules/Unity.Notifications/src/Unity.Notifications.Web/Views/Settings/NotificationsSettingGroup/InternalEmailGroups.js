@@ -514,7 +514,7 @@ const emailGroupsManager = {
                 type: 'Dynamic'
             };
 
-            unity.notifications.emailGroups.emailGroups.create(dto).then(result => {
+            unity.notifications.emailGroups.emailGroups.create(dto).then(async result => {
                 if (!(result?.id && selectedUsers?.length)) {
                     abp.notify.success('Email group created successfully');
                     modal.hide();
@@ -526,12 +526,11 @@ const emailGroupsManager = {
                     unity.notifications.emailGroups.emailGroupUsers.insert({ userId: u.userId, groupId: result.id })
                 );
 
-                return Promise.all(ops).then(() => {
-                    abp.notify.success(`Email group created with ${selectedUsers.length} users`);
-                    modal.hide();
-                    emailGroupsTable?.ajax.reload();
-                });
-                }).catch(err => {
+                await Promise.all(ops);
+                abp.notify.success(`Email group created with ${selectedUsers.length} users`);
+                modal.hide();
+                emailGroupsTable?.ajax.reload();
+            }).catch(err => {
                 console.error('Failed to create email group:', err);
                 abp.notify.error('Failed to create email group');
             });
@@ -881,7 +880,7 @@ const emailGroupsManager = {
 
     loadGroupUsersForTable: function (groupId, dataTable) {
 
-        unity.notifications.emailGroups.emailGroupUsers.getEmailGroupUsersByGroupId(groupId).then(function (groupUsers) {
+        unity.notifications.emailGroups.emailGroupUsers.getEmailGroupUsersByGroupId(groupId).then(async function (groupUsers) {
 
             if (!groupUsers || groupUsers.length === 0) {
                 dataTable.clear().draw();
@@ -916,23 +915,23 @@ const emailGroupsManager = {
                 })
             );
 
-            return Promise.all(userPromises).then(function (usersWithDetails) {
-                // Create unique list based on userId to prevent duplicates
-                const uniqueUsers = [];
-                const seenUserIds = new Set();
+            const usersWithDetails = await Promise.all(userPromises);
 
-                usersWithDetails.forEach(user => {
-                    if (!seenUserIds.has(user.userId)) {
-                        seenUserIds.add(user.userId);
-                        uniqueUsers.push(user);
-                    }
-                });
+            // Create unique list based on userId to prevent duplicates
+            const uniqueUsers = [];
+            const seenUserIds = new Set();
 
-                // Update DataTable with users
-                dataTable.clear();
-                dataTable.rows.add(uniqueUsers);
-                dataTable.draw();
+            usersWithDetails.forEach(user => {
+                if (!seenUserIds.has(user.userId)) {
+                    seenUserIds.add(user.userId);
+                    uniqueUsers.push(user);
+                }
             });
+
+            // Update DataTable with users
+            dataTable.clear();
+            dataTable.rows.add(uniqueUsers);
+            dataTable.draw();
         }).catch(function (error) {
             console.error('Failed to load group users:', error);
             abp.notify.error('Failed to load group users');
