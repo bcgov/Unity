@@ -1,0 +1,11 @@
+# Local development overrides for docker-compose.yml.
+# Copy this file to docker-compose.override.yml (gitignored) to activate.
+# Docker Compose merges it automatically — no flags needed.
+#
+# Primary use: mount tenant_config.local.json so local secrets (e.g. api_key)
+# are available inside the container without being committed to the repo.
+
+services:
+  reporting:
+    volumes:
+      - ./Unity.AI.Reporting.Backend/src/tenant_config.local.json:/app/backend/src/tenant_config.local.json
