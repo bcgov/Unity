@@ -142,7 +142,7 @@ Addresses accumulate into a case-insensitive `HashSet`, are joined with `"; "`, 
 
 The whole method is wrapped in a `try`/`catch` returning `string.Empty` on failure, so a directory outage degrades to "no recipients" rather than an exception.
 
-Because the link is **by group name**, renaming an email group silently detaches it from every scheduled notification referencing it. `EmailGroupsAppService.DeleteAsync` guards deletion (`BusinessException("Unity.Notifications:EmailGroupInUse")`) but nothing guards renaming — see [notifications-roadmap.md](notifications-roadmap.md#email-groups-are-linked-to-scheduled-notifications-by-name).
+Because the link is **by group name**, renaming an email group silently detaches it from every scheduled notification referencing it. `EmailGroupsAppService.DeleteAsync` guards deletion (`BusinessException("Notifications:EmailGroupInUse")`) but nothing guards renaming — see [notifications-roadmap.md](notifications-roadmap.md#email-groups-are-linked-to-scheduled-notifications-by-name).
 
 ### External — `PublishToExternalRecipientAsync`
 

@@ -9,6 +9,19 @@ public static class GrantManagerDomainErrorCodes
 
     /* APPLICATIONS */
     public const string ApplicationNotFound = "GrantManager:ApplicationNotFound";
+    public const string DueDateInPast = "GrantManager:DueDateInPast";
+    public const string DecisionDateInFuture = "GrantManager:DecisionDateInFuture";
+    public const string ApprovedAmountRequired = "GrantManager:ApprovedAmountRequired";
+    public const string RecommendedAmountRequired = "GrantManager:RecommendedAmountRequired";
+    public const string ProjectInfoZonesNotEnabled = "GrantManager:ProjectInfoZonesNotEnabled";
+    public const string AttachmentResyncFailed = "GrantManager:AttachmentResyncFailed";
+
+    /* TAGS */
+    public const string TagNameAlreadyExists = "GrantManager:TagNameAlreadyExists";
+    public const string TagNameUnchanged = "GrantManager:TagNameUnchanged";
+
+    /* CONTACTS */
+    public const string ContactNotFound = "GrantManager:ContactNotFound";
 
     /* ASSESSMENTS */
     public const string AssessmentNotFound = "GrantManager:AssessmentNotFound";
@@ -44,6 +57,7 @@ public static class GrantManagerDomainErrorCodes
     public const string MailingAddressAlreadyExists = "GrantManager:MailingAddressAlreadyExists";
     public const string AddressNotEditable = "GrantManager:AddressNotEditable";
     public const string AddressStreetRequired = "GrantManager:AddressStreetRequired";
+    public const string AddressNotFound = "GrantManager:AddressNotFound";
 
     /* APPLICANT MERGE */
     public const string ApplicantMergeSameApplicant = "GrantManager:ApplicantMergeSameApplicant";
