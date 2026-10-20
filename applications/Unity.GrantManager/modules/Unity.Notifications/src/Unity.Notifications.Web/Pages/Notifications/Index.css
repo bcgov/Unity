@@ -15,18 +15,35 @@
     min-width: 220px;
     display: flex;
     flex-direction: row;
-    align-items: flex-end;
+    align-items: center;
     gap: 1rem;
+    justify-content: flex-start;
 }
+
+input#search {
+  position: relative;
+  top: 15px;
+}
+
 
 .notification-filter-row {
     display: flex;
     flex-direction: row;
     flex-wrap: nowrap;
-    align-items: flex-end;
+    align-items: center;
     margin-bottom: 0 !important;
     gap: 1rem;
+    position: relative;
 }
+
+.notification-filter-row label,
+.notification-filter-row > .mb-3 {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
 
 .date-input-filter-div {
     display: inline-block;
@@ -47,6 +64,8 @@
     display: inline-block;
     padding: 0px;
     margin: 0px;
+    position: relative;
+    top: 3px;
 }
 
 .quick-date-input {
@@ -158,7 +177,7 @@
    negative top-margin, letting the date controls' mb-3 provide the spacing. */
 .action-bar-date-controls .search-action-bar {
     padding-top: 0 !important;
-    padding-bottom: 0 !important;
+    padding-bottom: 10px !important;
 }
 
 .action-bar-date-controls .date-input-filter-div {
@@ -179,4 +198,10 @@
 #notificationEmailModal .notification-email-text {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
+}
+
+.date-input-filter-div,
+.notification-view-filter {
+  position: relative;
+  top: -2px;
 }
