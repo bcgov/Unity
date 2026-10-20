@@ -615,6 +615,21 @@
         if (s.statusMessage) {
             html += '<div class="text-muted small mb-1">' + _escape(s.statusMessage) + '</div>';
         }
+        return html + _metabaseLastMemberSyncHtml(s.lastMemberSync);
+    }
+
+    function _metabaseLastMemberSyncHtml(sync) {
+        if (!sync) {
+            return '';
+        }
+        let outcome = sync.error
+            ? '<span class="text-danger"><i class="fa-solid fa-circle-xmark"></i> ' + _escape(lGm('TenantMetabase:LastMemberSyncFailed')) + '</span>'
+            : _escape(lGm('TenantMetabase:LastMemberSyncResult', sync.added, sync.removed, sync.notMetabaseUsers));
+        let html = '<div class="small mb-1">' + _escape(lGm('TenantMetabase:LastMemberSync')) + ': ' + outcome +
+            ' <span class="text-muted">(' + _escape(new Date(sync.syncedAt).toLocaleString()) + ')</span></div>';
+        if (sync.error) {
+            html += '<div class="text-muted small mb-1">' + _escape(sync.error) + '</div>';
+        }
         return html;
     }
 
@@ -711,10 +726,14 @@
     // ─── Configuration modal: Reporting tab (Metabase members) ────────────────
 
     // MetabaseMemberSource; the API sends the number unless enums are serialized as names.
-    let _metabaseMemberSources = ['ProgramManager', 'AdditionalMember', 'Metabase'];
+    let _metabaseMemberSources = ['ProgramManager', 'AdditionalMember', 'Metabase', 'Permission'];
+
+    function _metabaseMemberSourceName(source) {
+        return typeof source === 'number' ? _metabaseMemberSources[source] : source;
+    }
 
     function _metabaseMemberSourceText(source) {
-        return lGm('TenantMetabase:Source:' + (typeof source === 'number' ? _metabaseMemberSources[source] : source));
+        return lGm('TenantMetabase:Source:' + _metabaseMemberSourceName(source));
     }
 
     function _metabaseMemberStateHtml(row) {
@@ -735,7 +754,8 @@
             // d-inline-flex: the theme makes .btn display:flex, which ignores the cell's text-end.
             ? '<button type="button" class="btn btn-sm unt-btn-outline-primary btn-outline-primary d-inline-flex config-metabase-remove-member-btn" data-email="' +
                 _escape(row.email) + '"><i class="fa-solid fa-user-minus"></i> ' + _escape(lGm('TenantMetabase:Remove')) + '</button>'
-            : '<span class="text-muted">' + _escape(lGm('TenantMetabase:ManagedByRole')) + '</span>';
+            : '<span class="text-muted">' + _escape(lGm(_metabaseMemberSourceName(row.source) === 'Permission'
+                ? 'TenantMetabase:ManagedByPermission' : 'TenantMetabase:ManagedByRole')) + '</span>';
         return '<tr>' +
             '<td>' + _escape(row.email) + '</td>' +
             '<td>' + _escape(row.name) + '</td>' +
@@ -778,7 +798,9 @@
     }
 
     // Runs a members request with the button disabled, then reloads the table whatever the outcome.
-    function _runMetabaseMembersRequest(tenantId, $btn, request) {
+    // A request that ran a sync (or failed during one) also changes the last-sync line, so the
+    // whole section reloads.
+    function _runMetabaseMembersRequest(tenantId, $btn, request, runsSync) {
         $btn.prop('disabled', true);
         request()
             .done(function (result) {
@@ -787,7 +809,11 @@
                 }
             })
             .always(function () {
-                _loadMetabaseMembers(tenantId);
+                if (runsSync) {
+                    _loadMetabaseSection(tenantId);
+                } else {
+                    _loadMetabaseMembers(tenantId);
+                }
             });
     }
 
@@ -799,12 +825,12 @@
             }
             _runMetabaseMembersRequest(tenantId, $(this), function () {
                 return _metabaseTenantService.addMembers(tenantId, { emails: emails });
-            });
+            }, true);
         });
         $members.find('#config-metabase-sync-members-btn').on('click', function () {
             _runMetabaseMembersRequest(tenantId, $(this), function () {
                 return _metabaseTenantService.syncMembers(tenantId);
-            });
+            }, true);
         });
         $members.find('.config-metabase-remove-member-btn').on('click', function () {
             _confirmRemoveMetabaseMember(tenantId, $(this));

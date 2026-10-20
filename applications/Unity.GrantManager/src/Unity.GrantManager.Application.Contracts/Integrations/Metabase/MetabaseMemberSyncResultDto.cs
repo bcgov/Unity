@@ -5,7 +5,10 @@ public class MetabaseMemberSyncResultDto
 {
     public int Added { get; set; }
 
-    /// <summary>Off-boarded members removed from the group.</summary>
+    /// <summary>
+    /// Members removed from the group: off-boarded users, and members the sync added for
+    /// Metabase.Access who no longer hold it.
+    /// </summary>
     public int Removed { get; set; }
 
     /// <summary>Emails that should be in the group but have no Metabase account yet; added once they sign in.</summary>

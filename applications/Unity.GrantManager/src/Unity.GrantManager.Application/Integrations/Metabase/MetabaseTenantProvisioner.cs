@@ -3,22 +3,29 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Integrations.Exceptions;
+using Unity.GrantManager.Permissions;
 using Unity.Reporting.Settings;
 using Unity.TenantManagement.Metabase;
 using Volo.Abp;
+using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Identity;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.PermissionManagement;
 using Volo.Abp.Security.Encryption;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.Settings;
 using Volo.Abp.TenantManagement;
+using Volo.Abp.Timing;
 
 namespace Unity.GrantManager.Integrations.Metabase;
 
@@ -33,8 +40,8 @@ namespace Unity.GrantManager.Integrations.Metabase;
 ///    (<see cref="ReportingSettings.TenantViewRole"/>), and calls the Metabase API to find or create
 ///    a database connection named after the tenant, then triggers a schema sync + value rescan.
 /// 2. Finds or creates a Metabase permissions group named after the tenant and syncs its members
-///    (see <see cref="SyncMembersAsync"/>): adds the program managers and Additional members, and
-///    removes off-boarded users. A user who isn't already a Metabase user (via LDAP login or
+///    (see <see cref="SyncMembersAsync"/>): adds the program managers, Additional members and
+///    holders of Metabase.Access, and removes off-boarded users. A user who isn't already a Metabase user (via LDAP login or
 ///    Admin &gt; People) is skipped with a warning, not a hard failure.
 /// 3. Grants that group unrestricted view/query access to the new database connection, scoped to
 ///    just this tenant's data.
@@ -55,10 +62,12 @@ public class MetabaseTenantProvisioner(
     IMetabaseApiClient metabaseApiClient,
     ITenantRepository tenantRepository,
     IIdentityUserRepository identityUserRepository,
+    IRepository<PermissionGrant, Guid> permissionGrantRepository,
     IStringEncryptionService stringEncryptionService,
     ISettingManager settingManager,
     ICurrentTenant currentTenant,
     IDataFilter dataFilter,
+    IClock clock,
     IOptions<MetabaseOptions> metabaseOptions,
     ILogger<MetabaseTenantProvisioner> logger)
     : ITransientDependency
@@ -191,25 +200,59 @@ public class MetabaseTenantProvisioner(
     }
 
     /// <summary>
-    /// Brings the tenant's Metabase group in line with Unity: removes members whose email belongs to
-    /// an off-boarded Unity user in the tenant (whatever added them, including people added directly
-    /// in Metabase), and adds the program managers and Additional members who are missing. Everyone
-    /// else is left alone - in particular a program manager whose role was taken away but who is
-    /// still active keeps access. Emails without a Metabase account are skipped until they sign in.
+    /// Brings the tenant's Metabase group in line with Unity, and records the outcome (or the
+    /// failure) as the tenant's last members sync:
+    /// - removes members whose email belongs to an off-boarded Unity user in the tenant, whatever
+    ///   added them, including people added directly in Metabase;
+    /// - removes members this sync added only for Metabase.Access (tracked in
+    ///   <see cref="MetabaseSettings.PermissionSyncedEmails"/>) who no longer hold it and aren't
+    ///   wanted for another reason;
+    /// - adds the program managers, Additional members and permission holders who are missing,
+    ///   tracking those added only for the permission.
+    /// Everyone else is left alone - in particular a program manager whose role was taken away but
+    /// who is still active keeps access, and someone already in the group is never tracked, so this
+    /// never removes a member it didn't add. Emails without a Metabase account are skipped until
+    /// they sign in.
     /// </summary>
     public virtual async Task<MetabaseMemberSyncResultDto> SyncMembersAsync(Guid tenantId, int groupId)
     {
+        try
+        {
+            var result = await ReconcileMembersAsync(tenantId, groupId);
+            await SaveLastMemberSyncAsync(tenantId, new MetabaseLastMemberSyncDto
+            {
+                SyncedAt = clock.Now,
+                Added = result.Added,
+                Removed = result.Removed,
+                NotMetabaseUsers = result.NotMetabaseUsers
+            });
+            return result;
+        }
+        catch (Exception ex) when (ex is IntegrationServiceException or HttpRequestException or TaskCanceledException)
+        {
+            await SaveLastMemberSyncAsync(tenantId, new MetabaseLastMemberSyncDto { SyncedAt = clock.Now, Error = ex.Message });
+            throw;
+        }
+    }
+
+    private async Task<MetabaseMemberSyncResultDto> ReconcileMembersAsync(Guid tenantId, int groupId)
+    {
         var sources = await LoadMemberSourcesAsync(tenantId);
+        var tracked = ToEmailSet(SplitEmails(await GetTenantSettingAsync(MetabaseSettings.PermissionSyncedEmails, tenantId)));
         var groupMembers = await metabaseApiClient.GetGroupMembersAsync(groupId);
         var result = new MetabaseMemberSyncResultDto();
 
-        foreach (var member in groupMembers.Where(m => sources.Offboarded.Contains(m.Email)))
+        var removed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var member in groupMembers.Where(m =>
+            sources.Offboarded.Contains(m.Email) || (tracked.Contains(m.Email) && !sources.IsDesired(m.Email))))
         {
             await metabaseApiClient.RemoveGroupMembershipAsync(member.MembershipId);
+            removed.Add(member.Email);
             result.Removed++;
         }
 
-        var inGroup = ToEmailSet(groupMembers.Select(m => m.Email));
+        var inGroup = ToEmailSet(groupMembers.Select(m => m.Email).Where(e => !removed.Contains(e)));
+        var addedForPermission = new List<string>();
         foreach (var email in sources.DesiredEmails.Where(e => !inGroup.Contains(e)))
         {
             var userId = await metabaseApiClient.FindUserIdByEmailAsync(email);
@@ -220,19 +263,56 @@ public class MetabaseTenantProvisioner(
             }
             await metabaseApiClient.AddGroupMemberAsync(groupId, userId.Value);
             result.Added++;
+            if (sources.IsWantedOnlyForPermission(email))
+            {
+                addedForPermission.Add(email);
+            }
+        }
+
+        // Still tracked: added for the permission, still holding it and still in the group. Anyone
+        // else drops off, so a later re-add by someone else isn't mistaken for the sync's own.
+        var nowTracked = ToEmailSet(tracked
+            .Where(e => sources.PermissionHolders.Contains(e) && inGroup.Contains(e))
+            .Concat(addedForPermission));
+        if (!nowTracked.SetEquals(tracked))
+        {
+            await SetTenantSettingAsync(MetabaseSettings.PermissionSyncedEmails, string.Join(",", nowTracked), tenantId);
         }
 
         // Counts, not who: email addresses (even hashed) don't belong in logs.
         logger.LogInformation(
-            "{Prefix} Members synced for tenant {TenantId}: {Added} added, {Removed} off-boarded removed, {NotFound} not yet Metabase users.",
+            "{Prefix} Members synced for tenant {TenantId}: {Added} added, {Removed} removed, {NotFound} not yet Metabase users.",
             LogPrefix, tenantId, result.Added, result.Removed, result.NotMetabaseUsers);
 
         return result;
     }
 
+    /// <summary>The tenant's last members sync; null when none has been recorded.</summary>
+    public virtual async Task<MetabaseLastMemberSyncDto?> GetLastMemberSyncAsync(Guid tenantId)
+    {
+        var value = await GetTenantSettingAsync(MetabaseSettings.LastMemberSync, tenantId);
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<MetabaseLastMemberSyncDto>(value);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private Task SaveLastMemberSyncAsync(Guid tenantId, MetabaseLastMemberSyncDto lastSync) =>
+        SetTenantSettingAsync(MetabaseSettings.LastMemberSync, JsonSerializer.Serialize(lastSync), tenantId);
+
     /// <summary>
     /// Every email in the tenant's Metabase group or wanted there, with why it is listed and its
-    /// state. Program managers come first, then Additional members, then other group members.
+    /// state. Program managers come first, then permission holders, then Additional members, then
+    /// other group members.
     /// </summary>
     public virtual async Task<List<MetabaseMemberDto>> GetMembersAsync(Guid tenantId, int groupId)
     {
@@ -243,6 +323,7 @@ public class MetabaseTenantProvisioner(
 
         var rows = new List<MetabaseMemberDto>();
         foreach (var email in sources.ProgramManagers
+            .Concat(sources.PermissionHolders)
             .Concat(sources.AdditionalMembers)
             .Concat(groupMembers.Keys)
             .Distinct(StringComparer.OrdinalIgnoreCase))
@@ -255,7 +336,7 @@ public class MetabaseTenantProvisioner(
                 Source = sources.SourceOf(email),
                 InGroup = member != null,
                 Offboarded = sources.Offboarded.Contains(email),
-                CanRemove = !sources.IsActiveProgramManager(email)
+                CanRemove = !sources.IsManaged(email)
             };
 
             // Only an email that the next sync would add needs the (one call per email) account lookup.
@@ -281,7 +362,8 @@ public class MetabaseTenantProvisioner(
 
     /// <summary>
     /// Takes the email off the Additional members list and out of the group. An active program
-    /// manager can't be removed here: the sync would add them straight back, so their role decides.
+    /// manager or permission holder can't be removed here: the sync would add them straight back,
+    /// so their role or permission decides.
     /// </summary>
     public virtual async Task RemoveMemberAsync(Guid tenantId, int groupId, string email)
     {
@@ -290,6 +372,12 @@ public class MetabaseTenantProvisioner(
         {
             throw new UserFriendlyException(
                 "This member is a program manager in the tenant. Remove the Program Manager role from the user to remove their Metabase access.");
+        }
+
+        if (sources.PermissionHolders.Contains(email))
+        {
+            throw new UserFriendlyException(
+                "This member has the Metabase access permission in the tenant. Remove the permission from the user or their role to remove their Metabase access.");
         }
 
         if (sources.AdditionalMembers.Contains(email))
@@ -327,18 +415,32 @@ public class MetabaseTenantProvisioner(
 
     /// <summary>
     /// Unity's view of the tenant's members: program managers (all, active or not), the Additional
-    /// members list, and off-boarded emails - those whose every user in the tenant is deleted or
-    /// inactive. An email that also belongs to an active user is not off-boarded, which covers a
-    /// user deleted and imported again.
+    /// members list, active holders of Metabase.Access, and off-boarded emails - those whose every
+    /// user in the tenant is deleted or inactive. An email that also belongs to an active user is
+    /// not off-boarded, which covers a user deleted and imported again.
     /// </summary>
     private async Task<MemberSources> LoadMemberSourcesAsync(Guid tenantId)
     {
         List<IdentityUser> programManagers;
         List<IdentityUser> users;
+        var roleHolders = new List<IdentityUser>();
+        List<PermissionGrant> grants;
         using (currentTenant.Change(tenantId))
         {
             programManagers = await identityUserRepository.GetListByNormalizedRoleNameAsync(
                 UnityRoles.ProgramManager.ToUpperInvariant());
+
+            // The grant records, not a permission check per user: role and user grants are the only
+            // ways the tenant's Roles and Users screens grant it.
+            grants = await permissionGrantRepository.GetListAsync(g =>
+                g.Name == MetabasePermissions.Access &&
+                (g.ProviderName == RolePermissionValueProvider.ProviderName || g.ProviderName == UserPermissionValueProvider.ProviderName));
+
+            foreach (var roleGrant in grants.Where(g => g.ProviderName == RolePermissionValueProvider.ProviderName))
+            {
+                roleHolders.AddRange(await identityUserRepository.GetListByNormalizedRoleNameAsync(
+                    roleGrant.ProviderKey.ToUpperInvariant()));
+            }
 
             using (dataFilter.Disable<ISoftDelete>())
             {
@@ -350,30 +452,42 @@ public class MetabaseTenantProvisioner(
         var offboarded = ToEmailSet(users.Where(u => !u.IsActive || u.IsDeleted).Select(u => u.Email));
         offboarded.ExceptWith(activeEmails);
 
+        var userGrantIds = grants
+            .Where(g => g.ProviderName == UserPermissionValueProvider.ProviderName)
+            .Select(g => Guid.TryParse(g.ProviderKey, out var id) ? id : Guid.Empty)
+            .ToHashSet();
+        var permissionHolders = ToEmailSet(roleHolders
+            .Concat(users.Where(u => userGrantIds.Contains(u.Id)))
+            .Where(u => u.IsActive && !u.IsDeleted)
+            .Select(u => u.Email));
+        permissionHolders.ExceptWith(offboarded);
+
         return new MemberSources(
             ToEmailSet(programManagers.Select(u => u.Email)),
             ToEmailSet(await GetAdditionalMembersAsync(tenantId)),
+            permissionHolders,
             offboarded);
     }
 
-    private async Task<List<string>> GetAdditionalMembersAsync(Guid tenantId)
+    private async Task<List<string>> GetAdditionalMembersAsync(Guid tenantId) =>
+        SplitEmails(await GetTenantSettingAsync(MetabaseSettings.UserEmails, tenantId));
+
+    private Task SetAdditionalMembersAsync(Guid tenantId, IEnumerable<string> emails) =>
+        SetTenantSettingAsync(MetabaseSettings.UserEmails, string.Join(",", ToEmailSet(emails)), tenantId);
+
+    private async Task<string?> GetTenantSettingAsync(string name, Guid tenantId)
     {
-        string? value;
         using (currentTenant.Change(null))
         {
-            value = await settingManager.GetOrNullAsync(
-                MetabaseSettings.UserEmails, TenantSettingValueProvider.ProviderName, tenantId.ToString());
+            return await settingManager.GetOrNullAsync(name, TenantSettingValueProvider.ProviderName, tenantId.ToString());
         }
-        return SplitEmails(value);
     }
 
-    private async Task SetAdditionalMembersAsync(Guid tenantId, IEnumerable<string> emails)
+    private async Task SetTenantSettingAsync(string name, string value, Guid tenantId)
     {
         using (currentTenant.Change(null))
         {
-            await settingManager.SetAsync(
-                MetabaseSettings.UserEmails, string.Join(",", ToEmailSet(emails)),
-                TenantSettingValueProvider.ProviderName, tenantId.ToString());
+            await settingManager.SetAsync(name, value, TenantSettingValueProvider.ProviderName, tenantId.ToString());
         }
     }
 
@@ -405,6 +519,8 @@ public class MetabaseTenantProvisioner(
 
         public bool Contains(string email) => _set.Contains(email);
 
+        public bool SetEquals(OrderedEmailSet other) => _set.SetEquals(other._set);
+
         public void ExceptWith(OrderedEmailSet other)
         {
             _set.ExceptWith(other._set);
@@ -416,22 +532,39 @@ public class MetabaseTenantProvisioner(
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
     }
 
+    /// <summary>
+    /// Unity's member sources for one tenant. <see cref="PermissionHolders"/> are already active
+    /// and never off-boarded.
+    /// </summary>
     private sealed record MemberSources(
-        OrderedEmailSet ProgramManagers, OrderedEmailSet AdditionalMembers, OrderedEmailSet Offboarded)
+        OrderedEmailSet ProgramManagers, OrderedEmailSet AdditionalMembers, OrderedEmailSet PermissionHolders, OrderedEmailSet Offboarded)
     {
         public bool IsDesired(string email) =>
-            !Offboarded.Contains(email) && (ProgramManagers.Contains(email) || AdditionalMembers.Contains(email));
+            !Offboarded.Contains(email) &&
+            (ProgramManagers.Contains(email) || AdditionalMembers.Contains(email) || PermissionHolders.Contains(email));
 
         public bool IsActiveProgramManager(string email) => ProgramManagers.Contains(email) && !Offboarded.Contains(email);
 
+        /// <summary>Access follows the role or the permission, so Remove on the members table doesn't apply.</summary>
+        public bool IsManaged(string email) => IsActiveProgramManager(email) || PermissionHolders.Contains(email);
+
+        /// <summary>Wanted in the group only because of Metabase.Access, so the sync tracks adding them.</summary>
+        public bool IsWantedOnlyForPermission(string email) =>
+            PermissionHolders.Contains(email) && !ProgramManagers.Contains(email) && !AdditionalMembers.Contains(email);
+
         public IEnumerable<string> DesiredEmails =>
-            ProgramManagers.Concat(AdditionalMembers).Distinct(StringComparer.OrdinalIgnoreCase).Where(IsDesired);
+            ProgramManagers.Concat(AdditionalMembers).Concat(PermissionHolders)
+                .Distinct(StringComparer.OrdinalIgnoreCase).Where(IsDesired);
 
         public MetabaseMemberSource SourceOf(string email)
         {
             if (ProgramManagers.Contains(email))
             {
                 return MetabaseMemberSource.ProgramManager;
+            }
+            if (PermissionHolders.Contains(email))
+            {
+                return MetabaseMemberSource.Permission;
             }
             return AdditionalMembers.Contains(email) ? MetabaseMemberSource.AdditionalMember : MetabaseMemberSource.Metabase;
         }

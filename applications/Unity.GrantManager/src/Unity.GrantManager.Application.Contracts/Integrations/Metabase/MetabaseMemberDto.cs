@@ -2,7 +2,8 @@ namespace Unity.GrantManager.Integrations.Metabase;
 
 /// <summary>
 /// One row of the tenant's Metabase members table: an email that is in the tenant's Metabase
-/// group, or that Unity wants there (a program manager or an Additional member).
+/// group, or that Unity wants there (a program manager, an Additional member, or a holder of
+/// Metabase.Access).
 /// </summary>
 public class MetabaseMemberDto
 {
@@ -31,7 +32,8 @@ public class MetabaseMemberDto
     public bool? IsMetabaseUser { get; set; }
 
     /// <summary>
-    /// Whether Remove applies. Active program managers are managed by their role instead.
+    /// Whether Remove applies. Active program managers are managed by their role, and permission
+    /// holders by Metabase.Access, instead: the sync would add them straight back.
     /// </summary>
     public bool CanRemove { get; set; }
 }
@@ -45,5 +47,8 @@ public enum MetabaseMemberSource
     AdditionalMember = 1,
 
     /// <summary>In the group for no Unity reason: added directly in Metabase.</summary>
-    Metabase = 2
+    Metabase = 2,
+
+    /// <summary>An active user in this tenant who holds Metabase.Access, through a role or directly.</summary>
+    Permission = 3
 }
