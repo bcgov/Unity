@@ -129,45 +129,40 @@ public class TenantAppService_Tests : AbpTenantManagementApplicationTestBase
     }
 
     [Fact]
-    public void StripPrivilegedFieldsUnlessAuthorized_CallerNotAuthorized_ClearsFeatureKeysAndMetabaseUserEmails()
+    public void StripPrivilegedFieldsUnlessAuthorized_CallerNotAuthorized_ClearsFeatureKeys()
     {
         // A caller with only the plain Tenants.Create permission (not IT Admin/Operations) must
-        // not be able to enable arbitrary features or grant arbitrary email addresses Metabase
-        // access to a tenant's database via the post-creation registration step.
+        // not be able to enable arbitrary features.
         var input = new TenantCreateDto
         {
             Name = "acme2",
-            FeatureKeys = "Unity.Payments",
-            MetabaseUserEmails = "someone@gov.bc.ca"
+            FeatureKeys = "Unity.Payments"
         };
 
         TenantAppService.StripPrivilegedFieldsUnlessAuthorized(input, callerIsAuthorized: false);
 
         input.FeatureKeys.ShouldBeNull();
-        input.MetabaseUserEmails.ShouldBeNull();
     }
 
     [Fact]
-    public void StripPrivilegedFieldsUnlessAuthorized_CallerAuthorized_PreservesFeatureKeysAndMetabaseUserEmails()
+    public void StripPrivilegedFieldsUnlessAuthorized_CallerAuthorized_PreservesFeatureKeys()
     {
         var input = new TenantCreateDto
         {
             Name = "acme2",
-            FeatureKeys = "Unity.Payments",
-            MetabaseUserEmails = "someone@gov.bc.ca"
+            FeatureKeys = "Unity.Payments"
         };
 
         TenantAppService.StripPrivilegedFieldsUnlessAuthorized(input, callerIsAuthorized: true);
 
         input.FeatureKeys.ShouldBe("Unity.Payments");
-        input.MetabaseUserEmails.ShouldBe("someone@gov.bc.ca");
     }
 
     [Fact]
     public void EnsureRenameAllowed_CallerNotAuthorized_Throws()
     {
         // A caller with only the plain Tenants.Update permission must not rename a tenant: Metabase
-        // keeps the old names until IT Admin/Operations run Resync.
+        // keeps the old names until IT Admin/Operations use Rerun Setup.
         Should.Throw<UserFriendlyException>(() => TenantAppService.EnsureRenameAllowed(callerIsAuthorized: false));
     }
 

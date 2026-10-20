@@ -477,4 +477,67 @@ public class MetabaseApiClientTests
         await Should.ThrowAsync<IntegrationServiceException>(
             () => client.AddGroupMemberAsync(groupId: 5, userId: 101));
     }
+
+    [Fact]
+    public async Task GetGroupMembersAsync_ReadsEmailsAndMembershipIds()
+    {
+        var (client, http) = CreateClient();
+        SetupHttpSequence(http, JsonResponse(HttpStatusCode.OK,
+            "{\"id\":140,\"name\":\"AG-MARB\",\"members\":[" +
+            "{\"user_id\":5,\"membership_id\":51,\"email\":\"a@gov.bc.ca\",\"common_name\":\"Ann A\"}," +
+            "{\"user_id\":6,\"membership_id\":61,\"email\":\"b@gov.bc.ca\",\"first_name\":\"Bo\",\"last_name\":\"B\"}]}"));
+
+        var members = await client.GetGroupMembersAsync(140);
+
+        members.Count.ShouldBe(2);
+        members[0].ShouldBe(new MetabaseGroupMember(5, 51, "a@gov.bc.ca", "Ann A"));
+        members[1].ShouldBe(new MetabaseGroupMember(6, 61, "b@gov.bc.ca", "Bo B"));
+        await http.Received(1).HttpAsync(
+            HttpMethod.Get, $"{BaseUrl}/api/permissions/group/140", Arg.Any<object?>(), Arg.Any<string?>(),
+            Arg.Any<(string username, string password)?>(), Arg.Any<HttpCompletionOption>(),
+            Arg.Any<System.Collections.Generic.IReadOnlyDictionary<string, string>?>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task GetGroupMembersAsync_GroupMissing_ThrowsNotFound()
+    {
+        var (client, http) = CreateClient();
+        SetupHttpSequence(http, JsonResponse(HttpStatusCode.NotFound, "Not found."));
+
+        var ex = await Should.ThrowAsync<IntegrationServiceException>(() => client.GetGroupMembersAsync(140));
+
+        ex.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task RemoveGroupMembershipAsync_DeletesMembership()
+    {
+        var (client, http) = CreateClient();
+        SetupHttpSequence(http, new HttpResponseMessage(HttpStatusCode.NoContent));
+
+        await client.RemoveGroupMembershipAsync(51);
+
+        await http.Received(1).HttpAsync(
+            HttpMethod.Delete, $"{BaseUrl}/api/permissions/membership/51", Arg.Any<object?>(), Arg.Any<string?>(),
+            Arg.Any<(string username, string password)?>(), Arg.Any<HttpCompletionOption>(),
+            Arg.Any<System.Collections.Generic.IReadOnlyDictionary<string, string>?>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RemoveGroupMembershipAsync_AlreadyGone_DoesNotThrow()
+    {
+        var (client, http) = CreateClient();
+        SetupHttpSequence(http, JsonResponse(HttpStatusCode.NotFound, "Not found."));
+
+        await Should.NotThrowAsync(() => client.RemoveGroupMembershipAsync(51));
+    }
+
+    [Fact]
+    public async Task RemoveGroupMembershipAsync_Forbidden_Throws()
+    {
+        var (client, http) = CreateClient();
+        SetupHttpSequence(http, JsonResponse(HttpStatusCode.Forbidden, "no"));
+
+        await Should.ThrowAsync<IntegrationServiceException>(() => client.RemoveGroupMembershipAsync(51));
+    }
 }

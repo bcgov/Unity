@@ -51,10 +51,10 @@ public class CreateTenantInfoToTenantCreateDtoMapper : MapperBase<CreateModalMod
     public override void Map(CreateModalModel.TenantInfoModel source, TenantCreateDto destination)
     {
         destination.Name = source.Name;
-        destination.DisplayName = source.DisplayName;
-        destination.Division = source.Division;
-        destination.Branch = source.Branch;
-        destination.Description = source.Description;
+        destination.DisplayName = source.DisplayName ?? string.Empty;
+        destination.Division = source.Division ?? string.Empty;
+        destination.Branch = source.Branch ?? string.Empty;
+        destination.Description = source.Description ?? string.Empty;
         destination.CasClientCode = source.CasClientCode ?? string.Empty;
         destination.UserIdentifier = source.UserIdentifier;
         destination.FeatureKeys = source.FeatureKeys;

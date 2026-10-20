@@ -14,7 +14,7 @@ public class MetabaseSettingDefinitionProvider : SettingDefinitionProvider
                 isVisibleToClients: false,
                 isInherited: false,
                 isEncrypted: false)
-            .WithProviders(GlobalSettingValueProvider.ProviderName, TenantSettingValueProvider.ProviderName)
+            .WithProviders(TenantSettingValueProvider.ProviderName)
         );
     }
 }

@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Unity.GrantManager.Integrations.Exceptions;
 using Unity.GrantManager.Tenants.PostCreation;
 using Unity.GrantManager.Tenants.PostCreation.Steps;
@@ -22,7 +24,8 @@ public class MetabaseTenantAppService(
     ITenantRepository tenantRepository,
     IEnumerable<IPostTenantCreationStep> steps,
     IBackgroundJobManager backgroundJobManager,
-    IMetabaseApiClient metabaseApiClient)
+    IMetabaseApiClient metabaseApiClient,
+    MetabaseTenantProvisioner provisioner)
     : GrantManagerAppService, IMetabaseTenantAppService
 {
     public virtual async Task<MetabaseTenantStatusDto> GetAsync(Guid tenantId)
@@ -133,28 +136,84 @@ public class MetabaseTenantAppService(
         await CallMetabaseAsync(databaseId, () => metabaseApiClient.RescanDatabaseValuesAsync(databaseId));
     }
 
-    private async Task<int> GetDatabaseIdAsync(Guid tenantId)
+    public virtual async Task<List<MetabaseMemberDto>> GetMembersAsync(Guid tenantId)
     {
-        Tenant tenant;
-        using (CurrentTenant.Change(null))
-        {
-            tenant = await tenantRepository.GetAsync(tenantId);
-        }
-
-        return tenant.GetProperty<int?>(MetabaseTenantProvisioner.DatabaseIdProperty)
-            ?? throw new UserFriendlyException("This tenant is not set up in Metabase yet. Run Setup first.");
+        var groupId = await GetGroupIdAsync(tenantId);
+        return await CallMetabaseAsync("group", groupId, () => provisioner.GetMembersAsync(tenantId, groupId));
     }
 
-    private static async Task CallMetabaseAsync(int databaseId, Func<Task> call)
+    public virtual async Task<MetabaseMemberSyncResultDto> SyncMembersAsync(Guid tenantId)
+    {
+        var groupId = await GetGroupIdAsync(tenantId);
+        return await CallMetabaseAsync("group", groupId, () => provisioner.SyncMembersAsync(tenantId, groupId));
+    }
+
+    public virtual async Task<MetabaseMemberSyncResultDto> AddMembersAsync(Guid tenantId, MetabaseAddMembersDto input)
+    {
+        var emails = MetabaseTenantProvisioner.SplitEmails(input.Emails);
+        if (emails.Count == 0)
+        {
+            throw new UserFriendlyException("Enter at least one email address.");
+        }
+
+        var invalid = emails.Where(e => !IsValidEmail(e)).ToList();
+        if (invalid.Count > 0)
+        {
+            throw new UserFriendlyException($"Not a valid email address: {string.Join(", ", invalid)}");
+        }
+
+        var groupId = await GetGroupIdAsync(tenantId);
+        return await CallMetabaseAsync("group", groupId, () => provisioner.AddAdditionalMembersAsync(tenantId, groupId, emails));
+    }
+
+    // POST, not the DELETE that ABP infers from "Remove": DELETE would put the email in the query string.
+    [HttpPost]
+    public virtual async Task RemoveMemberAsync(Guid tenantId, MetabaseRemoveMemberDto input)
+    {
+        var groupId = await GetGroupIdAsync(tenantId);
+        await CallMetabaseAsync("group", groupId, async () =>
+        {
+            await provisioner.RemoveMemberAsync(tenantId, groupId, input.Email.Trim());
+            return true;
+        });
+    }
+
+    private static bool IsValidEmail(string email) =>
+        new EmailAddressAttribute().IsValid(email);
+
+    private async Task<int> GetDatabaseIdAsync(Guid tenantId) =>
+        (await GetTenantAsync(tenantId)).GetProperty<int?>(MetabaseTenantProvisioner.DatabaseIdProperty)
+            ?? throw new UserFriendlyException("This tenant is not set up in Metabase yet. Run Setup first.");
+
+    private async Task<int> GetGroupIdAsync(Guid tenantId) =>
+        (await GetTenantAsync(tenantId)).GetProperty<int?>(MetabaseTenantProvisioner.GroupIdProperty)
+            ?? throw new UserFriendlyException("This tenant is not set up in Metabase yet. Run Setup first.");
+
+    private async Task<Tenant> GetTenantAsync(Guid tenantId)
+    {
+        using (CurrentTenant.Change(null))
+        {
+            return await tenantRepository.GetAsync(tenantId);
+        }
+    }
+
+    private static Task CallMetabaseAsync(int databaseId, Func<Task> call) =>
+        CallMetabaseAsync("database", databaseId, async () =>
+        {
+            await call();
+            return true;
+        });
+
+    private static async Task<T> CallMetabaseAsync<T>(string resource, int id, Func<Task<T>> call)
     {
         try
         {
-            await call();
+            return await call();
         }
         catch (IntegrationServiceException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
             throw new UserFriendlyException(
-                $"Metabase database #{databaseId} no longer exists. Run Resync to recreate it.");
+                $"Metabase {resource} #{id} no longer exists. Use Rerun Setup to recreate it.");
         }
         catch (Exception ex) when (ex is IntegrationServiceException or HttpRequestException or TaskCanceledException)
         {
