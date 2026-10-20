@@ -213,7 +213,7 @@ public class MetabaseTenantAppService(
         catch (IntegrationServiceException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
         {
             throw new UserFriendlyException(
-                $"Metabase {resource} #{id} no longer exists. Run Resync to recreate it.");
+                $"Metabase {resource} #{id} no longer exists. Use Rerun Setup to recreate it.");
         }
         catch (Exception ex) when (ex is IntegrationServiceException or HttpRequestException or TaskCanceledException)
         {

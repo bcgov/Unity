@@ -666,14 +666,10 @@
                 _metabaseButtonHtml('config-metabase-rescan-values-btn', 'fa-filter',
                     'TenantMetabase:RescanValues', 'TenantMetabase:RescanValuesHint', canSetUp);
         }
-        return html + _metabaseButtonHtml('config-metabase-refresh-btn', 'fa-arrows-rotate', 'TenantMetabase:Refresh', null, true) +
-            '</div>';
+        return html + '</div>';
     }
 
     function _wireMetabaseSection($section, tenantId) {
-        $section.find('#config-metabase-refresh-btn').on('click', function () {
-            _loadMetabaseSection(tenantId);
-        });
         $section.find('#config-metabase-setup-btn').on('click', function () {
             $(this).prop('disabled', true);
             _metabaseTenantService.setup(tenantId)

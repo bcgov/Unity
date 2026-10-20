@@ -162,7 +162,7 @@ public class TenantAppService_Tests : AbpTenantManagementApplicationTestBase
     public void EnsureRenameAllowed_CallerNotAuthorized_Throws()
     {
         // A caller with only the plain Tenants.Update permission must not rename a tenant: Metabase
-        // keeps the old names until IT Admin/Operations run Resync.
+        // keeps the old names until IT Admin/Operations use Rerun Setup.
         Should.Throw<UserFriendlyException>(() => TenantAppService.EnsureRenameAllowed(callerIsAuthorized: false));
     }
 
