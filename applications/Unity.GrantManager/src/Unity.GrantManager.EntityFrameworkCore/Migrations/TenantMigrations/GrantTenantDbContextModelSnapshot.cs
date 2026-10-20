@@ -1991,6 +1991,11 @@ namespace Unity.GrantManager.Migrations.TenantMigrations
                     b.Property<bool>("IsDirectApproval")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsHiddenFromList")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<DateTime?>("LastModificationTime")
                         .HasColumnType("timestamp without time zone")
                         .HasColumnName("LastModificationTime");

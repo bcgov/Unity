@@ -15,6 +15,7 @@ using Unity.Payments.Permissions;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Security.Encryption;
 
@@ -54,7 +55,7 @@ public class ApplicationFormAppService
         _applicationFormSubmissionRepository = applicationFormSubmissionRepository;
         _formsApiService = formsApiService;
 
-        DeletePolicyName = GrantManagerPermissions.ApplicationForms.Default;
+        DeletePolicyName = GrantManagerPermissions.ApplicationForms.Delete;
     }
 
     [Authorize(GrantManagerPermissions.ApplicationForms.Default)]
@@ -68,7 +69,7 @@ public class ApplicationFormAppService
     [Authorize(GrantManagerPermissions.ApplicationForms.Default)]
     public override async Task<ApplicationFormDto> UpdateAsync(Guid id, CreateUpdateApplicationFormDto input)
     {
-        var existingForm = await Repository.GetAsync(id);
+        var existingForm = await GetFormForManagementAsync(id);
         input.ApiKey = _stringEncryptionService.Encrypt(input.ApiKey);
 
         bool hasFormGuidChanged = existingForm.ChefsApplicationFormGuid != input.ChefsApplicationFormGuid;
@@ -168,7 +169,7 @@ public class ApplicationFormAppService
     [Authorize(GrantManagerPermissions.ApplicationForms.Default)]
     public async Task SaveApplicationFormScoresheet(FormScoresheetDto dto)
     {
-        var appForm = await Repository.GetAsync(dto.ApplicationFormId);
+        var appForm = await GetFormForManagementAsync(dto.ApplicationFormId);
         appForm.ScoresheetId = dto.ScoresheetId;
         await Repository.UpdateAsync(appForm);
     }
@@ -176,7 +177,7 @@ public class ApplicationFormAppService
     [Authorize(GrantManagerPermissions.ApplicationForms.Default)]
     public async Task PatchOtherConfig(Guid id, OtherConfigDto config)
     {
-        var form = await Repository.GetAsync(id);
+        var form = await GetFormForManagementAsync(id);
         form.IsDirectApproval = config.IsDirectApproval;
         form.ElectoralDistrictAddressType = config.ElectoralDistrictAddressType;
         form.Prefix = config.Prefix;
@@ -187,7 +188,7 @@ public class ApplicationFormAppService
     [Authorize(GrantManagerPermissions.ApplicationForms.Default)]
     public async Task PatchAiConfig(Guid id, AIConfigDto config)
     {
-        var form = await Repository.GetAsync(id);
+        var form = await GetFormForManagementAsync(id);
         form.AutomaticallyGenerateAIAnalysis = config.AutomaticallyGenerateAIAnalysis;
         form.ManuallyInitiateAIAnalysis = config.ManuallyInitiateAIAnalysis;
         await Repository.UpdateAsync(form);
@@ -198,7 +199,7 @@ public class ApplicationFormAppService
     {
         ArgumentNullException.ThrowIfNull(config);
 
-        var form = await Repository.GetAsync(id);
+        var form = await GetFormForManagementAsync(id);
 
         var renewalLink = config.RenewalLink is null ? null : MapToExternalLink(config.RenewalLink);
         var relatedLinks = (config.RelatedLinks ?? []).Select(MapToExternalLink).ToList();
@@ -242,7 +243,11 @@ public class ApplicationFormAppService
     {
         ArgumentNullException.ThrowIfNull(dto);
 
-        var appForm = await Repository.GetAsync(dto.ApplicationFormId);
+        var appForm = await GetFormForManagementAsync(dto.ApplicationFormId);
+        var parentForm = dto.ParentFormId.HasValue
+            ? await Repository.FindAsync(dto.ParentFormId.Value)
+            : null;
+        parentForm?.EnsureCanBeAssignedAsParent(appForm.ParentFormId);
 
         if (dto.Payable)
         {
@@ -263,7 +268,10 @@ public class ApplicationFormAppService
                     throw new BusinessException(GrantManagerDomainErrorCodes.ChildFormCannotReferenceSelf);
                 }
 
-                _ = await Repository.FindAsync(dto.ParentFormId.Value) ?? throw new BusinessException(GrantManagerDomainErrorCodes.ChildFormRequiresParentForm);
+                if (parentForm == null)
+                {
+                    throw new BusinessException(GrantManagerDomainErrorCodes.ChildFormRequiresParentForm);
+                }
             }
         }
 
@@ -288,7 +296,7 @@ public class ApplicationFormAppService
         var normalizedFilter = string.IsNullOrWhiteSpace(input.Filter) ? null : input.Filter.Trim();
 
         var formsQueryable = await Repository.GetQueryableAsync();
-        var query = formsQueryable.AsQueryable();
+        var query = formsQueryable.Where(x => !x.IsHiddenFromList);
 
         if (input.ExcludeFormId.HasValue)
         {
@@ -351,7 +359,34 @@ public class ApplicationFormAppService
         };
     }
 
-    [RemoteService(false)]
-    public override Task DeleteAsync(Guid id)
-        => base.DeleteAsync(id);
+    protected override async Task<IQueryable<ApplicationForm>> CreateFilteredQueryAsync(PagedAndSortedResultRequestDto input)
+    {
+        var query = await base.CreateFilteredQueryAsync(input);
+        return query.Where(form => !form.IsHiddenFromList);
+    }
+
+    private async Task<ApplicationForm> GetFormForManagementAsync(Guid id)
+    {
+        var form = await Repository.GetAsync(id);
+        if (form.IsHiddenFromList)
+        {
+            throw new EntityNotFoundException(typeof(ApplicationForm), id);
+        }
+
+        return form;
+    }
+
+    [Authorize(GrantManagerPermissions.ApplicationForms.Delete)]
+    public override async Task DeleteAsync(Guid id)
+    {
+        await CheckDeletePolicyAsync();
+        var form = await Repository.GetAsync(id);
+        if (form.IsHiddenFromList)
+        {
+            return;
+        }
+
+        form.HideFromList();
+        await Repository.UpdateAsync(form);
+    }
 }

@@ -375,6 +375,7 @@ public partial class ApplicationFormDtoToEntityMapper : MapperBase<ApplicationFo
     [MapperIgnoreTarget(nameof(ApplicationForm.FormHierarchy))]
     [MapperIgnoreTarget(nameof(ApplicationForm.ParentFormId))]
     [MapperIgnoreTarget(nameof(ApplicationForm.IsDeleted))]
+    [MapperIgnoreTarget(nameof(ApplicationForm.IsHiddenFromList))]
     [MapperIgnoreTarget(nameof(ApplicationForm.PaymentApprovalThreshold))]
     [MapperIgnoreTarget(nameof(ApplicationForm.ExternalLinksConfig))]
     public override partial ApplicationForm Map(ApplicationFormDto source);
@@ -389,6 +390,7 @@ public partial class ApplicationFormDtoToEntityMapper : MapperBase<ApplicationFo
     [MapperIgnoreTarget(nameof(ApplicationForm.FormHierarchy))]
     [MapperIgnoreTarget(nameof(ApplicationForm.ParentFormId))]
     [MapperIgnoreTarget(nameof(ApplicationForm.IsDeleted))]
+    [MapperIgnoreTarget(nameof(ApplicationForm.IsHiddenFromList))]
     [MapperIgnoreTarget(nameof(ApplicationForm.PaymentApprovalThreshold))]
     [MapperIgnoreTarget(nameof(ApplicationForm.ExternalLinksConfig))]
     public override partial void Map(ApplicationFormDto source, ApplicationForm destination);
@@ -477,6 +479,7 @@ public partial class CreateUpdateApplicationFormDtoToEntityMapper : MapperBase<C
     [MapperIgnoreTarget(nameof(ApplicationForm.TenantId))]
     [MapperIgnoreTarget(nameof(ApplicationForm.ConcurrencyStamp))]
     [MapperIgnoreTarget(nameof(ApplicationForm.IsDeleted))]
+    [MapperIgnoreTarget(nameof(ApplicationForm.IsHiddenFromList))]
     [MapperIgnoreTarget(nameof(ApplicationForm.DeleterId))]
     [MapperIgnoreTarget(nameof(ApplicationForm.DeletionTime))]
     [MapperIgnoreTarget(nameof(ApplicationForm.LastModificationTime))]
@@ -505,6 +508,7 @@ public partial class CreateUpdateApplicationFormDtoToEntityMapper : MapperBase<C
     [MapperIgnoreTarget(nameof(ApplicationForm.TenantId))]
     [MapperIgnoreTarget(nameof(ApplicationForm.ConcurrencyStamp))]
     [MapperIgnoreTarget(nameof(ApplicationForm.IsDeleted))]
+    [MapperIgnoreTarget(nameof(ApplicationForm.IsHiddenFromList))]
     [MapperIgnoreTarget(nameof(ApplicationForm.DeleterId))]
     [MapperIgnoreTarget(nameof(ApplicationForm.DeletionTime))]
     [MapperIgnoreTarget(nameof(ApplicationForm.LastModificationTime))]

@@ -29,12 +29,16 @@ public class UpdateModalModel : GrantManagerPageModel
         _intakeAppService = intakeAppService;
     }
 
-    public async Task OnGetAsync()
+    public async Task<IActionResult> OnGetAsync()
     {
 
         ApplicationForm = new();
 
         var applicationFormDto = await _applicationFormAppService.GetAsync(Id);
+        if (applicationFormDto.IsHiddenFromList)
+        {
+            return NotFound();
+        }
         ApplicationForm = ObjectMapper.Map<ApplicationFormDto, CreateUpdateApplicationFormViewModel>(applicationFormDto);
 
         var intakes = await _intakeAppService.GetListAsync(new Volo.Abp.Application.Dtos.PagedAndSortedResultRequestDto());
@@ -44,11 +48,18 @@ public class UpdateModalModel : GrantManagerPageModel
         if (selected != null)
         {
             selected.Selected = true;
-        }                
+        }
+
+        return Page();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
+        var form = await _applicationFormAppService.GetAsync(Id);
+        if (form.IsHiddenFromList)
+        {
+            return NotFound();
+        }
         var updateDto = ObjectMapper.Map<CreateUpdateApplicationFormViewModel, CreateUpdateApplicationFormDto>(ApplicationForm!);
         bool isFormNameNull = updateDto.ApplicationFormName == null;
         if (isFormNameNull)
