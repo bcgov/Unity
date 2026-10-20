@@ -9,7 +9,7 @@ using Unity.Reporting.Configuration;
 namespace Unity.Reporting.Web.Pages.ReportingAdmin.Configuration
 {
     /// <summary>
-    /// Razor Page model for the Database Information modal dialog.
+    /// Razor Page model for the Reporting Views modal dialog.
     /// Displays the view role and the generation/grant status of each reporting view for a specific tenant.
     /// </summary>
     [Authorize(IdentityConsts.ITAdminOrITOperationsPolicyName)]

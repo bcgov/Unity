@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Shouldly;
 using Xunit;
 
@@ -6,30 +5,6 @@ namespace Unity.GrantManager.Handlers;
 
 public class TenantCreatedEventHandlerTests
 {
-    [Fact]
-    public void ResolveMetabaseUserEmails_PropertyOmitted_ReturnsEmpty()
-    {
-        var etoProperties = new Dictionary<string, string>();
-
-        TenantCreatedEventHandler.ResolveMetabaseUserEmails(etoProperties).ShouldBe(string.Empty);
-    }
-
-    [Fact]
-    public void ResolveMetabaseUserEmails_PropertyExplicitlyEmpty_ReturnsEmpty()
-    {
-        var etoProperties = new Dictionary<string, string> { ["MetabaseUserEmails"] = string.Empty };
-
-        TenantCreatedEventHandler.ResolveMetabaseUserEmails(etoProperties).ShouldBe(string.Empty);
-    }
-
-    [Fact]
-    public void ResolveMetabaseUserEmails_PropertyExplicitlySet_ReturnsThatValue()
-    {
-        var etoProperties = new Dictionary<string, string> { ["MetabaseUserEmails"] = "tenant-specific@gov.bc.ca" };
-
-        TenantCreatedEventHandler.ResolveMetabaseUserEmails(etoProperties).ShouldBe("tenant-specific@gov.bc.ca");
-    }
-
     [Fact]
     public void BuildFeatureUpdates_NullInput_ReturnsEmpty()
     {

@@ -154,6 +154,38 @@ public class MetabaseApiClient(
         }
     }
 
+    public async Task<IReadOnlyList<MetabaseGroupMember>> GetGroupMembersAsync(int groupId, CancellationToken cancellationToken = default)
+    {
+        var group = await GetAsync($"/api/permissions/group/{groupId}", cancellationToken);
+        var members = group["members"] as JArray ?? new JArray();
+
+        return members
+            .Where(m => !string.IsNullOrWhiteSpace(m.Value<string>("email")) && m.Value<int?>("membership_id") != null)
+            .Select(m => new MetabaseGroupMember(
+                m.Value<int>("user_id"),
+                m.Value<int>("membership_id"),
+                m.Value<string>("email")!,
+                m.Value<string>("common_name")
+                    ?? $"{m.Value<string>("first_name")} {m.Value<string>("last_name")}".Trim()))
+            .ToList();
+    }
+
+    public async Task RemoveGroupMembershipAsync(int membershipId, CancellationToken cancellationToken = default)
+    {
+        var path = $"/api/permissions/membership/{membershipId}";
+        var baseUrl = await GetBaseUrlAsync();
+        var response = await resilientHttpRequest.HttpAsync(
+            HttpMethod.Delete, $"{baseUrl}{path}", extraHeaders: BuildHeaders(), cancellationToken: cancellationToken);
+
+        // Already removed (e.g. by hand in Metabase, or a retried job): the desired end state.
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return;
+        }
+
+        await ReadJsonTokenAsync(response, path);
+    }
+
     private async Task<bool> IsGroupMemberAsync(int groupId, int userId, CancellationToken cancellationToken)
     {
         var membershipsToken = await ReadJsonTokenAsync(

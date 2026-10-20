@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Net;
 using System.Reflection;
 using System.Threading;
@@ -11,15 +13,21 @@ using NSubstitute.ExceptionExtensions;
 using Shouldly;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Integrations.Exceptions;
+using Unity.GrantManager.Permissions;
 using Unity.Reporting.Settings;
 using Unity.TenantManagement.Metabase;
+using Volo.Abp;
+using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Data;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Identity;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.PermissionManagement;
 using Volo.Abp.Security.Encryption;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.Settings;
 using Volo.Abp.TenantManagement;
+using Volo.Abp.Timing;
 using Xunit;
 
 namespace Unity.GrantManager.Integrations.Metabase;
@@ -36,7 +44,14 @@ public class MetabaseTenantProvisionerTests
         ISettingManager SettingManager,
         ITenantRepository TenantRepository,
         List<IdentityUser> ProgramManagers,
-        Tenant Tenant);
+        List<IdentityUser> OtherUsers,
+        List<MetabaseGroupMember> GroupMembers,
+        Tenant Tenant,
+        List<PermissionGrant> Grants,
+        Dictionary<string, List<IdentityUser>> RoleUsers,
+        Dictionary<string, string?> Settings);
+
+    private static readonly DateTime Now = new(2026, 10, 19, 17, 2, 0, DateTimeKind.Utc);
 
     // Tenant's constructors are all non-public (ABP requires going through ITenantManager to
     // create one) - reflection is the standard workaround for exercising its instance state
@@ -62,10 +77,20 @@ public class MetabaseTenantProvisionerTests
         var tenantRepository = Substitute.For<ITenantRepository>();
         tenantRepository.GetAsync(tenant.Id, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(tenant);
 
+        // The role query never returns deleted users; the off-boarding check sees every user,
+        // deleted ones included, so program managers are part of that list too.
         var programManagers = new List<IdentityUser>();
+        var otherUsers = new List<IdentityUser>();
+        var roleUsers = new Dictionary<string, List<IdentityUser>>();
         var identityUserRepository = Substitute.For<IIdentityUserRepository>();
+        identityUserRepository.GetListByNormalizedRoleNameAsync(Arg.Any<string>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(ci => roleUsers.TryGetValue(ci.ArgAt<string>(0), out var users)
+                ? users.Where(u => !u.IsDeleted).ToList()
+                : new List<IdentityUser>());
         identityUserRepository.GetListByNormalizedRoleNameAsync(UnityRoles.ProgramManager.ToUpperInvariant(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
-            .Returns(_ => programManagers);
+            .Returns(_ => programManagers.Where(u => !u.IsDeleted).ToList());
+        identityUserRepository.GetListAsync(maxResultCount: int.MaxValue)
+            .ReturnsForAnyArgs(_ => programManagers.Concat(otherUsers).ToList());
 
         var encryptionService = Substitute.For<IStringEncryptionService>();
         encryptionService.Decrypt(Arg.Any<string>()).Returns(DecryptedConnectionString);
@@ -73,6 +98,25 @@ public class MetabaseTenantProvisionerTests
         var settingManager = Substitute.For<ISettingManager>();
         settingManager.GetOrNullAsync(MetabaseSettings.UserEmails, TenantSettingValueProvider.ProviderName, tenant.Id.ToString())
             .Returns(additionalMembers);
+
+        // The tracking list and the last sync round-trip, so a test can run two syncs.
+        var settings = new Dictionary<string, string?>();
+        foreach (var name in new[] { MetabaseSettings.PermissionSyncedEmails, MetabaseSettings.LastMemberSync })
+        {
+            settingManager.GetOrNullAsync(name, TenantSettingValueProvider.ProviderName, tenant.Id.ToString())
+                .Returns(_ => settings.GetValueOrDefault(name));
+            settingManager.When(s => s.SetAsync(name, Arg.Any<string?>(), TenantSettingValueProvider.ProviderName, tenant.Id.ToString(), Arg.Any<bool>()))
+                .Do(ci => settings[name] = ci.ArgAt<string?>(1));
+        }
+
+        // Applies the provisioner's own filter, so a grant for another permission or provider is ignored.
+        var grants = new List<PermissionGrant>();
+        var permissionGrantRepository = Substitute.For<IRepository<PermissionGrant, Guid>>();
+        permissionGrantRepository.GetListAsync(Arg.Any<Expression<Func<PermissionGrant, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(ci => grants.Where(ci.ArgAt<Expression<Func<PermissionGrant, bool>>>(0).Compile()).ToList());
+
+        var clock = Substitute.For<IClock>();
+        clock.Now.Returns(Now);
 
         var currentTenant = Substitute.For<ICurrentTenant>();
         currentTenant.Change(Arg.Any<Guid?>(), Arg.Any<string?>()).Returns(Substitute.For<IDisposable>());
@@ -82,6 +126,8 @@ public class MetabaseTenantProvisionerTests
             .Returns(11);
         metabaseApiClient.FindOrCreateGroupAsync(tenant.Name).Returns(22);
         metabaseApiClient.FindOrCreateCollectionAsync(tenant.Name).Returns(33);
+        var groupMembers = new List<MetabaseGroupMember>();
+        metabaseApiClient.GetGroupMembersAsync(Arg.Any<int>()).Returns(_ => groupMembers);
 
         var metabaseOptions = Options.Create(new MetabaseOptions
         {
@@ -92,18 +138,45 @@ public class MetabaseTenantProvisionerTests
         });
 
         var provisioner = new MetabaseTenantProvisioner(
-            metabaseApiClient, tenantRepository, identityUserRepository, encryptionService, settingManager,
-            currentTenant, metabaseOptions, Substitute.For<ILogger<MetabaseTenantProvisioner>>());
+            metabaseApiClient, tenantRepository, identityUserRepository, permissionGrantRepository, encryptionService, settingManager,
+            currentTenant, Substitute.For<IDataFilter>(), clock, metabaseOptions, Substitute.For<ILogger<MetabaseTenantProvisioner>>());
 
-        return new Fixture(provisioner, metabaseApiClient, settingManager, tenantRepository, programManagers, tenant);
+        return new Fixture(provisioner, metabaseApiClient, settingManager, tenantRepository, programManagers, otherUsers, groupMembers, tenant,
+            grants, roleUsers, settings);
     }
 
-    private static IdentityUser CreateUser(string email, bool isActive = true)
+    /// <summary>Gives the role Metabase.Access and puts the user in it.</summary>
+    private static IdentityUser AddRoleHolder(Fixture f, string roleName, IdentityUser user)
     {
-        var user = new IdentityUser(Guid.NewGuid(), email, email);
+        if (!f.RoleUsers.ContainsKey(roleName.ToUpperInvariant()))
+        {
+            f.RoleUsers[roleName.ToUpperInvariant()] = [];
+            f.Grants.Add(new PermissionGrant(Guid.NewGuid(), MetabasePermissions.Access, RolePermissionValueProvider.ProviderName, roleName, f.Tenant.Id));
+        }
+        f.RoleUsers[roleName.ToUpperInvariant()].Add(user);
+        f.OtherUsers.Add(user);
+        return user;
+    }
+
+    /// <summary>Gives the user Metabase.Access directly.</summary>
+    private static IdentityUser AddUserHolder(Fixture f, IdentityUser user)
+    {
+        f.Grants.Add(new PermissionGrant(Guid.NewGuid(), MetabasePermissions.Access, UserPermissionValueProvider.ProviderName, user.Id.ToString(), f.Tenant.Id));
+        f.OtherUsers.Add(user);
+        return user;
+    }
+
+    private static string? Tracked(Fixture f) => f.Settings.GetValueOrDefault(MetabaseSettings.PermissionSyncedEmails);
+
+    private static IdentityUser CreateUser(string email, bool isActive = true, bool isDeleted = false)
+    {
+        var user = new IdentityUser(Guid.NewGuid(), email, email) { IsDeleted = isDeleted };
         user.SetIsActive(isActive);
         return user;
     }
+
+    private static MetabaseGroupMember GroupMember(string email, int membershipId) =>
+        new(membershipId + 1000, membershipId, email, null);
 
     [Fact]
     public async Task SetupAsync_NoReadonlyConnectionString_ThrowsWithoutCallingMetabase()
@@ -325,5 +398,367 @@ public class MetabaseTenantProvisionerTests
 
         await f.MetabaseApiClient.DidNotReceiveWithAnyArgs().FindUserIdByEmailAsync(default!);
         await f.SettingManager.DidNotReceive().GetOrNullGlobalAsync(MetabaseSettings.UserEmails);
+    }
+
+    [Fact]
+    public async Task SyncMembersAsync_OffboardedMembers_RemovedWhateverAddedThem()
+    {
+        var f = CreateProvisioner();
+        f.ProgramManagers.Add(CreateUser("inactive-pm@gov.bc.ca", isActive: false));
+        f.OtherUsers.Add(CreateUser("deleted@gov.bc.ca", isDeleted: true));
+        f.GroupMembers.Add(GroupMember("inactive-pm@gov.bc.ca", 1));
+        f.GroupMembers.Add(GroupMember("DELETED@gov.bc.ca", 2));
+        f.GroupMembers.Add(GroupMember("metabase-only@gov.bc.ca", 3));
+
+        var result = await f.Provisioner.SyncMembersAsync(f.Tenant.Id, 22);
+
+        result.Removed.ShouldBe(2);
+        await f.MetabaseApiClient.Received(1).RemoveGroupMembershipAsync(1);
+        await f.MetabaseApiClient.Received(1).RemoveGroupMembershipAsync(2);
+        await f.MetabaseApiClient.DidNotReceive().RemoveGroupMembershipAsync(3);
+    }
+
+    [Fact]
+    public async Task SyncMembersAsync_DeletedThenReimportedUser_IsNotOffboarded()
+    {
+        var f = CreateProvisioner();
+        f.OtherUsers.Add(CreateUser("back@gov.bc.ca", isDeleted: true));
+        f.OtherUsers.Add(CreateUser("back@gov.bc.ca"));
+        f.GroupMembers.Add(GroupMember("back@gov.bc.ca", 1));
+
+        var result = await f.Provisioner.SyncMembersAsync(f.Tenant.Id, 22);
+
+        result.Removed.ShouldBe(0);
+        await f.MetabaseApiClient.DidNotReceiveWithAnyArgs().RemoveGroupMembershipAsync(default);
+    }
+
+    [Fact]
+    public async Task SyncMembersAsync_DowngradedProgramManagerStillActive_KeepsAccess()
+    {
+        var f = CreateProvisioner();
+        f.OtherUsers.Add(CreateUser("former-pm@gov.bc.ca"));
+        f.GroupMembers.Add(GroupMember("former-pm@gov.bc.ca", 1));
+
+        await f.Provisioner.SyncMembersAsync(f.Tenant.Id, 22);
+
+        await f.MetabaseApiClient.DidNotReceiveWithAnyArgs().RemoveGroupMembershipAsync(default);
+    }
+
+    [Fact]
+    public async Task SyncMembersAsync_AddsOnlyMissingMembers_AndCountsThoseWithoutAMetabaseAccount()
+    {
+        var f = CreateProvisioner(additionalMembers: "already@gov.bc.ca,new@gov.bc.ca,not-yet@gov.bc.ca");
+        f.GroupMembers.Add(GroupMember("Already@gov.bc.ca", 1));
+        f.MetabaseApiClient.FindUserIdByEmailAsync("new@gov.bc.ca").Returns(301);
+        f.MetabaseApiClient.FindUserIdByEmailAsync("not-yet@gov.bc.ca").Returns((int?)null);
+
+        var result = await f.Provisioner.SyncMembersAsync(f.Tenant.Id, 22);
+
+        result.Added.ShouldBe(1);
+        result.NotMetabaseUsers.ShouldBe(1);
+        await f.MetabaseApiClient.DidNotReceive().FindUserIdByEmailAsync("already@gov.bc.ca");
+        await f.MetabaseApiClient.Received(1).AddGroupMemberAsync(22, 301);
+    }
+
+    [Fact]
+    public async Task SyncMembersAsync_OffboardedAdditionalMember_SkippedButKeptOnList()
+    {
+        var f = CreateProvisioner(additionalMembers: "gone@gov.bc.ca");
+        f.OtherUsers.Add(CreateUser("gone@gov.bc.ca", isDeleted: true));
+
+        await f.Provisioner.SyncMembersAsync(f.Tenant.Id, 22);
+
+        await f.MetabaseApiClient.DidNotReceiveWithAnyArgs().FindUserIdByEmailAsync(default!);
+        await f.SettingManager.DidNotReceive().SetAsync(
+            MetabaseSettings.UserEmails, Arg.Any<string?>(), Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<bool>());
+    }
+
+    [Fact]
+    public async Task SetupAsync_RemovesOffboardedMembers()
+    {
+        var f = CreateProvisioner();
+        f.OtherUsers.Add(CreateUser("deleted@gov.bc.ca", isDeleted: true));
+        f.GroupMembers.Add(GroupMember("deleted@gov.bc.ca", 7));
+
+        await f.Provisioner.SetupAsync(f.Tenant.Id);
+
+        await f.MetabaseApiClient.Received(1).RemoveGroupMembershipAsync(7);
+    }
+
+    [Fact]
+    public async Task GetMembersAsync_ListsEverySourceWithStateAndRemovability()
+    {
+        var f = CreateProvisioner(additionalMembers: "extra@gov.bc.ca,gone@gov.bc.ca");
+        f.ProgramManagers.Add(CreateUser("pm@gov.bc.ca"));
+        f.OtherUsers.Add(CreateUser("gone@gov.bc.ca", isDeleted: true));
+        f.GroupMembers.Add(GroupMember("pm@gov.bc.ca", 1));
+        f.GroupMembers.Add(GroupMember("analyst@gov.bc.ca", 2));
+        f.MetabaseApiClient.FindUserIdByEmailAsync("extra@gov.bc.ca").Returns((int?)null);
+
+        var rows = await f.Provisioner.GetMembersAsync(f.Tenant.Id, 22);
+
+        rows.Select(r => r.Email).ShouldBe(["pm@gov.bc.ca", "extra@gov.bc.ca", "gone@gov.bc.ca", "analyst@gov.bc.ca"]);
+
+        var pm = rows[0];
+        pm.Source.ShouldBe(MetabaseMemberSource.ProgramManager);
+        pm.InGroup.ShouldBeTrue();
+        pm.CanRemove.ShouldBeFalse();
+
+        var extra = rows[1];
+        extra.Source.ShouldBe(MetabaseMemberSource.AdditionalMember);
+        extra.InGroup.ShouldBeFalse();
+        extra.IsMetabaseUser.ShouldBe(false);
+        extra.CanRemove.ShouldBeTrue();
+
+        var gone = rows[2];
+        gone.Offboarded.ShouldBeTrue();
+        gone.IsMetabaseUser.ShouldBeNull();
+
+        rows[3].Source.ShouldBe(MetabaseMemberSource.Metabase);
+        rows[3].CanRemove.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task AddAdditionalMembersAsync_MergesIntoListWithoutDuplicates_ThenSyncs()
+    {
+        var f = CreateProvisioner(additionalMembers: "existing@gov.bc.ca");
+
+        await f.Provisioner.AddAdditionalMembersAsync(f.Tenant.Id, 22, ["EXISTING@gov.bc.ca", "new@gov.bc.ca"]);
+
+        await f.SettingManager.Received(1).SetAsync(
+            MetabaseSettings.UserEmails, "existing@gov.bc.ca,new@gov.bc.ca",
+            TenantSettingValueProvider.ProviderName, f.Tenant.Id.ToString(), Arg.Any<bool>());
+        await f.MetabaseApiClient.Received(1).GetGroupMembersAsync(22);
+    }
+
+    [Fact]
+    public async Task RemoveMemberAsync_ActiveProgramManager_Throws()
+    {
+        var f = CreateProvisioner();
+        f.ProgramManagers.Add(CreateUser("pm@gov.bc.ca"));
+        f.GroupMembers.Add(GroupMember("pm@gov.bc.ca", 1));
+
+        await Should.ThrowAsync<UserFriendlyException>(() => f.Provisioner.RemoveMemberAsync(f.Tenant.Id, 22, "PM@gov.bc.ca"));
+
+        await f.MetabaseApiClient.DidNotReceiveWithAnyArgs().RemoveGroupMembershipAsync(default);
+    }
+
+    [Fact]
+    public async Task RemoveMemberAsync_AdditionalMember_TakenOffListAndOutOfGroup()
+    {
+        var f = CreateProvisioner(additionalMembers: "keep@gov.bc.ca,drop@gov.bc.ca");
+        f.GroupMembers.Add(GroupMember("drop@gov.bc.ca", 5));
+
+        await f.Provisioner.RemoveMemberAsync(f.Tenant.Id, 22, "Drop@gov.bc.ca");
+
+        await f.SettingManager.Received(1).SetAsync(
+            MetabaseSettings.UserEmails, "keep@gov.bc.ca",
+            TenantSettingValueProvider.ProviderName, f.Tenant.Id.ToString(), Arg.Any<bool>());
+        await f.MetabaseApiClient.Received(1).RemoveGroupMembershipAsync(5);
+    }
+
+    [Fact]
+    public async Task RemoveMemberIfNotDesiredAsync_StillAnAdditionalMember_LeavesMembership()
+    {
+        var f = CreateProvisioner(additionalMembers: "keep@gov.bc.ca");
+        f.GroupMembers.Add(GroupMember("keep@gov.bc.ca", 5));
+
+        var removed = await f.Provisioner.RemoveMemberIfNotDesiredAsync(f.Tenant.Id, 22, "keep@gov.bc.ca");
+
+        removed.ShouldBeFalse();
+        await f.MetabaseApiClient.DidNotReceiveWithAnyArgs().RemoveGroupMembershipAsync(default);
+    }
+
+    [Fact]
+    public async Task RemoveMemberIfNotDesiredAsync_DeletedProgramManager_RemovesMembership()
+    {
+        var f = CreateProvisioner();
+        f.ProgramManagers.Add(CreateUser("pm@gov.bc.ca", isDeleted: true));
+        f.GroupMembers.Add(GroupMember("pm@gov.bc.ca", 5));
+
+        var removed = await f.Provisioner.RemoveMemberIfNotDesiredAsync(f.Tenant.Id, 22, "pm@gov.bc.ca");
+
+        removed.ShouldBeTrue();
+        await f.MetabaseApiClient.Received(1).RemoveGroupMembershipAsync(5);
+    }
+
+    [Fact]
+    public async Task SyncMembersAsync_RoleAndUserPermissionHolders_AddedAndTracked()
+    {
+        var f = CreateProvisioner();
+        AddRoleHolder(f, "analyst", CreateUser("by-role@gov.bc.ca"));
+        AddUserHolder(f, CreateUser("direct@gov.bc.ca"));
+        f.MetabaseApiClient.FindUserIdByEmailAsync("by-role@gov.bc.ca").Returns(401);
+        f.MetabaseApiClient.FindUserIdByEmailAsync("direct@gov.bc.ca").Returns(402);
+
+        var result = await f.Provisioner.SyncMembersAsync(f.Tenant.Id, 22);
+
+        result.Added.ShouldBe(2);
+        await f.MetabaseApiClient.Received(1).AddGroupMemberAsync(22, 401);
+        await f.MetabaseApiClient.Received(1).AddGroupMemberAsync(22, 402);
+        Tracked(f).ShouldBe("by-role@gov.bc.ca,direct@gov.bc.ca");
+    }
+
+    [Fact]
+    public async Task SyncMembersAsync_GrantOfAnotherPermissionOrProvider_Ignored()
+    {
+        var f = CreateProvisioner();
+        var user = CreateUser("other@gov.bc.ca");
+        f.OtherUsers.Add(user);
+        f.Grants.Add(new PermissionGrant(Guid.NewGuid(), "GrantManagerManagement.Default", UserPermissionValueProvider.ProviderName, user.Id.ToString(), f.Tenant.Id));
+        f.Grants.Add(new PermissionGrant(Guid.NewGuid(), MetabasePermissions.Access, "C", user.Id.ToString(), f.Tenant.Id));
+
+        await f.Provisioner.SyncMembersAsync(f.Tenant.Id, 22);
+
+        await f.MetabaseApiClient.DidNotReceiveWithAnyArgs().FindUserIdByEmailAsync(default!);
+    }
+
+    [Fact]
+    public async Task SyncMembersAsync_InactiveOrDeletedPermissionHolder_NotAdded()
+    {
+        var f = CreateProvisioner();
+        AddRoleHolder(f, "analyst", CreateUser("inactive@gov.bc.ca", isActive: false));
+        AddUserHolder(f, CreateUser("deleted@gov.bc.ca", isDeleted: true));
+
+        await f.Provisioner.SyncMembersAsync(f.Tenant.Id, 22);
+
+        await f.MetabaseApiClient.DidNotReceiveWithAnyArgs().FindUserIdByEmailAsync(default!);
+    }
+
+    [Fact]
+    public async Task SyncMembersAsync_TrackedMemberLostPermission_RemovedAndUntracked()
+    {
+        var f = CreateProvisioner();
+        AddUserHolder(f, CreateUser("analyst@gov.bc.ca"));
+        f.MetabaseApiClient.FindUserIdByEmailAsync("analyst@gov.bc.ca").Returns(401);
+        await f.Provisioner.SyncMembersAsync(f.Tenant.Id, 22);
+
+        f.Grants.Clear();
+        f.GroupMembers.Add(GroupMember("analyst@gov.bc.ca", 9));
+        var result = await f.Provisioner.SyncMembersAsync(f.Tenant.Id, 22);
+
+        result.Removed.ShouldBe(1);
+        await f.MetabaseApiClient.Received(1).RemoveGroupMembershipAsync(9);
+        Tracked(f).ShouldBe(string.Empty);
+    }
+
+    [Fact]
+    public async Task SyncMembersAsync_TrackedMemberLostPermissionButStillAdditionalMember_KeptAndUntracked()
+    {
+        var f = CreateProvisioner(additionalMembers: "analyst@gov.bc.ca");
+        f.Settings[MetabaseSettings.PermissionSyncedEmails] = "analyst@gov.bc.ca";
+        f.OtherUsers.Add(CreateUser("analyst@gov.bc.ca"));
+        f.GroupMembers.Add(GroupMember("analyst@gov.bc.ca", 9));
+
+        var result = await f.Provisioner.SyncMembersAsync(f.Tenant.Id, 22);
+
+        result.Removed.ShouldBe(0);
+        await f.MetabaseApiClient.DidNotReceiveWithAnyArgs().RemoveGroupMembershipAsync(default);
+        Tracked(f).ShouldBe(string.Empty);
+    }
+
+    [Fact]
+    public async Task SyncMembersAsync_PermissionHolderAlreadyInGroup_NeverTrackedSoNeverRemoved()
+    {
+        var f = CreateProvisioner();
+        AddUserHolder(f, CreateUser("analyst@gov.bc.ca"));
+        f.GroupMembers.Add(GroupMember("analyst@gov.bc.ca", 9));
+        await f.Provisioner.SyncMembersAsync(f.Tenant.Id, 22);
+
+        f.Grants.Clear();
+        var result = await f.Provisioner.SyncMembersAsync(f.Tenant.Id, 22);
+
+        Tracked(f).ShouldBeNull();
+        result.Removed.ShouldBe(0);
+        await f.MetabaseApiClient.DidNotReceiveWithAnyArgs().RemoveGroupMembershipAsync(default);
+    }
+
+    [Fact]
+    public async Task SyncMembersAsync_ProgramManagerWithPermission_NotTracked()
+    {
+        var f = CreateProvisioner();
+        var pm = CreateUser("pm@gov.bc.ca");
+        f.ProgramManagers.Add(pm);
+        f.Grants.Add(new PermissionGrant(Guid.NewGuid(), MetabasePermissions.Access, UserPermissionValueProvider.ProviderName, pm.Id.ToString(), f.Tenant.Id));
+        f.MetabaseApiClient.FindUserIdByEmailAsync("pm@gov.bc.ca").Returns(401);
+
+        await f.Provisioner.SyncMembersAsync(f.Tenant.Id, 22);
+
+        await f.MetabaseApiClient.Received(1).AddGroupMemberAsync(22, 401);
+        Tracked(f).ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task SyncMembersAsync_RecordsLastMemberSync()
+    {
+        var f = CreateProvisioner(additionalMembers: "new@gov.bc.ca");
+        f.MetabaseApiClient.FindUserIdByEmailAsync("new@gov.bc.ca").Returns(301);
+
+        await f.Provisioner.SyncMembersAsync(f.Tenant.Id, 22);
+        var lastSync = await f.Provisioner.GetLastMemberSyncAsync(f.Tenant.Id);
+
+        lastSync.ShouldNotBeNull();
+        lastSync.SyncedAt.ShouldBe(Now);
+        lastSync.Added.ShouldBe(1);
+        lastSync.Error.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task SyncMembersAsync_MetabaseFails_RecordsErrorAndRethrows()
+    {
+        var f = CreateProvisioner();
+        f.MetabaseApiClient.GetGroupMembersAsync(22)
+            .Throws(new IntegrationServiceException("Metabase is down") { StatusCode = HttpStatusCode.BadGateway });
+
+        await Should.ThrowAsync<IntegrationServiceException>(() => f.Provisioner.SyncMembersAsync(f.Tenant.Id, 22));
+        var lastSync = await f.Provisioner.GetLastMemberSyncAsync(f.Tenant.Id);
+
+        lastSync.ShouldNotBeNull();
+        lastSync.Error.ShouldBe("Metabase is down");
+    }
+
+    [Fact]
+    public async Task GetMembersAsync_PermissionHolder_ShownAsPermissionAndNotRemovable()
+    {
+        var f = CreateProvisioner(additionalMembers: "both@gov.bc.ca");
+        f.ProgramManagers.Add(CreateUser("pm@gov.bc.ca"));
+        AddRoleHolder(f, "analyst", CreateUser("analyst@gov.bc.ca"));
+        AddUserHolder(f, CreateUser("both@gov.bc.ca"));
+        f.GroupMembers.Add(GroupMember("pm@gov.bc.ca", 1));
+        f.GroupMembers.Add(GroupMember("analyst@gov.bc.ca", 2));
+        f.GroupMembers.Add(GroupMember("both@gov.bc.ca", 3));
+
+        var rows = await f.Provisioner.GetMembersAsync(f.Tenant.Id, 22);
+
+        rows.Select(r => r.Email).ShouldBe(["pm@gov.bc.ca", "analyst@gov.bc.ca", "both@gov.bc.ca"]);
+        rows[1].Source.ShouldBe(MetabaseMemberSource.Permission);
+        rows[1].CanRemove.ShouldBeFalse();
+        rows[2].Source.ShouldBe(MetabaseMemberSource.Permission);
+        rows[2].CanRemove.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task RemoveMemberAsync_PermissionHolder_Throws()
+    {
+        var f = CreateProvisioner();
+        AddUserHolder(f, CreateUser("analyst@gov.bc.ca"));
+        f.GroupMembers.Add(GroupMember("analyst@gov.bc.ca", 1));
+
+        await Should.ThrowAsync<UserFriendlyException>(() => f.Provisioner.RemoveMemberAsync(f.Tenant.Id, 22, "analyst@gov.bc.ca"));
+
+        await f.MetabaseApiClient.DidNotReceiveWithAnyArgs().RemoveGroupMembershipAsync(default);
+    }
+
+    [Fact]
+    public async Task RemoveMemberIfNotDesiredAsync_PermissionHolder_LeavesMembership()
+    {
+        var f = CreateProvisioner();
+        AddRoleHolder(f, "analyst", CreateUser("analyst@gov.bc.ca"));
+        f.GroupMembers.Add(GroupMember("analyst@gov.bc.ca", 5));
+
+        var removed = await f.Provisioner.RemoveMemberIfNotDesiredAsync(f.Tenant.Id, 22, "analyst@gov.bc.ca");
+
+        removed.ShouldBeFalse();
+        await f.MetabaseApiClient.DidNotReceiveWithAnyArgs().RemoveGroupMembershipAsync(default);
     }
 }

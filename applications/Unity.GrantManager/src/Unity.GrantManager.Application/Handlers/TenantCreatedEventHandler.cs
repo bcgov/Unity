@@ -5,14 +5,11 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Data;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Tenants.PostCreation;
-using Unity.TenantManagement.Metabase;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.MultiTenancy;
-using Volo.Abp.Settings;
-using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
 
 namespace Unity.GrantManager.Handlers
@@ -26,15 +23,13 @@ namespace Unity.GrantManager.Handlers
         private readonly IFeatureAppService _featureAppService;
         private readonly GrantManagerDbMigrationService _grantManagerDbMigrationService;
         private readonly IBackgroundJobManager _backgroundJobManager;
-        private readonly ISettingManager _settingManager;
 
         public TenantCreatedEventHandler(ITenantRepository tenantRepository,
             ICurrentTenant currentTenant,
             IUserImportAppService userImportAppService,
             IFeatureAppService featureAppService,
             GrantManagerDbMigrationService grantManagerDbMigrationService,
-            IBackgroundJobManager backgroundJobManager,
-            ISettingManager settingManager)
+            IBackgroundJobManager backgroundJobManager)
         {
             _tenantRepository = tenantRepository;
             _grantManagerDbMigrationService = grantManagerDbMigrationService;
@@ -42,7 +37,6 @@ namespace Unity.GrantManager.Handlers
             _userImportAppService = userImportAppService;
             _featureAppService = featureAppService;
             _backgroundJobManager = backgroundJobManager;
-            _settingManager = settingManager;
         }
 
         public async Task HandleEventAsync(TenantCreatedEto tenantCreatedEto)
@@ -60,7 +54,6 @@ namespace Unity.GrantManager.Handlers
             }
 
             await EnableRequestedFeaturesAsync(tenantCreatedEto, tenant.Id);
-            await SaveMetabaseUserEmailsAsync(tenantCreatedEto, tenant.Id);
 
             // Kick off the post-tenant-creation step sequence (e.g. Metabase registration).
             // The job re-enqueues itself for each subsequent step, so this only starts step 0.
@@ -70,21 +63,6 @@ namespace Unity.GrantManager.Handlers
                 StepIndex = 0
             });
         }
-
-        // Captures the Metabase user list passed at creation time as the tenant's setting, read
-        // later by the (async) Metabase step.
-        private async Task SaveMetabaseUserEmailsAsync(TenantCreatedEto eto, Guid tenantId)
-        {
-            await _settingManager.SetAsync(
-                MetabaseSettings.UserEmails, ResolveMetabaseUserEmails(eto.Properties),
-                TenantSettingValueProvider.ProviderName, tenantId.ToString());
-        }
-
-        // TenantAppService.CreateAsync only adds "MetabaseUserEmails" to eto.Properties when the
-        // caller explicitly set it. The create modals no longer collect Metabase emails, and there
-        // is no Global default to fall back to, so an absent property means an empty list.
-        internal static string ResolveMetabaseUserEmails(IReadOnlyDictionary<string, string> etoProperties) =>
-            etoProperties.TryGetValue("MetabaseUserEmails", out var emailsRaw) ? emailsRaw : string.Empty;
 
         private async Task EnableRequestedFeaturesAsync(TenantCreatedEto eto, Guid tenantId)
         {

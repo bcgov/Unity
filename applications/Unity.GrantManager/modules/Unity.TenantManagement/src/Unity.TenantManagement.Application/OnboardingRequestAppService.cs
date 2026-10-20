@@ -10,7 +10,6 @@ using Unity.Flex.Worksheets.Values;
 using Unity.Flex.WorksheetInstances;
 using Unity.Modules.Shared.Correlation;
 using Unity.Modules.Shared.Permissions;
-using Unity.TenantManagement.Metabase;
 using Unity.TenantManagement.Onboarding;
 using Unity.TenantManagement.Validation;
 using Volo.Abp;
@@ -316,8 +315,7 @@ public class OnboardingRequestAppService(
             Division = request.Division,
             Description = request.TenantDescription,
             UserIdentifier = userGuids[0],
-            FeatureKeys = featureKeys.Count > 0 ? string.Join(',', featureKeys) : null,
-            MetabaseUserEmails = input?.MetabaseUserEmails
+            FeatureKeys = featureKeys.Count > 0 ? string.Join(',', featureKeys) : null
         });
 
         foreach (var userGuid in userGuids.Skip(1))
@@ -329,28 +327,9 @@ public class OnboardingRequestAppService(
             });
         }
 
-        if (!string.IsNullOrWhiteSpace(input?.MetabaseNewDefaultUserEmails) || !string.IsNullOrWhiteSpace(input?.MetabaseRemovedDefaultUserEmails))
-            await UpdateMetabaseDefaultUserEmailsAsync(input.MetabaseNewDefaultUserEmails, input.MetabaseRemovedDefaultUserEmails);
-
         if (ApplicationProvider != null)
             await ApplicationProvider.CloseApplicationAsync(id);
     }
-
-    private async Task UpdateMetabaseDefaultUserEmailsAsync(string? newEmailsCsv, string? removedEmailsCsv)
-    {
-        var removed = SplitEmails(removedEmailsCsv);
-        var updated = SplitEmails(await _settingManager.GetOrNullGlobalAsync(MetabaseSettings.UserEmails))
-            .Concat(SplitEmails(newEmailsCsv))
-            .Where(email => !removed.Contains(email, StringComparer.OrdinalIgnoreCase))
-            .Distinct(StringComparer.OrdinalIgnoreCase);
-
-        await _settingManager.SetGlobalAsync(MetabaseSettings.UserEmails, string.Join(",", updated));
-    }
-
-    private static List<string> SplitEmails(string? emailsCsv) =>
-        (emailsCsv ?? string.Empty)
-            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .ToList();
 
     private async Task<List<string>> RunValidationStepsAsync(OnboardingRequestDto request)
     {

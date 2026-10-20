@@ -114,7 +114,7 @@ public class TenantViewRoleAppService(
             if (!await reportColumnsMapRepository.RoleExistsAsync(role))
             {
                 throw new UserFriendlyException(
-                    $"Role '{role}' does not exist in this tenant's database. Check the roles in View DB Info.");
+                    $"Role '{role}' does not exist in this tenant's database. Check Reporting Views.");
             }
         }
     }

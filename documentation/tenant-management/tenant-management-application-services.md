@@ -9,7 +9,7 @@
 |`GetAsync(id)`|`TenantsOrITOps`|Maps `Tenant` → `TenantDto`.|
 |`GetListAsync(GetTenantsInput)`|`TenantsOrITOps`|Two query paths — see below. `IncludeDeleted = true` also returns soft-deleted tenants (`TenantDto.IsDeleted`); only the Tenants screen sets it.|
 |`CreateAsync(TenantCreateDto)`|`TenantsCreateOrITOps`|Full tenant provisioning — see below.|
-|`UpdateAsync(id, TenantUpdateDto)`|`TenantsUpdateOrITOps`|Renames + updates `ExtraProperties`; `SetConcurrencyStampIfNotNull`. A name change also requires `ITAdminOrITOperations` (`EnsureRenameAllowed`), because Metabase resources are named after the tenant and only those roles can Resync them.|
+|`UpdateAsync(id, TenantUpdateDto)`|`TenantsUpdateOrITOps`|Renames + updates `ExtraProperties`; `SetConcurrencyStampIfNotNull`. A name change also requires `ITAdminOrITOperations` (`EnsureRenameAllowed`), because Metabase resources are named after the tenant and only those roles can use Rerun Setup to rename them.|
 |`DeleteAsync(id)`|`Tenants.Delete`|**Soft-deletes the ABP `Tenant` row** (`ISoftDelete`). The Postgres database/roles and host records stay until `PurgeAsync`.|
 |`PurgeAsync(id)`|`ITAdministrator`|Permanent second step for a **soft-deleted** tenant with a `LicencePlate`; refuses anything else. Delegates to the host through `ITenantPurgeProvider` (`GrantManagerTenantPurgeProvider` → `EntityFrameworkCoreTenantDatabasePurger`): drops the `T_XXX999` database (`WITH (FORCE)`) — only if the tenant connection string's database equals the licence plate and no other tenant (active or soft-deleted) shares that plate — and the roles `{licencePlate}` and `{licencePlate}_readonly` (named from the immutable licence plate, never from the editable connection-string usernames), then, in one transaction, deletes the tenant's host rows (users, roles, organization units, sessions, permission/feature/setting values, `DynamicUrls`, `TenantTokens`, `ApplicantTenantMaps`) and the `Tenant` row. Audit logs are kept. Metabase is not deregistered — see [tenant-management-roadmap.md](tenant-management-roadmap.md). Exposed as `POST api/multi-tenancy/tenants/{id}/purge`.|
 |`GetCurrentTenantCasClientCodeAsync(tenantId)`|`[AllowAnonymous]`, `[RemoteService(false)]`|Internal-only helper (e.g. for payment flows needing the current tenant's CAS code without a full tenant read).|
@@ -31,13 +31,13 @@ Deliberate tradeoff for tenant-count scale (dozens to low hundreds), not thousan
 
 Inside one unit of work:
 
-1. `StripPrivilegedFieldsUnlessAuthorized(input, callerIsAuthorized)` — re-checks `IdentityConsts.ITAdminOrITOperationsPolicyName` server-side and nulls `FeatureKeys`/`MetabaseUserEmails` if the caller isn't IT Admin/Ops, even though a caller reaching this method already holds `TenantsCreateOrITOps` — see [tenant-management-domain-model.md](tenant-management-domain-model.md#roleorpermissionrequirement--the-actual-or-logic) for why this second check exists.
+1. `StripPrivilegedFieldsUnlessAuthorized(input, callerIsAuthorized)` — re-checks `IdentityConsts.ITAdminOrITOperationsPolicyName` server-side and nulls `FeatureKeys` if the caller isn't IT Admin/Ops, even though a caller reaching this method already holds `TenantsCreateOrITOps` — see [tenant-management-domain-model.md](tenant-management-domain-model.md#roleorpermissionrequirement--the-actual-or-logic) for why this second check exists.
 2. `tenantManager.CreateAsync(input.Name)`.
 3. Generates and encrypts both connection strings (`TenantConnectionStringBuilder` — see domain model doc), attaches as `TenantConnectionString` rows named `"Tenant"`/`"Tenant_Readonly"`.
 4. Sets `ExtraProperties` (`LicencePlate`, `DisplayName`, `Division`, `Branch`, `Description`, `CasClientCode`).
 5. `tenant.SeedPostTenantCreationSections(postTenantCreationSteps)` — seeds a `Waiting` status for every registered `IPostTenantCreationStep`, injected as `IEnumerable<IPostTenantCreationStep>` (resolved across the whole app, including steps implemented in `Unity.GrantManager.Application` — DI doesn't care about compile-time project references). See [tenant-management-post-creation.md](tenant-management-post-creation.md).
 6. Inserts, commits the UoW.
-7. **After** the UoW commits, publishes `TenantCreatedEto` (`UserIdentifier`, `FeatureKeys`, optionally `MetabaseUserEmails`) — picked up by `Unity.GrantManager.Application`'s `TenantCreatedEventHandler`, which synchronously migrates/seeds the tenant DB and Postgres roles (see domain model doc), imports the initial IDIR user as Program Manager, enables requested features, snapshots the Metabase user-email setting, and finally enqueues the deferred post-creation job sequence.
+7. **After** the UoW commits, publishes `TenantCreatedEto` (`UserIdentifier`, `FeatureKeys`) — picked up by `Unity.GrantManager.Application`'s `TenantCreatedEventHandler`, which synchronously migrates/seeds the tenant DB and Postgres roles (see domain model doc), imports the initial IDIR user as Program Manager, enables requested features, and finally enqueues the deferred post-creation job sequence.
 
 `CreateAsync` is the single choke point both the "New Tenant" modal **and** Onboarding approval (`OnboardingRequestAppService.CreateTenantAsync`) call — see [tenant-management-onboarding.md](tenant-management-onboarding.md).
 
@@ -70,9 +70,11 @@ The schema **supports** per-tenant URL overrides via the nullable `TenantId`, bu
 
 ## Metabase settings
 
-`MetabaseSettings.UserEmails` (`Application.Contracts/Metabase/MetabaseSettings.cs` + `MetabaseSettingDefinitionProvider`) — a comma-separated default email list, settable **globally** and **per-tenant** (`TenantSettingValueProvider`). Two write paths:
+`MetabaseSettings.UserEmails` (`Application.Contracts/Metabase/MetabaseSettings.cs` + `MetabaseSettingDefinitionProvider`) — the tenant's **Additional members**: a comma-separated list of emails to keep in the tenant's Metabase group besides its program managers. It has only the tenant provider (`TenantSettingValueProvider`). A new tenant starts with an empty list; the only writer is `MetabaseTenantProvisioner`, through **Add** and **Remove** in the members table on the Configuration modal's Reporting tab. A value left at the global provider by the old create-modal default is not read.
 
-- `TenantCreatedEventHandler.SaveMetabaseUserEmailsAsync` saves the `MetabaseUserEmails` passed to `TenantAppService.CreateAsync` as the **per-tenant** setting (the tenant's Additional members) that `MetabaseTenantProvisioner` adds to the Metabase group alongside the tenant's program managers. When none is passed the setting is empty; there is no fallback to the global value.
-- `OnboardingRequestAppService`'s Metabase handling (`UpdateMetabaseDefaultUserEmailsAsync`) folds `MetabaseNewDefaultUserEmails` / `MetabaseRemovedDefaultUserEmails` into the **global** list when an API caller passes them. Neither create modal has a Metabase tab, and nothing reads the global value.
+Two more tenant-provider settings sit beside it, both written only by `MetabaseTenantProvisioner.SyncMembersAsync`:
 
-See [tenant-management-post-creation.md](tenant-management-post-creation.md) for how this setting is actually consumed by the Metabase registration step.
+- `MetabaseSettings.PermissionSyncedEmails`: the emails the members sync added only because they hold `Metabase.Access`, so it can remove them once they lose it.
+- `MetabaseSettings.LastMemberSync`: the last members sync's time and counts, or its error, as JSON.
+
+See [tenant-management-post-creation.md](tenant-management-post-creation.md#metabase-group-members) for how they are used.

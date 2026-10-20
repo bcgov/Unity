@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Services;
 
@@ -37,4 +38,26 @@ public interface IMetabaseTenantAppService : IApplicationService
     /// the background.
     /// </summary>
     Task RescanValuesAsync(Guid tenantId);
+
+    /// <summary>
+    /// The tenant's Metabase members table: everyone in the group or wanted there (program managers,
+    /// holders of Metabase.Access and Additional members), with their source and state.
+    /// </summary>
+    Task<List<MetabaseMemberDto>> GetMembersAsync(Guid tenantId);
+
+    /// <summary>
+    /// Syncs the group now, as the scheduled sync does: removes off-boarded users and members it
+    /// added for Metabase.Access who lost it, and adds missing program managers, permission holders
+    /// and Additional members who have a Metabase account.
+    /// </summary>
+    Task<MetabaseMemberSyncResultDto> SyncMembersAsync(Guid tenantId);
+
+    /// <summary>Adds emails to the tenant's Additional members list and syncs.</summary>
+    Task<MetabaseMemberSyncResultDto> AddMembersAsync(Guid tenantId, MetabaseAddMembersDto input);
+
+    /// <summary>
+    /// Removes the email from the Additional members list and the group. Not allowed for an active
+    /// program manager or a permission holder, whose access follows their role or permission.
+    /// </summary>
+    Task RemoveMemberAsync(Guid tenantId, MetabaseRemoveMemberDto input);
 }
