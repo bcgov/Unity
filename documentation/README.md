@@ -46,7 +46,7 @@ The bar is *"is anything here now false?"* — not *"should I describe what I di
 | `AGM/src/Unity.GrantManager.Application/ApplicantProfile/**`<br>`AGM/src/Unity.GrantManager.Application.Contracts/ApplicantProfile/**`<br>`AGM/src/Unity.GrantManager.Domain.Shared/ApplicantProfile/**` | [`applicant-portal/applicant-profile-data-providers.md`](applicant-portal/applicant-profile-data-providers.md) | The polymorphic profile endpoint and its `IApplicantProfileDataProvider` strategy set |
 | `AGM/src/Unity.GrantManager.Application/Messaging/**`<br>`AGM/src/Unity.GrantManager.Domain/Messaging/**` | [`transactional-outbox-pattern.md`](transactional-outbox-pattern.md)<br>[`applicant-portal/grants-portal-rabbitmq-integration.md`](applicant-portal/grants-portal-rabbitmq-integration.md) | Inbox/outbox entities and workers; the RabbitMQ consumer pipeline and Quartz job coordination |
 | `AGM/src/Unity.GrantManager.HttpApi/**` (applicant-portal-facing controllers only) | [`applicant-portal/applicant-portal-integration.md`](applicant-portal/applicant-portal-integration.md) | REST + messaging contract between Grant Manager and the Applicant Portal |
-| `.github/workflows/sonarsource-scan.yml`<br>`AGM/sonar-project.properties` | [`SonarCloudAnalysis/`](SonarCloudAnalysis/SonarCloud_Setup_Guide.md)<br>[`unity-sonarcloud-readme.md`](unity-sonarcloud-readme.md) | SonarCloud setup, maintenance, and the transition from SonarQube |
+| `.github/workflows/sonarsource-scan.yml`<br>`applications/sonar-project.properties` | [`SonarCloudAnalysis/`](SonarCloudAnalysis/SonarCloud_Setup_Guide.md)<br>[`unity-sonarcloud-readme.md`](unity-sonarcloud-readme.md) | SonarCloud setup, maintenance, and the transition from SonarQube |
 
 ## Cross-cutting docs
 
