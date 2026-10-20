@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "mode": "report-only",
-  "generatedAt": "2026-10-16T23:24:46.471Z",
+  "generatedAt": "2026-10-20T18:16:48.881Z",
   "summary": {
     "total": 364,
     "matched": 150,
@@ -791,6 +791,7 @@
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/Applicants/Details.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/ApplicationForms/Mapping.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/BulkApprovals/ApproveApplicationsModal.js",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/ConfigurationManagement/Index.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/GrantApplications/Details.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ActionBar/Default.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantAttachments/ApplicantAttachments.js",
@@ -820,6 +821,7 @@
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/Applicants/Details.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/ApplicationForms/Mapping.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/BulkApprovals/ApproveApplicationsModal.js",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/ConfigurationManagement/Index.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/GrantApplications/Details.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ActionBar/Default.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantAttachments/ApplicantAttachments.js",
