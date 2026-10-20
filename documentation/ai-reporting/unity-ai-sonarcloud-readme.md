@@ -2,6 +2,8 @@
 
 This document provides a guide for the Unity-AI SonarCloud, including setup, permissions, IDE integration, and CI/CD workflows.
 
+> **Unity AI is now scanned as part of the Unity project (`bcgov_Unity`).** Since moving into `bcgov/Unity` under `applications/Unity.AI` (AB#34431), the single `sonarsource-scan.yml` workflow scans Grant Manager and Unity AI together from `projectBaseDir: applications`. The old `bcgov_unity-ai` project is kept read-only as the history from before the move. See [`../unity-sonarcloud-readme.md`](../unity-sonarcloud-readme.md) for the shared configuration.
+
 ---
 
 ## Table of Contents
@@ -21,9 +23,10 @@ This document provides a guide for the Unity-AI SonarCloud, including setup, per
 **Unity-AI SonarCloud Project Details:**
 
 - **Organization:** `bcgov-sonarcloud`
-- **Project Key:** `bcgov_unity-ai`
-- **Project Name:** Unity-AI
-- **URL:** https://sonarcloud.io/project/overview?id=bcgov_unity-ai
+- **Project Key:** `bcgov_Unity` (shared with Grant Manager)
+- **Project Name:** Unity
+- **URL:** https://sonarcloud.io/project/overview?id=bcgov_Unity
+- **Archived (before the move):** https://sonarcloud.io/project/overview?id=bcgov_unity-ai
 
 **Technology Stack:**
 
@@ -45,8 +48,8 @@ This document provides a guide for the Unity-AI SonarCloud, including setup, per
    - Authorize SonarCloud access to your GitHub account
    - Accept organization invitation for `bcgov-sonarcloud`
 
-3. **Join Unity-AI Project:**
-   - Navigate to: https://sonarcloud.io/project/overview?id=bcgov_unity-ai
+3. **Join Unity Project:**
+   - Navigate to: https://sonarcloud.io/project/overview?id=bcgov_Unity
    - Request access if not automatically granted
 
 ### Required Permissions After First Login
@@ -72,11 +75,11 @@ Once logged in, request the following permissions from the SonarCloud Unity Proj
 
 ### Current SonarCloud Settings
 
-**Source Code Paths:**
+**Source Code Paths** (Unity AI entries in `applications/sonar-project.properties`, relative to `projectBaseDir: applications`):
 
 ```properties
-sonar.sources=applications/Unity.AI.Reporting.Backend/src,applications/Unity.AI.Reporting.Frontend/src
-sonar.tests=applications/Unity.AI.Reporting.Backend/test_packages.py
+sonar.sources=...,Unity.AI/Unity.AI.Reporting.Backend/src,Unity.AI/Unity.AI.Reporting.Frontend/src
+sonar.tests=...,Unity.AI/Unity.AI.Reporting.Backend/test_packages.py
 ```
 
 **Language Configuration:**
@@ -95,13 +98,13 @@ sonar.tests=applications/Unity.AI.Reporting.Backend/test_packages.py
 
 ```properties
 # Build artifacts and dependencies
-**/node_modules/**, **/dist/**, **/build/**
+**/node_modules/**, Unity.AI/**/dist/**, Unity.AI/**/build/**
 
 # Python artifacts
-**/__pycache__/**, **/*.pyc
+Unity.AI/**/__pycache__/**, Unity.AI/**/*.pyc
 
 # Environment configurations
-applications/Unity.AI.Reporting.Frontend/src/environments/**
+Unity.AI/Unity.AI.Reporting.Frontend/src/environments/**
 ```
 
 ---
@@ -125,7 +128,7 @@ code --install-extension SonarSource.sonarlint-vscode
 {
   "sonarlint.connectedMode.project": {
     "connectionId": "bcgov-sonarcloud",
-    "projectKey": "bcgov_unity-ai"
+    "projectKey": "bcgov_Unity"
   },
   "sonarlint.connectedMode.connections.sonarcloud": [
     {
@@ -164,7 +167,7 @@ code --install-extension SonarSource.sonarlint-vscode
 ```yaml
 on:
   push:
-    branches: [dev, test, main]
+    branches: [dev2, dev, test, main]
   pull_request:
     types: [opened, synchronize, reopened]
   workflow_dispatch:
@@ -190,7 +193,7 @@ on:
    - Uses `SonarSource/sonarqube-scan-action@v7`
    - Requires `SONAR_TOKEN` secret
    - Automatic PR decoration enabled
-   - Version handling: Uses `UAI_BUILD_VERSION` variable if set, otherwise removes version property
+   - Version handling: Uses the shared `UGM_BUILD_VERSION` variable (one Unity release) if set, otherwise removes version property
 
 #### Required GitHub Secrets
 
@@ -199,7 +202,7 @@ on:
 
 #### Required GitHub Environment Variables
 
-- **`UAI_BUILD_VERSION`:** Project version set at runtime (optional - if not set, SonarCloud will use automatic versioning)
+- **`UGM_BUILD_VERSION`:** Project version set at runtime (optional - if not set, SonarCloud will use automatic versioning). `UAI_BUILD_VERSION` is still used by the Unity AI image builds, but not by SonarCloud.
 
 ---
 
@@ -253,4 +256,4 @@ Check SonarCloud project → Quality Gates → View conditions
 **Technical Issues:**
 
 - [SonarSource Documentation](https://docs.sonarcloud.io/)
-- [GitHub Issues](https://github.com/bcgov/unity-ai/issues)
+- [GitHub Issues](https://github.com/bcgov/Unity/issues)
