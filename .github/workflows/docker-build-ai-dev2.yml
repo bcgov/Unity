@@ -1,0 +1,102 @@
+name: Dev2 - Build & Push Unity AI
+
+on:
+  push:
+    branches: [ "dev2" ]
+    paths:
+      - 'applications/Unity.AI/**'
+      - '!applications/Unity.AI/**/README*'
+      - '!applications/Unity.AI/**/CLAUDE.md'
+  # Allow manual workflow triggering
+  workflow_dispatch:
+
+env:
+  TARGET_ENV: dev2
+  GH_TOKEN: ${{secrets.GH_API_TOKEN}}
+  OC_CLUSTER: ${{ vars.OPENSHIFT_CLUSTER }}
+  OC_REGISTRY: ${{ vars.OPENSHIFT_REGISTRY }}
+  OC_TARGET_TOKEN: ${{ secrets.OPENSHIFT_TOKEN }}
+  OC_TARGET_PROJECT: ${{ vars.OPENSHIFT_NAMESPACE }}
+  JFROG_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+  JFROG_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+  JFROG_REPO_PATH: ${{ vars.ARTIFACTORY_REPO }}
+  JFROG_SERVICE:  ${{ vars.ARTIFACTORY_SERVICE }}
+
+jobs:
+  Setup:
+    runs-on: ubuntu-latest
+    environment: dev2
+    permissions:
+      contents: read
+    steps:
+    - name: Get variables
+      run: |
+        echo "Target: $TARGET_ENV"
+        echo "BaseRef: $GITHUB_REF_NAME"
+        echo "Environment: $TARGET_ENV OC_TARGET_PROJECT=$OC_TARGET_PROJECT"
+        echo "Environment: $TARGET_ENV JFROG_REPO_PATH=$JFROG_REPO_PATH"
+        echo "..."
+        env | sort
+  Branch:
+    needs: [Setup]
+    runs-on: ubuntu-latest
+    environment: dev2
+    permissions:
+      contents: read
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+      with:
+          fetch-depth: '1'
+    - name: Get short commitId
+      id: get_commit
+      run: |
+        echo "SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+    outputs:
+      SHA_SHORT: ${{steps.get_commit.outputs.SHA_SHORT}}
+  Build:
+    needs: [Setup,Branch]
+    runs-on: ubuntu-latest
+    environment: dev2
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@v6
+    - name: Build Docker images
+      run: |
+        docker build --build-arg UAI_BUILD_VERSION=dev2 --build-arg UAI_BUILD_REVISION=${{needs.Branch.outputs.SHA_SHORT}} --build-arg UAI_TARGET_ENVIRONMENT=Development -t unity-ai-reporting -f Dockerfile .
+      working-directory: ./applications/Unity.AI
+    - name: Push application images to Artifactory container registry
+      continue-on-error: true
+      run: |
+        echo "$JFROG_PASSWORD" | docker login -u "$JFROG_USERNAME" --password-stdin $JFROG_SERVICE
+        docker tag unity-ai-reporting $JFROG_SERVICE/$JFROG_REPO_PATH/dev2-unity-ai-reporting:latest
+        docker push $JFROG_SERVICE/$JFROG_REPO_PATH/dev2-unity-ai-reporting:latest
+        docker logout $JFROG_SERVICE
+    - name: Install OpenShift CLI
+      run: |
+          curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/oc/latest/linux/oc.tar.gz
+          tar -xvf oc.tar.gz
+          sudo mv oc /usr/local/bin
+    - name: Verify OpenShift CLI installation
+      run: oc version
+    - name: Push application images into ce395f-dev (no ce395f-tools hop for dev2)
+      run: |
+        for i in 1 2 3; do
+          oc login --token=$OC_TARGET_TOKEN --server=$OC_CLUSTER --request-timeout=30s && break
+          if [ "$i" -eq 3 ]; then
+            echo "oc login failed after 3 attempts" >&2
+            exit 1
+          fi
+          echo "oc login attempt $i failed, retrying in 30s..."
+          sleep 30
+        done
+        oc registry login
+        docker login -u unused -p $(oc whoami -t) $OC_REGISTRY
+        docker tag unity-ai-reporting $OC_REGISTRY/$OC_TARGET_PROJECT/$TARGET_ENV-unity-ai-reporting:latest
+        docker push $OC_REGISTRY/$OC_TARGET_PROJECT/$TARGET_ENV-unity-ai-reporting:latest
+        docker logout $OC_REGISTRY
+    - name: Roll out unity-ai-reporting and wait
+      run: |
+        oc -n $OC_TARGET_PROJECT rollout restart statefulset $TARGET_ENV-unity-ai-reporting
+        oc -n $OC_TARGET_PROJECT rollout status statefulset $TARGET_ENV-unity-ai-reporting --timeout=180s
