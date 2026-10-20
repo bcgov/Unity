@@ -4,6 +4,7 @@
     const ACTIVE_MENU_KEY = 'ConfigurationManagement_ActiveMenu';
     const ACTIVE_PAYMENTS_TAB_KEY = 'payments-active-tab';
     const ACTIVE_NOTIFICATIONS_TAB_KEY = 'notifications-active-tab';
+    const ACTIVE_APPLICANT_PORTAL_TAB_KEY = 'applicant-portal-active-tab';
 
     init();
 
@@ -20,6 +21,10 @@
             // Save active notifications tab
             if ($(this).closest('#nav-tab').length) {
                 localStorage.setItem(ACTIVE_NOTIFICATIONS_TAB_KEY, this.id);
+            }
+            // Save active applicant portal tab
+            if ($(this).closest('#applicant-portal-nav-tab').length) {
+                localStorage.setItem(ACTIVE_APPLICANT_PORTAL_TAB_KEY, this.id);
             }
         });
 
@@ -60,6 +65,20 @@
             const tab = new bootstrap.Tab(notificationsTabToActivate[0]);
             tab.show();
         }
+
+        // Auto-activate saved Applicant Portal tab or first tab
+        const savedApplicantPortalTabId = localStorage.getItem(ACTIVE_APPLICANT_PORTAL_TAB_KEY);
+        const applicantPortalTabContainer = $('#applicant-portal-nav-tab');
+        let applicantPortalTabToActivate = applicantPortalTabContainer.find('#' + savedApplicantPortalTabId);
+
+        if (!applicantPortalTabToActivate.length) {
+            applicantPortalTabToActivate = applicantPortalTabContainer.find('.nav-link').first();
+        }
+
+        if (applicantPortalTabToActivate.length) {
+            const tab = new bootstrap.Tab(applicantPortalTabToActivate[0]);
+            tab.show();
+        }
     }
 
     const splitRestoreMap = {
@@ -84,6 +103,11 @@
         // Restore split widths now that the section is visible
         if (splitRestoreMap[targetId]) {
             splitRestoreMap[targetId]();
+        }
+
+        // Sub-tab content that initialises lazily (e.g. the TinyMCE editor) needs its section visible first
+        if (targetId === 'applicant-portal-div') {
+            $('#applicant-portal-nav-tab .nav-link.active').trigger('shown.bs.tab');
         }
 
         adjustDataTables();

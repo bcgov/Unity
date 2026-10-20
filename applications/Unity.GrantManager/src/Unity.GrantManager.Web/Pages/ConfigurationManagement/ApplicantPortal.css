@@ -1,69 +1,27 @@
-.unity-app-main-container {
-    margin: auto;
-    display: block;
-}
-
-.portal-settings-layout {
-    min-height: calc(100vh - 200px);
-}
-
-#PortalSettingsSideMenu.side-menu {
-    position: sticky;
-    top: 150px;
-}
-
-#PortalSettingsSideMenu ul {
-    padding-left: 0;
-    list-style: none;
-}
-
-#PortalSettingsSideMenu .nav-item {
-    height: 40px;
-    width: 100%;
-    padding: 10px;
-    border-radius: 0 100em 100em 0;
-    justify-content: left;
-    text-align: left;
-}
-
-.portal-settings-config {
-    overflow: auto;
-    max-height: calc(100vh - 180px);
-    width: 95%;
-    padding: 1rem;
-}
-
-.portal-settings-actions {
+/* Every rule is scoped to #applicant-portal-div so it cannot leak into other Configuration Management sections */
+#applicant-portal-div .portal-settings-actions {
     background: #fff;
 }
 
-.portal-status-table th {
+#applicant-portal-div .portal-status-table th {
     font-weight: 600;
     border-bottom: 2px solid #dee2e6;
 }
 
-.portal-status-table td {
+#applicant-portal-div .portal-status-table td {
     vertical-align: middle;
 }
 
-.portal-status-table label {
+#applicant-portal-div .portal-status-table label {
     margin-bottom: 0;
     font-weight: 400;
 }
 
-#PortalStatusForm .dt-container {
+#applicant-portal-div #PortalStatusForm .dt-container {
     max-height: none !important;
 }
 
-.breadcrumb-container {
-    background-color: #fff;
-    margin: 0 -0.5rem;
-    padding: 0.75rem 1rem;
-    display: flex;
-    margin-top: 1px;
-}
-
-.portal-message-heading {
+#applicant-portal-div .portal-message-heading {
     color: #0066cc;
     border-bottom: 2px solid #0066cc;
     padding: 0 0 0.75rem;
@@ -71,20 +29,20 @@
     font-size: 1rem;
 }
 
-.portal-message-toggle {
+#applicant-portal-div .portal-message-toggle {
     display: flex;
     align-items: center;
     gap: 1rem;
     padding-left: 0;
 }
 
-.portal-message-toggle .form-check-input {
+#applicant-portal-div .portal-message-toggle .form-check-input {
     float: none;
     margin: 0;
     order: 1;
 }
 
-.portal-message-parameters {
+#applicant-portal-div .portal-message-parameters {
     display: flex;
     align-items: flex-start;
     gap: 1rem;
@@ -94,7 +52,7 @@
     border-radius: 4px;
 }
 
-.portal-message-token {
+#applicant-portal-div .portal-message-token {
     color: #005bbb;
     background-color: #e1ecff;
     font-weight: 600;
@@ -102,11 +60,6 @@
     border-radius: 4px;
 }
 
-#PortalSettingsSideMenu button:focus-visible {
-    outline: 2px solid #0066cc;
-    outline-offset: 2px;
-}
-
-#portal-messages-div .tox-tinymce {
+#applicant-portal-div .tox-tinymce {
     border-radius: 4px;
 }

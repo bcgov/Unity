@@ -5,7 +5,7 @@ const { test } = require('node:test');
 const vm = require('node:vm');
 
 const source = readFileSync(path.resolve(__dirname,
-    '../../../src/Unity.GrantManager.Web/Pages/ApplicantPortalSettings/Messages.js'), 'utf8');
+    '../../../src/Unity.GrantManager.Web/Pages/ConfigurationManagement/ApplicantPortalMessages.js'), 'utf8');
 const defaultMessage = {
     html: '<p>Multiple applicants. Contact {inboxEmail}.</p>',
     text: 'Multiple applicants. Contact {inboxEmail}.'
@@ -14,7 +14,7 @@ const defaultHtml = defaultMessage.html;
 const savedCustomMessage = { html: '<p>Saved custom</p>', text: 'Saved custom' };
 
 // Run the actual page handlers with adapters for jQuery, TinyMCE, and the API.
-function page({ useDefault = true, message = defaultMessage, customMessage = useDefault ? null : message } = {}) {
+function page({ useDefault = true, message = defaultMessage, customMessage = useDefault ? null : message, visible = true, onInit } = {}) {
     const nodes = new Map();
     const requests = [];
     const editorEvents = new Map();
@@ -41,6 +41,7 @@ function page({ useDefault = true, message = defaultMessage, customMessage = use
             prop(key, value) { if (arguments.length === 1) return this.props[key]; this.props[key] = value; return this; },
             toggleClass(key, enabled) { if (enabled) this.classes.add(key); else this.classes.delete(key); return this; },
             on(names, handler) { for (const name of names.split(' ')) events.set(name, handler); return this; },
+            is(state) { return state === ':visible' && this.visible !== false; },
             trigger(name) { events.get(name)?.call(this, { preventDefault() {} }); return this; }
         };
         nodes.set(selector, item);
@@ -64,6 +65,7 @@ function page({ useDefault = true, message = defaultMessage, customMessage = use
     $('#DefaultMultipleIdentitiesMessage').val(defaultHtml);
     $('#CustomMultipleIdentitiesMessage').val(customMessage?.html ?? '');
     $('#UseDefaultMultipleIdentitiesMessage').prop('checked', useDefault);
+    $('#nav-portal-messages').visible = visible;
     const editor = {
         html: message.html, currentMode: 'design', undoClears: 0,
         getContent(options) {
@@ -85,7 +87,7 @@ function page({ useDefault = true, message = defaultMessage, customMessage = use
             ui: { setBusy() {}, clearBusy() {} },
             notify: { success() {} }
         },
-        tinymce: { init(options) { options.setup(editor); editorEvents.get('init')(); return Promise.resolve([editor]); } },
+        tinymce: { init(options) { onInit?.(); options.setup(editor); editorEvents.get('init')(); return Promise.resolve([editor]); } },
         unity: { grantManager: { applicantPortal: { applicantPortalMessage: {
             updateMultipleIdentities(input) {
                 requests.push(input);
@@ -94,7 +96,7 @@ function page({ useDefault = true, message = defaultMessage, customMessage = use
         } } } }
     };
     vm.runInNewContext(source, context);
-    $('#manage-messages-menu-item').trigger('click');
+    $('#nav-portal-messages-tab').trigger('shown.bs.tab');
     return {
         $, editor, requests,
         type(html, text) {
@@ -281,12 +283,20 @@ test('failed Save preserves the draft, shows an error, and re-enables editing', 
     assert.equal(view.editor.html, defaultHtml);
 });
 
-test('switching configuration sections preserves the message draft and sends no save request', () => {
+test('switching sub-tabs preserves the message draft and sends no save request', () => {
     const view = page({ useDefault: false, message: { html: '<p>Saved</p>', text: 'Saved' } });
     view.type('<p>Draft</p>', 'Draft');
-    view.$('#manage-statuses-menu-item').trigger('click');
-    assert.equal(view.$('#portal-messages-div').classes.has('d-none'), true);
-    view.$('#manage-messages-menu-item').trigger('click');
+    view.$('#nav-portal-status-tab').trigger('shown.bs.tab');
+    view.$('#nav-portal-messages-tab').trigger('shown.bs.tab');
     assert.equal(view.editor.html, '<p>Draft</p>');
     assert.equal(view.requests.length, 0);
+});
+
+test('editor is not created while the messages pane is hidden', () => {
+    let initCalls = 0;
+    const view = page({ visible: false, onInit: () => initCalls++ });
+    assert.equal(initCalls, 0);
+    view.$('#nav-portal-messages').visible = true;
+    view.$('#nav-portal-messages-tab').trigger('shown.bs.tab');
+    assert.equal(initCalls, 1);
 });
