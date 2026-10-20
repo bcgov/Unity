@@ -74,7 +74,7 @@ UI anchor constants live on the **host** side, not in Flex itself: `Unity.GrantM
 - `ScoresheetSection` (`Domain/Scoresheets/ScoresheetSection.cs`) — named, ordered group of questions.
 - `Question` (`Domain/Scoresheets/Question.cs`) — name/label/description/type/order/enabled + JSON `Definition`.
 
-Same duplicate-name guards as Worksheet: section names unique per scoresheet (case-insensitive), question names unique across the whole scoresheet. **Inconsistency worth knowing:** `Scoresheet.UpdateSectionName` throws a namespaced, localizable `BusinessException(ErrorConsts.DuplicateSectionName)`, while most of the equivalent Worksheet guards (and other Scoresheet guards) throw a plain `UserFriendlyException` with a hardcoded English string. `ErrorConsts.DuplicateFieldName` is defined but not observed in use anywhere in the domain layer.
+Same duplicate-name guards as Worksheet: section names unique per scoresheet (case-insensitive), question names unique across the whole scoresheet. **Inconsistency worth knowing:** `Scoresheet.UpdateSectionName` throws a namespaced, localizable `BusinessException(FlexErrorCodes.DuplicateSectionName)`, while most of the equivalent Worksheet guards (and other Scoresheet guards) throw a plain `UserFriendlyException` with a hardcoded English string.
 
 ## Scoresheet instance tree
 
@@ -105,7 +105,7 @@ Every `*Definition` also inherits a common base, `CustomFieldDefinition`, carryi
 ## Settings and error codes
 
 - `FlexSettingDefinitionProvider` defines **no settings** — it's an empty override. `FlexSettings` only exposes `GroupName = "Flex"`. Placeholder/scaffold, not currently used.
-- `FlexErrorCodes` is intentionally empty (`// Intentionally left blank`). The only real structured errors are in `Domain/Exceptions/ErrorConsts.cs`: `DuplicateSectionName` and `DuplicateFieldName` (`Unity.Flex:Errors:...`), and only `DuplicateSectionName` is actually thrown (from `Scoresheet.UpdateSectionName`).
+- `Domain/FlexErrorCodes.cs` holds the module's only structured error code, `DuplicateSectionName` (`Flex:Errors:DuplicateSectionName`), thrown from `Scoresheet.UpdateSectionName`.
 - `PrivateSetterContractResolver`, `WorksheetContractResolver`, `ScoresheetContractResolver` (`Domain/Settings/`) are Newtonsoft `IContractResolver`s that let entities with private setters serialize/deserialize directly — needed because nearly every property on these entities is `private set`. These back JSON import/export of whole Worksheet/Scoresheet aggregates (see [flex-application-services.md](flex-application-services.md)).
 
 ## Cloning and versioning

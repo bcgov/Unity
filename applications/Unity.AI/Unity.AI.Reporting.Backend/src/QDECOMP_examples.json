@@ -1,0 +1,111 @@
+[
+  {
+    "Schema": [
+      "Applications(Id, RegionalDistrict, ApplicationStatusId, ApprovedAmount)",
+      "ApplicationStatuses(Id, ExternalStatus)"
+    ],
+    "Question": "What is the total approved amount per regional district for approved applications?",
+    "Reasoning": "1. FROM: Join Applications a with ApplicationStatuses s on a.ApplicationStatusId = s.Id.\n   SQL table (columns): Applications(ApplicationStatusId, RegionalDistrict, ApprovedAmount), ApplicationStatuses(Id, ExternalStatus)\n2. WHERE: Keep rows where s.ExternalStatus = 'Approved'.\n   SQL table (columns): ApplicationStatuses(ExternalStatus)\n3. SELECT: Group by a.RegionalDistrict and compute SUM(a.ApprovedAmount) as total_approved.\n   SQL table (columns): Applications(RegionalDistrict, ApprovedAmount)",
+    "SQL": "SELECT a.\"RegionalDistrict\", SUM(a.\"ApprovedAmount\") AS total_approved FROM \"public\".\"Applications\" AS a JOIN \"public\".\"ApplicationStatuses\" AS s ON a.\"ApplicationStatusId\" = s.\"Id\" WHERE s.\"ExternalStatus\" = 'Approved' GROUP BY a.\"RegionalDistrict\";",
+    "title": "Total Approved Amount per Regional District",
+    "x_axis": ["RegionalDistrict"],
+    "y_axis": ["total_approved"],
+    "visualization_options": ["bar", "pie", "map"]
+  },
+  {
+    "Schema": ["Applications(Id, SubmissionDate)"],
+    "Question": "How many applications were submitted in each month?",
+    "Reasoning": "1. FROM: Read from Applications a.\n   SQL table (columns): Applications(SubmissionDate)\n2. WHERE: No row filters.\n   SQL table (columns): —\n3. SELECT: Extract month from a.SubmissionDate and COUNT(*); group by extracted month.\n   SQL table (columns): Applications(SubmissionDate)",
+    "SQL": "SELECT EXTRACT(MONTH FROM \"SubmissionDate\") AS month, COUNT(*) FROM \"public\".\"Applications\" GROUP BY month;",
+    "title": "Applications Submitted Per Month",
+    "x_axis": ["month"],
+    "y_axis": ["count"],
+    "visualization_options": ["bar", "line", "pie"]
+  },
+  {
+    "Schema": ["Assessments(Id, ApplicationId, Status)", "Applications(Id)"],
+    "Question": "How many assessments exist for each status?",
+    "Reasoning": "1. FROM: Read from Assessments.\n   SQL table (columns): Assessments(Status)\n2. WHERE: No row filters.\n   SQL table (columns): —\n3. SELECT: Group by Status and COUNT(*).\n   SQL table (columns): Assessments(Status)",
+    "SQL": "SELECT \"Status\", COUNT(*) FROM \"public\".\"Assessments\" GROUP BY \"Status\";",
+    "title": "Number of Assessments by Status",
+    "x_axis": ["Status"],
+    "y_axis": ["count"],
+    "visualization_options": ["bar", "pie"]
+  },
+  {
+    "Schema": ["Applicants(Id, Sector)", "Applications(Id, ApplicantId)"],
+    "Question": "How many applications were submitted by applicants in each sector?",
+    "Reasoning": "1. FROM: Join Applications a with Applicants ap on a.ApplicantId = ap.Id.\n   SQL table (columns): Applications(ApplicantId), Applicants(Id, Sector)\n2. WHERE: No row filters.\n   SQL table (columns): —\n3. SELECT: Group by ap.Sector and COUNT(*).\n   SQL table (columns): Applicants(Sector)",
+    "SQL": "SELECT ap.\"Sector\", COUNT(*) FROM \"public\".\"Applications\" AS a JOIN \"public\".\"Applicants\" AS ap ON a.\"ApplicantId\" = ap.\"Id\" GROUP BY ap.\"Sector\";",
+    "title": "Applications by Sector",
+    "x_axis": ["Sector"],
+    "y_axis": ["application_count"],
+    "visualization_options": ["bar", "pie"]
+  },
+  {
+    "Schema": ["Applications(Id, ApprovedAmount, ProjectEndDate)"],
+    "Question": "What is the average approved amount for projects ending in 2024?",
+    "Reasoning": "1. FROM: Read from Applications.\n   SQL table (columns): Applications(ProjectEndDate, ApprovedAmount)\n2. WHERE: Keep rows where EXTRACT(YEAR FROM ProjectEndDate) = 2024.\n   SQL table (columns): Applications(ProjectEndDate)\n3. SELECT: Compute AVG(ApprovedAmount).\n   SQL table (columns): Applications(ApprovedAmount)",
+    "SQL": "SELECT AVG(\"ApprovedAmount\") FROM \"public\".\"Applications\" WHERE EXTRACT(YEAR FROM \"ProjectEndDate\") = 2024;",
+    "title": "Average Approved Amount for Projects Ending in 2024",
+    "x_axis": [],
+    "y_axis": ["average_approved_amount"],
+    "visualization_options": ["number"]
+  },
+  {
+    "Schema": ["Applications(Id, ApplicationStatusId)", "ApplicationStatuses(Id, ExternalStatus)"],
+    "Question": "List all external application statuses and how many applications have each.",
+    "Reasoning": "1. FROM: Join Applications a with ApplicationStatuses s on a.ApplicationStatusId = s.Id.\n   SQL table (columns): Applications(ApplicationStatusId), ApplicationStatuses(Id, ExternalStatus)\n2. WHERE: No row filters.\n   SQL table (columns): —\n3. SELECT: Group by s.ExternalStatus and COUNT(*).\n   SQL table (columns): ApplicationStatuses(ExternalStatus)",
+    "SQL": "SELECT s.\"ExternalStatus\", COUNT(*) FROM \"public\".\"Applications\" AS a JOIN \"public\".\"ApplicationStatuses\" AS s ON a.\"ApplicationStatusId\" = s.\"Id\" GROUP BY s.\"ExternalStatus\";",
+    "title": "Application Counts by External Status",
+    "x_axis": ["ExternalStatus"],
+    "y_axis": ["application_count"],
+    "visualization_options": ["bar", "pie"]
+  },
+  {
+    "Schema": ["Applicants(Id, IndigenousOrgInd)", "Applications(Id, ApplicantId)"],
+    "Question": "How many applications were submitted by Indigenous organizations?",
+    "Reasoning": "1. FROM: Join Applications a with Applicants ap on a.ApplicantId = ap.Id.\n   SQL table (columns): Applications(ApplicantId), Applicants(Id, IndigenousOrgInd)\n2. WHERE: Keep rows where ap.IndigenousOrgInd = 'Yes'.\n   SQL table (columns): Applicants(IndigenousOrgInd)\n3. SELECT: COUNT(*).\n   SQL table (columns): —",
+    "SQL": "SELECT COUNT(*) FROM \"public\".\"Applications\" AS a JOIN \"public\".\"Applicants\" AS ap ON a.\"ApplicantId\" = ap.\"Id\" WHERE ap.\"IndigenousOrgInd\" = 'Yes';",
+    "title": "Applications by Indigenous Organizations",
+    "x_axis": [],
+    "y_axis": ["application_count"],
+    "visualization_options": ["number"]
+  },
+  {
+    "Schema": ["Applications(Id, City, RequestedAmount)"],
+    "Question": "What is the total requested amount by city?",
+    "Reasoning": "1. FROM: Read from Applications.\n   SQL table (columns): Applications(City, RequestedAmount)\n2. WHERE: No row filters.\n   SQL table (columns): —\n3. SELECT: Group by City and compute SUM(RequestedAmount) as total_requested.\n   SQL table (columns): Applications(City, RequestedAmount)",
+    "SQL": "SELECT \"City\", SUM(\"RequestedAmount\") AS total_requested FROM \"public\".\"Applications\" GROUP BY \"City\";",
+    "title": "Total Requested Amount by City",
+    "x_axis": ["City"],
+    "y_axis": ["total_requested"],
+    "visualization_options": ["bar", "pie"]
+  },
+  {
+    "Schema": [
+      "\"Reporting\".\"Worksheet-eventinformation-v7\"(CorrelationId, EventTypeartsCultureFest, EventTypeliveMusicFest, EventTypesportEventsFest, EventTypeother)",
+      "\"public\".\"Applications\"(Id)"
+    ],
+    "Question": "How many applications correspond to each event type?",
+    "Reasoning": "1. FROM: Join \"Reporting\".\"Worksheet-eventinformation-v7\" w with Applications a on w.CorrelationId = a.Id.\n   SQL table (columns): Worksheet-eventinformation-v7(CorrelationId, EventTypeartsCultureFest, EventTypeliveMusicFest, EventTypesportEventsFest, EventTypeother), Applications(Id)\n2. WHERE: For each subquery, filter rows where the corresponding event flag equals 'True' (artsCultureFest / liveMusicFest / sportEventsFest / other).\n   SQL table (columns): Worksheet-eventinformation-v7(EventTypeartsCultureFest | EventTypeliveMusicFest | EventTypesportEventsFest | EventTypeother)\n3. SELECT: For each subquery, project a literal event_type label and COUNT(*); UNION ALL the four results and ORDER BY event_count DESC.\n   SQL table (columns): —",
+    "SQL": "SELECT 'artsCultureFest' AS event_type, COUNT(*) AS event_count\nFROM \"Reporting\".\"Worksheet-eventinformation-v7\" w\nJOIN \"public\".\"Applications\" a ON a.\"Id\" = w.\"CorrelationId\"\nWHERE w.\"EventTypeartsCultureFest\" = 'True'\nUNION ALL\nSELECT 'liveMusicFest' AS event_type, COUNT(*) AS event_count\nFROM \"Reporting\".\"Worksheet-eventinformation-v7\" w\nJOIN \"public\".\"Applications\" a ON a.\"Id\" = w.\"CorrelationId\"\nWHERE w.\"EventTypeliveMusicFest\" = 'True'\nUNION ALL\nSELECT 'sportEventsFest' AS event_type, COUNT(*) AS event_count\nFROM \"Reporting\".\"Worksheet-eventinformation-v7\" w\nJOIN \"public\".\"Applications\" a ON a.\"Id\" = w.\"CorrelationId\"\nWHERE w.\"EventTypesportEventsFest\" = 'True'\nUNION ALL\nSELECT 'other' AS event_type, COUNT(*) AS event_count\nFROM \"Reporting\".\"Worksheet-eventinformation-v7\" w\nJOIN \"public\".\"Applications\" a ON a.\"Id\" = w.\"CorrelationId\"\nWHERE w.\"EventTypeother\" = 'True'\nORDER BY event_count DESC;",
+    "title": "Applications by Event Type",
+    "x_axis": ["event_type"],
+    "y_axis": ["event_count"],
+    "visualization_options": ["bar", "pie"]
+  },
+  {
+  "Schema": [
+    "Applicants(Id, Name)",
+    "Applications(Id, ApplicantId, RegionalDistrict)"
+  ],
+  "Question": "Count distinct applicants per regional district.",
+  "Reasoning": "0. Provenance: 'RegionalDistrict' exists on Applications, not Applicants.\n1. FROM: Join Applications a with Applicants ap on a.ApplicantId = ap.Id.\n   SQL tables: Applications(ApplicantId, RegionalDistrict), Applicants(Id)\n2. WHERE: No row filters.\n3. SELECT: Group by a.RegionalDistrict and COUNT(DISTINCT ap.Id) as applicant_count.",
+  "SQL": "SELECT a.\"RegionalDistrict\", COUNT(DISTINCT ap.\"Id\") AS applicant_count\nFROM \"public\".\"Applications\" a\nJOIN \"public\".\"Applicants\" ap ON ap.\"Id\" = a.\"ApplicantId\"\nGROUP BY a.\"RegionalDistrict\"\nORDER BY applicant_count DESC;",
+  "title": "Distinct Applicants by Regional District",
+  "x_axis": ["RegionalDistrict"],
+  "y_axis": ["applicant_count"],
+  "visualization_options": ["bar", "map"]
+}
+]

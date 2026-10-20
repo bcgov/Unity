@@ -135,6 +135,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
                 b.ConfigureByConvention(); //auto configure for the base class props
                 b.Property(x => x.ApplicationFormName).IsRequired().HasMaxLength(255);
+                b.Property(x => x.IsHiddenFromList).IsRequired().HasDefaultValue(false);
                 // Mapped as a JSON-serialized scalar (rather than EF's native JSON complex-type
                 // support) because that feature is relational-only and breaks under the
                 // EFCore.InMemory provider used by Unity.GrantManager.Web.Tests.

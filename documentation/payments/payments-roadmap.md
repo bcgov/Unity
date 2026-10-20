@@ -45,20 +45,6 @@ Both number generators are also O(n) on a table that only grows.
 | `Supplier.SIN` | `Domain/Suppliers/Supplier.cs` | Mapped and persisted, but `SupplierService.GetEventDtoFromCasResponse` never reads CAS's `sin` field |
 | `PaymentRequestDto`'s `explicit operator` | `Application.Contracts/PaymentRequests/` | `public static explicit operator PaymentRequestDto(CreatePaymentRequestDto v) => throw new NotImplementedException();` |
 
-## Exception details are sent to clients
-
-`PaymentsApplicationModule` configures:
-
-```csharp
-Configure<AbpExceptionHandlingOptions>(options =>
-{
-    options.SendExceptionsDetailsToClients = true;
-    options.SendStackTraceToClients = false;
-});
-```
-
-`AbpExceptionHandlingOptions` is global, not per-module, so this affects the whole application, not just payments endpoints.
-
 ## Anonymous page conventions
 
 `PaymentsWebModule` marks two Razor Pages anonymous:
@@ -83,7 +69,7 @@ Two dbcontexts also map the same tables: `PaymentsDbContext` (bound to the `Tena
 - `PaymentQueueService` lives in `Unity.Payments.Application/Integrations/RabbitMQ/` but is declared in namespace **`Unity.Notifications.Integrations.RabbitMQ`**.
 - `Domain/UserPaymentThresholds/IPaymentConfigurationRepository.cs` declares `IPaymentThresholdRepository`, and its implementation is `EntityFrameworkCore/Repositories/UserPaymentThresholdRepository.cs`.
 - `Pages/PaymentRequests/Index.cshtml.cs` declares `PaymentsPageModel` in namespace `Unity.Payments.Web.Pages.Payments`, not a `PaymentRequests` namespace.
-- The error-code constant `Unity.Payments:Errors:InvalidAccountCodingFiled` is misspelled, in both `ErrorConsts` and `en.json`.
+- The error-code constant `Payments:Errors:InvalidAccountCodingFiled` is misspelled, in both `ErrorConsts` and `en.json`.
 - The Payments main-menu item's display name is the hard-coded string `"Payments"` rather than a `PaymentsResource` key, so it does not localize.
 
 ## CAS reconciliation details

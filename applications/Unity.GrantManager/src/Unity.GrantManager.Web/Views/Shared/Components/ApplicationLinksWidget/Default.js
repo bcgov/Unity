@@ -993,7 +993,9 @@ $(function () {
         // Validate existing Parent/Child links on load
         const hasParentChildLinks = state.currentLinks.some(link => link.linkType !== 'Related');
         if (hasParentChildLinks) {
-            void ValidationService.validateAllLinks(state);
+            ValidationService.validateAllLinks(state).catch(error => {
+                console.error('Failed to validate existing application links:', error);
+            });
         }
     }
 });
