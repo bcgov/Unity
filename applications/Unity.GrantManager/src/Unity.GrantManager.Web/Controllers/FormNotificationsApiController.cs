@@ -21,37 +21,21 @@ namespace Unity.GrantManager.Web.Controllers
 {
     [Route("api/form-notifications")]
     [ApiController]
-    public class FormNotificationsApiController : ControllerBase
+    public class FormNotificationsApiController(IApplicationStatusService statusService, 
+                                                IEmailGroupsAppService emailGroupsAppService, 
+                                                ITemplateService templateService, 
+                                                Notifications.IAutomatedNotificationAppService automatedNotificationAppService, 
+                                                EmailAttachmentService emailAttachmentService, ICurrentUser currentUser,
+                                                IEmailGroupUsersAppService emailGroupUsersAppService,
+                                                IIdentityUserIntegrationService identityUserIntegrationService,
+                                                IGrantApplicationAppService grantApplicationAppService, 
+                                                ScheduledNotificationHelper scheduledNotificationHelper, 
+                                                IApplicantEmailTemplateAppService applicantEmailTemplateService,
+                                                EmailComposerAccessChecker emailAccessChecker) : ControllerBase
     {
-        private readonly IApplicationStatusService _statusService;
-        private readonly IEmailGroupsAppService _emailGroupsAppService;
-        private readonly ITemplateService _templateService;
-        private readonly Notifications.IAutomatedNotificationAppService _automatedNotificationAppService;
-        private readonly EmailAttachmentService _emailAttachmentService;
-        private readonly ICurrentUser _currentUser;
-        private readonly IEmailGroupUsersAppService _emailGroupUsersAppService;
-        private readonly IIdentityUserIntegrationService _identityUserIntegrationService;
-        private readonly IGrantApplicationAppService _grantApplicationAppService;
-        private readonly ScheduledNotificationHelper _scheduledNotificationHelper;
-        private readonly IApplicantEmailTemplateAppService _applicantEmailTemplateService;
-        private readonly EmailComposerAccessChecker _emailAccessChecker;
 
-        public FormNotificationsApiController(IApplicationStatusService statusService, IEmailGroupsAppService emailGroupsAppService, Unity.Notifications.Templates.ITemplateService templateService, Unity.GrantManager.Notifications.IAutomatedNotificationAppService automatedNotificationAppService, EmailAttachmentService emailAttachmentService, ICurrentUser currentUser, IEmailGroupUsersAppService emailGroupUsersAppService, IIdentityUserIntegrationService identityUserIntegrationService, IGrantApplicationAppService grantApplicationAppService, ScheduledNotificationHelper scheduledNotificationHelper, IApplicantEmailTemplateAppService applicantEmailTemplateService, EmailComposerAccessChecker emailAccessChecker)
-        {
-            _statusService = statusService;
-            _emailGroupsAppService = emailGroupsAppService;
-            _templateService = templateService;
-            _automatedNotificationAppService = automatedNotificationAppService;
-            _emailAttachmentService = emailAttachmentService;
-            _currentUser = currentUser;
-            _emailGroupUsersAppService = emailGroupUsersAppService;
-            _identityUserIntegrationService = identityUserIntegrationService;
-            _grantApplicationAppService = grantApplicationAppService;
-            _scheduledNotificationHelper = scheduledNotificationHelper;
-            _applicantEmailTemplateService = applicantEmailTemplateService;
-            _emailAccessChecker = emailAccessChecker;
-        }
 
+        [Authorize(NotificationsPermissions.Email.Send)]
         [HttpGet("payment-statuses")]
         public ActionResult<List<object>> GetPaymentStatuses()
         {
@@ -77,10 +61,11 @@ namespace Unity.GrantManager.Web.Controllers
         // In-memory storage removed; persisting to ScheduledNotifications table via IAutomatedNotificationAppService
 
 
+        [Authorize(NotificationsPermissions.Email.Send)]
         [HttpGet("templates")]
         public async Task<ActionResult<List<EmailTemplateDto>>> GetTemplates([FromQuery] string? templateType = null)
         {
-            var templates = await _templateService.GetTemplatesByTenant();
+            var templates = await templateService.GetTemplatesByTenant();
             if (!string.IsNullOrWhiteSpace(templateType))
             {
                 templates = templates
@@ -107,13 +92,14 @@ namespace Unity.GrantManager.Web.Controllers
         [HttpGet("templates/{templateId:guid}/applicant-preview")]
         public async Task<ActionResult<ApplicantEmailTemplatePreviewDto>> GetApplicantTemplatePreview(Guid templateId, [FromQuery] Guid applicantId)
         {
-            return Ok(await _applicantEmailTemplateService.GetPreviewAsync(applicantId, templateId));
+            return Ok(await applicantEmailTemplateService.GetPreviewAsync(applicantId, templateId));
         }
 
+        [Authorize(NotificationsPermissions.Email.Send)]
         [HttpGet("templates/{templateId:guid}/resolved-recipients")]
         public async Task<ActionResult<ResolvedRecipientsDto>> GetResolvedTemplateRecipients(Guid templateId, [FromQuery] Guid? applicationId = null)
         {
-            var template = await _templateService.GetTemplateById(templateId);
+            var template = await templateService.GetTemplateById(templateId);
             if (template == null)
             {
                 return NotFound();
@@ -134,11 +120,11 @@ namespace Unity.GrantManager.Web.Controllers
                     RecipientIdentifier = recipientIdentifier
                 };
 
-                var emailTo = await _scheduledNotificationHelper.GetInternalRecipientEmailAddressesAsync(
+                var emailTo = await scheduledNotificationHelper.GetInternalRecipientEmailAddressesAsync(
                     notification,
-                    _emailGroupsAppService,
-                    _emailGroupUsersAppService,
-                    _identityUserIntegrationService);
+                    emailGroupsAppService,
+                    emailGroupUsersAppService,
+                    identityUserIntegrationService);
 
                 return Ok(new ResolvedRecipientsDto { EmailTo = emailTo });
             }
@@ -150,7 +136,7 @@ namespace Unity.GrantManager.Web.Controllers
                     return Ok(new ResolvedRecipientsDto { EmailTo = string.Empty });
                 }
 
-                var application = await _grantApplicationAppService.GetAsync(applicationId.Value);
+                var application = await grantApplicationAppService.GetAsync(applicationId.Value);
                 var identifiers = recipientIdentifier
                     .Split(',')
                     .Select(r => r.Trim())
@@ -179,6 +165,12 @@ namespace Unity.GrantManager.Web.Controllers
                         !string.IsNullOrWhiteSpace(application.SigningAuthorityEmail))
                     {
                         emailAddresses.Add(application.SigningAuthorityEmail);
+                        continue;
+                    }
+
+                    if (string.Equals(identifier, "AdditionalContact", StringComparison.OrdinalIgnoreCase))
+                    {
+                        emailAddresses.UnionWith(await scheduledNotificationHelper.GetAdditionalContactEmailsAsync(applicationId.Value));
                     }
                 }
 
@@ -195,20 +187,21 @@ namespace Unity.GrantManager.Web.Controllers
             if (input.EmailLogId == Guid.Empty)
                 return BadRequest("EmailLogId is required");
 
-            var email = await _emailAccessChecker.CheckEmailAsync(input.EmailLogId, NotificationsPermissions.Email.Send, requireDraft: true);
-            await _emailAccessChecker.CheckTemplateAsync(templateId, email.ApplicantId);
-            var copiedCount = await _emailAttachmentService.ReplaceTemplateAttachmentsAsync(
+            var email = await emailAccessChecker.CheckEmailAsync(input.EmailLogId, NotificationsPermissions.Email.Send, requireDraft: true);
+            await emailAccessChecker.CheckTemplateAsync(templateId, email.ApplicantId);
+            var copiedCount = await emailAttachmentService.ReplaceTemplateAttachmentsAsync(
                 templateId,
                 input.EmailLogId,
-                _currentUser.TenantId);
+                currentUser.TenantId);
 
             return Ok(new CopyAttachmentsResponseDto { AttachmentCount = copiedCount });
         }
 
+        [Authorize(NotificationsPermissions.Email.Send)]
         [HttpGet("email-template/{templateId}/validate-attachments")]
         public async Task<IActionResult> ValidateTemplateAttachments(Guid templateId)
         {
-            await _emailAttachmentService.ValidateTemplateAttachmentsAsync(templateId);
+            await emailAttachmentService.ValidateTemplateAttachmentsAsync(templateId);
             return NoContent();
         }
 
@@ -216,35 +209,38 @@ namespace Unity.GrantManager.Web.Controllers
         [HttpDelete("email-log/{emailLogId}/origin-attachments")]
         public async Task<ActionResult<CopyAttachmentsResponseDto>> DeleteOriginAttachments(Guid emailLogId)
         {
-            await _emailAccessChecker.CheckEmailAsync(emailLogId, NotificationsPermissions.Email.Send, requireDraft: true);
-            var deletedCount = await _emailAttachmentService.DeleteOriginAttachmentsAsync(emailLogId);
+            await emailAccessChecker.CheckEmailAsync(emailLogId, NotificationsPermissions.Email.Send, requireDraft: true);
+            var deletedCount = await emailAttachmentService.DeleteOriginAttachmentsAsync(emailLogId);
             return Ok(new CopyAttachmentsResponseDto { AttachmentCount = deletedCount });
         }
 
+        [Authorize(NotificationsPermissions.Email.Send)]
         [HttpGet("statuses")]
         public async Task<ActionResult<List<object>>> GetApplicationStatuses()
         {
-            var statuses = await _statusService.GetListAsync();
+            var statuses = await statusService.GetListAsync();
             var list = statuses.Select(s => new { id = s.Id, internalStatus = s.InternalStatus }).ToList<object>();
             return Ok(list);
         }
 
+        [Authorize(NotificationsPermissions.Email.Send)]
         [HttpGet("recipients")]
         public async Task<ActionResult<List<RecipientDto>>> GetRecipients([FromQuery] string category)
         {
             // For internal recipients, load EmailGroups from the notifications module and expose their Name
             if (string.Equals(category, "Internal", StringComparison.OrdinalIgnoreCase))
             {
-                var groups = await _emailGroupsAppService.GetListAsync();
+                var groups = await emailGroupsAppService.GetListAsync();
                 var list = groups.Select(g => new RecipientDto { Id = g.Name, DisplayName = g.Name }).ToList();
                 return Ok(list);
             }
 
-            // For external recipients we expose the two choices required by the UI
+            // For external recipients we expose the contact choices required by the UI
             var externalContacts = new List<RecipientDto>
             {
                 new() { Id = "ApplicationContact", DisplayName = "Application Contact" },
-                new() { Id = "SigningAuthority", DisplayName = "Signing Authority" }
+                new() { Id = "SigningAuthority", DisplayName = "Signing Authority" },
+                new() { Id = "AdditionalContact", DisplayName = "Additional Contacts" }
             };
 
             if (string.Equals(category, "External", StringComparison.OrdinalIgnoreCase)) return Ok(externalContacts);
@@ -253,21 +249,22 @@ namespace Unity.GrantManager.Web.Controllers
         }
 
         [HttpGet("{formId}")]
+        [Authorize(NotificationsPermissions.Email.NotificationsTab)]
         public async Task<ActionResult<List<ScheduledNotificationDto>>> GetForForm(string formId)
         {
             if (!Guid.TryParse(formId, out var parsedFormId)) return BadRequest("Invalid form id");
 
-            var listResult = await _automatedNotificationAppService.GetListAsync(new Notifications.GetNotificationsInput { FormId = parsedFormId, MaxResultCount = 1000 });
+            var listResult = await automatedNotificationAppService.GetListAsync(new Notifications.GetNotificationsInput { FormId = parsedFormId, MaxResultCount = 1000 });
 
             // Resolve template names and status labels
             var templateIds = listResult.Items.Select(x => x.EmailTemplateId).Where(id => id != Guid.Empty).Distinct().ToList();
             var templateMap = new Dictionary<Guid, EmailTemplate?>();
             foreach (var id in templateIds)
             {
-                templateMap[id] = await _templateService.GetTemplateById(id);
+                templateMap[id] = await templateService.GetTemplateById(id);
             }
 
-            var statuses = await _statusService.GetListAsync();
+            var statuses = await statusService.GetListAsync();
             var statusMap = statuses.ToDictionary(s => s.Id, s => s.InternalStatus);
 
             var items = listResult.Items.Select(e => new ScheduledNotificationDto
@@ -293,6 +290,7 @@ namespace Unity.GrantManager.Web.Controllers
             return Ok(items);
         }
 
+        [Authorize(NotificationsPermissions.Email.ScheduleCreate)]
         [HttpPost("{formId}")]
         public async Task<ActionResult<ScheduledNotificationDto>> CreateForForm(string formId, [FromBody] CreateScheduledNotificationInput input)
         {
@@ -319,7 +317,7 @@ namespace Unity.GrantManager.Web.Controllers
                 return BadRequest("ApplicationStatusId required for Application event trigger");
             }
 
-            var template = await _templateService.GetTemplateById(input.TemplateId);
+            var template = await templateService.GetTemplateById(input.TemplateId);
             if (template == null) return BadRequest("Template not found");
             if (!string.Equals(template.TemplateType, TemplateTypes.Application, StringComparison.OrdinalIgnoreCase))
             {
@@ -331,7 +329,7 @@ namespace Unity.GrantManager.Web.Controllers
             string? statusLabel = null;
             if (input.ApplicationStatusId.HasValue)
             {
-                var statuses = await _statusService.GetListAsync();
+                var statuses = await statusService.GetListAsync();
                 var match = statuses.FirstOrDefault(s => s.Id == input.ApplicationStatusId.Value);
                 if (match != null) statusLabel = match.InternalStatus;
             }
@@ -353,7 +351,7 @@ namespace Unity.GrantManager.Web.Controllers
                 RecipientIdentifier = input.RecipientIdentifier
             };
 
-            var created = await _automatedNotificationAppService.CreateAsync(createDto);
+            var created = await automatedNotificationAppService.CreateAsync(createDto);
 
             var dto = new ScheduledNotificationDto
             {
@@ -375,29 +373,30 @@ namespace Unity.GrantManager.Web.Controllers
             return CreatedAtAction(nameof(GetForForm), new { formId }, dto);
         }
 
+        [Authorize(NotificationsPermissions.Email.ScheduleCancel)]
         [HttpDelete("{formId}/{id:guid}")]
         public async Task<IActionResult> Delete(string formId, Guid id)
         {
-            await _automatedNotificationAppService.DeleteAsync(id);
+            await automatedNotificationAppService.DeleteAsync(id);
             return NoContent();
         }
 
+        [Authorize(NotificationsPermissions.Email.ScheduleCancel)]
         [HttpPatch("{formId}/{id:guid}/cancel")]
         public async Task<IActionResult> CancelNotification(string formId, Guid id)
         {
             if (!Guid.TryParse(formId, out _)) return BadRequest("Invalid form id");
-            await _automatedNotificationAppService.CancelAsync(id);
+            await automatedNotificationAppService.CancelAsync(id);
             return NoContent();
         }
 
+        [Authorize(NotificationsPermissions.Email.Send)]
         [HttpGet("can-delete-template/{templateId:guid}")]
         public async Task<ActionResult<object>> CanDeleteTemplate(Guid templateId)
         {
-            var result = await _automatedNotificationAppService.GetListAsync(
-                new Notifications.GetNotificationsInput { MaxResultCount = 1000 });
+            var references = await automatedNotificationAppService.GetTemplateReferencesAsync(templateId);
 
-            var associatedPlans = result.Items
-                .Where(n => n.EmailTemplateId == templateId)
+            var associatedPlans = references
                 .Select(n =>
                     string.IsNullOrWhiteSpace(n.TriggerDetail)
                         ? $"{n.TriggerType} notification"
@@ -420,16 +419,16 @@ namespace Unity.GrantManager.Web.Controllers
             return Ok(new { canDelete = true, errorMessage = (string?)null, notificationPlanNames = Array.Empty<string>() });
         }
 
+        [Authorize(NotificationsPermissions.Email.Send)]
         [HttpGet("template-notification-plans/{templateId:guid}")]
         public async Task<ActionResult<object>> GetTemplateNotificationPlans(Guid templateId)
         {
-            var result = await _automatedNotificationAppService.GetListAsync(
-                new Notifications.GetNotificationsInput { MaxResultCount = 1000 });
-            var template = await _templateService.GetTemplateById(templateId);
+            var references = await automatedNotificationAppService.GetTemplateReferencesAsync(templateId);
+            var template = await templateService.GetTemplateById(templateId);
 
             var templateName = template?.Name ?? "Template";
-            var planNames = result.Items
-                .Where(n => n.IsActive && n.EmailTemplateId == templateId)
+            var planNames = references
+                .Where(n => n.IsActive)
                 .Select(n => string.IsNullOrWhiteSpace(n.TriggerDetail)
                     ? $"{templateName} - {n.TriggerType} notification"
                     : $"{templateName} - {n.TriggerType} notification - {n.TriggerDetail}")
@@ -439,6 +438,7 @@ namespace Unity.GrantManager.Web.Controllers
             return Ok(new { notificationPlanNames = planNames });
         }
 
+        [Authorize(NotificationsPermissions.Email.ScheduleCreate)]
         [HttpPut("{formId}/{id:guid}")]
         public async Task<ActionResult<ScheduledNotificationDto>> UpdateForForm(string formId, Guid id, [FromBody] CreateScheduledNotificationInput input)
         {
@@ -447,11 +447,11 @@ namespace Unity.GrantManager.Web.Controllers
 
             if (!ValidateModule(input, out var moduleError)) return BadRequest(moduleError);
 
-            var template = await _templateService.GetTemplateById(input.TemplateId);
+            var template = await templateService.GetTemplateById(input.TemplateId);
             if (template == null) return BadRequest("Template not found");
 
-            var existingNotification = await _automatedNotificationAppService.GetAsync(id);
-            var existingTemplate = await _templateService.GetTemplateById(existingNotification.EmailTemplateId);
+            var existingNotification = await automatedNotificationAppService.GetAsync(id);
+            var existingTemplate = await templateService.GetTemplateById(existingNotification.EmailTemplateId);
             if (existingTemplate != null &&
                 !string.Equals(template.TemplateType, existingTemplate.TemplateType, StringComparison.OrdinalIgnoreCase))
             {
@@ -465,7 +465,7 @@ namespace Unity.GrantManager.Web.Controllers
             string? statusLabel = null;
             if (input.ApplicationStatusId.HasValue)
             {
-                var statuses = await _statusService.GetListAsync();
+                var statuses = await statusService.GetListAsync();
                 var match = statuses.FirstOrDefault(s => s.Id == input.ApplicationStatusId.Value);
                 if (match != null) statusLabel = match.InternalStatus;
             }
@@ -487,7 +487,7 @@ namespace Unity.GrantManager.Web.Controllers
                 RecipientIdentifier = input.RecipientIdentifier
             };
 
-            var updated = await _automatedNotificationAppService.UpdateAsync(id, updateDto);
+            var updated = await automatedNotificationAppService.UpdateAsync(id, updateDto);
 
             var dto = new ScheduledNotificationDto
             {

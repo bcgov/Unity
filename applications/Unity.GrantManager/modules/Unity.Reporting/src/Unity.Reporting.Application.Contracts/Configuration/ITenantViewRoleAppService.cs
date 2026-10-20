@@ -11,29 +11,16 @@ namespace Unity.Reporting.Configuration
     public interface ITenantViewRoleAppService
     {
         /// <summary>
-        /// Retrieves the view role configuration for a specific tenant.
-        /// Returns either the explicitly configured role or a default inferred role based on the tenant's name.
+        /// Retrieves the role a tenant's reporting views are granted to: the saved role (written by
+        /// Metabase Setup, or saved by hand for legacy tenants), otherwise {LicencePlate}_readonly.
         /// </summary>
-        /// <param name="tenantId">The unique identifier of the tenant to retrieve the view role configuration for.</param>
+        /// <param name="tenantId">The unique identifier of the tenant to retrieve the view role for.</param>
         /// <returns>
-        /// A <see cref="TenantViewRoleDto"/> containing the tenant information and its associated view role.
-        /// Defaults to {LicencePlate}_readonly when a licence plate exists, falling back to {tenantname}_readonly for legacy tenants.
+        /// A <see cref="TenantViewRoleDto"/> with the role (null when the tenant has neither a saved
+        /// role nor a licence plate) and whether it and the licence-plate roles exist.
         /// </returns>
         /// <exception cref="InvalidOperationException">Thrown when the specified tenant is not found.</exception>
         Task<TenantViewRoleDto> GetAsync(Guid tenantId);
-
-        /// <summary>
-        /// Updates the view role configuration for a specific tenant.
-        /// This method persists a custom role assignment that overrides the default naming pattern.
-        /// </summary>
-        /// <param name="tenantId">The unique identifier of the tenant to update.</param>
-        /// <param name="input">The update input containing the new view role name to assign to the tenant.</param>
-        /// <returns>
-        /// The updated <see cref="TenantViewRoleDto"/> reflecting the new role assignment with IsDefaultInferred set to false.
-        /// </returns>
-        /// <exception cref="ArgumentNullException">Thrown when tenantId is empty or input is null.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when the specified tenant is not found or the role name is invalid.</exception>
-        Task<TenantViewRoleDto> UpdateAsync(Guid tenantId, UpdateTenantViewRoleDto input);
 
         /// <summary>
         /// Assigns the configured database role to all reporting views for the specified tenant.
@@ -48,13 +35,13 @@ namespace Unity.Reporting.Configuration
         Task AssignRoleToViewsAsync(Guid tenantId);
 
         /// <summary>
-        /// Retrieves database information for a specific tenant, including available roles and reporting views.
-        /// This method queries the tenant's database to return a comprehensive list of database roles
-        /// and all reporting views in the Reporting schema for the specified tenant.
+        /// Retrieves the reporting health of a tenant's database: the view role and whether it exists,
+        /// and every reporting view reconciled against the mappings that generate them.
         /// </summary>
         /// <param name="tenantId">The unique identifier of the tenant whose database information to retrieve.</param>
         /// <returns>
-        /// A <see cref="TenantDatabaseInfoDto"/> containing the tenant's available database roles and reporting view names.
+        /// A <see cref="TenantDatabaseInfoDto"/> with the view role and one <see cref="ReportingViewStatusDto"/>
+        /// per view, problems first. Database errors are logged and reported in <see cref="TenantDatabaseInfoDto.Error"/>.
         /// </returns>
         /// <exception cref="ArgumentNullException">Thrown when tenantId is empty.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the tenant is not found or database access fails.</exception>

@@ -47,7 +47,7 @@ public class MetabaseApiClient(
         var existingId = await FindIdByNameAsync("/api/database", name, cancellationToken);
         if (existingId != null)
         {
-            await UpdateDatabaseDetailsAsync(existingId.Value, host, port, dbName, username, password, ssl, cancellationToken);
+            await UpdateDatabaseDetailsAsync(existingId.Value, name, host, port, dbName, username, password, ssl, cancellationToken);
             return existingId.Value;
         }
 
@@ -62,12 +62,13 @@ public class MetabaseApiClient(
         return result.Value<int>("id");
     }
 
-    public async Task UpdateDatabaseDetailsAsync(int databaseId, string host, int port, string dbName, string username, string password, bool ssl, CancellationToken cancellationToken = default)
+    public async Task UpdateDatabaseDetailsAsync(int databaseId, string name, string host, int port, string dbName, string username, string password, bool ssl, CancellationToken cancellationToken = default)
     {
         var path = $"/api/database/{databaseId}";
         var body = new
         {
             engine = "postgres",
+            name,
             details = new { host, port, dbname = dbName, user = username, password, ssl }
         };
         await ReadJsonTokenAsync(await PutRawAsync(path, body, cancellationToken), path);
@@ -111,6 +112,12 @@ public class MetabaseApiClient(
         return result.Value<int>("id");
     }
 
+    public async Task RenameGroupAsync(int groupId, string name, CancellationToken cancellationToken = default)
+    {
+        var path = $"/api/permissions/group/{groupId}";
+        await ReadJsonTokenAsync(await PutRawAsync(path, new { name }, cancellationToken), path);
+    }
+
     public async Task<int?> FindUserIdByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         var result = await GetAsync($"/api/user?query={Uri.EscapeDataString(email)}", cancellationToken);
@@ -145,6 +152,38 @@ public class MetabaseApiClient(
                 throw;
             }
         }
+    }
+
+    public async Task<IReadOnlyList<MetabaseGroupMember>> GetGroupMembersAsync(int groupId, CancellationToken cancellationToken = default)
+    {
+        var group = await GetAsync($"/api/permissions/group/{groupId}", cancellationToken);
+        var members = group["members"] as JArray ?? new JArray();
+
+        return members
+            .Where(m => !string.IsNullOrWhiteSpace(m.Value<string>("email")) && m.Value<int?>("membership_id") != null)
+            .Select(m => new MetabaseGroupMember(
+                m.Value<int>("user_id"),
+                m.Value<int>("membership_id"),
+                m.Value<string>("email")!,
+                m.Value<string>("common_name")
+                    ?? $"{m.Value<string>("first_name")} {m.Value<string>("last_name")}".Trim()))
+            .ToList();
+    }
+
+    public async Task RemoveGroupMembershipAsync(int membershipId, CancellationToken cancellationToken = default)
+    {
+        var path = $"/api/permissions/membership/{membershipId}";
+        var baseUrl = await GetBaseUrlAsync();
+        var response = await resilientHttpRequest.HttpAsync(
+            HttpMethod.Delete, $"{baseUrl}{path}", extraHeaders: BuildHeaders(), cancellationToken: cancellationToken);
+
+        // Already removed (e.g. by hand in Metabase, or a retried job): the desired end state.
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return;
+        }
+
+        await ReadJsonTokenAsync(response, path);
     }
 
     private async Task<bool> IsGroupMemberAsync(int groupId, int userId, CancellationToken cancellationToken)
@@ -191,6 +230,12 @@ public class MetabaseApiClient(
 
         var result = await PostAsync("/api/collection", new { name, color = "#509EE3" }, cancellationToken);
         return result.Value<int>("id");
+    }
+
+    public async Task RenameCollectionAsync(int collectionId, string name, CancellationToken cancellationToken = default)
+    {
+        var path = $"/api/collection/{collectionId}";
+        await ReadJsonTokenAsync(await PutRawAsync(path, new { name }, cancellationToken), path);
     }
 
     public Task GrantGroupCollectionAccessAsync(int groupId, int collectionId, CancellationToken cancellationToken = default) =>

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Unity.GrantManager.Integrations;
+using Unity.GrantManager.Integrations.Metabase;
 using Unity.Modules.Shared.Permissions;
 using Unity.Reporting.Configuration;
 using Volo.Abp.Domain.Entities;
@@ -23,7 +24,8 @@ public class ConfigurationModalModel(
     ITenantAppService tenantAppService,
     ICasClientCodeLookupService lookupService,
     IFeatureAppService featureAppService,
-    ITenantViewRoleAppService tenantViewRoleAppService) : TenantManagementPageModel
+    ITenantViewRoleAppService tenantViewRoleAppService,
+    IMetabaseTenantAppService metabaseTenantAppService) : TenantManagementPageModel
 {
     [BindProperty]
     public TenantInfoModel Tenant { get; set; } = null!;
@@ -53,6 +55,9 @@ public class ConfigurationModalModel(
 
     public bool CanManageReporting { get; set; }
 
+    // TenantAppService.UpdateAsync refuses a name change from anyone else.
+    public bool CanRename { get; set; }
+
     public TenantViewRoleDto? ViewRole { get; set; }
 
     public virtual async Task<IActionResult> OnGetAsync(Guid id)
@@ -72,6 +77,8 @@ public class ConfigurationModalModel(
         CanManageManagers = CanManageFeatures;
 
         CanManageReporting = CanManageFeatures;
+
+        CanRename = CanManageFeatures;
 
         if (CanManageConnectionStrings)
         {
@@ -95,8 +102,17 @@ public class ConfigurationModalModel(
     {
         ValidateModel();
 
+        var previousName = (await tenantAppService.GetAsync(Tenant.Id)).Name;
+
         var input = ObjectMapper.Map<TenantInfoModel, TenantUpdateDto>(Tenant);
         await tenantAppService.UpdateAsync(Tenant.Id, input);
+
+        // Metabase names its database, group and collection after the tenant, so a rename queues
+        // Resync to rename them too. UpdateAsync only lets IT Admin/Ops rename.
+        if (!string.Equals(previousName, Tenant.Name, StringComparison.Ordinal))
+        {
+            await metabaseTenantAppService.ResyncIfSetUpAsync(Tenant.Id);
+        }
 
         if (!string.IsNullOrWhiteSpace(SelectedManagerUserIdentifier))
         {

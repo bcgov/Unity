@@ -25,13 +25,24 @@ namespace Unity.Payments.PaymentRequests.BackgroundJobWorkers
         ILocalEventBus localEventBus,
         ILogger<FinancialSummaryNotifier> logger) : ISingletonDependency
     {
-        public async Task NotifyFailedPayments(IEnumerable<IEmailRecipientStrategy> strategies)
+        public async Task<IReadOnlyList<Guid>> GetTenantIdsAsync()
         {
             var tenants = await tenantRepository.GetListAsync();
-            foreach (var tenantId in tenants.Select(tenant => tenant.Id))
+            return tenants.Select(tenant => tenant.Id).ToList();
+        }
+
+        public async Task NotifyFailedPayments(IEnumerable<IEmailRecipientStrategy> strategies)
+        {
+            foreach (var tenantId in await GetTenantIdsAsync())
             {
-                using (currentTenant.Change(tenantId))
-                {                    
+                await NotifyFailedPaymentsForTenantAsync(tenantId, strategies);
+            }
+        }
+
+        public async Task NotifyFailedPaymentsForTenantAsync(Guid tenantId, IEnumerable<IEmailRecipientStrategy> strategies)
+        {
+            using (currentTenant.Change(tenantId))
+            {
                     List<PaymentRequest> failedPaymentList = await GetFailedPayments();
                     if (failedPaymentList != null && failedPaymentList.Count > 0)
                     {
@@ -61,7 +72,7 @@ namespace Unity.Payments.PaymentRequests.BackgroundJobWorkers
                             if (recipientEmails.Count == 0)
                             {
                                 logger.LogWarning("NotifyFailedPayments: No recipients found from any strategy for tenant {TenantId}", tenantId);
-                                continue;
+                                return;
                             }
                             
                             var defaultFromAddress = await settingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
@@ -83,7 +94,6 @@ namespace Unity.Payments.PaymentRequests.BackgroundJobWorkers
                         }                       
                     }
                     
-                }
             }
         }
 

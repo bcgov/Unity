@@ -77,7 +77,14 @@
             <div class="tab-content" id="configurationTabContent">
 
                 <div class="tab-pane fade show active" id="pane-details" aria-labelledby="tab-details">
-                    <abp-input asp-for="Tenant.Name" label="@L["TenantName"].Value" />
+                    @if (Model.CanRename)
+                    {
+                        <abp-input asp-for="Tenant.Name" label="@L["TenantName"].Value" />
+                    }
+                    else
+                    {
+                        <abp-input asp-for="Tenant.Name" label="@L["TenantName"].Value" readonly="true" />
+                    }
                     <abp-input asp-for="Tenant.DisplayName" label="Display Name" />
                     <abp-input asp-for="Tenant.Division" label="Division" />
                     <abp-input asp-for="Tenant.Branch" label="Branch" />
@@ -186,7 +193,7 @@
                         <hr />
 
                         <p class="text-muted small">
-                            Configure the database role granted SELECT access to this tenant's reporting views.
+                            The database role granted SELECT access to this tenant's reporting views.
                         </p>
 
                         @if (!string.IsNullOrEmpty(Model.ViewRole?.LicencePlate))
@@ -217,49 +224,37 @@
                                 </div>
                             </div>
                         }
-                        else
-                        {
-                            <p class="text-muted small">
-                                No license plate on record for this tenant (a legacy tenant, created before
-                                automatic role provisioning) - defaulting to
-                                <code>@($"{Model.Tenant.Name.ToLowerInvariant()}_readonly")</code> unless a role
-                                has been explicitly saved below.
-                            </p>
-                        }
 
-                        <div class="form-group mb-3">
-                            <label for="config-view-role-input">View Role</label>
-                            <div class="d-flex align-items-center">
-                                <input type="text" id="config-view-role-input"
-                                       class="form-control view-role-input"
-                                       value="@Model.ViewRole?.ViewRole"
-                                       data-is-default="@(Model.ViewRole?.IsDefaultInferred == true ? "true" : "false")"
-                                       placeholder="@(Model.ViewRole?.ExpectedReadOnlyRole ?? $"{Model.Tenant.Name.ToLowerInvariant()}_readonly")"
-                                       aria-label="View role for this tenant" />
-                                @if (Model.ViewRole?.IsDefaultInferred == true)
+                        <div class="small mb-3">
+                            View role:
+                            @if (Model.ViewRole?.ViewRole != null)
+                            {
+                                <code>@Model.ViewRole.ViewRole</code>
+                                @if (Model.ViewRole.ViewRoleExists)
                                 {
-                                    <i class="fa-solid fa-triangle-exclamation text-warning ms-2 default-role-indicator"
-                                       title="This is an inferred default role name. Save to persist this setting in the database."
-                                       data-bs-toggle="tooltip"
-                                       data-bs-placement="top"></i>
+                                    <span class="text-success"><i class="fa-solid fa-circle-check"></i> Found</span>
                                 }
-                            </div>
+                                else
+                                {
+                                    <span class="text-danger"><i class="fa-solid fa-circle-xmark"></i> Not found</span>
+                                }
+                            }
+                            else
+                            {
+                                <span class="text-muted">None. This tenant has no licence plate and no saved role, so Assign to Views can't run.</span>
+                            }
                         </div>
 
                         <div class="d-flex gap-2">
-                            <button type="button" id="config-save-role-btn" class="btn btn-sm btn-outline-primary"
-                                    data-tenant-id="@Model.Tenant.Id" title="Save Role">
-                                <i class="fa-regular fa-floppy-disk"></i> Save
-                            </button>
-                            <button type="button" id="config-assign-role-btn" class="btn btn-sm btn-outline-secondary"
+                            <button type="button" id="config-assign-role-btn" class="btn btn-sm unt-btn-outline-primary btn-outline-primary"
                                     data-tenant-id="@Model.Tenant.Id" data-tenant-name="@Model.Tenant.Name"
-                                    title="Assign Role to All Views">
+                                    title="Assign Role to All Views" @(Model.ViewRole?.ViewRole == null ? "disabled" : null)>
                                 <i class="fa-solid fa-gears"></i> Assign to Views
                             </button>
-                            <button type="button" id="config-view-database-info-btn" class="btn btn-sm btn-outline-info"
+                            <button type="button" id="config-view-database-info-btn" class="btn btn-sm unt-btn-outline-primary btn-outline-primary"
                                     data-tenant-id="@Model.Tenant.Id" data-tenant-name="@Model.Tenant.Name"
-                                    title="View Database Info">
-                                <i class="fa-solid fa-database"></i> View DB Info
+                                    title="The tenant's reporting views and whether the view role can read them">
+                                <i class="fa-solid fa-database"></i> Reporting Views
                             </button>
                         </div>
                     </div>
@@ -272,7 +267,7 @@
                             <p class="text-muted small mb-0">
                                 Values are hidden. Show loads the current values so you can edit them. Hidden values are kept unchanged on save.
                             </p>
-                            <button type="button" id="config-toggle-connection-strings-btn" class="btn btn-sm btn-outline-secondary ms-2 text-nowrap"
+                            <button type="button" id="config-toggle-connection-strings-btn" class="btn btn-sm unt-btn-outline-primary btn-outline-primary ms-2 text-nowrap"
                                     data-tenant-id="@Model.Tenant.Id" aria-pressed="false">
                                 <i class="fa-regular fa-eye"></i> Show
                             </button>

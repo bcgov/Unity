@@ -19,21 +19,17 @@ public class TenantViewRoleDto
     public string TenantName { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the database role name that will be granted SELECT permissions on reporting views for this tenant.
-    /// Defaults to the tenant's {LicencePlate}_readonly role when a license plate is on record
-    /// (the role automatically provisioned for new tenants), falling back to the legacy
-    /// {tenantname}_readonly pattern for older tenants with no license plate, unless a role has
-    /// been explicitly saved for this tenant.
+    /// Gets or sets the database role granted SELECT permissions on reporting views for this tenant:
+    /// the saved role when there is one, otherwise {LicencePlate}_readonly. Null when the tenant
+    /// has neither, in which case Assign to Views can't run.
     /// </summary>
-    public string ViewRole { get; set; } = string.Empty;
+    public string? ViewRole { get; set; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether the current ViewRole value is an inferred default
-    /// that has not been explicitly saved to the database. When true, indicates the role name
-    /// follows a default pattern (see <see cref="ViewRole"/>) and requires explicit saving to
-    /// persist as a tenant-specific setting.
+    /// Gets or sets whether <see cref="ViewRole"/> actually exists as a role in the tenant's
+    /// database, checked live. Always false when <see cref="ViewRole"/> is null.
     /// </summary>
-    public bool IsDefaultInferred { get; set; }
+    public bool ViewRoleExists { get; set; }
 
     /// <summary>
     /// Gets or sets the tenant's license plate (its database name, e.g. "T_ABC123"), used since

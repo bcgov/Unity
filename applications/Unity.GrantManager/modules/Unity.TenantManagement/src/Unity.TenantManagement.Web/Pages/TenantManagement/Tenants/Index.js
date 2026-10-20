@@ -552,38 +552,7 @@
 
     let _tenantViewRoleAppService = unity.reporting.configuration.tenantViewRole;
 
-    function _saveReportingViewRole(tenantId, onSaved) {
-        let $btn = $('#config-save-role-btn');
-        let viewRole = $('#config-view-role-input').val().trim();
-
-        if (!viewRole) {
-            abp.notify.warn('Please enter a view role name.');
-            return;
-        }
-
-        $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Saving...');
-
-        _tenantViewRoleAppService.update(tenantId, { viewRole: viewRole })
-            .done(function () {
-                let $indicator = $('#pane-reporting .default-role-indicator');
-                if ($indicator.length) {
-                    $indicator.tooltip('dispose');
-                    $indicator.remove();
-                }
-                $('#config-view-role-input').attr('data-is-default', 'false');
-
-                abp.notify.success('View role saved successfully.');
-                if (onSaved) onSaved(viewRole);
-            })
-            .fail(function () {
-                abp.notify.error('Failed to save view role.');
-            })
-            .always(function () {
-                $btn.prop('disabled', false).html('<i class="fa-regular fa-floppy-disk"></i> Save');
-            });
-    }
-
-    function _assignReportingRoleToViews(tenantId, tenantName, viewRole) {
+    function _assignReportingRoleToViews(tenantId, tenantName) {
         let $btn = $('#config-assign-role-btn');
         $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin"></i> Assigning...');
 
@@ -600,36 +569,8 @@
     }
 
     function _wireReportingTabHandlers(tenantId) {
-        $('#config-save-role-btn').off('click').on('click', function () {
-            _saveReportingViewRole(tenantId);
-        });
-
         $('#config-assign-role-btn').off('click').on('click', function () {
-            let $btn = $(this);
-            let tenantName = $btn.data('tenant-name');
-            let viewRole = $('#config-view-role-input').val().trim();
-            let isDefault = $('#config-view-role-input').attr('data-is-default') === 'true';
-
-            if (!viewRole) {
-                abp.notify.warn('Please enter a view role name before assigning it to views.');
-                return;
-            }
-
-            if (isDefault) {
-                abp.message.confirm(
-                    'The role "' + viewRole + '" is using the default pattern and hasn\'t been saved yet. Would you like to save it first and then assign it to views?',
-                    'Save and Assign Role',
-                    function (isConfirmed) {
-                        if (isConfirmed) {
-                            _saveReportingViewRole(tenantId, function (savedViewRole) {
-                                _assignReportingRoleToViews(tenantId, tenantName, savedViewRole);
-                            });
-                        }
-                    }
-                );
-            } else {
-                _assignReportingRoleToViews(tenantId, tenantName, viewRole);
-            }
+            _assignReportingRoleToViews(tenantId, $(this).data('tenant-name'));
         });
 
         $('#config-view-database-info-btn').off('click').on('click', function () {
@@ -664,58 +605,86 @@
             : text;
     }
 
-    function _renderMetabaseSection(tenantId, s) {
-        let html = '<h6>' + _escape(lGm('TenantMetabase:Title')) + '</h6>' +
-            '<p class="text-muted small">' + _escape(lGm('TenantMetabase:Description')) + '</p>';
-
+    function _metabaseStatusHtml(s) {
         let statusText = s.status ? lGm('TenantList:PostCreationStatus:' + s.status) : lGm('TenantMetabase:NeverRun');
-        html += '<div class="small mb-1">' + _escape(lGm('TenantMetabase:LastResult')) + ': ' +
+        let html = '<p class="text-muted small">' + _escape(lGm('TenantMetabase:Description')) + '</p>' +
+            '<div class="small mb-1">' + _escape(lGm('TenantMetabase:LastResult')) + ': ' +
             (s.status ? '<i class="fa-solid ' + _metabaseStatusIcons[s.status] + '"></i> ' : '') + _escape(statusText) +
             (s.statusUpdatedAt ? ' <span class="text-muted">(' + _escape(new Date(s.statusUpdatedAt).toLocaleString()) + ')</span>' : '') +
             '</div>';
         if (s.statusMessage) {
             html += '<div class="text-muted small mb-1">' + _escape(s.statusMessage) + '</div>';
         }
+        return html + _metabaseLastMemberSyncHtml(s.lastMemberSync);
+    }
 
-        if (!s.canRun) {
-            html += '<div class="alert ' + (s.notRunIsFailure ? 'alert-danger' : 'alert-secondary') + ' small py-2 mt-2">' +
-                _escape(s.notRunReason) + '</div>';
-        } else {
-            html += '<div class="small mb-1">' + _escape(lGm('TenantMetabase:Connection')) + ': ' +
-                (s.connectionOk
-                    ? '<span class="text-success"><i class="fa-solid fa-circle-check"></i> ' + _escape(lGm('TenantMetabase:Connected')) + '</span>'
-                    : '<span class="text-danger"><i class="fa-solid fa-circle-xmark"></i> ' + _escape(lGm('TenantMetabase:ConnectionFailed')) + '</span>') +
-                '</div>';
-            if (s.connectionMessage) {
-                html += '<div class="alert ' + (s.connectionOk ? 'alert-warning' : 'alert-danger') + ' small py-2">' +
-                    _escape(s.connectionMessage) + '</div>';
-            }
+    function _metabaseLastMemberSyncHtml(sync) {
+        if (!sync) {
+            return '';
         }
+        let outcome = sync.error
+            ? '<span class="text-danger"><i class="fa-solid fa-circle-xmark"></i> ' + _escape(lGm('TenantMetabase:LastMemberSyncFailed')) + '</span>'
+            : _escape(lGm('TenantMetabase:LastMemberSyncResult', sync.added, sync.removed, sync.notMetabaseUsers));
+        let html = '<div class="small mb-1">' + _escape(lGm('TenantMetabase:LastMemberSync')) + ': ' + outcome +
+            ' <span class="text-muted">(' + _escape(new Date(sync.syncedAt).toLocaleString()) + ')</span></div>';
+        if (sync.error) {
+            html += '<div class="text-muted small mb-1">' + _escape(sync.error) + '</div>';
+        }
+        return html;
+    }
 
-        html += s.isSetUp
-            ? '<div class="small mb-2">' +
-                _metabaseLink(s.metabaseUrl, '/admin/databases/' + s.databaseId, lGm('TenantMetabase:Database'), s.databaseId) + ' · ' +
-                _metabaseLink(s.metabaseUrl, '/admin/people/groups/' + s.groupId, lGm('TenantMetabase:Group'), s.groupId) + ' · ' +
-                _metabaseLink(s.metabaseUrl, '/collection/' + s.collectionId, lGm('TenantMetabase:Collection'), s.collectionId) +
-                '</div>'
-            : '<div class="text-muted small mb-2">' + _escape(lGm('TenantMetabase:NotSetUp')) + '</div>';
-
-        let canSetUp = s.canRun && s.connectionOk && s.status !== 'Waiting';
-        let setupLabel = lGm(s.isSetUp ? 'TenantMetabase:Resync' : 'TenantMetabase:SetUp');
-        let setupHint = lGm(s.isSetUp ? 'TenantMetabase:ResyncHint' : 'TenantMetabase:SetUpHint');
-        html += '<div class="d-flex gap-2">' +
-            '<button type="button" id="config-metabase-setup-btn" class="btn btn-sm btn-outline-primary"' +
-            (canSetUp ? '' : ' disabled') + ' title="' + _escape(setupHint) + '">' +
-            '<i class="fa-solid fa-rotate"></i> ' + _escape(setupLabel) + '</button>' +
-            '<button type="button" id="config-metabase-refresh-btn" class="btn btn-sm btn-outline-secondary">' +
-            '<i class="fa-solid fa-arrows-rotate"></i> ' + _escape(lGm('TenantMetabase:Refresh')) + '</button>' +
+    function _metabaseConnectionHtml(s) {
+        if (!s.canRun) {
+            return '<div class="alert ' + (s.notRunIsFailure ? 'alert-danger' : 'alert-secondary') + ' small py-2 mt-2">' +
+                _escape(s.notRunReason) + '</div>';
+        }
+        let html = '<div class="small mb-1">' + _escape(lGm('TenantMetabase:Connection')) + ': ' +
+            (s.connectionOk
+                ? '<span class="text-success"><i class="fa-solid fa-circle-check"></i> ' + _escape(lGm('TenantMetabase:Connected')) + '</span>'
+                : '<span class="text-danger"><i class="fa-solid fa-circle-xmark"></i> ' + _escape(lGm('TenantMetabase:ConnectionFailed')) + '</span>') +
             '</div>';
+        if (s.connectionMessage) {
+            html += '<div class="alert ' + (s.connectionOk ? 'alert-warning' : 'alert-danger') + ' small py-2">' +
+                _escape(s.connectionMessage) + '</div>';
+        }
+        return html;
+    }
 
-        let $section = $('#config-metabase-section').html(html);
+    function _metabaseLinksHtml(s) {
+        if (!s.isSetUp) {
+            return '<div class="text-muted small mb-2">' + _escape(lGm('TenantMetabase:NotSetUp')) + '</div>';
+        }
+        // Group admin pages need Metabase admin, which only IT Administrators have
+        let groupBaseUrl = abp.auth.isGranted('ITAdministrator') ? s.metabaseUrl : null;
+        return '<div class="small mb-2">' +
+            _metabaseLink(s.metabaseUrl, '/browse/databases/' + s.databaseId, lGm('TenantMetabase:Database'), s.databaseId) + ' · ' +
+            _metabaseLink(groupBaseUrl, '/admin/people/groups/' + s.groupId, lGm('TenantMetabase:Group'), s.groupId) + ' · ' +
+            _metabaseLink(s.metabaseUrl, '/collection/' + s.collectionId, lGm('TenantMetabase:Collection'), s.collectionId) +
+            '</div>';
+    }
 
-        $section.find('#config-metabase-refresh-btn').on('click', function () {
-            _loadMetabaseSection(tenantId);
-        });
+    function _metabaseButtonHtml(id, icon, labelKey, hintKey, enabled) {
+        return '<button type="button" id="' + id + '" class="btn btn-sm unt-btn-outline-primary btn-outline-primary"' +
+            (enabled ? '' : ' disabled') + (hintKey ? ' title="' + _escape(lGm(hintKey)) + '"' : '') + '>' +
+            (icon ? '<i class="fa-solid ' + icon + '"></i> ' : '') + _escape(lGm(labelKey)) + '</button>';
+    }
+
+    function _metabaseButtonsHtml(s) {
+        let canSetUp = s.canRun && s.connectionOk && s.status !== 'Waiting';
+        let html = '<div class="d-flex flex-wrap justify-content-end gap-2">' +
+            _metabaseButtonHtml('config-metabase-setup-btn', 'fa-rotate',
+                s.isSetUp ? 'TenantMetabase:Resync' : 'TenantMetabase:SetUp',
+                s.isSetUp ? 'TenantMetabase:ResyncHint' : 'TenantMetabase:SetUpHint', canSetUp);
+        if (s.isSetUp) {
+            html += _metabaseButtonHtml('config-metabase-sync-schema-btn', 'fa-table-list',
+                    'TenantMetabase:SyncSchema', 'TenantMetabase:SyncSchemaHint', canSetUp) +
+                _metabaseButtonHtml('config-metabase-rescan-values-btn', 'fa-filter',
+                    'TenantMetabase:RescanValues', 'TenantMetabase:RescanValuesHint', canSetUp);
+        }
+        return html + '</div>';
+    }
+
+    function _wireMetabaseSection($section, tenantId) {
         $section.find('#config-metabase-setup-btn').on('click', function () {
             $(this).prop('disabled', true);
             _metabaseTenantService.setup(tenantId)
@@ -727,12 +696,202 @@
                     _loadMetabaseSection(tenantId);
                 });
         });
+        _wireMetabaseRequestButton($section.find('#config-metabase-sync-schema-btn'),
+            function () { return _metabaseTenantService.syncSchema(tenantId); }, 'TenantMetabase:SyncSchemaRequested');
+        _wireMetabaseRequestButton($section.find('#config-metabase-rescan-values-btn'),
+            function () { return _metabaseTenantService.rescanValues(tenantId); }, 'TenantMetabase:RescanValuesRequested');
     }
 
-    function _loadMetabaseSection(tenantId) {
+    // Members need a working connection to a set-up tenant; not reloaded while Setup is still running.
+    function _canShowMetabaseMembers(s) {
+        return s.isSetUp && s.canRun && s.connectionOk && s.status !== 'Waiting';
+    }
+
+    // Heading with its actions on the right, the same layout as the Members section below it.
+    function _sectionHeaderHtml(titleKey, actionsHtml) {
+        return '<div class="d-flex justify-content-between align-items-center mb-2">' +
+            '<h6 class="mb-0">' + _escape(lGm(titleKey)) + '</h6>' + actionsHtml + '</div>';
+    }
+
+    function _renderMetabaseSection(tenantId, s) {
+        let html = _sectionHeaderHtml('TenantMetabase:Title', _metabaseButtonsHtml(s)) +
+            _metabaseStatusHtml(s) + _metabaseConnectionHtml(s) + _metabaseLinksHtml(s) +
+            '<div id="config-metabase-members" class="mt-3"></div>';
+        _wireMetabaseSection($('#config-metabase-section').html(html), tenantId);
+        if (_canShowMetabaseMembers(s)) {
+            _loadMetabaseMembers(tenantId);
+        }
+    }
+
+    // ─── Configuration modal: Reporting tab (Metabase members) ────────────────
+
+    // MetabaseMemberSource; the API sends the number unless enums are serialized as names.
+    let _metabaseMemberSources = ['ProgramManager', 'AdditionalMember', 'Metabase', 'Permission'];
+
+    function _metabaseMemberSourceName(source) {
+        return typeof source === 'number' ? _metabaseMemberSources[source] : source;
+    }
+
+    function _metabaseMemberSourceText(source) {
+        return lGm('TenantMetabase:Source:' + _metabaseMemberSourceName(source));
+    }
+
+    function _metabaseMemberStateHtml(row) {
+        if (row.offboarded) {
+            return row.inGroup
+                ? '<span class="text-danger">' + _escape(lGm('TenantMetabase:State:OffboardedInGroup')) + '</span>'
+                : '<span class="text-muted">' + _escape(lGm('TenantMetabase:State:Offboarded')) + '</span>';
+        }
+        if (row.inGroup) {
+            return '<span class="text-success">' + _escape(lGm('TenantMetabase:State:Member')) + '</span>';
+        }
+        let key = row.isMetabaseUser === false ? 'TenantMetabase:State:NotMetabaseUser' : 'TenantMetabase:State:Pending';
+        return '<span class="text-muted">' + _escape(lGm(key)) + '</span>';
+    }
+
+    function _metabaseMemberActionHtml(row) {
+        if (row.canRemove) {
+            // d-inline-flex: the theme makes .btn display:flex, which ignores the cell's text-end.
+            return '<button type="button" class="btn btn-sm unt-btn-outline-primary btn-outline-primary d-inline-flex config-metabase-remove-member-btn" data-email="' +
+                _escape(row.email) + '"><i class="fa-solid fa-user-minus"></i> ' + _escape(lGm('TenantMetabase:Remove')) + '</button>';
+        }
+        let managedByKey = _metabaseMemberSourceName(row.source) === 'Permission'
+            ? 'TenantMetabase:ManagedByPermission' : 'TenantMetabase:ManagedByRole';
+        return '<span class="text-muted">' + _escape(lGm(managedByKey)) + '</span>';
+    }
+    function _metabaseMemberRowHtml(row) {
+        let action = _metabaseMemberActionHtml(row);
+        return '<tr>' +
+            '<td>' + _escape(row.email) + '</td>' +
+            '<td>' + _escape(row.name) + '</td>' +
+            '<td>' + _escape(_metabaseMemberSourceText(row.source)) + '</td>' +
+            '<td>' + _metabaseMemberStateHtml(row) + '</td>' +
+            '<td class="text-end text-nowrap">' + action + '</td>' +
+            '</tr>';
+    }
+
+    function _metabaseMembersTableHtml(rows) {
+        if (!rows.length) {
+            return '<div class="text-muted small mb-2">' + _escape(lGm('TenantMetabase:NoMembers')) + '</div>';
+        }
+        // align-middle: rows with a Remove button are taller, so text rows would otherwise sit at the top.
+        return '<table class="table table-sm small align-middle mb-2"><thead><tr>' +
+            '<th>' + _escape(lGm('TenantMetabase:Email')) + '</th>' +
+            '<th>' + _escape(lGm('TenantMetabase:Name')) + '</th>' +
+            '<th>' + _escape(lGm('TenantMetabase:Source')) + '</th>' +
+            '<th>' + _escape(lGm('TenantMetabase:MemberStatus')) + '</th>' +
+            '<th></th></tr></thead><tbody>' +
+            rows.map(_metabaseMemberRowHtml).join('') +
+            '</tbody></table>';
+    }
+
+    function _renderMetabaseMembers(tenantId, rows) {
+        let html = _sectionHeaderHtml('TenantMetabase:Members',
+                _metabaseButtonHtml('config-metabase-sync-members-btn', 'fa-rotate', 'TenantMetabase:SyncMembers', 'TenantMetabase:SyncMembersHint', true)) +
+            '<p class="text-muted small">' + _escape(lGm('TenantMetabase:MembersDescription')) + '</p>' +
+            _metabaseMembersTableHtml(rows) +
+            '<div class="d-flex gap-2">' +
+            '<input type="text" id="config-metabase-add-members-input" class="form-control form-control-sm" autocomplete="off" placeholder="' +
+                _escape(lGm('TenantMetabase:AddMembersPlaceholder')) + '" />' +
+            _metabaseButtonHtml('config-metabase-add-members-btn', 'fa-user-plus', 'TenantMetabase:AddMembers', null, true) +
+            '</div>';
+        _wireMetabaseMembers($('#config-metabase-members').html(html), tenantId);
+    }
+
+    function _notifyMetabaseSyncResult(result) {
+        abp.notify.info(lGm('TenantMetabase:MembersSynced', result.added, result.removed, result.notMetabaseUsers));
+    }
+
+    // Runs a members request with the button disabled, then reloads the table whatever the outcome.
+    // A request that ran a sync (or failed during one) also changes the last-sync line, so the
+    // whole section reloads.
+    function _runMetabaseMembersRequest(tenantId, $btn, request, runsSync) {
+        $btn.prop('disabled', true);
+        request()
+            .done(function (result) {
+                if (result) {
+                    _notifyMetabaseSyncResult(result);
+                }
+            })
+            .always(function () {
+                if (runsSync) {
+                    _loadMetabaseSection(tenantId);
+                } else {
+                    _loadMetabaseMembers(tenantId);
+                }
+            });
+    }
+
+    function _wireMetabaseMembers($members, tenantId) {
+        $members.find('#config-metabase-add-members-btn').on('click', function () {
+            let emails = $members.find('#config-metabase-add-members-input').val().trim();
+            if (!emails) {
+                return;
+            }
+            _runMetabaseMembersRequest(tenantId, $(this), function () {
+                return _metabaseTenantService.addMembers(tenantId, { emails: emails });
+            }, true);
+        });
+        $members.find('#config-metabase-sync-members-btn').on('click', function () {
+            _runMetabaseMembersRequest(tenantId, $(this), function () {
+                return _metabaseTenantService.syncMembers(tenantId);
+            }, true);
+        });
+        $members.find('.config-metabase-remove-member-btn').on('click', function () {
+            _confirmRemoveMetabaseMember(tenantId, $(this));
+        });
+    }
+
+    function _removeMetabaseMember(tenantId, $btn, email) {
+        _runMetabaseMembersRequest(tenantId, $btn, function () {
+            return _metabaseTenantService.removeMember(tenantId, { email: email });
+        });
+    }
+
+    function _confirmRemoveMetabaseMember(tenantId, $btn) {
+        let email = $btn.data('email');
+        abp.message.confirm(lGm('TenantMetabase:RemoveConfirm', email), function (confirmed) {
+            if (confirmed) {
+                _removeMetabaseMember(tenantId, $btn, email);
+            }
+        });
+    }
+
+    function _loadMetabaseMembers(tenantId) {
+        let $members = $('#config-metabase-members');
+        $members.html('<div class="text-muted small"><i class="fa-solid fa-spinner fa-spin"></i> ' +
+            _escape(lGm('TenantMetabase:MembersLoading')) + '</div>');
+
+        _metabaseTenantService.getMembers(tenantId)
+            .done(function (rows) {
+                _renderMetabaseMembers(tenantId, rows);
+            })
+            .fail(function () {
+                $members.html('<div class="text-danger small">' + _escape(lGm('TenantMetabase:MembersLoadFailed')) + '</div>');
+            });
+    }
+
+    // Metabase runs these in the background, so there's no status to poll; just confirm the request.
+    function _wireMetabaseRequestButton($btn, request, requestedKey) {
+        $btn.on('click', function () {
+            $btn.prop('disabled', true);
+            request()
+                .done(function () {
+                    abp.notify.info(lGm(requestedKey));
+                })
+                .always(function () {
+                    $btn.prop('disabled', false);
+                });
+        });
+    }
+
+    function _loadMetabaseSection(tenantId, isPoll) {
         let $section = $('#config-metabase-section');
-        $section.html('<div class="text-muted small"><i class="fa-solid fa-spinner fa-spin"></i> ' +
-            _escape(lGm('TenantMetabase:Loading')) + '</div>');
+        // Polls re-render in place; swapping in the spinner each time makes the tab flash
+        if (!isPoll) {
+            $section.html('<div class="text-muted small"><i class="fa-solid fa-spinner fa-spin"></i> ' +
+                _escape(lGm('TenantMetabase:Loading')) + '</div>');
+        }
 
         _metabaseTenantService.get(tenantId)
             .done(function (status) {
@@ -740,10 +899,11 @@
                 _renderMetabaseSection(tenantId, status);
 
                 // The job saves the tenant again when it finishes, so keep polling until then.
-                if (status.status === 'Waiting') {
+                // A step that can't run never finishes, so a stale Waiting would poll forever.
+                if (status.status === 'Waiting' && status.canRun) {
                     setTimeout(function () {
                         if ($.contains(document, $section[0])) {
-                            _loadMetabaseSection(tenantId);
+                            _loadMetabaseSection(tenantId, true);
                         }
                     }, 3000);
                 }

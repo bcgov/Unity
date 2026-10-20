@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Settings;
 using Unity.Modules.Shared.Utils;
-using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
@@ -15,8 +14,10 @@ using Volo.Abp.Uow;
 namespace Unity.GrantManager.Applicants.BackgroundWorkers;
 
 [DisallowConcurrentExecution]
-public class FiscalYearEndRolloverWorker : QuartzBackgroundWorkerBase
+public class FiscalYearEndRolloverWorker : UnityQuartzBackgroundWorkerBase
 {
+    protected override bool UsesTenantAuditScopes => true;
+
     private readonly ILogger<FiscalYearEndRolloverWorker> _logger;
     private readonly IServiceProvider _serviceProvider;
     private readonly ITenantRepository _tenantRepository;
@@ -71,7 +72,7 @@ public class FiscalYearEndRolloverWorker : QuartzBackgroundWorkerBase
             .Build();
     }
 
-    public override async Task Execute(IJobExecutionContext context)
+    protected override async Task ExecuteInBackgroundAsync(IJobExecutionContext context)
     {
         _logger.LogInformation("Executing FiscalYearEndRolloverWorker...");
 
@@ -87,31 +88,34 @@ public class FiscalYearEndRolloverWorker : QuartzBackgroundWorkerBase
                 var currentTenant = tenantScope.ServiceProvider.GetRequiredService<ICurrentTenant>();
                 var uowManager = tenantScope.ServiceProvider.GetRequiredService<IUnitOfWorkManager>();
 
-                // The rollover runs raw SQL directly against the tenant connection, which bypasses
-                // ABP's EF Core query filters (soft-delete, multi-tenancy) entirely, so no explicit
-                // IDataFilter bypass is required here - CurrentTenant.Change only selects the
-                // correct tenant connection string.
-                using (currentTenant.Change(tenant.Id, tenant.Name))
+                await ExecuteInTenantAuditScopeAsync(tenant.Id, async () =>
                 {
-                    using var uow = uowManager.Begin(requiresNew: true, isTransactional: false);
-                    var applicantRepository = tenantScope.ServiceProvider.GetRequiredService<IApplicantRepository>();
-
-                    var result = await applicantRepository.RollOverFiscalYearEndAsync();
-
-                    if (!result.ColumnsAvailable)
+                    // The rollover runs raw SQL directly against the tenant connection, which bypasses
+                    // ABP's EF Core query filters (soft-delete, multi-tenancy) entirely, so no explicit
+                    // IDataFilter bypass is required here - CurrentTenant.Change only selects the
+                    // correct tenant connection string.
+                    using (currentTenant.Change(tenant.Id, tenant.Name))
                     {
-                        _logger.LogWarning(
-                            "Skipped fiscal year end rollover for tenant {TenantName} ({TenantId}) - missing column(s): {MissingColumns}",
-                            tenant.Name, tenant.Id, string.Join(", ", result.MissingColumns));
-                        continue;
+                        using var uow = uowManager.Begin(requiresNew: true, isTransactional: false);
+                        var applicantRepository = tenantScope.ServiceProvider.GetRequiredService<IApplicantRepository>();
+
+                        var result = await applicantRepository.RollOverFiscalYearEndAsync();
+
+                        if (!result.ColumnsAvailable)
+                        {
+                            _logger.LogWarning(
+                                "Skipped fiscal year end rollover for tenant {TenantName} ({TenantId}) - missing column(s): {MissingColumns}",
+                                tenant.Name, tenant.Id, string.Join(", ", result.MissingColumns));
+                            return;
+                        }
+
+                        await uow.CompleteAsync(context.CancellationToken);
+
+                        _logger.LogInformation(
+                            "Fiscal year end rollover completed for tenant {TenantName} ({TenantId}). Rows affected: {RowsAffected}",
+                            tenant.Name, tenant.Id, result.RowsAffected);
                     }
-
-                    await uow.CompleteAsync(context.CancellationToken);
-
-                    _logger.LogInformation(
-                        "Fiscal year end rollover completed for tenant {TenantName} ({TenantId}). Rows affected: {RowsAffected}",
-                        tenant.Name, tenant.Id, result.RowsAffected);
-                }
+                });
             }
             catch (Exception ex)
             {

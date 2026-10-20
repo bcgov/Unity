@@ -5,13 +5,12 @@ using System.Threading.Tasks;
 using Unity.GrantManager.ApplicantProfile;
 using Unity.GrantManager.Settings;
 using Unity.Modules.Shared.Utils;
-using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.SettingManagement;
 
 namespace Unity.GrantManager.Applicants.BackgroundWorkers
 {
     [DisallowConcurrentExecution]
-    public class ApplicantTenantMapReconciliationWorker : QuartzBackgroundWorkerBase
+    public class ApplicantTenantMapReconciliationWorker : UnityQuartzBackgroundWorkerBase
     {
         private readonly IApplicantTenantMapReconciler _reconciler;
         private readonly ILogger<ApplicantTenantMapReconciliationWorker> _logger;             
@@ -87,7 +86,7 @@ namespace Unity.GrantManager.Applicants.BackgroundWorkers
         /// encountered.</remarks>
         /// <param name="context">The execution context for the job, providing runtime information and job-specific data.</param>
         /// <returns>A task that represents the asynchronous execution of the job.</returns>
-        public override async Task Execute(IJobExecutionContext context)
+        protected override async Task ExecuteInBackgroundAsync(IJobExecutionContext context)
         {
             _logger.LogInformation("Executing ApplicantTenantMapReconciliationWorker...");
 

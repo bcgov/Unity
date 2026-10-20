@@ -9,7 +9,7 @@ Unlike Flex's roadmap (one specific, aspirational feature), this module's outsta
 
 Combined: if a tenant's readonly (or read-write) password is ever changed after the role's first creation — via that operator edit, or via any re-run of tenant-creation logic against a pre-existing role name — the actual Postgres role silently keeps its **original** password while the encrypted connection string (and everything downstream that decrypts and uses it, including the Metabase registration step) reflects the **new** one. The next thing that tries to actually connect fails with an authentication error that gives no hint the mismatch is the cause.
 
-Neither reads as a bug in isolation — each is a reasonable "create-only, idempotent-on-existing" implementation. Together, they mean a password change made through the UI silently fails to reach the Postgres role, with no error at the time of the change — only later, and only if something tries to connect. Metabase Resync (Reporting tab) copies the stored connection string's details onto Metabase's database record, which doesn't help while the role still has the old password.
+Neither reads as a bug in isolation — each is a reasonable "create-only, idempotent-on-existing" implementation. Together, they mean a password change made through the UI silently fails to reach the Postgres role, with no error at the time of the change — only later, and only if something tries to connect. Metabase Rerun Setup (Reporting tab) copies the stored connection string's details onto Metabase's database record, which doesn't help while the role still has the old password.
 
 ## Tenant deletion: what purge does not clean up
 
@@ -32,4 +32,4 @@ Deleting a tenant is two steps: `DeleteAsync` soft-deletes it, and `TenantAppSer
 
 ## No UI for retrying a failed post-creation step
 
-The Metabase step can be re-run from the Configuration modal's Reporting tab (Set up / Resync), but there's no retry action on the Tenants list or in the Setup Status dialog, and none for a step in general. Any future step would need its own way to be re-run, or a generic "retry" action reachable from that dialog.
+The Metabase step can be re-run from the Configuration modal's Reporting tab (Setup / Rerun Setup), but there's no retry action on the Tenants list or in the Setup Status dialog, and none for a step in general. Any future step would need its own way to be re-run, or a generic "retry" action reachable from that dialog.

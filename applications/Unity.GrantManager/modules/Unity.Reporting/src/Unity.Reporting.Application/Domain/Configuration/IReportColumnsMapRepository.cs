@@ -90,21 +90,18 @@ namespace Unity.Reporting.Domain.Configuration
         Task AssignRoleToViewAsync(string role, string viewName);
 
         /// <summary>
-        /// Retrieves all non-system database roles with their type information.
+        /// Retrieves all views in the Reporting schema and whether the given role can SELECT from each.
         /// </summary>
-        /// <returns>A list of database role names with type indicators.</returns>
-        Task<List<string>> GetDatabaseRolesAsync();
+        /// <param name="role">The role to check. Must exist in the database when not null; null
+        /// reports every view as not granted.</param>
+        /// <returns>One entry per reporting view, ordered by view name.</returns>
+        Task<List<ReportingViewGrant>> GetReportingViewGrantsAsync(string? role);
 
         /// <summary>
-        /// Retrieves role membership information showing which roles inherit from other roles.
+        /// Retrieves whether the given role can log in and has USAGE on the Reporting schema.
         /// </summary>
-        /// <returns>A list of role membership relationships.</returns>
-        Task<List<string>> GetRoleMembershipsAsync();
-
-        /// <summary>
-        /// Retrieves all view names in the Reporting schema.
-        /// </summary>
-        /// <returns>A list of reporting view names.</returns>
-        Task<List<string>> GetReportingViewsAsync();
+        /// <param name="role">The role to check.</param>
+        /// <returns>The role's access, or null when the role does not exist.</returns>
+        Task<ReportingRoleAccess?> GetRoleAccessAsync(string role);
     }
 }
