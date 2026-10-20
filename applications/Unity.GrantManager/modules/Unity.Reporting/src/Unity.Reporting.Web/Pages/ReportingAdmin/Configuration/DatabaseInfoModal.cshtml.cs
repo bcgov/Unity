@@ -9,8 +9,8 @@ using Unity.Reporting.Configuration;
 namespace Unity.Reporting.Web.Pages.ReportingAdmin.Configuration
 {
     /// <summary>
-    /// Razor Page model for the Database Information modal dialog.
-    /// Displays database roles and reporting views for a specific tenant.
+    /// Razor Page model for the Reporting Views modal dialog.
+    /// Displays the view role and the generation/grant status of each reporting view for a specific tenant.
     /// </summary>
     [Authorize(IdentityConsts.ITAdminOrITOperationsPolicyName)]
     public class DatabaseInfoModalModel : ReportingPageModel
@@ -63,8 +63,7 @@ namespace Unity.Reporting.Web.Pages.ReportingAdmin.Configuration
                     {
                         TenantId = TenantId,
                         TenantName = TenantName,
-                        DatabaseRoles = new(),
-                        ReportingViews = new()
+                        Error = "Could not load database information for this tenant."
                     };
                 }
             }

@@ -91,7 +91,9 @@ public class GrantManagerSettingDefinitionProvider : SettingDefinitionProvider
             // 2 AM PST = 10 AM UTC
             { SettingsConstants.BackgroundJobs.DateBasedNotificationSchedule_Expression, "0 0 10 1/1 * ? *" },
             // Midnight January 1st every year (server local time)
-            { SettingsConstants.BackgroundJobs.FiscalYearEndRollover_Expression, "0 0 0 1 1 ? *" }
+            { SettingsConstants.BackgroundJobs.FiscalYearEndRollover_Expression, "0 0 0 1 1 ? *" },
+            // Hourly at 2 minutes past: every other scheduled job starts at minute 0
+            { SettingsConstants.BackgroundJobs.MetabaseMembershipSync_Expression, "0 2 * 1/1 * ? *" }
         };
 
         foreach (var setting in backGroundSchedules)

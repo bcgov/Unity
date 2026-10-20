@@ -47,6 +47,7 @@ using Unity.Payments.Web;
 using Unity.TenantManagement.Web;
 using Volo.Abp;
 using Volo.Abp.AspNetCore.Auditing;
+using Volo.Abp.AspNetCore.ExceptionHandling;
 using Volo.Abp.AspNetCore.Authentication.OpenIdConnect;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.AntiForgery;
@@ -156,6 +157,7 @@ public class GrantManagerWebModule : AbpModule
         ConfigureUtils(context);
         ConfigureDataProtection(context, configuration);
         ConfigureMiniProfiler(context, configuration);
+        ConfigureExceptionHandling(hostingEnvironment);
 
         // Trust forwarded client IP headers only from explicitly configured ingress/router addresses.
         // This ensures RemoteIpAddress reflects the real client IP only when the request came
@@ -551,6 +553,20 @@ public class GrantManagerWebModule : AbpModule
                 options.FileSets.ReplaceEmbeddedByPhysical<GrantManagerWebModule>(hostingEnvironment.ContentRootPath);
             });
         }
+    }
+
+    // Exception details (type names and inner exception text) reach the browser only in the
+    // Development environment, which covers local runs and the dev and dev2 deployments.
+    // ABP applies this setting to the whole application. Stack traces are never sent.
+    // Errors users need to see must be UserFriendlyException or a BusinessException with a
+    // localized error code.
+    private void ConfigureExceptionHandling(IWebHostEnvironment hostingEnvironment)
+    {
+        Configure<AbpExceptionHandlingOptions>(options =>
+        {
+            options.SendExceptionsDetailsToClients = hostingEnvironment.IsDevelopment();
+            options.SendStackTraceToClients = false;
+        });
     }
 
     private void ConfigureNavigationServices()

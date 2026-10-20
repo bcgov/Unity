@@ -215,26 +215,36 @@
         return detail;
     }
 
+    // Cell text includes user-entered values (template and email group names),
+    // so it must be HTML-escaped before DataTables inserts it as markup.
+    function escapeCellText(value) {
+        return $.fn.dataTable.render.text().display(value ?? '');
+    }
+
     function renderTriggerDetail(data, type, row) {
         const detail = row.triggerType === 'Date'
             ? renderDateTriggerDetail(row)
             : row.eventStatus || '';
 
-        return appendRecipientDetail(detail, row);
+        return escapeCellText(appendRecipientDetail(detail, row));
     }
 
     function renderTriggerType(data, type, row) {
         if (row.triggerType === 'Event' && row.module) {
-            return 'Event - ' + row.module;
+            return escapeCellText('Event - ' + row.module);
         }
 
-        return row.triggerType || '';
+        return escapeCellText(row.triggerType || '');
+    }
+
+    function renderTemplateName(data) {
+        return escapeCellText(data);
     }
 
     function getNotificationColumns() {
         let index = 0;
         return [
-            { title: 'Template',      name: 'templateName', data: 'templateName', visible: true, index: index++ },
+            { title: 'Template',      name: 'templateName', data: 'templateName', visible: true, index: index++, render: renderTemplateName },
             { title: 'Trigger Type',  name: 'triggerType',  data: 'triggerType',  visible: true, index: index++, render: renderTriggerType },
             { title: 'Trigger Detail',name: 'triggerDetail',data: null, visible: true, orderable: true, defaultContent: '', index: index++,
               render: renderTriggerDetail },

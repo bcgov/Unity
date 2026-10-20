@@ -92,7 +92,7 @@ It is what backs address autocomplete on applicant addresses, and contributes to
 
 ## Matomo
 
-`MatomoUrlProvider` supplies the Matomo tracking URL from `ANALYTICS_MATOMO_BASE`, and returns nothing unless the `Unity.Analytics` tenant feature is enabled. The value can carry the Matomo site ID with Matomo's own `idsite` parameter (`https://prod-analytics-matomo.apps.silver.devops.gov.bc.ca/?idsite=5`); `AnalyticsUtils.initMatomo` reads it and falls back to site `1` when it is absent. The type exists twice — in `Application/Analytics/` and `Web/Analytics/` — with the web copy being the one the layout uses.
+`MatomoUrlProvider` supplies the Matomo tracking URL from `ANALYTICS_MATOMO_BASE`, and returns nothing when that endpoint is blank (its seeded value), which turns tracking off. The value can carry the Matomo site ID with Matomo's own `idsite` parameter (`https://prod-analytics-matomo.apps.silver.devops.gov.bc.ca/?idsite=5`); `AnalyticsUtils.initMatomo` reads it and falls back to site `1` when it is absent. The type exists twice — in `Application/Analytics/` and `Web/Analytics/`. The layout resolves `IAnalyticsUrlProvider` to the Application copy (registered explicitly in `GrantManagerApplicationModule`). The Web copy, which also checks the `Unity.Analytics` tenant feature, isn't exposed under that interface by ABP's naming convention, so that feature check doesn't currently apply. The login layout (`Account.cshtml`) uses the theme's own `AnalyticsUrlProvider` in `Unity.Theme.UX2`.
 
 ## GitHub
 

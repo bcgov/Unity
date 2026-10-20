@@ -166,11 +166,9 @@ public class TenantAppService(
     {
         // TenantsCreateOrITOps also grants access to any caller holding the plain Tenants.Create
         // permission, not just IT Admin/Operations. CreateModalModel.OnPostAsync already strips
-        // FeatureKeys/MetabaseUserEmails for non-admin callers, but that only guards the OOTB
-        // Razor Page - a caller can still invoke this application service directly (its own
-        // dynamic API controller) and set them. Re-check the stricter policy here so a forged call
-        // can't enable arbitrary features or - more importantly - grant arbitrary email addresses
-        // Metabase access to the new tenant's database via the post-creation registration step.
+        // FeatureKeys for non-admin callers, but that only guards the OOTB Razor Page - a caller
+        // can still invoke this application service directly (its own dynamic API controller) and
+        // set them. Re-check the stricter policy here so a forged call can't enable arbitrary features.
         StripPrivilegedFieldsUnlessAuthorized(
             input, await AuthorizationService.IsGrantedAsync(IdentityConsts.ITAdminOrITOperationsPolicyName));
 
@@ -229,15 +227,6 @@ public class TenantAppService(
             }
         };
 
-        // Distinguish "field omitted" (input.MetabaseUserEmails is null - an older/API caller
-        // that never set it) from "explicitly cleared" (empty string - a deliberate "no Metabase
-        // users for this tenant" choice). TenantCreatedEventHandler saves an empty list when the
-        // property is absent; there is no Global default to fall back to.
-        if (input.MetabaseUserEmails != null)
-        {
-            tenantCreatedEto.Properties["MetabaseUserEmails"] = input.MetabaseUserEmails;
-        }
-
         await localEventBus.PublishAsync(tenantCreatedEto);
 
         return ObjectMapper.Map<Tenant, TenantDto>(tenant);
@@ -250,7 +239,15 @@ public class TenantAppService(
         if (!callerIsAuthorized)
         {
             input.FeatureKeys = null;
-            input.MetabaseUserEmails = null;
+        }
+    }
+
+    // Extracted, like StripPrivilegedFieldsUnlessAuthorized, so the decision is unit-testable.
+    internal static void EnsureRenameAllowed(bool callerIsAuthorized)
+    {
+        if (!callerIsAuthorized)
+        {
+            throw new UserFriendlyException("Only IT Admin and IT Operations can change a tenant's name.");
         }
     }
 
@@ -258,6 +255,14 @@ public class TenantAppService(
     public virtual async Task<TenantDto> UpdateAsync(Guid id, TenantUpdateDto input)
     {
         var tenant = await tenantRepository.GetAsync(id);
+
+        // TenantsUpdateOrITOps also admits the plain Tenants.Update permission. Renaming is limited
+        // to IT Admin/Operations because Metabase names its database, group and collection after the
+        // tenant, and only those roles can run the Resync that renames them to match.
+        if (!string.Equals(tenant.Name, input.Name, StringComparison.Ordinal))
+        {
+            EnsureRenameAllowed(await AuthorizationService.IsGrantedAsync(IdentityConsts.ITAdminOrITOperationsPolicyName));
+        }
 
         await tenantManager.ChangeNameAsync(tenant, input.Name);
 

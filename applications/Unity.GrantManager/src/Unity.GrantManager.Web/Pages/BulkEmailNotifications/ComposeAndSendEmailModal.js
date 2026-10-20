@@ -975,17 +975,17 @@
 
         $('#composeApplicationList')
             .off('click.compose', '.compose-application-row')
-            .on('click.compose', '.compose-application-row', function (event) {
+            .on('click.compose', '.compose-application-row', async function (event) {
                 if ($(event.target).closest('.compose-remove-application').length) return;
-                void selectApplication($(this).data('application-id'))
+                await selectApplication($(this).data('application-id'))
                     .catch(error => console.error('Failed to select application:', error));
             })
             .off('keydown.compose', '.compose-application-row')
-            .on('keydown.compose', '.compose-application-row', function (event) {
+            .on('keydown.compose', '.compose-application-row', async function (event) {
                 if ($(event.target).closest('.compose-remove-application').length) return;
                 if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault();
-                    void selectApplication($(this).data('application-id'))
+                    await selectApplication($(this).data('application-id'))
                         .catch(error => console.error('Failed to select application:', error));
                 }
             })

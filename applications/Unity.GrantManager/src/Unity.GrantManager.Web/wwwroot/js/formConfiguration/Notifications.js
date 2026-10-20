@@ -66,10 +66,11 @@
             responsive: true,
             data: items,
             columns: [
-                { data: 'templateName', title: 'Template' },
-                { data: 'triggerType', title: 'Trigger Type' },
+                // Escape user-entered values (template and email group names) to prevent XSS.
+                { data: 'templateName', title: 'Template', render: $.fn.dataTable.render.text() },
+                { data: 'triggerType', title: 'Trigger Type', render: $.fn.dataTable.render.text() },
                 { data: 'eventStatus', title: 'Trigger Detail', render: function (d, t, r) {
-                    return formatTriggerDetail(r);
+                    return $.fn.dataTable.render.text().display(formatTriggerDetail(r));
                 } },
                 { data: 'isActive', title: 'Status', render: function (d) { return d ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-secondary">Inactive</span>'; } },
                 {

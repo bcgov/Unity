@@ -60,9 +60,13 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
         public bool ShowAutomatic { get; set; }
         public bool ShowManual { get; set; }
 
-        public async Task OnGetAsync()
+        public async Task<IActionResult> OnGetAsync()
         {
             ApplicationFormDto = await applicationFormAppService.GetAsync(ApplicationId);
+            if (ApplicationFormDto.IsHiddenFromList)
+            {
+                return NotFound();
+            }
             ApplicationFormVersionDtoList = (List<ApplicationFormVersionDto>?) await applicationFormAppService.GetVersionsAsync(ApplicationFormDto.Id);
             FlexEnabled = await featureChecker.IsEnabledAsync("Unity.Flex");
 
@@ -102,6 +106,7 @@ namespace Unity.GrantManager.Web.Pages.ApplicationForms
             }
 
             IntakeProperties = JsonSerializer.Serialize(await GenerateMappingFieldsAsync());
+            return Page();
         }
         
         private async Task<List<MapField>> GenerateMappingFieldsAsync()

@@ -177,6 +177,7 @@ namespace Unity.GrantManager.Permissions
                     IdentitySeedPermissions.Roles.ManagePermissions,
                     GrantManagerPermissions.Intakes.Default,
                     GrantManagerPermissions.ApplicationForms.Default,
+                    GrantManagerPermissions.ApplicationForms.Delete,
                     UnitySettingManagementPermissions.UserInterface,
                     UnitySettingManagementPermissions.EditProgramDetails,
 
@@ -195,7 +196,8 @@ namespace Unity.GrantManager.Permissions
                     .. ApplicantManagement_CommonPermissions,
                     AIPermissions.Configuration.ConfigureAI,
                     FlexPermissions.Worksheets.Default,
-                    FlexPermissions.Worksheets.Delete
+                    FlexPermissions.Worksheets.Delete,
+                    MetabasePermissions.Access
             ], context.TenantId);
 
             // - Reviewer

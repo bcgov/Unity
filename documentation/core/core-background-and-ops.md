@@ -13,6 +13,7 @@ Quartz-based, all deriving from `QuartzBackgroundWorkerBase` and nearly all mark
 | `IntakeSyncWorker` | `GrantManager.BackgroundJobs.IntakeResync_Expression` | `0 0 7,19 1/1 * ? *` | Detects CHEFS submissions Unity is missing — see [core-intake.md](core-intake.md#the-nightly-resync) |
 | `DataHealthCheckWorker` | `GrantManager.BackgroundJobs.DataHealthCheckMonitor_Expression` | `0 0 * 1/1 * ? *` (hourly) | Data-integrity monitoring across tenants |
 | `ApplicantTenantMapReconciliationWorker` | `GrantManager.BackgroundJobs.ApplicantTenantMapReconciliation_Expression` | `0 0 10 1/1 * ? *` | Reconciles the host-side applicant↔tenant map |
+| `MetabaseMembershipSyncWorker` | `GrantManager.BackgroundJobs.MetabaseMembershipSync_Expression` | `0 2 * 1/1 * ? *` (hourly, 2 minutes past) | Syncs every set-up tenant's Metabase group members — see [`tenant-management/tenant-management-post-creation.md`](../tenant-management/tenant-management-post-creation.md#metabase-group-members) |
 | `DateBasedScheduledNotificationJob` | `GrantManager.BackgroundJobs.DateBasedNotificationSchedule_Expression` | | Date-driven emails — see [`notifications/notifications-scheduled-notifications.md`](../notifications/notifications-scheduled-notifications.md) |
 | `InboxWorkerBase` / `OutboxWorkerBase` | | | The transactional outbox — see [`transactional-outbox-pattern.md`](../transactional-outbox-pattern.md) |
 | `GrantsPortalMessageCleanupWorker` | | | Prunes processed portal messages |
