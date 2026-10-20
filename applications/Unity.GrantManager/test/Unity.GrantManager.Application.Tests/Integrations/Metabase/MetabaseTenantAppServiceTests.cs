@@ -277,7 +277,7 @@ public class MetabaseTenantAppServiceTests
     }
 
     [Fact]
-    public async Task RescanValuesAsync_DatabaseDeletedInMetabase_SuggestsResync()
+    public async Task RescanValuesAsync_DatabaseDeletedInMetabase_SuggestsRerunSetup()
     {
         var f = CreateService();
         f.Tenant.SetProperty(MetabaseTenantProvisioner.DatabaseIdProperty, 11);
@@ -286,7 +286,7 @@ public class MetabaseTenantAppServiceTests
 
         var ex = await Should.ThrowAsync<UserFriendlyException>(() => f.Service.RescanValuesAsync(f.Tenant.Id));
 
-        ex.Message.ShouldContain("Resync");
+        ex.Message.ShouldContain("Rerun Setup");
     }
 
     [Fact]

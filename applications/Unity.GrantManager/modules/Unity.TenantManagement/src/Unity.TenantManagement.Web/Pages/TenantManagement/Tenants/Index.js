@@ -749,13 +749,18 @@
         return '<span class="text-muted">' + _escape(lGm(key)) + '</span>';
     }
 
-    function _metabaseMemberRowHtml(row) {
-        let action = row.canRemove
+    function _metabaseMemberActionHtml(row) {
+        if (row.canRemove) {
             // d-inline-flex: the theme makes .btn display:flex, which ignores the cell's text-end.
-            ? '<button type="button" class="btn btn-sm unt-btn-outline-primary btn-outline-primary d-inline-flex config-metabase-remove-member-btn" data-email="' +
-                _escape(row.email) + '"><i class="fa-solid fa-user-minus"></i> ' + _escape(lGm('TenantMetabase:Remove')) + '</button>'
-            : '<span class="text-muted">' + _escape(lGm(_metabaseMemberSourceName(row.source) === 'Permission'
-                ? 'TenantMetabase:ManagedByPermission' : 'TenantMetabase:ManagedByRole')) + '</span>';
+            return '<button type="button" class="btn btn-sm unt-btn-outline-primary btn-outline-primary d-inline-flex config-metabase-remove-member-btn" data-email="' +
+                _escape(row.email) + '"><i class="fa-solid fa-user-minus"></i> ' + _escape(lGm('TenantMetabase:Remove')) + '</button>';
+        }
+        let managedByKey = _metabaseMemberSourceName(row.source) === 'Permission'
+            ? 'TenantMetabase:ManagedByPermission' : 'TenantMetabase:ManagedByRole';
+        return '<span class="text-muted">' + _escape(lGm(managedByKey)) + '</span>';
+    }
+    function _metabaseMemberRowHtml(row) {
+        let action = _metabaseMemberActionHtml(row);
         return '<tr>' +
             '<td>' + _escape(row.email) + '</td>' +
             '<td>' + _escape(row.name) + '</td>' +
