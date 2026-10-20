@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -47,6 +48,19 @@ public interface IMetabaseApiClient
     Task RenameGroupAsync(int groupId, string name, CancellationToken cancellationToken = default);
     Task<int?> FindUserIdByEmailAsync(string email, CancellationToken cancellationToken = default);
     Task AddGroupMemberAsync(int groupId, int userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lists the group's members (<c>GET /api/permissions/group/{id}</c>). Throws with status 404
+    /// when the group no longer exists.
+    /// </summary>
+    Task<IReadOnlyList<MetabaseGroupMember>> GetGroupMembersAsync(int groupId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Removes one group membership (<c>DELETE /api/permissions/membership/{id}</c>), using the
+    /// membership ID from <see cref="GetGroupMembersAsync"/>. A membership that is already gone
+    /// (404) counts as removed.
+    /// </summary>
+    Task RemoveGroupMembershipAsync(int membershipId, CancellationToken cancellationToken = default);
     Task GrantGroupDatabaseAccessAsync(int groupId, int databaseId, CancellationToken cancellationToken = default);
     Task<int> FindOrCreateCollectionAsync(string name, CancellationToken cancellationToken = default);
 

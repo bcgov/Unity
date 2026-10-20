@@ -31,13 +31,13 @@ Deliberate tradeoff for tenant-count scale (dozens to low hundreds), not thousan
 
 Inside one unit of work:
 
-1. `StripPrivilegedFieldsUnlessAuthorized(input, callerIsAuthorized)` — re-checks `IdentityConsts.ITAdminOrITOperationsPolicyName` server-side and nulls `FeatureKeys`/`MetabaseUserEmails` if the caller isn't IT Admin/Ops, even though a caller reaching this method already holds `TenantsCreateOrITOps` — see [tenant-management-domain-model.md](tenant-management-domain-model.md#roleorpermissionrequirement--the-actual-or-logic) for why this second check exists.
+1. `StripPrivilegedFieldsUnlessAuthorized(input, callerIsAuthorized)` — re-checks `IdentityConsts.ITAdminOrITOperationsPolicyName` server-side and nulls `FeatureKeys` if the caller isn't IT Admin/Ops, even though a caller reaching this method already holds `TenantsCreateOrITOps` — see [tenant-management-domain-model.md](tenant-management-domain-model.md#roleorpermissionrequirement--the-actual-or-logic) for why this second check exists.
 2. `tenantManager.CreateAsync(input.Name)`.
 3. Generates and encrypts both connection strings (`TenantConnectionStringBuilder` — see domain model doc), attaches as `TenantConnectionString` rows named `"Tenant"`/`"Tenant_Readonly"`.
 4. Sets `ExtraProperties` (`LicencePlate`, `DisplayName`, `Division`, `Branch`, `Description`, `CasClientCode`).
 5. `tenant.SeedPostTenantCreationSections(postTenantCreationSteps)` — seeds a `Waiting` status for every registered `IPostTenantCreationStep`, injected as `IEnumerable<IPostTenantCreationStep>` (resolved across the whole app, including steps implemented in `Unity.GrantManager.Application` — DI doesn't care about compile-time project references). See [tenant-management-post-creation.md](tenant-management-post-creation.md).
 6. Inserts, commits the UoW.
-7. **After** the UoW commits, publishes `TenantCreatedEto` (`UserIdentifier`, `FeatureKeys`, optionally `MetabaseUserEmails`) — picked up by `Unity.GrantManager.Application`'s `TenantCreatedEventHandler`, which synchronously migrates/seeds the tenant DB and Postgres roles (see domain model doc), imports the initial IDIR user as Program Manager, enables requested features, snapshots the Metabase user-email setting, and finally enqueues the deferred post-creation job sequence.
+7. **After** the UoW commits, publishes `TenantCreatedEto` (`UserIdentifier`, `FeatureKeys`) — picked up by `Unity.GrantManager.Application`'s `TenantCreatedEventHandler`, which synchronously migrates/seeds the tenant DB and Postgres roles (see domain model doc), imports the initial IDIR user as Program Manager, enables requested features, and finally enqueues the deferred post-creation job sequence.
 
 `CreateAsync` is the single choke point both the "New Tenant" modal **and** Onboarding approval (`OnboardingRequestAppService.CreateTenantAsync`) call — see [tenant-management-onboarding.md](tenant-management-onboarding.md).
 
@@ -70,9 +70,6 @@ The schema **supports** per-tenant URL overrides via the nullable `TenantId`, bu
 
 ## Metabase settings
 
-`MetabaseSettings.UserEmails` (`Application.Contracts/Metabase/MetabaseSettings.cs` + `MetabaseSettingDefinitionProvider`) — a comma-separated default email list, settable **globally** and **per-tenant** (`TenantSettingValueProvider`). Two write paths:
+`MetabaseSettings.UserEmails` (`Application.Contracts/Metabase/MetabaseSettings.cs` + `MetabaseSettingDefinitionProvider`) — the tenant's **Additional members**: a comma-separated list of emails to keep in the tenant's Metabase group besides its program managers. It has only the tenant provider (`TenantSettingValueProvider`). A new tenant starts with an empty list; the only writer is `MetabaseTenantProvisioner`, through **Add** and **Remove** in the members table on the Configuration modal's Reporting tab. A value left at the global provider by the old create-modal default is not read.
 
-- `TenantCreatedEventHandler.SaveMetabaseUserEmailsAsync` saves the `MetabaseUserEmails` passed to `TenantAppService.CreateAsync` as the **per-tenant** setting (the tenant's Additional members) that `MetabaseTenantProvisioner` adds to the Metabase group alongside the tenant's program managers. When none is passed the setting is empty; there is no fallback to the global value.
-- `OnboardingRequestAppService`'s Metabase handling (`UpdateMetabaseDefaultUserEmailsAsync`) folds `MetabaseNewDefaultUserEmails` / `MetabaseRemovedDefaultUserEmails` into the **global** list when an API caller passes them. Neither create modal has a Metabase tab, and nothing reads the global value.
-
-See [tenant-management-post-creation.md](tenant-management-post-creation.md) for how this setting is actually consumed by the Metabase registration step.
+See [tenant-management-post-creation.md](tenant-management-post-creation.md#metabase-group-members) for how the list is used.

@@ -11,6 +11,7 @@ using Unity.GrantManager.Integrations.Metabase;
 using Unity.Modules.Shared.Features;
 using Unity.Modules.Shared.PostTenantCreation;
 using Volo.Abp;
+using Volo.Abp.Data;
 using Volo.Abp.Features;
 using Volo.Abp.Identity;
 using Volo.Abp.MultiTenancy;
@@ -67,13 +68,15 @@ public class MetabaseTenantRegistrationStepTests
 
         var identityUserRepository = Substitute.For<IIdentityUserRepository>();
         identityUserRepository.GetListByNormalizedRoleNameAsync(default!, default, default).ReturnsForAnyArgs(new List<IdentityUser>());
+        identityUserRepository.GetListAsync(maxResultCount: int.MaxValue).ReturnsForAnyArgs(new List<IdentityUser>());
+        metabaseApiClient.GetGroupMembersAsync(Arg.Any<int>()).Returns(new List<MetabaseGroupMember>());
 
         var currentTenant = Substitute.For<ICurrentTenant>();
         currentTenant.Change(Arg.Any<Guid?>(), Arg.Any<string?>()).Returns(Substitute.For<IDisposable>());
 
         var provisioner = new MetabaseTenantProvisioner(
             metabaseApiClient, tenantRepository, identityUserRepository, encryptionService,
-            Substitute.For<ISettingManager>(), currentTenant, metabaseOptions,
+            Substitute.For<ISettingManager>(), currentTenant, Substitute.For<IDataFilter>(), metabaseOptions,
             Substitute.For<ILogger<MetabaseTenantProvisioner>>());
 
         var step = new MetabaseTenantRegistrationStep(provisioner, metabaseOptions, endpointManagementAppService, featureChecker);

@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using Shouldly;
@@ -15,7 +18,10 @@ using Volo.Abp;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Identity;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Security.Encryption;
+using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.Timing;
 using Xunit;
@@ -28,6 +34,7 @@ public class MetabaseTenantAppServiceTests
         MetabaseTenantAppService Service,
         IMetabaseApiClient MetabaseApiClient,
         IBackgroundJobManager BackgroundJobManager,
+        MetabaseTenantProvisioner Provisioner,
         Tenant Tenant);
 
     // Tenant's constructors are all non-public (ABP requires going through ITenantManager to
@@ -77,14 +84,21 @@ public class MetabaseTenantAppServiceTests
         lazyServices.LazyGetRequiredService<ICurrentTenant>().Returns(currentTenant);
         lazyServices.LazyGetRequiredService<IClock>().Returns(clock);
 
+        // Every provisioner method is virtual, so a substitute stands in for the Metabase work.
+        var provisioner = Substitute.For<MetabaseTenantProvisioner>(
+            metabaseApiClient, tenantRepository, Substitute.For<IIdentityUserRepository>(),
+            Substitute.For<IStringEncryptionService>(), Substitute.For<ISettingManager>(), currentTenant,
+            Substitute.For<IDataFilter>(), Options.Create(new MetabaseOptions()),
+            Substitute.For<ILogger<MetabaseTenantProvisioner>>());
+
         // Registered out of order, as DI may return them.
         var service = new MetabaseTenantAppService(
-            tenantRepository, [metabaseStep, otherStep], backgroundJobManager, metabaseApiClient)
+            tenantRepository, [metabaseStep, otherStep], backgroundJobManager, metabaseApiClient, provisioner)
         {
             LazyServiceProvider = lazyServices
         };
 
-        return new Fixture(service, metabaseApiClient, backgroundJobManager, tenant);
+        return new Fixture(service, metabaseApiClient, backgroundJobManager, provisioner, tenant);
     }
 
     [Fact]
@@ -270,5 +284,74 @@ public class MetabaseTenantAppServiceTests
         var ex = await Should.ThrowAsync<UserFriendlyException>(() => f.Service.RescanValuesAsync(f.Tenant.Id));
 
         ex.Message.ShouldContain("Resync");
+    }
+
+    [Fact]
+    public async Task GetMembersAsync_NotSetUp_ThrowsUserFriendly()
+    {
+        var f = CreateService();
+
+        await Should.ThrowAsync<UserFriendlyException>(() => f.Service.GetMembersAsync(f.Tenant.Id));
+    }
+
+    [Fact]
+    public async Task SyncMembersAsync_UsesStoredGroupId()
+    {
+        var f = CreateService();
+        f.Tenant.SetProperty(MetabaseTenantProvisioner.GroupIdProperty, 140);
+        f.Provisioner.SyncMembersAsync(f.Tenant.Id, 140).Returns(new MetabaseMemberSyncResultDto { Added = 2 });
+
+        var result = await f.Service.SyncMembersAsync(f.Tenant.Id);
+
+        result.Added.ShouldBe(2);
+    }
+
+    [Fact]
+    public async Task SyncMembersAsync_GroupDeletedInMetabase_ThrowsUserFriendlyWithResync()
+    {
+        var f = CreateService();
+        f.Tenant.SetProperty(MetabaseTenantProvisioner.GroupIdProperty, 140);
+        f.Provisioner.SyncMembersAsync(f.Tenant.Id, 140).ThrowsAsync(
+            new IntegrationServiceException("gone") { StatusCode = HttpStatusCode.NotFound });
+
+        var ex = await Should.ThrowAsync<UserFriendlyException>(() => f.Service.SyncMembersAsync(f.Tenant.Id));
+
+        ex.Message.ShouldContain("group #140");
+    }
+
+    [Fact]
+    public async Task AddMembersAsync_SplitsOnCommasSemicolonsAndNewLines()
+    {
+        var f = CreateService();
+        f.Tenant.SetProperty(MetabaseTenantProvisioner.GroupIdProperty, 140);
+
+        await f.Service.AddMembersAsync(f.Tenant.Id, new MetabaseAddMembersDto { Emails = "a@gov.bc.ca; b@gov.bc.ca\nc@gov.bc.ca," });
+
+        await f.Provisioner.Received(1).AddAdditionalMembersAsync(f.Tenant.Id, 140,
+            Arg.Is<IEnumerable<string>>(e => e.SequenceEqual(new[] { "a@gov.bc.ca", "b@gov.bc.ca", "c@gov.bc.ca" })));
+    }
+
+    [Fact]
+    public async Task AddMembersAsync_InvalidEmail_ThrowsWithoutChangingAnything()
+    {
+        var f = CreateService();
+        f.Tenant.SetProperty(MetabaseTenantProvisioner.GroupIdProperty, 140);
+
+        var ex = await Should.ThrowAsync<UserFriendlyException>(() =>
+            f.Service.AddMembersAsync(f.Tenant.Id, new MetabaseAddMembersDto { Emails = "ok@gov.bc.ca,not-an-email" }));
+
+        ex.Message.ShouldContain("not-an-email");
+        await f.Provisioner.DidNotReceiveWithAnyArgs().AddAdditionalMembersAsync(default, default, default!);
+    }
+
+    [Fact]
+    public async Task RemoveMemberAsync_PassesTrimmedEmail()
+    {
+        var f = CreateService();
+        f.Tenant.SetProperty(MetabaseTenantProvisioner.GroupIdProperty, 140);
+
+        await f.Service.RemoveMemberAsync(f.Tenant.Id, new MetabaseRemoveMemberDto { Email = " x@gov.bc.ca " });
+
+        await f.Provisioner.Received(1).RemoveMemberAsync(f.Tenant.Id, 140, "x@gov.bc.ca");
     }
 }
