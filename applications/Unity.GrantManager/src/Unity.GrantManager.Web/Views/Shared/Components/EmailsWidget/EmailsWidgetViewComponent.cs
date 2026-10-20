@@ -63,6 +63,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
         {
             var templates = (await templateService.GetTemplatesByTenant())
                 .Where(t => string.Equals(t.TemplateType, model.TemplateType, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(t => t.Name, StringComparer.CurrentCultureIgnoreCase)
                 .ToList();
 
             templates.ForEach(t =>

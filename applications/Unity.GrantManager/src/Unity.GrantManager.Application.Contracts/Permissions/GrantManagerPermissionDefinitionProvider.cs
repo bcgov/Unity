@@ -18,7 +18,8 @@ public class GrantManagerPermissionDefinitionProvider : PermissionDefinitionProv
 
         grantManagerPermissionsGroup.AddPermission(GrantManagerPermissions.Intakes.Default, L("Permission:GrantManagerManagement.Intakes.Default"));
 
-        grantManagerPermissionsGroup.AddPermission(GrantManagerPermissions.ApplicationForms.Default, L("Permission:GrantManagerManagement.ApplicationForms.Default"));
+        var applicationFormPermissions = grantManagerPermissionsGroup.AddPermission(GrantManagerPermissions.ApplicationForms.Default, L("Permission:GrantManagerManagement.ApplicationForms.Default"));
+        applicationFormPermissions.AddChild(GrantManagerPermissions.ApplicationForms.Delete, L("Permission:GrantManagerManagement.ApplicationForms.Delete"));
 
         var notificationSchedulerPermissions = grantManagerPermissionsGroup.AddPermission(GrantManagerPermissions.NotificationScheduler.Default, L("Permission:GrantManagerManagement.NotificationScheduler.Default"));
         notificationSchedulerPermissions.AddChild(GrantManagerPermissions.NotificationScheduler.ManageSchedules, L("Permission:GrantManagerManagement.NotificationScheduler.ManageSchedules"));

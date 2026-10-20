@@ -8,6 +8,12 @@ Together they are the most consequential configuration in the product: a dozen f
 
 `Domain/Applications/ApplicationForm.cs` — `FullAuditedAggregateRoot<Guid>`, `IMultiTenant`.
 
+### Form deletion and visibility
+
+`IsHiddenFromList` is a management visibility flag, separate from ABP's `IsDeleted`. **Delete Form** requires the **Delete Forms** permission, granted to Program Manager by default. It hides the form from `/ApplicationForms` and new parent-form choices, and blocks its configuration/edit screens. Existing parent assignments remain visible and may be saved unchanged.
+
+The form and its relationships remain intact. Application records, submissions, payments, dashboard categories, reporting, Applicant Portal data, and CHEFS synchronization continue to use it. Ordinary form reads still return hidden forms; the forms list and parent lookup apply explicit visibility filters. Restore UI is deferred.
+
 ### CHEFS binding
 
 | Property | Purpose |
