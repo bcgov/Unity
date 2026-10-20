@@ -246,12 +246,12 @@
                         </div>
 
                         <div class="d-flex gap-2">
-                            <button type="button" id="config-assign-role-btn" class="btn btn-sm btn-outline-secondary"
+                            <button type="button" id="config-assign-role-btn" class="btn btn-sm unt-btn-outline-primary btn-outline-primary"
                                     data-tenant-id="@Model.Tenant.Id" data-tenant-name="@Model.Tenant.Name"
                                     title="Assign Role to All Views" @(Model.ViewRole?.ViewRole == null ? "disabled" : null)>
                                 <i class="fa-solid fa-gears"></i> Assign to Views
                             </button>
-                            <button type="button" id="config-view-database-info-btn" class="btn btn-sm btn-outline-info"
+                            <button type="button" id="config-view-database-info-btn" class="btn btn-sm unt-btn-outline-primary btn-outline-primary"
                                     data-tenant-id="@Model.Tenant.Id" data-tenant-name="@Model.Tenant.Name"
                                     title="The tenant's reporting views and whether the view role can read them">
                                 <i class="fa-solid fa-database"></i> Reporting Views
@@ -267,7 +267,7 @@
                             <p class="text-muted small mb-0">
                                 Values are hidden. Show loads the current values so you can edit them. Hidden values are kept unchanged on save.
                             </p>
-                            <button type="button" id="config-toggle-connection-strings-btn" class="btn btn-sm btn-outline-secondary ms-2 text-nowrap"
+                            <button type="button" id="config-toggle-connection-strings-btn" class="btn btn-sm unt-btn-outline-primary btn-outline-primary ms-2 text-nowrap"
                                     data-tenant-id="@Model.Tenant.Id" aria-pressed="false">
                                 <i class="fa-regular fa-eye"></i> Show
                             </button>
