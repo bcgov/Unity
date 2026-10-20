@@ -11,11 +11,14 @@ using Unity.GrantManager.Integrations.Exceptions;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Data;
 using Volo.Abp.Domain.Entities.Events;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Identity;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.PermissionManagement;
 using Volo.Abp.Security.Encryption;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
+using Volo.Abp.Timing;
 using Xunit;
 
 namespace Unity.GrantManager.Integrations.Metabase;
@@ -150,8 +153,9 @@ public class MetabaseMemberOffboardingTests
     private static MetabaseTenantProvisioner CreateProvisionerSubstitute() =>
         Substitute.For<MetabaseTenantProvisioner>(
             Substitute.For<IMetabaseApiClient>(), Substitute.For<ITenantRepository>(), Substitute.For<IIdentityUserRepository>(),
+            Substitute.For<IRepository<PermissionGrant, Guid>>(),
             Substitute.For<IStringEncryptionService>(), Substitute.For<ISettingManager>(), Substitute.For<ICurrentTenant>(),
-            Substitute.For<IDataFilter>(), Options.Create(new MetabaseOptions()),
+            Substitute.For<IDataFilter>(), Substitute.For<IClock>(), Options.Create(new MetabaseOptions()),
             Substitute.For<ILogger<MetabaseTenantProvisioner>>());
 
     private static MetabaseMemberRemovalJob CreateJob(MetabaseTenantProvisioner provisioner, bool enabled = true) =>

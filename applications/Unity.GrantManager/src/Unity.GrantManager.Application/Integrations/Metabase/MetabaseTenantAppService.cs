@@ -47,6 +47,7 @@ public class MetabaseTenantAppService(
             DatabaseId = tenant.GetProperty<int?>(MetabaseTenantProvisioner.DatabaseIdProperty),
             GroupId = tenant.GetProperty<int?>(MetabaseTenantProvisioner.GroupIdProperty),
             CollectionId = tenant.GetProperty<int?>(MetabaseTenantProvisioner.CollectionIdProperty),
+            LastMemberSync = await provisioner.GetLastMemberSyncAsync(tenantId),
             ConcurrencyStamp = tenant.ConcurrencyStamp
         };
 

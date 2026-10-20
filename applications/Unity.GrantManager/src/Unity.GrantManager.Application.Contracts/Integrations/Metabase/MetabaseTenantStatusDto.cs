@@ -37,6 +37,9 @@ public class MetabaseTenantStatusDto
     /// <summary>Why the connection check failed, or a warning (e.g. the key isn't an administrator's).</summary>
     public string? ConnectionMessage { get; set; }
 
+    /// <summary>The last members sync (scheduled, Sync Members or Setup); null if none recorded.</summary>
+    public MetabaseLastMemberSyncDto? LastMemberSync { get; set; }
+
     /// <summary>The tenant's current concurrency stamp, so the Configuration modal can save after Setup.</summary>
     public string? ConcurrencyStamp { get; set; }
 }

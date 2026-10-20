@@ -195,7 +195,8 @@ namespace Unity.GrantManager.Permissions
                     .. ApplicantManagement_CommonPermissions,
                     AIPermissions.Configuration.ConfigureAI,
                     FlexPermissions.Worksheets.Default,
-                    FlexPermissions.Worksheets.Delete
+                    FlexPermissions.Worksheets.Delete,
+                    MetabasePermissions.Access
             ], context.TenantId);
 
             // - Reviewer

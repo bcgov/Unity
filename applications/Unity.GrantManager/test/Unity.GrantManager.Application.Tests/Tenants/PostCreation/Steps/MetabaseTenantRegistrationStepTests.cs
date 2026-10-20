@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -12,12 +14,15 @@ using Unity.Modules.Shared.Features;
 using Unity.Modules.Shared.PostTenantCreation;
 using Volo.Abp;
 using Volo.Abp.Data;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
 using Volo.Abp.Identity;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.PermissionManagement;
 using Volo.Abp.Security.Encryption;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
+using Volo.Abp.Timing;
 using Xunit;
 
 namespace Unity.GrantManager.Tenants.PostCreation.Steps;
@@ -74,9 +79,13 @@ public class MetabaseTenantRegistrationStepTests
         var currentTenant = Substitute.For<ICurrentTenant>();
         currentTenant.Change(Arg.Any<Guid?>(), Arg.Any<string?>()).Returns(Substitute.For<IDisposable>());
 
+        var permissionGrantRepository = Substitute.For<IRepository<PermissionGrant, Guid>>();
+        permissionGrantRepository.GetListAsync(Arg.Any<Expression<Func<PermissionGrant, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(new List<PermissionGrant>());
+
         var provisioner = new MetabaseTenantProvisioner(
-            metabaseApiClient, tenantRepository, identityUserRepository, encryptionService,
-            Substitute.For<ISettingManager>(), currentTenant, Substitute.For<IDataFilter>(), metabaseOptions,
+            metabaseApiClient, tenantRepository, identityUserRepository, permissionGrantRepository, encryptionService,
+            Substitute.For<ISettingManager>(), currentTenant, Substitute.For<IDataFilter>(), Substitute.For<IClock>(), metabaseOptions,
             Substitute.For<ILogger<MetabaseTenantProvisioner>>());
 
         var step = new MetabaseTenantRegistrationStep(provisioner, metabaseOptions, endpointManagementAppService, featureChecker);

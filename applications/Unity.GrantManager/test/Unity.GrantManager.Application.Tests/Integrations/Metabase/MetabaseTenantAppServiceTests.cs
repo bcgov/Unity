@@ -18,8 +18,10 @@ using Volo.Abp;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Identity;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.PermissionManagement;
 using Volo.Abp.Security.Encryption;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
@@ -87,8 +89,9 @@ public class MetabaseTenantAppServiceTests
         // Every provisioner method is virtual, so a substitute stands in for the Metabase work.
         var provisioner = Substitute.For<MetabaseTenantProvisioner>(
             metabaseApiClient, tenantRepository, Substitute.For<IIdentityUserRepository>(),
+            Substitute.For<IRepository<PermissionGrant, Guid>>(),
             Substitute.For<IStringEncryptionService>(), Substitute.For<ISettingManager>(), currentTenant,
-            Substitute.For<IDataFilter>(), Options.Create(new MetabaseOptions()),
+            Substitute.For<IDataFilter>(), Substitute.For<IClock>(), Options.Create(new MetabaseOptions()),
             Substitute.For<ILogger<MetabaseTenantProvisioner>>());
 
         // Registered out of order, as DI may return them.
@@ -274,7 +277,7 @@ public class MetabaseTenantAppServiceTests
     }
 
     [Fact]
-    public async Task RescanValuesAsync_DatabaseDeletedInMetabase_SuggestsResync()
+    public async Task RescanValuesAsync_DatabaseDeletedInMetabase_SuggestsRerunSetup()
     {
         var f = CreateService();
         f.Tenant.SetProperty(MetabaseTenantProvisioner.DatabaseIdProperty, 11);
@@ -283,7 +286,7 @@ public class MetabaseTenantAppServiceTests
 
         var ex = await Should.ThrowAsync<UserFriendlyException>(() => f.Service.RescanValuesAsync(f.Tenant.Id));
 
-        ex.Message.ShouldContain("Resync");
+        ex.Message.ShouldContain("Rerun Setup");
     }
 
     [Fact]

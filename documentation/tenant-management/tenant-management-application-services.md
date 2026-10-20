@@ -72,4 +72,9 @@ The schema **supports** per-tenant URL overrides via the nullable `TenantId`, bu
 
 `MetabaseSettings.UserEmails` (`Application.Contracts/Metabase/MetabaseSettings.cs` + `MetabaseSettingDefinitionProvider`) — the tenant's **Additional members**: a comma-separated list of emails to keep in the tenant's Metabase group besides its program managers. It has only the tenant provider (`TenantSettingValueProvider`). A new tenant starts with an empty list; the only writer is `MetabaseTenantProvisioner`, through **Add** and **Remove** in the members table on the Configuration modal's Reporting tab. A value left at the global provider by the old create-modal default is not read.
 
-See [tenant-management-post-creation.md](tenant-management-post-creation.md#metabase-group-members) for how the list is used.
+Two more tenant-provider settings sit beside it, both written only by `MetabaseTenantProvisioner.SyncMembersAsync`:
+
+- `MetabaseSettings.PermissionSyncedEmails`: the emails the members sync added only because they hold `Metabase.Access`, so it can remove them once they lose it.
+- `MetabaseSettings.LastMemberSync`: the last members sync's time and counts, or its error, as JSON.
+
+See [tenant-management-post-creation.md](tenant-management-post-creation.md#metabase-group-members) for how they are used.
