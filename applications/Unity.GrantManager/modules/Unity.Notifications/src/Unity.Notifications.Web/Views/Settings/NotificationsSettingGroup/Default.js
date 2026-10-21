@@ -129,14 +129,14 @@ $(function () {
                     render: function (data, type, row) {
                         return `<div class="dropdown" style="float:right;">
                             <button class="btn btn-light dropbtn" type="button" aria-label="More actions" title="More actions">
-                                <i class="fl fl-attachment-more" aria-hidden="true"></i>
+                                <i class="fa-solid fa-ellipsis" aria-hidden="true"></i>
                             </button>
                             <div class="dropdown-content">
                                 <button class="btn fullWidth edit-email-address" style="margin:10px" type="button" data-id="${row.id}">
-                                    <i class="fl fl-edit"></i><span>Edit</span>
+                                    <i class="fa-solid fa-pencil"></i><span>Edit</span>
                                 </button>
                                 <button class="btn fullWidth delete-email-address" style="margin:10px" type="button" data-id="${row.id}" data-in-use="${row.isInUse}" data-is-default="${row.isDefault}">
-                                    <i class="fl fl-delete"></i><span>Delete</span>
+                                    <i class="fa-regular fa-trash-can"></i><span>Delete</span>
                                 </button>
                             </div>
                         </div>`;
@@ -844,10 +844,8 @@ $(function () {
     }
 
     function handleDeleteCanCheckError(templateId) {
-        // If check fails, proceed with deletion
-        proceedWithDelete(templateId, function () {
-            PubSub.publish('reload_templates_table_with_close');
-        });
+        // If check fails, do not proceed with deletion. Let the user know the preflight check failed.
+        abp.notify.error('Unable to verify whether this template can be safely deleted. Deletion has been cancelled.');
     }
 
     function checkCanDeleteTemplate(templateId) {
@@ -924,10 +922,10 @@ $(function () {
                     return `
                         <div class="d-inline-flex gap-2">
                             <button class="btn btn-sm btn-action-gray template-edit-btn" data-id="${data}" title="Edit">
-                                <i class="fl fl-edit"></i>
+                                <i class="fa-solid fa-pencil"></i>
                             </button>
                             <button class="btn btn-sm btn-action-gray template-delete-btn" data-id="${data}" title="Delete">
-                                <i class="fl fl-cancel"></i>
+                                <i class="fa-solid fa-xmark"></i>
                             </button>
                         </div>
                     `;
@@ -1340,7 +1338,7 @@ $(function () {
             complete: function () {
                 input.value = '';
                 $('#email_attachment_upload_btn')
-                    .html('<i class="fl fl-plus me-1"></i>Add Attachments')
+                    .html('<i class="fa-solid fa-plus me-1"></i>Add Attachments')
                     .prop('disabled', false);
                 $('#attachment-upload-progress').hide();
             }
@@ -1519,7 +1517,7 @@ function createMenuItems(dropdownItems, editor) {
  */
 function generateEmailAttachmentButtonContent(attachmentId) {
     return `<button class="btn fullWidth btn  btn-action-gray" style="margin:10px" type="button" onclick="deleteEmailAttachment('${attachmentId}')">
-                <i class="fl fl-cancel"></i>
+                <i class="fa-solid fa-xmark"></i>
             </button>`;
 }
 

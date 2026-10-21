@@ -14,7 +14,9 @@
     <select class="@Model.Field.Type.ApplyCssClass()"
             id="@fieldId"
             name="@fieldId"
-            onchange="@($"notifyFieldChange('{Model.Name}', '{Model.Field?.UiAnchor}', this)")">
+            data-worksheet-name="@Model.Name"
+            data-ui-anchor="@Model.Field?.UiAnchor"
+            onchange="notifyFieldChange(this.dataset.worksheetName, this.dataset.uiAnchor, this)">
         <option selected="@Model.Field?.CurrentValue?.CompareYesNoSelectListValue("Please choose...")">Please choose...</option>
         <option selected="@Model.Field?.CurrentValue?.CompareYesNoSelectListValue("Yes")">Yes</option>
         <option selected="@Model.Field?.CurrentValue?.CompareYesNoSelectListValue("No")">No</option>

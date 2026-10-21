@@ -394,7 +394,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
         var applicantAgent = await applicantAgentRepository.GetAsync(input.Id);
         if (applicantAgent.ApplicantId != applicantId)
         {
-            throw new BusinessException("Unity:Applicant:ContactNotFound")
+            throw new BusinessException(GrantManagerDomainErrorCodes.ContactNotFound)
                 .WithData(ApplicantIdDataKey, applicantId)
                 .WithData("ContactId", input.Id);
         }
@@ -422,7 +422,7 @@ public class ApplicantAppService(IApplicantRepository applicantRepository,
 
         if (link == null)
         {
-            throw new BusinessException("Unity:Applicant:ContactNotFound")
+            throw new BusinessException(GrantManagerDomainErrorCodes.ContactNotFound)
                 .WithData(ApplicantIdDataKey, applicantId)
                 .WithData("ContactId", input.Id);
         }

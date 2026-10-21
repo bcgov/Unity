@@ -16,7 +16,7 @@ public class PostTenantCreationStepStatusEntry
 
     public PostTenantCreationStepStatus Status { get; set; } = PostTenantCreationStepStatus.Waiting;
 
-    /// <summary>Error detail when <see cref="Status"/> is <see cref="PostTenantCreationStepStatus.Error"/> or <see cref="PostTenantCreationStepStatus.Failure"/>.</summary>
+    /// <summary>Error detail or reason when <see cref="Status"/> is <see cref="PostTenantCreationStepStatus.Error"/>, <see cref="PostTenantCreationStepStatus.Failure"/> or <see cref="PostTenantCreationStepStatus.Skipped"/>.</summary>
     public string? Message { get; set; }
 
     public DateTime? UpdatedAt { get; set; }

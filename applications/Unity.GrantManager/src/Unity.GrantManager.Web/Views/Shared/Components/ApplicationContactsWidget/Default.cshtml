@@ -35,21 +35,21 @@
                 @if (!contact.ContactEmail.IsNullOrEmpty())
                 {
                     <div class="d-flex text-muted">
-                        <i class="fl fl-mail" aria-hidden="true"></i>
+                        <i class="fa-regular fa-envelope" aria-hidden="true"></i>
                         <div class="ms-2">@contact.ContactEmail</div>
                     </div>
                 }
                 @if (!contact.ContactMobilePhone.IsNullOrEmpty())
                 {
                     <div class="d-flex text-muted">
-                        <i class="fl fl-phone" aria-hidden="true"></i>
+                        <i class="fa-solid fa-phone" aria-hidden="true"></i>
                         <div class="ms-2">@contact.ContactMobilePhone</div>
                     </div>
                 }
                 @if (!contact.ContactWorkPhone.IsNullOrEmpty())
                 {
                     <div class="d-flex text-muted">
-                        <i class="fl fl-work" aria-hidden="true"></i>
+                        <i class="fa-solid fa-briefcase" aria-hidden="true"></i>
                         <div class="ms-2">@contact.ContactWorkPhone</div>
                     </div>
                 }
@@ -59,7 +59,7 @@
                 <div class="pe-2">
                     <abp-button id="@contact.Id" data-id="@contact.Id" class="contact-edit-btn"
                         icon-type="Other"
-                        icon="fl fl-edit"
+                        icon="fa-solid fa-pencil"
                         button-type="Light" />
                 </div>
             }
@@ -72,7 +72,7 @@
 {
     <div class="d-flex justify-content-end">
         <abp-button text="Add Contact" id="CreateContactButton" class="create_contact_btn" 
-            icon-type="Other" icon="fl fl-plus"
+            icon-type="Other" icon="fa-solid fa-plus"
             button-type="Light" />
     </div>
 }

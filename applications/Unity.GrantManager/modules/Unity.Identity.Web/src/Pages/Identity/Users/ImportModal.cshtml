@@ -3,7 +3,6 @@
 @using Microsoft.Extensions.Localization
 @using Unity.GrantManager.Localization;
 @using Unity.Identity.Web.Pages.Identity.Users
-@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
 
 @model ImportModalModel
 
@@ -16,7 +15,7 @@
     <abp-modal centered="true" scrollable="true" size="ExtraLarge">
         <abp-modal-header title="@L["UnityIdentity:ImportUser"].Value"></abp-modal-header>
         <abp-modal-body>
-            <div class="mt-3" >
+            <div class="mt-3">
                 <abp-input id="import-user-directory" asp-for="UserInfo.Directory" disabled readonly="true" />
                 <abp-row>
                     <abp-column size="_5">
@@ -30,7 +29,7 @@
                             text="@L["Common:Command:Search"].Value"
                             class="mt-2"
                             icon-type="Other"
-                            icon="fl fl-search"
+                            icon="fa-solid fa-magnifying-glass"
                             button-type="Light" />
                     </abp-column>
                 </abp-row>
@@ -40,7 +39,7 @@
         </abp-modal-body>
         <abp-modal-footer>
             <abp-button id="import-user-btn" text="@L["UnityIdentity:Import"].Value" type="submit" button-type="Primary" disabled="true"></abp-button>
-            <abp-button id="cancel-import-btn" class="close" data-dismiss="modal" aria-label="Close" text="@L["Cancel"].Value" button-type="Secondary"></abp-button>
+            <abp-button id="cancel-import-btn" class="close" data-bs-dismiss="modal" aria-label="Close" text="@L["Cancel"].Value" button-type="Secondary"></abp-button>
         </abp-modal-footer>
     </abp-modal>
 </form>

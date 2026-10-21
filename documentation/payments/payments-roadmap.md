@@ -26,10 +26,6 @@ Both number generators are also O(n) on a table that only grows.
 
 `UpdateStatusAsync` wraps each payment in `try { … } catch (Exception ex) { Logger.LogException(ex); }`. A payment that fails to transition is omitted from the returned list with no error surfaced to the user — the modal simply reports success for the ones that worked. This is what hides the declined-payment bug above.
 
-## Level 3 approval rows are created during a GET
-
-`UpdatePaymentRequestStatus.UpdateExpenseApprovalsAsync` inserts or deletes the Level 3 `ExpenseApproval` row while **rendering the approval modal** (`OnGetAsync`), based on whether the amount exceeds the threshold. Opening and closing the modal without approving anything therefore mutates the payment. The decision also duplicates logic that `PaymentRequestAppService.GetLevel2ApprovalActionAsync` re-derives independently when the approval is actually submitted.
-
 ## The state machine validates but does not decide
 
 `PaymentsManager.TriggerAction` runs the workflow against a **local copy** of the status purely to check that the transition is permitted, then computes the real destination with a separate `if/else` ladder and assigns it to the entity. The two can drift: the machine says `L2Approve` leads to `L3Pending`, and the ladder independently sets `L3Pending`. `Submit` is the clearest case — the machine always says `Submitted`, the ladder may choose `FSB`.
@@ -48,20 +44,6 @@ Both number generators are also O(n) on a table that only grows.
 | `CasClientOptions` | `Integrations/Cas/` | Bound from the `Payments` config section in `GrantManagerApplicationModule`, but `CasTokenService` reads its credentials from `CAS_API_KEY_{CODE}` and `ICasClientCodeLookupService` instead |
 | `Supplier.SIN` | `Domain/Suppliers/Supplier.cs` | Mapped and persisted, but `SupplierService.GetEventDtoFromCasResponse` never reads CAS's `sin` field |
 | `PaymentRequestDto`'s `explicit operator` | `Application.Contracts/PaymentRequests/` | `public static explicit operator PaymentRequestDto(CreatePaymentRequestDto v) => throw new NotImplementedException();` |
-
-## Exception details are sent to clients
-
-`PaymentsApplicationModule` configures:
-
-```csharp
-Configure<AbpExceptionHandlingOptions>(options =>
-{
-    options.SendExceptionsDetailsToClients = true;
-    options.SendStackTraceToClients = false;
-});
-```
-
-`AbpExceptionHandlingOptions` is global, not per-module, so this affects the whole application, not just payments endpoints.
 
 ## Anonymous page conventions
 
@@ -87,7 +69,7 @@ Two dbcontexts also map the same tables: `PaymentsDbContext` (bound to the `Tena
 - `PaymentQueueService` lives in `Unity.Payments.Application/Integrations/RabbitMQ/` but is declared in namespace **`Unity.Notifications.Integrations.RabbitMQ`**.
 - `Domain/UserPaymentThresholds/IPaymentConfigurationRepository.cs` declares `IPaymentThresholdRepository`, and its implementation is `EntityFrameworkCore/Repositories/UserPaymentThresholdRepository.cs`.
 - `Pages/PaymentRequests/Index.cshtml.cs` declares `PaymentsPageModel` in namespace `Unity.Payments.Web.Pages.Payments`, not a `PaymentRequests` namespace.
-- The error-code constant `Unity.Payments:Errors:InvalidAccountCodingFiled` is misspelled, in both `ErrorConsts` and `en.json`.
+- The error-code constant `Payments:Errors:InvalidAccountCodingFiled` is misspelled, in both `ErrorConsts` and `en.json`.
 - The Payments main-menu item's display name is the hard-coded string `"Payments"` rather than a `PaymentsResource` key, so it does not localize.
 
 ## CAS reconciliation details

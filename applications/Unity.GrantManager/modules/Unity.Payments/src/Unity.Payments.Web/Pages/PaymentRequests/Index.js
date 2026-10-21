@@ -223,7 +223,7 @@ $(function () {
 
     let actionButtons = [
         {
-            text: 'Check Status',
+            text: '<i class="fa-solid fa-rotate-right" aria-hidden="true"></i> Check Status',
             className: 'custom-table-btn flex-none btn btn-secondary payment-check-status',
             attr: {
                 'data-selector': 'batch-payment-table-actions'
@@ -254,7 +254,7 @@ $(function () {
             }
         },
         {
-            text: 'Approve',
+            text: '<i class="fa-solid fa-file-signature" aria-hidden="true"></i> Approve',
             className: 'custom-table-btn flex-none btn btn-secondary payment-status',
             attr: {
                 'data-selector': 'batch-payment-table-actions'
@@ -277,7 +277,7 @@ $(function () {
             }
         },
         {
-            text: 'Decline',
+            text: '<i class="fa-regular fa-rectangle-xmark" aria-hidden="true"></i> Decline',
             className: 'custom-table-btn flex-none btn btn-secondary payment-status',
             attr: {
                 'data-selector': 'batch-payment-table-actions'
@@ -300,7 +300,7 @@ $(function () {
             }
         },
         ...(abp.auth.isGranted('PaymentsPermissions.Payments.CancelPayment') ? [{
-            text: 'Cancel',
+            text: '<i class="fa-solid fa-ban" aria-hidden="true"></i> Cancel',
             className: 'custom-table-btn flex-none btn btn-secondary payment-cancel',
             action: function (e, dt, node, config) {
                 if (selectedPaymentIds?.length !== 1) return;
@@ -332,7 +332,7 @@ $(function () {
             }
         }] : []),
         {
-            text: 'History',
+            text: '<i class="fa-regular fa-file-zipper" aria-hidden="true"></i> History',
             className: 'custom-table-btn flex-none btn btn-secondary history',
             attr: {
                 'data-selector': 'batch-payment-table-actions'
@@ -342,7 +342,7 @@ $(function () {
             }
         },
         {
-            text: 'Filter',
+            text: '<i class="fa-solid fa-filter" aria-hidden="true"></i> Filter',
             className: 'custom-table-btn flex-none btn btn-secondary',
             id: "btn-toggle-filter",
             action: function (e, dt, node, config) { },
@@ -421,7 +421,7 @@ $(function () {
         },
         {
             extend: 'csv',
-            text: 'Export',
+            text: '<i class="fa-solid fa-file-arrow-down" aria-hidden="true"></i> Export',
             title: 'Payment Requests',
             className: 'custom-table-btn flex-none btn btn-secondary',
             exportOptions: {
@@ -458,6 +458,7 @@ $(function () {
         dt,
         defaultVisibleColumns,
         listColumns,
+        columnSelectButtonText: '<i class="fa-solid fa-list-check" aria-hidden="true"></i> Columns',
         maxRowsPerPage: 10,
         defaultSortColumn: {
             name: 'requestedOn',
@@ -537,7 +538,8 @@ $(function () {
             initialLoad = false;
         },
         enableContextMenu: true,
-        contextMenuActionsSelector: '[data-selector="batch-payment-table-actions"]'
+        contextMenuActionsSelector: '[data-selector="batch-payment-table-actions"]',
+        contextMenuRowUrl: getApplicationDetailsUrl
     });
 
     // Initialize savedStates button styling
@@ -545,7 +547,7 @@ $(function () {
 
     // Update button text to Save View
     function updateSavedStatesButtonText() {
-        $('.grp-savedStates').text('Save View');
+        $('.grp-savedStates').html('<i class="fa-regular fa-bookmark" aria-hidden="true"></i> Save View');
     }
 
     dataTable.on('stateRestore-change', updateSavedStatesButtonText);
@@ -738,7 +740,6 @@ $(function () {
             getNoteColumn(columnIndex++),
             getAccountDistributionColumn(columnIndex++),
             getFsbNotifiedColumn(columnIndex++),
-            getCancelledColumn(columnIndex++),
             getCancelledByColumn(columnIndex++),
             getCancelledOnColumn(columnIndex++),
         ]
@@ -796,6 +797,21 @@ $(function () {
         };
     }
 
+    // The payment request's application page, or null when the user can't view applications.
+    // Shared by the Submission # link and the row context menu's Open / Open in New Tab.
+    function getApplicationDetailsUrl(row) {
+        if (!abp.auth.isGranted('GrantApplicationManagement.Applications')) {
+            return null;
+        }
+
+        const applicationId = row?.correlationId;
+        if (!applicationId || !guidPattern.test(applicationId)) {
+            return null;
+        }
+
+        return `/GrantApplications/Details?ApplicationId=${encodeURIComponent(applicationId)}`;
+    }
+
     function getSubmissionConfirmationCodeColumn(columnIndex) {
         return {
             title: l('ApplicationPaymentListTable:SubmissionConfirmationCode'),
@@ -813,14 +829,8 @@ $(function () {
                 const safeCode = $.fn.dataTable.render.text().display(code);
 
                 if (type === 'display' && abp.auth.isGranted('GrantApplicationManagement.Applications')) {
-                    const applicationId = row?.correlationId;
-                    const isGuid = applicationId && guidPattern.test(applicationId);
-
-                    if (isGuid) {
-                        return `<a href="/GrantApplications/Details?ApplicationId=${encodeURIComponent(applicationId)}">${safeCode}</a>`;
-                    }
-
-                    return safeCode;
+                    const applicationUrl = getApplicationDetailsUrl(row);
+                    return applicationUrl ? `<a href="${applicationUrl}">${safeCode}</a>` : safeCode;
                 }
 
                 return code || null;
@@ -1007,7 +1017,7 @@ $(function () {
                         .replaceAll('"', '&quot;')
                         .replaceAll('<', '&lt;')
                         .replaceAll('>', '&gt;');
-                    return '<button class="btn btn-light info-btn" type="button" onclick="openCasResponseModal(\'' + escaped + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
+                    return '<button class="btn btn-light info-btn" type="button" onclick="openCasResponseModal(\'' + escaped + '\');">View Response<i class="fa-solid fa-diamond-turn-right"></i></button>';
                 }
                 return null;
             }
@@ -1384,19 +1394,6 @@ function setActionButtonState(buttonApi, enabled) {
         buttonApi.disable();
     }
     buttonApi.nodes().toggleClass('action-bar-btn-unavailable', !enabled);
-}
-
-function getCancelledColumn(columnIndex) {
-    return {
-        title: 'Cancelled',
-        name: 'cancelled',
-        data: null,
-        className: 'data-table-header',
-        index: columnIndex,
-        render: function (data, type, row) {
-            return row.status === 'Cancelled' ? 'Cancelled' : '';
-        }
-    };
 }
 
 function getCancelledByColumn(columnIndex) {

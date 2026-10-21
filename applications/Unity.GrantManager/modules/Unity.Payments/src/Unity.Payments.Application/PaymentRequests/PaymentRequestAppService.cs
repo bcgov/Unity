@@ -480,7 +480,7 @@ namespace Unity.Payments.PaymentRequests
         public virtual async Task<PaymentRequestDto> CancelAsync(Guid paymentRequestId)
         {
             var payment = await paymentRequestQueryManager.GetPaymentRequestByIdAsync(paymentRequestId)
-                ?? throw new BusinessException("Payments:PaymentRequestNotFound")
+                ?? throw new BusinessException(ErrorConsts.PaymentRequestNotFound)
                     .WithData("Id", paymentRequestId);
 
             PaymentRequestStatus[] eligibleStatuses =
@@ -492,7 +492,7 @@ namespace Unity.Payments.PaymentRequests
             ];
 
             if (!eligibleStatuses.Contains(payment.Status))
-                throw new BusinessException("Payments:CancellationNotAllowed")
+                throw new BusinessException(ErrorConsts.CancellationNotAllowed)
                     .WithData("Status", payment.Status.ToString());
 
             var result = await paymentsManager.CancelPaymentAsync(paymentRequestId);

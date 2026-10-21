@@ -1,5 +1,7 @@
 ﻿@using Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;
+@using System.Globalization;
 @using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.PageAlerts;
+@using Microsoft.Extensions.Hosting;
 
 @using Volo.Abp.AspNetCore.Mvc.UI.Components.LayoutHook;
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout;
@@ -12,6 +14,7 @@
 
 @inject IBrandingProvider BrandingProvider
 @inject IPageLayout PageLayout
+@inject IHostEnvironment HostEnvironment
 @{
     Layout = null;
     var containerClass = ViewBag.FluidLayout? "container-fluid" : "container";
@@ -76,5 +79,9 @@
     @await Component.InvokeAsync(typeof(WidgetScriptsViewComponent))
 
     @await Component.InvokeLayoutHookAsync(LayoutHooks.Body.Last, StandardLayouts.Empty)
+    @if (HostEnvironment.IsDevelopment())
+    {
+        <script src="/_framework/aspnetcore-browser-refresh.js"></script>
+    }
 </body>
 </html>

@@ -1,8 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
@@ -15,6 +15,7 @@ using Volo.Abp.AspNetCore.SignalR;
 using Volo.Abp.Features;
 using Volo.Abp.Identity;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Threading;
 
 namespace Unity.Notifications.Web.Realtime;
 
@@ -27,7 +28,8 @@ public class NotificationHub(
     IIdentityUserRepository identityUserRepository,
     IFeatureChecker featureChecker,
     INotificationLogsRepository notificationLogsRepository,
-    NotificationReadStateManager notificationReadStateManager) : Hub
+    NotificationReadStateManager notificationReadStateManager,
+    ICancellationTokenProvider cancellationTokenProvider) : Hub
 {
     public const string HubRoute = "/signalr/notifications";
     public const string NotificationLogsOpsGroup = "ops:notification-logs";
@@ -166,7 +168,19 @@ public class NotificationHub(
     {
         presenceTracker.UserDisconnected(Context.ConnectionId);
         await BroadcastOnlineUsersAsync();
-        await BroadcastTenantPresenceAsync();
+        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        try
+        {
+            using (cancellationTokenProvider.Use(timeoutCts.Token))
+            {
+                await BroadcastTenantPresenceAsync();
+            }
+        }
+        catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
+        {
+            await base.OnDisconnectedAsync(exception);
+            return;
+        }
 
         await base.OnDisconnectedAsync(exception);
     }

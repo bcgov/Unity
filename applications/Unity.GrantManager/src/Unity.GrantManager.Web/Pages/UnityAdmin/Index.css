@@ -3,8 +3,9 @@
 }
 
 #reconciliation-report-div {
-    width:70%;
-    min-width:700px;
+    width: calc(100% - 221px);
+    min-width: 0;
+    margin-left: 221px;
 }
 
 .reconciliation-report {
@@ -12,8 +13,93 @@
 }
 
 #background-jobs-div {
-    width:70%;
-    min-width:700px;
+    width: calc(100% - 221px);
+    min-width: 0;
+    margin-left: 221px;
+}
+
+#audit-logs-div,
+#ai-prompts-div,
+#endpoints-div,
+#exception-logs-div {
+    width: calc(100% - 221px);
+    min-width: 0;
+    max-width: none;
+    margin-left: 221px;
+    flex: none;
+}
+
+#audit-log-settings-div {
+    width: calc(100% - 221px);
+    min-width: 0;
+    margin-left: 221px;
+}
+
+#audit-logs-div {
+    margin-left: 221px;
+    padding-left: 0;
+    padding-right: 0;
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: auto;
+    min-width: 0;
+    width: auto;
+    max-height: none;
+}
+
+/* The Endpoints stylesheet bundled on this page forces #AbpContentToolbar visible;
+   keep it tight so the admin sections sit directly beneath it. */
+#AbpContentToolbar {
+    padding: 0;
+    margin-top: 10px;
+}
+
+#audit-logs-div .reconciliation-filter-inputs {
+    align-items: center;
+}
+
+#audit-logs-div .reconciliation-filter-inputs > div:has(> #audit-search) {
+    display: flex;
+    align-items: center;
+    align-self: center;
+    width: 250px;
+    height: auto;
+    margin: 0 10px;
+}
+
+#audit-logs-div .tbl-search-label {
+    display: none;
+}
+
+#audit-search,
+#audit-entity-type {
+    height: 38px;
+    box-sizing: border-box;
+}
+
+#audit-search {
+    display: block;
+    width: 100%;
+    padding: 6px 12px;
+    margin-top: 0;
+    align-self: flex-end;    
+}
+
+#audit-logs-div .reconciliation-filter-buttons {
+    align-items: flex-end !important;
+    margin-left: auto;
+    padding-top: 10px;
+}
+
+#audit-filter-button {
+    margin-top: 0 !important;
+    align-self: flex-end;
+}
+
+.audit-change-time {
+    display: inline-block;
+    white-space: normal;
+    min-width: 9rem;
 }
 
 .background-jobs {
@@ -25,6 +111,17 @@
     max-height: 80vh;
     overflow: scroll;
     margin-top:20px;
+}
+
+/* DataTable sections: ScrollResize sizes the scroll body to the viewport so the
+   table footer sits at the bottom of the page; the card must not clip or scroll it. */
+#reconciliation-report-div,
+#audit-logs-div,
+#ai-prompts-div,
+#endpoints-div,
+#exception-logs-div {
+    max-height: none;
+    overflow: visible;
 }
 
 .unity-app-main-container {
@@ -39,6 +136,7 @@
     position: absolute;
     left: 0px;
     top: 150px;
+    z-index: 1000;
 }
 
 #UnityAdminSideMenu ul {
@@ -68,6 +166,9 @@
 
 .reconciliation-filter-row {
     display: flex;
+    gap: 1rem;
+    align-items: flex-end !important;
+    padding-bottom: 0 !important;
 }
 
 .reconciliation-filter-inputs {
@@ -76,6 +177,11 @@
 
 .reconciliation-filter-buttons {
     display: flex;
+    align-items: flex-end !important;
+    margin-left: auto;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    min-height: 44px;
 }
 
 label {
@@ -91,6 +197,15 @@ label {
     display:block;
 }
 
+.tbl-search-label {
+    position: static;
+    display: block;
+    width: auto;
+    height: auto;
+    margin-bottom: 0;
+    visibility: hidden;
+}
+
 .abp-application-layout {
     overflow-y: scroll;
 }
@@ -102,5 +217,50 @@ label {
 }
 
 #btn-toggle-filter {
+    height: 44px;
+    min-height: 44px;
     margin-right:10px;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+@media (max-width: 900px) {
+    #UnityAdminSideMenu.side-menu {
+        float: none;
+        position: static;
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+
+    #UnityAdminSideMenu ul {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+
+    #UnityAdminSideMenu li {
+        flex: 1 1 180px;
+    }
+
+    #reconciliation-report-div,
+    #background-jobs-div,
+    #audit-logs-div,
+    #ai-prompts-div,
+    #endpoints-div,
+    #exception-logs-div,
+    #audit-log-settings-div {
+        width: 100%;
+        max-width: 100%;
+        margin-left: 0;
+    }
+
+    #audit-logs-div {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .reconciliation-filter-row,
+    .reconciliation-filter-inputs {
+        flex-wrap: wrap;
+    }
 }

@@ -12,8 +12,10 @@ using Unity.GrantManager.GrantsPortal.Notifications;
 using Unity.Notifications.EmailNotifications;
 using Unity.Notifications.Emails;
 using Volo.Abp.Features;
+using Volo.Abp.Auditing;
 using Volo.Abp.Linq;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Security.Claims;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.Timing;
 using Volo.Abp.Uow;
@@ -68,10 +70,21 @@ public class ApplicantUpdateEmailRecoveryWorkerTests
         services.AddSingleton(clock);
         services.AddSingleton(features);
         services.AddSingleton(currentTenant);
+        services.AddSingleton(Substitute.For<ICurrentPrincipalAccessor>());
         services.AddSingleton(manager);
         services.AddSingleton(uowManager);
+        var auditingManager = Substitute.For<IAuditingManager>();
+        var auditScope = Substitute.For<IAuditLogScope>();
+        auditScope.Log.Returns(new AuditLogInfo());
+        auditingManager.Current.Returns(auditScope);
+        auditingManager.BeginScope().Returns(Substitute.For<IAuditLogSaveHandle>());
+        services.AddSingleton(auditingManager);
+        services.AddSingleton(Substitute.For<IAuditingStore>());
         using var provider = services.BuildServiceProvider();
-        var worker = new ApplicantUpdateEmailRecoveryWorker(provider);
+        var worker = new ApplicantUpdateEmailRecoveryWorker(provider)
+        {
+            ServiceProvider = provider
+        };
 
         await worker.Execute(Substitute.For<IJobExecutionContext>());
 

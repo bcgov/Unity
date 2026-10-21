@@ -4,8 +4,8 @@ using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using Unity.GrantManager.GlobalTag;
+using Volo.Abp;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
-using Volo.Abp.Validation;
 
 namespace Unity.GrantManager.Web.Pages.SettingManagement.TagManagement;
 
@@ -53,17 +53,10 @@ public class RenameTagModal(ITagsService tagService) : AbpPageModel
 
         if (ViewModel.OriginalTag == ViewModel.ReplacementTag)
         {
-            throw new AbpValidationException("New tag cannot be the same as the original tag.");
+            throw new BusinessException(GrantManagerDomainErrorCodes.TagNameUnchanged);
         }
 
-        try
-        {
-            await tagService.RenameTagGlobalAsync(ViewModel.TagId,ViewModel.OriginalTag, ViewModel.ReplacementTag);
-        }
-        catch (Exception ex)
-        {
-            throw new AbpValidationException(ex.Message);
-        }
+        await tagService.RenameTagGlobalAsync(ViewModel.TagId, ViewModel.OriginalTag, ViewModel.ReplacementTag);
 
         return NoContent();
     }

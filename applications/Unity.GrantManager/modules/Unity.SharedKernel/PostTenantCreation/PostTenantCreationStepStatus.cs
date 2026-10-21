@@ -12,9 +12,18 @@ public enum PostTenantCreationStepStatus
     /// <summary><see cref="IPostTenantCreationStep.ExecuteAsync"/> completed without error.</summary>
     Success,
 
-    /// <summary>The step ran but reported a handled (non-exception) failure.</summary>
+    /// <summary>
+    /// The step should apply but cannot run, e.g. it is enabled but its required configuration is
+    /// missing (see <see cref="PostTenantCreationStepCheck.Fail"/>).
+    /// </summary>
     Failure,
 
     /// <summary><see cref="IPostTenantCreationStep.ExecuteAsync"/> threw an exception.</summary>
-    Error
+    Error,
+
+    /// <summary>
+    /// The step does not apply to this tenant or environment and was not run
+    /// (see <see cref="PostTenantCreationStepCheck.Skip"/>).
+    /// </summary>
+    Skipped
 }

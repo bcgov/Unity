@@ -11,12 +11,12 @@ function getDatagridActionsRowButtonTemplate(actions) {
 
     let items = '';
     if (actions.includes('EDIT'))
-        items += '<button type="button" class="btn fullWidth row-edit-btn"><i class="fl fl-edit"></i><span>Edit</span></button>';
+        items += '<button type="button" class="btn fullWidth row-edit-btn"><i class="fa-solid fa-pencil"></i><span>Edit</span></button>';
     if (actions.includes('DELETE'))
-        items += '<button type="button" class="btn fullWidth row-delete-btn"><i class="fl fl-cancel"></i><span>Delete</span></button>';
+        items += '<button type="button" class="btn fullWidth row-delete-btn"><i class="fa-solid fa-xmark"></i><span>Delete</span></button>';
 
     return `<div class="dropdown" style="float:right;">` +
-               `<button type="button" class="btn btn-light dropbtn"><i class="fl fl-attachment-more"></i></button>` +
+               `<button type="button" class="btn btn-light dropbtn"><i class="fa-solid fa-ellipsis"></i></button>` +
                `<div class="dropdown-content">${items}</div>` +
            `</div>`;
 }

@@ -34,6 +34,10 @@
     transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out, border-color 0.15s ease-in-out;
 }
 
+.dt-context-menu-icon {
+    margin-right: 0.5rem;
+}
+
 .dt-context-menu-link:hover,
 .dt-context-menu-link:focus-visible {
     color: var(--bc-colors-blue-primary, #2E5DD7);

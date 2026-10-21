@@ -1,4 +1,8 @@
 (function () {
+    if ($('#EndpointsTable').length === 0) {
+        return;
+    }
+
     const l = abp.localization.getResource('GrantManager');
     let createModal = new abp.ModalManager(abp.appPath + 'EndpointManagement/Endpoints/CreateModal');
     let updateModal = new abp.ModalManager(abp.appPath + 'EndpointManagement/Endpoints/UpdateModal');
@@ -9,7 +13,7 @@
     $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn flex-none';
     let actionButtons = [
         {
-            text: '<i class="fl fl-add-to align-middle"></i> <span>' + l('Common:Command:Create') + '</span>',
+            text: '<i class="fa-solid fa-circle-plus align-middle"></i> <span>' + l('Common:Command:Create') + '</span>',
             titleAttr: l('Common:Command:Create'),
             id: 'CreateButton',
             className: 'btn-light rounded-1',
@@ -86,7 +90,7 @@
         reorderEnabled: false,
         languageSetValues: {},
         dataTableName: 'EndpointsTable',
-        dynamicButtonContainerId: 'dynamicButtonContainerId',
+        dynamicButtonContainerId: $('#endpoints-dynamic-buttons').length ? 'endpoints-dynamic-buttons' : 'dynamicButtonContainerId',
         useNullPlaceholder: true,
         externalSearchId: 'search-endpoints',
         fixedHeaders: true

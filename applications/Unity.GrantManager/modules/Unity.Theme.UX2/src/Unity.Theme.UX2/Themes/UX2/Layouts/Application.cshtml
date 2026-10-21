@@ -1,5 +1,7 @@
 ﻿@using Unity.GrantManager.Analytics;
+@using System.Globalization;
 @using System.Reflection;
+@using Microsoft.Extensions.Hosting;
 @using Unity.AspNetCore.Mvc.UI.Theme.UX2.Bundling;
 @using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.ContentTitle;
 @using Unity.AspNetCore.Mvc.UI.Theme.UX2.Themes.UX2.Components.MainNavbar;
@@ -19,6 +21,7 @@
 @inject IBrandingProvider BrandingProvider
 @inject IPageLayout PageLayout
 @inject IAbpAntiForgeryManager AbpAntiForgeryManager
+@inject IHostEnvironment HostEnvironment
 @{
     Layout = null;    
     var containerClass = "container-fluid";
@@ -88,7 +91,7 @@
         @(await Component.InvokeAsync<TopbarViewComponent>())
     }
 
-    <div class="@containerClass unity-app-container p-0">
+    <main id="main-content" class="@containerClass unity-app-container p-0">
         @await Component.InvokeLayoutHookAsync(LayoutHooks.PageContent.First, StandardLayouts.Application)
         <div class="d-flex">
             <div class="flex-fill @applicationContainerClass">
@@ -109,7 +112,7 @@
             </div>
         </div>
         @await Component.InvokeLayoutHookAsync(LayoutHooks.PageContent.Last, StandardLayouts.Application)
-    </div>
+    </main>
 
     <abp-script-bundle name="@UnityThemeUX2Bundles.Scripts.Global" />
     <script src="~/js/notifications-realtime-client.js"></script>
@@ -158,5 +161,9 @@
     </script>
 
     @await Component.InvokeLayoutHookAsync(LayoutHooks.Body.Last, StandardLayouts.Application)
+    @if (HostEnvironment.IsDevelopment())
+    {
+        <script src="/_framework/aspnetcore-browser-refresh.js"></script>
+    }
 </body>
 </html>

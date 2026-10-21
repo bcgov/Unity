@@ -298,7 +298,7 @@ permissions:
 
 4. **Check configuration files:**
    ```
-   applications/Unity.GrantManager/sonar-project.properties
+   applications/sonar-project.properties
    .github/workflows/sonarsource-scan.yml
    ```
 
@@ -317,7 +317,7 @@ If issues persist after standard troubleshooting:
 ```bash
 # Restore known-good configuration
 git checkout HEAD~1 -- .github/workflows/sonarsource-scan.yml
-git checkout HEAD~1 -- applications/Unity.GrantManager/sonar-project.properties
+git checkout HEAD~1 -- applications/sonar-project.properties
 ```
 
 #### Emergency Disable

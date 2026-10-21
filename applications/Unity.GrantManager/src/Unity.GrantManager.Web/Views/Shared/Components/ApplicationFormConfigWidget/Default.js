@@ -164,7 +164,7 @@
         removeButton.className = 'btn btn-sm btn-outline-danger px-0 btn-remove-related-link';
         removeButton.setAttribute('aria-label', l('ApplicationForms.Configuration:RemoveLink'));
         const removeIcon = document.createElement('i');
-        removeIcon.className = 'fl fl-delete';
+        removeIcon.className = 'fa-regular fa-trash-can';
         removeButton.appendChild(removeIcon);
         removeCol.appendChild(removeButton);
 

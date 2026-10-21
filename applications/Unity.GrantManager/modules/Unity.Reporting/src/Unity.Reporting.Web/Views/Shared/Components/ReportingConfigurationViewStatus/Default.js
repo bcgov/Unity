@@ -30,9 +30,9 @@ $(function () {
         if ($('.view-status-compact .status-text-only').length > 0 && 
             $('.view-status-compact .status-text-only').text().includes('Generating')) {
             return 'GENERATING';
-        } else if ($('.view-status-compact .fl-checkmark').length > 0) {
+        } else if ($('.view-status-compact [data-view-status="SUCCESS"]').length > 0) {
             return 'SUCCESS';
-        } else if ($('.view-status-compact .fl-cross').length > 0) {
+        } else if ($('.view-status-compact [data-view-status="FAILED"]').length > 0) {
             return 'FAILED';
         }
         return null;
@@ -151,7 +151,7 @@ $(function () {
                 <div class="mb-3">
                     <div class="alert alert-info">
                         <strong><i class="fa-solid fa-circle-info"></i> Preview Mode:</strong> 
-                        Showing sample data from the first application ID found in the view (${response.totalCount} record${response.totalCount !== 1 ? 's' : ''} from this application).
+                        Showing sample data from the first application ID found in the view (${abp.utils.htmlEscape(response.totalCount)} record${response.totalCount !== 1 ? 's' : ''} from this application).
                     </div>
                 </div>
                 <table class="table table-striped table-hover">
@@ -160,7 +160,7 @@ $(function () {
             
             // Add column headers
             response.columns.forEach(function(column) {
-                tableHtml += `<th>${column}</th>`;
+                tableHtml += `<th>${abp.utils.htmlEscape(column)}</th>`;
             });
             
             tableHtml += '</tr></thead><tbody>';

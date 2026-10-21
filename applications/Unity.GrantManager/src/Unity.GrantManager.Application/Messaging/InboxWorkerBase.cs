@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Quartz;
-using Volo.Abp.BackgroundWorkers.Quartz;
+using Unity.Modules.Shared.Utils;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
 
@@ -19,8 +19,10 @@ namespace Unity.GrantManager.Messaging;
 /// Handlers are resolved from DI as <see cref="IInboxMessageHandler"/> filtered by <see cref="SourceName"/>.
 /// </summary>
 [DisallowConcurrentExecution]
-public abstract class InboxWorkerBase : QuartzBackgroundWorkerBase
+public abstract class InboxWorkerBase : UnityQuartzBackgroundWorkerBase
 {
+    protected override bool UsesTenantAuditScopes => true;
+
     private readonly IServiceProvider _serviceProvider;
 
     /// <summary>
@@ -68,7 +70,7 @@ public abstract class InboxWorkerBase : QuartzBackgroundWorkerBase
         _serviceProvider = serviceProvider;
     }
 
-    public override async Task Execute(IJobExecutionContext context)
+    protected override async Task ExecuteInBackgroundAsync(IJobExecutionContext context)
     {        
         try
         {
@@ -114,7 +116,7 @@ public abstract class InboxWorkerBase : QuartzBackgroundWorkerBase
             inboxMsg.MessageId, inboxMsg.Source, inboxMsg.DataType, inboxMsg.TenantId);
 
         string ackStatus;
-        string details;
+        string details = string.Empty;
 
         try
         {
@@ -149,12 +151,15 @@ public abstract class InboxWorkerBase : QuartzBackgroundWorkerBase
             else
             {
                 // Switch to tenant context ONLY for the domain handler execution
-                using (currentTenant.Change(inboxMsg.TenantId))
+                await ExecuteInTenantAuditScopeAsync(inboxMsg.TenantId, async () =>
                 {
-                    using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
-                    details = await handler.HandleAsync(inboxMsg.Payload);
-                    await uow.CompleteAsync();
-                }
+                    using (currentTenant.Change(inboxMsg.TenantId))
+                    {
+                        using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
+                        details = await handler.HandleAsync(inboxMsg.Payload);
+                        await uow.CompleteAsync();
+                    }
+                });
                 ackStatus = "SUCCESS";
             }
         }

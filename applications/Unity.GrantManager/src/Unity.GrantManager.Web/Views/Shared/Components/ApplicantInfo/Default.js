@@ -657,7 +657,7 @@ function registerElectoralDistrictControls($container) {
                 (type === "MailingAddress" && $(this).closest('.mailing-address-fields-group').length)) &&
             !electoralDistrictLocked
         ) {
-            refreshApplicantElectoralDistrict();
+            void refreshApplicantElectoralDistrict().catch(error => console.error('Failed to refresh electoral district:', error));
         }
     });
 }

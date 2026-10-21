@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applicants;
+using Unity.GrantManager.ApplicantPortal;
 using Unity.Notifications.EmailAddresses;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
@@ -24,6 +25,7 @@ namespace Unity.GrantManager.ApplicantProfile
             IRepository<ApplicantTenantMap, Guid> applicantTenantMapRepository,
             IRepository<Tenant, Guid> tenantRepository,
             IEmailAddressConfigurationsRepository emailAddressConfigurationsRepository,
+            ApplicantPortalMessageService messageService,
             IEnumerable<IApplicantProfileDataProvider> dataProviders,
             ILogger<ApplicantProfileQueryService> logger)
         : IApplicantProfileQueryService, ITransientDependency
@@ -137,6 +139,7 @@ namespace Unity.GrantManager.ApplicantProfile
                 var defaultEmailConfiguration = await emailAddressConfigurationsRepository.FirstOrDefaultAsync(
                     configuration => configuration.IsActive && configuration.IsDefault);
                 tenantMap.DefaultFromAddress = defaultEmailConfiguration?.EmailAddress ?? "NoReply@gov.bc.ca";
+                tenantMap.MultipleIdentitiesMessageHtml = await messageService.RenderAsync(tenantMap.DefaultFromAddress);
             }
         }
 

@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -8,7 +7,6 @@ using System.Threading.Tasks;
 using Unity.GrantManager.GlobalTag;
 using Unity.Modules.Shared;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
-using Volo.Abp.Validation;
 
 namespace Unity.GrantManager.Web.Pages.Tags 
 {
@@ -40,17 +38,7 @@ namespace Unity.GrantManager.Web.Pages.Tags
 
         public async Task<IActionResult> OnPostAsync()
         {
-         
-            try
-            {
-                await _tagsService.CreateTagsAsync(new TagDto { Name = Tag });
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, message: "Error creating application tags");
-                throw new AbpValidationException(ex.Message);
-
-            }
+            await _tagsService.CreateTagsAsync(new TagDto { Name = Tag });
 
             return NoContent();
         }

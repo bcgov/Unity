@@ -22,6 +22,8 @@ public class EmailAddressConfigurationsAppService(
     ITemplatesRepository templatesRepository,
     IEmailLogsRepository emailLogsRepository) : ApplicationService, IEmailAddressConfigurationsAppService
 {
+    private const string DefaultEmailAddressRequiredErrorCode = "Notifications:DefaultEmailAddressRequired";
+
     private static readonly string[] AllowedTypes =
     ["Sender", "ReplyTo", "NoReply", "Inbound", "Support", "Other"];
 
@@ -56,17 +58,17 @@ public class EmailAddressConfigurationsAppService(
         EnsureDefaultIsActive(input.IsDefault, input.IsActive);
         if (entity.IsDefault && !input.IsDefault)
         {
-            throw new BusinessException("Unity.Notifications:DefaultEmailAddressRequired", "The default email address cannot be unselected.");
+            throw new BusinessException(DefaultEmailAddressRequiredErrorCode);
         }
         if (entity.IsDefault && !input.IsActive)
         {
-            throw new BusinessException("Unity.Notifications:DefaultEmailAddressRequired", "The default email address cannot be inactivated.");
+            throw new BusinessException(DefaultEmailAddressRequiredErrorCode);
         }
 
         var existing = await repository.GetListAsync();
         if (!input.IsDefault && existing.Where(configuration => configuration.Id != entity.Id).All(configuration => !configuration.IsDefault))
         {
-            throw new BusinessException("Unity.Notifications:DefaultEmailAddressRequired", "There must always be one default email address.");
+            throw new BusinessException(DefaultEmailAddressRequiredErrorCode);
         }
         if (input.IsDefault)
         {
@@ -88,13 +90,11 @@ public class EmailAddressConfigurationsAppService(
         var entity = await repository.GetAsync(id);
         if (entity.IsDefault)
         {
-            throw new BusinessException("Unity.Notifications:DefaultEmailAddressRequired", "The default email address cannot be deleted.");
+            throw new BusinessException(DefaultEmailAddressRequiredErrorCode);
         }
         if (await IsInUseAsync(entity))
         {
-            throw new BusinessException(
-                "Unity.Notifications:EmailAddressInUse",
-                "This email address is used by an email template or email history and cannot be deleted.");
+            throw new BusinessException("Notifications:EmailAddressInUse");
         }
 
         await repository.DeleteAsync(id, true);
@@ -116,18 +116,18 @@ public class EmailAddressConfigurationsAppService(
     {
         if (!new EmailAddressAttribute().IsValid(input.EmailAddress))
         {
-            throw new BusinessException("Unity.Notifications:InvalidEmailAddress", "The email address is not valid.");
+            throw new BusinessException("Notifications:InvalidEmailAddress");
         }
 
         if (!AllowedTypes.Contains(input.EmailType, StringComparer.OrdinalIgnoreCase))
         {
-            throw new BusinessException("Unity.Notifications:InvalidEmailType", "The email type is not valid.");
+            throw new BusinessException("Notifications:InvalidEmailType");
         }
 
         if (string.Equals(input.EmailType, "Other", StringComparison.OrdinalIgnoreCase) &&
             string.IsNullOrWhiteSpace(input.Description))
         {
-            throw new BusinessException("Unity.Notifications:EmailDescriptionRequired", "A description is required for Other email addresses.");
+            throw new BusinessException("Notifications:EmailDescriptionRequired");
         }
     }
 
@@ -135,7 +135,7 @@ public class EmailAddressConfigurationsAppService(
     {
         if (isDefault && !isActive)
         {
-            throw new BusinessException("Unity.Notifications:DefaultEmailAddressRequired", "The default email address must be active.");
+            throw new BusinessException(DefaultEmailAddressRequiredErrorCode);
         }
     }
 
@@ -158,7 +158,7 @@ public class EmailAddressConfigurationsAppService(
 
         if (entities.Count > 0)
         {
-            throw new BusinessException("Unity.Notifications:DuplicateEmailAddressConfiguration", "This email address and type already exists.");
+            throw new BusinessException("Notifications:DuplicateEmailAddressConfiguration");
         }
     }
 

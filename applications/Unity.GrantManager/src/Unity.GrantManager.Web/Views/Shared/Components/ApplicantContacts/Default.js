@@ -101,7 +101,7 @@ $(function () {
                       data-bs-toggle="tooltip"
                       data-bs-placement="left"
                       title="${title}">
-                    <i class="fl fl-checkmark text-success" aria-hidden="true"></i>
+                    <i class="fa-solid fa-check text-success" aria-hidden="true"></i>
                     <span class="visually-hidden">${t('primaryContactVisuallyHidden', 'Primary contact')}</span>
                 </span>`;
     }

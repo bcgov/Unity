@@ -149,7 +149,7 @@ The section payload itself is built by `AIApplicationInputBuilder.BuildSectionQu
 
 ### The Prompts page
 
-`~/Prompts` (`Pages/Prompts/Index.cshtml` + `Index.js`, ~370 lines) lists prompt families and their versions, with create/edit modals for both a prompt and an individual version entry:
+The AI Prompts section of `~/UnityAdmin` (`Pages/Prompts/Index.cshtml` + `Index.js`) lists prompt families and their versions, with create/edit modals for both a prompt and an individual version entry:
 
 | Page | Purpose |
 |---|---|

@@ -214,7 +214,7 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
     {
         if ((DueDate != dueDate) && dueDate != null && dueDate.Value < DateTime.Now.AddDays(-1))
         {
-            throw new BusinessException("Due Date cannot be a past date.");
+            throw new BusinessException(GrantManagerDomainErrorCodes.DueDateInPast);
         }
         else
         {
@@ -231,7 +231,7 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
     {
         if ((FinalDecisionDate != finalDecisionDate) && finalDecisionDate != null && finalDecisionDate.Value > DateTime.Now)
         {
-            throw new BusinessException("Decision Date cannot not be a future date.");
+            throw new BusinessException(GrantManagerDomainErrorCodes.DecisionDateInFuture);
         }
         else
         {
@@ -248,7 +248,7 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
     {
         if ((ApprovedAmount != approvedAmount) && approvedAmount <= 0m)
         {
-            throw new BusinessException("Approved amount cannot be 0.");
+            throw new BusinessException(GrantManagerDomainErrorCodes.ApprovedAmountRequired);
         }
         else
         {
@@ -266,7 +266,7 @@ public class Application : FullAuditedAggregateRoot<Guid>, IMultiTenant
     {
         if (isDirectApproval != true && (RecommendedAmount != recommendedAmount) && recommendedAmount <= 0m)
         {
-            throw new BusinessException("Recommended amount cannot be 0.");
+            throw new BusinessException(GrantManagerDomainErrorCodes.RecommendedAmountRequired);
         }
     }
 

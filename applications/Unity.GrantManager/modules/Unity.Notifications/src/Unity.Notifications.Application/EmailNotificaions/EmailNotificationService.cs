@@ -10,6 +10,7 @@ using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Unity.AspNetCore.Mvc.UI.Theme.UX2.Renderers;
+using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Notifications;
 using Unity.Notifications.Emails;
 using Unity.Notifications.EmailAddresses;
@@ -20,6 +21,7 @@ using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Features;
 using Volo.Abp.SettingManagement;
+using Volo.Abp.Uow;
 using Volo.Abp.Users;
 
 namespace Unity.Notifications.EmailNotifications;
@@ -36,7 +38,8 @@ public class EmailNotificationService(
         IMarkdownRenderer markdownRenderer,
         IEmailAddressConfigurationsRepository emailAddressConfigurationsRepository,
         EmailComposerAccessChecker emailAccessChecker,
-        IEmailLogsRepository emailLogsRepository) : ApplicationService, IEmailNotificationService
+        IEmailLogsRepository emailLogsRepository,
+        IAssessmentRepository assessmentRepository) : ApplicationService, IEmailNotificationService
 {
 
     [Authorize(NotificationsPermissions.Email.Default)]
@@ -84,6 +87,7 @@ public class EmailNotificationService(
         await emailNotificationManager.CancelEmailLogAsync(id);
     }
 
+    [RemoteService(false)]
     public async Task<int> GetEmailsChesWithNoResponseCountAsync()
     {
         return await emailNotificationManager.GetPendingEmailsCountAsync();
@@ -115,7 +119,7 @@ public class EmailNotificationService(
         await notificationAppService.PostToNotificationsAsync(activityTitle, activitySubtitle);
     }
 
-    public Task<string> GetBaseUrlAsync()
+    private Task<string> GetBaseUrlAsync()
     {
         var selfUrl = configuration["App:SelfUrl"];
         
@@ -129,6 +133,7 @@ public class EmailNotificationService(
         return Task.FromResult(selfUrl.TrimEnd('/'));
     }
 
+    [Authorize]
     public async Task<HttpResponseMessage> SendCommentNotification(EmailCommentDto input)
     {
         HttpResponseMessage res = new();
@@ -137,23 +142,19 @@ public class EmailNotificationService(
             if (await featureChecker.IsEnabledAsync("Unity.Notifications"))
             {
                 var baseUrl = await GetBaseUrlAsync();
+                var (applicationId, applicantId) = await ResolveCommentOwnerAsync(input);
 
-                string commentLink = input.CommentType switch
-                {
-                    Comments.CommentType.ApplicationComment or Comments.CommentType.AssessmentComment =>
-                        QueryHelpers.AddQueryString($"{baseUrl}/GrantApplications/Details", new Dictionary<string, string?>
-                        {
-                            ["ApplicationId"] = input.OwnerId,
-                            ["TenantId"] = CurrentTenant.Id?.ToString()
-                        }),
-                    Comments.CommentType.ApplicantComment =>
-                        QueryHelpers.AddQueryString($"{baseUrl}/GrantApplicants/Details", new Dictionary<string, string?>
-                        {
-                            ["ApplicantId"] = input.OwnerId,
-                            ["TenantId"] = CurrentTenant.Id?.ToString()
-                        }),
-                    _ => throw new InvalidOperationException("Invalid comment type.")
-                };
+                string commentLink = applicantId != Guid.Empty
+                    ? QueryHelpers.AddQueryString($"{baseUrl}/GrantApplicants/Details", new Dictionary<string, string?>
+                    {
+                        ["ApplicantId"] = applicantId.ToString(),
+                        ["TenantId"] = CurrentTenant.Id?.ToString()
+                    })
+                    : QueryHelpers.AddQueryString($"{baseUrl}/GrantApplications/Details", new Dictionary<string, string?>
+                    {
+                        ["ApplicationId"] = applicationId.ToString(),
+                        ["TenantId"] = CurrentTenant.Id?.ToString()
+                    });
 
                 var subject = $"Unity-Comment: {input.Subject}";
                 var senderAddresses = await emailAddressConfigurationsRepository.GetListAsync(address =>
@@ -171,12 +172,26 @@ public class EmailNotificationService(
 
                 string htmlBody = await RenderCommentNotificationTemplateAsync(currentUserText, input.Body, commentLink);
 
-                foreach (var email in input.MentionNamesEmail)
+                // Log each mention email so it appears in the Notifications list, and commit the logs
+                // before queueing so the email consumer can load them.
+                var emailLogs = new List<EmailLog>();
+                using (var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true))
                 {
-                    var toEmail = email;
-                    res = await emailNotificationManager.SendEmailAsync(
-                        new EmailMessageParams(toEmail, htmlBody, subject, fromEmail, input.EmailTemplateName), "html");
+                    foreach (var toEmail in input.MentionNamesEmail.Where(e => !string.IsNullOrWhiteSpace(e)))
+                    {
+                        emailLogs.Add(await emailNotificationManager.CreateInternalEmailLogAsync(
+                            new EmailMessageParams(toEmail, htmlBody, subject, fromEmail, input.EmailTemplateName),
+                            applicationId, applicantId, EmailType.EventBased));
+                    }
+                    await uow.CompleteAsync();
                 }
+
+                foreach (var emailLog in emailLogs)
+                {
+                    await emailNotificationManager.QueueEmailAsync(emailLog);
+                }
+
+                res = new HttpResponseMessage(HttpStatusCode.Accepted);
             }
             else
             {
@@ -196,6 +211,26 @@ public class EmailNotificationService(
             };
         }
         return res;
+    }
+
+    /// <summary>
+    /// Resolves the application or applicant that owns the comment. Assessment comments are
+    /// owned by an assessment, so they resolve to the assessment's application.
+    /// </summary>
+    private async Task<(Guid ApplicationId, Guid ApplicantId)> ResolveCommentOwnerAsync(EmailCommentDto input)
+    {
+        if (!Guid.TryParse(input.OwnerId, out var ownerId) || ownerId == Guid.Empty)
+        {
+            throw new InvalidOperationException("Invalid comment owner.");
+        }
+
+        return input.CommentType switch
+        {
+            Comments.CommentType.ApplicationComment => (ownerId, Guid.Empty),
+            Comments.CommentType.AssessmentComment => ((await assessmentRepository.GetAsync(ownerId)).ApplicationId, Guid.Empty),
+            Comments.CommentType.ApplicantComment => (Guid.Empty, ownerId),
+            _ => throw new InvalidOperationException("Invalid comment type.")
+        };
     }
 
     /// <summary>
