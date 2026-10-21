@@ -275,38 +275,35 @@ $(function () {
                 confirmButton: 'btn btn-primary',
                 cancelButton: 'btn btn-secondary'
             }
-        }).then((result) => {
+        }).then(async (result) => {
             if (!result.isConfirmed) {
                 return;
             }
 
             let nextPublishedState = !isPublished;
 
-                return unity.grantManager.grantApplications.grantApplication
-                .updateExternalStatusVisibility(selectedApplicationIds, nextPublishedState)
-                .then(function () {
-                    $publishButton.attr('data-is-published', nextPublishedState.toString());
-                    $publishButton.text(nextPublishedState
-                        ? l('DetailsActionBar:UnpublishButton')
-                        : l('DetailsActionBar:PublishButton'));
+            await unity.grantManager.grantApplications.grantApplication
+                .updateExternalStatusVisibility(selectedApplicationIds, nextPublishedState);
+            $publishButton.attr('data-is-published', nextPublishedState.toString());
+            $publishButton.text(nextPublishedState
+                ? l('DetailsActionBar:UnpublishButton')
+                : l('DetailsActionBar:PublishButton'));
 
-                    abp.notify.success(nextPublishedState 
-                        ? l('DetailsActionBar:PublishStatusUpdatedToast')
-                        : l('DetailsActionBar:UnpublishStatusUpdatedToast'));
+            abp.notify.success(nextPublishedState
+                ? l('DetailsActionBar:PublishStatusUpdatedToast')
+                : l('DetailsActionBar:UnpublishStatusUpdatedToast'));
 
-                    let canPublishStatus = abp.auth.isGranted("Unity.GrantManager.ApplicationManagement.Application.Status.Publish");
-                    let canUnpublishStatus = abp.auth.isGranted("Unity.GrantManager.ApplicationManagement.Application.Status.Unpublish");
-                    let canUpdateExternalStatusVisibility = (!nextPublishedState && canPublishStatus) || (nextPublishedState && canUnpublishStatus);
-                    $('#togglePublishStatusBtn').prop('disabled', !canUpdateExternalStatusVisibility);
+            let canPublishStatus = abp.auth.isGranted("Unity.GrantManager.ApplicationManagement.Application.Status.Publish");
+            let canUnpublishStatus = abp.auth.isGranted("Unity.GrantManager.ApplicationManagement.Application.Status.Unpublish");
+            let canUpdateExternalStatusVisibility = (!nextPublishedState && canPublishStatus) || (nextPublishedState && canUnpublishStatus);
+            $('#togglePublishStatusBtn').prop('disabled', !canUpdateExternalStatusVisibility);
 
-                    PubSub.publish('application_status_changed', nextPublishedState ? 'Publish' : 'Unpublish');
-                    PubSub.publish('refresh_detail_panel_summary');
-                    PubSub.publish('ApplicationHistory_refresh');
-                })
-                .catch(function (error) {
-                    abp.notify.error(l('DetailsActionBar:PublishStatusUpdateFailed'));
-                    console.error('Error updating publish status:', error);
-                });
+            PubSub.publish('application_status_changed', nextPublishedState ? 'Publish' : 'Unpublish');
+            PubSub.publish('refresh_detail_panel_summary');
+            PubSub.publish('ApplicationHistory_refresh');
+        }).catch(function (error) {
+            abp.notify.error(l('DetailsActionBar:PublishStatusUpdateFailed'));
+            console.error('Error updating publish status:', error);
         });
     });
 

@@ -321,26 +321,25 @@ function cancelScheduledEmail(id, rowIndex) {
             confirmButton: 'btn btn-primary',
             cancelButton: 'btn btn-secondary'
         }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            return $.ajax({
-                url: `/api/app/email-notification/${id}/email`,
-                type: "DELETE",
-            })
-                .then(response => {
-                    abp.notify.success('Scheduled email has been cancelled.', 'Cancel Scheduled Email');
-                    PubSub.publish($('#EmailHistoryTable').attr('data-applicant-id') !== '00000000-0000-0000-0000-000000000000' ? 'refresh_applicant_emails' : 'refresh_application_emails');
-                    PubSub.publish('scheduled_email_cancelled', { id: id });
-                })
-                .catch(error => {
-                    console.error('There was a problem with the fetch operation:', error);
-                    
-                    // Extract error message from API response
-                    const errorMessage = error?.responseJSON?.error?.message || 'Failed to cancel scheduled email. Please try again.';
-                    
-                    abp.notify.error(errorMessage, 'Cancel Scheduled Email');
-                });
+    }).then(async (result) => {
+        if (!result.isConfirmed) {
+            return;
         }
+
+        await $.ajax({
+            url: `/api/app/email-notification/${id}/email`,
+            type: "DELETE",
+        });
+        abp.notify.success('Scheduled email has been cancelled.', 'Cancel Scheduled Email');
+        PubSub.publish($('#EmailHistoryTable').attr('data-applicant-id') !== '00000000-0000-0000-0000-000000000000' ? 'refresh_applicant_emails' : 'refresh_application_emails');
+        PubSub.publish('scheduled_email_cancelled', { id: id });
+    }).catch(error => {
+        console.error('There was a problem with the fetch operation:', error);
+
+        // Extract error message from API response
+        const errorMessage = error?.responseJSON?.error?.message || 'Failed to cancel scheduled email. Please try again.';
+
+        abp.notify.error(errorMessage, 'Cancel Scheduled Email');
     });
 }
 
@@ -354,27 +353,25 @@ function deleteDraftEmail(id, rowIndex) {
             confirmButton: 'btn btn-primary',
             cancelButton: 'btn btn-secondary'
         }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            return $.ajax(
-                {
-                    url: `/api/app/email-notification/${id}/email`,
-                    type: "DELETE",
-                })
-                .then(response => {
-                    abp.notify.success('Draft email is successfully deleted.', 'Delete Draft Email');
-                    PubSub.publish($('#EmailHistoryTable').attr('data-applicant-id') !== '00000000-0000-0000-0000-000000000000' ? 'refresh_applicant_emails' : 'refresh_application_emails');
-                    PubSub.publish($('#EmailHistoryTable').attr('data-applicant-id') !== '00000000-0000-0000-0000-000000000000' ? 'applicant_draft_email_deleted' : 'draft_email_deleted', { id: id });
-                })
-                .catch(error => {
-                    console.error('There was a problem with the fetch operation:', error);
-                    
-                    // Extract error message from API response
-                    const errorMessage = error?.responseJSON?.error?.message || 'Failed to delete draft email. Please try again.';
-                    
-                    abp.notify.error(errorMessage, 'Delete Draft Email');
-                });
+    }).then(async (result) => {
+        if (!result.isConfirmed) {
+            return;
         }
+
+        await $.ajax({
+            url: `/api/app/email-notification/${id}/email`,
+            type: "DELETE",
+        });
+        abp.notify.success('Draft email is successfully deleted.', 'Delete Draft Email');
+        PubSub.publish($('#EmailHistoryTable').attr('data-applicant-id') !== '00000000-0000-0000-0000-000000000000' ? 'refresh_applicant_emails' : 'refresh_application_emails');
+        PubSub.publish($('#EmailHistoryTable').attr('data-applicant-id') !== '00000000-0000-0000-0000-000000000000' ? 'applicant_draft_email_deleted' : 'draft_email_deleted', { id: id });
+    }).catch(error => {
+        console.error('There was a problem with the fetch operation:', error);
+
+        // Extract error message from API response
+        const errorMessage = error?.responseJSON?.error?.message || 'Failed to delete draft email. Please try again.';
+
+        abp.notify.error(errorMessage, 'Delete Draft Email');
     });
 }
 
