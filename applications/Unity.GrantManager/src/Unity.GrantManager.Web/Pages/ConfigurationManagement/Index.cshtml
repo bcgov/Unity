@@ -30,6 +30,11 @@
         @* Holds the shared .char-counter styles used by Program Details and the email template editor *@
         <abp-style src="/Views/Settings/ProgramDetails/ProgramDetails.css" />
     }
+    @if (Model.ShowApplicantPortal)
+    {
+        <abp-style src="/libs/tinymce/skins/ui/oxide/skin.css" />
+        <abp-style src="/Pages/ConfigurationManagement/ApplicantPortal.css" />
+    }
 }
 
 @section scripts {
@@ -60,6 +65,11 @@
     @if (Model.ShowProgramDetails)
     {
         <abp-script src="/Views/Settings/ProgramDetails/ProgramDetails.js" />
+    }
+    @if (Model.ShowApplicantPortal)
+    {
+        <abp-script src="/Pages/ConfigurationManagement/ApplicantPortalStatuses.js" />
+        <abp-script src="/Pages/ConfigurationManagement/ApplicantPortalMessages.js" />
     }
 }
 
@@ -107,6 +117,12 @@
             {
                 <li id="program-details-menu-item" class="nav-item btn btn-nav" data-target="program-details-div">
                     Program Details
+                </li>
+            }
+            @if (Model.ShowApplicantPortal)
+            {
+                <li id="applicant-portal-menu-item" class="nav-item btn btn-nav" data-target="applicant-portal-div">
+                    Applicant Portal
                 </li>
             }
         </ul>
@@ -257,6 +273,14 @@
         {
             <div id="program-details-div" class="config-section input-area card mb-3 config-management hide">
                 @await Component.InvokeAsync(typeof(Unity.GrantManager.Web.Views.Settings.ProgramDetails.ProgramDetailsViewComponent))
+            </div>
+        }
+
+        <!-- Applicant Portal -->
+        @if (Model.ShowApplicantPortal)
+        {
+            <div id="applicant-portal-div" class="config-section input-area card mb-3 config-management hide">
+                <partial name="_ApplicantPortal" model="Model" />
             </div>
         }
     </div>

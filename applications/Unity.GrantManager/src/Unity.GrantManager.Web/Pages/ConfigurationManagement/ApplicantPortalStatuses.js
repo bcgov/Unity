@@ -3,8 +3,8 @@
     const l = abp.localization.getResource('GrantManager');
 
     const $form = $('#PortalStatusForm');
-    const $saveButton = $('#SaveButton');
-    const $resetButton = $('#ResetButton');
+    const $saveButton = $('#PortalStatusSaveButton');
+    const $resetButton = $('#PortalStatusResetButton');
 
     // Store original values on page load
     const originalValues = new Map();
