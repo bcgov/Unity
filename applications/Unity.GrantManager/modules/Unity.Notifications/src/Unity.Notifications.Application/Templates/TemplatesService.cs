@@ -1,14 +1,14 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
+using Unity.Notifications.Permissions;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
-using Unity.Notifications.Permissions;
 
 namespace Unity.Notifications.Templates;
 
@@ -50,7 +50,7 @@ public class TemplateService(
             templateType));
     }
 
-    [Authorize(NotificationsPermissions.Email.Send)]
+    [Authorize(NotificationsPermissions.Email.Send.Default)]
     public async Task<EmailTemplate?> UpdateTemplate(Guid id, EmailTempateDto templateDto)
     {
 
@@ -85,7 +85,7 @@ public class TemplateService(
         return await _templatesRepository.GetAsync(id);
     }
 
-    [Authorize(NotificationsPermissions.Email.Send)]
+    [Authorize(NotificationsPermissions.Email.Send.Default)]
     public async Task DeleteTemplate(Guid id)
     {
         using var uow = _unitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
@@ -102,7 +102,7 @@ public class TemplateService(
         await _templatesRepository.DeleteAsync(template);
         await uow.CompleteAsync();
     }
-    [Authorize(NotificationsPermissions.Email.Send)]
+    [Authorize(NotificationsPermissions.Email.Send.Default)]
     public async Task<EmailTemplate?> GetTemplateByName(string name)
     {
         var data =  await _templatesRepository.GetByNameAsync(name);
