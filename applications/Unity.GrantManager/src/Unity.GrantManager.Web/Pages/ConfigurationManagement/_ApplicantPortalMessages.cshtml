@@ -3,8 +3,8 @@
 @model Unity.GrantManager.ApplicantPortal.MultipleIdentitiesMessageDto
 @inject IStringLocalizer<GrantManagerResource> L
 
-<section id="portal-messages-div" class="input-area card mb-3 portal-settings-config d-none" aria-labelledby="multiple-identities-heading">
-    <h5 id="multiple-identities-heading" class="portal-message-heading">@L["ApplicantPortalSettings:MultipleIdentitiesMessage"]</h5>
+<section class="p-3" aria-labelledby="multiple-identities-heading">
+    <h5 class="fw-bold">@L["ApplicantPortalSettings:MultipleIdentitiesMessage"]</h5>
     <p class="mb-1">@L["ApplicantPortalSettings:MessageDescription"]</p>
     <p class="pb-3 border-bottom">@L["ApplicantPortalSettings:MessageInstructions"]</p>
     <form id="PortalMessageForm" novalidate
