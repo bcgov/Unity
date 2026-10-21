@@ -1,0 +1,204 @@
+name: Main - Build & Push Unity AI
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'applications/Unity.AI/**'
+      - '!applications/Unity.AI/**/README*'
+      - '!applications/Unity.AI/**/CLAUDE.md'
+  # Allow manual workflow triggering
+  workflow_dispatch:
+# Workflow dependencies
+env:
+  TARGET_ENV: main
+  GH_TOKEN: ${{secrets.GH_API_TOKEN}}
+  OC_CLUSTER: ${{ vars.OPENSHIFT_CLUSTER }}
+  OC_REGISTRY: ${{ vars.OPENSHIFT_REGISTRY }}
+  OC_TOOLS_TOKEN: ${{ secrets.TOOLS_OPENSHIFT_TOKEN }}
+  OC_TOOLS_PROJECT: ${{ vars.TOOLS_OPENSHIFT_NAMESPACE }}
+  JFROG_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+  JFROG_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+  JFROG_REPO_PATH: ${{ vars.ARTIFACTORY_REPO }}
+  JFROG_SERVICE:  ${{ vars.ARTIFACTORY_SERVICE }}
+  UNITY_AI_BUILD_VERSION: ${{vars.UAI_BUILD_VERSION}}
+  UNITY_AI_BUILD_REVISION: ${{vars.UAI_BUILD_REVISION}}
+
+  UNITY_AI_RELEASE_PREFIX: Unity_AI_Reporting_v
+  UNITY_AI_RELEASE_MESSAGE: "Production deployment"
+
+jobs:
+  Setup:
+    runs-on: ubuntu-latest
+    environment: main
+    permissions:
+      contents: read
+    steps:
+    - name: Get variables
+      run: |
+        echo "Target: $TARGET_ENV"
+        echo "BaseRef: $GITHUB_REF_NAME"
+        echo "Environment: $TARGET_ENV OC_TOOLS_PROJECT=$OC_TOOLS_PROJECT"
+        echo "Environment: $TARGET_ENV JFROG_REPO_PATH=$JFROG_REPO_PATH"
+        echo "..."
+        env | sort
+    - name: Get current date
+      id: date_selector
+      run: |
+        echo "DATE=$(date +'%B %e, %Y')" >> $GITHUB_OUTPUT
+    outputs:
+      DATE: ${{steps.date_selector.outputs.DATE}}
+  Branch:
+    needs: [Setup]
+    runs-on: ubuntu-latest
+    environment: main
+    permissions:
+      contents: read
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+      with:
+          fetch-depth: '1'
+    - name: Get short commitId
+      id: get_commit
+      run: |
+        echo "SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+    - name: List merged branch
+      id: get_branch
+      run: |
+        git log -1
+        MERGED_BRANCH=$(git log -1 | grep -oE 'from bcgov/[^ ]+' | sed 's/from bcgov\///')
+        if [ -z "$MERGED_BRANCH" ]; then
+          echo "Direct push into --env ${{env.TARGET_ENV}}"
+          echo "MERGED_BRANCH=push" >> $GITHUB_OUTPUT
+        else
+          echo "Merged branch: $MERGED_BRANCH"
+          echo "MERGED_BRANCH=$MERGED_BRANCH" >> $GITHUB_OUTPUT
+        fi
+    outputs:
+      SHA_SHORT: ${{steps.get_commit.outputs.SHA_SHORT}}
+      MERGED_BRANCH: ${{steps.get_branch.outputs.MERGED_BRANCH}}
+  GenerateTag:
+    needs: [Setup,Branch]
+    runs-on: ubuntu-latest
+    environment: main
+    permissions:
+      contents: write
+      actions: write
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+      with:
+          fetch-depth: '1'
+    - name: Generate Next Git Tag
+      id: tag_selector
+      run: |
+        echo "Current release: ${{env.UNITY_AI_BUILD_VERSION}}"
+        # Check the merged branch and set versions accordingly
+        if [[ "${{ needs.Branch.outputs.MERGED_BRANCH }}" == "test" ]]; then
+          UNITY_AI_DEPLOY_VERSION=$(gh variable get UAI_BUILD_VERSION --env test)
+          gh variable set UAI_BUILD_VERSION --env main --body "$UNITY_AI_DEPLOY_VERSION"
+        elif [[ "${{ needs.Branch.outputs.MERGED_BRANCH }}" == hotfix/* ]]; then
+          # Extract the major.minor.patch version parts using grep
+          MAJOR_VERSION=$(echo "${{env.UNITY_AI_BUILD_VERSION}}" | grep -oE '^[0-9]+')
+          MINOR_VERSION=$(echo "${{env.UNITY_AI_BUILD_VERSION}}" | grep -oE '\.[0-9]+\.' | grep -oE '[0-9]+')
+          VERSION_PATCH=$(echo "${{env.UNITY_AI_BUILD_VERSION}}" | grep -oE '[0-9]+$')
+          echo "Incrementing patch version for hotfix release"
+          VERSION_PATCH=$((VERSION_PATCH + 1))
+          UNITY_AI_DEPLOY_VERSION="$MAJOR_VERSION.$MINOR_VERSION.$VERSION_PATCH"
+        else
+          echo "WARNING: Compare branch pattern != test|hotfix/* unable to process build from ${{ needs.Branch.outputs.MERGED_BRANCH }}"
+          exit 1
+        fi
+        echo "Main branch tagged as stable release: $UNITY_AI_DEPLOY_VERSION"
+        echo "TAGNAME=${{env.UNITY_AI_RELEASE_PREFIX}}$UNITY_AI_DEPLOY_VERSION" >> $GITHUB_OUTPUT
+        echo "TAGVERSION=$UNITY_AI_DEPLOY_VERSION" >> $GITHUB_OUTPUT
+        echo "TAGMSG=${{env.UNITY_AI_RELEASE_MESSAGE}} ${{needs.Setup.outputs.DATE}}" >> $GITHUB_OUTPUT
+    - name: Create Git Tag
+      id: tag_create
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "github-actions@users.noreply.github.com"
+        if [[ "${{ needs.Branch.outputs.MERGED_BRANCH }}" == "test" ]]; then
+          echo "Test branch tagged as stable release -m Test to Main - ${{steps.tag_selector.outputs.TAGMSG}}"
+          git tag -a "${{steps.tag_selector.outputs.TAGNAME}}" -m "Test to Main - ${{steps.tag_selector.outputs.TAGMSG}}"
+          git push origin "${{steps.tag_selector.outputs.TAGNAME}}"
+        elif [[ "${{ needs.Branch.outputs.MERGED_BRANCH }}" == hotfix/* ]]; then
+          echo "Hotfix branch tagged as stable release -m Hotfix to Main - ${{steps.tag_selector.outputs.TAGMSG}}"
+          git tag -a "${{steps.tag_selector.outputs.TAGNAME}}" -m "Hotfix to Main - ${{steps.tag_selector.outputs.TAGMSG}}"
+          git push origin "${{steps.tag_selector.outputs.TAGNAME}}"
+        fi
+    outputs:
+      TAGMSG: ${{steps.tag_selector.outputs.TAGMSG}}
+      TAGNAME: ${{steps.tag_selector.outputs.TAGNAME}}
+      TAGVERSION: ${{steps.tag_selector.outputs.TAGVERSION}}
+  PushVariables:
+    needs: [Setup,Branch,GenerateTag]
+    runs-on: ubuntu-latest
+    environment: main
+    permissions:
+      contents: write
+      actions: write
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+      with:
+          fetch-depth: '1'
+    - name: Set repository version variables
+      id: set_version
+      run: |
+        gh variable set UAI_BUILD_REVISION --env ${{env.TARGET_ENV}} --body "${{needs.Branch.outputs.SHA_SHORT}}"
+        echo "UNITY_AI_BUILD_REVISION=${{needs.Branch.outputs.SHA_SHORT}}" >> $GITHUB_ENV
+        gh variable set UAI_BUILD_VERSION --env ${{env.TARGET_ENV}} --body "${{needs.GenerateTag.outputs.TAGVERSION}}"
+        echo "UNITY_AI_BUILD_VERSION=${{needs.GenerateTag.outputs.TAGVERSION}}" >> $GITHUB_ENV
+    - name: Get repository version variables
+      id: get_version
+      run: |
+        gh variable list --env dev
+        echo "..."
+        gh variable list --env test
+        echo "..."
+        echo "buildArgs --env ${{env.TARGET_ENV}} UNITY_AI_BUILD_VERSION: ${{env.UNITY_AI_BUILD_VERSION}}, UNITY_AI_BUILD_REVISION: ${{env.UNITY_AI_BUILD_REVISION}}, Merged Branch: ${{needs.Branch.outputs.MERGED_BRANCH}}"
+  Build:
+    needs: [Setup,Branch,GenerateTag,PushVariables]
+    runs-on: ubuntu-latest
+    environment: main
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@v6
+    - name: Build Docker images
+      run: |
+        echo "buildArgs UNITY_AI_BUILD_VERSION: ${{env.UNITY_AI_BUILD_VERSION}}, UNITY_AI_BUILD_REVISION: ${{env.UNITY_AI_BUILD_REVISION}}"
+        docker build --build-arg UAI_BUILD_VERSION=${{env.UNITY_AI_BUILD_VERSION}} --build-arg UAI_BUILD_REVISION=${{env.UNITY_AI_BUILD_REVISION}} --build-arg UAI_TARGET_ENVIRONMENT=Production -t unity-ai-reporting -f Dockerfile .
+      working-directory: ./applications/Unity.AI
+    - name: Push application images to Artifactory container registry
+      continue-on-error: true
+      run: |
+        echo "$JFROG_PASSWORD" | docker login -u "$JFROG_USERNAME" --password-stdin $JFROG_SERVICE
+        docker tag unity-ai-reporting $JFROG_SERVICE/$JFROG_REPO_PATH/main-unity-ai-reporting:stable
+        docker push $JFROG_SERVICE/$JFROG_REPO_PATH/main-unity-ai-reporting:stable
+        docker logout $JFROG_SERVICE
+    - name: Install OpenShift CLI
+      run: |
+          curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/oc/latest/linux/oc.tar.gz
+          tar -xvf oc.tar.gz
+          sudo mv oc /usr/local/bin
+    - name: Verify OpenShift CLI installation
+      run: oc version
+    - name: Push application images into ce395f-tools
+      run: |
+        for i in 1 2 3; do
+          oc login --token=$OC_TOOLS_TOKEN --server=$OC_CLUSTER --request-timeout=30s && break
+          if [ "$i" -eq 3 ]; then
+            echo "oc login failed after 3 attempts" >&2
+            exit 1
+          fi
+          echo "oc login attempt $i failed, retrying in 30s..."
+          sleep 30
+        done
+        oc registry login
+        docker login -u unused -p $(oc whoami -t) $OC_REGISTRY
+        docker tag unity-ai-reporting $OC_REGISTRY/$OC_TOOLS_PROJECT/$TARGET_ENV-unity-ai-reporting:stable
+        docker push $OC_REGISTRY/$OC_TOOLS_PROJECT/$TARGET_ENV-unity-ai-reporting:stable
+        docker logout $OC_REGISTRY

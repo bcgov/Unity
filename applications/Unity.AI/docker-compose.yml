@@ -1,0 +1,74 @@
+# Unity AI Platform - Combined Frontend + Backend Docker Compose
+# Single container running both Angular frontend and Flask backend
+
+services:
+  # PostgreSQL Database (shared)
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_DB: ${DB_NAME:-unity_ai}
+      POSTGRES_USER: ${DB_USER:-unity_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - unity-ai-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-unity_user} -d ${DB_NAME:-unity_ai}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Unity.AI.Reporting - Frontend + Backend (Flask serves both)
+  reporting:
+    image: unity-ai-reporting:${UAI_BUILD_VERSION:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - UAI_BUILD_VERSION=${UAI_BUILD_VERSION:-0.0.0}
+        - UAI_BUILD_REVISION=${UAI_BUILD_REVISION:-0000000}
+        - UAI_TARGET_ENVIRONMENT=${UAI_TARGET_ENVIRONMENT:-Development}
+    ports:
+      - "80:8080"
+    environment:
+      # Flask config
+      - FLASK_ENV=${FLASK_ENV:-development}
+
+      # Azure OpenAI secrets (all other Azure config is hardcoded in config.py)
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+
+      # Authentication
+      - JWT_SECRET=${JWT_SECRET}
+      - ORIGIN_URL=${ORIGIN_URL}
+
+      # Metabase config (secrets + env-specific base URL and UUIDs)
+      - MB_URL=${MB_URL}
+      - MB_MAP_REGION_UUID=${MB_MAP_REGION_UUID}
+
+      # Database config
+      - DB_HOST=postgres
+      - DB_NAME=${DB_NAME:-unity_ai}
+      - DB_USER=${DB_USER:-unity_user}
+      - DB_PASSWORD=${DB_PASSWORD}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - unity-ai-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  unity-ai-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
