@@ -1,6 +1,7 @@
 {
   "culture": "en",
   "texts": {
+    "Flex:Errors:DuplicateSectionName": "A section named \"{duplicateName}\" already exists in this scoresheet.",
     "MyAccount": "My account",
     "SamplePageMessage": "A sample page for the Flex module",
     "Scoresheet:Configuration:ScoresheetModal.Title": "Title",

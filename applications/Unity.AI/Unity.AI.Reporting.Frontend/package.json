@@ -1,0 +1,43 @@
+{
+  "name": "recap",
+  "version": "0.0.0",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "build": "ng build",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test"
+  },
+  "private": true,
+  "dependencies": {
+    "@angular/common": "^21.2.0",
+    "@angular/compiler": "^21.2.0",
+    "@angular/core": "^21.2.0",
+    "@angular/forms": "^21.2.0",
+    "@angular/platform-browser": "^21.2.0",
+    "@angular/router": "^21.2.0",
+    "rxjs": "~7.8.0"
+  },
+  "devDependencies": {
+    "@angular/build": "^21.2.0",
+    "@angular/cli": "^21.2.0",
+    "@angular/compiler-cli": "^21.2.0",
+    "jsdom": "^29.0.0",
+    "typescript": "~5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "overrides": {
+    "rollup": "^4.59.0",
+    "tar": "^7.5.6",
+    "minimatch": "^10.0.1",
+    "qs": "^6.13.1",
+    "hono": "^4.7.7",
+    "@hono/node-server": "^1.14.1",
+    "undici": "^7.3.0",
+    "picomatch": "^4.0.2",
+    "immutable": "^5.1.4",
+    "flatted": "^3.4.2",
+    "lodash": "^4.18.0",
+    "socket.io-parser": "^4.2.6"
+  }
+}

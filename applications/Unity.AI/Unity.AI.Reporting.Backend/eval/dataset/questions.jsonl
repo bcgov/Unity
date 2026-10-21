@@ -1,0 +1,1055 @@
+[
+  {
+    "id": "PUB-EASY-001",
+    "question": "How many applications are there in total?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "easy",
+    "gold_sql": "SELECT COUNT(*) AS \"count\" FROM \"public\".\"Applications\";",
+    "expected_columns": [
+      "count"
+    ],
+    "expected_column_types": [
+      "type/BigInteger"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:a134de59edec8005e1a2202eb757d0bbf0efdc317bcdf9327d527e3281df9650",
+    "frozen": false,
+    "schema_type": "public",
+    "tags": [
+      "aggregation"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "Sanity-check on total application volume; grows as new applications arrive on this shared test tenant. Worded as 'are there' (not 'submitted') so the plain COUNT(*) without a SubmissionDate/IsDeleted filter is unambiguously the right answer.",
+    "captured_at": "2026-07-06T20:45:37+00:00"
+  },
+  {
+    "id": "PUB-EASY-002",
+    "question": "How many applicants are there in total?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "easy",
+    "gold_sql": "SELECT COUNT(*) AS \"count\" FROM \"public\".\"Applicants\";",
+    "expected_columns": [
+      "count"
+    ],
+    "expected_column_types": [
+      "type/BigInteger"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:3a8de25fc5499b2bdf1ea65ea448fb0809394b4423b99f1d47aa29e2d43a9932",
+    "frozen": false,
+    "schema_type": "public",
+    "tags": [
+      "aggregation"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "Applicants can have multiple applications, so this differs from application count.",
+    "captured_at": "2026-07-06T20:45:37+00:00"
+  },
+  {
+    "id": "PUB-EASY-003",
+    "question": "How many funding intakes exist?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "easy",
+    "gold_sql": "SELECT COUNT(*) AS \"count\" FROM \"public\".\"Intakes\";",
+    "expected_columns": [
+      "count"
+    ],
+    "expected_column_types": [
+      "type/BigInteger"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:698901803b136d7e0a5a9a5020568fa386ba78465710e1366eb831590b88fb19",
+    "frozen": false,
+    "schema_type": "public",
+    "tags": [
+      "aggregation"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "Intakes are a small, slow-changing reference table.",
+    "captured_at": "2026-07-06T20:45:38+00:00"
+  },
+  {
+    "id": "PUB-EASY-004",
+    "question": "How many tags have been defined?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "easy",
+    "gold_sql": "SELECT COUNT(*) AS \"count\" FROM \"public\".\"Tags\";",
+    "expected_columns": [
+      "count"
+    ],
+    "expected_column_types": [
+      "type/BigInteger"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:c89cf8c8fce5ff28179c76dc99accda5bc5b2eb6185a1bfa57b45027f25606fb",
+    "frozen": false,
+    "schema_type": "public",
+    "tags": [
+      "aggregation"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "Tags is a small reference table of labels applications can be tagged with.",
+    "captured_at": "2026-07-06T20:45:38+00:00"
+  },
+  {
+    "id": "PUB-EASY-005",
+    "question": "How many applications are flagged as high risk?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "easy",
+    "gold_sql": "SELECT COUNT(*) AS \"count\" FROM \"public\".\"Applications\" WHERE \"RiskRanking\" = 'HIGH';",
+    "expected_columns": [
+      "count"
+    ],
+    "expected_column_types": [
+      "type/BigInteger"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:b691de1b5b6dcf01d59e39f7491fa93dcd42d3e40a8d5df71aa5c28361370b9f",
+    "frozen": false,
+    "schema_type": "public",
+    "tags": [
+      "filter"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "RiskRanking is a free-text field with observed values HIGH/MEDIUM/LOW/blank.",
+    "captured_at": "2026-07-06T20:45:38+00:00"
+  },
+  {
+    "id": "PUB-EASY-006",
+    "question": "How many applications are flagged as medium risk?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "easy",
+    "gold_sql": "SELECT COUNT(*) AS \"count\" FROM \"public\".\"Applications\" WHERE \"RiskRanking\" = 'MEDIUM';",
+    "expected_columns": [
+      "count"
+    ],
+    "expected_column_types": [
+      "type/BigInteger"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:b4d86d56f7a596497b56df6d2f37f7980e859942b6656d61c62b3cecf8fd4b12",
+    "frozen": false,
+    "schema_type": "public",
+    "tags": [
+      "filter"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "Companion to PUB-EASY-005 for the same RiskRanking field.",
+    "captured_at": "2026-07-06T20:45:39+00:00"
+  },
+  {
+    "id": "PUB-EASY-007",
+    "question": "What are the distinct economic regions applications have been submitted from, excluding blanks?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "easy",
+    "gold_sql": "SELECT DISTINCT \"EconomicRegion\" FROM \"public\".\"Applications\" WHERE \"EconomicRegion\" IS NOT NULL AND \"EconomicRegion\" <> '' ORDER BY \"EconomicRegion\";",
+    "expected_columns": [
+      "EconomicRegion"
+    ],
+    "expected_column_types": [
+      "type/Text"
+    ],
+    "expected_row_count": 8,
+    "content_hash": "sha256:5b62d224fb34051833d7bb76e1ca330ae0468276e20ef0d318586a7620ae877c",
+    "frozen": false,
+    "schema_type": "public",
+    "tags": [
+      "filter"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "Multi-row result — ORDER BY is required for a reproducible content_hash. EconomicRegion has some blank-string rows excluded here.",
+    "captured_at": "2026-07-06T20:45:39+00:00"
+  },
+  {
+    "id": "PUB-EASY-008",
+    "question": "How many applicants have their organization type recorded exactly as 'CORPORATION'?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "easy",
+    "gold_sql": "SELECT COUNT(*) AS \"count\" FROM \"public\".\"Applicants\" WHERE \"OrganizationType\" = 'CORPORATION';",
+    "expected_columns": [
+      "count"
+    ],
+    "expected_column_types": [
+      "type/BigInteger"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:b48c5c13951df3984fb595fc1213eddba80c8a0054330c103bcdb4330cdd3b25",
+    "frozen": false,
+    "schema_type": "public",
+    "tags": [
+      "filter"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "OrganizationType values are inconsistent free text (e.g. both 'CORPORATION' and 'Corporation'-like variants) — the question now names the exact code value so the exact-match gold SQL is unambiguous.",
+    "captured_at": "2026-07-06T20:45:39+00:00"
+  },
+  {
+    "id": "PUB-EASY-009",
+    "question": "How many applications have not been deleted?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "easy",
+    "gold_sql": "SELECT COUNT(*) AS \"count\" FROM \"public\".\"Applications\" WHERE \"IsDeleted\" = false;",
+    "expected_columns": [
+      "count"
+    ],
+    "expected_column_types": [
+      "type/BigInteger"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:a134de59edec8005e1a2202eb757d0bbf0efdc317bcdf9327d527e3281df9650",
+    "frozen": false,
+    "schema_type": "public",
+    "tags": [
+      "filter"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "Soft-delete flag check on a single boolean column.",
+    "captured_at": "2026-07-06T20:45:40+00:00"
+  },
+  {
+    "id": "PUB-EASY-010",
+    "question": "How many assessments have been marked complete?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "easy",
+    "gold_sql": "SELECT COUNT(*) AS \"count\" FROM \"public\".\"Assessments\" WHERE \"IsComplete\" = true;",
+    "expected_columns": [
+      "count"
+    ],
+    "expected_column_types": [
+      "type/BigInteger"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:561f4b4a2c390b12ce227b54b760df30f61e34bf8d6cebdb9c50cc828e59e259",
+    "frozen": false,
+    "schema_type": "public",
+    "tags": [
+      "filter",
+      "aggregation"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "Single-table boolean filter with a count aggregate.",
+    "captured_at": "2026-07-06T20:45:40+00:00"
+  },
+  {
+    "id": "PUB-MEDIUM-001",
+    "question": "How many applications currently have an internal status of 'Approved'?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "medium",
+    "gold_sql": "SELECT COUNT(*) AS \"count\" FROM \"public\".\"Applications\" a JOIN \"public\".\"ApplicationStatuses\" s ON a.\"ApplicationStatusId\" = s.\"Id\" WHERE s.\"InternalStatus\" = 'Approved';",
+    "expected_columns": [
+      "count"
+    ],
+    "expected_column_types": [
+      "type/BigInteger"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:6a516f3198262db928a06244905ed60b9c1a76da5d5f3c8464086efeef3153a1",
+    "frozen": false,
+    "schema_type": "public",
+    "tags": [
+      "join"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "Status lives on a separate lookup table (ApplicationStatuses), joined via ApplicationStatusId.",
+    "captured_at": "2026-07-06T20:45:40+00:00"
+  },
+  {
+    "id": "PUB-MEDIUM-002",
+    "question": "How many applications were submitted during the 2024 calendar year?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "medium",
+    "gold_sql": "SELECT COUNT(*) AS \"count\" FROM \"public\".\"Applications\" WHERE \"SubmissionDate\" >= '2024-01-01' AND \"SubmissionDate\" < '2025-01-01';",
+    "expected_columns": [
+      "count"
+    ],
+    "expected_column_types": [
+      "type/BigInteger"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:57b5c0b15d401fd6a8280c3885fc982c1009fabebf458a57260a48653c9e3db3",
+    "frozen": false,
+    "schema_type": "public",
+    "tags": [
+      "date"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "Half-open date range avoids off-by-one issues at year boundary.",
+    "captured_at": "2026-07-06T20:45:41+00:00"
+  },
+  {
+    "id": "PUB-MEDIUM-003",
+    "question": "How many applications were submitted during the 2025 calendar year?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "medium",
+    "gold_sql": "SELECT COUNT(*) AS \"count\" FROM \"public\".\"Applications\" WHERE \"SubmissionDate\" >= '2025-01-01' AND \"SubmissionDate\" < '2026-01-01';",
+    "expected_columns": [
+      "count"
+    ],
+    "expected_column_types": [
+      "type/BigInteger"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:a507f279bc341375ec1f80e40a548e3d6c1b31bd8abe0f8db598588a7fc780a3",
+    "frozen": false,
+    "schema_type": "public",
+    "tags": [
+      "date"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "Companion to PUB-MEDIUM-002 for the following year.",
+    "captured_at": "2026-07-06T20:45:41+00:00"
+  },
+  {
+    "id": "PUB-MEDIUM-004",
+    "question": "How many applications does each status currently have, from most to fewest?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "medium",
+    "gold_sql": "SELECT s.\"InternalStatus\" AS \"status\", COUNT(*) AS \"count\" FROM \"public\".\"Applications\" a JOIN \"public\".\"ApplicationStatuses\" s ON a.\"ApplicationStatusId\" = s.\"Id\" GROUP BY s.\"InternalStatus\" ORDER BY COUNT(*) DESC, s.\"InternalStatus\" ASC;",
+    "expected_columns": [
+      "status",
+      "count"
+    ],
+    "expected_column_types": [
+      "type/Text",
+      "type/BigInteger"
+    ],
+    "expected_row_count": 12,
+    "content_hash": "sha256:dd16d2c3b9a4b04b9a1b000470642aa72a5f47ea954a884221cde421d567a307",
+    "frozen": false,
+    "schema_type": "public",
+    "tags": [
+      "join"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "Multi-row GROUP BY — tie-broken alphabetically by status name for a reproducible order.",
+    "captured_at": "2026-07-06T20:45:42+00:00"
+  },
+  {
+    "id": "PUB-MEDIUM-005",
+    "question": "What is the average requested amount for applications with an internal status of 'Approved'?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "medium",
+    "gold_sql": "SELECT ROUND(AVG(a.\"RequestedAmount\")::numeric, 2) AS \"avg_requested_amount\" FROM \"public\".\"Applications\" a JOIN \"public\".\"ApplicationStatuses\" s ON a.\"ApplicationStatusId\" = s.\"Id\" WHERE s.\"InternalStatus\" = 'Approved';",
+    "expected_columns": [
+      "avg_requested_amount"
+    ],
+    "expected_column_types": [
+      "type/Decimal"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:fabb8432c706c4beca714442ad076eb2f561e28f79e597a012cb189cff6683f5",
+    "frozen": false,
+    "schema_type": "public",
+    "tags": [
+      "join",
+      "aggregation"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "RequestedAmount contains at least one extreme outlier value in the test data; the average reflects that.",
+    "captured_at": "2026-07-06T20:45:42+00:00"
+  },
+  {
+    "id": "PUB-MEDIUM-006",
+    "question": "What organization types have at least one funding history record, and how many applicants of each, excluding blank organization types?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "medium",
+    "gold_sql": "SELECT a.\"OrganizationType\" AS \"organization_type\", COUNT(DISTINCT a.\"Id\") AS \"count\" FROM \"public\".\"Applicants\" a JOIN \"public\".\"FundingHistories\" f ON f.\"ApplicantId\" = a.\"Id\" WHERE a.\"OrganizationType\" IS NOT NULL AND a.\"OrganizationType\" <> '' GROUP BY a.\"OrganizationType\" ORDER BY COUNT(DISTINCT a.\"Id\") DESC, a.\"OrganizationType\" ASC;",
+    "expected_columns": [
+      "organization_type",
+      "count"
+    ],
+    "expected_column_types": [
+      "type/Text",
+      "type/BigInteger"
+    ],
+    "expected_row_count": 3,
+    "content_hash": "sha256:8c0a7d3e61edbf6910e371c5d9c9d5f3bcb82b8d3250d7a68e12b3b600929731",
+    "frozen": false,
+    "schema_type": "public",
+    "tags": [
+      "join"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "COUNT(DISTINCT) avoids double-counting an applicant with multiple funding history rows.",
+    "captured_at": "2026-07-06T20:45:42+00:00"
+  },
+  {
+    "id": "PUB-MEDIUM-007",
+    "question": "What are the top 5 tags by number of applications tagged with them?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "medium",
+    "gold_sql": "SELECT t.\"Name\" AS \"tag_name\", COUNT(*) AS \"count\" FROM \"public\".\"ApplicationTags\" at JOIN \"public\".\"Tags\" t ON at.\"TagId\" = t.\"Id\" GROUP BY t.\"Name\" ORDER BY COUNT(*) DESC, t.\"Name\" ASC LIMIT 5;",
+    "expected_columns": [
+      "tag_name",
+      "count"
+    ],
+    "expected_column_types": [
+      "type/Text",
+      "type/BigInteger"
+    ],
+    "expected_row_count": 5,
+    "content_hash": "sha256:a773df050e7626ece175b21277ffa9158202d0209b4169010b38e4fa72e21d15",
+    "frozen": false,
+    "schema_type": "public",
+    "tags": [
+      "join"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "LIMIT 5 with a deterministic tie-break by tag name.",
+    "captured_at": "2026-07-06T20:45:43+00:00"
+  },
+  {
+    "id": "PUB-MEDIUM-008",
+    "question": "How many applications are linked to an intake with a budget greater than 500,000?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "medium",
+    "gold_sql": "SELECT COUNT(*) AS \"count\" FROM \"public\".\"Applications\" a JOIN \"public\".\"ApplicationForms\" f ON a.\"ApplicationFormId\" = f.\"Id\" JOIN \"public\".\"Intakes\" i ON f.\"IntakeId\" = i.\"Id\" WHERE i.\"Budget\" > 500000;",
+    "expected_columns": [
+      "count"
+    ],
+    "expected_column_types": [
+      "type/BigInteger"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:a89f76f10dd6e2e2f2c078864c7f74b95bcd13fed5e243074093065ca32b4df5",
+    "frozen": false,
+    "schema_type": "public",
+    "tags": [
+      "join"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "Intake budget isn't on Applications directly — requires the ApplicationForms bridge table.",
+    "captured_at": "2026-07-06T20:45:43+00:00"
+  },
+  {
+    "id": "PUB-MEDIUM-009",
+    "question": "How many assessments were completed during 2025 and recommended for approval?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "medium",
+    "gold_sql": "SELECT COUNT(*) AS \"count\" FROM \"public\".\"Assessments\" WHERE \"IsComplete\" = true AND \"ApprovalRecommended\" = true AND \"EndDate\" >= '2025-01-01' AND \"EndDate\" < '2026-01-01';",
+    "expected_columns": [
+      "count"
+    ],
+    "expected_column_types": [
+      "type/BigInteger"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:272a426cb171d68a9580ec439534e00338598f4e60a765edbd4f51784f10ca38",
+    "frozen": false,
+    "schema_type": "public",
+    "tags": [
+      "date",
+      "filter"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "Combines two boolean filters with a date-range filter on the same table.",
+    "captured_at": "2026-07-06T20:45:43+00:00"
+  },
+  {
+    "id": "PUB-MEDIUM-010",
+    "question": "How many distinct applications are assigned to a person who has an identified staff badge?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "medium",
+    "gold_sql": "SELECT COUNT(DISTINCT aa.\"ApplicationId\") AS \"count\" FROM \"public\".\"ApplicationAssignments\" aa JOIN \"public\".\"Persons\" p ON aa.\"AssigneeId\" = p.\"Id\" WHERE p.\"Badge\" IS NOT NULL AND p.\"Badge\" <> '';",
+    "expected_columns": [
+      "count"
+    ],
+    "expected_column_types": [
+      "type/BigInteger"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:2cb144a912fd7ea7e8b5708606da91d5168c8cecc60b1df43e62798d751dbe3a",
+    "frozen": false,
+    "schema_type": "public",
+    "tags": [
+      "join"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "COUNT(DISTINCT ApplicationId) — one application can have multiple assignment rows.",
+    "captured_at": "2026-07-06T20:45:44+00:00"
+  },
+  {
+    "id": "PUB-HARD-001",
+    "question": "For each intake, what is the project name and requested amount of the single highest-requested application?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "hard",
+    "gold_sql": "SELECT i.\"IntakeName\" AS \"intake_name\", ranked.\"ProjectName\" AS \"project_name\", ranked.\"RequestedAmount\" AS \"requested_amount\" FROM (SELECT f.\"IntakeId\", a.\"ProjectName\", a.\"RequestedAmount\", ROW_NUMBER() OVER (PARTITION BY f.\"IntakeId\" ORDER BY a.\"RequestedAmount\" DESC, a.\"ProjectName\" ASC) AS rn FROM \"public\".\"Applications\" a JOIN \"public\".\"ApplicationForms\" f ON a.\"ApplicationFormId\" = f.\"Id\" WHERE a.\"RequestedAmount\" IS NOT NULL) ranked JOIN \"public\".\"Intakes\" i ON i.\"Id\" = ranked.\"IntakeId\" WHERE ranked.rn = 1 ORDER BY i.\"IntakeName\" ASC;",
+    "expected_columns": [
+      "intake_name",
+      "project_name",
+      "requested_amount"
+    ],
+    "expected_column_types": [
+      "type/Text",
+      "type/Text",
+      "type/Decimal"
+    ],
+    "expected_row_count": 13,
+    "content_hash": "sha256:70de37b1ffc96244c58ac2c43f595a9a98ad3b9b50b08ac993252c0ee662d0de",
+    "frozen": false,
+    "schema_type": "public",
+    "tags": [
+      "join"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "Window function (ROW_NUMBER) over a nested subquery, 3-table join — genuinely Hard on the public schema, independent of worksheet/scoresheet involvement. Window ORDER BY tie-breaks on ProjectName so the picked row (and content_hash) is deterministic when two applications tie on RequestedAmount.",
+    "captured_at": "2026-07-06T21:52:08+00:00"
+  },
+  {
+    "id": "PUB-HARD-002",
+    "question": "Which applicants have submitted more applications than the tenant-wide average number of applications per applicant, from most to fewest?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "hard",
+    "gold_sql": "SELECT a.\"ApplicantId\" AS \"applicant_id\", COUNT(*) AS \"application_count\" FROM \"public\".\"Applications\" a GROUP BY a.\"ApplicantId\" HAVING COUNT(*) > (SELECT AVG(sub.cnt) FROM (SELECT COUNT(*) AS cnt FROM \"public\".\"Applications\" GROUP BY \"ApplicantId\") sub) ORDER BY \"application_count\" DESC, a.\"ApplicantId\" ASC;",
+    "expected_columns": [
+      "applicant_id",
+      "application_count"
+    ],
+    "expected_column_types": [
+      "type/UUID",
+      "type/BigInteger"
+    ],
+    "expected_row_count": 25,
+    "content_hash": "sha256:13a0a76fd937287bb92ec354edf484b69f2a382aa01e3c6eccd59e74c472c4aa",
+    "frozen": false,
+    "schema_type": "public",
+    "tags": [
+      "aggregation"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "Correlated/nested subquery computing a tenant-wide average inside a HAVING clause — genuinely Hard on the public schema without touching any worksheet/scoresheet view.",
+    "captured_at": "2026-07-06T21:52:09+00:00"
+  },
+  {
+    "id": "WKS-EASY-001",
+    "question": "How many rows exist in the HIRG insulation grant worksheet test view?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "easy",
+    "gold_sql": "SELECT COUNT(*) AS \"count\" FROM \"Reporting\".\"hirg_ws_test_v4\";",
+    "expected_columns": [
+      "count"
+    ],
+    "expected_column_types": [
+      "type/BigInteger"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:a722c61cc8bd6c647ca757010c166e850b594f8ffaf34194f6932c81abd35814",
+    "frozen": true,
+    "schema_type": "worksheet",
+    "tags": [
+      "worksheet",
+      "aggregation"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "hirg_ws_test_v4 is a small, stable QA fixture (single-digit row count) for the Home Insulation Resilience Grant intake worksheet. Reclassified from 'hard' to 'easy': single table, no join, no casting — doesn't meet the Hard bar despite being a worksheet view.",
+    "captured_at": "2026-07-06T20:45:44+00:00"
+  },
+  {
+    "id": "WKS-EASY-002",
+    "question": "In the all-field-types test worksheet, how many rows have 'Yes' recorded for the yes/no field?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "easy",
+    "gold_sql": "SELECT COUNT(*) AS \"count\" FROM \"Reporting\".\"worksheet_sri_allfieldtypes_v1\" WHERE \"yes_or_no\" = 'Yes';",
+    "expected_columns": [
+      "count"
+    ],
+    "expected_column_types": [
+      "type/BigInteger"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:7edd0c168129e9e43f6a9ec7789296dffbc0ab56932fd5482ffdb68b4c4db63e",
+    "frozen": true,
+    "schema_type": "worksheet",
+    "tags": [
+      "worksheet",
+      "filter"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "worksheet_sri_allfieldtypes_v1 is a QA fixture that exercises every form field type; most rows are placeholder NULLs. Reclassified from 'hard' to 'easy': single-table filter, no join, no casting.",
+    "captured_at": "2026-07-06T20:45:44+00:00"
+  },
+  {
+    "id": "WKS-EASY-003",
+    "question": "What is the total contractor quote amount across all HIRG worksheet rows with a quote on file?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "easy",
+    "gold_sql": "SELECT SUM(\"contractor_quote_amount\") AS \"total_contractor_quote_amount\" FROM \"Reporting\".\"hirg_ws_test_v4\" WHERE \"contractor_quote_amount\" IS NOT NULL;",
+    "expected_columns": [
+      "total_contractor_quote_amount"
+    ],
+    "expected_column_types": [
+      "type/Decimal"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:bc20cab8fa29f55381db0a97e0fc5a119878b7fe12559651c0db4fb6f87f990b",
+    "frozen": true,
+    "schema_type": "worksheet",
+    "tags": [
+      "worksheet",
+      "aggregation"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "contractor_quote_amount is already typed Decimal at the view level (Currency form field), so no cast is needed here. Reclassified from 'hard' to 'easy': single-table aggregation, no join, no casting needed.",
+    "captured_at": "2026-07-06T20:45:45+00:00"
+  },
+  {
+    "id": "WKS-EASY-004",
+    "question": "How many rows in the all-field-types test worksheet have the select-list field set to 'key2'?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "easy",
+    "gold_sql": "SELECT COUNT(*) AS \"count\" FROM \"Reporting\".\"worksheet_sri_allfieldtypes_v1\" WHERE \"select_list\" = 'key2';",
+    "expected_columns": [
+      "count"
+    ],
+    "expected_column_types": [
+      "type/BigInteger"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:7edd0c168129e9e43f6a9ec7789296dffbc0ab56932fd5482ffdb68b4c4db63e",
+    "frozen": true,
+    "schema_type": "worksheet",
+    "tags": [
+      "worksheet",
+      "filter"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "select_list is a dropdown-backed Text column storing raw option keys rather than display labels. Reclassified from 'hard' to 'easy': single-table filter, no join, no casting.",
+    "captured_at": "2026-07-06T20:45:45+00:00"
+  },
+  {
+    "id": "WKS-EASY-005",
+    "question": "How many rows in the AI project-category scoring worksheet view are flagged as an emergency request?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "easy",
+    "gold_sql": "SELECT COUNT(*) AS \"count\" FROM \"Reporting\".\"ai_scoring_ws_view_v3b\" WHERE \"IsThisAnEmergencyRequest\" = 'Yes';",
+    "expected_columns": [
+      "count"
+    ],
+    "expected_column_types": [
+      "type/BigInteger"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:4df9e84bb7b8c04fa7d7c39079c255d3ce29321d5b9cbf6560da32ef8b33529c",
+    "frozen": true,
+    "schema_type": "worksheet",
+    "tags": [
+      "worksheet",
+      "filter"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "ai_scoring_ws_view_v3b backs the AI project-category scoring feature; IsThisAnEmergencyRequest is a Radio-type Text column. Reclassified from 'hard' to 'easy': single-table filter, no join, no casting.",
+    "captured_at": "2026-07-06T20:45:46+00:00"
+  },
+  {
+    "id": "WKS-EASY-006",
+    "question": "How many HIRG scoresheet rows recommend the application for funding?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "easy",
+    "gold_sql": "SELECT COUNT(*) AS \"count\" FROM \"Reporting\".\"hirg_ss_test_v4\" WHERE \"is_this_application_recommended_for_funding\" = true;",
+    "expected_columns": [
+      "count"
+    ],
+    "expected_column_types": [
+      "type/BigInteger"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:a722c61cc8bd6c647ca757010c166e850b594f8ffaf34194f6932c81abd35814",
+    "frozen": true,
+    "schema_type": "scoresheet",
+    "tags": [
+      "scoresheet",
+      "filter"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "is_this_application_recommended_for_funding is a Boolean YesNo-type column. Reclassified from 'hard' to 'easy': single-table boolean filter, no join, no casting.",
+    "captured_at": "2026-07-06T20:45:46+00:00"
+  },
+  {
+    "id": "WKS-EASY-007",
+    "question": "How many rows in the AI eligibility scoresheet view show the organization in good corporate standing?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "easy",
+    "gold_sql": "SELECT COUNT(*) AS \"count\" FROM \"Reporting\".\"ai_scoring_ss_view\" WHERE \"CorporateStanding\" = true;",
+    "expected_columns": [
+      "count"
+    ],
+    "expected_column_types": [
+      "type/BigInteger"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:4df9e84bb7b8c04fa7d7c39079c255d3ce29321d5b9cbf6560da32ef8b33529c",
+    "frozen": true,
+    "schema_type": "scoresheet",
+    "tags": [
+      "scoresheet",
+      "filter"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "ai_scoring_ss_view backs the AI eligibility/scoring feature; CorporateStanding is a Boolean YesNo-type column. Reclassified from 'hard' to 'easy': single-table boolean filter, no join, no casting.",
+    "captured_at": "2026-07-06T20:45:47+00:00"
+  },
+  {
+    "id": "WKS-MEDIUM-001",
+    "question": "What is the average total score across HIRG scoresheet rows with a positive score?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "medium",
+    "gold_sql": "SELECT ROUND(AVG(\"total_score\")::numeric, 2) AS \"avg_total_score\" FROM \"Reporting\".\"hirg_ss_test_v4\" WHERE \"total_score\" IS NOT NULL AND \"total_score\" > 0;",
+    "expected_columns": [
+      "avg_total_score"
+    ],
+    "expected_column_types": [
+      "type/Decimal"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:33bdb4ae973a56be2535fb020db8f49794d888943a6cab16ab642087bd6b9df5",
+    "frozen": true,
+    "schema_type": "scoresheet",
+    "tags": [
+      "scoresheet",
+      "aggregation"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "Excludes zero-score placeholder rows from the average. Reclassified from 'hard' to 'medium': single-table filtered aggregation with a numeric round/cast on the result — more than Easy, but no join or Text-to-numeric column cast, so not Hard.",
+    "captured_at": "2026-07-06T20:45:46+00:00"
+  },
+  {
+    "id": "WKS-MEDIUM-002",
+    "question": "In the all-field-types test worksheet, how many rows fall under each select-list value, from most to fewest?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "medium",
+    "gold_sql": "SELECT \"select_list\" AS \"select_list\", COUNT(*) AS \"count\" FROM \"Reporting\".\"worksheet_sri_allfieldtypes_v1\" WHERE \"select_list\" IS NOT NULL GROUP BY \"select_list\" ORDER BY COUNT(*) DESC, \"select_list\" ASC;",
+    "expected_columns": [
+      "select_list",
+      "count"
+    ],
+    "expected_column_types": [
+      "type/Text",
+      "type/BigInteger"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:774591ac7e38d3b5660135faaffdf3dd794e9b0aaffc44c1f1fecf640b54e3c1",
+    "frozen": true,
+    "schema_type": "worksheet",
+    "tags": [
+      "worksheet",
+      "aggregation"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "GROUP BY on a single worksheet view, no join or casting — Medium complexity on the worksheet schema, filling the worksheet x medium stratification cell.",
+    "captured_at": "2026-07-06T21:52:09+00:00"
+  },
+  {
+    "id": "WKS-HARD-001",
+    "question": "For applications with both a HIRG worksheet and scoresheet entry, what is each application's total score, from highest to lowest?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "hard",
+    "gold_sql": "SELECT w.\"application_id\" AS \"application_id\", s.\"total_score\" AS \"total_score\" FROM \"Reporting\".\"hirg_ws_test_v4\" w JOIN \"Reporting\".\"hirg_ss_test_v4\" s ON w.\"application_id\" = s.\"application_id\" ORDER BY s.\"total_score\" DESC, w.\"application_id\" ASC;",
+    "expected_columns": [
+      "application_id",
+      "total_score"
+    ],
+    "expected_column_types": [
+      "type/UUID",
+      "type/Decimal"
+    ],
+    "expected_row_count": 2,
+    "content_hash": "sha256:e3e112444165d155acffb93286d5cb3e213651b09a14da601a64dd5b44ba7bb5",
+    "frozen": true,
+    "schema_type": "worksheet",
+    "tags": [
+      "worksheet",
+      "scoresheet",
+      "join"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "Cross-view join between a worksheet and its corresponding scoresheet, keyed on application_id.",
+    "captured_at": "2026-07-06T20:45:45+00:00"
+  },
+  {
+    "id": "WKS-HARD-002",
+    "question": "What is the total point value parsed from the free-text energy burden score labels across HIRG scoresheet rows where that score has been filled in?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "hard",
+    "gold_sql": "SELECT SUM(CAST(NULLIF(regexp_replace(\"energy_burden_score_max_15_pts\", '\\D', '', 'g'), '') AS numeric)) AS \"total_energy_burden_points\" FROM \"Reporting\".\"hirg_ss_test_v4\" WHERE \"energy_burden_score_max_15_pts\" IS NOT NULL;",
+    "expected_columns": [
+      "total_energy_burden_points"
+    ],
+    "expected_column_types": [
+      "type/Decimal"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:87c7eff93a9e3fe8bff33302cf58329e2104149bd197a9768b04108cf9c4cf46",
+    "frozen": true,
+    "schema_type": "scoresheet",
+    "tags": [
+      "scoresheet",
+      "casting"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "energy_burden_score_max_15_pts is a SelectList-backed Text column storing labels like '(5 pts) Limited energy burden is demonstrated.' — regexp_replace strips non-digits before casting to numeric.",
+    "captured_at": "2026-07-06T20:45:47+00:00"
+  },
+  {
+    "id": "WKS-HARD-003",
+    "question": "What is the total point value parsed from the free-text home insulation need score labels across HIRG scoresheet rows where that score has been filled in?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "hard",
+    "gold_sql": "SELECT SUM(CAST(NULLIF(regexp_replace(\"home_insulation_need_score_max_10_pts\", '\\D', '', 'g'), '') AS numeric)) AS \"total_home_insulation_need_points\" FROM \"Reporting\".\"hirg_ss_test_v4\" WHERE \"home_insulation_need_score_max_10_pts\" IS NOT NULL;",
+    "expected_columns": [
+      "total_home_insulation_need_points"
+    ],
+    "expected_column_types": [
+      "type/Decimal"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:7eba3e2f6dfe3075721889cee959f6092dd7d147343af08f1ee8dc2a9c83d8ce",
+    "frozen": true,
+    "schema_type": "scoresheet",
+    "tags": [
+      "scoresheet",
+      "casting"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "Companion casting example to WKS-HARD-002 on a second SelectList score column.",
+    "captured_at": "2026-07-06T20:45:47+00:00"
+  },
+  {
+    "id": "WKS-EASY-008",
+    "question": "How many event-information worksheet rows are flagged for a live music festival?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "easy",
+    "gold_sql": "SELECT COUNT(*) AS \"count\" FROM \"Reporting\".\"Worksheet-eventinformation-v7\" WHERE \"EventTypeliveMusicFest\" = 'True';",
+    "expected_columns": [
+      "count"
+    ],
+    "expected_column_types": [
+      "type/BigInteger"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:ae533fedc79cc1048650aa3820fac48ae83d28d2cd09e9ad47a0c21c5f0cc021",
+    "frozen": true,
+    "schema_type": "worksheet",
+    "tags": [
+      "worksheet",
+      "filter"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "Legacy (unregistered) view — EventTypeliveMusicFest is stored as the literal Text values 'True'/'False', not a real boolean, unlike ReportColumnsMaps-registered views.",
+    "captured_at": "2026-07-08T16:33:14+00:00"
+  },
+  {
+    "id": "WKS-EASY-009",
+    "question": "How many rows in the SRI01 scoresheet have 'Yes' recorded for Q2?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "easy",
+    "gold_sql": "SELECT COUNT(*) AS \"count\" FROM \"Reporting\".\"Scoresheet-sri01scoresheet-v1\" WHERE \"Q2\" = 'Yes';",
+    "expected_columns": [
+      "count"
+    ],
+    "expected_column_types": [
+      "type/BigInteger"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:ae533fedc79cc1048650aa3820fac48ae83d28d2cd09e9ad47a0c21c5f0cc021",
+    "frozen": true,
+    "schema_type": "scoresheet",
+    "tags": [
+      "scoresheet",
+      "filter"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "Legacy (unregistered) view with real varied data (12 rows) — Q2 is a Yes/No-style Text column.",
+    "captured_at": "2026-07-08T16:33:14+00:00"
+  },
+  {
+    "id": "WKS-EASY-010",
+    "question": "How many rows in the lite test worksheet have a dog name recorded?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "easy",
+    "gold_sql": "SELECT COUNT(*) AS \"count\" FROM \"Reporting\".\"Worksheet-litestworksheet-v1\" WHERE \"dogname\" IS NOT NULL AND \"dogname\" <> '';",
+    "expected_columns": [
+      "count"
+    ],
+    "expected_column_types": [
+      "type/BigInteger"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:a722c61cc8bd6c647ca757010c166e850b594f8ffaf34194f6932c81abd35814",
+    "frozen": true,
+    "schema_type": "worksheet",
+    "tags": [
+      "worksheet",
+      "filter"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "Legacy (unregistered), single-row QA fixture — same spirit as worksheet_sri_allfieldtypes_v1.",
+    "captured_at": "2026-07-08T16:33:14+00:00"
+  },
+  {
+    "id": "WKS-MEDIUM-003",
+    "question": "For the HIRG application on the raw (unlabeled) worksheet view, what is the project name and home type?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "medium",
+    "gold_sql": "SELECT a.\"ProjectName\" AS \"project_name\", w.\"S04K01HomeType\" AS \"home_type\" FROM \"Reporting\".\"Worksheet-homeinsulationresiliencegrant-v1\" w JOIN \"public\".\"Applications\" a ON w.\"CorrelationId\" = a.\"Id\";",
+    "expected_columns": [
+      "project_name",
+      "home_type"
+    ],
+    "expected_column_types": [
+      "type/Text",
+      "type/Text"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:4d446298fd81cdd202d2a0e3f343e5d205e042b328a53dd1e1ce86fe7e8b4a5f",
+    "frozen": true,
+    "schema_type": "worksheet",
+    "tags": [
+      "worksheet",
+      "join"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "New pattern: joins a Reporting-schema worksheet view directly to the public.Applications table via CorrelationId = Id (verified live). Worksheet-homeinsulationresiliencegrant-v1 is the raw-coded twin of hirg_ws_test_v4 — same underlying data, no field labels.",
+    "captured_at": "2026-07-08T16:33:15+00:00"
+  },
+  {
+    "id": "WKS-HARD-004",
+    "question": "What is the total contractor quote amount on the raw (unlabeled) HIRG worksheet view?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "hard",
+    "gold_sql": "SELECT SUM(CAST(\"S05K07ContractorQuoteAmount\" AS numeric)) AS \"total_contractor_quote_amount\" FROM \"Reporting\".\"Worksheet-homeinsulationresiliencegrant-v1\" WHERE \"S05K07ContractorQuoteAmount\" IS NOT NULL AND \"S05K07ContractorQuoteAmount\" <> '';",
+    "expected_columns": [
+      "total_contractor_quote_amount"
+    ],
+    "expected_column_types": [
+      "type/Decimal"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:bc20cab8fa29f55381db0a97e0fc5a119878b7fe12559651c0db4fb6f87f990b",
+    "frozen": true,
+    "schema_type": "worksheet",
+    "tags": [
+      "worksheet",
+      "casting"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "Deliberate mirror of WKS-EASY-003: same real contractor quote amount as hirg_ws_test_v4 (18500.00), but here the column is untyped Text (legacy view), requiring an explicit CAST that the registered-view twin does not need.",
+    "captured_at": "2026-07-08T16:33:15+00:00"
+  },
+  {
+    "id": "WKS-HARD-005",
+    "question": "What is the sum of the Q1 scores across the SRI01 scoresheet rows?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "hard",
+    "gold_sql": "SELECT SUM(CAST(NULLIF(\"Q1\", '') AS numeric)) AS \"total_q1_score\" FROM \"Reporting\".\"Scoresheet-sri01scoresheet-v1\";",
+    "expected_columns": [
+      "total_q1_score"
+    ],
+    "expected_column_types": [
+      "type/Decimal"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:327c834f15fc9584ab4dc3daffa4192672185bd88b7cbaa93bfccaa09c5b71cb",
+    "frozen": true,
+    "schema_type": "scoresheet",
+    "tags": [
+      "scoresheet",
+      "casting"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "Q1 is a Text column mixing numeric strings and blank strings across 12 rows — NULLIF is required before the cast or Postgres errors on the empty-string rows.",
+    "captured_at": "2026-07-08T16:33:15+00:00"
+  },
+  {
+    "id": "WKS-HARD-006",
+    "question": "What is the numeric score parsed from the CP scoresheet's question2 label?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "hard",
+    "gold_sql": "SELECT CAST(substring(\"question2\" from '\\((\\d+)\\)') AS numeric) AS \"question2_score\" FROM \"Reporting\".\"Scoresheet-cpscoresheet-v1\" WHERE \"question2\" IS NOT NULL AND \"question2\" <> '';",
+    "expected_columns": [
+      "question2_score"
+    ],
+    "expected_column_types": [
+      "type/Decimal"
+    ],
+    "expected_row_count": 1,
+    "content_hash": "sha256:02bfc9d1e154b2f174fcba0d383dfad3054180397773d9c9c0c6c455ab0ee940",
+    "frozen": true,
+    "schema_type": "scoresheet",
+    "tags": [
+      "scoresheet",
+      "casting"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "question2 holds a label like \"(10) Option 1\" — deliberately uses substring(... from a parenthesized-digit pattern) rather than regexp_replace(\\D), since the latter would incorrectly also grab the stray trailing digit in \"Option 1\" (yielding 101 instead of 10). Verified live.",
+    "captured_at": "2026-07-08T16:33:16+00:00"
+  },
+  {
+    "id": "WKS-HARD-007",
+    "question": "Bridging through Applications and Assessments, what home type and total score does each HIRG assessment have on the raw (unlabeled) worksheet/scoresheet views?",
+    "tenant_id": "Default Grants Program",
+    "difficulty": "hard",
+    "gold_sql": "SELECT w.\"S04K01HomeType\" AS \"home_type\", s.\"TotalScore\" AS \"total_score\" FROM \"Reporting\".\"Worksheet-homeinsulationresiliencegrant-v1\" w JOIN \"public\".\"Applications\" a ON w.\"CorrelationId\" = a.\"Id\" JOIN \"public\".\"Assessments\" asmt ON asmt.\"ApplicationId\" = a.\"Id\" JOIN \"Reporting\".\"Scoresheet-homeinsulationresilience-score-v1\" s ON s.\"CorrelationId\" = asmt.\"Id\" ORDER BY s.\"TotalScore\" DESC NULLS LAST, asmt.\"Id\" ASC;",
+    "expected_columns": [
+      "home_type",
+      "total_score"
+    ],
+    "expected_column_types": [
+      "type/Text",
+      "type/Integer"
+    ],
+    "expected_row_count": 2,
+    "content_hash": "sha256:e5e512a04ae5a7fad348d87f9626abc87b654a62d38b182b8ecdd65154756ff0",
+    "frozen": true,
+    "schema_type": "worksheet",
+    "tags": [
+      "worksheet",
+      "scoresheet",
+      "join"
+    ],
+    "question_type": "standard",
+    "schema_version": "default_grants_program_schema_2026-07-08",
+    "notes": "3-table bridge join, verified live: Worksheet-homeinsulationresiliencegrant-v1.CorrelationId = Applications.Id, but Scoresheet-homeinsulationresilience-score-v1.CorrelationId = Assessments.Id (NOT Applications.Id directly) — Assessments.ApplicationId is the bridge. Richer than WKS-HARD-001's direct 2-view join, which only works because hirg_ws_test_v4/hirg_ss_test_v4 happen to share an application_id column.",
+    "captured_at": "2026-07-08T16:33:16+00:00"
+  }
+]

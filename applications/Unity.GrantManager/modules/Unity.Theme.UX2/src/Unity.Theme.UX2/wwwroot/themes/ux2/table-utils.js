@@ -237,7 +237,8 @@ function initializeDataTable(options) {
         deferRender = false,
         enableContextMenu = false,
         contextMenuActionsSelector = '[data-selector$="-table-actions"]',
-        contextMenuLabels = {}
+        contextMenuLabels = {},
+        contextMenuRowUrl
     } = options;
 
     // Process columns and visibility
@@ -492,7 +493,8 @@ function initializeDataTable(options) {
             enabled: true,
             actionsSelector: contextMenuActionsSelector,
             copyEnabled: true,
-            labels: contextMenuLabels
+            labels: contextMenuLabels,
+            rowUrl: contextMenuRowUrl
         });
     }
 

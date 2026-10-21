@@ -74,7 +74,7 @@ public class ContactManager(
                         && l.IsActive));
 
         var targetLink = links.FirstOrDefault(l => l.ContactId == contactId)
-            ?? throw new BusinessException("Contacts:ContactLinkNotFound")
+            ?? throw new BusinessException(GrantManagerDomainErrorCodes.ContactNotFound)
                 .WithData("contactId", contactId)
                 .WithData("entityType", entityType)
                 .WithData("entityId", entityId);
@@ -132,7 +132,7 @@ public class ContactManager(
                         && l.RelatedEntityId == entityId
                         && l.ContactId == contactId
                         && l.IsActive))
-            ?? throw new BusinessException("Contacts:ContactLinkNotFound")
+            ?? throw new BusinessException(GrantManagerDomainErrorCodes.ContactNotFound)
                 .WithData("contactId", contactId)
                 .WithData("entityType", entityType)
                 .WithData("entityId", entityId);
