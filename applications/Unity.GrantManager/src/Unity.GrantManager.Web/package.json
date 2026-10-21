@@ -19,7 +19,7 @@
     "dompurify": "~3.4.16",
     "echarts": "~6.1.0",
     "formiojs": "4.21.7",
-    "handlebars": "~4.7.9",
+    "handlebars": "~4.7.10",
     "jquery": "^3.7.1",
     "jquery-maskmoney": "~3.0.2",
     "jszip": "~3.10.1",
