@@ -231,7 +231,7 @@ $(function () {
     }
 
     if (abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Review.AssessmentReviewList.Create')) {
-        void CreateAssessmentButton().catch(error => console.error('Failed to create assessment buttons:', error));
+        CreateAssessmentButton().catch(error => console.error('Failed to create assessment buttons:', error));
     }
 
     function GenerateAiAssessmentButton() {
@@ -354,12 +354,13 @@ function refreshActionButtons(dataTableContext, assessmentId, selectedData) {
                 .then(function (actionListResult) {
                     let enabledButtons = actionListResult.map((x) => x + ':name');
                     dataTableContext.buttons(enabledButtons).enable();
-                });
+                })
+                .catch(error => console.error('Failed to load permitted assessment actions:', error));
         }
     }
 
-    void updateCloneButtonState(dataTableContext).catch(error => console.error('Failed to update clone button state:', error));
-    void updateCreateButtonState(dataTableContext).catch(error => console.error('Failed to update create button state:', error));
+    updateCloneButtonState(dataTableContext).catch(error => console.error('Failed to update clone button state:', error));
+    updateCreateButtonState(dataTableContext).catch(error => console.error('Failed to update create button state:', error));
 }
 
 function renderApproval(data) {

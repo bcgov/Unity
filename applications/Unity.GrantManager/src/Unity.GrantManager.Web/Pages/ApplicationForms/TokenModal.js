@@ -23,7 +23,9 @@
 
         $('#CopyApiTokenBtn').click(function (e) {
             e.preventDefault();
-            void copyToClipboard($('#ApplicationForm_ApiToken').val());
+            copyToClipboard($('#ApplicationForm_ApiToken').val()).catch(err => {
+                console.error('Copy failed', err);
+            });
         });
 
         $('#ClearApiTokenBtn').click(function (e) {

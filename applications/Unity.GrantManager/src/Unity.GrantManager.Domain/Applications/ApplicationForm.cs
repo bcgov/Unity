@@ -12,6 +12,22 @@ namespace Unity.GrantManager.Applications;
 
 public class ApplicationForm : FullAuditedAggregateRoot<Guid>, IMultiTenant
 {
+    // This only controls form management visibility; related records still use the form.
+    public bool IsHiddenFromList { get; private set; }
+
+    public void HideFromList()
+    {
+        IsHiddenFromList = true;
+    }
+
+    public void EnsureCanBeAssignedAsParent(Guid? existingParentFormId)
+    {
+        if (IsHiddenFromList && existingParentFormId != Id)
+        {
+            throw new BusinessException(GrantManagerDomainErrorCodes.ParentFormUnavailable);
+        }
+    }
+
     public Guid IntakeId { get; set; }
     [Required]
     public string? ApplicationFormName { get; set; }

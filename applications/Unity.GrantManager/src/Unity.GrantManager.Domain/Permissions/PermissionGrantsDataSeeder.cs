@@ -177,6 +177,7 @@ namespace Unity.GrantManager.Permissions
                     IdentitySeedPermissions.Roles.ManagePermissions,
                     GrantManagerPermissions.Intakes.Default,
                     GrantManagerPermissions.ApplicationForms.Default,
+                    GrantManagerPermissions.ApplicationForms.Delete,
                     UnitySettingManagementPermissions.UserInterface,
                     UnitySettingManagementPermissions.EditProgramDetails,
 

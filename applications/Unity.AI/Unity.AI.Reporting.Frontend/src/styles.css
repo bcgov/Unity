@@ -1,0 +1,99 @@
+/* You can add global styles to this file, and also import other style files */
+:root {
+  --mb-blue-600: #1292e2;
+  --mb-blue-700: #0a7aca;
+  --mb-teal-600: #0096c7;
+  --mb-gray-050: #f7f9fb;
+  --mb-gray-200: #dfe4ea;
+  --mb-gray-400: #9aa5b1;
+  --mb-radius: 6px;
+  --mb-font-stack:"BC Sans","Noto Sans","Helvetica Neue",Arial,sans-serif !important;
+  --mb-shadow-sm: 0 1px 3px rgba(16, 32, 64, 0.08);
+}
+
+body {
+  margin: 0px;
+  background: var(--mb-gray-050);
+  font-family: var(--mb-font-stack) !important; 
+  color: #273142;
+  height: 100%;
+}
+
+button, input {
+  font-family: var(--mb-font-stack) !important;
+}
+
+.header {
+  display: flex;
+  position: fixed;
+  box-sizing: border-box;   /* include padding in width calc */
+  z-index: 200;
+  background: #fff;
+  top: 0;
+  width: 100vw;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--mb-gray-200);
+  padding-left: 50px;
+  padding-right: 50px;
+  box-shadow:0 2px 4px rgba(0,0,0,.06);
+}
+.header button {
+  background: var(--mb-blue-600);
+  color: #fff;
+  padding: 10px 16px;
+  border: none;
+  border-radius: var(--mb-radius);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color .12s, box-shadow .12s;
+}
+.header button:hover {
+  background: var(--mb-blue-700);
+  box-shadow: var(--mb-shadow-sm);
+}
+.header img.logo {
+  height: 70px;
+  width: auto;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* SQL syntax highlighting — VS Code Light+ palette */
+.sql-keyword    { color: #0000ff; font-weight: 600; }
+.sql-function   { color: #795e26; }
+.sql-string     { color: #a31515; }
+.sql-number     { color: #098658; }
+.sql-comment    { color: #008000; font-style: italic; }
+.sql-identifier { color: #267f99; }
+
+/* Line numbers via CSS counter */
+.sql-line {
+  display: block;
+  counter-increment: sql-line-counter;
+  padding-left: 3.5em;
+  position: relative;
+}
+.sql-line::before {
+  content: counter(sql-line-counter);
+  position: absolute;
+  left: 0;
+  width: 2.8em;
+  text-align: right;
+  color: #aaaaaa;
+  font-size: 0.85em;
+  user-select: none;
+  padding-right: 0.6em;
+  border-right: 1px solid #e2e8f0;
+  line-height: inherit;
+}

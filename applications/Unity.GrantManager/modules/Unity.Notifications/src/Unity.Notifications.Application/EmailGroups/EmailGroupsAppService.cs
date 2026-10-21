@@ -66,9 +66,7 @@ namespace Unity.Notifications.EmailGroups
             var emailGroup = await _emailGroupsRepository.GetAsync(id);
             if (await IsUsedByScheduledNotificationAsync(emailGroup.Name))
             {
-                throw new BusinessException(
-                    "Unity.Notifications:EmailGroupInUse",
-                    "This email group is associated with a scheduled notification and cannot be deleted.");
+                throw new BusinessException("Notifications:EmailGroupInUse");
             }
 
             try

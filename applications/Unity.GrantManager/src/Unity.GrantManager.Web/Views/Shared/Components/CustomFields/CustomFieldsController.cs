@@ -18,7 +18,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CustomFields
     [Route("GrantApplications/CustomFields")]
     public class CustomFieldsController(IWorksheetLinkAppService worksheetLinkAppService,
 
-        IApplicationFormVersionAppService applicationFormVersionAppService) : AbpController
+        IApplicationFormVersionAppService applicationFormVersionAppService,
+        IApplicationFormAppService applicationFormAppService) : AbpController
     {
         protected ILogger logger => LazyServiceProvider.LazyGetService<ILogger>(provider => LoggerFactory?.CreateLogger(GetType().FullName!) ?? NullLogger.Instance);
 
@@ -40,6 +41,16 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CustomFields
             ProcessSlotIds(model.FundingAgreementInfoSlotIds, FlexConsts.FundingAgreementInfoUiAnchor, tabLinks);
 
             var formVersion = await applicationFormVersionAppService.GetByChefsFormVersionId(model.ChefsFormVersionId);
+            if (formVersion == null)
+            {
+                return NotFound();
+            }
+
+            var form = await applicationFormAppService.GetAsync(formVersion.ApplicationFormId);
+            if (form.IsHiddenFromList)
+            {
+                return NotFound();
+            }
             _ = await worksheetLinkAppService
                 .UpdateWorksheetLinksAsync(new UpdateWorksheetLinksDto()
                 {

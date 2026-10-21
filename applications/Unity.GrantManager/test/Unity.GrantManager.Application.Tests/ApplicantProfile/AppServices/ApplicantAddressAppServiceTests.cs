@@ -67,7 +67,7 @@ public class ApplicantAddressAppServiceTests
         var exception = await Should.ThrowAsync<BusinessException>(() =>
             _service.UpdateAsync(_applicantId, _addressId, ValidInput()));
 
-        exception.Code.ShouldBe("Unity:Applicant:AddressNotFound");
+        exception.Code.ShouldBe(GrantManagerDomainErrorCodes.AddressNotFound);
     }
 
     [Fact]
