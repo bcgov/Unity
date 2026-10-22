@@ -35,8 +35,6 @@
   <ItemGroup>
     <PackageReference Include="DistributedLock.Redis" Version="1.1.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.13" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.13" />
-    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" Version="10.0.13" />
 
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageReference Include="Quartz.Serialization.Json" Version="3.18.2" />

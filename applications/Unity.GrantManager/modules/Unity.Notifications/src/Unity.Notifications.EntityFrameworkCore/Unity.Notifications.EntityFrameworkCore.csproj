@@ -10,8 +10,6 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.13" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.13" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="10.0.13" />
     <PackageReference Include="Volo.Abp.EntityFrameworkCore" Version="10.7.0" />
     <ProjectReference Include="..\Unity.Notifications.Domain\Unity.Notifications.Domain.csproj" />
   </ItemGroup>

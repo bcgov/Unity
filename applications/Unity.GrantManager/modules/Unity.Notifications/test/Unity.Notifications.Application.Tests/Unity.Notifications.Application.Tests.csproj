@@ -13,8 +13,7 @@
     <ProjectReference Include="..\..\src\Unity.Notifications.Application\Unity.Notifications.Application.csproj" />
     <ProjectReference Include="..\Unity.Notifications.Domain.Tests\Unity.Notifications.Domain.Tests.csproj" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.13" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.13" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.11.0" />
   </ItemGroup>
 
   <ItemGroup>

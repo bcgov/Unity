@@ -2,7 +2,7 @@
   <PropertyGroup>
     <LangVersion>latest</LangVersion>
     <Version>1.0.0</Version>
-    <NoWarn>$(NoWarn);CS1591;MSB3277</NoWarn>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
 	<AbpProjectType>app</AbpProjectType>
   </PropertyGroup>
 
@@ -18,13 +18,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Add direct reference to the patched Scriban to ensure all projects importing common.props
-         use the safe version (pins transitive consumers that do not specify a version). -->
-    <PackageReference Include="Scriban" Version="7.2.5" />
-
-    <!-- System.Security.Cryptography.Xml 8.0.2 (pulled in transitively) has several known high
-         severity vulnerabilities; pin to the same patched version already used directly by
-         Unity.AI.Application so every project importing common.props gets the safe version. -->
+    <!-- System.Security.Cryptography.Xml comes in transitively through NPOI and through ABP Identity's
+         Microsoft.AspNetCore.DataProtection, both at versions with known high severity vulnerabilities.
+         Pin the patched version here so every project gets it. Remove once both parents depend on
+         a patched version (check with dotnet list package vulnerable include-transitive). -->
     <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.13" />
   </ItemGroup>
 
