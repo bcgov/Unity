@@ -21,7 +21,9 @@
           <h1 class="welcome-title">What would you like to know?</h1>
           <div class="ask-row-container welcome-ask-row">
             <div class="ask-row">
+              <label for="welcome-question-input" class="sr-only">Report question</label>
               <input type="text"
+                id="welcome-question-input"
                 [(ngModel)]="question"
                 placeholder="Type a prompt to generate a report..."
                 (keyup.enter)="askQuestion()" />
@@ -193,7 +195,9 @@
           </div>
           <div class="ask-row-container">
             <div class="ask-row">
+              <label for="refine-question-input" class="sr-only">Refine the report</label>
               <input type="text"
+                id="refine-question-input"
                 #questionInput
                 [(ngModel)]="question"
                 placeholder="Refine the report..."

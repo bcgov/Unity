@@ -62,7 +62,7 @@ export class App implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.initialize();
+    this.initialize().catch(error => this.logger.error('Failed to initialize app:', error));
   }
 
   private async initialize(): Promise<void> {
@@ -291,7 +291,7 @@ export class App implements OnInit, OnDestroy {
 
           // Refresh the sidebar to remove the deleted chat
           if (this.sidebar) {
-            this.sidebar.loadChats();
+            void this.sidebar.loadChats();
           }
 
           // Show success toast for entire chat deletion
@@ -422,7 +422,7 @@ export class App implements OnInit, OnDestroy {
     // Retry the question with the existing turn
     this.question = turn.question;
     this.conversation = this.conversation.filter(t => t !== turn);
-    this.askQuestion(nextRetryCount, errorType, turn.errorDetail);
+    void this.askQuestion(nextRetryCount, errorType, turn.errorDetail);
   }
 
   editQuestion(turn: Turn): void {
@@ -438,7 +438,7 @@ export class App implements OnInit, OnDestroy {
     // Resubmit the question with retry_count=1 so the backend skips the semantic cache (is_retry=true).
     this.question = turn.question;
     this.conversation = this.conversation.filter(t => t !== turn);
-    this.askQuestion(1);
+    void this.askQuestion(1);
   }
 
   get isLoading(): boolean {
@@ -450,12 +450,12 @@ export class App implements OnInit, OnDestroy {
     
     // Refresh chat list when opening sidebar
     if (this.sidebarOpen && this.sidebar) {
-      this.sidebar.loadChats();
+      void this.sidebar.loadChats();
     }
   }
 
   onChatSelected(chat: Chat): void {
-    this.loadChat(chat.id);
+    void this.loadChat(chat.id);
   }
 
   onNewChat(): void {
@@ -521,7 +521,7 @@ export class App implements OnInit, OnDestroy {
       
       // Refresh the chat list in the sidebar
       if (this.sidebar) {
-        this.sidebar.loadChats();
+        void this.sidebar.loadChats();
       }
     } catch (error) {
       // Log the error and provide user feedback instead of handling it silently

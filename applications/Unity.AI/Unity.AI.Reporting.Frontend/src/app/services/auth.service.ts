@@ -361,11 +361,11 @@ export class AuthService {
     const tokenTimestamp = localStorage.getItem('ai_reporting_timestamp');
     console.log('🔍 Token timestamp check:', {
       timestamp: tokenTimestamp,
-      timestampDate: tokenTimestamp ? new Date(parseInt(tokenTimestamp)).toISOString() : null
+      timestampDate: tokenTimestamp ? new Date(Number.parseInt(tokenTimestamp, 10)).toISOString() : null
     });
     
     if (tokenTimestamp) {
-      const tokenAge = Date.now() - parseInt(tokenTimestamp);
+      const tokenAge = Date.now() - Number.parseInt(tokenTimestamp, 10);
       const maxAge = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
       
       console.log('🔍 Token age check:', {
