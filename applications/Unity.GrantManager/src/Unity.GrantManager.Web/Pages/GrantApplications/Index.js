@@ -465,7 +465,10 @@ $(function () {
                 initialLoad = false; // Reset flag after use
             },
             enableContextMenu: true,
-            contextMenuActionsSelector: '[data-selector="applications-table-actions"]'
+            contextMenuActionsSelector: '[data-selector="applications-table-actions"]',
+            contextMenuRowUrl: row => row?.id
+                ? `/GrantApplications/Details?ApplicationId=${encodeURIComponent(row.id)}`
+                : null
         });
 
         dataTable.on('select', function (e, dt, type, indexes) {

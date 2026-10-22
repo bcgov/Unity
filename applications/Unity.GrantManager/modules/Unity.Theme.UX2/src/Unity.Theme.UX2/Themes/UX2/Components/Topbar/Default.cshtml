@@ -45,10 +45,6 @@
             {
                 <abp-dropdown-item href="/GrantPrograms">Switch Grant Programs</abp-dropdown-item>
             }
-            @if (CurrentTenant.Id != null)
-            {
-                <abp-dropdown-item href="/ApplicantPortalSettings">Applicant Portal Configuration</abp-dropdown-item>
-            }          
             @* "system_admin" is a DB-managed role, not a Keycloak-native one - it's only ever
                present as an AbpClaimTypes.Role claim (dynamically recomputed by ABP from the DB
                on every request), never in client_roles/CurrentUser.IsInRole. *@

@@ -1,24 +1,24 @@
 # ABP Framework Instructions for Unity Grant Manager
 
 ## Project Overview
-Unity Grant Manager is an ASP.NET Core MVC application built using ABP Framework 9.1.3, following Domain-Driven Design (DDD) principles.
+Unity Grant Manager is an ASP.NET Core MVC application built using ABP Framework 10.7, following Domain-Driven Design (DDD) principles.
 
 ## Architecture & Technology Stack
 
 ### Backend
-- **Framework**: ABP Framework 9.1.3 (ASP.NET Core MVC)
+- **Framework**: ABP Framework 10.7 (ASP.NET Core MVC)
 - **Architecture**: Domain-Driven Design (DDD)
 - **Pattern**: Multi-layered application (Domain, Application, Web)
-- **UI Framework**: ABP MVC UI with Bootstrap 4
+- **UI Framework**: ABP MVC UI with Bootstrap 5
 - **ORM**: Entity Framework Core (inferred from ABP standard)
 
 ### Frontend
 - **UI Theme**: ABP Basic Theme (`@abp/aspnetcore.mvc.ui.theme.basic`)
-- **JavaScript**: jQuery, DataTables.net
-- **Form Builder**: FormIO (formiojs 4.17.4)
-- **Charts**: ECharts 6.0
-- **Rich Text**: TinyMCE 8.3.2
-- **CSS**: Bootstrap 4.6.2
+- **JavaScript**: jQuery 4 (with jQuery Migrate, loaded by ABP), DataTables.net 2.x
+- **Form Builder**: FormIO (formiojs 4.21.7)
+- **Charts**: ECharts 6.1
+- **Rich Text**: TinyMCE 8.10
+- **CSS**: Bootstrap 5.3 for the app shell. Bootstrap 4.6.2 is loaded only in a few isolated places (Dashboard, AI Reporting, and the read-only form view on Application Details)
 
 ## Project Structure
 

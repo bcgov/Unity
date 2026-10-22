@@ -1,0 +1,62 @@
+@using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Localization
+@using Unity.GrantManager.GrantApplications
+@model IList<ApplicantPortalStatusDto>
+@inject IStringLocalizer<GrantManagerResource> L
+
+<div class="p-3">
+    <h5 class="fw-bold">@L["ApplicantPortalSettings:PortalStatusHeading"]</h5>
+    <form id="PortalStatusForm">
+        <table id="PortalStatusTable" class="table table-striped portal-status-table">
+            <thead>
+                <tr>
+                    <th>@L["ApplicantPortalSettings:InternalStatus"]</th>
+                    <th>@L["ApplicantPortalSettings:PortalStatusLabel"]</th>
+                    <th>@L["ApplicantPortalSettings:PortalPublishedStatusLabel"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (var i = 0; i < Model.Count; i++)
+                {
+                    var status = Model[i];
+                    <tr>
+                        <td class="align-middle">
+                            <label for="Statuses[@i].ExternalStatus">@status.InternalStatus</label>
+                        </td>
+                        <td>
+                            <input type="hidden"
+                                   name="Statuses[@i].Id"
+                                   value="@status.Id" />
+                            <input type="text"
+                                   class="form-control"
+                                   id="Statuses[@i].ExternalStatus"
+                                   name="Statuses[@i].ExternalStatus"
+                                   value="@status.ExternalStatus"
+                                   required
+                                   maxlength="250" />
+                        </td>
+                        <td>
+                            <input type="text"
+                                   class="form-control"
+                                   id="Statuses[@i].NotifiedStatus"
+                                   name="Statuses[@i].NotifiedStatus"
+                                   value="@status.NotifiedStatus"
+                                   maxlength="250"
+                                   placeholder="-" />
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <div class="d-flex gap-2 pt-3 portal-settings-actions">
+            <abp-button id="PortalStatusSaveButton"
+                        button-type="Primary"
+                        type="submit"
+                        text="@L["ApplicantPortalSettings:SaveChanges"].Value" />
+            <abp-button id="PortalStatusResetButton"
+                        button-type="Secondary"
+                        type="button"
+                        text="@L["ApplicantPortalSettings:ResetChanges"].Value" />
+        </div>
+    </form>
+</div>

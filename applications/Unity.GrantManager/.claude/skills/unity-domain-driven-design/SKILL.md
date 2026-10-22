@@ -5,7 +5,7 @@ description: DDD patterns for Unity - Entities, Aggregate Roots, Repositories, D
 
 # Unity ABP DDD Patterns
 
-> Based on ABP Framework DDD conventions. This project uses ABP 10.5 with PostgreSQL 17 and EF Core 10.
+> Based on ABP Framework DDD conventions. This project uses ABP 10.7 with PostgreSQL 17 and EF Core 10.
 
 ## Entities
 
