@@ -5,7 +5,7 @@
 
 ## Project Overview
 
-Unity Grant Manager is a **grant management portal** for the Province of British Columbia, built on **ABP Framework 10.3** with **.NET 10.0**, targeting **PostgreSQL 17**. The UI uses **Razor Pages** with a custom ABP theme (Unity.Theme.UX2). The architecture follows ABP's **Domain-Driven Design (DDD)** layered module pattern.
+Unity Grant Manager is a **grant management portal** for the Province of British Columbia, built on **ABP Framework 10.7** with **.NET 10.0**, targeting **PostgreSQL 17**. The UI uses **Razor Pages** with a custom ABP theme (Unity.Theme.UX2). The architecture follows ABP's **Domain-Driven Design (DDD)** layered module pattern.
 
 **Key stack:** .NET 10 · ABP 10.7 · EF Core 10.0 · PostgreSQL 17 · Redis · RabbitMQ · xUnit · Shouldly · NSubstitute · Mapperly · Cypress (E2E)
 
