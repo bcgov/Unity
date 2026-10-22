@@ -10,10 +10,11 @@ This is the main grant management application for the Unity platform. It include
 
 ## Getting Started
 
-1. With .NET Core installed, run `dotnet tool install -g Volo.Abp.Cli`
-2. **Load JS Dependencies**: Navigate to `.\applications\Unity.GrantManager` and run `abp install-libs` to install JavaScript dependencies.
-3. **Create the Database**: If you are using Visual Studio, right click on the `Unity.GrantManager.DbMigrator` project, select Set as StartUp Project, then hit Ctrl+F5 to run it without debugging. It will create the initial database and seed the initial data.
-4. **Run the Web Application**: Right click on the `Unity.GrantManager.Web` project, select Set as StartUp Project and run the application (F5 or Ctrl+F5 in Visual Studio).
+1. With .NET installed, run `dotnet tool install -g Volo.Abp.Cli` (version 10.7 or newer). If you use the ABP Studio CLI instead, it must be version 3.1.6 or newer. Older ABP CLI versions can't run Yarn 4.
+2. **Enable Yarn 4 (once per machine)**: with Node.js 24 installed, run `corepack enable`. The project pins Yarn 4 through the `packageManager` field in `src/Unity.GrantManager.Web/package.json`, and corepack picks it up from there. If `corepack enable` fails with a permissions error on Windows, run `corepack enable --install-directory "%APPDATA%\npm"` instead.
+3. **Load JS Dependencies**: Navigate to `.\applications\Unity.GrantManager` and run `abp install-libs` to install JavaScript dependencies. To add or update a JS package, run `yarn` in `src/Unity.GrantManager.Web` (not `npm` or `npx yarn@1`).
+4. **Create the Database**: If you are using Visual Studio, right click on the `Unity.GrantManager.DbMigrator` project, select Set as StartUp Project, then hit Ctrl+F5 to run it without debugging. It will create the initial database and seed the initial data.
+5. **Run the Web Application**: Right click on the `Unity.GrantManager.Web` project, select Set as StartUp Project and run the application (F5 or Ctrl+F5 in Visual Studio).
 
 ### Creating Entity Framework Migrations
 
