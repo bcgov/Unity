@@ -2,9 +2,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 using Unity.AI.Permissions;
+using Unity.GrantManager.ApplicantPortal;
+using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Permissions;
 using Unity.Modules.Shared;
 using Unity.Notifications.Permissions;
@@ -19,6 +22,8 @@ namespace Unity.GrantManager.Web.Pages.ConfigurationManagement;
 [Authorize(UnitySettingManagementPermissions.UserInterface)]
 public class IndexModel(
     IPaymentConfigurationAppService paymentConfigurationAppService,
+    IApplicationStatusService applicationStatusService,
+    IApplicantPortalMessageAppService applicantPortalMessageService,
     IConfiguration configuration,
     IFeatureChecker featureChecker,
     IPermissionChecker permissionChecker) : GrantManagerPageModel
@@ -26,9 +31,12 @@ public class IndexModel(
     public Guid? AccountCodingId { get; set; }
     public string? PaymentIdPrefix { get; set; }
     public string MaxFileSize { get; set; } = string.Empty;
+    public MultipleIdentitiesMessageDto MultipleIdentitiesMessage { get; set; } = new();
+    public IList<ApplicantPortalStatusDto> Statuses { get; set; } = [];
 
     // Visibility flags
     public bool ShowNotifications { get; set; }
+    public bool ShowApplicantPortal { get; set; }
     public bool ShowPayments { get; set; }
     public bool ShowPaymentAccountCoding { get; set; }
     public bool ShowPaymentSettings { get; set; }
@@ -64,6 +72,15 @@ public class IndexModel(
             && await permissionChecker.IsGrantedAsync(AIPermissions.Configuration.ConfigureAI);
 
         ShowProgramDetails = await permissionChecker.IsGrantedAsync(UnitySettingManagementPermissions.EditProgramDetails);
+
+        // Applicant portal statuses and messages are tenant data
+        ShowApplicantPortal = CurrentTenant.Id != null;
+
+        if (ShowApplicantPortal)
+        {
+            MultipleIdentitiesMessage = await applicantPortalMessageService.GetMultipleIdentitiesAsync();
+            Statuses = await applicationStatusService.GetApplicantPortalStatusListAsync();
+        }
 
         // Load payment data only if visible
         if (ShowPayments)

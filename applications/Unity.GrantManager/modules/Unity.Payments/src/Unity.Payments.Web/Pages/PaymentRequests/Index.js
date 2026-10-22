@@ -538,7 +538,8 @@ $(function () {
             initialLoad = false;
         },
         enableContextMenu: true,
-        contextMenuActionsSelector: '[data-selector="batch-payment-table-actions"]'
+        contextMenuActionsSelector: '[data-selector="batch-payment-table-actions"]',
+        contextMenuRowUrl: getApplicationDetailsUrl
     });
 
     // Initialize savedStates button styling
@@ -796,6 +797,21 @@ $(function () {
         };
     }
 
+    // The payment request's application page, or null when the user can't view applications.
+    // Shared by the Submission # link and the row context menu's Open / Open in New Tab.
+    function getApplicationDetailsUrl(row) {
+        if (!abp.auth.isGranted('GrantApplicationManagement.Applications')) {
+            return null;
+        }
+
+        const applicationId = row?.correlationId;
+        if (!applicationId || !guidPattern.test(applicationId)) {
+            return null;
+        }
+
+        return `/GrantApplications/Details?ApplicationId=${encodeURIComponent(applicationId)}`;
+    }
+
     function getSubmissionConfirmationCodeColumn(columnIndex) {
         return {
             title: l('ApplicationPaymentListTable:SubmissionConfirmationCode'),
@@ -813,14 +829,8 @@ $(function () {
                 const safeCode = $.fn.dataTable.render.text().display(code);
 
                 if (type === 'display' && abp.auth.isGranted('GrantApplicationManagement.Applications')) {
-                    const applicationId = row?.correlationId;
-                    const isGuid = applicationId && guidPattern.test(applicationId);
-
-                    if (isGuid) {
-                        return `<a href="/GrantApplications/Details?ApplicationId=${encodeURIComponent(applicationId)}">${safeCode}</a>`;
-                    }
-
-                    return safeCode;
+                    const applicationUrl = getApplicationDetailsUrl(row);
+                    return applicationUrl ? `<a href="${applicationUrl}">${safeCode}</a>` : safeCode;
                 }
 
                 return code || null;
