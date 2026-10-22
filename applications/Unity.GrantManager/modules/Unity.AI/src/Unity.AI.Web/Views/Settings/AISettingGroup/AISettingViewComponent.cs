@@ -1,9 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 using System.Threading.Tasks;
+using Unity.AI.Features;
+using Unity.AI.Generation;
 using Unity.AI.Settings;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
+using Volo.Abp.Features;
 using Volo.Abp.Settings;
 
 namespace Unity.AI.Web.Views.Settings.AISettingGroup;
@@ -12,10 +16,12 @@ namespace Unity.AI.Web.Views.Settings.AISettingGroup;
     ScriptTypes = [typeof(AISettingScriptBundleContributor)],
     AutoInitialize = true
 )]
-public class AISettingViewComponent(ISettingProvider settingProvider) : AbpViewComponent
+public class AISettingViewComponent(ISettingProvider settingProvider, IFeatureChecker featureChecker) : AbpViewComponent
 {
     public virtual async Task<IViewComponentResult> InvokeAsync()
     {
+        var generationFeatures = AIGenerationOperations.All.Select(o => o.FeatureName).Distinct().ToArray();
+
         var model = new AISettingViewModel
         {
             AutomaticGenerationEnabled = await settingProvider.GetAsync<bool>(
@@ -23,7 +29,9 @@ public class AISettingViewComponent(ISettingProvider settingProvider) : AbpViewC
             ManualGenerationEnabled = await settingProvider.GetAsync<bool>(
                 AISettings.ManualGenerationEnabled, defaultValue: false),
             ReportingEnabled = await settingProvider.GetAsync<bool>(
-                AISettings.ReportingEnabled, defaultValue: false)
+                AISettings.ReportingEnabled, defaultValue: false),
+            ShowGenerationSettings = await featureChecker.IsEnabledAsync(requiresAll: false, generationFeatures),
+            ShowReportingSetting = await featureChecker.IsEnabledAsync(AIFeatures.Reporting)
         };
 
         return View("~/Views/Settings/AISettingGroup/Default.cshtml", model);
