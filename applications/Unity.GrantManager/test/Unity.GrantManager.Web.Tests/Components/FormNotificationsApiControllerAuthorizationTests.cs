@@ -1,10 +1,10 @@
+using Microsoft.AspNetCore.Authorization;
+using NSubstitute;
+using Shouldly;
 using System;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using NSubstitute;
-using Shouldly;
 using Unity.GrantManager.Web.Controllers;
 using Unity.Notifications.Permissions;
 using Xunit;
@@ -24,7 +24,7 @@ public class FormNotificationsApiControllerAuthorizationTests
     [InlineData(nameof(FormNotificationsApiController.GetTemplateNotificationPlans))]
     public void Should_Authorize_Template_Editors_For_Template_Preflights(string actionName)
     {
-        PoliciesOf(actionName).ShouldBe([NotificationsPermissions.Email.Send]);
+        PoliciesOf(actionName).ShouldBe([NotificationsPermissions.Email.Default]);
     }
 
     [Fact]
