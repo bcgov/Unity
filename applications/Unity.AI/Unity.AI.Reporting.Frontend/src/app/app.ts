@@ -2,7 +2,6 @@ import { Component, ViewChild, ElementRef, OnInit, OnDestroy, ChangeDetectorRef 
 import { firstValueFrom } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 import { Embed } from './embed';
 import { Turn } from './turn';
@@ -49,8 +48,7 @@ export class App implements OnInit, OnDestroy {
     private readonly logger: LoggerService,
     private readonly iframeDetector: IframeDetectorService,
     private readonly configService: ConfigService,
-    private readonly cdr: ChangeDetectorRef,
-    private readonly sanitizer: DomSanitizer
+    private readonly cdr: ChangeDetectorRef
   ) {}
 
   @ViewChild('turnsContainer') private readonly turnsContainer!: ElementRef<HTMLDivElement>;
@@ -660,8 +658,8 @@ export class App implements OnInit, OnDestroy {
     return JSON.stringify(value);
   }
 
-  highlightSql(sql: string): SafeHtml {
-    if (!sql) return this.sanitizer.bypassSecurityTrustHtml('');
+  highlightSql(sql: string): string {
+    if (!sql) return '';
 
     const KEYWORDS = new Set([
       'SELECT','FROM','WHERE','JOIN','LEFT','RIGHT','INNER','OUTER','FULL','ON',
@@ -713,9 +711,9 @@ export class App implements OnInit, OnDestroy {
     const numbered = highlighted.split('\n')
       .map(line => `<span class="sql-line">${line}</span>`)
       .join('');
-    // Safe: all SQL content is HTML-escaped via esc(); only hardcoded <span> tags with
-    // static class names are injected.
-    return this.sanitizer.bypassSecurityTrustHtml(numbered);
+    // SQL content is HTML-escaped via esc(); the [innerHTML] binding then runs Angular's
+    // built-in sanitizer, which keeps the <span class="..."> markup.
+    return numbered;
   }
 
   ngOnDestroy(): void {
