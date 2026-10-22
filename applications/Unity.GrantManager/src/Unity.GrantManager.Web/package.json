@@ -22,12 +22,12 @@
     "handlebars": "~4.7.10",
     "jquery": "~4.0.0",
     "jquery-maskmoney": "~3.0.2",
-    "jszip": "~3.10.1",
+    "jszip": "~3.10.2",
     "pubsub-js": "~1.9.5",
     "select2": "~4.1.0",
     "select2-bootstrap-5-theme": "~1.3.0",
     "sortablejs": "~1.15.7",
-    "tinymce": "~8.8.2",
+    "tinymce": "~8.10.0",
     "tributejs": "~5.1.3"
   },
   "devDependencies": {
