@@ -8,9 +8,11 @@ WORKDIR /src
 
 # set up node
 ARG NODE_VERSION=24.13.0
-ARG YARN_VERSION=1.22.22
+ARG YARN_VERSION=4.18.1
 ARG NODE_DOWNLOAD_URL=https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-x64.tar.gz
 ARG NODE_DOWNLOAD_SHA=6223aad1a81f9d1e7b682c59d12e2de233f7b4c37475cd40d1c89c42b737ffa8
+
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 
 ADD --checksum=sha256:${NODE_DOWNLOAD_SHA} ${NODE_DOWNLOAD_URL} nodejs.tar.gz
 RUN tar -xzf "nodejs.tar.gz" -C /usr/local --strip-components=1 \
@@ -19,9 +21,10 @@ RUN tar -xzf "nodejs.tar.gz" -C /usr/local --strip-components=1 \
     # NODE SMOKE TESTS
     && node --version \
     && npm --version \
-    ## INSTALL YARN
+    ## INSTALL YARN (the version must match "packageManager" in package.json)
     && corepack enable \
-    && yarn set version ${YARN_VERSION}
+    && corepack prepare yarn@${YARN_VERSION} --activate \
+    && yarn --version
 
 COPY ["src/Unity.GrantManager.Domain.Shared/Unity.GrantManager.Domain.Shared.csproj", "src/Unity.GrantManager.Domain.Shared/"]
 COPY ["src/Unity.GrantManager.Web/Unity.GrantManager.Web.csproj", "src/Unity.GrantManager.Web/"]

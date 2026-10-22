@@ -2,6 +2,7 @@
   "version": "1.0.0",
   "name": "my-app",
   "private": true,
+  "packageManager": "yarn@4.18.1",
   "dependencies": {
     "@abp/aspnetcore.mvc.ui.theme.basic": "~10.7.0",
     "@abp/font-awesome": "~10.7.0",
