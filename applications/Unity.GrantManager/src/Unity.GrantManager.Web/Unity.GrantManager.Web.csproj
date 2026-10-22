@@ -1,5 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
-
+  <PropertyGroup>
+    <ExcludeExplicitCryptographyXml>true</ExcludeExplicitCryptographyXml>
+  </PropertyGroup>
   <Import Project="..\..\common.props" />
 
   <PropertyGroup>

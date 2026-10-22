@@ -17,12 +17,13 @@
     <Content Remove="$(UserProfile)\.nuget\packages\*\*\contentFiles\any\*\*.abppkg*.json" />
   </ItemGroup>
 
-  <ItemGroup>
     <!-- System.Security.Cryptography.Xml comes in transitively through NPOI and through ABP Identity's
          Microsoft.AspNetCore.DataProtection, both at versions with known high severity vulnerabilities.
          Pin the patched version here so every project gets it. Remove once both parents depend on
          a patched version (check with dotnet list package vulnerable include-transitive). -->
-    <PackageReference Include="System.Security.Cryptography.Xml" Version="10.0.13" />
+  <ItemGroup Condition="'$(ExcludeExplicitCryptographyXml)' != 'true'">
+    <PackageReference Include="System.Security.Cryptography.Xml"
+                      Version="10.0.13" />
   </ItemGroup>
 
 </Project>
