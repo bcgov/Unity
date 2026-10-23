@@ -24,6 +24,8 @@ declare const describe: {
 };
 declare function it(name: string, callback: (...args: any[]) => void): void;
 declare function before(callback: (...args: any[]) => void): void;
+declare function beforeEach(callback: (...args: any[]) => void): void;
+declare function afterEach(callback: (...args: any[]) => void): void;
 declare function require(moduleName: string): any;
 
 const { ApplicationsListPage } = require("../pages/ApplicationsListPage");
@@ -88,6 +90,7 @@ const APPLICATIONS_PATH = "GrantApplications";
 
   // Resolved after "Fetch submission ID from API" — shared across all subsequent tests
   let submissionId: string;
+  let failedStep = false;
 
   // ============ Shared Helpers ============
 
@@ -106,7 +109,7 @@ const APPLICATIONS_PATH = "GrantApplications";
 
   function navigateToApplicationsList(): void {
     cy.location("pathname", { timeout: 20000 }).then((pathname) => {
-      if (!pathname.includes(`/${APPLICATIONS_PATH}`)) {
+      if (pathname !== `/${APPLICATIONS_PATH}`) {
         cy.visit(`${Cypress.env("webapp.url")}${APPLICATIONS_PATH}`);
       }
     });
@@ -386,12 +389,7 @@ const APPLICATIONS_PATH = "GrantApplications";
     dismissBlockingModalIfPresent();
     waitForSubmissionToAppearInList();
 
-    listPage
-      .waitForNoBlockingOverlay()
-      .selectQuickDateRange("last30days")
-      .waitForTableRefresh()
-      .searchForSubmission(submissionId)
-      .selectRowByText(submissionId);
+    listPage.waitForNoBlockingOverlay().selectRowByText(submissionId);
 
     cy.get("#assignApplication", { timeout: 20000 })
       .should("exist")
@@ -507,6 +505,19 @@ const APPLICATIONS_PATH = "GrantApplications";
     loginIfNeeded();
   });
 
+  beforeEach(function () {
+    if (failedStep) this.skip();
+  });
+
+  afterEach(function () {
+    if (
+      this.currentTest?.state === "failed" &&
+      this.currentTest.currentRetry() >= this.currentTest.retries()
+    ) {
+      failedStep = true;
+    }
+  });
+
   // ============ Dynamic Submission Fetch ============
 
   it("Fetch submission ID from API", () => {
@@ -579,18 +590,13 @@ const APPLICATIONS_PATH = "GrantApplications";
     waitForSubmissionToAppearInList();
     listPage.waitForNoBlockingOverlay();
 
-    cy.location("pathname", { timeout: 20000 }).then((pathname) => {
-      if (pathname.includes("/GrantApplications/Details")) {
-        cy.log("Already on details page after assignment");
-      } else {
-        listPage
-          .selectQuickDateRange("last30days")
-          .waitForTableRefresh()
-          .searchForSubmission(submissionId)
-          .selectRowByText(submissionId)
-          .clickOpenButton();
-      }
-    });
+    cy.contains("#GrantApplicationsTable tbody tr td a", submissionId, {
+      timeout: 20000,
+    }).should("be.visible").click();
+    cy.location("pathname", { timeout: 20000 }).should(
+      "eq",
+      "/GrantApplications/Details",
+    );
 
     cy.get(BREADCRUMB_STATUS_SELECTOR, { timeout: 20000 })
       .should("be.visible")

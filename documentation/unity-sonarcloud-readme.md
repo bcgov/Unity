@@ -27,7 +27,7 @@ This document provides a guide for the Unity Grant Manager SonarCloud, including
 
 **Technology Stack:**
 
-- **Backend:** .NET with ABP Framework 10.3
+- **Backend:** .NET with ABP Framework 10.7
 - **Database:** PostgreSQL 17 with Entity Framework Core 10.0
 - **Frontend:** Razor Pages with custom ABP theme
 - **Testing:** xUnit with Shouldly assertions and NSubstitute mocks

@@ -152,7 +152,7 @@ Because the link is **by group name**, renaming an email group silently detaches
 |---|---|
 |`ApplicationContact`|`ApplicantAgent.Email`|
 |`SigningAuthority`|`Application.SigningAuthorityEmail`|
-|`AdditionalContact`|`ContactEmail` of every `ApplicationContact` row on the application with `ContactType = ADDITIONAL_CONTACT`|
+|`AdditionalContact`|`ContactEmail` of every `ApplicationContact` row on the application with `ContactType` `ADDITIONAL_CONTACT` or `ADDITIONAL_SIGNING_AUTHORITY` (the Additional Contact(s) section)|
 
 Anything else logs a warning and is skipped. A recognized identifier with no address on this particular application is also logged and skipped. Zero resolvable addresses → nothing published.
 

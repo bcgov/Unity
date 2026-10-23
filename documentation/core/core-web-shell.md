@@ -99,7 +99,7 @@ The conventions across contributors: feature-check before adding an item, `requi
 | Applications | `GrantApplications/` (detail and list), `ApplicationLinks/`, `ApplicationTags/`, `ApplicationContact/`, `AssigneeSelection/`, `StatusUpdate/`, `Attachments/` |
 | Bulk operations | `BulkActions/`, `BulkApprovals/`, `BulkEmailNotifications/` |
 | Applicants | `Applicants/`, `ApplicantContact/`, `ApplicantHistory/` |
-| Configuration | `ConfigurationManagement/`, `FormConfiguration/`, `ApplicationForms/`, `GrantPrograms/`, `Intakes/`, `Sites/`, `Tags/`, `SettingManagement/`, `ApplicantPortalSettings/` |
+| Configuration | `ConfigurationManagement/`, `FormConfiguration/`, `ApplicationForms/`, `GrantPrograms/`, `Intakes/`, `Sites/`, `Tags/`, `SettingManagement/` |
 | Operations | `ExceptionLogs/`, `UnityAdmin/`, `Dashboard/` |
 | Payments | `PaymentHistory/` |
 

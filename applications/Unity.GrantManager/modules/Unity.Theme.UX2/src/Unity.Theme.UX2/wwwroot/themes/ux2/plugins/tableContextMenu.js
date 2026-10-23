@@ -425,37 +425,34 @@
     }
 
     /**
+     * Resolve the URL that Open / Open in New Tab should navigate to for a row.
+     * When the table supplies a rowUrl callback, the URL is built from the row's data, so it
+     * does not depend on column order or visibility. Otherwise the first link in the row is used.
+     */
+    function getRowUrl(dtApi, $row, rowUrl) {
+        if (typeof rowUrl === 'function') {
+            return rowUrl(dtApi.row($row[0]).data()) || null;
+        }
+
+        return $row.find('a[href]').first().attr('href') || null;
+    }
+
+    /**
      * Handle open action (current tab).
      */
-    function handleOpenAction(e, $row) {
+    function handleOpenAction(e, url) {
         e.preventDefault();
         hideMenu();
-
-        // Try to find a link in the row to open
-        const $link = $row.find('a[href]').first();
-        if ($link.length > 0) {
-            const url = $link.attr('href');
-            if (url) {
-                window.location = url;
-            }
-        }
+        window.location = url;
     }
 
     /**
      * Handle open in new tab action.
      */
-    function handleOpenInNewTabAction(e, $row) {
+    function handleOpenInNewTabAction(e, url) {
         e.preventDefault();
         hideMenu();
-
-        // Try to find a link in the row to open
-        const $link = $row.find('a[href]').first();
-        if ($link.length > 0) {
-            const url = $link.attr('href');
-            if (url) {
-                window.open(url, '_blank');
-            }
-        }
+        window.open(url, '_blank');
     }
 
     /**
@@ -466,6 +463,7 @@
      * - Toolbar items: Filtering
      * - Open: opens the selected row's link in the current tab
      * - Open in New Tab: opens the selected row's link in a new tab
+     *   (the URL from options.rowUrl if provided, otherwise the row's first link)
      * - Custom actions: mirrors visible/enabled ActionBar buttons
      * 
      * @param {DataTables.Api} dtApi - The initialized DataTable API instance
@@ -474,6 +472,7 @@
      * @param {string} [options.actionsSelector='[data-selector$=\"-table-actions\"]'] - Selector for custom action buttons
      * @param {boolean} [options.copyEnabled=true] - Whether Copy action is available
      * @param {Object} [options.labels={}] - Localization overrides { copy, filter, clearFilter, open, openNewTab }
+     * @param {Function} [options.rowUrl] - Builds the Open / Open in New Tab URL from the row data; return null to hide those items
      */
     globalThis.initializeTableContextMenu = function (dtApi, options) {
         options = options ?? {};
@@ -482,6 +481,7 @@
         const actionsSelector = options.actionsSelector ?? '[data-selector$="-table-actions"]';
         const copyEnabled = options.copyEnabled !== false;
         const labels = options.labels ?? {};
+        const rowUrl = options.rowUrl;
 
         if (!enabled || !dtApi?.table) {
             return;
@@ -565,12 +565,13 @@
             }
 
             // Open and Open in New Tab
-            if ($row.find('a[href]').length > 0) {
+            const url = getRowUrl(dtApi, $row, rowUrl);
+            if (url) {
                 appendMenuAction($menuContainer, labels.open, function (e) {
-                    handleOpenAction(e, $row);
+                    handleOpenAction(e, url);
                 }, 'fa-solid fa-folder-open');
                 appendMenuAction($menuContainer, labels.openNewTab, function (e) {
-                    handleOpenInNewTabAction(e, $row);
+                    handleOpenInNewTabAction(e, url);
                 });
                 // Add separator after Open/Open in New Tab section
                 $menuContainer.append($('<li class="dt-context-menu-separator"></li>'));
