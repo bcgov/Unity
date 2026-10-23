@@ -616,7 +616,7 @@ export class AuthService {
 
   private base64urlDecode(base64url: string): string {
     // Convert base64url to base64
-    let base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+    let base64 = base64url.replaceAll('-', '+').replaceAll('_', '/');
     
     // Add padding if needed
     while (base64.length % 4) {

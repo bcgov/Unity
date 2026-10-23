@@ -333,7 +333,7 @@ export class App implements OnInit, OnDestroy {
     this.turnToDelete = null;
   }
 
-  async resetConversation() {
+  resetConversation(): void {
     this.conversation = [];
     this.currentTurnIndex = 0;
   }

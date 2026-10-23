@@ -186,6 +186,15 @@ export class SidebarComponent implements OnDestroy {
     this.chatSelected.emit(chat);
   }
 
+  onChatKeydown(chat: Chat, event: Event): void {
+    // Ignore keys bubbling up from the nested delete button
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+    event.preventDefault();
+    this.onChatSelect(chat);
+  }
+
   onNewChat(): void {
     this.newChat.emit();
   }
@@ -315,6 +324,12 @@ export class SidebarComponent implements OnDestroy {
 
   closeInfoModal(): void {
     this.showInfoModal = false;
+  }
+
+  onInfoOverlayClick(event: Event): void {
+    if (event.target === event.currentTarget) {
+      this.closeInfoModal();
+    }
   }
 
   get version(): string {

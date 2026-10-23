@@ -27,8 +27,8 @@
                 [(ngModel)]="question"
                 placeholder="Type a prompt to generate a report..."
                 (keyup.enter)="askQuestion()" />
-              <button class="ask-question-btn" (click)="askQuestion()">
-                <svg width="20" height="20" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <button class="ask-question-btn" (click)="askQuestion()" aria-label="Submit question">
+                <svg aria-hidden="true" width="20" height="20" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M24 6L24 42" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
                   <path d="M12 18L24 6L36 18" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
@@ -128,7 +128,7 @@
                           <button class="metabase-view-btn metabase-view-btn--secondary metabase-view-btn--header"
                                   (click)="redirectToMB(turn)"
                                   title="View in Metabase">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                               <path d="M18 13V19C18 20.1046 17.1046 21 16 21H5C3.89543 21 3 20.1046 3 19V8C3 6.89543 3.89543 6 5 6H11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                               <path d="M15 3H21V9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                               <path d="M10 14L21 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -170,7 +170,7 @@
                       } @else {
                         <div class="metabase-view-container">
                           <button class="metabase-view-btn" (click)="redirectToMB(turn)" title="View in Metabase">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                               <path d="M18 13V19C18 20.1046 17.1046 21 16 21H5C3.89543 21 3 20.1046 3 19V8C3 6.89543 3.89543 6 5 6H11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                               <path d="M15 3H21V9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                               <path d="M10 14L21 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -230,12 +230,12 @@
                   @if (conversation.length > 0 && currentTurnIndex >= 0 && currentTurnIndex < conversation.length) {
                     <div class="action-buttons">
                       <button class="action-button" (click)="toggleSqlPanel(conversation[currentTurnIndex])" title="Show/Hide SQL">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                       </button>
                       <button class="action-button delete-action" (click)="deleteQuestion(conversation[currentTurnIndex])" title="Delete Card">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <path d="M10 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                           <path d="M14 11V17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                           <path d="M4 7H20" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -248,14 +248,14 @@
                   @if (conversation.length > 1) {
                     <div class="nav-controls">
                       <button class="action-button nav-button" (click)="scrollToPreviousTurn()" [disabled]="currentTurnIndex <= 0" title="Previous Report">
-                        <svg width="16" height="16" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <path d="M24 6L24 42" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
                           <path d="M12 18L24 6L36 18" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                       </button>
                       <span class="turn-counter">{{currentTurnIndex + 1}} / {{conversation.length}}</span>
                       <button class="action-button nav-button" (click)="scrollToNextTurn()" [disabled]="currentTurnIndex >= conversation.length - 1" title="Next Report">
-                        <svg width="16" height="16" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform: rotate(180deg);">
+                        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" style="transform: rotate(180deg);">
                           <path d="M24 6L24 42" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
                           <path d="M12 18L24 6L36 18" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
@@ -263,8 +263,8 @@
                     </div>
                   }
                 </div>
-                <button class="ask-question-btn" (click)="askQuestion()">
-                  <svg width="20" height="20" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <button class="ask-question-btn" (click)="askQuestion()" aria-label="Submit question">
+                  <svg aria-hidden="true" width="20" height="20" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M24 6L24 42" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
                     <path d="M12 18L24 6L36 18" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
                   </svg>
