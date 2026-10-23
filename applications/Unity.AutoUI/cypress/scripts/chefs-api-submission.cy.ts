@@ -18,7 +18,7 @@ export {};
  */
 
 const isProd =
-  (Cypress.env("CHEFS_ENV") || Cypress.env("environment") || "").toLowerCase() ===
+  (Cypress.expose("CHEFS_ENV") || Cypress.expose("environment") || "").toLowerCase() ===
   "prod";
 
 (isProd ? describe.skip : describe)("CHEFS Approval Flow Seeder", () => {
