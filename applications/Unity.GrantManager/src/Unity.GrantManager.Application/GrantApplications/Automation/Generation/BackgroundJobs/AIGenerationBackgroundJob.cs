@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Unity.AI.RateLimit;
+using Volo.Abp.AspNetCore.ExceptionHandling;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
@@ -16,7 +17,8 @@ public sealed class AIGenerationBackgroundJob(
     IUnitOfWorkManager unitOfWorkManager,
     IAIRateLimiter aiRateLimiter,
     ILogger<AIGenerationBackgroundJob> logger,
-    IAIGenerationOperationExecutorRegistry operationExecutorRegistry) : AsyncBackgroundJob<AIGenerationBackgroundJobArgs>, ITransientDependency
+    IAIGenerationOperationExecutorRegistry operationExecutorRegistry,
+    IExceptionToErrorInfoConverter errorInfoConverter) : AsyncBackgroundJob<AIGenerationBackgroundJobArgs>, ITransientDependency
 {
     public override async Task ExecuteAsync(AIGenerationBackgroundJobArgs args)
     {
@@ -68,7 +70,7 @@ public sealed class AIGenerationBackgroundJob(
                     args.TenantId,
                     args.ApplicationId,
                     args.OperationId,
-                    ex.Message,
+                    AIGenerationRequestJobHelper.GetFailureReason(errorInfoConverter, ex),
                     args.GenerationRequestId);
                 throw;
             }

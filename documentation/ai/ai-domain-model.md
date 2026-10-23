@@ -186,6 +186,8 @@ Configuration keys (not ABP settings — `IConfiguration`, so environment/secret
 
 ## Localization and error keys
 
-`AILocalizationKeys` (`Unity.AI.Domain.Shared/Localization/`) holds ~50 keys against `AIResource`, falling into four groups: per-operation *disabled* messages used by `AIFeatureGuard`, per-operation *prerequisite* messages used by `AIGenerationPrerequisiteValidator`, form-generation review and workflow messages, and scoresheet-generation validation messages.
+`AIErrorCodes` (`Unity.AI.Domain.Shared/AIErrorCodes.cs`) holds every `AI:` error code the module and the host app throw as a `BusinessException`. They fall into four groups: per-operation *disabled* codes used by `AIFeatureGuard`, per-operation *prerequisite* codes used by `AIGenerationPrerequisiteValidator`, form-generation review codes, and scoresheet-generation validation codes. Each code is also its key in `AIResource`, which `AISharedModule` maps to the `AI` code namespace so ABP shows the localized message. Codes that need values (section name, property name, failure reason) pass them with `WithData`, and the `en.json` text uses the matching named placeholders.
 
-`AIFeatureGuard.EnsureEnabledAsync(featureName, disabledMessageKey)` is the single place a disabled feature becomes a `UserFriendlyException`, and the key it uses comes from the operation's `AIGenerationOperationDefinition`.
+Non-error keys, such as the guided workflow step names (`AI:Workflow*`), are written inline as `L["..."]` / `localizer["..."]` like every other module.
+
+`AIFeatureGuard.EnsureEnabledAsync(featureName, disabledErrorCode)` is the single place a disabled feature becomes a `BusinessException`, and the code it uses comes from the operation's `AIGenerationOperationDefinition.DisabledErrorCode`.

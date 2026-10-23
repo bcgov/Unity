@@ -53,7 +53,7 @@ public class ApplicationGenerationQueue(
     {
         var hasEnabledStage = false;
         var enqueuedStage = false;
-        UserFriendlyException? lastStageException = null;
+        BusinessException? lastStageException = null;
 
         if (await featureChecker.IsEnabledAsync(AIFeatures.AttachmentSummaries))
         {
@@ -70,7 +70,7 @@ public class ApplicationGenerationQueue(
                     tenantId);
                 enqueuedStage = true;
             }
-            catch (UserFriendlyException ex)
+            catch (BusinessException ex)
             {
                 lastStageException = ex;
             }
@@ -91,7 +91,7 @@ public class ApplicationGenerationQueue(
                     tenantId);
                 enqueuedStage = true;
             }
-            catch (UserFriendlyException ex)
+            catch (BusinessException ex)
             {
                 lastStageException = ex;
             }
@@ -112,7 +112,7 @@ public class ApplicationGenerationQueue(
                     tenantId);
                 enqueuedStage = true;
             }
-            catch (UserFriendlyException ex)
+            catch (BusinessException ex)
             {
                 lastStageException = ex;
             }
