@@ -254,17 +254,18 @@ public class ExceptionLogAppService(
 
             if (!string.IsNullOrWhiteSpace(input.Filter))
             {
-                var filter = input.Filter.Trim();
+                var filter = input.Filter.Trim().ToLower();
+
                 query = query.Where(x =>
-                    x.Title.Contains(filter) ||
-                    x.Message.Contains(filter) ||
-                    (x.Source != null && x.Source.Contains(filter)) ||
-                    (x.ExceptionType != null && x.ExceptionType.Contains(filter)) ||
-                    (x.CorrelationId != null && x.CorrelationId.Contains(filter)) ||
-                    (x.TicketReference != null && x.TicketReference.Contains(filter)) ||
-                    (x.BlameAuthor != null && x.BlameAuthor.Contains(filter)) ||
-                    (x.UserName != null && x.UserName.Contains(filter)) ||
-                    (x.TenantName != null && x.TenantName.Contains(filter)));
+                    x.Title.ToLower().Contains(filter) ||
+                    x.Message.ToLower().Contains(filter) ||
+                    (x.Source != null && x.Source.ToLower().Contains(filter)) ||
+                    (x.ExceptionType != null && x.ExceptionType.ToLower().Contains(filter)) ||
+                    (x.CorrelationId != null && x.CorrelationId.ToLower().Contains(filter)) ||
+                    (x.TicketReference != null && x.TicketReference.ToLower().Contains(filter)) ||
+                    (x.BlameAuthor != null && x.BlameAuthor.ToLower().Contains(filter)) ||
+                    (x.UserName != null && x.UserName.ToLower().Contains(filter)) ||
+                    (x.TenantName != null && x.TenantName.ToLower().Contains(filter)));
             }
 
             var totalCount = await AsyncExecuter.CountAsync(query);
