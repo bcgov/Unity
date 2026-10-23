@@ -126,11 +126,11 @@ export default defineConfig({
         expose: {
           ...config.expose,
           "webapp.url":
-            (config.env["webapp.url"] as string | undefined) ||
             (environmentConfig["webapp.url"] as string | undefined) ||
+            (config.env["webapp.url"] as string | undefined) ||
             config.baseUrl,
-          environment: config.env.environment || environmentConfig.environment || environmentName,
-          CHEFS_ENV: config.env.CHEFS_ENV || environmentConfig.CHEFS_ENV,
+          environment: environmentConfig.environment || config.env.environment || environmentName,
+          CHEFS_ENV: environmentConfig.CHEFS_ENV || config.env.CHEFS_ENV,
         },
         env: {
           ...config.env,
