@@ -17,7 +17,7 @@ export class NavigationPage extends BasePage {
   private readonly tenantDropdown = "#user-dropdown .btn-dropdown span";
 
   constructor() {
-    super(Cypress.env("webapp.url"));
+    super(Cypress.expose("webapp.url"));
   }
 
   /**

@@ -18,7 +18,7 @@ export class LoginPage extends BasePage {
   };
 
   constructor() {
-    super(Cypress.env("webapp.url"));
+    super(Cypress.expose("webapp.url"));
   }
 
   /**
@@ -29,7 +29,7 @@ export class LoginPage extends BasePage {
       username,
       password,
       timeout: 30000,
-      baseUrl: Cypress.env("webapp.url"),
+      baseUrl: Cypress.expose("webapp.url"),
     });
   }
 
@@ -48,7 +48,7 @@ export class LoginPage extends BasePage {
    */
   logout(): void {
     this.visit();
-    cy.request("GET", Cypress.env("webapp.url") + "Account/Logout");
+    cy.request("GET", Cypress.expose("webapp.url") + "Account/Logout");
     this.wait(1000);
     this.visit();
   }

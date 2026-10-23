@@ -2,9 +2,16 @@
 import { LoginPageInstance, NavigationPageInstance } from "../utilities";
 
 describe("Send an email", () => {
-  const TEST_EMAIL_TO = Cypress.env("TEST_EMAIL_TO") as string;
-  const TEST_EMAIL_CC = Cypress.env("TEST_EMAIL_CC") as string;
-  const TEST_EMAIL_BCC = Cypress.env("TEST_EMAIL_BCC") as string;
+  let TEST_EMAIL_TO: string;
+  let TEST_EMAIL_CC: string;
+  let TEST_EMAIL_BCC: string;
+  before(() => {
+    cy.env(["TEST_EMAIL_TO", "TEST_EMAIL_CC", "TEST_EMAIL_BCC"]).then((values) => {
+      TEST_EMAIL_TO = values.TEST_EMAIL_TO;
+      TEST_EMAIL_CC = values.TEST_EMAIL_CC;
+      TEST_EMAIL_BCC = values.TEST_EMAIL_BCC;
+    });
+  });
   const TEMPLATE_NAME = "Test Case 1";
   const STANDARD_TIMEOUT = 20000;
 

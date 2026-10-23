@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "mode": "report-only",
-  "generatedAt": "2026-10-21T23:53:22.504Z",
+  "generatedAt": "2026-10-23T17:08:18.085Z",
   "summary": {
     "total": 364,
     "matched": 150,
@@ -156,7 +156,7 @@
       "missingTokens": [],
       "usedBy": [
         "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:50",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:950"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:952"
       ],
       "applicationMatches": []
     },
@@ -249,9 +249,9 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:117",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:119",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:89",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:124",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:126",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:96",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:649",
         "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:67",
         "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:194",
@@ -402,8 +402,8 @@
       "status": "exempt",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:189",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:190"
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:196",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:197"
       ],
       "applicationMatches": []
     },
@@ -415,10 +415,10 @@
       "status": "exempt",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:105",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:106",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:191",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:192",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:112",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:113",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:198",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:199",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:645"
       ],
       "applicationMatches": []
@@ -431,13 +431,13 @@
       "status": "exempt",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:101",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:187",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:188",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:197",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:90",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:96",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:98",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:103",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:105",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:108",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:194",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:195",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:204",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:97",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:644",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:659",
         "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:68",
@@ -481,7 +481,7 @@
       "status": "exempt",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:110"
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:117"
       ],
       "applicationMatches": []
     },
@@ -493,7 +493,7 @@
       "status": "exempt",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:236",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:243",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:39"
       ],
       "applicationMatches": []
@@ -519,8 +519,8 @@
       "status": "exempt",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:237",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:243"
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:244",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:250"
       ],
       "applicationMatches": []
     },
@@ -532,7 +532,7 @@
       "status": "exempt",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:46"
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:53"
       ],
       "applicationMatches": []
     },
@@ -784,8 +784,8 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/support/commands.ts:169",
-        "applications/Unity.AutoUI/cypress/support/commands.ts:173"
+        "applications/Unity.AutoUI/cypress/support/commands.ts:171",
+        "applications/Unity.AutoUI/cypress/support/commands.ts:175"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/Applicants/Details.js",
@@ -814,8 +814,8 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/support/commands.ts:154",
-        "applications/Unity.AutoUI/cypress/support/commands.ts:157"
+        "applications/Unity.AutoUI/cypress/support/commands.ts:156",
+        "applications/Unity.AutoUI/cypress/support/commands.ts:159"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/Applicants/Details.js",
@@ -1936,7 +1936,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:288"
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:295"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/EmailsWidget/Default.cshtml",
@@ -1980,9 +1980,9 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:127",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:140",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:91",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:134",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:147",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:98",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsRightTabPage.ts:79",
         "applications/Unity.AutoUI/cypress_manyEmails/manyEmails.cy.ts:161"
       ],
@@ -1999,7 +1999,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:215",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:222",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsRightTabPage.ts:67",
         "applications/Unity.AutoUI/cypress_manyEmails/manyEmails.cy.ts:116"
       ],
@@ -2043,8 +2043,8 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:316",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:340"
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:323",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:347"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/modules/Unity.AI/src/Unity.AI.Web/Views/Shared/Components/AIConfiguration/Default.js",
@@ -2086,8 +2086,8 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:339",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:346"
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:346",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:353"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/EmailsWidget/Default.cshtml",
@@ -2102,7 +2102,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:290"
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:297"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/EmailsWidget/Default.cshtml",
@@ -2639,9 +2639,9 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:294",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:299",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:336",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:301",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:306",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:343",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsRightTabPage.ts:72",
         "applications/Unity.AutoUI/cypress_manyEmails/manyEmails.cy.ts:132",
         "applications/Unity.AutoUI/cypress_manyEmails/manyEmails.cy.ts:151"
@@ -2660,7 +2660,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:252",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:259",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsRightTabPage.ts:75"
       ],
       "applicationMatches": [
@@ -2677,9 +2677,9 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:275",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:280",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:335",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:282",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:287",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:342",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsRightTabPage.ts:71",
         "applications/Unity.AutoUI/cypress_manyEmails/manyEmails.cy.ts:131",
         "applications/Unity.AutoUI/cypress_manyEmails/manyEmails.cy.ts:150"
@@ -2698,7 +2698,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:332",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:339",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsRightTabPage.ts:68"
       ],
       "applicationMatches": [
@@ -2733,8 +2733,8 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:68",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:70"
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:75",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:77"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/EmailHistoryWidget/Default.cshtml",
@@ -2749,7 +2749,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:321"
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:328"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/EmailHistoryWidget/Default.cshtml",
@@ -2781,8 +2781,8 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:203",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:207",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:210",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:214",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsRightTabPage.ts:18",
         "applications/Unity.AutoUI/cypress_manyEmails/manyEmails.cy.ts:107"
       ],
@@ -2800,9 +2800,9 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:305",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:310",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:337",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:312",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:317",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:344",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsRightTabPage.ts:74",
         "applications/Unity.AutoUI/cypress_manyEmails/manyEmails.cy.ts:133",
         "applications/Unity.AutoUI/cypress_manyEmails/manyEmails.cy.ts:152"
@@ -2821,10 +2821,10 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:219",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:264",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:269",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:334",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:226",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:271",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:276",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:341",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsRightTabPage.ts:70",
         "applications/Unity.AutoUI/cypress_manyEmails/manyEmails.cy.ts:130",
         "applications/Unity.AutoUI/cypress_manyEmails/manyEmails.cy.ts:149"
@@ -2922,8 +2922,8 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:172",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:177"
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:179",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:184"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/GrantApplications/Index.cshtml",
@@ -3278,8 +3278,8 @@
       "missingTokens": [],
       "usedBy": [
         "applications/Unity.AutoUI/cypress/pages/LoginPage.ts:13",
-        "applications/Unity.AutoUI/cypress/support/commands.ts:185",
-        "applications/Unity.AutoUI/cypress/support/commands.ts:24"
+        "applications/Unity.AutoUI/cypress/support/commands.ts:188",
+        "applications/Unity.AutoUI/cypress/support/commands.ts:25"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/modules/Unity.Reporting/src/Unity.Reporting.Application/Configuration/FormsIoMappingUtils.cs",
@@ -3641,7 +3641,7 @@
         "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:216",
         "applications/Unity.AutoUI/cypress/pages/ListPages.ts:46",
         "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:103",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:934"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:936"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/modules/Unity.AI/src/Unity.AI.Web/Pages/Prompts/Index.cshtml",
@@ -3771,8 +3771,8 @@
         "id:social-idir"
       ],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:157",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:158",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:164",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:165",
         "applications/Unity.AutoUI/cypress/e2e/lists.cy.ts:64",
         "applications/Unity.AutoUI/cypress/e2e/lists.cy.ts:65",
         "applications/Unity.AutoUI/cypress/support/auth.ts:105",
@@ -3975,10 +3975,10 @@
       "missingTokens": [],
       "usedBy": [
         "applications/Unity.AutoUI/cypress/pages/LoginPage.ts:12",
-        "applications/Unity.AutoUI/cypress/support/commands.ts:182",
         "applications/Unity.AutoUI/cypress/support/commands.ts:184",
+        "applications/Unity.AutoUI/cypress/support/commands.ts:187",
         "applications/Unity.AutoUI/cypress/support/commands.ts:21",
-        "applications/Unity.AutoUI/cypress/support/commands.ts:23"
+        "applications/Unity.AutoUI/cypress/support/commands.ts:24"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Controllers/UnityMessagingController.cs",
@@ -4152,14 +4152,14 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:156",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:186",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:194",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:235",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:287",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:45",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:67",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:88",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:102",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:163",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:193",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:201",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:242",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:294",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:52",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:74",
         "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:95",
         "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:38",
         "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:59",
@@ -4211,9 +4211,9 @@
         "applications/Unity.AutoUI/cypress/support/auth.ts:213",
         "applications/Unity.AutoUI/cypress/support/auth.ts:228",
         "applications/Unity.AutoUI/cypress/support/auth.ts:60",
-        "applications/Unity.AutoUI/cypress/support/commands.ts:146",
-        "applications/Unity.AutoUI/cypress/support/commands.ts:163",
-        "applications/Unity.AutoUI/cypress/support/commands.ts:180",
+        "applications/Unity.AutoUI/cypress/support/commands.ts:148",
+        "applications/Unity.AutoUI/cypress/support/commands.ts:165",
+        "applications/Unity.AutoUI/cypress/support/commands.ts:182",
         "applications/Unity.AutoUI/cypress/support/commands.ts:19",
         "applications/Unity.AutoUI/cypress_manyEmails/manyEmails.cy.ts:27",
         "applications/Unity.AutoUI/cypress_manyEmails/manyEmails.cy.ts:39",
@@ -4230,8 +4230,8 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:132",
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:52",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:139",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:59",
         "applications/Unity.AutoUI/cypress/e2e/chefsdata.cy.ts:232",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:446",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:462",
@@ -4258,8 +4258,8 @@
       "missingTokens": [],
       "usedBy": [
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:414",
-        "applications/Unity.AutoUI/cypress/support/commands.ts:149",
-        "applications/Unity.AutoUI/cypress/support/commands.ts:166"
+        "applications/Unity.AutoUI/cypress/support/commands.ts:151",
+        "applications/Unity.AutoUI/cypress/support/commands.ts:168"
       ],
       "applicationMatches": []
     },
@@ -4297,7 +4297,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/support/commands.ts:165"
+        "applications/Unity.AutoUI/cypress/support/commands.ts:167"
       ],
       "applicationMatches": []
     },
@@ -4309,7 +4309,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/support/commands.ts:148"
+        "applications/Unity.AutoUI/cypress/support/commands.ts:150"
       ],
       "applicationMatches": []
     },
@@ -4346,7 +4346,7 @@
       "missingTokens": [],
       "usedBy": [
         "applications/Unity.AutoUI/cypress/support/auth.ts:45",
-        "applications/Unity.AutoUI/cypress/support/commands.ts:49"
+        "applications/Unity.AutoUI/cypress/support/commands.ts:51"
       ],
       "applicationMatches": []
     },
@@ -4871,7 +4871,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/support/commands.ts:115"
+        "applications/Unity.AutoUI/cypress/support/commands.ts:117"
       ],
       "applicationMatches": []
     },
@@ -4883,7 +4883,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/support/commands.ts:109"
+        "applications/Unity.AutoUI/cypress/support/commands.ts:111"
       ],
       "applicationMatches": []
     },
@@ -5259,7 +5259,7 @@
       "status": "matched",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:227"
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:234"
       ],
       "applicationMatches": [
         "applications/Unity.GrantManager/modules/Unity.Flex/src/Unity.Flex.Web/Views/Shared/Components/Scoresheet/Scoresheet.js",
@@ -5341,13 +5341,13 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:74",
         "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:81",
+        "applications/Unity.AutoUI/cypress/e2e/basicEmail.cy.ts:88",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:401",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:402",
         "applications/Unity.AutoUI/cypress/pages/ApplicationDetailsPage.ts:403",
         "applications/Unity.AutoUI/cypress/pages/ApplicationsListPage.ts:295",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:956"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:958"
       ],
       "applicationMatches": []
     },
@@ -5567,7 +5567,7 @@
       "status": "unverified",
       "missingTokens": [],
       "usedBy": [
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:952"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:954"
       ],
       "applicationMatches": []
     },
@@ -5586,8 +5586,8 @@
         "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:107",
         "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:462",
         "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:858",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:939",
-        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:955"
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:941",
+        "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:957"
       ],
       "applicationMatches": []
     },

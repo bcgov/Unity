@@ -126,7 +126,7 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
                     EnsureSafeIdentifier(readOnlyRoleName, "readonly role name");
 
                     await CreateRoleIfNotExistsAsync(adminConnectionString, readOnlyRoleName, readOnlyPassword);
-                    await GrantReadOnlyPrivilegesAsync(adminConnectionString, adminTenantConnectionString, dbName, readOnlyRoleName);
+                    await GrantReadOnlyPrivilegesAsync(adminConnectionString, adminTenantConnectionString, dbName, readOnlyRoleName, roleName);
                 }
 
                 /* The payments module is also migrated.
@@ -342,7 +342,7 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
         await cmd.ExecuteNonQueryAsync();
     }
 
-    private static async Task GrantReadOnlyPrivilegesAsync(string adminConnectionString, string adminTenantConnectionString, string dbName, string roleName)
+    private static async Task GrantReadOnlyPrivilegesAsync(string adminConnectionString, string adminTenantConnectionString, string dbName, string roleName, string ownerRoleName)
     {
         await using (var conn = new NpgsqlConnection(adminConnectionString))
         {
@@ -359,6 +359,9 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
 
             // Grant read-only access (USAGE/SELECT) on every non-system schema, including
             // tables and sequences created by future migrations via ALTER DEFAULT PRIVILEGES.
+            // Plain ALTER DEFAULT PRIVILEGES only covers objects the admin creates; the
+            // FOR ROLE variants cover objects the tenant's read-write role creates at runtime,
+            // such as reporting views, which would otherwise be invisible to this role.
             cmd.CommandText = $"""
                 DO $$
                 DECLARE
@@ -374,6 +377,8 @@ public class EntityFrameworkCoreGrantManagerDbSchemaMigrator(
                         EXECUTE format('GRANT SELECT ON ALL SEQUENCES IN SCHEMA %I TO "{roleName}"', r.nspname);
                         EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA %I GRANT SELECT ON TABLES TO "{roleName}"', r.nspname);
                         EXECUTE format('ALTER DEFAULT PRIVILEGES IN SCHEMA %I GRANT SELECT ON SEQUENCES TO "{roleName}"', r.nspname);
+                        EXECUTE format('ALTER DEFAULT PRIVILEGES FOR ROLE "{ownerRoleName}" IN SCHEMA %I GRANT SELECT ON TABLES TO "{roleName}"', r.nspname);
+                        EXECUTE format('ALTER DEFAULT PRIVILEGES FOR ROLE "{ownerRoleName}" IN SCHEMA %I GRANT SELECT ON SEQUENCES TO "{roleName}"', r.nspname);
                     END LOOP;
                 END
                 $$;
