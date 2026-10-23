@@ -37,8 +37,8 @@ const { loginIfNeeded } = require("../support/auth");
 
 const isProd =
   (
-    Cypress.env("CHEFS_ENV") ||
-    Cypress.env("environment") ||
+    Cypress.expose("CHEFS_ENV") ||
+    Cypress.expose("environment") ||
     ""
   ).toLowerCase() === "prod";
 
@@ -49,7 +49,7 @@ const TEST_CONFIG = {
   grantProgram: "Default Grants Program",
   approvedAmount: "5000",
   assignOwner: "Unity User1",
-  supplierNumber: Cypress.env("environment") === "TEST" ? "2002712" : "2009366",
+  supplierNumber: Cypress.expose("environment") === "TEST" ? "2002712" : "2009366",
   paymentGroup: "Cheque" as const,
   testComment: "Test comment from automated regression test",
   // Options used when fetching dynamically (ignored when submissionId is set or seeded file exists)
@@ -110,7 +110,7 @@ const APPLICATIONS_PATH = "GrantApplications";
   function navigateToApplicationsList(): void {
     cy.location("pathname", { timeout: 20000 }).then((pathname) => {
       if (pathname !== `/${APPLICATIONS_PATH}`) {
-        cy.visit(`${Cypress.env("webapp.url")}${APPLICATIONS_PATH}`);
+        cy.visit(`${Cypress.expose("webapp.url")}${APPLICATIONS_PATH}`);
       }
     });
     listPage.waitForNoBlockingOverlay();
@@ -844,7 +844,7 @@ const APPLICATIONS_PATH = "GrantApplications";
   // ============ Post-Approval Verification ============
 
   it("Navigate back to applications list", () => {
-    cy.visit(`${Cypress.env("webapp.url")}${APPLICATIONS_PATH}`);
+    cy.visit(`${Cypress.expose("webapp.url")}${APPLICATIONS_PATH}`);
     listPage.switchToGrantProgram(TEST_CONFIG.grantProgram);
   });
 
@@ -906,9 +906,11 @@ const APPLICATIONS_PATH = "GrantApplications";
 
   it("Logout user1 and login as user2 for L2 approval", () => {
     cy.logout();
-    loginIfNeeded({
-      username: Cypress.env("test2username") as string,
-      password: Cypress.env("test2password") as string,
+    cy.env(["test2username", "test2password"]).then(({ test2username, test2password }: any) => {
+      loginIfNeeded({
+        username: test2username,
+        password: test2password,
+      });
     });
   });
 
