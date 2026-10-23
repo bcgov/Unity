@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
+import { Component, Input, ViewChild, ElementRef, AfterViewInit, OnDestroy } from '@angular/core';
 
 interface Dot {
   x: number;
@@ -30,7 +30,7 @@ function randomUnit(): number {
   templateUrl: './sql-loader.html',
   styleUrls: ['./sql-loader.css']
 })
-export class SqlLoaderComponent implements OnInit, AfterViewInit, OnDestroy {
+export class SqlLoaderComponent implements AfterViewInit, OnDestroy {
   @ViewChild('canvas', { static: false }) canvasRef!: ElementRef<HTMLCanvasElement>;
   @Input() loadingText: string = 'Generating Report...';
   
@@ -45,10 +45,6 @@ export class SqlLoaderComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly dotSpacing: number = 8;  // Much smaller spacing for more dots
   private readonly NUM_WAVE_SOURCES = 3;
   private readonly WAVE_HEIGHT = 40;
-
-  ngOnInit() {
-    // Initialize will happen in setupCanvas
-  }
 
   ngAfterViewInit() {
     this.setupCanvas();
