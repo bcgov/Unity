@@ -76,7 +76,7 @@ The dependency does run both ways in one respect: the module's `AIApplicationMod
 
 ```text
 Unity.AI.Domain.Shared          → AIFeatures, AISettings, PromptType,
-   (Unity.AI.Shared.csproj)       AIResource + AILocalizationKeys
+   (Unity.AI.Shared.csproj)       AIResource + AIErrorCodes
         ↑
 Unity.AI.Application.Contracts  → DTOs, I*AppService, AIGenerationOperations definitions,
                                   Requests/, Responses/, Models/, AIPermissions,

@@ -3,6 +3,7 @@ using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.Notifications.Email;
 using Unity.Modules.Shared.Utils;
+using Unity.Notifications;
 using Unity.Notifications.EmailNotifications;
 using Unity.Notifications.Emails;
 using Unity.Notifications.Events;
@@ -65,7 +66,7 @@ namespace Unity.GrantManager.Notifications
             await ValidateComposerRequestAsync(dto);
             if (dto.SendOnDateTime.HasValue)
             {
-                throw new Volo.Abp.BusinessException("Notifications:EmailDraftCannotBeScheduled");
+                throw new Volo.Abp.BusinessException(NotificationsErrorCodes.EmailDraftCannotBeScheduled);
             }
             EmailNotificationEvent emailNotificationEvent = GetEmailNotificationEvent(dto);
             emailNotificationEvent.Action = EmailAction.SaveDraft;
