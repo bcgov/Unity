@@ -22,7 +22,7 @@ $(function () {
                 severity: UIElements.severity.val()
             };
         },
-        actionButtons: commonTableActionButtons('Exception Logs'),
+        actionButtons: [],
         serverSideEnabled: true,
         pagingEnabled: true,
         reorderEnabled: true,
