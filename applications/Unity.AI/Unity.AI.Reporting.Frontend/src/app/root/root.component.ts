@@ -63,7 +63,7 @@ export class RootComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.initialize();
+    void this.initialize();
   }
 
   private async initialize(): Promise<void> {
@@ -72,7 +72,7 @@ export class RootComponent implements OnInit {
       if (!await this.authService.isAuthenticated()) {
         this.logger.info('User not authenticated, redirecting to main app');
         this.isLoading = false;
-        this.router.navigate(['/app']);
+        void this.router.navigate(['/app']);
         return;
       }
 
@@ -85,16 +85,16 @@ export class RootComponent implements OnInit {
       
       if (isAdmin) {
         this.logger.info('Admin user detected from JWT token, redirecting to admin page');
-        this.router.navigate(['/admin']);
+        void this.router.navigate(['/admin']);
       } else {
         this.logger.info('Regular user from JWT token, redirecting to main app');
-        this.router.navigate(['/app']);
+        void this.router.navigate(['/app']);
       }
 
     } catch (error) {
       this.logger.error('Error checking admin status:', error);
       // On error, default to main app
-      this.router.navigate(['/app']);
+      void this.router.navigate(['/app']);
     } finally {
       this.isLoading = false;
       this.cdr.markForCheck();

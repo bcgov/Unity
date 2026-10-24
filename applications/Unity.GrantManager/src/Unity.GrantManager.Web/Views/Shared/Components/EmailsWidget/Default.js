@@ -151,7 +151,10 @@ function initializeDraftEmailsWidget() {
         // Bind button handlers
         UIElements.btnNewEmail.on('click', function (e) {
             e.preventDefault();
-            handleNewEmail(false);
+            handleNewEmail(false).catch(error => {
+                console.error('Failed to initialize new email:', error);
+                abp.notify.error('Failed to create email draft. Please try again.');
+            });
         });
         UIElements.btnSend.on('click', handleSendEmail);
         UIElements.btnSave.on('click', handleSaveEmail);
@@ -284,7 +287,10 @@ function initializeDraftEmailsWidget() {
         initializeSenderAddressSelector();
         loadActiveSenderAddresses();
         void preloadTemplates(); // Pre-fetch templates on page load
-        initTemplateDetails();
+        initTemplateDetails().catch(error => {
+            console.error('Failed to initialize email template details:', error);
+            abp.notify.error('Failed to load email template details. Please try again.');
+        });
         $('#templateTextContainer').hide();
         $('#scheduled-delay-section').hide();
         UIElements.btnSave.hide();

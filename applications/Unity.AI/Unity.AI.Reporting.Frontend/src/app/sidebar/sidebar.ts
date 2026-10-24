@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectorRef, OnDestroy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectorRef, OnInit, OnDestroy } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -86,7 +86,7 @@ export type ModelsModalStep = 'idle' | 'pick-mode' | 'loading-views' | 'pick-vie
   templateUrl: './sidebar.html',
   styleUrls: ['./sidebar.css']
 })
-export class SidebarComponent implements OnDestroy {
+export class SidebarComponent implements OnInit, OnDestroy {
   @Input() isOpen: boolean = false;
   @Input() currentChatId: string | null = null;
   @Input() conversation: Turn[] = [];
@@ -184,6 +184,15 @@ export class SidebarComponent implements OnDestroy {
 
   onChatSelect(chat: Chat): void {
     this.chatSelected.emit(chat);
+  }
+
+  onChatKeydown(chat: Chat, event: Event): void {
+    // Ignore keys bubbling up from the nested delete button
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+    event.preventDefault();
+    this.onChatSelect(chat);
   }
 
   onNewChat(): void {
@@ -315,6 +324,12 @@ export class SidebarComponent implements OnDestroy {
 
   closeInfoModal(): void {
     this.showInfoModal = false;
+  }
+
+  onInfoOverlayClick(event: Event): void {
+    if (event.target === event.currentTarget) {
+      this.closeInfoModal();
+    }
   }
 
   get version(): string {

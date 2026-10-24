@@ -610,3 +610,9 @@ button.btn.fullWidth:hover {
   background-color: #ffffff !important;
   color: #000000 !important;
 }
+
+@media (prefers-reduced-motion: reduce) {
+    .v-scroll {
+        scroll-behavior: auto;
+    }
+}

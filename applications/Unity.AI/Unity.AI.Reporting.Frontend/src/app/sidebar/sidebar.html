@@ -26,7 +26,10 @@
           <div
             class="chat-item"
             [class.active]="currentChatId === chat.id"
+            tabindex="0"
             (click)="onChatSelect(chat)"
+            (keydown.enter)="onChatKeydown(chat, $event)"
+            (keydown.space)="onChatKeydown(chat, $event)"
             >
             <div class="chat-title" title="{{ chat.title }}">{{ chat.title }}</div>
             <button
@@ -52,7 +55,7 @@
     -->
     @if (canEditDataModel) {
     <a class="footer-btn models-btn" title="Generate Data Models" routerLink="/models">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
         <ellipse cx="8" cy="3.5" rx="6" ry="2"/>
         <path d="M2 3.5v4c0 1.1 2.7 2 6 2s6-.9 6-2v-4"/>
         <path d="M2 7.5v4c0 1.1 2.7 2 6 2s6-.9 6-2v-4"/>
@@ -60,7 +63,7 @@
     </a>
     }
     <button class="footer-btn info-btn" title="Information" (click)="openInfoModal()">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
         <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
       </svg>
     </button>
@@ -74,8 +77,8 @@
   message="Are you sure you want to delete this chat? This action cannot be undone."
   confirmText="Delete"
   cancelText="Cancel"
-  (confirm)="confirmDelete()"
-  (cancel)="cancelDelete()">
+  (confirmed)="confirmDelete()"
+  (cancelled)="cancelDelete()">
 </app-alert>
 
 <!-- TEMPORARY MVP: Report Bug modal hidden - uncomment to restore
@@ -106,8 +109,8 @@
 
 <!-- Information Modal -->
 @if (showInfoModal) {
-  <div class="info-modal-overlay" (click)="closeInfoModal()">
-    <div class="info-modal" (click)="$event.stopPropagation()">
+  <div class="info-modal-overlay" (click)="onInfoOverlayClick($event)" (keydown.escape)="closeInfoModal()">
+    <div class="info-modal">
       <div class="info-modal-header">
         <h3>About Unity AI Reporting</h3>
         <button class="info-modal-close" (click)="closeInfoModal()">×</button>

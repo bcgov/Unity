@@ -21,8 +21,7 @@ export const authGuard: CanActivateFn = async (route, state) => {
 
     // Navigate to access denied page
     console.log('Navigating to /access-denied');
-    router.navigate(['/access-denied']);
-    return false;
+    return router.createUrlTree(['/access-denied']);
   }
 
   console.log('✓ Authentication successful - allowing access');

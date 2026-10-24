@@ -84,3 +84,9 @@
         transform: scale(1);
     }
 }
+
+@media (prefers-reduced-motion: reduce) {
+    .status-text-only {
+        animation: none;
+    }
+}
