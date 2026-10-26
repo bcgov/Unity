@@ -624,3 +624,16 @@
     justify-content: center;
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .feature-card {
+    transition: none;
+  }
+
+  .btn-secondary:hover,
+  .btn-danger:hover,
+  .feature-card:hover {
+    transform: none;
+  }
+}

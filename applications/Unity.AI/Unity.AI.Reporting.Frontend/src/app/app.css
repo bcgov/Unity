@@ -1091,4 +1091,21 @@
   .metabase-view-btn::before {
     transition: none;
   }
+
+  .welcome-action-card,
+  .retry-btn,
+  .help-btn,
+  .metabase-view-btn,
+  .metabase-view-btn svg {
+    transition: none;
+  }
+
+  .welcome-action-card:hover,
+  .retry-btn:hover,
+  .help-btn:hover,
+  .metabase-view-btn:hover,
+  .metabase-view-btn--secondary:hover,
+  .metabase-view-btn:hover svg {
+    transform: none;
+  }
 }

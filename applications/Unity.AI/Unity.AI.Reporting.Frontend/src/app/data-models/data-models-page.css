@@ -1181,4 +1181,14 @@
   .dm-dots span {
     animation: none;
   }
+
+  .dm-mode-card,
+  .dm-row {
+    transition: none;
+  }
+
+  .dm-mode-card:hover,
+  .dm-row:hover {
+    transform: none;
+  }
 }

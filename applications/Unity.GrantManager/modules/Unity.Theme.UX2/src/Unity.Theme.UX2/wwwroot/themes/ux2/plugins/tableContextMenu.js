@@ -332,7 +332,7 @@
     async function copyToClipboard(text) {
         try {
             if (typeof navigator.clipboard?.writeText !== 'function') {
-                throw new Error('Clipboard API is unavailable');
+                throw new TypeError('Clipboard API is unavailable');
             }
 
             await navigator.clipboard.writeText(text);

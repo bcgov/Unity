@@ -26,13 +26,16 @@
           <div
             class="chat-item"
             [class.active]="currentChatId === chat.id"
-            tabindex="0"
-            (click)="onChatSelect(chat)"
-            (keydown.enter)="onChatKeydown(chat, $event)"
-            (keydown.space)="onChatKeydown(chat, $event)"
             >
-            <div class="chat-title" title="{{ chat.title }}">{{ chat.title }}</div>
             <button
+              type="button"
+              class="chat-title"
+              title="{{ chat.title }}"
+              [attr.aria-current]="currentChatId === chat.id ? 'page' : null"
+              (click)="onChatSelect(chat)"
+              >{{ chat.title }}</button>
+            <button
+              type="button"
               class="delete-chat-btn"
               (click)="deleteChat(chat, $event)"
               title="Delete chat"

@@ -696,6 +696,10 @@ $(function () {
                     if (confirmed) {
                         performSave(isNewTemplate, templateId, templateData, templateName, sendFrom, subject, bodyHTML);
                     }
+                })
+                .catch(function (e) {
+                    console.warn('Failed to save template:', e);
+                    abp.notify.error('Failed to save template.');
                 });
         });
     });
@@ -1556,6 +1560,9 @@ function deleteEmailAttachment(attachmentId) {
                     });
             }
         );
+    }).catch(function (e) {
+        console.warn('Failed to delete attachment:', e);
+        abp.notify.error('Failed to delete attachment.');
     });
 }
 

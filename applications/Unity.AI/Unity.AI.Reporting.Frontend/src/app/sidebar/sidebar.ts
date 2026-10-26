@@ -155,8 +155,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
     return this.authService.canEditDataModel();
   }
 
-  async ngOnInit(): Promise<void> {
-    await this.loadChats();
+  ngOnInit(): void {
+    // loadChats handles its own errors, so the promise never rejects
+    void this.loadChats();
   }
 
   public async loadChats(): Promise<void> {
@@ -184,15 +185,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   onChatSelect(chat: Chat): void {
     this.chatSelected.emit(chat);
-  }
-
-  onChatKeydown(chat: Chat, event: Event): void {
-    // Ignore keys bubbling up from the nested delete button
-    if (event.target !== event.currentTarget) {
-      return;
-    }
-    event.preventDefault();
-    this.onChatSelect(chat);
   }
 
   onNewChat(): void {

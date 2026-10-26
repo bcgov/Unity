@@ -83,7 +83,6 @@
 
 .chat-item {
   margin: 2px 12px;
-  padding: 8px 14px;
   cursor: pointer;
   position: relative;
   display: flex;
@@ -96,6 +95,15 @@
 }
 
 .chat-title {
+  display: block;
+  width: 100%;
+  padding: 8px 44px 8px 14px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
   font-weight: 400;
   color: #333;
   font-size: 0.78rem;
@@ -103,7 +111,11 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-right: 30px;
+}
+
+.chat-title:focus-visible {
+  outline: 2px solid #0062cc;
+  outline-offset: -2px;
 }
 
 .chat-date {
@@ -133,7 +145,8 @@
   line-height: 1;
 }
 
-.chat-item:hover .delete-chat-btn {
+.chat-item:hover .delete-chat-btn,
+.chat-item:focus-within .delete-chat-btn {
   opacity: 1;
 }
 
