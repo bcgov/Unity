@@ -27,6 +27,7 @@ public static class NotificationsPermissions
             public const string Schedule = "Notifications.Email.Application.Schedule";
             public const string DeleteDraft = "Notifications.Email.Application.DeleteDraft";
             public const string CancelScheduled = "Notifications.Email.Application.CancelScheduled";
+            public const string SendBulk = "Notifications.Email.Application.SendBulk";
         }
 
         public static class Applicant
@@ -38,9 +39,9 @@ public static class NotificationsPermissions
             public const string Schedule = "Notifications.Email.Applicant.Schedule";
             public const string DeleteDraft = "Notifications.Email.Applicant.DeleteDraft";
             public const string CancelScheduled = "Notifications.Email.Applicant.CancelScheduled";
+            public const string SendBulk = "Notifications.Email.Applicant.SendBulk";
         }
 
-        public const string SendBulk = "Notifications.Email.SendBulk";
         public const string NotificationsTab = "Notifications.Form.Tab";
         public const string ScheduleCreate = "Notifications.Form.Email.Schedule.Create";
         public const string ScheduleCancel = "Notifications.Form.Email.Schedule.Cancel";

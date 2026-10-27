@@ -110,8 +110,7 @@
         @* The bulk-send modal's right panel reuses EmailsWidget for Application emails, so SendBulk is only usable
            together with the Application view/create/send rights that panel relies on. *@
         @if (await FeatureChecker.IsEnabledAsync("Unity.Notifications")
-            && await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.SendBulk)
-            && await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.Default)
+            && await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.Application.SendBulk)
             && await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.Application.Default)
             && await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.Application.Create)
             && await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.Application.Send))

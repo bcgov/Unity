@@ -163,4 +163,25 @@ public class EmailComposerAccessCheckerTests
         applicant.CanEdit.ShouldBeFalse();
         applicant.CanSend.ShouldBeTrue();
     }
+
+    [Theory]
+    [InlineData(NotificationsPermissions.Email.Application.SendBulk)]
+    [InlineData(NotificationsPermissions.Email.Application.Create)]
+    [InlineData(NotificationsPermissions.Email.Application.Send)]
+    [InlineData(NotificationsPermissions.Email.Application.Default)]
+    public async Task Should_RequireEveryBulkOperationForApplications(string deniedPermission)
+    {
+        _permissions.IsGrantedAsync(deniedPermission).Returns(false);
+        await Should.ThrowAsync<AbpAuthorizationException>(() => _checker.CheckPermissionsAllAsync(
+            Guid.Empty, EmailOperation.View, EmailOperation.Create, EmailOperation.Send, EmailOperation.SendBulk));
+    }
+
+    [Fact]
+    public async Task Should_ScopeSendBulkToOwnerType()
+    {
+        _permissions.IsGrantedAsync(NotificationsPermissions.Email.Applicant.SendBulk).Returns(false);
+
+        await _checker.CheckPermissionsAsync(Guid.Empty, EmailOperation.SendBulk);
+        await Should.ThrowAsync<AbpAuthorizationException>(() => _checker.CheckPermissionsAsync(Guid.NewGuid(), EmailOperation.SendBulk));
+    }
 }

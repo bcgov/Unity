@@ -20,7 +20,8 @@ public enum EmailOperation
     Send,
     Schedule,
     DeleteDraft,
-    CancelScheduled
+    CancelScheduled,
+    SendBulk
 }
 
 public static class EmailPermissionMap
@@ -38,6 +39,7 @@ public static class EmailPermissionMap
                 EmailOperation.Schedule => NotificationsPermissions.Email.Application.Schedule,
                 EmailOperation.DeleteDraft => NotificationsPermissions.Email.Application.DeleteDraft,
                 EmailOperation.CancelScheduled => NotificationsPermissions.Email.Application.CancelScheduled,
+                EmailOperation.SendBulk => NotificationsPermissions.Email.Application.SendBulk,
                 _ => throw new ArgumentOutOfRangeException(nameof(operation))
             },
             EmailOwnerTypes.Applicant => operation switch
@@ -49,6 +51,7 @@ public static class EmailPermissionMap
                 EmailOperation.Schedule => NotificationsPermissions.Email.Applicant.Schedule,
                 EmailOperation.DeleteDraft => NotificationsPermissions.Email.Applicant.DeleteDraft,
                 EmailOperation.CancelScheduled => NotificationsPermissions.Email.Applicant.CancelScheduled,
+                EmailOperation.SendBulk => NotificationsPermissions.Email.Applicant.SendBulk,
                 _ => throw new ArgumentOutOfRangeException(nameof(operation))
             },
             _ => throw new ArgumentOutOfRangeException(nameof(ownerType))

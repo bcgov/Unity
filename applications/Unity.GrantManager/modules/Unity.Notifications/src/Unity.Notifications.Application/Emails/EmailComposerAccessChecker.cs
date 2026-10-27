@@ -62,6 +62,15 @@ public class EmailComposerAccessChecker(
         }
     }
 
+    /// <summary>Requires every listed operation for the owner type (Guid.Empty applicantId means Application).</summary>
+    public async Task CheckPermissionsAllAsync(Guid applicantId, params EmailOperation[] operations)
+    {
+        foreach (var operation in operations)
+        {
+            await CheckPermissionsAsync(applicantId, operation);
+        }
+    }
+
     public async Task<EmailLog> CheckEmailAsync(Guid emailId, EmailOperation operation, bool requireDraft = false)
     {
         var email = await emailLogsRepository.GetAsync(emailId);

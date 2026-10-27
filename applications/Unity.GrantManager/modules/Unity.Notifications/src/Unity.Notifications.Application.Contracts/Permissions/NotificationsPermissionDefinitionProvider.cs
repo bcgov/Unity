@@ -51,8 +51,6 @@ public static class EmailPermissionDefinitionExtensions
         var email = notificationsPermissionsGroup.AddPermission(NotificationsPermissions.Email.Default, L($"Permission:{NotificationsPermissions.Email.Default}"));
 
         // Template attachments are not owner-scoped.
-        email.AddUnityChild(NotificationsPermissions.Email.Send.Default);
-        email.AddUnityChild(NotificationsPermissions.Email.SendBulk);
 
         AddOwnerPermissions(
             email,
@@ -62,7 +60,8 @@ public static class EmailPermissionDefinitionExtensions
             NotificationsPermissions.Email.Application.Send,
             NotificationsPermissions.Email.Application.Schedule,
             NotificationsPermissions.Email.Application.DeleteDraft,
-            NotificationsPermissions.Email.Application.CancelScheduled);
+            NotificationsPermissions.Email.Application.CancelScheduled,
+            NotificationsPermissions.Email.Application.SendBulk);
 
         AddOwnerPermissions(
             email,
@@ -73,6 +72,9 @@ public static class EmailPermissionDefinitionExtensions
             NotificationsPermissions.Email.Applicant.Schedule,
             NotificationsPermissions.Email.Applicant.DeleteDraft,
             NotificationsPermissions.Email.Applicant.CancelScheduled);
+
+        // Manage Email Templates
+        email.AddUnityChild(NotificationsPermissions.Email.Send.Default);
     }
 
     private static void AddOwnerPermissions(PermissionDefinition email, string view, params string[] operations)

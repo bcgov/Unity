@@ -9,20 +9,15 @@ using Unity.GrantManager.Applications;
 using Unity.GrantManager.Notifications.Email;
 using Unity.Modules.Shared.Utils;
 using Unity.Notifications.Emails;
-using Unity.Notifications.Permissions;
 using Unity.Notifications.Templates;
 using Volo.Abp;
 using Volo.Abp.Users;
 
 namespace Unity.GrantManager.GrantApplications
 {
-    // The right-panel editor reuses EmailsWidget, so bulk send needs the Application email rights that panel relies on
-    // (view, create the draft, send it) in addition to SendBulk. Stacked [Authorize] attributes compose as AND.
-    [Authorize(NotificationsPermissions.Email.SendBulk)]
-    [Authorize(NotificationsPermissions.Email.Application.Default)]
-    [Authorize(NotificationsPermissions.Email.Application.Create)]
-    [Authorize(NotificationsPermissions.Email.Application.Send)]
+    [Authorize]
     public class BulkEmailNotificationAppService(
+        EmailComposerAccessChecker emailAccessChecker,
         IApplicationRepository applicationRepository,
         IEmailLogsRepository emailLogsRepository,
         IEmailLogAttachmentRepository emailLogAttachmentRepository,
@@ -31,6 +26,17 @@ namespace Unity.GrantManager.GrantApplications
         ITemplateService templateService,
         IConfiguration configuration) : GrantManagerAppService, IBulkEmailNotificationAppService
     {
+        // The right-panel editor reuses EmailsWidget, so bulk send needs the owner-type email rights that panel relies on
+        // (view, create the draft, send it) in addition to SendBulk.
+        private static readonly EmailOperation[] BulkOperations =
+            [EmailOperation.View, EmailOperation.Create, EmailOperation.Send, EmailOperation.SendBulk];
+
+        // Only Application bulk email is implemented; an Applicant flow would pass its applicantId here instead.
+        private Task EnsureBulkAccessAsync()
+        {
+            return emailAccessChecker.CheckPermissionsAllAsync(Guid.Empty, BulkOperations);
+        }
+
         /// <summary>
         /// Get applications for bulk email with added draft validation information
         /// </summary>
@@ -38,6 +44,7 @@ namespace Unity.GrantManager.GrantApplications
         /// <returns></returns>
         public async Task<List<BulkEmailNotificationDto>> GetApplicationsForBulkEmail(Guid[] applicationGuids)
         {
+            await EnsureBulkAccessAsync();
             var applications = await applicationRepository.GetListByIdsAsync(applicationGuids);
             var draftEmails = await emailLogsRepository.GetByApplicationIdsAndStatusAsync([.. applicationGuids], EmailStatus.Draft);
             var draftsByApplication = draftEmails.GroupBy(e => e.ApplicationId).ToDictionary(g => g.Key, g => g.ToList());
@@ -60,6 +67,7 @@ namespace Unity.GrantManager.GrantApplications
         /// <returns></returns>
         public async Task<BulkEmailNotificationDto> RevalidateApplicationForBulkEmail(Guid applicationId)
         {
+            await EnsureBulkAccessAsync();
             var applications = await applicationRepository.GetListByIdsAsync([applicationId]);
             var application = applications.Single();
             var drafts = await emailLogsRepository.GetByApplicationIdsAndStatusAsync([applicationId], EmailStatus.Draft);
@@ -70,6 +78,7 @@ namespace Unity.GrantManager.GrantApplications
 
         public async Task<List<ComposeEmailApplicationDto>> GetApplicationsForComposeEmail(Guid[] applicationGuids)
         {
+            await EnsureBulkAccessAsync();
             var applications = await applicationRepository.GetListByIdsAsync(applicationGuids);
             var applicationsById = applications.ToDictionary(application => application.Id);
 
@@ -107,6 +116,7 @@ namespace Unity.GrantManager.GrantApplications
         /// <returns></returns>
         public async Task<BulkEmailNotificationResultDto> SendBulkEmailNotifications(List<BulkEmailNotificationDto> batchApplicationsToEmail)
         {
+            await EnsureBulkAccessAsync();
             var bulkEmailResult = new BulkEmailNotificationResultDto();
 
             // Fail the whole batch up front if notifications are disabled, rather than reporting false successes
@@ -212,6 +222,7 @@ namespace Unity.GrantManager.GrantApplications
 
         public async Task<BulkEmailNotificationResultDto> SendComposedBulkEmails(ComposeBulkEmailRequestDto request)
         {
+            await EnsureBulkAccessAsync();
             var result = new BulkEmailNotificationResultDto();
             var emails = request?.Emails ?? [];
 
