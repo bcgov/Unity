@@ -131,7 +131,7 @@ using (currentTenant.Change(args.TenantId))
 }
 ```
 
-The job runs outside a web request, so ABP never turns a business error code into its message. `AIGenerationRequestJobHelper.GetFailureReason` does that translation with ABP's `IExceptionToErrorInfoConverter` for any `IBusinessException`, so the saved failure reason is the same localized text a web request would show. Any other exception is saved as its raw `Message`.
+The saved failure reason is shown to users, but the job runs outside a web request and so skips ABP's exception handling. `AIGenerationRequestJobHelper.GetFailureReason` passes every exception through ABP's `IExceptionToErrorInfoConverter`, so the saved text matches what a web request would show. Business errors get their localized message. Any other error gets the generic error message, unless exception details are turned on, which happens only in Development. The queue uses the same helper when an enqueue fails. The full exception is still logged, because both places rethrow it.
 
 Every status transition runs in its **own short unit of work** (`requiresNew: true, isTransactional: false`). `AIGenerationRequestJobHelper` explains why that pattern is used for results too:
 

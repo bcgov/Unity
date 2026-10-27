@@ -6,7 +6,6 @@ using Microsoft.Extensions.Logging;
 using Unity.AI.Domain;
 using Unity.AI.RateLimit;
 using Unity.GrantManager.Applications;
-using Volo.Abp;
 using Volo.Abp.AspNetCore.ExceptionHandling;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Guids;
@@ -17,15 +16,14 @@ namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 public static class AIGenerationRequestJobHelper
 {
     /// <summary>
-    /// Jobs run outside a web request, so ABP never turns a business error code into its
-    /// localized message. Translate it here so the saved failure reason reads like the
-    /// message a web request would show.
+    /// The saved failure reason is shown to users, but jobs run outside a web request and so
+    /// skip ABP's exception handling. Convert it here the same way a web request would:
+    /// business errors get their localized message, and any other error gets the generic
+    /// message unless exception details are turned on.
     /// </summary>
-    public static string GetFailureReason(IExceptionToErrorInfoConverter errorInfoConverter, Exception exception)
+    public static string? GetFailureReason(IExceptionToErrorInfoConverter errorInfoConverter, Exception exception)
     {
-        return exception is IBusinessException
-            ? errorInfoConverter.Convert(exception).Message
-            : exception.Message;
+        return errorInfoConverter.Convert(exception).Message;
     }
 
     /// <summary>
