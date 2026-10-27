@@ -2479,7 +2479,10 @@ function initializeDraftEmailsWidget() {
 
         // Only drafts pick up the current date. Sent and scheduled emails must show the
         // "Today's Date" value that was frozen into the body when they left the draft state.
-        const displayBody = isDraft && !isApplicantEmail ? refreshTodayDateSpans(data.body) : data.body;
+        // Note:
+        // Only drafts that can be edited pick up the current date. Sent and scheduled emails must show the
+        // "Today's Date" value that was frozen into the body when they left the draft state.
+        const displayBody = canEditDraft && !isApplicantEmail ? refreshTodayDateSpans(data.body) : data.body;
 
         resetValidationErrors();
         populateSelectedEmailFields(data, displayBody);
