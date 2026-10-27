@@ -4,9 +4,9 @@
 
 ## Project Summary
 
-Unity is a **grant management portal** for the Province of British Columbia, built on **ABP Framework 10.3** with **.NET 10.0**, targeting **PostgreSQL 17**. The primary application code lives in `applications/Unity.GrantManager/`.
+Unity is a **grant management portal** for the Province of British Columbia, built on **ABP Framework 10.7** with **.NET 10.0**, targeting **PostgreSQL 17**. The primary application code lives in `applications/Unity.GrantManager/`.
 
-**Key stack:** .NET 10 · ABP 10.3 · EF Core 10.0 · PostgreSQL 17 · Redis · RabbitMQ · xUnit · Shouldly · NSubstitute · Mapperly · Cypress (E2E)
+**Key stack:** .NET 10 · ABP 10.7 · EF Core 10.0 · PostgreSQL 17 · Redis · RabbitMQ · xUnit · Shouldly · NSubstitute · Mapperly · Cypress (E2E)
 
 ## Repository Structure
 

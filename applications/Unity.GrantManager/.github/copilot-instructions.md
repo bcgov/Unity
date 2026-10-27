@@ -5,16 +5,15 @@
 
 ## Project Overview
 
-Unity Grant Manager is a **grant management portal** for the Province of British Columbia, built on **ABP Framework 10.3** with **.NET 10.0**, targeting **PostgreSQL 17**. The UI uses **Razor Pages** with a custom ABP theme (Unity.Theme.UX2). The architecture follows ABP's **Domain-Driven Design (DDD)** layered module pattern.
+Unity Grant Manager is a **grant management portal** for the Province of British Columbia, built on **ABP Framework 10.7** with **.NET 10.0**, targeting **PostgreSQL 17**. The UI uses **Razor Pages** with a custom ABP theme (Unity.Theme.UX2). The architecture follows ABP's **Domain-Driven Design (DDD)** layered module pattern.
 
-**Key stack:** .NET 10 · ABP 10.3 · EF Core 10.0 · PostgreSQL 17 · Redis · RabbitMQ · xUnit · Shouldly · NSubstitute · Mapperly · Cypress (E2E)
+**Key stack:** .NET 10 · ABP 10.7 · EF Core 10.0 · PostgreSQL 17 · Redis · RabbitMQ · xUnit · Shouldly · NSubstitute · Mapperly · Cypress (E2E)
 
 ## Repository Layout
 
 ```
 Unity.GrantManager.sln                    ← Solution file (63 projects)
 common.props                              ← Shared MSBuild properties
-Directory.Build.props                     ← Global build props (suppresses NU1701, MSB3277)
 NuGet.Config                              ← NuGet package sources
 .env.example                              ← Environment variable template
 docker-compose.yml                        ← Docker dev environment
@@ -59,7 +58,6 @@ dotnet build Unity.GrantManager.sln --no-restore
 
 - Build takes ~3 minutes. The solution has 63 projects.
 - The build is not warning-free. It carries pre-existing warnings, mostly nullability warnings in the test projects plus a few in production code such as `Unity.GrantManager.Web/Pages/Error.cshtml`. Judge a change by whether it adds new warnings, and do not try to fix existing ones unless explicitly asked. Warnings only show when a project actually compiles, so use `--no-incremental` when you need the full list.
-- `Directory.Build.props` suppresses NU1701 and MSB3277 warnings globally; do not re-add these suppressions in individual projects.
 - `common.props` sets `<LangVersion>latest</LangVersion>` and suppresses CS1591.
 
 ### Run All Tests

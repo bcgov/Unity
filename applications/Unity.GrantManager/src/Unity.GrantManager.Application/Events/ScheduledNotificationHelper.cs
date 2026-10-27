@@ -240,13 +240,15 @@ namespace Unity.GrantManager.Events
         }
 
         /// <summary>
-        /// Returns the email addresses of the application's "Additional Contact" contacts.
+        /// Returns the email addresses of the application's Additional Contact(s): contacts of type
+        /// "Additional Contact" and "Additional Signing Authority".
         /// </summary>
         public async Task<List<string>> GetAdditionalContactEmailsAsync(Guid applicationId)
         {
             var contacts = await applicationContactRepository.GetListAsync(c =>
                 c.ApplicationId == applicationId
-                && c.ContactType == ApplicationContactOptionList.AdditionalContact);
+                && (c.ContactType == ApplicationContactOptionList.AdditionalContact
+                    || c.ContactType == ApplicationContactOptionList.AdditionalSigningAuthority));
 
             return contacts
                 .Select(c => c.ContactEmail?.Trim())

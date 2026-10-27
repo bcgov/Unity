@@ -68,8 +68,8 @@ public class IndexModel(
 
         ShowTags = await permissionChecker.IsGrantedAsync(UnitySelector.SettingManagement.Tags.Default);
 
-        ShowAI = await featureChecker.IsEnabledAsync("Unity.AI.Scoring")
-            && await permissionChecker.IsGrantedAsync(AIPermissions.Configuration.ConfigureAI);
+        // ConfigureAI is only enabled when at least one AI feature is on (see AIPermissionDefinitionProvider)
+        ShowAI = await permissionChecker.IsGrantedAsync(AIPermissions.Configuration.ConfigureAI);
 
         ShowProgramDetails = await permissionChecker.IsGrantedAsync(UnitySettingManagementPermissions.EditProgramDetails);
 

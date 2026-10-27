@@ -38,7 +38,7 @@ describe('Grant Manager Login and Top Navigation', () => {
         navPage.goToPayments()
 
         // Return to top
-        cy.visit(Cypress.env('webapp.url'))
+        cy.visit(Cypress.expose('webapp.url'))
     })
 
     it('Verify Logout', () => {

@@ -216,6 +216,7 @@ $(function () {
             UIElements.auditLogsDiv.removeClass('hide');
             if (auditDt) {
                 auditDt.columns.adjust().draw(false);
+                $(window).trigger('resize'); // makes ScrollResize re-measure now that the div is visible
             }
         } else if ($(e.currentTarget).attr('id') === 'audit-log-settings-menu-item') {
             UIElements.auditLogSettingsDiv.removeClass('hide');

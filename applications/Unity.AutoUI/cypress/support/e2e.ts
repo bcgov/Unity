@@ -79,7 +79,7 @@ beforeEach(blockRealtimeMessaging)
 
 // Ignore common errors that shouldn't fail tests
 Cypress.on('uncaught:exception', (err: any) => {
-  const environment = (Cypress.env('environment') as string | undefined)?.toLowerCase()
+  const environment = (Cypress.expose('environment') as string | undefined)?.toLowerCase()
 
   if ((environment === 'dev' || environment === 'test') && err.message.includes('missing ) after argument list')) {
     return false

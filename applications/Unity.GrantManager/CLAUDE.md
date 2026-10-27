@@ -17,7 +17,7 @@ dotnet test test/Unity.GrantManager.Application.Tests/ --no-build
 
 - No PostgreSQL setup needed for tests — SQLite in-memory (most projects) or `EFCore.InMemory` (`Unity.GrantManager.Web.Tests`).
 - The build is not warning-free. It carries pre-existing warnings, mostly nullability warnings in the test projects plus a few in production code such as `Unity.GrantManager.Web/Pages/Error.cshtml`. Judge a change by whether it adds new warnings; don't fix existing ones unless asked. Warnings only show when a project actually compiles, so use `--no-incremental` when you need the full list.
-- `Directory.Build.props` / `common.props` (repo-wide MSBuild props) already suppress `NU1701`, `MSB3277`, `CS1591` — don't re-suppress per-project.
+- `common.props` (shared MSBuild props) already suppresses `CS1591`, so don't re-suppress it per project.
 
 ### Local dev environment
 

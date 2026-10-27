@@ -58,7 +58,9 @@ public static class ApplicantEmailRecipientResolver
 
     private static bool IsAdditionalContact(string? role)
     {
-        return NormalizeRole(role).Equals("AdditionalContact", StringComparison.OrdinalIgnoreCase);
+        var normalized = NormalizeRole(role);
+        return normalized.Equals("AdditionalContact", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("AdditionalSigningAuthority", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string NormalizeRole(string? role)

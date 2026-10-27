@@ -22,10 +22,11 @@ $(function () {
                 severity: UIElements.severity.val()
             };
         },
-        actionButtons: commonTableActionButtons('Exception Logs'),
+        actionButtons: [],
         serverSideEnabled: true,
         pagingEnabled: true,
         reorderEnabled: true,
+        disableFilterColumns: true,
         languageSetValues: {},
         dynamicButtonContainerId: 'dynamicButtonContainerId',
         externalSearchId: 'search-exception-logs',
@@ -45,6 +46,7 @@ $(function () {
         exceptionLogsTable.rows().every(function () {
             $(this.node()).toggleClass('has-details', hasDetails(this.data()));
         });
+        $(this).closest('.dataTables_wrapper').find('.tr-toggle-filter').hide();
     });
 
     // Detail content is read-only; prevent its clicks from reaching the row toggle.
