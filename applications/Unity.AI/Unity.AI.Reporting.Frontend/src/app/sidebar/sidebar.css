@@ -179,7 +179,7 @@
   justify-content: center;
   cursor: pointer;
   color: #6c757d;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
 }
 
 .footer-btn:hover {
@@ -258,7 +258,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .feedback-modal-close:hover {
@@ -323,7 +323,7 @@
   border-radius: 6px;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
 .feedback-btn-cancel:hover {
@@ -340,7 +340,7 @@
   border-radius: 6px;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
   font-weight: 500;
 }
 
@@ -406,7 +406,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .info-modal-close:hover {
@@ -479,7 +479,7 @@
   border-radius: 6px;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
   font-weight: 500;
 }
 
@@ -517,5 +517,17 @@
   .info-modal-body,
   .info-modal-footer {
     padding: 16px 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feedback-btn-submit,
+  .info-btn-close {
+    transition: none;
+  }
+
+  .feedback-btn-submit:active,
+  .info-btn-close:active {
+    transform: none;
   }
 }

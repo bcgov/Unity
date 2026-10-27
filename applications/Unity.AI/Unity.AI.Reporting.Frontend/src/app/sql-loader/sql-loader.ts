@@ -129,7 +129,7 @@ export class SqlLoaderComponent implements AfterViewInit, OnDestroy {
       source.vy += (randomUnit() - 0.3) * 0.02;  // Bias toward positive (down)
       
       // Keep velocity in diagonal direction
-      const speed = Math.sqrt(source.vx * source.vx + source.vy * source.vy);
+      const speed = Math.hypot(source.vx, source.vy);
       if (speed > 0.5) {
         source.vx = (source.vx / speed) * 0.5;
         source.vy = (source.vy / speed) * 0.5;
