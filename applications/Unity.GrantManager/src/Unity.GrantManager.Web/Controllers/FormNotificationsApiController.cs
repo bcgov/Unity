@@ -100,7 +100,6 @@ namespace Unity.GrantManager.Web.Controllers
         public async Task<ActionResult<ResolvedRecipientsDto>> GetResolvedTemplateRecipients(Guid templateId, [FromQuery] Guid? applicationId = null)
         {
             // Check if the user has permission to create or edit emails for Applications
-            // Permissions handled differently for Applicants
             if (applicationId.HasValue && applicationId.Value != Guid.Empty)
             {
                 await emailAccessChecker.CheckOwnerAnyAsync(

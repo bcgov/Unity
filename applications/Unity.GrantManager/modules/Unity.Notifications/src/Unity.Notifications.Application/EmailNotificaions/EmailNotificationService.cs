@@ -61,7 +61,8 @@ public class EmailNotificationService(
         {
             await emailAccessChecker.CheckOwnerAsync(email.ApplicationId, email.ApplicantId, EmailOperation.CancelScheduled);
         }
-        else if (isUnsavedOwnDraft)
+        else if (isUnsavedOwnDraft
+            && await AuthorizationService.IsGrantedAsync(EmailPermissionMap.Get(EmailOwnerTypes.FromIds(email.ApplicantId), EmailOperation.Create))) // Empty draft cleanup support
         {
             await emailAccessChecker.CheckOwnerAsync(email.ApplicationId, email.ApplicantId, EmailOperation.Create);
         }
