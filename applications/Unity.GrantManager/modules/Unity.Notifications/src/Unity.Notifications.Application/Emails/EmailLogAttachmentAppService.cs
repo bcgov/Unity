@@ -77,7 +77,7 @@ public class EmailLogAttachmentAppService(
 
         if (attachment.TemplateId.HasValue)
         {
-            await AuthorizationService.CheckAsync(NotificationsPermissions.Email.Send.Default);
+            await AuthorizationService.CheckAsync(NotificationsPermissions.Email.Template.Default);
             await emailAttachmentService.DeleteAttachmentAsync(attachment);
             return;
         }
@@ -100,7 +100,7 @@ public class EmailLogAttachmentAppService(
         }
         else
         {
-            await AuthorizationService.CheckAsync(NotificationsPermissions.Email.Send.Default);
+            await AuthorizationService.CheckAsync(NotificationsPermissions.Email.Template.Default);
         }
         return await emailAttachmentService.GetTotalFileSizeAsync(emailLogId, templateId);
     }
@@ -120,7 +120,7 @@ public class EmailLogAttachmentAppService(
         }
         else
         {
-            await AuthorizationService.CheckAsync(NotificationsPermissions.Email.Send.Default);
+            await AuthorizationService.CheckAsync(NotificationsPermissions.Email.Template.Default);
         }
         var attachment = await emailAttachmentService.UploadUserAttachmentAsync(emailLogId, templateId, tenantId, fileName, content, contentType);
 

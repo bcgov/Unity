@@ -73,7 +73,7 @@ public class EmailComposerAccessCheckerTests
     {
         _permissions.IsGrantedAsync(Arg.Any<string>()).Returns(false);
         _permissions.IsGrantedAsync(NotificationsPermissions.Email.Default).Returns(true);
-        _permissions.IsGrantedAsync(NotificationsPermissions.Email.Send.Default).Returns(true);
+        _permissions.IsGrantedAsync(NotificationsPermissions.Email.Template.Default).Returns(true);
         await Should.ThrowAsync<AbpAuthorizationException>(() => _checker.CheckOwnerAsync(Guid.NewGuid(), Guid.Empty, EmailOperation.Send));
     }
 

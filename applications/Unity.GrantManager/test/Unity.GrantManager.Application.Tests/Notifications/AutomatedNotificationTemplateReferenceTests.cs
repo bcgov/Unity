@@ -25,7 +25,7 @@ public class AutomatedNotificationTemplateReferenceTests(ITestOutputHelper outpu
     public void Should_Require_Email_Send_For_Template_Reference_Lookup()
     {
         PoliciesOf(nameof(AutomatedNotificationAppService.GetTemplateReferencesAsync))
-            .ShouldBe([NotificationsPermissions.Email.Send.Default]);
+            .ShouldBe([NotificationsPermissions.Email.Template.Default]);
     }
 
     [Fact]

@@ -25,7 +25,7 @@
     "Setting:Notifications.Mailing.DefaultFromAddress.Description": "The default From sender address",
     "Permission:Notifications": "Notifications",
     "Permission:Notifications.Email": "Email",
-    "Permission:Notifications.Email.Send": "Manage Email Templates",
+    "Permission:Notifications.Email.Template": "Manage Email Templates",
     "Permission:Notifications.Email.Application": "Application Emails",
     "Permission:Notifications.Email.Application.Create": "Create Application Emails",
     "Permission:Notifications.Email.Application.Edit": "Edit Application Email Drafts",

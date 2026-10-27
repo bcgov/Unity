@@ -148,7 +148,7 @@ namespace Unity.GrantManager.Notifications
         }
 
         // Limited lookup for template editors (delete/edit preflights); does not expose the schedule list.
-        [Authorize(NotificationsPermissions.Email.Send.Default)]
+        [Authorize(NotificationsPermissions.Email.Template.Default)]
         public async Task<List<TemplateNotificationReferenceDto>> GetTemplateReferencesAsync(Guid templateId)
         {
             var query = await _repository.GetQueryableAsync();

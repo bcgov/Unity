@@ -74,7 +74,7 @@ public static class EmailPermissionDefinitionExtensions
             NotificationsPermissions.Email.Applicant.CancelScheduled);
 
         // Manage Email Templates
-        email.AddUnityChild(NotificationsPermissions.Email.Send.Default);
+        email.AddUnityChild(NotificationsPermissions.Email.Template.Default);
     }
 
     private static void AddOwnerPermissions(PermissionDefinition email, string view, params string[] operations)

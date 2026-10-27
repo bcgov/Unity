@@ -13,9 +13,9 @@ public static class NotificationsPermissions
         public const string Default = "Notifications.Email";
 
         // Template attachments are not owner-scoped.
-        public static class Send
+        public static class Template
         {
-            public const string Default = "Notifications.Email.Send";
+            public const string Default = "Notifications.Email.Template";
         }
 
         public static class Application

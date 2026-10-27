@@ -31,7 +31,7 @@ public class TemplateService(
     private readonly IUnitOfWorkManager _unitOfWorkManager = unitOfWorkManager;
     private readonly Volo.Abp.Domain.Repositories.IRepository<GrantManager.Notifications.ScheduledNotification, Guid> _scheduledNotificationsRepository = scheduledNotificationsRepository;
 
-    [Authorize(NotificationsPermissions.Email.Default)]
+    [Authorize(NotificationsPermissions.Email.Template.Default)]
     public async Task<EmailTemplate?> CreateAsync(EmailTempateDto templateDto)
     {
         var templateType = NormalizeTemplateType(templateDto.TemplateType);
@@ -50,7 +50,7 @@ public class TemplateService(
             templateType));
     }
 
-    [Authorize(NotificationsPermissions.Email.Send.Default)]
+    [Authorize(NotificationsPermissions.Email.Template.Default)]
     public async Task<EmailTemplate?> UpdateTemplate(Guid id, EmailTempateDto templateDto)
     {
 
@@ -85,7 +85,7 @@ public class TemplateService(
         return await _templatesRepository.GetAsync(id);
     }
 
-    [Authorize(NotificationsPermissions.Email.Send.Default)]
+    [Authorize(NotificationsPermissions.Email.Template.Default)]
     public async Task DeleteTemplate(Guid id)
     {
         using var uow = _unitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
@@ -102,7 +102,7 @@ public class TemplateService(
         await _templatesRepository.DeleteAsync(template);
         await uow.CompleteAsync();
     }
-    [Authorize(NotificationsPermissions.Email.Send.Default)]
+    [Authorize(NotificationsPermissions.Email.Default)]
     public async Task<EmailTemplate?> GetTemplateByName(string name)
     {
         var data =  await _templatesRepository.GetByNameAsync(name);
