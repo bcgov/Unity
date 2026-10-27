@@ -99,8 +99,14 @@ namespace Unity.GrantManager.Web.Controllers
         [HttpGet("templates/{templateId:guid}/resolved-recipients")]
         public async Task<ActionResult<ResolvedRecipientsDto>> GetResolvedTemplateRecipients(Guid templateId, [FromQuery] Guid? applicationId = null)
         {
-            // NOTE: May require more granular permissions for contact address isolation
-            // between application and applicant permissions.
+            // Check if the user has permission to create or edit emails for Applications
+            // Permissions handled differently for Applicants
+            if (applicationId.HasValue && applicationId.Value != Guid.Empty)
+            {
+                await emailAccessChecker.CheckOwnerAnyAsync(
+                    applicationId.Value, Guid.Empty, EmailOperation.Create, EmailOperation.Edit);
+            }
+
             var template = await templateService.GetTemplateById(templateId);
             if (template == null)
             {
