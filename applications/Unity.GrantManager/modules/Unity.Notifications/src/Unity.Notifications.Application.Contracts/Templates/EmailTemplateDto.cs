@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Unity.Notifications.Templates
 {
     [Serializable]
-    public class EmailTempateDto
+    public class EmailTemplateDto
     {
         public Guid? TenantId { get; set; }
         // Server-side guard matching the maxlength on the template editor input

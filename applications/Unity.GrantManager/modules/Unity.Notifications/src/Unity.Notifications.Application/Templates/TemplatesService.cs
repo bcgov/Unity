@@ -32,7 +32,7 @@ public class TemplateService(
     private readonly Volo.Abp.Domain.Repositories.IRepository<GrantManager.Notifications.ScheduledNotification, Guid> _scheduledNotificationsRepository = scheduledNotificationsRepository;
 
     [Authorize(NotificationsPermissions.Email.Template.Default)]
-    public async Task<EmailTemplate?> CreateAsync(EmailTempateDto templateDto)
+    public async Task<EmailTemplate?> CreateAsync(EmailTemplateDto templateDto)
     {
         var templateType = NormalizeTemplateType(templateDto.TemplateType);
 
@@ -51,7 +51,7 @@ public class TemplateService(
     }
 
     [Authorize(NotificationsPermissions.Email.Template.Default)]
-    public async Task<EmailTemplate?> UpdateTemplate(Guid id, EmailTempateDto templateDto)
+    public async Task<EmailTemplate?> UpdateTemplate(Guid id, EmailTemplateDto templateDto)
     {
 
         EmailTemplate template = await _templatesRepository.GetAsync(id);
