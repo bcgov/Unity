@@ -51,6 +51,7 @@ namespace Unity.GrantManager.Notifications
                 // Validate at the HTTP application-service boundary so ABP serializes the
                 // user-friendly missing-file message directly back to the email composer.
                 // The event, queue, and worker checks remain as race-condition defenses.
+                await emailAttachmentService.ValidateEmailAttachmentsTotalSizeAsync(dto.EmailId);
                 await emailAttachmentService.ValidateEmailAttachmentsAsync(dto.EmailId);
             }
 

@@ -2488,7 +2488,7 @@ function initializeDraftEmailsWidget() {
         setSelectedEmailTemplate(data);
         configureSelectedEmailActions(isDraft, canEditDraft);
         $('#email-attachments-section').show();
-        initEmailAttachmentsTable(data.id, canEditDraft);
+        initEmailAttachmentsTable(data.id, canEditDraft, isDraft);
 
         console.log("About to call showModalEmail() - emailForm element:", UIElements.emailForm);
         showModalEmail();
@@ -2521,7 +2521,9 @@ function initializeDraftEmailsWidget() {
         reloadEmailAttachmentsTable();
     });
 
-    function initEmailAttachmentsTable(emailLogId, isDraft) {
+    // canEditAttachments controls the remove buttons; validateTotalSize gates Send on the size limit and
+    // must stay on for send-only users, who can send a draft without being able to edit it.
+    function initEmailAttachmentsTable(emailLogId, canEditAttachments, validateTotalSize = canEditAttachments) {
         if (emailAttachmentsTable) {
             emailAttachmentsTable.destroy();
             emailAttachmentsTable = null;
@@ -2595,12 +2597,12 @@ function initializeDraftEmailsWidget() {
                         className: 'text-center',
                         orderable: false,
                         render: function (data) {
-                            return isDraft ? generateEmailAttachmentButtonContent(data) : '';
+                            return canEditAttachments ? generateEmailAttachmentButtonContent(data) : '';
                         }
                     }
                 ],
                 drawCallback: function () {
-                    if (isDraft) {
+                    if (validateTotalSize) {
                         checkTotalAttachmentSize();
                     }
                 }
