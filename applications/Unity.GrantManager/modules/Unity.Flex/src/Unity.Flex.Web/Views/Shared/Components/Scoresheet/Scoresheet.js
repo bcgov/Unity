@@ -240,8 +240,8 @@ $(function () {
 
         previewDiv.innerHTML = `
             <div class="save-button-container" id="previewScoresheetActions">
-                <button type="button" class="btn unt-btn-link btn-link floating-save-btn" id="previewDiscardAllBtn" disabled onclick="discardAllPreviewSections()"><i class="fl fl-undo"></i> Discard Changes</button>
-                <button type="button" class="btn unt-btn-primary btn-primary floating-save-btn" id="previewSaveAllBtn" disabled onclick="savePreviewAllSections()"><i class="fl fl-save"></i> Save Changes</button>
+                <button type="button" class="btn unt-btn-link btn-link floating-save-btn" id="previewDiscardAllBtn" disabled onclick="discardAllPreviewSections()"><i class="fa-solid fa-arrow-rotate-left"></i> Discard Changes</button>
+                <button type="button" class="btn unt-btn-primary btn-primary floating-save-btn" id="previewSaveAllBtn" disabled onclick="savePreviewAllSections()"><i class="fa-regular fa-floppy-disk"></i> Save Changes</button>
             </div>
             <div class="accordion unt-accordion" id="accordion-preview">
                 <div class="d-flex justify-content-end m-3">
@@ -283,7 +283,9 @@ $(function () {
         let optionsHTML = `<option data-numeric-value="0" value="">Please choose...</option>`;
         optionsHTML += options.map(option => {
             const truncatedValue = option.value.length > 100 ? option.value.substring(0, 100) + " ..." : option.value;
-            return `<option data-numeric-value="${option.numeric_value}" value="${option.value}" title="${option.value}">${truncatedValue}</option>`;
+            // Encode option text and attributes before the preview is parsed as HTML.
+            const escapedValue = escapeHtml(option.value);
+            return `<option data-numeric-value="${escapeHtml(option.numeric_value)}" value="${escapedValue}" title="${escapedValue}">${escapeHtml(truncatedValue)}</option>`;
         }).join('');
         let req = item.dataset.required === 'True' ? "required" : null;
 

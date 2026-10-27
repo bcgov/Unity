@@ -38,27 +38,27 @@ function initializeApplicationFormsTable() {
 function setTypeIcon(intakeField) {
     switch (intakeField.Type) {
         case 'String':
-            return 'fl fl-font';
+            return 'fa-solid fa-font';
         case 'Phone':
-            return 'fl fl-phone';
+            return 'fa-solid fa-phone';
         case 'Date':
-            return 'fl fl-datetime';
+            return 'fa-regular fa-calendar-days';
         case 'Email':
-            return 'fl fl-mail';
+            return 'fa-regular fa-envelope';
         case 'Radio':
-            return 'fl fl-radio';
+            return 'fa-regular fa-circle-dot';
         case 'Checkbox':
-            return 'fl fl-checkbox-checked';
+            return 'fa-regular fa-square-check';
         case 'CheckboxGroup':
-            return 'fl fl-multi-select';
+            return 'fa-solid fa-list-check';
         case 'SelectList':
-            return 'fl fl-list';
+            return 'fa-solid fa-bars-staggered';
         case 'BCAddress':
-            return 'fl fl-globe';
+            return 'fa-solid fa-globe';
         case 'TextArea':
-            return 'fl fl-text-area';
+            return 'fa-solid fa-paragraph';
         case 'DataGrid':
-            return 'fl fl-datagrid';
+            return 'fa-solid fa-table-cells';
         default:
             return '';
     }

@@ -192,13 +192,12 @@ After the loop, if any payments entered `FSB`, `FsbPaymentNotifier.NotifyFsbPaym
 
 ## Level 3 slots are created on demand
 
-Level 3 `ExpenseApproval` rows are **not** created with the payment. They are added or removed by the approval modal's page model, `UpdatePaymentRequestStatus.UpdateExpenseApprovalsAsync`, while the modal is being rendered:
+Level 3 `ExpenseApproval` rows are **not** created with the payment. The approval modal computes `isL3ApprovalRequired = payment.Amount > PaymentThreshold` for display only; opening it does not persist changes. When an L2 approval is submitted, `GetLevel2ApprovalActionAsync` resolves the threshold again from current data and chooses the transition. `PaymentsManager.TriggerAction` updates the Level 3 slot in the same command:
 
-- the payment is in `L2Pending`, and
-- `isL3ApprovalRequired = payment.Amount > PaymentThreshold` — where `PaymentThreshold` is the same `min(form, user)` resolution computed per row in `BuildPaymentApprovalsAsync` —
-- then a Level 3 row is inserted if required and absent, or deleted if present and not required.
+- `L2Approve` inserts a Level 3 row if absent before moving to `L3Pending`.
+- `Submit` from `L2Pending` removes a stale Level 3 row, if present, before moving to `Submitted` or `FSB`.
 
-The modal then computes the destination status for display (`GetNextStatus`) and filters out any row the current user lacks the permission for (`VerifyPermissionsAsync` / `GetRequiredPermission`). Note that this write happens during a `GET`.
+The modal computes the destination status for display (`GetNextStatus`) and filters out any row the current user lacks the permission for (`VerifyPermissionsAsync` / `GetRequiredPermission`).
 
 ## Cancellation
 

@@ -278,13 +278,13 @@ namespace Unity.GrantManager.Intakes
             if (!Guid.TryParse(applicationForm.ChefsApplicationFormGuid, out var chefsFormId))
             {
                 Logger.LogWarning("ResyncSubmissionAttachments: invalid ChefsApplicationFormGuid on form {FormId}", submissionRecord.ApplicationFormId);
-                throw new BusinessException(message: $"Application form {submissionRecord.ApplicationFormId} has an invalid CHEFS form GUID.");
+                throw new BusinessException(GrantManagerDomainErrorCodes.AttachmentResyncFailed);
             }
 
             if (!Guid.TryParse(submissionRecord.ChefsSubmissionGuid, out var chefsSubmissionId))
             {
                 Logger.LogWarning("ResyncSubmissionAttachments: invalid ChefsSubmissionGuid on submission record {RecordId}", submissionRecord.Id);
-                throw new BusinessException(message: $"Submission record {submissionRecord.Id} has an invalid CHEFS submission GUID.");
+                throw new BusinessException(GrantManagerDomainErrorCodes.AttachmentResyncFailed);
             }
 
             var formSubmission = await _formsApiService.GetSubmissionDataAsync(chefsFormId, chefsSubmissionId);
@@ -292,13 +292,13 @@ namespace Unity.GrantManager.Intakes
             if (formSubmission == null)
             {
                 Logger.LogWarning("ResyncSubmissionAttachments: CHEFS returned no data for submission {SubmissionId}", chefsSubmissionId);
-                throw new BusinessException(message: $"CHEFS returned no data for submission {chefsSubmissionId}. Resync aborted — existing attachments are unchanged.");
+                throw new BusinessException(GrantManagerDomainErrorCodes.AttachmentResyncFailed);
             }
 
             if (formSubmission["submission"]?["submission"]?["data"] == null || formSubmission["version"] == null)
             {
                 Logger.LogWarning("ResyncSubmissionAttachments: CHEFS response for submission {SubmissionId} has unexpected shape", chefsSubmissionId);
-                throw new BusinessException(message: $"CHEFS response for submission {chefsSubmissionId} has unexpected shape. Resync aborted — existing attachments are unchanged.");
+                throw new BusinessException(GrantManagerDomainErrorCodes.AttachmentResyncFailed);
             }
 
             using var uow = _unitOfWorkManager.Begin(isTransactional: true);

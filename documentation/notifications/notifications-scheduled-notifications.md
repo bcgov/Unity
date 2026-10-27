@@ -19,6 +19,8 @@ Both triggers converge on the same output: an `EmailNotificationEvent` published
 
 `FullAuditedAggregateRoot<Guid>`, tenant-scoped.
 
+Schedule creation and updates lock the referenced active `EmailTemplate` row inside the write transaction. Template deletion takes the same lock before checking for schedules and soft-deleting the template. This prevents a schedule from being saved between the reference check and the soft delete; a missing or soft-deleted template is rejected when saving a schedule.
+
 |Field|Meaning|
 |---|---|
 |`FormId`|The application form this configuration applies to|
@@ -31,7 +33,7 @@ Both triggers converge on the same output: an `EmailNotificationEvent` published
 |`DateField`|Date trigger: `"DueDate"`, `"NotificationDate"`, `"ContractNotificationDate"`, etc.|
 |`TriggerDetail`|Free-text detail carried for the UI|
 |`RecipientCategory`|`"Internal"` or `"External"` — decides how `RecipientIdentifier` is interpreted|
-|`RecipientIdentifier`|Comma-separated. For `Internal`: email **group names**. For `External`: `ApplicationContact` and/or `SigningAuthority`|
+|`RecipientIdentifier`|Comma-separated. For `Internal`: email **group names**. For `External`: any of `ApplicationContact`, `SigningAuthority`, `AdditionalContact`|
 
 `RecipientCategory` is doing double duty: it selects the recipient resolution strategy *and*, once the email exists, it is what `EmailNotificationHandler.StampClassificationAsync` reads back to set `EmailLog.Recipient`.
 
@@ -140,16 +142,17 @@ Addresses accumulate into a case-insensitive `HashSet`, are joined with `"; "`, 
 
 The whole method is wrapped in a `try`/`catch` returning `string.Empty` on failure, so a directory outage degrades to "no recipients" rather than an exception.
 
-Because the link is **by group name**, renaming an email group silently detaches it from every scheduled notification referencing it. `EmailGroupsAppService.DeleteAsync` guards deletion (`BusinessException("Unity.Notifications:EmailGroupInUse")`) but nothing guards renaming — see [notifications-roadmap.md](notifications-roadmap.md#email-groups-are-linked-to-scheduled-notifications-by-name).
+Because the link is **by group name**, renaming an email group silently detaches it from every scheduled notification referencing it. `EmailGroupsAppService.DeleteAsync` guards deletion (`BusinessException("Notifications:EmailGroupInUse")`) but nothing guards renaming — see [notifications-roadmap.md](notifications-roadmap.md#email-groups-are-linked-to-scheduled-notifications-by-name).
 
 ### External — `PublishToExternalRecipientAsync`
 
-`RecipientIdentifier` is a comma-separated list of two recognized literals:
+`RecipientIdentifier` is a comma-separated list of three recognized literals:
 
 |Identifier|Resolves to|
 |---|---|
 |`ApplicationContact`|`ApplicantAgent.Email`|
 |`SigningAuthority`|`Application.SigningAuthorityEmail`|
+|`AdditionalContact`|`ContactEmail` of every `ApplicationContact` row on the application with `ContactType` `ADDITIONAL_CONTACT` or `ADDITIONAL_SIGNING_AUTHORITY` (the Additional Contact(s) section)|
 
 Anything else logs a warning and is skipped. A recognized identifier with no address on this particular application is also logged and skipped. Zero resolvable addresses → nothing published.
 

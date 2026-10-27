@@ -117,7 +117,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
                 Rows = [.. dataRows],
                 AllowEdit = true,
                 SummaryOption = ConvertSummaryOption(dataGridDefinition),
-                Summary = GenerateSummary([.. dataColumns], [.. dataRows], presentationSetttings),
+                Summary = GenerateSummary([.. dataColumns], dataGridRowsValue?.Rows ?? [], presentationSetttings),
                 TableOptions = GenerateAvailableTableOptions(!dataGridDefinition.Dynamic),
                 WorksheetId = worksheetId,
                 WorksheetInstanceId = worksheetInstanceId,
@@ -367,7 +367,7 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
         }
 
         private static DataGridViewSummary GenerateSummary(DataGridColumn[]? dataColumns,
-            DataGridViewModelRow[] rows,
+            List<DataGridRow> rows,
             PresentationSettings presentationSettings)
         {
             var summary = new DataGridViewSummary();
@@ -386,10 +386,11 @@ namespace Unity.Flex.Web.Views.Shared.Components.DataGridWidget
             return summary;
         }
 
-        private static string SumCells(string? key, DataGridViewModelRow[] rows)
+        // Sum the raw stored values - presentation-formatted values (e.g. "CA$ 567.00") do not parse back to decimals
+        private static string SumCells(string? key, List<DataGridRow> rows)
         {
             decimal sum = 0;
-            var cells = rows.Select(row => row.Cells.Find(x => x.Key == key)).Where(cell => cell != null);
+            var cells = rows.Select(row => row.Cells.Find(x => x.Key == key)).Where(cell => cell?.Value != null);
             foreach (var cell in cells)
             {
                 var preparse = cell!.Value.Replace("$", "").Replace(",", "");

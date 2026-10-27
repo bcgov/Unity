@@ -121,7 +121,7 @@ $(function () {
     $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn flex-none';
     let actionButtons = [
         {
-            text: '<i class="fl fl-multi-select align-middle"></i><span>View Role Matrix</span>',
+            text: '<i class="fa-solid fa-list-check align-middle"></i><span>View Role Matrix</span>',
             className: 'btn-light rounded-1',
             available: () => abp.auth.isGranted('AbpIdentity.Roles'),
             action: function (e, dt, button, config) {
@@ -129,7 +129,7 @@ $(function () {
             }
         },
         {
-            text: '<i class="fl fl-add-to align-middle"></i> <span>' + l('NewRole') + '</span>',
+            text: '<i class="fa-solid fa-circle-plus align-middle"></i> <span>' + l('NewRole') + '</span>',
             titleAttr: l('NewRole'),
             id: 'CreateRoleButton',
             className: 'btn-light rounded-1',

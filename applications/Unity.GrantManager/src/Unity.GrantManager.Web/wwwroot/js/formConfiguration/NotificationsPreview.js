@@ -80,7 +80,13 @@
         subjectRow.append(subjectLabel, subjectValue);
 
         const bodyRow = document.createElement('div');
-        bodyRow.innerHTML = resolveTemplateBodyHtml(template);
+        const bodyHtml = resolveTemplateBodyHtml(template);
+        // Sanitize after decoding so encoded markup cannot bypass the sanitizer.
+        if (globalThis.DOMPurify?.isSupported) {
+            bodyRow.innerHTML = globalThis.DOMPurify.sanitize(bodyHtml, { USE_PROFILES: { html: true } });
+        } else {
+            bodyRow.textContent = bodyHtml;
+        }
 
         previewElement.append(subjectRow, document.createElement('br'), bodyRow);
     }

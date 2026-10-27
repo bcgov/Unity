@@ -154,7 +154,10 @@
 
     $(function () {
         PubSub.subscribe('open_applicant_unmerge', (message, applicant) => {
-            openModal(applicant);
+            openModal(applicant).catch(error => {
+                console.error('Failed to open applicant unmerge modal:', error);
+                abp.message.error(l('ApplicantMerge:UnmergeFailed'));
+            });
         });
 
         $(document).on('change', 'input[name="applicantUnmergeOperation"]', function () {

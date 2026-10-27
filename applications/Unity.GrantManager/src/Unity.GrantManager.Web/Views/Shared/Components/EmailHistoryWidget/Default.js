@@ -210,7 +210,7 @@
 
     function generateDeleteButtonContent(full, row, addWidthClass) {
         const widthClass = addWidthClass ? ' btn-w30' : '';
-        return `<button class="btn btn-delete-draft${widthClass}" type="button" onclick="deleteDraftEmail('${full.id}', '${row}')"><i class="fl fl-cancel"></i></button>`;
+        return `<button class="btn btn-delete-draft${widthClass}" type="button" onclick="deleteDraftEmail('${full.id}', '${row}')"><i class="fa-solid fa-xmark"></i></button>`;
     }
 
     // Move the DataTables print button out of the table toolbar and into the header row
@@ -308,7 +308,7 @@ function formatScheduledSendDateTimeUtcToPacific(value, type) {
 
 function generateCancelScheduledButtonContent(full, row, addWidthClass) {
     const widthClass = addWidthClass ? ' btn-w30' : '';
-    return `<button class="btn btn-delete-delayed${widthClass}" type="button" onclick="cancelScheduledEmail('${full.id}', '${row}')"><i class="fl fl-cancel"></i></button>`;
+    return `<button class="btn btn-delete-delayed${widthClass}" type="button" onclick="cancelScheduledEmail('${full.id}', '${row}')"><i class="fa-solid fa-xmark"></i></button>`;
 }
 
 function cancelScheduledEmail(id, rowIndex) {
@@ -323,7 +323,7 @@ function cancelScheduledEmail(id, rowIndex) {
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            $.ajax({
+            return $.ajax({
                 url: `/api/app/email-notification/${id}/email`,
                 type: "DELETE",
             })
@@ -356,7 +356,7 @@ function deleteDraftEmail(id, rowIndex) {
         }
     }).then((result) => {
         if (result.isConfirmed) {
-            $.ajax(
+            return $.ajax(
                 {
                     url: `/api/app/email-notification/${id}/email`,
                     type: "DELETE",
@@ -526,5 +526,5 @@ function openEmailPrintInNewTab(emailPrintHtml, printTitle) {
             doc.head.appendChild(printScript);
         };
         doc.head.appendChild(jqueryScript);
-    });
+    }).catch(error => console.error('Failed to prepare email for printing:', error));
 }

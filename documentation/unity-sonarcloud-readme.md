@@ -27,7 +27,7 @@ This document provides a guide for the Unity Grant Manager SonarCloud, including
 
 **Technology Stack:**
 
-- **Backend:** .NET with ABP Framework 10.3
+- **Backend:** .NET with ABP Framework 10.7
 - **Database:** PostgreSQL 17 with Entity Framework Core 10.0
 - **Frontend:** Razor Pages with custom ABP theme
 - **Testing:** xUnit with Shouldly assertions and NSubstitute mocks
@@ -74,15 +74,18 @@ Once logged in, request the following permissions from the SonarCloud Unity Proj
 
 **Source Code Paths:**
 
+Paths are relative to `projectBaseDir: applications`, which covers both Grant Manager and Unity AI Reporting.
+
 ```properties
-sonar.sources=src,modules
-sonar.tests=test
+sonar.sources=Unity.GrantManager/src,Unity.GrantManager/modules,Unity.AI/Unity.AI.Reporting.Backend/src,Unity.AI/Unity.AI.Reporting.Frontend/src
+sonar.tests=Unity.GrantManager/test,Unity.GrantManager/modules,Unity.AI/Unity.AI.Reporting.Backend/test_packages.py
 ```
 
 **Language Configuration:**
 
 - .NET
 - C# with Razor Pages
+- Python 3.13 and TypeScript (Unity AI Reporting)
 - Java 17 (for SonarCloud scanner)
 
 **Quality Gate:**
@@ -98,10 +101,13 @@ sonar.tests=test
 **/bin/**, **/obj/**, **/wwwroot/lib/**
 
 # EF Migrations
-src/Unity.GrantManager.EntityFrameworkCore/Migrations/**
+Unity.GrantManager/src/Unity.GrantManager.EntityFrameworkCore/Migrations/**
 
 # Generated files
 **/*.Designer.cs
+
+# Unity AI build artifacts and environment configs
+Unity.AI/**/dist/**, Unity.AI/**/__pycache__/**, Unity.AI/Unity.AI.Reporting.Frontend/src/environments/**
 ```
 
 ---

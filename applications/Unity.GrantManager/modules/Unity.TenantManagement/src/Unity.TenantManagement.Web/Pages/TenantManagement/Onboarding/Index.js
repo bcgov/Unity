@@ -154,7 +154,7 @@
 
         const cacheKey = 'dg-' + (_dataGridCacheId++);
         _dataGridCache[cacheKey] = { grid: parsed, title: columnTitle };
-        return '<button type="button" class="btn btn-icon btn-sm onboarding-datagrid-btn" data-datagrid-key="' + cacheKey + '" title="' + l('Onboarding:ViewDataGrid') + '"><i class="fl fl-datagrid"></i></button>';
+        return '<button type="button" class="btn btn-icon btn-sm onboarding-datagrid-btn" data-datagrid-key="' + cacheKey + '" title="' + l('Onboarding:ViewDataGrid') + '"><i class="fa-solid fa-table-cells"></i></button>';
     }
 
     function _openDataGridModal(grid, title) {
@@ -351,7 +351,7 @@
         $('#onboarding-validation-loading').addClass('d-none');
         if (result.isValid) {
             $('#onboarding-validation-result')
-                .html('<div class="alert alert-success mb-0"><i class="fl fl-check me-1"></i> ' + l('OnboardingModal:ValidationPassed') + '</div>')
+                .html('<div class="alert alert-success mb-0"><i class="fa-solid fa-check me-1"></i> ' + l('OnboardingModal:ValidationPassed') + '</div>')
                 .removeClass('d-none');
             $('#btn-confirm-create-tenant').prop('disabled', false);
         } else {
@@ -418,14 +418,11 @@
             const ministryFieldKey    = $('#create-tenant-ministry-field').val() || null;
             const divisionFieldKey    = $('#create-tenant-division-field').val() || null;
             const programAreaFieldKey = $('#create-tenant-program-area-field').val() || null;
-            const metabaseUserEmails             = $('#create-tenant-metabase-user-emails').val() || null;
-            const metabaseNewDefaultUserEmails   = $('#create-tenant-metabase-new-default-user-emails').val() || null;
-            const metabaseRemovedDefaultUserEmails = $('#create-tenant-metabase-removed-default-user-emails').val() || null;
 
             abp.ajax({
                 url: abp.appPath + 'api/onboarding-requests/' + applicationId + '/create-tenant',
                 type: 'POST',
-                data: JSON.stringify({ tenantNameFieldKey, displayNameFieldKey, programManagersFieldKey, branchFieldKey, featuresFieldKey, ministryFieldKey, divisionFieldKey, programAreaFieldKey, metabaseUserEmails, metabaseNewDefaultUserEmails, metabaseRemovedDefaultUserEmails }),
+                data: JSON.stringify({ tenantNameFieldKey, displayNameFieldKey, programManagersFieldKey, branchFieldKey, featuresFieldKey, ministryFieldKey, divisionFieldKey, programAreaFieldKey }),
                 contentType: 'application/json'
             }).done(function () {
                 abp.notify.success(l('OnboardingModal:CreateSuccess'));
@@ -512,76 +509,6 @@
         });
     }
 
-    // ─── Metabase tab: user list ───────────────────────────────────────────────
-
-    let _metabaseNewlyAddedEmails = [];
-    let _metabaseRemovedDefaultEmails = [];
-
-    function _captureMetabaseUsersToForm() {
-        let checked = [];
-        $('#create-tenant-metabase-user-list .create-tenant-metabase-user-checkbox:checked').each(function () {
-            checked.push($(this).val());
-        });
-        $('#create-tenant-metabase-user-emails').val(checked.join(','));
-        $('#create-tenant-metabase-removed-default-user-emails').val(_metabaseRemovedDefaultEmails.join(','));
-
-        if ($('#create-tenant-metabase-save-as-default').prop('checked')) {
-            let newDefaults = _metabaseNewlyAddedEmails.filter(function (email) {
-                return checked.includes(email);
-            });
-            $('#create-tenant-metabase-new-default-user-emails').val(newDefaults.join(','));
-        } else {
-            $('#create-tenant-metabase-new-default-user-emails').val('');
-        }
-    }
-
-    function _addMetabaseUser(email) {
-        email = (email || '').trim();
-        if (!email) return;
-
-        let exists = $('#create-tenant-metabase-user-list .create-tenant-metabase-user-checkbox').toArray().some(function (el) {
-            return $(el).val().toLowerCase() === email.toLowerCase();
-        });
-        if (exists) {
-            abp.notify.warn(l('CreateTenantModal:MetabaseAlreadyInList'));
-            return;
-        }
-
-        let id = 'create-tenant-metabase-user-' + $('#create-tenant-metabase-user-list .create-tenant-metabase-user-checkbox').length + '-' + Date.now();
-        let $checkbox = $('<input class="form-check-input create-tenant-metabase-user-checkbox" type="checkbox" checked>')
-            .attr('id', id).val(email);
-        let $label = $('<label class="form-check-label"></label>').attr('for', id).text(email);
-        $('<div class="form-check"></div>').append($checkbox).append($label).appendTo('#create-tenant-metabase-user-list');
-
-        _metabaseNewlyAddedEmails.push(email);
-        _captureMetabaseUsersToForm();
-    }
-
-    function _wireMetabaseTabHandlers() {
-        _metabaseNewlyAddedEmails = [];
-        _metabaseRemovedDefaultEmails = [];
-        _captureMetabaseUsersToForm();
-        $('#create-tenant-metabase-user-list').on('change', '.create-tenant-metabase-user-checkbox', _captureMetabaseUsersToForm);
-        $('#create-tenant-metabase-save-as-default').on('change', _captureMetabaseUsersToForm);
-        $('#create-tenant-metabase-add-user-btn').on('click', function (e) {
-            e.preventDefault();
-            _addMetabaseUser($('#create-tenant-metabase-new-user-email').val());
-            $('#create-tenant-metabase-new-user-email').val('');
-        });
-        $('#create-tenant-metabase-new-user-email').on('keypress', function (e) {
-            if (e.which === 13) {
-                e.preventDefault();
-                $('#create-tenant-metabase-add-user-btn').click();
-            }
-        });
-        $('#create-tenant-metabase-user-list').on('click', '.create-tenant-metabase-remove-default-btn', function (e) {
-            e.preventDefault();
-            _metabaseRemovedDefaultEmails.push($(this).data('email'));
-            $(this).closest('.form-check').remove();
-            _captureMetabaseUsersToForm();
-        });
-    }
-
     abp.modals.createTenantModal = function () {
         return {
             initModal: function (publicApi, args) {
@@ -593,7 +520,6 @@
                 } catch { _fieldValues = {}; }
 
                 _loadCreateTenantFields(applicationId);
-                _wireMetabaseTabHandlers();
                 $('#btn-confirm-create-tenant').on('click', _onCreateTenantConfirm(applicationId));
             }
         };

@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,7 +10,9 @@ using Quartz;
 using Shouldly;
 using Unity.GrantManager.Applicants.BackgroundWorkers;
 using Unity.GrantManager.Applications;
+using Volo.Abp.Auditing;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Security.Claims;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.Uow;
@@ -94,28 +98,97 @@ public class FiscalYearEndRolloverWorkerTests
         await applicantRepository.Received(2).RollOverFiscalYearEndAsync();
     }
 
+    [Fact]
+    public async Task ShouldPersistSeparateAuditLogs_WhenProcessingMultipleTenants()
+    {
+        var tenantOne = CreateTenant("Tenant One");
+        var tenantTwo = CreateTenant("Tenant Two");
+        var currentTenant = CreateCurrentTenant();
+        var applicantRepository = Substitute.For<IApplicantRepository>();
+        var auditingManager = CreateAuditingManager(out var savedLogs);
+        var auditingStore = Substitute.For<IAuditingStore>();
+        auditingStore.SaveAsync(Arg.Any<AuditLogInfo>()).Returns(callInfo =>
+        {
+            if (callInfo.Arg<AuditLogInfo>() is { } auditLog)
+            {
+                savedLogs.Add(auditLog);
+            }
+            return Task.CompletedTask;
+        });
+        applicantRepository.RollOverFiscalYearEndAsync().Returns(_ =>
+        {
+            auditingManager.Current!.Log.EntityChanges.Add(new EntityChangeInfo());
+            return Task.FromResult(new FiscalYearEndRolloverResult { RowsAffected = 1 });
+        });
+
+        var worker = CreateWorker(
+            currentTenant,
+            CreateTenantRepository(tenantOne, tenantTwo),
+            applicantRepository,
+            auditingManager,
+            auditingStore);
+
+        await worker.Execute(Substitute.For<IJobExecutionContext>());
+
+        savedLogs.Count.ShouldBe(2);
+        savedLogs.Select(log => log.TenantId).ShouldBe([tenantOne.Id, tenantTwo.Id]);
+        savedLogs.ShouldAllBe(log => log.EntityChanges.Count == 1);
+    }
+
     private static FiscalYearEndRolloverWorker CreateWorker(
         ICurrentTenant currentTenant,
         ITenantRepository tenantRepository,
-        IApplicantRepository applicantRepository)
+        IApplicantRepository applicantRepository,
+        IAuditingManager? auditingManager = null,
+        IAuditingStore? auditingStore = null)
     {
         var logger = Substitute.For<ILogger<FiscalYearEndRolloverWorker>>();
         var settingManager = Substitute.For<ISettingManager>();
-        var serviceProvider = CreateServiceProvider(currentTenant, applicantRepository);
+        var serviceProvider = CreateServiceProvider(currentTenant, applicantRepository, auditingManager, auditingStore);
 
-        return new FiscalYearEndRolloverWorker(logger, serviceProvider, tenantRepository, settingManager);
+        var worker = new FiscalYearEndRolloverWorker(logger, serviceProvider, tenantRepository, settingManager)
+        {
+            ServiceProvider = serviceProvider
+        };
+        return worker;
     }
 
-    private static IServiceProvider CreateServiceProvider(ICurrentTenant currentTenant, IApplicantRepository applicantRepository)
+    private static IServiceProvider CreateServiceProvider(
+        ICurrentTenant currentTenant,
+        IApplicantRepository applicantRepository,
+        IAuditingManager? auditingManager = null,
+        IAuditingStore? auditingStore = null)
     {
         var uowManager = Substitute.For<IUnitOfWorkManager>();
         uowManager.Begin(Arg.Any<AbpUnitOfWorkOptions>(), Arg.Any<bool>()).Returns(Substitute.For<IUnitOfWork>());
 
         var services = new ServiceCollection();
         services.AddSingleton(currentTenant);
+        services.AddSingleton(Substitute.For<ICurrentPrincipalAccessor>());
         services.AddSingleton(uowManager);
         services.AddSingleton(applicantRepository);
+        services.AddSingleton(auditingManager ?? CreateAuditingManager(out _));
+        services.AddSingleton(auditingStore ?? Substitute.For<IAuditingStore>());
         return services.BuildServiceProvider();
+    }
+
+    private static IAuditingManager CreateAuditingManager(out List<AuditLogInfo> auditLogs)
+    {
+        auditLogs = [];
+        var scopes = new Stack<IAuditLogScope>();
+        var auditingManager = Substitute.For<IAuditingManager>();
+        auditingManager.Current.Returns(_ => scopes.TryPeek(out var scope) ? scope : null);
+        auditingManager.BeginScope().Returns(_ =>
+        {
+            var scope = Substitute.For<IAuditLogScope>();
+            scope.Log.Returns(new AuditLogInfo());
+            scopes.Push(scope);
+
+            var disposable = Substitute.For<IAuditLogSaveHandle>();
+            disposable.When(x => x.Dispose()).Do(_ => scopes.Pop());
+            return disposable;
+        });
+        return auditingManager;
     }
 
     private static ICurrentTenant CreateCurrentTenant()

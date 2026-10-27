@@ -7,7 +7,6 @@ using Unity.Modules.Shared.Utils;
 using Unity.Notifications.EmailNotifications;
 using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Enums;
-using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
@@ -15,8 +14,10 @@ using Volo.Abp.TenantManagement;
 namespace Unity.GrantManager.HealthChecks.BackgroundWorkers
 {
     [DisallowConcurrentExecution]
-    public class DataHealthCheckWorker : QuartzBackgroundWorkerBase
+    public class DataHealthCheckWorker : UnityQuartzBackgroundWorkerBase
     {
+        protected override bool UsesTenantAuditScopes => true;
+
         private readonly ICurrentTenant _currentTenant;
         private readonly ITenantRepository _tenantRepository;
         private readonly IEmailNotificationService _emailNotificationService;
@@ -49,7 +50,7 @@ namespace Unity.GrantManager.HealthChecks.BackgroundWorkers
                 .Build();
         }
 
-        public override async Task Execute(IJobExecutionContext context)
+        protected override async Task ExecuteInBackgroundAsync(IJobExecutionContext context)
         {
             Logger.LogInformation("Executing DataHealthCheckWorker...");
 
@@ -65,27 +66,30 @@ namespace Unity.GrantManager.HealthChecks.BackgroundWorkers
 
                 foreach (var tenant in tenants)
                 {
-                    using (_currentTenant.Change(tenant.Id, tenant.Name))
+                    await ExecuteInTenantAuditScopeAsync(tenant.Id, async () =>
                     {
-                        // Lookup the missing emails
-                        var missingEmailsCount = await _emailNotificationService.GetEmailsChesWithNoResponseCountAsync();
-                        if (missingEmailsCount > 0)
+                        using (_currentTenant.Change(tenant.Id, tenant.Name))
                         {
-                            Logger.LogWarning("Tenant {TenantName} has {MissingEmailsCount} missing email(s) with a status of Initialized or Sent but no CHES Response.", tenant.Name, missingEmailsCount);
-                            string missingEmailBody = $"Unity tenant {tenant.Name} has {missingEmailsCount} email(s) that were sent but have no CHES Response.";
-                            sendEmail = true;
-                            emailBodyBuilder.AppendLine($"{missingEmailBody}<br />");
+                            // Lookup the missing emails
+                            var missingEmailsCount = await _emailNotificationService.GetEmailsChesWithNoResponseCountAsync();
+                            if (missingEmailsCount > 0)
+                            {
+                                Logger.LogWarning("Tenant {TenantName} has {MissingEmailsCount} missing email(s) with a status of Initialized or Sent but no CHES Response.", tenant.Name, missingEmailsCount);
+                                string missingEmailBody = $"Unity tenant {tenant.Name} has {missingEmailsCount} email(s) that were sent but have no CHES Response.";
+                                sendEmail = true;
+                                emailBodyBuilder.AppendLine($"{missingEmailBody}<br />");
+                            }
+                            // Lookup the missing payments
+                            var missingPayments = await GetPaymentsSentWithoutResponseCountAsync();
+                            if (missingPayments > 0)
+                            {
+                                Logger.LogWarning("Tenant {TenantName} has {MissingPaymentsCount} payments sent without a response.", tenant.Name, missingPayments);
+                                string missingPaymentBody = $"Unity tenant {tenant.Name} has {missingPayments} payment(s) that are in Submitted status but have no CAS Response.";
+                                sendEmail = true;
+                                emailBodyBuilder.AppendLine($"{missingPaymentBody}<br />");
+                            }
                         }
-                        // Lookup the missing payments
-                        var missingPayments = await GetPaymentsSentWithoutResponseCountAsync();
-                        if (missingPayments > 0)
-                        {
-                            Logger.LogWarning("Tenant {TenantName} has {MissingPaymentsCount} payments sent without a response.", tenant.Name, missingPayments);
-                            string missingPaymentBody = $"Unity tenant {tenant.Name} has {missingPayments} payment(s) that are in Submitted status but have no CAS Response.";
-                            sendEmail = true;
-                            emailBodyBuilder.AppendLine($"{missingPaymentBody}<br />");
-                        }
-                    }
+                    });
                 }
 
                 if (sendEmail)

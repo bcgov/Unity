@@ -220,13 +220,14 @@ Both workers fall back to `0 0 9 1/1 * ? *` if the setting cannot be read.
 
 | Code | Message |
 |---|---|
-| `Unity.Payments:Errors:ZeroPayment` | Cannot submit a payment request for $0.00 |
-| `Unity.Payments:Errors:MissingSupplierNumber` | Cannot submit a payment request without a supplier number |
-| `Unity.Payments:Errors:MissingSite` | Cannot submit a payment request without a site |
-| `Unity.Payments:Errors:MissingAccountCoding` | Cannot submit a payment request without an account coding |
-| `Unity.Payments:Errors:ThresholdExceeded` | Batch contains payments needing a third level of approval |
-| `Unity.Payments:Errors:L2ApproverRestriction` | You cannot approve payments you already approved as L1 |
-| `Unity.Payments:Errors:InvalidAccountCodingFiled` | Invalid account coding field {field} : {length} (note the misspelled key) |
-| `Unity.Payments:Errors:ConfigurationExists` / `ConfigurationDoesNotExist` | Payment configuration create/update guards |
+| `Payments:Errors:ZeroPayment` | Cannot submit a payment request for $0.00 |
+| `Payments:Errors:MissingSupplierNumber` | Cannot submit a payment request without a supplier number |
+| `Payments:Errors:MissingSite` | Cannot submit a payment request without a site |
+| `Payments:Errors:MissingAccountCoding` | Cannot submit a payment request without an account coding |
+| `Payments:Errors:L2ApproverRestriction` | You cannot approve payments you already approved as L1 |
+| `Payments:Errors:InvalidAccountCodingFiled` | Invalid account coding field {field} : {length} (note the misspelled key) |
+| `Payments:Errors:ConfigurationDoesNotExist` | Payment configuration update guard |
+| `Payments:PaymentRequestNotFound` | The payment request could not be found (`PaymentRequestAppService.CancelAsync`) |
+| `Payments:CancellationNotAllowed` | The payment cannot be cancelled in its current status (`PaymentRequestAppService.CancelAsync`) |
 
-Two further codes are raised inline in `PaymentRequestAppService.CancelAsync` without `ErrorConsts` entries: `Payments:PaymentRequestNotFound` and `Payments:CancellationNotAllowed`.
+The `Payments:` prefix must match the exception-code namespace `PaymentsSharedModule` maps to `PaymentsResource`. ABP localizes a code only through that mapping, so a code with any other prefix reaches users as the generic error message.

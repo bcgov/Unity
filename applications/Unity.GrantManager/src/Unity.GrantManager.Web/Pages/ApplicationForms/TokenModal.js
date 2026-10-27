@@ -23,7 +23,9 @@
 
         $('#CopyApiTokenBtn').click(function (e) {
             e.preventDefault();
-            copyToClipboard($('#ApplicationForm_ApiToken').val());
+            copyToClipboard($('#ApplicationForm_ApiToken').val()).catch(err => {
+                console.error('Copy failed', err);
+            });
         });
 
         $('#ClearApiTokenBtn').click(function (e) {
@@ -41,13 +43,14 @@
                 });
         }
 
-        function copyToClipboard(value) {
-            let textToCopy = value;
-            let tempTextarea = $('<textarea>');
-            $('body').append(textToCopy);
-            tempTextarea.val(textToCopy).select();
-            navigator.clipboard.writeText(tempTextarea[0].value);
-            tempTextarea.remove();
+        async function copyToClipboard(value) {
+            try {
+                await navigator.clipboard.writeText(String(value));
+            } catch (err) {
+                 console.error('Copy failed', err);
+                 abp.notify.error('Unable to copy to clipboard.');
+                 return;
+            }
             abp.notify.success(
                 'Copied to clipboard.'
             );

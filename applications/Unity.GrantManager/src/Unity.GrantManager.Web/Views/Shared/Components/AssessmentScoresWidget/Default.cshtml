@@ -21,8 +21,8 @@
     <input type="hidden" id="AssessmentScoresheetSchemaJson" value='@JsonSerializer.Serialize(Model.Scoresheet)' />
     <div class="container-fluid px-3" id="assessment-scoresheet">
         <div class="save-button-container">
-            <button type="button" class="btn unt-btn-link btn-link floating-save-btn" id="scoresheetDiscardAllBtn" disabled><i class="fl fl-undo"></i> Discard Changes</button>
-            <button type="button" class="btn unt-btn-primary btn-primary floating-save-btn" id="scoresheetSaveAllBtn" disabled><i class="fl fl-save"></i> Save Changes</button>
+            <button type="button" class="btn unt-btn-link btn-link floating-save-btn" id="scoresheetDiscardAllBtn" disabled><i class="fa-solid fa-arrow-rotate-left"></i> Discard Changes</button>
+            <button type="button" class="btn unt-btn-primary btn-primary floating-save-btn" id="scoresheetSaveAllBtn" disabled><i class="fa-regular fa-floppy-disk"></i> Save Changes</button>
         </div>
         @if (Model.Scoresheet.Sections.Any())
         {
@@ -248,7 +248,7 @@ else
                     <input type="number" size="18" class="form-control" disabled="disabled" name="SubTotal" id="subTotal" value="@Model.ScoreTotal()" min="0" max="2147483647" />
                 </div>
                 <div class="scores-block-save">
-                    <abp-button text="Save" type="button" id="saveAssessmentScoresBtn" disabled="true" icon-type="Other" icon="fl fl-save" button-type="Light" />
+                    <abp-button text="Save" type="button" id="saveAssessmentScoresBtn" disabled="true" icon-type="Other" icon="fa-regular fa-floppy-disk" button-type="Light" />
                 </div>
             </div>
         </div>

@@ -215,26 +215,36 @@
         return detail;
     }
 
+    // Cell text includes user-entered values (template and email group names),
+    // so it must be HTML-escaped before DataTables inserts it as markup.
+    function escapeCellText(value) {
+        return $.fn.dataTable.render.text().display(value ?? '');
+    }
+
     function renderTriggerDetail(data, type, row) {
         const detail = row.triggerType === 'Date'
             ? renderDateTriggerDetail(row)
             : row.eventStatus || '';
 
-        return appendRecipientDetail(detail, row);
+        return escapeCellText(appendRecipientDetail(detail, row));
     }
 
     function renderTriggerType(data, type, row) {
         if (row.triggerType === 'Event' && row.module) {
-            return 'Event - ' + row.module;
+            return escapeCellText('Event - ' + row.module);
         }
 
-        return row.triggerType || '';
+        return escapeCellText(row.triggerType || '');
+    }
+
+    function renderTemplateName(data) {
+        return escapeCellText(data);
     }
 
     function getNotificationColumns() {
         let index = 0;
         return [
-            { title: 'Template',      name: 'templateName', data: 'templateName', visible: true, index: index++ },
+            { title: 'Template',      name: 'templateName', data: 'templateName', visible: true, index: index++, render: renderTemplateName },
             { title: 'Trigger Type',  name: 'triggerType',  data: 'triggerType',  visible: true, index: index++, render: renderTriggerType },
             { title: 'Trigger Detail',name: 'triggerDetail',data: null, visible: true, orderable: true, defaultContent: '', index: index++,
               render: renderTriggerDetail },
@@ -367,7 +377,7 @@
             }
         }).then((result) => {
             if (!result.isConfirmed) return;
-            fetch('/api/form-notifications/' + encodeURIComponent(formId) + '/' + encodeURIComponent(id) + '/cancel', {
+                return fetch('/api/form-notifications/' + encodeURIComponent(formId) + '/' + encodeURIComponent(id) + '/cancel', {
                     method: 'PATCH',
                     headers: { 'RequestVerificationToken': abp.security.antiForgery.getToken() }
                 })
@@ -618,7 +628,13 @@
         subjectRow.append(subjectLabel, subjectValue);
 
         const bodyRow = document.createElement('div');
-        bodyRow.innerHTML = resolveTemplatePreviewBody(template);
+        const bodyHtml = resolveTemplatePreviewBody(template);
+        // Sanitize after decoding so encoded markup cannot bypass the sanitizer.
+        if (globalThis.DOMPurify?.isSupported) {
+            bodyRow.innerHTML = globalThis.DOMPurify.sanitize(bodyHtml, { USE_PROFILES: { html: true } });
+        } else {
+            bodyRow.textContent = bodyHtml;
+        }
 
         previewElement.append(subjectRow, document.createElement('br'), bodyRow);
     }
@@ -629,7 +645,7 @@
         if (sel === null || preview === null) return;
         const val = sel.value;
         updateTemplateAttachments(val);
-        fetch('/api/form-notifications/templates?templateType=Application').then(r => r.json()).then(list => {
+        return fetch('/api/form-notifications/templates?templateType=Application').then(r => r.json()).then(list => {
             const t = list.find(x => String(x.id) === String(val));
             renderTemplatePreview(preview, t);
         });
@@ -692,12 +708,12 @@
                 ),
                 columnDefs: [
                     {
-                        title: '<i class="fl fl-paperclip"></i>',
+                        title: '<i class="fa-solid fa-paperclip"></i>',
                         width: '40px',
                         className: 'text-center',
                         orderable: false,
                         render: function () {
-                            return '<i class="fl fl-paperclip"></i>';
+                            return '<i class="fa-solid fa-paperclip"></i>';
                         }
                     },
                     {
@@ -874,7 +890,7 @@
             });
         }
 
-        fetchTemplates().then(populateTemplates);
+        void fetchTemplates().then(populateTemplates).catch(error => console.error('Failed to load notification templates:', error));
         initNotificationsTable();
         bindTabVisibilityResize();
         // In case the widget is already visible on load (not inside a hidden tab pane)
@@ -933,7 +949,7 @@
                 const moduleSelect = document.getElementById('moduleSelect');
                 const statusSelect = document.getElementById('statusSelect');
                 if (moduleSelect?.value) {
-                    loadStatusesForModule(moduleSelect.value);
+                    void loadStatusesForModule(moduleSelect.value).catch(error => console.error('Failed to load module statuses:', error));
                 } else if (statusSelect) {
                     statusSelect.disabled = true;
                 }
@@ -957,7 +973,10 @@
         document.getElementById('recipientCategory')?.addEventListener('change', (e) => {
             const cat = e.target.value;
             e.target.classList.remove('is-invalid');
-            if (cat) fetchRecipients(cat).then(populateRecipients);
+            if (cat) {
+                void fetchRecipients(cat).then(populateRecipients)
+                    .catch(error => console.error('Failed to load notification recipients:', error));
+            }
         });
 
     function handleSaveNotification(e) {
@@ -1054,11 +1073,11 @@
         init();
         
         // Load statuses and initial recipients
-        fetchStatuses().then(statuses => {
+        void fetchStatuses().then(statuses => {
             populateStatuses(statuses);
             populateDateStatuses(statuses);
             reloadTable();
-        });
+        }).catch(error => console.error('Failed to load notification statuses:', error));
     });
 
     function configureSubmitOnlyValidation() {

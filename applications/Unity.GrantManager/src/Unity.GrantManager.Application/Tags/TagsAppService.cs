@@ -50,10 +50,7 @@ public class TagsAppService : ApplicationService, ITagsService
 
         if (tag != null)
         {
-            throw new BusinessException(
-
-               "400", "Another tag with the same name already exists."
-            );
+            throw new BusinessException(GrantManagerDomainErrorCodes.TagNameAlreadyExists);
         }
         var newTag = await _tagsRepository.InsertAsync(new Tag
         {
@@ -105,10 +102,7 @@ public class TagsAppService : ApplicationService, ITagsService
            .FirstOrDefaultAsync(e => e.Name.ToLower() == replacementTag.ToLower() && e.Id != id);
         if (duplicateTag != null)
         {
-            throw new BusinessException(
-
-                "400", "Another tag with the same name already exists."
-            );
+            throw new BusinessException(GrantManagerDomainErrorCodes.TagNameAlreadyExists);
         }
 
         var tag = await _tagsRepository

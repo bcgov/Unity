@@ -232,6 +232,6 @@ function runCli() {
 // Only run the CLI report when this file is executed directly
 // (`node scripts/selector-contract.mjs`) — not when imported as a module by
 // selector-diff-report.mjs.
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (path.resolve(fileURLToPath(import.meta.url)) === path.resolve(process.argv[1] ?? "")) {
   runCli();
 }

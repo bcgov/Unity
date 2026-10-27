@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 using Quartz;
 using Unity.Notifications.EmailNotifications;
 using Unity.Notifications.Emails;
-using Volo.Abp.BackgroundWorkers.Quartz;
+using Unity.Modules.Shared.Utils;
 using Volo.Abp.Features;
 using Volo.Abp.Linq;
 using Volo.Abp.MultiTenancy;
@@ -21,8 +21,10 @@ namespace Unity.GrantManager.GrantsPortal.Notifications;
 /// Recovers the commit-to-queue gap. Delivery failures are retried by the existing EmailConsumer.
 /// </summary>
 [DisallowConcurrentExecution]
-public class ApplicantUpdateEmailRecoveryWorker : QuartzBackgroundWorkerBase
+public class ApplicantUpdateEmailRecoveryWorker : UnityQuartzBackgroundWorkerBase
 {
+    protected override bool UsesTenantAuditScopes => true;
+
     private readonly IServiceProvider _serviceProvider;
 
     public ApplicantUpdateEmailRecoveryWorker(IServiceProvider serviceProvider)
@@ -35,7 +37,7 @@ public class ApplicantUpdateEmailRecoveryWorker : QuartzBackgroundWorkerBase
                 .WithMisfireHandlingInstructionIgnoreMisfires()).Build();
     }
 
-    public override async Task Execute(IJobExecutionContext context)
+    protected override async Task ExecuteInBackgroundAsync(IJobExecutionContext context)
     {
         using var scope = _serviceProvider.CreateScope();
         var currentTenant = scope.ServiceProvider.GetRequiredService<ICurrentTenant>();
@@ -52,11 +54,14 @@ public class ApplicantUpdateEmailRecoveryWorker : QuartzBackgroundWorkerBase
         {
             try
             {
-                using var tenantScope = _serviceProvider.CreateScope();
-                using (tenantScope.ServiceProvider.GetRequiredService<ICurrentTenant>().Change(tenant.Id))
+                await ExecuteInTenantAuditScopeAsync(tenant.Id, async () =>
                 {
-                    await RecoverTenantAsync(tenantScope.ServiceProvider);
-                }
+                    using var tenantScope = _serviceProvider.CreateScope();
+                    using (tenantScope.ServiceProvider.GetRequiredService<ICurrentTenant>().Change(tenant.Id))
+                    {
+                        await RecoverTenantAsync(tenantScope.ServiceProvider);
+                    }
+                });
             }
             catch (Exception ex)
             {

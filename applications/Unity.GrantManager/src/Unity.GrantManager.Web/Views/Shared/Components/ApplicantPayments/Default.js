@@ -134,7 +134,7 @@ function getCasResponseColumn() {
         index: 7,
         render: function (data) {
             if (data + '' !== 'undefined' && data?.length > 0) {
-                return '<button class="btn btn-light info-btn" type="button" onclick="openApplicantCasResponseModal(\'' + data + '\');">View Response<i class="fl fl-mapinfo"></i></button>';
+                return '<button class="btn btn-light info-btn" type="button" onclick="openApplicantCasResponseModal(\'' + data + '\');">View Response<i class="fa-solid fa-diamond-turn-right"></i></button>';
             }
             return null;
         },

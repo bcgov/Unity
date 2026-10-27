@@ -81,13 +81,12 @@ namespace Unity.GrantManager.Integrations.Css
             return new UserSearchResult
             {
                 Success = true,
-                Data = successfulResults
+                Data = [.. successfulResults
                     .SelectMany(result => result.Data ?? [])
                     .GroupBy(user => user.Attributes?.IdirUserGuid?.FirstOrDefault()
                         ?? user.Username
                         ?? user.Email)
-                    .Select(group => group.First())
-                    .ToArray()
+                    .Select(group => group.First())]
             };
         }
 
@@ -214,12 +213,7 @@ namespace Unity.GrantManager.Integrations.Css
                 TokenValidationResponse tokenResponse;
                 try
                 {
-                    tokenResponse = JsonSerializer.Deserialize<TokenValidationResponse>(content, _jsonOptions)!;
-
-                    if (tokenResponse == null)
-                    {
-                        throw new UserFriendlyException("Invalid token response format");
-                    }
+                    tokenResponse = JsonSerializer.Deserialize<TokenValidationResponse>(content, _jsonOptions)! ?? throw new UserFriendlyException("Invalid token response format");
                 }
                 catch (JsonException ex)
                 {

@@ -33,6 +33,34 @@ public class ApplicantEmailRecipientResolverTests
         ApplicantEmailRecipientResolver.Resolve("SigningAuthority", contacts).ShouldBe("signer@example.test");
     }
 
+    [Theory]
+    [InlineData("ADDITIONAL_CONTACT")]
+    [InlineData("Additional Contact")]
+    [InlineData("ADDITIONAL_SIGNING_AUTHORITY")]
+    [InlineData("Additional Signing Authority")]
+    public void Should_ResolveAdditionalContactRoleVariants(string role)
+    {
+        var contacts = new[]
+        {
+            new ContactInfoItemDto { Email = "additional@example.test", Role = role },
+            new ContactInfoItemDto { Email = "other@example.test", Role = "General" }
+        };
+        ApplicantEmailRecipientResolver.Resolve("AdditionalContact", contacts).ShouldBe("additional@example.test");
+    }
+
+    [Fact]
+    public void Should_IncludeBothAdditionalContactTypes()
+    {
+        var contacts = new[]
+        {
+            new ContactInfoItemDto { Email = "additional@example.test", Role = "Additional Contact" },
+            new ContactInfoItemDto { Email = "signer@example.test", Role = "Additional Signing Authority" },
+            new ContactInfoItemDto { Email = "other@example.test", Role = "General" }
+        };
+        ApplicantEmailRecipientResolver.Resolve("AdditionalContact", contacts)
+            .ShouldBe("additional@example.test; signer@example.test");
+    }
+
     [Fact]
     public void Should_DeduplicateContactsAndExplicitAddresses()
     {

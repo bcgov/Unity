@@ -91,7 +91,7 @@ $(function () {
 
     function renderSubmission() {
         const shadowRoot = initializeShadowDOM();
-        getSubmission(shadowRoot);
+        void getSubmission(shadowRoot).catch(error => console.error('Failed to load submission:', error));
     }
 
 
@@ -335,6 +335,23 @@ $(function () {
 
     $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function () {
         $($.fn.dataTable.tables(true)).DataTable().columns.adjust();
+    });
+
+    TabUtils.initialize({
+        entityType: 'application',
+        entityId: $('#DetailsViewApplicationId').val(),
+        groups: [
+            {
+                id: 'left',
+                tabListSelector: '#detailsTab > .nav-tabs',
+                contentSelector: '#detailsTabContent'
+            },
+            {
+                id: 'right',
+                tabListSelector: '#main-right .details-nav',
+                contentSelector: '#myTabContent'
+            }
+        ]
     });
 
     $('#printAssessmentPdf').click(function () {

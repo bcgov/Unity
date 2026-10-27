@@ -5,6 +5,7 @@ using System;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.Modules.Shared;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.Users;
 
@@ -78,7 +79,7 @@ namespace Unity.GrantManager.Web.Pages.Applicants
                     var application = await _applicationRepository.WithBasicDetailsAsync(ApplicationId.Value);
                     ApplicantId = application.ApplicantId;
                 }
-                catch (Exception)
+                catch (InvalidOperationException)
                 {
                     return RedirectToPage("/Error", new
                     {
@@ -113,7 +114,7 @@ namespace Unity.GrantManager.Web.Pages.Applicants
 
                 return Page();
             }
-            catch (Exception)
+            catch (EntityNotFoundException)
             {
                 return RedirectToPage("/Error", new
                 {

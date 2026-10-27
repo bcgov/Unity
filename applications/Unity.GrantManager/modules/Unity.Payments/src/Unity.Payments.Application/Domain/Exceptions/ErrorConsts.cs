@@ -2,14 +2,14 @@
 {
     public static class ErrorConsts
     {
-        public const string ThesholdExceeded = "Unity.Payments:Errors:ThresholdExceeded";
-        public const string ZeroPayment = "Unity.Payments:Errors:ZeroPayment";
-        public const string ConfigurationExists = "Unity.Payments:Errors:ConfigurationExists";
-        public const string ConfigurationDoesNotExist = "Unity.Payments:Errors:ConfigurationDoesNotExist";
-        public const string InvalidAccountCodingField = "Unity.Payments:Errors:InvalidAccountCodingFiled";
-        public const string L2ApproverRestriction = "Unity.Payments:Errors:L2ApproverRestriction";
-        public const string MissingSupplierNumber = "Unity.Payments:Errors:MissingSupplierNumber";
-        public const string MissingSite = "Unity.Payments:Errors:MissingSite";
-        public const string MissingAccountCoding = "Unity.Payments:Errors:MissingAccountCoding";
+        public const string ZeroPayment = "Payments:Errors:ZeroPayment";
+        public const string ConfigurationDoesNotExist = "Payments:Errors:ConfigurationDoesNotExist";
+        public const string InvalidAccountCodingField = "Payments:Errors:InvalidAccountCodingFiled";
+        public const string L2ApproverRestriction = "Payments:Errors:L2ApproverRestriction";
+        public const string MissingSupplierNumber = "Payments:Errors:MissingSupplierNumber";
+        public const string MissingSite = "Payments:Errors:MissingSite";
+        public const string MissingAccountCoding = "Payments:Errors:MissingAccountCoding";
+        public const string PaymentRequestNotFound = "Payments:PaymentRequestNotFound";
+        public const string CancellationNotAllowed = "Payments:CancellationNotAllowed";
     }
 }

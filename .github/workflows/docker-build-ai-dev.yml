@@ -1,0 +1,162 @@
+name: Dev - Build & Push Unity AI
+
+on:
+  push:
+    branches: [ "dev" ]
+    paths:
+      - 'applications/Unity.AI/**'
+      - '!applications/Unity.AI/**/README*'
+      - '!applications/Unity.AI/**/CLAUDE.md'
+  # Allow manual workflow triggering
+  workflow_dispatch:
+# Workflow dependencies
+env:
+  TARGET_ENV: dev
+  GH_TOKEN: ${{secrets.GH_API_TOKEN}}
+  OC_CLUSTER: ${{ vars.OPENSHIFT_CLUSTER }}
+  OC_REGISTRY: ${{ vars.OPENSHIFT_REGISTRY }}
+  OC_TOOLS_TOKEN: ${{ secrets.TOOLS_OPENSHIFT_TOKEN }}
+  OC_TOOLS_PROJECT: ${{ vars.TOOLS_OPENSHIFT_NAMESPACE }}
+  OC_TARGET_TOKEN: ${{ secrets.OPENSHIFT_TOKEN }}
+  OC_TARGET_PROJECT: ${{ vars.OPENSHIFT_NAMESPACE }}
+  JFROG_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+  JFROG_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+  JFROG_REPO_PATH: ${{ vars.ARTIFACTORY_REPO }}
+  JFROG_SERVICE:  ${{ vars.ARTIFACTORY_SERVICE }}
+  UNITY_AI_BUILD_VERSION: ${{vars.UAI_BUILD_VERSION}}
+  UNITY_AI_BUILD_REVISION: ${{vars.UAI_BUILD_REVISION}}
+
+  UNITY_AI_RELEASE_PREFIX: Unity_AI_Reporting_v
+  UNITY_AI_RELEASE_MESSAGE: "Development deployment"
+
+jobs:
+  Setup:
+    runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      contents: read
+    steps:
+    - name: Get variables
+      run: |
+        echo "Target: $TARGET_ENV"
+        echo "BaseRef: $GITHUB_REF_NAME"
+        echo "Environment: $TARGET_ENV OC_TOOLS_PROJECT=$OC_TOOLS_PROJECT OC_TARGET_PROJECT=$OC_TARGET_PROJECT"
+        echo "Environment: $TARGET_ENV JFROG_REPO_PATH=$JFROG_REPO_PATH"
+        echo "..."
+        env | sort
+    - name: Get current date
+      id: date_selector
+      run: |
+        echo "DATE=$(date +'%B %e, %Y')" >> $GITHUB_OUTPUT
+    outputs:
+      DATE: ${{steps.date_selector.outputs.DATE}}
+  Branch:
+    needs: [Setup]
+    runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      contents: read
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+      with:
+          fetch-depth: '1'
+    - name: Get short commitId
+      id: get_commit
+      run: |
+        echo "SHA_SHORT=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+    - name: List merged branch
+      id: get_branch
+      run: |
+        git log -1
+        MERGED_BRANCH=$(git log -1 | grep -oE 'from bcgov/[^ ]+' | sed 's/from bcgov\///')
+        if [ -z "$MERGED_BRANCH" ]; then
+          echo "Direct push into --env ${{env.TARGET_ENV}}"
+          echo "MERGED_BRANCH=push" >> $GITHUB_OUTPUT
+        else
+          echo "Merged branch: $MERGED_BRANCH"
+          echo "MERGED_BRANCH=$MERGED_BRANCH" >> $GITHUB_OUTPUT
+        fi
+    outputs:
+      SHA_SHORT: ${{steps.get_commit.outputs.SHA_SHORT}}
+      MERGED_BRANCH: ${{steps.get_branch.outputs.MERGED_BRANCH}}
+  PushVariables:
+    needs: [Setup,Branch]
+    runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      contents: write
+      actions: write
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+      with:
+          fetch-depth: '1'
+    - name: Set repository version variables
+      id: set_version
+      run: |
+        gh variable set UAI_BUILD_REVISION --env ${{env.TARGET_ENV}} --body "${{needs.Branch.outputs.SHA_SHORT}}"
+        echo "UNITY_AI_BUILD_REVISION=${{needs.Branch.outputs.SHA_SHORT}}" >> $GITHUB_ENV
+    - name: Get repository version variables
+      id: get_version
+      run: |
+        gh variable list --env ${{env.TARGET_ENV}}
+        echo "..."
+        echo "buildArgs --env ${{env.TARGET_ENV}} UNITY_AI_BUILD_VERSION: ${{env.UNITY_AI_BUILD_VERSION}}, UNITY_AI_BUILD_REVISION: ${{env.UNITY_AI_BUILD_REVISION}}, Merged Branch: ${{needs.Branch.outputs.MERGED_BRANCH}}"
+  Build:
+    needs: [Setup,Branch,PushVariables]
+    runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      contents: read
+    steps:
+    - uses: actions/checkout@v6
+    - name: Build Docker images
+      run: |
+        echo "buildArgs UNITY_AI_BUILD_VERSION: ${{env.UNITY_AI_BUILD_VERSION}}, UNITY_AI_BUILD_REVISION: ${{env.UNITY_AI_BUILD_REVISION}}"
+        docker build --build-arg UAI_BUILD_VERSION=${{env.UNITY_AI_BUILD_VERSION}} --build-arg UAI_BUILD_REVISION=${{env.UNITY_AI_BUILD_REVISION}} --build-arg UAI_TARGET_ENVIRONMENT=Development -t unity-ai-reporting -f Dockerfile .
+      working-directory: ./applications/Unity.AI
+    - name: Push application images to Artifactory container registry
+      continue-on-error: true
+      run: |
+        echo "$JFROG_PASSWORD" | docker login -u "$JFROG_USERNAME" --password-stdin $JFROG_SERVICE
+        docker tag unity-ai-reporting $JFROG_SERVICE/$JFROG_REPO_PATH/dev-unity-ai-reporting:latest
+        docker push $JFROG_SERVICE/$JFROG_REPO_PATH/dev-unity-ai-reporting:latest
+        docker logout $JFROG_SERVICE
+    - name: Install OpenShift CLI
+      run: |
+          curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/oc/latest/linux/oc.tar.gz
+          tar -xvf oc.tar.gz
+          sudo mv oc /usr/local/bin
+    - name: Verify OpenShift CLI installation
+      run: oc version
+    - name: Push application images into ce395f-tools
+      run: |
+        for i in 1 2 3; do
+          oc login --token=$OC_TOOLS_TOKEN --server=$OC_CLUSTER --request-timeout=30s && break
+          if [ "$i" -eq 3 ]; then
+            echo "oc login failed after 3 attempts" >&2
+            exit 1
+          fi
+          echo "oc login attempt $i failed, retrying in 30s..."
+          sleep 30
+        done
+        oc registry login
+        docker login -u unused -p $(oc whoami -t) $OC_REGISTRY
+        docker tag unity-ai-reporting $OC_REGISTRY/$OC_TOOLS_PROJECT/$TARGET_ENV-unity-ai-reporting:latest
+        docker push $OC_REGISTRY/$OC_TOOLS_PROJECT/$TARGET_ENV-unity-ai-reporting:latest
+        docker logout $OC_REGISTRY
+    - name: Promote unity-ai-reporting into ce395f-dev and wait
+      run: |
+        for i in 1 2 3; do
+          oc login --token=$OC_TARGET_TOKEN --server=$OC_CLUSTER --request-timeout=30s && break
+          if [ "$i" -eq 3 ]; then
+            echo "oc login failed after 3 attempts" >&2
+            exit 1
+          fi
+          echo "oc login attempt $i failed, retrying in 30s..."
+          sleep 30
+        done
+        oc tag $OC_TOOLS_PROJECT/$TARGET_ENV-unity-ai-reporting:latest $OC_TARGET_PROJECT/$TARGET_ENV-unity-ai-reporting:latest
+        oc -n $OC_TARGET_PROJECT rollout restart statefulset $TARGET_ENV-unity-ai-reporting
+        oc -n $OC_TARGET_PROJECT rollout status statefulset $TARGET_ENV-unity-ai-reporting --timeout=180s

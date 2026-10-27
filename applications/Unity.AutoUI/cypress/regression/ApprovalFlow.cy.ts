@@ -24,6 +24,8 @@ declare const describe: {
 };
 declare function it(name: string, callback: (...args: any[]) => void): void;
 declare function before(callback: (...args: any[]) => void): void;
+declare function beforeEach(callback: (...args: any[]) => void): void;
+declare function afterEach(callback: (...args: any[]) => void): void;
 declare function require(moduleName: string): any;
 
 const { ApplicationsListPage } = require("../pages/ApplicationsListPage");
@@ -35,8 +37,8 @@ const { loginIfNeeded } = require("../support/auth");
 
 const isProd =
   (
-    Cypress.env("CHEFS_ENV") ||
-    Cypress.env("environment") ||
+    Cypress.expose("CHEFS_ENV") ||
+    Cypress.expose("environment") ||
     ""
   ).toLowerCase() === "prod";
 
@@ -47,7 +49,7 @@ const TEST_CONFIG = {
   grantProgram: "Default Grants Program",
   approvedAmount: "5000",
   assignOwner: "Unity User1",
-  supplierNumber: Cypress.env("environment") === "TEST" ? "2002712" : "2009366",
+  supplierNumber: Cypress.expose("environment") === "TEST" ? "2002712" : "2009366",
   paymentGroup: "Cheque" as const,
   testComment: "Test comment from automated regression test",
   // Options used when fetching dynamically (ignored when submissionId is set or seeded file exists)
@@ -88,6 +90,7 @@ const APPLICATIONS_PATH = "GrantApplications";
 
   // Resolved after "Fetch submission ID from API" — shared across all subsequent tests
   let submissionId: string;
+  let failedStep = false;
 
   // ============ Shared Helpers ============
 
@@ -106,8 +109,8 @@ const APPLICATIONS_PATH = "GrantApplications";
 
   function navigateToApplicationsList(): void {
     cy.location("pathname", { timeout: 20000 }).then((pathname) => {
-      if (!pathname.includes(`/${APPLICATIONS_PATH}`)) {
-        cy.visit(`${Cypress.env("webapp.url")}${APPLICATIONS_PATH}`);
+      if (pathname !== `/${APPLICATIONS_PATH}`) {
+        cy.visit(`${Cypress.expose("webapp.url")}${APPLICATIONS_PATH}`);
       }
     });
     listPage.waitForNoBlockingOverlay();
@@ -386,12 +389,7 @@ const APPLICATIONS_PATH = "GrantApplications";
     dismissBlockingModalIfPresent();
     waitForSubmissionToAppearInList();
 
-    listPage
-      .waitForNoBlockingOverlay()
-      .selectQuickDateRange("last30days")
-      .waitForTableRefresh()
-      .searchForSubmission(submissionId)
-      .selectRowByText(submissionId);
+    listPage.waitForNoBlockingOverlay().selectRowByText(submissionId);
 
     cy.get("#assignApplication", { timeout: 20000 })
       .should("exist")
@@ -507,6 +505,19 @@ const APPLICATIONS_PATH = "GrantApplications";
     loginIfNeeded();
   });
 
+  beforeEach(function () {
+    if (failedStep) this.skip();
+  });
+
+  afterEach(function () {
+    if (
+      this.currentTest?.state === "failed" &&
+      this.currentTest.currentRetry() >= this.currentTest.retries()
+    ) {
+      failedStep = true;
+    }
+  });
+
   // ============ Dynamic Submission Fetch ============
 
   it("Fetch submission ID from API", () => {
@@ -579,18 +590,13 @@ const APPLICATIONS_PATH = "GrantApplications";
     waitForSubmissionToAppearInList();
     listPage.waitForNoBlockingOverlay();
 
-    cy.location("pathname", { timeout: 20000 }).then((pathname) => {
-      if (pathname.includes("/GrantApplications/Details")) {
-        cy.log("Already on details page after assignment");
-      } else {
-        listPage
-          .selectQuickDateRange("last30days")
-          .waitForTableRefresh()
-          .searchForSubmission(submissionId)
-          .selectRowByText(submissionId)
-          .clickOpenButton();
-      }
-    });
+    cy.contains("#GrantApplicationsTable tbody tr td a", submissionId, {
+      timeout: 20000,
+    }).should("be.visible").click();
+    cy.location("pathname", { timeout: 20000 }).should(
+      "eq",
+      "/GrantApplications/Details",
+    );
 
     cy.get(BREADCRUMB_STATUS_SELECTOR, { timeout: 20000 })
       .should("be.visible")
@@ -838,7 +844,7 @@ const APPLICATIONS_PATH = "GrantApplications";
   // ============ Post-Approval Verification ============
 
   it("Navigate back to applications list", () => {
-    cy.visit(`${Cypress.env("webapp.url")}${APPLICATIONS_PATH}`);
+    cy.visit(`${Cypress.expose("webapp.url")}${APPLICATIONS_PATH}`);
     listPage.switchToGrantProgram(TEST_CONFIG.grantProgram);
   });
 
@@ -900,9 +906,11 @@ const APPLICATIONS_PATH = "GrantApplications";
 
   it("Logout user1 and login as user2 for L2 approval", () => {
     cy.logout();
-    loginIfNeeded({
-      username: Cypress.env("test2username") as string,
-      password: Cypress.env("test2password") as string,
+    cy.env(["test2username", "test2password"]).then(({ test2username, test2password }: any) => {
+      loginIfNeeded({
+        username: test2username,
+        password: test2password,
+      });
     });
   });
 

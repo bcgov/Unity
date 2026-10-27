@@ -3,8 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Unity.AI.Localization;
 using Unity.AI.Permissions;
 using Unity.AI.Settings;
-using Unity.Modules.Shared.Navigation;
-using Unity.Modules.Shared.Specializations;
 using Unity.Modules.Shared.Permissions;
 using Volo.Abp.Features;
 using Volo.Abp.Settings;
@@ -29,18 +27,6 @@ public class AIMenuContributor : IMenuContributor
         var featureChecker = context.ServiceProvider.GetRequiredService<IFeatureChecker>();
         var settingProvider = context.ServiceProvider.GetRequiredService<ISettingProvider>();
 
-        var specializationChecker = context.ServiceProvider.GetRequiredService<ISpecializationChecker>();
-        if (!await specializationChecker.IsEnabledAsync(SpecializationConsts.Onboarding))
-        {
-            await context.AddItemAsync(new ApplicationMenuItem(
-                name: AIMenus.Prompts,
-                displayName: "AI Prompts",
-                url: "~/Prompts",
-                icon: "fl fl-ai-prompts",
-                order: 900
-            ).OnlyWhenInRole(IdentityConsts.ITOperationsRoleName));
-        }
-
         var currentUser = context.ServiceProvider.GetRequiredService<ICurrentUser>();
         var isItAdmin = currentUser.IsInRole(IdentityConsts.ITAdminRoleName);
 
@@ -53,7 +39,6 @@ public class AIMenuContributor : IMenuContributor
                 name: AIMenus.Reporting,
                 displayName: l["Menu:AIReporting"],
                 url: "~/AIReporting",
-                icon: "fl fl-view-dashboard",
                 order: 9,
                 requiredPermissionName: AIPermissions.Reporting.ReportingDefault
             ));

@@ -104,6 +104,7 @@
 }
 
 .comment-btn {
+    box-sizing: content-box;
     margin-top: 10px;
     padding-left: 14px;
     padding-right: 14px;

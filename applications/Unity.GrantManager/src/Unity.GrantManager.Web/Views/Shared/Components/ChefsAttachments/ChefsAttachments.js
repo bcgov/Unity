@@ -11,6 +11,7 @@ $(function () {
     let chefsDataTable;
     let selectedAttachmentIds = [];
     const nullPlaceholder = '—';
+    const textRenderer = $.fn.dataTable.render.text();
 
     let inputAction = function (requestData, dataTableSettings) {
         return getApplicationId();
@@ -106,6 +107,7 @@ $(function () {
             title: 'Document Name',
             name: 'chefsFileName',
             data: 'fileName',
+            render: textRenderer,
             className: 'data-table-header text-break',
             index: 1,
             orderable: false,
@@ -119,8 +121,9 @@ $(function () {
             data: 'displayName',
             className: 'data-table-header text-break',
             width: '35%',
-            render: function (data) {
-                return data ?? nullPlaceholder;
+            render: function (data, type) {
+                const value = data ?? nullPlaceholder;
+                return type === 'display' || type === 'filter' ? textRenderer[type](value) : value;
             },
         };
     }
@@ -453,7 +456,7 @@ function getChefsFileDownloadColumn() {
             let html =
                 '<div class="dropdown" style="float:right;">' +
                 '<button class="btn btn-light dropbtn" type="button">' +
-                '<i class="fl fl-attachment-more"></i>' +
+                '<i class="fa-solid fa-ellipsis"></i>' +
                 '</button>' +
                 '<div class="dropdown-content">' +
                 '<button class="btn fullWidth" style="margin:10px;margin-left:8px;" type="button"' +
@@ -469,11 +472,12 @@ function getChefsFileDownloadColumn() {
                 ' chefs-data="' + escapeHtmlAttribute(fileId) + '"' +
                 ' chefs-file-name="' + escapeHtmlAttribute(fileName) + '"' +
                 ' onclick="downloadChefsFile(event)">' +
-                '<i class="fl fl-download"></i><span>Download Attachment</span>' +
+                '<i class="fa-solid fa-download"></i><span>Download Attachment</span>' +
                 '</button>' +
                 '<button class="btn fullWidth" style="margin:10px" type="button"' +
-                ' onclick="updateAttachmentMetadata(\'CHEFS\',\'' + full.id + '\')">' +
-                '<i class="fl fl-edit"></i><span>Edit Attachment</span>' +
+                ' data-attachment-type="CHEFS" data-attachment-id="' + escapeHtmlAttribute(full.id) + '"' +
+                ' onclick="updateAttachmentMetadata(this.dataset.attachmentType, this.dataset.attachmentId)">' +
+                '<i class="fa-solid fa-pencil"></i><span>Edit Attachment</span>' +
                 '</button>' +
                 '</div>' +
                 '</div>';

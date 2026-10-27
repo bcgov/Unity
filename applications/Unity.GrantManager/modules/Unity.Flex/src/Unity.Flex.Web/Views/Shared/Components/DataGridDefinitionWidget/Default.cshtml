@@ -36,7 +36,7 @@
                         <abp-button id="data-btn-@option.Name"
                                     class="delete-column-option btn-danger"
                                     icon-type="Other"
-                                    icon="fl fl-delete"
+                                    icon="fa-regular fa-trash-can"
                                     abp-tooltip="Delete"
                                     button-type="Danger" />
                     </td>
@@ -57,10 +57,10 @@
                 <select class="form-control form-select" id="new-row-type" asp-items="@Model.SupportedFieldTypes" aria-label="Type"></select>
             </td>
             <td class="new-row-actions">
-                <abp-button id="save-column-option-btn" icon-type="Other" icon="fl fl-checkmark"
+                <abp-button id="save-column-option-btn" icon-type="Other" icon="fa-solid fa-check"
                             abp-tooltip="Confirm"
                             button-type="Primary" />
-                <abp-button id="cancel-column-option-btn" icon-type="Other" icon="fl fl-cancel"
+                <abp-button id="cancel-column-option-btn" icon-type="Other" icon="fa-solid fa-xmark"
                             abp-tooltip="Cancel"
                             button-type="Secondary" />
             </td>

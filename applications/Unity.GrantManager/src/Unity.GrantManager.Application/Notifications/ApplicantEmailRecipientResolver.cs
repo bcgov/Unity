@@ -26,6 +26,13 @@ public static class ApplicantEmailRecipientResolver
                     AddAddress(contact.Email);
                 }
             }
+            else if (string.Equals(identifier, "AdditionalContact", StringComparison.OrdinalIgnoreCase))
+            {
+                foreach (var contact in contactList.Where(c => IsAdditionalContact(c.Role)))
+                {
+                    AddAddress(contact.Email);
+                }
+            }
             else
             {
                 AddAddress(identifier);
@@ -44,8 +51,20 @@ public static class ApplicantEmailRecipientResolver
 
     private static bool IsSigningAuthority(string? role)
     {
-        var normalized = (role ?? string.Empty).Replace("_", string.Empty).Replace(" ", string.Empty);
+        var normalized = NormalizeRole(role);
         return normalized.Equals("SigningAuthority", StringComparison.OrdinalIgnoreCase)
             || normalized.Equals("AdditionalSigningAuthority", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsAdditionalContact(string? role)
+    {
+        var normalized = NormalizeRole(role);
+        return normalized.Equals("AdditionalContact", StringComparison.OrdinalIgnoreCase)
+            || normalized.Equals("AdditionalSigningAuthority", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizeRole(string? role)
+    {
+        return (role ?? string.Empty).Replace("_", string.Empty).Replace(" ", string.Empty);
     }
 }

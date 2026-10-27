@@ -13,7 +13,8 @@
             <form id="AISettingsForm">
                 <abp-row>
                     <abp-column size-md="_12" class="mx-2">
-                        <div class="form-check form-switch mb-3">
+                        @* Hidden rather than omitted: Default.js saves all three switches, so a missing one would save as off *@
+                        <div class="form-check form-switch mb-3 @(Model.ShowGenerationSettings ? "" : "d-none")">
                             <input class="form-check-input"
                                    type="checkbox"
                                    id="AutomaticGenerationEnabled"
@@ -28,7 +29,7 @@
                             </div>
                         </div>
 
-                        <div class="form-check form-switch mb-3">
+                        <div class="form-check form-switch mb-3 @(Model.ShowGenerationSettings ? "" : "d-none")">
                             <input class="form-check-input"
                                    type="checkbox"
                                    id="ManualGenerationEnabled"
@@ -43,7 +44,7 @@
                             </div>
                         </div>
 
-                        <div class="form-check form-switch">
+                        <div class="form-check form-switch @(Model.ShowReportingSetting ? "" : "d-none")">
                             <input class="form-check-input"
                                    type="checkbox"
                                    id="ReportingEnabled"

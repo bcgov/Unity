@@ -25,11 +25,11 @@ Two contributors, both registered in `NotificationsWebModule`.
 
 Runs only when the `Unity.Notifications` feature is enabled and the menu is `StandardMenus.Main`:
 
-|Item|Path|Icon|Order|Required permission|
-|---|---|---|---|---|
-|`Notifications.NotificationList`|`~/Notifications`|`fl fl-mail`|9|`Notifications.NotificationList.View`|
-|`Notifications.NotificationLogs`|`~/NotificationLogs`|`fl fl-table`|10|`ITOperations`|
-|`Notifications.UnityMessaging`|`~/UnityMessaging`|`fl fl-users`|11|`ITOperations`|
+|Item|Path|Order|Required permission|
+|---|---|---|---|
+|`Notifications.NotificationList`|`~/Notifications`|9|`Notifications.NotificationList.View`|
+|`Notifications.NotificationLogs`|`~/NotificationLogs`|10|`ITOperations`|
+|`Notifications.UnityMessaging`|`~/UnityMessaging`|11|`ITOperations`|
 
 The third is added only when `DirectMessaging` is also enabled.
 
@@ -90,13 +90,13 @@ These are in `src/Unity.GrantManager.Web/`, not in this module, but they are the
 
 Applicant history selects `EmailLog.ApplicantId` with an empty `ApplicationId`, including existing automatic applicant notifications. It excludes all application-owned messages. The widgets share markup and CSS with Application details and use Applicant-specific history refresh events and counters; printing uses Unity Applicant ID and applicant name.
 
-`POST /api/app/email/initialize-applicant-draft` creates an applicant-owned draft. The existing send/save request accepts `ApplicantId` alongside the existing `ApplicationId`, requiring exactly one owner. `GET /api/form-notifications/templates/{templateId}/applicant-preview?applicantId=...` validates access and template type, then renders the subject/body from applicant fields. HTML substitutions are encoded. External `ApplicationContact` resolves to the displayed primary contact; `SigningAuthority` resolves matching contacts from that same list. Internal templates retain distribution-group resolution. Empty resolution leaves To blank for staff to complete.
+`POST /api/app/email/initialize-applicant-draft` creates an applicant-owned draft. The existing send/save request accepts `ApplicantId` alongside the existing `ApplicationId`, requiring exactly one owner. `GET /api/form-notifications/templates/{templateId}/applicant-preview?applicantId=...` validates access and template type, then renders the subject/body from applicant fields. HTML substitutions are encoded. External `ApplicationContact` resolves to the displayed primary contact; `SigningAuthority` and `AdditionalContact` resolve matching contacts (by role) from that same list. Internal templates retain distribution-group resolution. Empty resolution leaves To blank for staff to complete.
 
 Backend checks cover owner, tenant, action permissions, draft status, scheduling settings, and template type. Draft template identity is retained in the existing email log's JSON metadata when saving/sending. Existing log columns and delivery infrastructure are reused; no migration or reseeding is required.
 
 ## Localization
 
-`Unity.Notifications.Domain.Shared/Localization/Notifications/en.json` holds all 119 keys for both this module's pages and the host-side notification surfaces, under the `NotificationsResource` resource. `NotificationsDomainSharedModule` registers it with `AddVirtualJson("/Localization/Notifications")` and base type `AbpValidationResource`, and maps the `Notifications` exception-code namespace to it — which is what turns `BusinessException("Unity.Notifications:EmailGroupInUse")` into a localizable message.
+`Unity.Notifications.Domain.Shared/Localization/Notifications/en.json` holds all 144 keys for both this module's pages and the host-side notification surfaces, under the `NotificationsResource` resource. `NotificationsDomainSharedModule` registers it with `AddVirtualJson("/Localization/Notifications")` and base type `AbpValidationResource`, and maps the `Notifications` exception-code namespace to it — which is what turns `BusinessException("Notifications:EmailGroupInUse")` into a localizable message. Only codes with the `Notifications:` prefix go through that mapping.
 
 Two keys to know about when editing:
 

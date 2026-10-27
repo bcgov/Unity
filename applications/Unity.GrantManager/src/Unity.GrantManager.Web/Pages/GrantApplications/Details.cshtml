@@ -121,7 +121,7 @@
                     <div class="container-fluid">
                         <abp-row>
                             <abp-column size="_12">
-                                <abp-button icon="fl fl-pdf" icon-type="Other" id="printPdf" class="pdf-icon"></abp-button>
+                                <abp-button icon="fa-regular fa-file-pdf" icon-type="Other" id="printPdf" class="pdf-icon"></abp-button>
                                 <div id="formio"></div>
                             </abp-column>
 
@@ -213,7 +213,8 @@
                 @*-------- Applicant Info Section END ---------*@
 
                 @*-------- Funding Agreement Info Section ---------*@
-                @if (IsZoneEnabled(UnitySelector.Funding.Default))
+                @* Tab requires both the zone toggle and the Funding Agreement permission *@
+                @if (await IsZoneVisible(UnitySelector.Funding.Default))
                 {
                     <abp-tab name="nav-funding-agreement-info" title="Funding Agreement">
                         <div class="w-100 px-2 @ZoneCssClass(UnitySelector.Funding.Agreement.Default)" id="FundingAgreementInfoWidget">
@@ -261,25 +262,25 @@
         <abp-card class="right-card">
             <ul class="nav nav-tabs details-nav flex-nowrap">
                 <li class="nav-item">
-                    <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="home" aria-selected="true">Details</button>
+                    <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab" aria-controls="details" aria-selected="true">Details</button>
                 </li>
             @if (notificationsFeatureEnabled && readEmailGranted)
             {
                 <li class="nav-item">
-                    <button class="nav-link" id="emails-tab" data-bs-toggle="tab" data-bs-target="#emails" type="button" role="tab" aria-controls="emails" aria-selected="false"> <i class="fl fl-emails" aria-hidden="true"></i> (<span id="application_emails_count">0</span>)</button>
+                    <button class="nav-link" id="emails-tab" data-bs-toggle="tab" data-bs-target="#emails" type="button" role="tab" aria-controls="emails" aria-selected="false"> <i class="fa-regular fa-envelope-open" aria-hidden="true"></i> (<span id="application_emails_count">0</span>)</button>
                 </li>
             }
                 <li class="nav-item">
-                    <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab" aria-controls="comments" aria-selected="false"> <i class="fl fl-comments" aria-hidden="true"></i> (<span id="application_comments_count">0</span>)</button>
+                    <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab" aria-controls="comments" aria-selected="false"> <i class="fa-regular fa-comments" aria-hidden="true"></i> (<span id="application_comments_count">0</span>)</button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link" id="attachments-tab" data-bs-toggle="tab" data-bs-target="#attachments" type="button" role="tab" aria-controls="attachments" aria-selected="false"><i class="fl fl-paperclip" aria-hidden="true"></i> (<span id="application_attachment_count">0</span>)</button>
+                    <button class="nav-link" id="attachments-tab" data-bs-toggle="tab" data-bs-target="#attachments" type="button" role="tab" aria-controls="attachments" aria-selected="false"><i class="fa-solid fa-paperclip" aria-hidden="true"></i> (<span id="application_attachment_count">0</span>)</button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link" id="links-tab" data-bs-toggle="tab" data-bs-target="#links" type="button" role="tab" aria-controls="links" aria-selected="false"><i class="fl fl-link" aria-hidden="true"></i> (<span id="application_links_count">0</span>)</button>
+                    <button class="nav-link" id="links-tab" data-bs-toggle="tab" data-bs-target="#links" type="button" role="tab" aria-controls="links" aria-selected="false"><i class="fa-solid fa-link" aria-hidden="true"></i> (<span id="application_links_count">0</span>)</button>
                 </li>
                 <li class="nav-item">
-                    <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false"><i class="fl fl-history" aria-hidden="true"></i></button>
+                    <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab" aria-controls="history" aria-selected="false"><i class="fa-solid fa-clock-rotate-left" aria-hidden="true"></i></button>
                 </li>
             @if (aiApplicationAnalysisEnabled)
             {
@@ -313,7 +314,7 @@
                             <div class="container-fluid float-inline">
                                 <abp-row>
                                     <abp-column size="_12">
-                                        <abp-button icon="fl fl-pdf" icon-type="Other" id="printAssessmentPdf" class="pdf-icon"></abp-button>
+                                        <abp-button icon="fa-regular fa-file-pdf" icon-type="Other" id="printAssessmentPdf" class="pdf-icon"></abp-button>
                                     </abp-column>
                                 </abp-row>
                             </div>
@@ -335,7 +336,7 @@
                                             id="assessment_upload_btn"
                                             class="assessment-upload-btn"
                                             icon-type="Other"
-                                            icon="fl fl-plus"
+                                            icon="fa-solid fa-plus"
                                             button-type="Light" />
                             </form>
                         </div>
@@ -434,7 +435,7 @@
                         @* Default message when no analysis data is available *@
                         <div class="ai-analysis-no-data px-3 py-4" id="aiAnalysisNoData">
                         <div class="text-center text-muted">
-                            <i class="fl fl-review-user fa-2x mb-3 opacity-50"></i>
+                            <i class="fa-solid fa-user-check fa-2x mb-3 opacity-50"></i>
                             <h6 class="mb-2">No AI Analysis Available</h6>
                             <p class="small mb-0">AI analysis results will appear here when available.</p>
                         </div>

@@ -51,7 +51,7 @@ public interface IApplicantAddressManager
     /// Loads an address and verifies it belongs to <paramref name="applicantId"/>.
     /// </summary>
     /// <exception cref="Volo.Abp.BusinessException">
-    /// <c>Unity:Applicant:AddressNotFound</c> when the address belongs to another applicant.
+    /// <see cref="GrantManagerDomainErrorCodes.AddressNotFound"/> when the address belongs to another applicant.
     /// </exception>
     Task<ApplicantAddress> GetOwnedAsync(Guid applicantId, Guid addressId);
 
