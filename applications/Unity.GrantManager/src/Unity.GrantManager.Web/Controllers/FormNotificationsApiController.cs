@@ -99,6 +99,8 @@ namespace Unity.GrantManager.Web.Controllers
         [HttpGet("templates/{templateId:guid}/resolved-recipients")]
         public async Task<ActionResult<ResolvedRecipientsDto>> GetResolvedTemplateRecipients(Guid templateId, [FromQuery] Guid? applicationId = null)
         {
+            // NOTE: May require more granular permissions for contact address isolation
+            // between application and applicant permissions.
             var template = await templateService.GetTemplateById(templateId);
             if (template == null)
             {

@@ -122,6 +122,10 @@ namespace Unity.GrantManager.Notifications
             dto.EmailBCC = email.BCC;
             dto.EmailSubject = email.Subject;
             dto.EmailBody = email.Body;
+
+            // Keep the saved template identity so the sent record matches the stored draft. 
+            dto.TemplateId = EmailOwnership.GetTemplateId(email);
+            dto.EmailTemplateName = email.TemplateName;
         }
 
         private async Task ValidateTemplateAsync(CreateEmailDto dto, Guid applicantId)
