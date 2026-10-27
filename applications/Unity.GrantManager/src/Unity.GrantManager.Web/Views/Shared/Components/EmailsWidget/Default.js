@@ -2485,8 +2485,8 @@ function initializeDraftEmailsWidget() {
         const displayBody = canEditDraft && !isApplicantEmail ? refreshTodayDateSpans(data.body) : data.body;
 
         resetValidationErrors();
-        populateSelectedEmailFields(data, displayBody);
         initializeSelectedEmailEditor(displayBody, selectedRecordTemplateName, canEditDraft);
+        populateSelectedEmailFields(data, displayBody);
         populateSelectedEmailSchedule(data);
         setSelectedEmailTemplate(data);
         configureSelectedEmailActions(isDraft, canEditDraft);
