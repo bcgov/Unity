@@ -40,6 +40,6 @@
     @await Component.InvokeAsync("BackgroundJobs")
 </div>
 
+@await Html.PartialAsync("_RetentionSettings", Model)
 @await Html.PartialAsync("_AuditLogs", Model)
 
-@await Html.PartialAsync("_RetentionSettings", Model)

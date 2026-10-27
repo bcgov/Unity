@@ -98,7 +98,7 @@ describe('Grant Manager Login and List Navigation', () => {
                 expect(Number.parseInt($el.text(), 10)).to.be.gt(0)
             })
 
-        cy.visit(Cypress.env('webapp.url'))
+        cy.visit(Cypress.expose('webapp.url'))
     })
 
     it('Verify Logout', () => {

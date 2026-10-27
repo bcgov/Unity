@@ -2,12 +2,12 @@
 
 <div id="audit-logs-div" class="input-area card mb-3 audit-logs hide">
     <div class="container-fluid px-0">
-        <div class="unity-page-titlebar">
+        <div class="unity-page-titlebar mb-40">
             <h4>Audit Logs</h4>
         </div>
         <div class="reconciliation-filter-row">
             <div class="reconciliation-filter-inputs gap-3 px-1">
-                <div>
+                <div class="audit-search">
                     <label class="form-label tbl-search-label" for="audit-search">Search</label>
                     <input type="search" id="audit-search" placeholder="Search" aria-label="Search audit logs" class="tbl-search">
                 </div>
@@ -48,9 +48,6 @@
                         <input type="date" id="audit-to-date" class="form-control input-sm date-input-filter" min="1900-01-01">
                     </div>
                 </div>
-            </div>
-            <div class="reconciliation-filter-buttons d-flex align-items-center">
-                <button id="audit-filter-button" type="button" class="custom-table-btn flex-none btn btn-secondary">Filter</button>
             </div>
         </div>
         <div class="application-scrollable-content p-3">
