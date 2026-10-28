@@ -1,0 +1,27 @@
+@using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Localization
+@using Unity.GrantManager.Web.Pages.ConfigurationManagement
+@model IndexModel
+@inject IStringLocalizer<GrantManagerResource> L
+
+<div class="container-fluid px-0">
+    <nav aria-label="@L["ApplicantPortalSettings:Title"]">
+        <div class="nav nav-tabs" id="applicant-portal-nav-tab" role="tablist">
+            <button class="nav-link active" id="nav-portal-status-tab" data-bs-toggle="tab" data-bs-target="#nav-portal-status" type="button" role="tab" aria-controls="nav-portal-status" aria-selected="true">
+                @L["ApplicantPortalSettings:ManageStatuses"]
+            </button>
+            <button class="nav-link" id="nav-portal-messages-tab" data-bs-toggle="tab" data-bs-target="#nav-portal-messages" type="button" role="tab" aria-controls="nav-portal-messages" aria-selected="false">
+                @L["ApplicantPortalSettings:ManageMessages"]
+            </button>
+        </div>
+    </nav>
+
+    <div class="tab-content unt-tab-content" id="applicant-portal-nav-tabContent">
+        <div class="tab-pane fade show active" id="nav-portal-status" role="tabpanel" aria-labelledby="nav-portal-status-tab">
+            <partial name="_ApplicantPortalStatuses" model="Model.Statuses" />
+        </div>
+        <div class="tab-pane fade" id="nav-portal-messages" role="tabpanel" aria-labelledby="nav-portal-messages-tab">
+            <partial name="_ApplicantPortalMessages" model="Model.MultipleIdentitiesMessage" />
+        </div>
+    </div>
+</div>

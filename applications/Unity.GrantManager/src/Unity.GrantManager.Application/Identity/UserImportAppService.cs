@@ -174,8 +174,8 @@ namespace Unity.GrantManager.Identity
             {
                 return [];
             }
-
-            var result = await cssUsersApiService.FindUserAsync(renameUserSearchDto.Directory, person.OidcSub);
+            var oidcSub = person.OidcSub.ToSubjectWithoutIdp();
+            var result = await cssUsersApiService.FindUserAsync(renameUserSearchDto.Directory, oidcSub);
             if (!result.Success || result.Data == null)
             {
                 return [];

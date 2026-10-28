@@ -19,7 +19,7 @@ namespace Unity.GrantManager.Migrations.HostMigrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("_Abp_DatabaseProvider", EfCoreDatabaseProvider.PostgreSql)
-                .HasAnnotation("ProductVersion", "10.0.3")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -424,6 +424,10 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                     b.Property<short?>("MisfireInstruction")
                         .HasColumnType("smallint")
                         .HasColumnName("misfire_instr");
+
+                    b.Property<long?>("MisfireOriginalFireTime")
+                        .HasColumnType("bigint")
+                        .HasColumnName("misfire_orig_fire_time");
 
                     b.Property<long?>("NextFireTime")
                         .HasColumnType("bigint")
@@ -1887,6 +1891,9 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                         .HasMaxLength(96)
                         .HasColumnType("character varying(96)");
 
+                    b.Property<DateTime?>("CompletionTime")
+                        .HasColumnType("timestamp without time zone");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -1936,7 +1943,7 @@ namespace Unity.GrantManager.Migrations.HostMigrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("IsAbandoned", "NextTryTime");
+                    b.HasIndex("ApplicationName", "CompletionTime", "IsAbandoned", "NextTryTime");
 
                     b.ToTable("BackgroundJobs", (string)null);
                 });
@@ -3358,7 +3365,7 @@ namespace Unity.GrantManager.Migrations.HostMigrations
 
                             b1.HasKey("IdentityUserPasskeyCredentialId");
 
-                            b1.ToTable("UserPasskeys", (string)null);
+                            b1.ToTable("UserPasskeys");
 
                             b1
                                 .ToJson("Data")

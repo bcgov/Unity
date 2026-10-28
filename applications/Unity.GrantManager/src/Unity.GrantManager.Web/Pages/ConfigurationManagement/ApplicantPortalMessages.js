@@ -126,13 +126,9 @@
         return initializing;
     }
 
-    $('#manage-statuses-menu-item, #manage-messages-menu-item').on('click', function () {
-        const messages = this.id === 'manage-messages-menu-item';
-        $('#manage-statuses-menu-item').toggleClass('active', !messages).attr('aria-pressed', String(!messages));
-        $('#manage-messages-menu-item').toggleClass('active', messages).attr('aria-pressed', String(messages));
-        $('#portal-status-div').toggleClass('d-none', messages);
-        $('#portal-messages-div').toggleClass('d-none', !messages);
-        if (messages) initializeEditor();
+    // TinyMCE is created lazily, and only once its pane is actually visible.
+    $('#nav-portal-messages-tab').on('shown.bs.tab', function () {
+        if ($('#nav-portal-messages').is(':visible')) initializeEditor();
     });
 
     $toggle.on('change', function () {

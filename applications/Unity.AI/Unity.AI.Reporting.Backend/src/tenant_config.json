@@ -4,11 +4,5 @@
     "collection_id": 16,
     "schema_types": ["public", "custom"],
     "api_key": ""
-  },
-  "REDIP": {
-    "db_id": 9,
-    "collection_id": 93,
-    "schema_types": ["public", "custom"],
-    "api_key": ""
   }
 }

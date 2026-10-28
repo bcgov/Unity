@@ -1,0 +1,65 @@
+/* Every rule is scoped to #applicant-portal-div so it cannot leak into other Configuration Management sections */
+#applicant-portal-div .portal-settings-actions {
+    background: #fff;
+}
+
+#applicant-portal-div .portal-status-table th {
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+}
+
+#applicant-portal-div .portal-status-table td {
+    vertical-align: middle;
+}
+
+#applicant-portal-div .portal-status-table label {
+    margin-bottom: 0;
+    font-weight: 400;
+}
+
+#applicant-portal-div #PortalStatusForm .dt-container {
+    max-height: none !important;
+}
+
+#applicant-portal-div .portal-message-heading {
+    color: #0066cc;
+    border-bottom: 2px solid #0066cc;
+    padding: 0 0 0.75rem;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+}
+
+#applicant-portal-div .portal-message-toggle {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-left: 0;
+}
+
+#applicant-portal-div .portal-message-toggle .form-check-input {
+    float: none;
+    margin: 0;
+    order: 1;
+}
+
+#applicant-portal-div .portal-message-parameters {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem;
+    background-color: #f0f4fa;
+    border: 1px solid #dbe5f4;
+    border-radius: 4px;
+}
+
+#applicant-portal-div .portal-message-token {
+    color: #005bbb;
+    background-color: #e1ecff;
+    font-weight: 600;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+#applicant-portal-div .tox-tinymce {
+    border-radius: 4px;
+}

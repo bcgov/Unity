@@ -5,7 +5,7 @@ paths:
 
 # C# Conventions for Unity Grant Manager
 
-> C# and .NET 10 development standards for ABP Framework 10.5.
+> C# and .NET 10 development standards for ABP Framework 10.7.
 
 - Target framework: .NET 10.0 with `<LangVersion>latest</LangVersion>`.
 - Nullable reference types are enabled in most projects.

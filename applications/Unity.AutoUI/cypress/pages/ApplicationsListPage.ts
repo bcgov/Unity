@@ -225,11 +225,14 @@ export class ApplicationsListPage extends ApplicationsPage {
    */
   selectRowByText(text: string): this {
     this.waitForNoBlockingOverlay();
-    cy.contains("tr", text, { timeout: this.STANDARD_TIMEOUT })
-      .scrollIntoView()
-      .find(".checkbox-select")
-      .should("be.visible")
-      .click();
+    cy.contains("#GrantApplicationsTable tbody tr", text, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).within(() => {
+      cy.get(".checkbox-select.chkbox").should("be.visible").check();
+    });
+    cy.contains("#GrantApplicationsTable tbody tr", text, {
+      timeout: this.STANDARD_TIMEOUT,
+    }).should("have.class", "selected");
     return this;
   }
 

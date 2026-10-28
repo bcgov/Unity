@@ -42,6 +42,7 @@ function loadLocalEnvironmentConfig(requestedEnvironment?: string): {
 
 // https://docs.cypress.io/guides/references/configuration
 export default defineConfig({
+  allowCypressEnv: false,
   e2e: {
     setupNodeEvents(on, config) {
       // Supports selecting the environment either via Cypress's native
@@ -122,6 +123,15 @@ export default defineConfig({
         baseUrl:
           (environmentConfig["webapp.url"] as string | undefined) ||
           config.baseUrl,
+        expose: {
+          ...config.expose,
+          "webapp.url":
+            (environmentConfig["webapp.url"] as string | undefined) ||
+            (config.env["webapp.url"] as string | undefined) ||
+            config.baseUrl,
+          environment: environmentConfig.environment || config.env.environment || environmentName,
+          CHEFS_ENV: environmentConfig.CHEFS_ENV || config.env.CHEFS_ENV,
+        },
         env: {
           ...config.env,
           ...environmentConfig,

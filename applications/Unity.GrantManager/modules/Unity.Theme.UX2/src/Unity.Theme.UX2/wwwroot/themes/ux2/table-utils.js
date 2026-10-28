@@ -237,7 +237,9 @@ function initializeDataTable(options) {
         deferRender = false,
         enableContextMenu = false,
         contextMenuActionsSelector = '[data-selector$="-table-actions"]',
-        contextMenuLabels = {}
+        contextMenuLabels = {},
+        contextMenuRowUrl,
+        disableFilterColumns = false
     } = options;
 
     // Process columns and visibility
@@ -465,7 +467,7 @@ function initializeDataTable(options) {
     let iDt = new DataTable(dt, configuration);
 
     // Initialize FilterRow plugin
-    initializeFilterRowPlugin(iDt, externalFilterButtonId);
+    initializeFilterRowPlugin(iDt, externalFilterButtonId, disableFilterColumns);
 
     // Move buttons to designated container
     moveButtonsToContainer(iDt, updatedActionButtons, dynamicButtonContainerId);
@@ -492,7 +494,8 @@ function initializeDataTable(options) {
             enabled: true,
             actionsSelector: contextMenuActionsSelector,
             copyEnabled: true,
-            labels: contextMenuLabels
+            labels: contextMenuLabels,
+            rowUrl: contextMenuRowUrl
         });
     }
 
@@ -719,9 +722,9 @@ function adjustColumnsWithRetry(api) {
  * @param {DataTable} iDt - DataTable instance
  * @param {string} externalFilterButtonId - ID of external filter button element, skips initialization if null
  */
-function initializeFilterRowPlugin(iDt, externalFilterButtonId) {
+function initializeFilterRowPlugin(iDt, externalFilterButtonId, disableFilterColumns) {
     if (!externalFilterButtonId || !$('#' + externalFilterButtonId).length) return;
-    if ($.fn.dataTable?.FilterRow) {
+    if ($.fn.dataTable?.FilterRow && !disableFilterColumns) {
         const filterRow = new $.fn.dataTable.FilterRow(iDt.settings()[0], {
             buttonId: externalFilterButtonId,
             buttonText: FilterDesc.Default,

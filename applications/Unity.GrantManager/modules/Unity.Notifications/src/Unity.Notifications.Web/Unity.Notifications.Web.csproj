@@ -12,17 +12,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Volo.Abp.Mapperly" Version="10.5.0" />
+    <PackageReference Include="Volo.Abp.Mapperly" Version="10.7.0" />
     <PackageReference Include="Riok.Mapperly" Version="4.3.1" />
-    <PackageReference Include="Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared" Version="10.5.0" />
-    <PackageReference Include="Volo.Abp.Identity.Domain" Version="10.5.0" />
-    <PackageReference Include="Volo.Abp.AspNetCore.SignalR" Version="10.5.0" />
-    <PackageReference Include="Volo.Abp.BackgroundJobs" Version="10.5.0" />
-    <PackageReference Include="Volo.Abp.BackgroundJobs.Quartz" Version="10.5.0" />
-    <PackageReference Include="Volo.Abp.BackgroundWorkers.Quartz" Version="10.5.0" />
-    <PackageReference Include="Volo.Abp.SettingManagement.Web" Version="10.5.0" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="10.0.3" />
-    <PackageReference Include="MessagePack" Version="2.5.302" />
+    <PackageReference Include="Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared" Version="10.7.0" />
+    <PackageReference Include="Volo.Abp.Identity.Domain" Version="10.7.0" />
+    <PackageReference Include="Volo.Abp.AspNetCore.SignalR" Version="10.7.0" />
+    <PackageReference Include="Volo.Abp.BackgroundJobs" Version="10.7.0" />
+    <PackageReference Include="Volo.Abp.BackgroundJobs.Quartz" Version="10.7.0" />
+    <PackageReference Include="Volo.Abp.BackgroundWorkers.Quartz" Version="10.7.0" />
+    <PackageReference Include="Volo.Abp.SettingManagement.Web" Version="10.7.0" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="10.0.13" />
   </ItemGroup>
 
   <ItemGroup>
@@ -32,7 +31,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="10.0.10" />
+    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="10.0.13" />
   </ItemGroup>
 
   <ItemGroup>

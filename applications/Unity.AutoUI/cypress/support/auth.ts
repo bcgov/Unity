@@ -128,8 +128,6 @@ function handleKeycloakLogin(
 
     cy.log("Entering IDIR credentials");
 
-    const username = options.username || Cypress.env("test1username");
-    const password = options.password || Cypress.env("test1password");
     const usernameSelector = getExistingSelector($loginBody, [
       "#user",
       "input[name='user']",
@@ -141,15 +139,17 @@ function handleKeycloakLogin(
       "input[type='password']",
     ]);
 
-    cy.get(usernameSelector, { timeout })
-      .should("be.visible")
-      .clear()
-      .type(username, { log: false });
+    cy.env(["test1username", "test1password"]).then((credentials: any) => {
+      cy.get(usernameSelector, { timeout })
+        .should("be.visible")
+        .clear()
+        .type(options.username || credentials.test1username, { log: false });
 
-    cy.get(passwordSelector, { timeout })
-      .should("be.visible")
-      .clear()
-      .type(password, { log: false });
+      cy.get(passwordSelector, { timeout })
+        .should("be.visible")
+        .clear()
+        .type(options.password || credentials.test1password, { log: false });
+    });
 
     // Look for Continue button or submit the form
     cy.get("body").then(($formBody: any) => {
@@ -199,7 +199,7 @@ function ensureGrantApplicationsPage(timeout: number): void {
 function performLogin(options: LoginOptions = {}): void {
   const baseUrl =
     options.baseUrl ||
-    (Cypress.env("webapp.url") as string | undefined) ||
+    (Cypress.expose("webapp.url") as string | undefined) ||
     Cypress.config("baseUrl");
   const useMfa = options.useMfa || false;
   const timeout = options.timeout || 20000;
@@ -249,35 +249,36 @@ function performLogin(options: LoginOptions = {}): void {
 export function loginIfNeeded(
   options: LoginOptions = {},
 ): void {
-  const username = options.username || (Cypress.env("test1username") as string);
   const baseUrl =
     options.baseUrl ||
-    (Cypress.env("webapp.url") as string | undefined) ||
+    (Cypress.expose("webapp.url") as string | undefined) ||
     Cypress.config("baseUrl");
 
   if (!baseUrl) {
     throw new Error("Missing baseUrl for Unity login flow");
   }
 
-  const sessionId = `unity-${baseUrl}-${username}`;
+  cy.env(["test1username"]).then(({ test1username }: any) => {
+    const sessionId = `unity-${baseUrl}-${options.username || test1username}`;
 
-  cy.session(
-    sessionId,
-    () => {
-      performLogin(options);
-    },
-    {
-      validate() {
-        // Lightweight validation: check auth cookies exist without visiting
-        cy.getCookie(".AspNetCore.Cookies").then((cookie: any) => {
-          if (!cookie) {
-            throw new Error("Session expired - auth cookie missing");
-          }
-        });
+    cy.session(
+      sessionId,
+      () => {
+        performLogin(options);
       },
-      cacheAcrossSpecs: true,
-    },
-  );
+      {
+        validate() {
+          // Lightweight validation: check auth cookies exist without visiting
+          cy.getCookie(".AspNetCore.Cookies").then((cookie: any) => {
+            if (!cookie) {
+              throw new Error("Session expired - auth cookie missing");
+            }
+          });
+        },
+        cacheAcrossSpecs: true,
+      },
+    );
+  });
 
   cy.then(() => {
     cy.visit(baseUrl);
