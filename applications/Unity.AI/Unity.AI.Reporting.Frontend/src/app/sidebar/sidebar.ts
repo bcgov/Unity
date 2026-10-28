@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, ChangeDetectorRef, OnDestroy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectorRef, OnInit, OnDestroy } from '@angular/core';
 
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -86,7 +86,7 @@ export type ModelsModalStep = 'idle' | 'pick-mode' | 'loading-views' | 'pick-vie
   templateUrl: './sidebar.html',
   styleUrls: ['./sidebar.css']
 })
-export class SidebarComponent implements OnDestroy {
+export class SidebarComponent implements OnInit, OnDestroy {
   @Input() isOpen: boolean = false;
   @Input() currentChatId: string | null = null;
   @Input() conversation: Turn[] = [];
@@ -155,8 +155,9 @@ export class SidebarComponent implements OnDestroy {
     return this.authService.canEditDataModel();
   }
 
-  async ngOnInit(): Promise<void> {
-    await this.loadChats();
+  ngOnInit(): void {
+    // loadChats handles its own errors, so the promise never rejects
+    void this.loadChats();
   }
 
   public async loadChats(): Promise<void> {
@@ -315,6 +316,12 @@ export class SidebarComponent implements OnDestroy {
 
   closeInfoModal(): void {
     this.showInfoModal = false;
+  }
+
+  onInfoOverlayClick(event: Event): void {
+    if (event.target === event.currentTarget) {
+      this.closeInfoModal();
+    }
   }
 
   get version(): string {

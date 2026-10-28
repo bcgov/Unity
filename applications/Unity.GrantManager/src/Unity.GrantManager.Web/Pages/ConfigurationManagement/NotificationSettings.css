@@ -47,7 +47,7 @@
     font-weight: 700;
     padding: 0.25rem 0.5rem;
     white-space: nowrap;
-    transition: all 0.15s ease-in-out;
+    transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, color 0.15s ease-in-out, opacity 0.15s ease-in-out;
     border-radius: 4px;
     font-size: 0.875rem;
 }
@@ -70,4 +70,10 @@
 
 .modal-footer {
     margin-top: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .v-scroll {
+        scroll-behavior: auto;
+    }
 }
