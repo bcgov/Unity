@@ -1,21 +1,21 @@
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
-using Unity.GrantManager.Notifications.Email;
-using Unity.Notifications.Emails;
-using Unity.Notifications.Permissions;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Unity.GrantManager.GrantApplications;
-using Unity.Notifications.EmailGroups;
 using System.Threading.Tasks;
-using Unity.Notifications.EmailNotifications;
-using Unity.Notifications.Templates;
-using Volo.Abp.Users;
 using Unity.GrantManager.Events;
+using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Notifications.Email;
+using Unity.Notifications.EmailGroups;
+using Unity.Notifications.EmailNotifications;
+using Unity.Notifications.Emails;
+using Unity.Notifications.Permissions;
+using Unity.Notifications.Templates;
 using Unity.Payments.Codes;
 using Unity.Payments.Enums;
 using Volo.Abp.Identity.Integration;
+using Volo.Abp.Users;
 
 namespace Unity.GrantManager.Web.Controllers
 {
@@ -35,7 +35,7 @@ namespace Unity.GrantManager.Web.Controllers
     {
 
 
-        [Authorize(NotificationsPermissions.Email.Send)]
+        [Authorize(NotificationsPermissions.Email.Default)]
         [HttpGet("payment-statuses")]
         public ActionResult<List<object>> GetPaymentStatuses()
         {
@@ -60,7 +60,7 @@ namespace Unity.GrantManager.Web.Controllers
         // In-memory storage removed; persisting to ScheduledNotifications table via IAutomatedNotificationAppService
 
 
-        [Authorize(NotificationsPermissions.Email.Send)]
+        [Authorize(NotificationsPermissions.Email.Default)]
         [HttpGet("templates")]
         public async Task<ActionResult<List<EmailTemplateDto>>> GetTemplates([FromQuery] string? templateType = null)
         {
@@ -87,17 +87,24 @@ namespace Unity.GrantManager.Web.Controllers
             return Ok(list);
         }
 
-        [Authorize(NotificationsPermissions.Email.Send)]
+        [Authorize(NotificationsPermissions.Email.Default)]
         [HttpGet("templates/{templateId:guid}/applicant-preview")]
         public async Task<ActionResult<ApplicantEmailTemplatePreviewDto>> GetApplicantTemplatePreview(Guid templateId, [FromQuery] Guid applicantId)
         {
             return Ok(await applicantEmailTemplateService.GetPreviewAsync(applicantId, templateId));
         }
 
-        [Authorize(NotificationsPermissions.Email.Send)]
+        [Authorize(NotificationsPermissions.Email.Default)]
         [HttpGet("templates/{templateId:guid}/resolved-recipients")]
         public async Task<ActionResult<ResolvedRecipientsDto>> GetResolvedTemplateRecipients(Guid templateId, [FromQuery] Guid? applicationId = null)
         {
+            // Check if the user has permission to create or edit emails for Applications
+            if (applicationId.HasValue && applicationId.Value != Guid.Empty)
+            {
+                await emailAccessChecker.CheckOwnerAnyAsync(
+                    applicationId.Value, Guid.Empty, EmailOperation.Create, EmailOperation.Edit);
+            }
+
             var template = await templateService.GetTemplateById(templateId);
             if (template == null)
             {
@@ -179,14 +186,14 @@ namespace Unity.GrantManager.Web.Controllers
             return Ok(new ResolvedRecipientsDto { EmailTo = string.Empty });
         }
 
-        [Authorize(NotificationsPermissions.Email.Send)]
+        [Authorize(NotificationsPermissions.Email.Default)]
         [HttpPost("email-template/{templateId}/copy-attachments")]
         public async Task<ActionResult<CopyAttachmentsResponseDto>> CopyTemplateAttachments(Guid templateId, [FromBody] CopyAttachmentsInput input)
         {
             if (input.EmailLogId == Guid.Empty)
                 return BadRequest("EmailLogId is required");
 
-            var email = await emailAccessChecker.CheckEmailAsync(input.EmailLogId, NotificationsPermissions.Email.Send, requireDraft: true);
+            var email = await emailAccessChecker.CheckDraftEditAsync(input.EmailLogId);
             await emailAccessChecker.CheckTemplateAsync(templateId, email.ApplicantId);
             var copiedCount = await emailAttachmentService.ReplaceTemplateAttachmentsAsync(
                 templateId,
@@ -196,7 +203,7 @@ namespace Unity.GrantManager.Web.Controllers
             return Ok(new CopyAttachmentsResponseDto { AttachmentCount = copiedCount });
         }
 
-        [Authorize(NotificationsPermissions.Email.Send)]
+        [Authorize(NotificationsPermissions.Email.Default)]
         [HttpGet("email-template/{templateId}/validate-attachments")]
         public async Task<IActionResult> ValidateTemplateAttachments(Guid templateId)
         {
@@ -204,16 +211,16 @@ namespace Unity.GrantManager.Web.Controllers
             return NoContent();
         }
 
-        [Authorize(NotificationsPermissions.Email.Send)]
+        [Authorize(NotificationsPermissions.Email.Default)]
         [HttpDelete("email-log/{emailLogId}/origin-attachments")]
         public async Task<ActionResult<CopyAttachmentsResponseDto>> DeleteOriginAttachments(Guid emailLogId)
         {
-            await emailAccessChecker.CheckEmailAsync(emailLogId, NotificationsPermissions.Email.Send, requireDraft: true);
+            await emailAccessChecker.CheckDraftEditAsync(emailLogId);
             var deletedCount = await emailAttachmentService.DeleteOriginAttachmentsAsync(emailLogId);
             return Ok(new CopyAttachmentsResponseDto { AttachmentCount = deletedCount });
         }
 
-        [Authorize(NotificationsPermissions.Email.Send)]
+        [Authorize(NotificationsPermissions.Email.Default)]
         [HttpGet("statuses")]
         public async Task<ActionResult<List<object>>> GetApplicationStatuses()
         {
@@ -222,7 +229,7 @@ namespace Unity.GrantManager.Web.Controllers
             return Ok(list);
         }
 
-        [Authorize(NotificationsPermissions.Email.Send)]
+        [Authorize(NotificationsPermissions.Email.Default)]
         [HttpGet("recipients")]
         public async Task<ActionResult<List<RecipientDto>>> GetRecipients([FromQuery] string category)
         {
@@ -389,7 +396,7 @@ namespace Unity.GrantManager.Web.Controllers
             return NoContent();
         }
 
-        [Authorize(NotificationsPermissions.Email.Send)]
+        [Authorize(NotificationsPermissions.Email.Template.Default)]
         [HttpGet("can-delete-template/{templateId:guid}")]
         public async Task<ActionResult<object>> CanDeleteTemplate(Guid templateId)
         {
@@ -418,7 +425,7 @@ namespace Unity.GrantManager.Web.Controllers
             return Ok(new { canDelete = true, errorMessage = (string?)null, notificationPlanNames = Array.Empty<string>() });
         }
 
-        [Authorize(NotificationsPermissions.Email.Send)]
+        [Authorize(NotificationsPermissions.Email.Template.Default)]
         [HttpGet("template-notification-plans/{templateId:guid}")]
         public async Task<ActionResult<object>> GetTemplateNotificationPlans(Guid templateId)
         {

@@ -7,21 +7,23 @@ using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 using Volo.Abp.Settings;
 using Unity.Notifications.Settings;
+using Unity.Notifications.Emails;
 
 namespace Unity.GrantManager.Web.Views.Shared.Components.EmailHistoryWidget;
 
 [Widget(
     ScriptTypes = new [] {typeof(EmailHistoryScriptBundleContributor)}, 
     StyleTypes = new [] {typeof(EmailHistoryStyleBundleContributor)})]
-public class EmailHistoryWidgetViewComponent(ISettingProvider settingProvider) : AbpViewComponent
+public class EmailHistoryWidgetViewComponent(ISettingProvider settingProvider, EmailComposerAccessChecker emailAccessChecker) : AbpViewComponent
 {
     public async Task<IViewComponentResult> InvokeAsync(Guid applicationId = default, Guid applicantId = default, string applicantName = "", string unityApplicantId = "")
     {
         var enableEmailDelay = string.Equals(
             await settingProvider.GetOrNullAsync(NotificationsSettings.Mailing.EnableEmailDelay),
             "true", StringComparison.OrdinalIgnoreCase);
+        var capabilities = await emailAccessChecker.GetCapabilitiesAsync(EmailOwnerTypes.FromIds(applicantId));
 
-        return View(new EmailHistoryWidgetViewModel { EnableEmailDelay = enableEmailDelay, ApplicationId = applicationId, ApplicantId = applicantId, ApplicantName = applicantName, UnityApplicantId = unityApplicantId });
+        return View(new EmailHistoryWidgetViewModel { EnableEmailDelay = enableEmailDelay, ApplicationId = applicationId, ApplicantId = applicantId, ApplicantName = applicantName, UnityApplicantId = unityApplicantId, Capabilities = capabilities });
     }
 }
 

@@ -1,17 +1,17 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
+using Unity.Notifications.Permissions;
+using Unity.Notifications.Templates;
+using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
-using Microsoft.EntityFrameworkCore;
 using Unity.Notifications;
-using Unity.Notifications.Permissions;
-using Unity.Notifications.Templates;
 using Volo.Abp.Uow;
-using Volo.Abp;
 
 namespace Unity.GrantManager.Notifications
 {
@@ -149,7 +149,7 @@ namespace Unity.GrantManager.Notifications
         }
 
         // Limited lookup for template editors (delete/edit preflights); does not expose the schedule list.
-        [Authorize(NotificationsPermissions.Email.Send)]
+        [Authorize(NotificationsPermissions.Email.Template.Default)]
         public async Task<List<TemplateNotificationReferenceDto>> GetTemplateReferencesAsync(Guid templateId)
         {
             var query = await _repository.GetQueryableAsync();

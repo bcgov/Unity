@@ -42,10 +42,10 @@ public class EmailNotificationService(
         IAssessmentRepository assessmentRepository) : ApplicationService, IEmailNotificationService
 {
 
-    [Authorize(NotificationsPermissions.Email.Send)]
+    [Authorize(NotificationsPermissions.Email.Default)]
     public async Task<Guid> InitializeDraftAsync(Guid applicationId)
     {
-        await emailAccessChecker.CheckOwnerAsync(applicationId, Guid.Empty, NotificationsPermissions.Email.Send);
+        await emailAccessChecker.CheckOwnerAsync(applicationId, Guid.Empty, EmailOperation.Create);
         var emailLog = await emailNotificationManager.CreateDraftEmailLogAsync(applicationId);
         return emailLog.Id;
     }
@@ -57,10 +57,19 @@ public class EmailNotificationService(
         // Closing an unsaved composer cleans up only the current user's empty draft.
         var isUnsavedOwnDraft = email.Status == EmailStatus.Draft && email.CreatorId == CurrentUser.Id
             && string.IsNullOrEmpty(email.Subject) && string.IsNullOrEmpty(email.Body);
-        var permission = email.Status == EmailStatus.Draft
-            ? (isUnsavedOwnDraft ? NotificationsPermissions.Email.Send : NotificationsPermissions.Email.DeleteDraft)
-            : NotificationsPermissions.Email.CancelScheduled;
-        await emailAccessChecker.CheckOwnerAsync(email.ApplicationId, email.ApplicantId, permission);
+        if (email.Status != EmailStatus.Draft)
+        {
+            await emailAccessChecker.CheckOwnerAsync(email.ApplicationId, email.ApplicantId, EmailOperation.CancelScheduled);
+        }
+        else if (isUnsavedOwnDraft
+            && await AuthorizationService.IsGrantedAsync(EmailPermissionMap.Get(EmailOwnerTypes.FromIds(email.ApplicantId), EmailOperation.Create))) // Empty draft cleanup support
+        {
+            await emailAccessChecker.CheckOwnerAsync(email.ApplicationId, email.ApplicantId, EmailOperation.Create);
+        }
+        else
+        {
+            await emailAccessChecker.CheckDraftDeleteAsync(email);
+        }
         if (email.Status != EmailStatus.Draft && (!email.SendOnDateTime.HasValue || email.SendOnDateTime <= Clock.Now))
         {
             throw new BusinessException(NotificationsErrorCodes.EmailNotScheduled);
@@ -68,10 +77,10 @@ public class EmailNotificationService(
         await emailNotificationManager.DeleteEmailLogAsync(id);
     }
 
-    [Authorize(NotificationsPermissions.Email.CancelScheduled)]
+    [Authorize(NotificationsPermissions.Email.Default)]
     public async Task CancelEmail(Guid id)
     {
-        var email = await emailAccessChecker.CheckEmailAsync(id, NotificationsPermissions.Email.CancelScheduled);
+        var email = await emailAccessChecker.CheckEmailAsync(id, EmailOperation.CancelScheduled);
         if (!email.SendOnDateTime.HasValue || email.SendOnDateTime <= Clock.Now)
         {
             throw new BusinessException(NotificationsErrorCodes.EmailNotScheduled);
@@ -260,9 +269,10 @@ public class EmailNotificationService(
         return await emailNotificationManager.GetEmailLogByIdAsync(id);
     }
 
-    [Authorize]
+    [Authorize(NotificationsPermissions.Email.Default)]
     public virtual async Task<List<EmailHistoryDto>> GetHistoryByApplicationId(Guid applicationId)
     {
+        await emailAccessChecker.CheckOwnerAsync(applicationId, Guid.Empty, EmailOperation.View);
         var entityList = await emailNotificationManager.GetEmailLogsByApplicationIdAsync(applicationId);
         return await MapEmailHistoryAsync(entityList);
     }
@@ -270,7 +280,7 @@ public class EmailNotificationService(
     [Authorize(NotificationsPermissions.Email.Default)]
     public virtual async Task<List<EmailHistoryDto>> GetHistoryByApplicantId(Guid applicantId)
     {
-        await emailAccessChecker.CheckOwnerAsync(Guid.Empty, applicantId, NotificationsPermissions.Email.Default);
+        await emailAccessChecker.CheckOwnerAsync(Guid.Empty, applicantId, EmailOperation.View);
         return await MapEmailHistoryAsync(await emailLogsRepository.GetByApplicantIdAsync(applicantId));
     }
 

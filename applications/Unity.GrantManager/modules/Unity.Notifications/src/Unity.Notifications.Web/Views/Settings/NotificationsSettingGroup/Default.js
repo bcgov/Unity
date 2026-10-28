@@ -53,14 +53,17 @@ $(function () {
     function init() {
         $('#email-attachments-section').hide();
         initializeEmailAddressDataTable();
-        initializeSenderAddressSelector();
-        loadActiveEmailAddresses();
-        initializeTooltips();
-        initializeTemplateNameCounter();
-        initializeTemplateDataTables();
-        initializeDivider();
+        // The templates tab is only rendered when the user has the Notifications.Email.Template permission
+        if (UiElements.templatesTable.length) {
+            initializeSenderAddressSelector();
+            loadActiveEmailAddresses();
+            initializeTooltips();
+            initializeTemplateNameCounter();
+            initializeTemplateDataTables();
+            initializeDivider();
+            initializeRecipientSelect();
+        }
         initializeTabPersistence();
-        initializeRecipientSelect();
         checkFormChanges();
     }
 

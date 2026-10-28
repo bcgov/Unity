@@ -58,7 +58,8 @@ public class NotificationsController(
                     Cc = emailLog.CC,
                     Bcc = emailLog.BCC,
                     SentDateTime = emailLog.SentDateTime,
-                    Body = emailLog.Body
+                    Body = emailLog.Body,
+                    CreatorId = emailLog.CreatorId
                 }
             });
         }

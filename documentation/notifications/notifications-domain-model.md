@@ -131,7 +131,7 @@ Declared in `Unity.Notifications.Application.Contracts/Permissions/Notifications
 |---|---|---|
 |`Email.Default`|`Notifications.Email`|Parent node — not itself an `[Authorize]` target|
 |`Email.Send`|`Notifications.Email.Send`|`EmailNotificationService.CancelEmail`, the whole `EmailLogAttachmentAppService`|
-|`Email.SendBulk`|`Notifications.Email.SendBulk`|Host bulk-email surfaces|
+|`Email.Application.SendBulk` / `Email.Applicant.SendBulk`|`Notifications.Email.Application.SendBulk` / `Notifications.Email.Applicant.SendBulk`|`BulkEmailNotificationAppService` (Application owner only for now) via `EmailComposerAccessChecker`|
 |`Email.DeleteDraft`|`Notifications.Email.DeleteDraft`|UI gate on the delete action|
 |`Email.CancelScheduled`|`Notifications.Email.CancelScheduled`|UI gate on the cancel action|
 |`Email.Schedule`|`Notifications.Email.Schedule`|UI gate on the send-later control|
