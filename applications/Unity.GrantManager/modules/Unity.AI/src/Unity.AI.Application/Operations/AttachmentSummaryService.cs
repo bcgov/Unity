@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -8,7 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Unity.AI.Extraction;
 using Unity.AI.Attachments;
-using Unity.AI.Localization;
 using Unity.AI.Requests;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
@@ -23,8 +21,7 @@ public class AttachmentSummaryService(
     IAIService aiService,
     IAIGenerationPrerequisiteValidator aiGenerationPrerequisiteValidator,
     IUnitOfWorkManager unitOfWorkManager,
-    ILogger<AttachmentSummaryService> logger,
-    IStringLocalizer<AIResource> localizer) : IAttachmentSummaryService, ITransientDependency
+    ILogger<AttachmentSummaryService> logger) : IAttachmentSummaryService, ITransientDependency
 {
     private const string SummaryGenerationFailedMessage = "AI summary generation failed.";
     private const string TextExtractionFailedSummary = "Attachment text could not be extracted for AI summary generation.";
@@ -61,7 +58,7 @@ public class AttachmentSummaryService(
         var ids = attachmentIds as IReadOnlyCollection<Guid> ?? attachmentIds.ToList();
         if (ids.Count == 0)
         {
-            throw new UserFriendlyException(localizer[AILocalizationKeys.SelectAttachmentForSummaries]);
+            throw new BusinessException(AIErrorCodes.SelectAttachmentForSummaries);
         }
 
         return await AIExecutionStrategy.RunAsync(
@@ -129,7 +126,7 @@ public class AttachmentSummaryService(
     private async Task<AttachmentSummarySource> LoadAttachmentAsync(Guid attachmentId)
     {
         var attachment = await attachmentSummaryDataProvider.GetAttachmentAsync(attachmentId);
-        return attachment ?? throw new UserFriendlyException(localizer[AILocalizationKeys.AttachmentNotFound]);
+        return attachment ?? throw new BusinessException(AIErrorCodes.AttachmentNotFound);
     }
 
     private async Task SaveSummaryAsync(Guid attachmentId, string summary)

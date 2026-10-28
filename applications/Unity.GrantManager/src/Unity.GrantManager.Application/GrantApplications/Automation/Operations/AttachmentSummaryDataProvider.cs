@@ -1,9 +1,8 @@
-using Microsoft.Extensions.Localization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Unity.AI.Localization;
+using Unity.AI;
 using Unity.AI.Operations;
 using Unity.GrantManager.Applications;
 using Volo.Abp.DependencyInjection;
@@ -14,8 +13,7 @@ namespace Unity.GrantManager.GrantApplications.Automation;
 
 public class AttachmentSummaryDataProvider(
     IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
-    IUnitOfWorkManager unitOfWorkManager,
-    IStringLocalizer<AIResource> localizer) : IAttachmentSummaryDataProvider, ITransientDependency
+    IUnitOfWorkManager unitOfWorkManager) : IAttachmentSummaryDataProvider, ITransientDependency
 {
     public async Task<AttachmentSummarySource?> GetAttachmentAsync(Guid attachmentId)
     {
@@ -36,7 +34,7 @@ public class AttachmentSummaryDataProvider(
     {
         using var uow = unitOfWorkManager.Begin(requiresNew: true);
         var attachment = await applicationChefsFileAttachmentRepository.FindAsync(attachmentId)
-            ?? throw new UserFriendlyException(localizer[AILocalizationKeys.AttachmentNotFound]);
+            ?? throw new BusinessException(AIErrorCodes.AttachmentNotFound);
         attachment.AISummary = summary;
         await applicationChefsFileAttachmentRepository.UpdateAsync(attachment);
         await uow.CompleteAsync();

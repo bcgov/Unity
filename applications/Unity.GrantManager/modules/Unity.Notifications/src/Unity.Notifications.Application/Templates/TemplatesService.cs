@@ -96,7 +96,7 @@ public class TemplateService(
         var inUse = await scheduledQuery.AnyAsync(x => x.EmailTemplateId == id);
         if (inUse)
         {
-            throw new Volo.Abp.BusinessException("Notifications:TemplateInUse");
+            throw new Volo.Abp.BusinessException(NotificationsErrorCodes.TemplateInUse);
         }
 
         await _templatesRepository.DeleteAsync(template);

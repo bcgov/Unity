@@ -86,7 +86,7 @@ public class EmailComposerAccessChecker(
         if (!string.Equals(await settingProvider.GetOrNullAsync(NotificationsSettings.Mailing.EnableEmailDelay),
             "true", StringComparison.OrdinalIgnoreCase))
         {
-            throw new BusinessException("Notifications:EmailSchedulingDisabled");
+            throw new BusinessException(NotificationsErrorCodes.EmailSchedulingDisabled);
         }
     }
 }

@@ -1,9 +1,8 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Localization;
+using Unity.AI;
 using Unity.AI.Generation;
-using Unity.AI.Localization;
 using Unity.AI.Operations;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.GrantManager.Applications;
@@ -22,7 +21,6 @@ public class AIGenerationPrerequisiteValidator(
     IApplicationChefsFileAttachmentRepository applicationChefsFileAttachmentRepository,
     IScoresheetRepository scoresheetRepository,
     IAsyncQueryableExecuter asyncExecuter,
-    IStringLocalizer<AIResource> localizer,
     IGenerationReviewRepository generationReviewRepository) : IAIGenerationPrerequisiteValidator, ITransientDependency
 {
     public Task EnsureAvailableAsync(string operationType, AIGenerationSubmissionDto request) => operationType switch
@@ -40,14 +38,14 @@ public class AIGenerationPrerequisiteValidator(
     {
         var attachmentQuery = await applicationChefsFileAttachmentRepository.GetQueryableAsync();
         var hasAttachments = await asyncExecuter.AnyAsync(attachmentQuery.Where(a => a.ApplicationId == applicationId));
-        if (!hasAttachments) throw new UserFriendlyException(localizer[AILocalizationKeys.NoAttachmentsAvailable]);
+        if (!hasAttachments) throw new BusinessException(AIErrorCodes.NoAttachmentsAvailable);
     }
 
     public async Task EnsureApplicationAnalysisAvailableAsync(Guid applicationId)
     {
         var submission = await applicationFormSubmissionRepository.GetByApplicationAsync(applicationId);
         if (submission == null || string.IsNullOrWhiteSpace(submission.Submission))
-            throw new UserFriendlyException(localizer[AILocalizationKeys.ApplicationAnalysisRequiresSubmission]);
+            throw new BusinessException(AIErrorCodes.ApplicationAnalysisRequiresSubmission);
     }
 
     public async Task EnsureApplicationScoringAvailableAsync(Guid applicationId)
@@ -55,30 +53,30 @@ public class AIGenerationPrerequisiteValidator(
         var application = await applicationRepository.GetAsync(applicationId);
         var applicationForm = await applicationFormRepository.GetAsync(application.ApplicationFormId);
         if (applicationForm.ScoresheetId == null)
-            throw new UserFriendlyException(localizer[AILocalizationKeys.ScoringRequiresScoresheet]);
+            throw new BusinessException(AIErrorCodes.ScoringRequiresScoresheet);
         var scoresheet = await scoresheetRepository.GetWithChildrenAsync(applicationForm.ScoresheetId.Value);
         if (scoresheet == null || !scoresheet.Sections.Any() || !scoresheet.Sections.SelectMany(s => s.Fields).Any())
-            throw new UserFriendlyException(localizer[AILocalizationKeys.ScoringRequiresScoresheetFields]);
+            throw new BusinessException(AIErrorCodes.ScoringRequiresScoresheetFields);
     }
 
     public async Task EnsureFormMappingAvailableAsync(Guid applicationFormVersionId)
     {
         var formVersion = await applicationFormVersionRepository.FindAsync(applicationFormVersionId);
-        if (formVersion == null) throw new UserFriendlyException(localizer[AILocalizationKeys.FormMappingRequiresFormVersion]);
+        if (formVersion == null) throw new BusinessException(AIErrorCodes.FormMappingRequiresFormVersion);
         await EnsureNoActiveReviewAsync(AIGenerationOperations.FormMapping, applicationFormVersionId);
     }
 
     public async Task EnsureFormWorksheetAvailableAsync(Guid applicationFormVersionId)
     {
         var formVersion = await applicationFormVersionRepository.FindAsync(applicationFormVersionId);
-        if (formVersion == null) throw new UserFriendlyException(localizer[AILocalizationKeys.FormWorksheetRequiresFormVersion]);
+        if (formVersion == null) throw new BusinessException(AIErrorCodes.FormWorksheetRequiresFormVersion);
         await EnsureNoActiveReviewAsync(AIGenerationOperations.FormWorksheet, applicationFormVersionId);
     }
 
     public async Task EnsureFormScoresheetAvailableAsync(Guid applicationFormVersionId)
     {
         var formVersion = await applicationFormVersionRepository.FindAsync(applicationFormVersionId);
-        if (formVersion == null) throw new UserFriendlyException(localizer[AILocalizationKeys.FormScoresheetRequiresFormVersion]);
+        if (formVersion == null) throw new BusinessException(AIErrorCodes.FormScoresheetRequiresFormVersion);
         await EnsureNoActiveReviewAsync(AIGenerationOperations.FormScoresheet, applicationFormVersionId);
     }
 
@@ -86,6 +84,6 @@ public class AIGenerationPrerequisiteValidator(
     {
         var review = await generationReviewRepository.FindLatestByOperationAndFormVersionAsync(operation, formVersionId);
         if (review?.Status == GenerationReviewStatus.Active)
-            throw new UserFriendlyException(localizer[AILocalizationKeys.FormGenerationReviewActive]);
+            throw new BusinessException(AIErrorCodes.FormGenerationReviewActive);
     }
 }

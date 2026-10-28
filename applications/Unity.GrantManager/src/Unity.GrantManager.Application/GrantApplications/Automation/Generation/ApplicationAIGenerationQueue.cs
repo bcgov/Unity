@@ -14,6 +14,7 @@ using Medallion.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Localization;
 using Volo.Abp;
+using Volo.Abp.AspNetCore.ExceptionHandling;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
@@ -34,6 +35,7 @@ public class ApplicationGenerationQueue(
     IAIRateLimiter aiRateLimiter,
     IAsyncQueryableExecuter asyncQueryableExecuter,
     ICurrentUser currentUser,
+    IExceptionToErrorInfoConverter errorInfoConverter,
     ILogger<ApplicationGenerationQueue> logger)
     : IApplicationGenerationQueue, ITransientDependency
 {
@@ -53,7 +55,7 @@ public class ApplicationGenerationQueue(
     {
         var hasEnabledStage = false;
         var enqueuedStage = false;
-        UserFriendlyException? lastStageException = null;
+        BusinessException? lastStageException = null;
 
         if (await featureChecker.IsEnabledAsync(AIFeatures.AttachmentSummaries))
         {
@@ -70,7 +72,7 @@ public class ApplicationGenerationQueue(
                     tenantId);
                 enqueuedStage = true;
             }
-            catch (UserFriendlyException ex)
+            catch (BusinessException ex)
             {
                 lastStageException = ex;
             }
@@ -91,7 +93,7 @@ public class ApplicationGenerationQueue(
                     tenantId);
                 enqueuedStage = true;
             }
-            catch (UserFriendlyException ex)
+            catch (BusinessException ex)
             {
                 lastStageException = ex;
             }
@@ -112,7 +114,7 @@ public class ApplicationGenerationQueue(
                     tenantId);
                 enqueuedStage = true;
             }
-            catch (UserFriendlyException ex)
+            catch (BusinessException ex)
             {
                 lastStageException = ex;
             }
@@ -220,7 +222,10 @@ public class ApplicationGenerationQueue(
     {
         try
         {
-            await AIGenerationRequestJobHelper.MarkFailedAsync(generationRequestRepository, request, exception.Message);
+            await AIGenerationRequestJobHelper.MarkFailedAsync(
+                generationRequestRepository,
+                request,
+                AIGenerationRequestJobHelper.GetFailureReason(errorInfoConverter, exception));
         }
         catch (Exception markException)
         {
