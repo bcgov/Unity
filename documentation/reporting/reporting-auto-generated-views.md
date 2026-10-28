@@ -149,7 +149,7 @@ All are `[Authorize(IdentityConsts.ITAdminPolicyName)]`.
 These are the reasons the path is being retired, not incidental bugs to fix in place.
 
 1. **Everything is `TEXT`.** Numbers, dates, currency, and booleans all arrive as strings, so every Metabase model on top of an auto view has to cast. The explicit path emits real `NUMERIC` / `DECIMAL(18,2)` / `TIMESTAMP` / `BOOLEAN` columns via the `Reporting.safe_to_*` helpers.
-2. **View names are not valid bare identifiers.** `Form-…`, `Worksheet-…`, `Scoresheet-…` all contain a hyphen and are mixed-case. `ReportColumnsMapRepository.IsValidPostgreSqlIdentifier` accepts only `^[a-zA-Z_][a-zA-Z0-9_]*$`, and `AssignRoleToAllViewsAsync` validates *every* view name it reads back from `pg_views` in the `Reporting` schema before granting. An auto view in the schema will therefore make the "assign role to all views" operation throw `ArgumentException` part-way through, leaving the grant loop incomplete. This is the sharpest interaction between the two paths and a concrete argument for removing the auto views early.
+2. **View names are not valid bare identifiers.** `Form-…`, `Worksheet-…`, `Scoresheet-…` all contain a hyphen and are mixed-case. They fail `ReportColumnsMapRepository.IsValidPostgreSqlIdentifier` (`^[a-zA-Z_][a-zA-Z0-9_]*$`), so they must be double-quoted in every query, grant, and Metabase native question that names them. The explicit path's per-view operations cannot address them; only the schema-wide grant in `AssignRoleToAllViewsAsync` covers them.
 3. **Unqualified `DROP VIEW`.** `EXECUTE format('DROP VIEW IF EXISTS %I', view_name)` has no schema qualifier, so it resolves against `search_path` while the subsequent `CREATE VIEW` is explicitly `"Reporting".%I`. If `Reporting` is not on the search path the drop silently misses and the create fails on a pre-existing view. The explicit procedures qualify both statements.
 4. **Column names are truncated, not de-duplicated.** `ReportingFieldsGeneratorService` truncates each key at 63 characters and does nothing about collisions; two long CHEFS keys sharing a 63-character prefix produce two columns with the same name and the `CREATE VIEW` fails. The explicit path runs a full sanitisation pipeline with numeric-suffix uniquing.
 5. **Failures are silent.** All three handlers catch `Exception` and log. Only the submissions handler notifies Teams. There is no `ViewStatus` equivalent and nothing surfaces in the UI, so a tenant can sit with a stale or missing view indefinitely.
@@ -259,8 +259,7 @@ Cross-check that list against the explicitly configured views, which are exactly
 
 5. **Regenerate migrations for both contexts** with the two-context command (`--context GrantTenantDbContext --output-dir Migrations/TenantMigrations`), and take a database backup before running Phase 2 in any environment — `DROP COLUMN` on `ReportData` is irreversible.
 
-**Verification for Phase 2:** after the migration, `SELECT viewname FROM pg_views WHERE schemaname = 'Reporting'` should return exactly the `ViewName` set from `Reporting."ReportColumnsMaps"`. Run "assign role to all views" for the tenant — with no hyphenated view names left it should now complete without throwing (see rough edge 2).
-
+**Verification for Phase 2:** after the migration, `SELECT viewname FROM pg_views WHERE schemaname = 'Reporting'` should return exactly the `ViewName` set from `Reporting."ReportColumnsMaps"`.
 ---
 
 ### Sequencing summary

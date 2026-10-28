@@ -35,7 +35,7 @@
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, transform 0.2s ease;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
@@ -96,7 +96,7 @@
   border: 1px solid #e9ecef;
   border-radius: 8px;
   padding: 20px;
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .feature-card:hover {
@@ -144,7 +144,7 @@
 }
 
 .stat-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #5a67d8 0%, #764ba2 100%);
   color: white;
   border-radius: 12px;
   padding: 25px;
@@ -234,7 +234,7 @@
   border: 1px solid #e9ecef;
   border-radius: 8px;
   padding: 20px;
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .feedback-item:hover {
@@ -312,7 +312,7 @@
 }
 
 .badge-feature_request {
-  background: #28a745;
+  background: #1e7e34;
   color: white;
 }
 
@@ -408,7 +408,7 @@
 
 .feedback-context summary {
   padding: 12px 15px;
-  background: #667eea;
+  background: #5a67d8;
   color: white;
   cursor: pointer;
   font-weight: 600;
@@ -416,7 +416,7 @@
 }
 
 .feedback-context summary:hover {
-  background: #5a6fd8;
+  background: #4c51bf;
 }
 
 .context-info {
@@ -622,5 +622,18 @@
 
   .feedback-actions {
     justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .feature-card {
+    transition: none;
+  }
+
+  .btn-secondary:hover,
+  .btn-danger:hover,
+  .feature-card:hover {
+    transform: none;
   }
 }

@@ -14,6 +14,7 @@ using Unity.AI.Generation;
 using Unity.AI.Operations;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
+using Volo.Abp.AspNetCore.ExceptionHandling;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DistributedLocking;
 using Volo.Abp.Domain.Repositories;
@@ -169,6 +170,7 @@ public class AIGenerationQueueTests(ITestOutputHelper outputHelper) : GrantManag
             rateLimiter,
             asyncQueryableExecuter,
             CreateCurrentUser(),
+            Substitute.For<IExceptionToErrorInfoConverter>(),
             Substitute.For<ILogger<ApplicationGenerationQueue>>());
     }
 

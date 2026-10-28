@@ -626,3 +626,9 @@
 .rt-status-legend .rt-status-dot:first-child {
     margin-left: 0;
 }
+
+@media (prefers-reduced-motion: reduce) {
+    .rt-widget-bounce {
+        animation: none;
+    }
+}

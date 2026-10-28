@@ -133,7 +133,7 @@ var isFinalMapping = review.Sequence > 1 && review.Sequence % 2 == 0;
 
 Odd sequences are **initial** mapping passes; even sequences from 2 onward are **final** passes, which additionally run `ClassifyFinalSuggestions` against the existing mapping to separate genuinely new suggestions from ones that leave the mapping unchanged (counted into `UnchangedSuggestionCount`).
 
-That alternation is the mapping half of the guided workflow whose steps are named in `AILocalizationKeys`:
+That alternation is the mapping half of the guided workflow whose step names are the `AI:Workflow*` keys in the AI `en.json`:
 
 ```text
 WorkflowGenerateInitialMapping → WorkflowReviewInitialMapping

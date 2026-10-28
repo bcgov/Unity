@@ -10,11 +10,11 @@
 @inject IStringLocalizerFactory StringLocalizerFactory
 @{
     Layout = null;
-    var sendEmailGranted    = await PermissionChecker.IsGrantedAsync("Notifications.Email.Send");
-    var emailFieldsetState  = sendEmailGranted || Model.NoDraftPreviewMode ? string.Empty : "disabled";
+    var caps = Model.Capabilities;
+    var canActOnEmail = caps.CanCreate || caps.CanEdit || caps.CanSend;
+    var emailFieldsetState = canActOnEmail || Model.NoDraftPreviewMode ? string.Empty : "disabled";
     var enableEmailDelay = Model.EnableEmailDelay;
-    var scheduleEmailGranted = await PermissionChecker.IsGrantedAsync("Notifications.Email.Schedule");
-    var enableScheduleSend = enableEmailDelay && scheduleEmailGranted && !Model.NoDraftPreviewMode;
+    var enableScheduleSend = enableEmailDelay && caps.CanSchedule && !Model.NoDraftPreviewMode;
 }
 
 <div id="emails-div-@(Model.EmailOwnerId)"
@@ -23,6 +23,9 @@
      data-counttag="@(Model.ApplicantId == Guid.Empty ? "application_emails_count" : "applicant_emails_count")"
      data-template-type="@Model.TemplateType"
      data-applicant-id="@Model.ApplicantId"
+     data-can-create="@caps.CanCreate.ToString().ToLowerInvariant()"
+     data-can-edit="@caps.CanEdit.ToString().ToLowerInvariant()"
+     data-can-send="@caps.CanSend.ToString().ToLowerInvariant()"
      data-no-draft-preview="@Model.NoDraftPreviewMode.ToString().ToLowerInvariant()">
 
     <div id="modal-background"></div>
@@ -33,12 +36,12 @@
         icon-type="Other" 
         icon="fa-solid fa-plus" 
         button-type="Light"
-        abp-if="@(sendEmailGranted && !Model.NoDraftPreviewMode)" />
+        abp-if="@(caps.CanCreate && !Model.NoDraftPreviewMode)" />
 
     <abp-alert
         id="email-alert-readonly"
         alert-type="Secondary" 
-        abp-if="@(!sendEmailGranted && !Model.NoDraftPreviewMode)">
+        abp-if="@(!canActOnEmail && !Model.NoDraftPreviewMode)">
         Please select from the email history below.
     </abp-alert>
 
@@ -90,7 +93,7 @@
             <input type="hidden" id="OriginalDraftEmailBody" />
 
             <!-- Top Buttons -->
-            <abp-row class="m-0 p-0" abp-if="@(sendEmailGranted || Model.NoDraftPreviewMode)">
+            <abp-row class="m-0 p-0" abp-if="@(canActOnEmail || Model.NoDraftPreviewMode)">
                 <abp-column size="_10" class="email-buttons-container">
                     <!-- From Field -->
                     <div class="from-field-container">

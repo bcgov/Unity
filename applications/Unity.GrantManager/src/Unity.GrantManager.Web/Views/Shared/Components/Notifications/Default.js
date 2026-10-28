@@ -375,21 +375,21 @@
                 confirmButton: 'btn btn-primary',
                 cancelButton: 'btn btn-secondary'
             }
-        }).then((result) => {
-            if (!result.isConfirmed) return;
-                return fetch('/api/form-notifications/' + encodeURIComponent(formId) + '/' + encodeURIComponent(id) + '/cancel', {
-                    method: 'PATCH',
-                    headers: { 'RequestVerificationToken': abp.security.antiForgery.getToken() }
-                })
-                .then(r => {
-                    if (!r.ok) throw new Error('Failed to cancel');
-                    abp.notify.success('Notification plan cancelled');
-                    reloadTable();
-                })
-                .catch(err => {
-                    console.error(err);
-                    abp.notify.error('Failed to cancel notification plan');
-                });
+        }).then(async (result) => {
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            const response = await fetch('/api/form-notifications/' + encodeURIComponent(formId) + '/' + encodeURIComponent(id) + '/cancel', {
+                method: 'PATCH',
+                headers: { 'RequestVerificationToken': abp.security.antiForgery.getToken() }
+            });
+            if (!response.ok) throw new Error('Failed to cancel');
+            abp.notify.success('Notification plan cancelled');
+            reloadTable();
+        }).catch(err => {
+            console.error(err);
+            abp.notify.error('Failed to cancel notification plan');
         });
     }
 
@@ -401,7 +401,7 @@
             .then(list => {
                 const row = list.find(n => String(n.id) === String(id));
                 if (!row) { abp.notify.error('Notification not found'); return; }
-                populateModalForEdit(row);
+                return populateModalForEdit(row);
             })
             .catch(err => {
                 console.error(err);
@@ -432,7 +432,7 @@
             };
 
             setVal('templateSelect', row.templateId);
-            updatePreview();
+            void updatePreview();
 
             setVal('triggerType', row.triggerType);
             // Use class-based visibility
@@ -487,7 +487,7 @@
                 opt.text = t.name + ' — ' + t.subject;
                 sel.appendChild(opt);
             });
-        updatePreview();
+        return updatePreview();
     }
 
     function populateStatuses(statuses) {
@@ -648,6 +648,9 @@
         return fetch('/api/form-notifications/templates?templateType=Application').then(r => r.json()).then(list => {
             const t = list.find(x => String(x.id) === String(val));
             renderTemplatePreview(preview, t);
+        }).catch(error => {
+            console.error('Failed to load notification template preview:', error);
+            abp.notify.error('Failed to load notification template preview');
         });
     }
 
@@ -911,7 +914,7 @@
 
         document.getElementById('templateSelect')?.addEventListener('change', (e) => {
             e.target.classList.remove('is-invalid');
-            updatePreview();
+            void updatePreview();
         });
         document.getElementById('templateConfigurationLink')?.addEventListener('click', () => {
             localStorage.setItem('ConfigurationManagement_ActiveMenu', 'notifications-menu-item');
