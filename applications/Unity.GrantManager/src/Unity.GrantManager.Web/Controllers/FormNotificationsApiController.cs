@@ -397,7 +397,7 @@ namespace Unity.GrantManager.Web.Controllers
             return NoContent();
         }
 
-        [Authorize(NotificationsPermissions.Email.Default)]
+        [Authorize(NotificationsPermissions.Email.Template.Default)]
         [HttpGet("can-delete-template/{templateId:guid}")]
         public async Task<ActionResult<object>> CanDeleteTemplate(Guid templateId)
         {
