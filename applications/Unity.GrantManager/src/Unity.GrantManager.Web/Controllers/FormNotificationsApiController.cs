@@ -42,7 +42,6 @@ namespace Unity.GrantManager.Web.Controllers
             var statuses = new List<object>
             {
                 new { id = PaymentRequestStatus.Cancelled.ToString(), internalStatus = "Canceled", originalSource = "Unity Payment Status" },
-                new { id = PaymentRequestStatus.Failed.ToString(), internalStatus = "Failed", originalSource = "CAS Payment Status" },
                 new { id = CasPaymentRequestStatus.FullyPaid, internalStatus = CasPaymentRequestStatus.FullyPaid, originalSource = "CAS Payment Status" },
                 new { id = PaymentRequestStatus.HistoricalPayment.ToString(), internalStatus = "Historical Payment", originalSource = "Unity Payment Status" },
                 new { id = PaymentRequestStatus.L1Declined.ToString(), internalStatus = "L1 Declined", originalSource = "Unity Payment Status" },
