@@ -10,10 +10,7 @@ using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
-using Microsoft.EntityFrameworkCore;
 using Unity.Notifications;
-using Unity.Notifications.Permissions;
-using Unity.Notifications.Templates;
 using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Notifications
