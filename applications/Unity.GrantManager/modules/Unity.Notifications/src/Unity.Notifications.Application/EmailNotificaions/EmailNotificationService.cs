@@ -72,7 +72,7 @@ public class EmailNotificationService(
         }
         if (email.Status != EmailStatus.Draft && (!email.SendOnDateTime.HasValue || email.SendOnDateTime <= Clock.Now))
         {
-            throw new BusinessException("Notifications:EmailNotScheduled");
+            throw new BusinessException(NotificationsErrorCodes.EmailNotScheduled);
         }
         await emailNotificationManager.DeleteEmailLogAsync(id);
     }
@@ -83,7 +83,7 @@ public class EmailNotificationService(
         var email = await emailAccessChecker.CheckEmailAsync(id, EmailOperation.CancelScheduled);
         if (!email.SendOnDateTime.HasValue || email.SendOnDateTime <= Clock.Now)
         {
-            throw new BusinessException("Notifications:EmailNotScheduled");
+            throw new BusinessException(NotificationsErrorCodes.EmailNotScheduled);
         }
         await emailNotificationManager.CancelEmailLogAsync(id);
     }

@@ -85,7 +85,7 @@ The active default `Sender` row is the From address fallback used by `EmailNotif
 - **`FSB-AP`** — recipients for PO-related payment notifications sent to Financial Services Branch.
 - **`Payments`** — recipients for payment failure/error notifications.
 
-`EmailGroupsAppService.DeleteAsync` throws `BusinessException("Notifications:EmailGroupInUse")` if the group's *name* appears in the `RecipientIdentifier` of any active `ScheduledNotification` with `RecipientCategory == "Internal"`. The link between a scheduled notification and a group is by name, not by id — renaming a group silently breaks that link.
+`EmailGroupsAppService.DeleteAsync` throws `BusinessException(NotificationsErrorCodes.EmailGroupInUse)` if the group's *name* appears in the `RecipientIdentifier` of any active `ScheduledNotification` with `RecipientCategory == "Internal"`. The link between a scheduled notification and a group is by name, not by id — renaming a group silently breaks that link.
 
 ## Realtime entities
 

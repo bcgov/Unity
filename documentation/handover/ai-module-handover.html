@@ -359,7 +359,7 @@
         <div class="gate-n">01</div>
         <div class="gate-what">Feature</div>
         <div class="gate-scope">Has this tenant bought the capability?</div>
-        <div class="gate-fail"><span><span class="code">AIFeatureGuard</span> throws a localized <b>UserFriendlyException</b>; permissions also disappear from the UI</span></div>
+        <div class="gate-fail"><span><span class="code">AIFeatureGuard</span> throws a <b>BusinessException</b> with a localized <span class="code">AIErrorCodes</span> code; permissions also disappear from the UI</span></div>
       </div>
       <div class="gate-row">
         <div class="gate-n">02</div>
@@ -589,7 +589,7 @@ selected ??= global (TenantId == null) newest ACTIVE prompt in this family</div>
     <div class="schematic">GenerateInitialMapping → ReviewInitialMapping
     → GenerateWorksheets → ReviewWorksheets → PublishAssignWorksheets
     → GenerateFinalMapping → ReviewFinalMapping → Completed</div>
-    <p class="note">Map what you can, generate worksheets for what you cannot, publish and assign them, then map again now that the new custom fields exist. The step names are localization keys in <span class="code">AILocalizationKeys</span>; the odd/even sequence rule above is what implements the two mapping passes.</p>
+    <p class="note">Map what you can, generate worksheets for what you cannot, publish and assign them, then map again now that the new custom fields exist. The step names are the <span class="code">AI:Workflow*</span> localization keys; the odd/even sequence rule above is what implements the two mapping passes.</p>
   </section>
 
   <!-- ============ 08 EDGES ============ -->

@@ -1,5 +1,4 @@
-﻿using Unity.Payments.Domain.Exceptions;
-using Volo.Abp;
+﻿using Volo.Abp;
 using System;
 using Volo.Abp.Domain.Entities.Auditing;
 using System.Linq;
@@ -69,7 +68,7 @@ namespace Unity.Payments.Domain.AccountCodings
 
             if (!string.IsNullOrWhiteSpace(description) && description.Length > 35)
             {
-                throw new BusinessException(ErrorConsts.InvalidAccountCodingField)
+                throw new BusinessException(PaymentsErrorCodes.InvalidAccountCodingField)
                     .WithData("field", nameof(Description))
                     .WithData("length", 35);
             }
@@ -93,7 +92,7 @@ namespace Unity.Payments.Domain.AccountCodings
 
             if (!string.IsNullOrWhiteSpace(description) && description.Length > 35)
             {
-                throw new BusinessException(ErrorConsts.InvalidAccountCodingField)
+                throw new BusinessException(PaymentsErrorCodes.InvalidAccountCodingField)
                     .WithData("field", nameof(Description))
                     .WithData("length", 35);
             }
@@ -118,7 +117,7 @@ namespace Unity.Payments.Domain.AccountCodings
 
             if (field.Length != length || !validAlphanumeric)
             {
-                throw new BusinessException(ErrorConsts.InvalidAccountCodingField)
+                throw new BusinessException(PaymentsErrorCodes.InvalidAccountCodingField)
                     .WithData("field", fieldName)
                     .WithData("length", length);
             }

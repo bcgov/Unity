@@ -96,7 +96,7 @@ Backend checks cover owner, tenant, action permissions, draft status, scheduling
 
 ## Localization
 
-`Unity.Notifications.Domain.Shared/Localization/Notifications/en.json` holds all 144 keys for both this module's pages and the host-side notification surfaces, under the `NotificationsResource` resource. `NotificationsDomainSharedModule` registers it with `AddVirtualJson("/Localization/Notifications")` and base type `AbpValidationResource`, and maps the `Notifications` exception-code namespace to it — which is what turns `BusinessException("Notifications:EmailGroupInUse")` into a localizable message. Only codes with the `Notifications:` prefix go through that mapping.
+`Unity.Notifications.Domain.Shared/Localization/Notifications/en.json` holds all 144 keys for both this module's pages and the host-side notification surfaces, under the `NotificationsResource` resource. `NotificationsDomainSharedModule` registers it with `AddVirtualJson("/Localization/Notifications")` and base type `AbpValidationResource`, and maps the `Notifications` exception-code namespace to it — which is what turns `BusinessException(NotificationsErrorCodes.EmailGroupInUse)` into a localizable message. Only codes with the `Notifications:` prefix go through that mapping, and every code the module and the host app throw is a constant in `NotificationsErrorCodes` (`Unity.Notifications.Domain.Shared/NotificationsErrorCodes.cs`).
 
 Two keys to know about when editing:
 

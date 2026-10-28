@@ -10,6 +10,10 @@ using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
+using Microsoft.EntityFrameworkCore;
+using Unity.Notifications;
+using Unity.Notifications.Permissions;
+using Unity.Notifications.Templates;
 using Volo.Abp.Uow;
 
 namespace Unity.GrantManager.Notifications
@@ -28,7 +32,7 @@ namespace Unity.GrantManager.Notifications
             using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
             if (await templatesRepository.LockActiveAsync(input.EmailTemplateId) == null)
             {
-                throw new BusinessException("Notifications:TemplateNotAvailable");
+                throw new BusinessException(NotificationsErrorCodes.TemplateNotAvailable);
             }
 
             var entity = new ScheduledNotification
@@ -170,7 +174,7 @@ namespace Unity.GrantManager.Notifications
             var e = await _repository.GetAsync(id);
             if (await templatesRepository.LockActiveAsync(input.EmailTemplateId) == null)
             {
-                throw new BusinessException("Notifications:TemplateNotAvailable");
+                throw new BusinessException(NotificationsErrorCodes.TemplateNotAvailable);
             }
 
             e.EmailTemplateId = input.EmailTemplateId;
