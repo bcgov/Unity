@@ -105,7 +105,7 @@ Every `*Definition` also inherits a common base, `CustomFieldDefinition`, carryi
 ## Settings and error codes
 
 - `FlexSettingDefinitionProvider` defines **no settings** — it's an empty override. `FlexSettings` only exposes `GroupName = "Flex"`. Placeholder/scaffold, not currently used.
-- `Domain/FlexErrorCodes.cs` holds the module's only structured error code, `DuplicateSectionName` (`Flex:Errors:DuplicateSectionName`), thrown from `Scoresheet.UpdateSectionName`.
+- `FlexErrorCodes` (`Unity.Flex.Shared/FlexErrorCodes.cs`) holds the module's only structured error code, `DuplicateSectionName` (`Flex:Errors:DuplicateSectionName`), thrown from `Scoresheet.UpdateSectionName`.
 - `PrivateSetterContractResolver`, `WorksheetContractResolver`, `ScoresheetContractResolver` (`Domain/Settings/`) are Newtonsoft `IContractResolver`s that let entities with private setters serialize/deserialize directly — needed because nearly every property on these entities is `private set`. These back JSON import/export of whole Worksheet/Scoresheet aggregates (see [flex-application-services.md](flex-application-services.md)).
 
 ## Cloning and versioning

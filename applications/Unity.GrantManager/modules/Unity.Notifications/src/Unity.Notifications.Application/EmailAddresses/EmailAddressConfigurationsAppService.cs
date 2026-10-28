@@ -22,8 +22,6 @@ public class EmailAddressConfigurationsAppService(
     ITemplatesRepository templatesRepository,
     IEmailLogsRepository emailLogsRepository) : ApplicationService, IEmailAddressConfigurationsAppService
 {
-    private const string DefaultEmailAddressRequiredErrorCode = "Notifications:DefaultEmailAddressRequired";
-
     private static readonly string[] AllowedTypes =
     ["Sender", "ReplyTo", "NoReply", "Inbound", "Support", "Other"];
 
@@ -58,17 +56,17 @@ public class EmailAddressConfigurationsAppService(
         EnsureDefaultIsActive(input.IsDefault, input.IsActive);
         if (entity.IsDefault && !input.IsDefault)
         {
-            throw new BusinessException(DefaultEmailAddressRequiredErrorCode);
+            throw new BusinessException(NotificationsErrorCodes.DefaultEmailAddressRequired);
         }
         if (entity.IsDefault && !input.IsActive)
         {
-            throw new BusinessException(DefaultEmailAddressRequiredErrorCode);
+            throw new BusinessException(NotificationsErrorCodes.DefaultEmailAddressRequired);
         }
 
         var existing = await repository.GetListAsync();
         if (!input.IsDefault && existing.Where(configuration => configuration.Id != entity.Id).All(configuration => !configuration.IsDefault))
         {
-            throw new BusinessException(DefaultEmailAddressRequiredErrorCode);
+            throw new BusinessException(NotificationsErrorCodes.DefaultEmailAddressRequired);
         }
         if (input.IsDefault)
         {
@@ -90,11 +88,11 @@ public class EmailAddressConfigurationsAppService(
         var entity = await repository.GetAsync(id);
         if (entity.IsDefault)
         {
-            throw new BusinessException(DefaultEmailAddressRequiredErrorCode);
+            throw new BusinessException(NotificationsErrorCodes.DefaultEmailAddressRequired);
         }
         if (await IsInUseAsync(entity))
         {
-            throw new BusinessException("Notifications:EmailAddressInUse");
+            throw new BusinessException(NotificationsErrorCodes.EmailAddressInUse);
         }
 
         await repository.DeleteAsync(id, true);
@@ -116,18 +114,18 @@ public class EmailAddressConfigurationsAppService(
     {
         if (!new EmailAddressAttribute().IsValid(input.EmailAddress))
         {
-            throw new BusinessException("Notifications:InvalidEmailAddress");
+            throw new BusinessException(NotificationsErrorCodes.InvalidEmailAddress);
         }
 
         if (!AllowedTypes.Contains(input.EmailType, StringComparer.OrdinalIgnoreCase))
         {
-            throw new BusinessException("Notifications:InvalidEmailType");
+            throw new BusinessException(NotificationsErrorCodes.InvalidEmailType);
         }
 
         if (string.Equals(input.EmailType, "Other", StringComparison.OrdinalIgnoreCase) &&
             string.IsNullOrWhiteSpace(input.Description))
         {
-            throw new BusinessException("Notifications:EmailDescriptionRequired");
+            throw new BusinessException(NotificationsErrorCodes.EmailDescriptionRequired);
         }
     }
 
@@ -135,7 +133,7 @@ public class EmailAddressConfigurationsAppService(
     {
         if (isDefault && !isActive)
         {
-            throw new BusinessException(DefaultEmailAddressRequiredErrorCode);
+            throw new BusinessException(NotificationsErrorCodes.DefaultEmailAddressRequired);
         }
     }
 
@@ -158,7 +156,7 @@ public class EmailAddressConfigurationsAppService(
 
         if (entities.Count > 0)
         {
-            throw new BusinessException("Notifications:DuplicateEmailAddressConfiguration");
+            throw new BusinessException(NotificationsErrorCodes.DuplicateEmailAddressConfiguration);
         }
     }
 

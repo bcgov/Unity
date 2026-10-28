@@ -17,14 +17,16 @@
           {{isLoading ? 'Loading...' : 'Refresh'}}
         </button>
         <div class="feedback-filters">
-          <select [(ngModel)]="selectedStatus" (change)="filterFeedback()" class="filter-select">
+          <label for="feedback-status-filter" class="sr-only">Filter by status</label>
+          <select id="feedback-status-filter" [(ngModel)]="selectedStatus" (change)="filterFeedback()" class="filter-select">
             <option value="">All Status</option>
             <option value="open">Open</option>
             <option value="in_progress">In Progress</option>
             <option value="resolved">Resolved</option>
             <option value="closed">Closed</option>
           </select>
-          <select [(ngModel)]="selectedType" (change)="filterFeedback()" class="filter-select">
+          <label for="feedback-type-filter" class="sr-only">Filter by type</label>
+          <select id="feedback-type-filter" [(ngModel)]="selectedType" (change)="filterFeedback()" class="filter-select">
             <option value="">All Types</option>
             <option value="bug_report">Bug Report</option>
             <option value="feature_request">Feature Request</option>
@@ -66,7 +68,9 @@
                   <span class="feedback-date">{{formatDate(feedback.created_at)}}</span>
                 </div>
                 <div class="feedback-actions">
+                  <label for="feedback-status-{{feedback.feedback_id}}" class="sr-only">Change status</label>
                   <select
+                    id="feedback-status-{{feedback.feedback_id}}"
                     [value]="feedback.status"
                     (change)="updateFeedbackStatus(feedback.feedback_id, $event)"
                     class="status-select">
