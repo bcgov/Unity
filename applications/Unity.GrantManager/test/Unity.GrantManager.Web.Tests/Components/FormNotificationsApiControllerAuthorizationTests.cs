@@ -24,7 +24,7 @@ public class FormNotificationsApiControllerAuthorizationTests
     [InlineData(nameof(FormNotificationsApiController.GetTemplateNotificationPlans))]
     public void Should_Authorize_Template_Editors_For_Template_Preflights(string actionName)
     {
-        PoliciesOf(actionName).ShouldBe([NotificationsPermissions.Email.Default]);
+        PoliciesOf(actionName).ShouldBe([NotificationsPermissions.Email.Template.Default]);
     }
 
     [Fact]

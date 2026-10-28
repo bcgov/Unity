@@ -426,7 +426,7 @@ namespace Unity.GrantManager.Web.Controllers
             return Ok(new { canDelete = true, errorMessage = (string?)null, notificationPlanNames = Array.Empty<string>() });
         }
 
-        [Authorize(NotificationsPermissions.Email.Default)]
+        [Authorize(NotificationsPermissions.Email.Template.Default)]
         [HttpGet("template-notification-plans/{templateId:guid}")]
         public async Task<ActionResult<object>> GetTemplateNotificationPlans(Guid templateId)
         {
