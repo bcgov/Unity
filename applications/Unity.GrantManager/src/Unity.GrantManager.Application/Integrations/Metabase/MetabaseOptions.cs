@@ -2,6 +2,13 @@ namespace Unity.GrantManager.Integrations.Metabase;
 
 public class MetabaseOptions
 {
+    /// <summary>
+    /// Whether this environment uses Metabase at all. Off (the default): tenant registration is
+    /// recorded as Skipped. On: a missing API key or METABASE_API_BASE endpoint is recorded as a
+    /// Failure, so misconfiguration is visible instead of silently skipped.
+    /// </summary>
+    public bool Enabled { get; set; }
+
     /// <summary>Admin API key - same key the Metabase admin UI/PowerShell runbook uses (x-api-key header).</summary>
     public string ApiKey { get; set; } = string.Empty;
 

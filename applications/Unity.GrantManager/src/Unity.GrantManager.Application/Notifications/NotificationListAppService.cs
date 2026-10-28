@@ -85,6 +85,7 @@ public class NotificationListAppService(
             {
                 Id = log.Id,
                 ApplicationId = log.ApplicationId,
+                ApplicantId = applicantId,
                 SubmissionReferenceNo = referenceNo ?? string.Empty,
                 ApplicantName = applicantName ?? string.Empty,
                 SentDateTime = log.SentDateTime,

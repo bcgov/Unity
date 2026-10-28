@@ -30,7 +30,7 @@ namespace Unity.GrantManager.Events
         IApplicationStatusRepository applicationStatusRepository,
         IApplicantAgentRepository applicantAgentRepository,
         ILocalEventBus localEventBus,
-        ITemplateService templateService,
+        ITemplatesRepository templatesRepository,
         IEmailGroupsAppService emailGroupsAppService,
         IEmailGroupUsersAppService emailGroupUsersAppService,
         IIdentityUserIntegrationService identityUserIntegrationService,
@@ -198,7 +198,7 @@ namespace Unity.GrantManager.Events
                 return;
             }
 
-            var template = await templateService.GetTemplateById(notification.EmailTemplateId);
+            var template = await templatesRepository.FindAsync(notification.EmailTemplateId);
             if (template == null)
             {
                 logger.LogWarning(

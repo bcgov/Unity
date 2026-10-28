@@ -82,7 +82,7 @@ $(function () {
         });
 
         _filterDataTable.on('deselect', function (e, dt, type, indexes) {
-            $('#import-user-id').val();
+            $('#import-user-id').val('');
             $('#import-user-btn').attr('disabled', true);
         });
 
@@ -114,6 +114,10 @@ $(function () {
         viewUrl: abp.appPath + 'Identity/Users/ImportModal',
         modalClass: "importUser"
     });
+    let _renameModal = new abp.ModalManager({
+        viewUrl: abp.appPath + 'Identity/Users/RenameModal',
+        modalClass: "renameUser"
+    });
 
     let dataTable = null;
 
@@ -129,6 +133,15 @@ $(function () {
                         action: function (data) {
                             _editModal.open({
                                 id: data.record.id,
+                            });
+                        },
+                    },
+                    {
+                        text: lg('UnityIdentity:RenameUser'),
+                        visible: abp.auth.isGranted('AbpIdentity.Users.Update'),
+                        action: function (data) {
+                            _renameModal.open({
+                                userId: data.record.id
                             });
                         },
                     },
@@ -225,7 +238,7 @@ $(function () {
     $.fn.dataTable.Buttons.defaults.dom.button.className = 'btn flex-none';
     let actionButtons = [
         {
-            text: '<i class="fl fl-multi-select align-middle"></i> <span>View User Matrix</span>',
+            text: '<i class="fa-solid fa-list-check align-middle"></i> <span>View User Matrix</span>',
             className: 'btn-light rounded-1',
             available: () => abp.auth.isGranted('AbpIdentity.Users'),
             action: function (e, dt, button, config) {
@@ -233,7 +246,7 @@ $(function () {
             }
         },
         {
-            text: '<i class="fl fl-add-to align-middle"></i> <span>' + lg('Common:Command:Create') + '</span>',
+            text: '<i class="fa-solid fa-circle-plus align-middle"></i> <span>' + lg('Common:Command:Create') + '</span>',
             titleAttr: lg('Common:Command:Create'),
             id: 'CreateIntakeButton',
             className: 'btn-light rounded-1',
@@ -279,6 +292,10 @@ $(function () {
     });
 
     _editModal.onResult(function () {
+        dataTable.ajax.reload();
+    });
+
+    _renameModal.onResult(function () {
         dataTable.ajax.reload();
     });
 });

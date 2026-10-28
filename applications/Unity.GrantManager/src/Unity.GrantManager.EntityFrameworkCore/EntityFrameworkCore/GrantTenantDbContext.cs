@@ -17,6 +17,7 @@ using Unity.GrantManager.Identity;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Notifications;
 using Unity.Notifications.EntityFrameworkCore;
+using Unity.Notifications.Templates;
 using Unity.Payments.EntityFrameworkCore;
 using Unity.Reporting.EntityFrameworkCore;
 using Volo.Abp.Data;
@@ -26,7 +27,7 @@ using Volo.Abp.EntityFrameworkCore.Modeling;
 namespace Unity.GrantManager.EntityFrameworkCore
 {
     [ConnectionStringName(GrantManagerConsts.DefaultTenantConnectionStringName)]
-    public class GrantTenantDbContext : AbpDbContext<GrantTenantDbContext>
+    public class GrantTenantDbContext(DbContextOptions<GrantTenantDbContext> options) : AbpDbContext<GrantTenantDbContext>(options)
     {
         #region Domain Entities
         public DbSet<Intake> Intakes { get; set; }
@@ -64,11 +65,8 @@ namespace Unity.GrantManager.EntityFrameworkCore
         public DbSet<ReportsHistory> ReportsHistories { get; set; }
         public DbSet<ScheduledNotification> ScheduledNotifications { get; set; }
         public DbSet<ScheduledNotificationTracking> ScheduledNotificationTrackings { get; set; }
-        #endregion
 
-        public GrantTenantDbContext(DbContextOptions<GrantTenantDbContext> options) : base(options)
-        {
-        }
+        #endregion
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -137,6 +135,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
 
                 b.ConfigureByConvention(); //auto configure for the base class props
                 b.Property(x => x.ApplicationFormName).IsRequired().HasMaxLength(255);
+                b.Property(x => x.IsHiddenFromList).IsRequired().HasDefaultValue(false);
                 // Mapped as a JSON-serialized scalar (rather than EF's native JSON complex-type
                 // support) because that feature is relational-only and breaks under the
                 // EFCore.InMemory provider used by Unity.GrantManager.Web.Tests.
@@ -489,6 +488,9 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.Property(x => x.DateField).HasMaxLength(128);
                 b.Property(x => x.TenantId).HasColumnName("TenantId");
                 b.HasIndex(x => x.TenantId);
+                b.HasIndex(x => x.EmailTemplateId);
+                // Foreign key constraint prevents concurrent template deletion races.
+                b.HasOne<EmailTemplate>().WithMany().HasForeignKey(x => x.EmailTemplateId).IsRequired().OnDelete(DeleteBehavior.Restrict);
                 b.TryConfigureExtraProperties();    
             });
 
@@ -503,7 +505,7 @@ namespace Unity.GrantManager.EntityFrameworkCore
                 b.HasIndex(x => x.ApplicationId);
                 b.HasIndex(x => x.ScheduledNotificationId);
                 b.HasIndex(x => x.CreationTime);
-                b.HasIndex(new[] { nameof(ScheduledNotificationTracking.ApplicationId), nameof(ScheduledNotificationTracking.ScheduledNotificationId), nameof(ScheduledNotificationTracking.DateField), nameof(ScheduledNotificationTracking.TriggerDate) }).IsUnique();
+                b.HasIndex([nameof(ScheduledNotificationTracking.ApplicationId), nameof(ScheduledNotificationTracking.ScheduledNotificationId), nameof(ScheduledNotificationTracking.DateField), nameof(ScheduledNotificationTracking.TriggerDate)]).IsUnique();
                 b.HasOne<Application>().WithMany().HasForeignKey(x => x.ApplicationId).IsRequired().OnDelete(DeleteBehavior.Cascade);
                 b.HasOne<ScheduledNotification>().WithMany().HasForeignKey(x => x.ScheduledNotificationId).IsRequired().OnDelete(DeleteBehavior.Cascade);
             });

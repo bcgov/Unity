@@ -21,21 +21,19 @@ public static class BackgroundJobContext
     /// <param name="principalAccessor">The current principal accessor for setting user identity</param>
     /// <param name="currentTenant">The current tenant accessor for setting tenant context</param>
     /// <param name="tenantId">The tenant ID to set context for</param>
-    /// <param name="userId">Optional user ID. If null, uses BackgroundJobConstants.BackgroundJobPersonId</param>
     /// <returns>IDisposable that restores previous context when disposed (LIFO order)</returns>
     public static IDisposable Set(
         IAuditingManager auditingManager,
         ICurrentPrincipalAccessor principalAccessor,
         ICurrentTenant currentTenant,
-        Guid? tenantId,
-        Guid? userId = null)
+        Guid? tenantId)
     {
-        var effectiveUserId = userId ?? BackgroundJobConstants.BackgroundJobPersonId;
+        var backgroundJobPersonId = BackgroundJobConstants.BackgroundJobPersonId;
 
         var claims = new[]
         {
-            new Claim(AbpClaimTypes.UserId, effectiveUserId.ToString()),
-            new Claim(ClaimTypes.NameIdentifier, effectiveUserId.ToString()), // Standard claim for user ID
+            new Claim(AbpClaimTypes.UserId, backgroundJobPersonId.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, backgroundJobPersonId.ToString()), // Standard claim for user ID
             new Claim(AbpClaimTypes.UserName, BackgroundJobConstants.BackgroundJobUserName),
             new Claim(AbpClaimTypes.Email, BackgroundJobConstants.BackgroundJobEmail),
             new Claim(AbpClaimTypes.TenantId, tenantId?.ToString() ?? Guid.Empty.ToString()),
@@ -52,20 +50,49 @@ public static class BackgroundJobContext
         var principalDisposable = principalAccessor.Change(principal);
         
         // NOW start auditing - it will see the correct tenant/user context
-        var auditingDisposable = auditingManager.BeginScope();
-        
-        // Ensure the current audit log has the user ID set for entity change tracking
-        if (auditingManager.Current != null)
-        {
-            auditingManager.Current.Log.UserId = effectiveUserId;
-            auditingManager.Current.Log.UserName = BackgroundJobConstants.BackgroundJobUserName;
-            auditingManager.Current.Log.TenantId = tenantId;
-        }
+        var auditingDisposable = BeginAuditScope(auditingManager, tenantId);
 
         // Dispose in LIFO order: last registered is disposed first.
         // audit scope closes first (while tenant/user context is still valid),
         // then principal, then tenant.
-        return new CompositeDisposable(auditingDisposable, principalDisposable, tenantDisposable);
+        return new CompositeDisposable(tenantDisposable, principalDisposable, auditingDisposable);
+    }
+
+    public static IDisposable SetExecutionContext(
+        ICurrentPrincipalAccessor principalAccessor,
+        ICurrentTenant currentTenant,
+        Guid? tenantId)
+    {
+        var backgroundJobPersonId = BackgroundJobConstants.BackgroundJobPersonId;
+        var claims = new[]
+        {
+            new Claim(AbpClaimTypes.UserId, backgroundJobPersonId.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, backgroundJobPersonId.ToString()),
+            new Claim(AbpClaimTypes.UserName, BackgroundJobConstants.BackgroundJobUserName),
+            new Claim(AbpClaimTypes.Email, BackgroundJobConstants.BackgroundJobEmail),
+            new Claim(AbpClaimTypes.TenantId, tenantId?.ToString() ?? Guid.Empty.ToString()),
+            new Claim(AbpClaimTypes.Name, BackgroundJobConstants.BackgroundJobName)
+        };
+
+        var principal = new ClaimsPrincipal(new ClaimsIdentity(
+            claims, "BackgroundJob", AbpClaimTypes.UserName, AbpClaimTypes.Role));
+        var tenantDisposable = currentTenant.Change(tenantId);
+        var principalDisposable = principalAccessor.Change(principal);
+        return new CompositeDisposable(tenantDisposable, principalDisposable);
+    }
+
+    public static IDisposable BeginAuditScope(IAuditingManager auditingManager, Guid? tenantId)
+    {
+        var auditingDisposable = auditingManager.BeginScope();
+
+        if (auditingManager.Current != null)
+        {
+            auditingManager.Current.Log.UserId = BackgroundJobConstants.BackgroundJobPersonId;
+            auditingManager.Current.Log.UserName = BackgroundJobConstants.BackgroundJobUserName;
+            auditingManager.Current.Log.TenantId = tenantId;
+        }
+
+        return auditingDisposable;
     }
 
     /// <summary>

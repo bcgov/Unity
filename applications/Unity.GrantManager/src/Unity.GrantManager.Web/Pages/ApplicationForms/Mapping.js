@@ -300,7 +300,7 @@ $(function () {
                 continueEmptyReview(reviewConfigs.mapping);
                 return;
             }
-            addSelectedMappingSuggestion();
+            void addSelectedMappingSuggestion().catch(error => console.error('Failed to add mapping suggestion:', error));
         });
         UIElements.btnReviewLaterMapping.on('click', function () {
             UIElements.mappingReviewModal.modal('hide');

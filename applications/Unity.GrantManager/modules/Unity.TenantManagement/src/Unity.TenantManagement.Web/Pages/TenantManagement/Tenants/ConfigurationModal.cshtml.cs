@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Unity.GrantManager.Integrations;
+using Unity.GrantManager.Integrations.Metabase;
 using Unity.Modules.Shared.Permissions;
 using Unity.Reporting.Configuration;
 using Volo.Abp.Domain.Entities;
@@ -23,7 +24,8 @@ public class ConfigurationModalModel(
     ITenantAppService tenantAppService,
     ICasClientCodeLookupService lookupService,
     IFeatureAppService featureAppService,
-    ITenantViewRoleAppService tenantViewRoleAppService) : TenantManagementPageModel
+    ITenantViewRoleAppService tenantViewRoleAppService,
+    IMetabaseTenantAppService metabaseTenantAppService) : TenantManagementPageModel
 {
     [BindProperty]
     public TenantInfoModel Tenant { get; set; } = null!;
@@ -43,11 +45,18 @@ public class ConfigurationModalModel(
 
     public bool CanManageConnectionStrings { get; set; }
 
+    public bool HasTenantConnectionString { get; set; }
+
+    public bool HasReadOnlyConnectionString { get; set; }
+
     public bool CanManageFeatures { get; set; }
 
     public bool CanManageManagers { get; set; }
 
     public bool CanManageReporting { get; set; }
+
+    // TenantAppService.UpdateAsync refuses a name change from anyone else.
+    public bool CanRename { get; set; }
 
     public TenantViewRoleDto? ViewRole { get; set; }
 
@@ -67,15 +76,18 @@ public class ConfigurationModalModel(
 
         CanManageManagers = CanManageFeatures;
 
-        // Stricter than CanManageFeatures - this mirrors the reporting database-role admin page's
-        // original ITAdministrator-only gating (IdentityConsts.ITAdminPermissionName on
-        // TenantViewRoleAppService itself), not the broader ITAdminOrITOperations used above.
-        CanManageReporting = (await AuthorizationService
-            .AuthorizeAsync(User, IdentityConsts.ITAdminPolicyName)).Succeeded;
+        CanManageReporting = CanManageFeatures;
+
+        CanRename = CanManageFeatures;
 
         if (CanManageConnectionStrings)
         {
-            ConnectionStrings = await tenantAppService.GetConnectionStringsAsync(id);
+            // Only whether each value is set goes into the page. The decrypted values are fetched on
+            // demand through OnPostRevealConnectionStringsAsync, so they are not sent on every open
+            // and each reveal is a POST that ABP audit-logs.
+            var connectionStrings = await tenantAppService.GetConnectionStringsAsync(id);
+            HasTenantConnectionString = !string.IsNullOrWhiteSpace(connectionStrings.TenantConnectionString);
+            HasReadOnlyConnectionString = !string.IsNullOrWhiteSpace(connectionStrings.ReadOnlyConnectionString);
         }
 
         if (CanManageReporting)
@@ -90,8 +102,17 @@ public class ConfigurationModalModel(
     {
         ValidateModel();
 
+        var previousName = (await tenantAppService.GetAsync(Tenant.Id)).Name;
+
         var input = ObjectMapper.Map<TenantInfoModel, TenantUpdateDto>(Tenant);
         await tenantAppService.UpdateAsync(Tenant.Id, input);
+
+        // Metabase names its database, group and collection after the tenant, so a rename queues
+        // Resync to rename them too. UpdateAsync only lets IT Admin/Ops rename.
+        if (!string.Equals(previousName, Tenant.Name, StringComparison.Ordinal))
+        {
+            await metabaseTenantAppService.ResyncIfSetUpAsync(Tenant.Id);
+        }
 
         if (!string.IsNullOrWhiteSpace(SelectedManagerUserIdentifier))
         {
@@ -126,6 +147,12 @@ public class ConfigurationModalModel(
         }
 
         return NoContent();
+    }
+
+    // Access check is GetConnectionStringsAsync's ManageConnectionStrings (IT Admin); the page allows IT Ops
+    public virtual async Task<IActionResult> OnPostRevealConnectionStringsAsync(Guid id)
+    {
+        return new JsonResult(await tenantAppService.GetConnectionStringsAsync(id));
     }
 
     public class TenantInfoModel : ExtensibleObject, IHasConcurrencyStamp

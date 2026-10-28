@@ -13,6 +13,7 @@ using Unity.Payments.Codes;
 using Unity.Payments.Events;
 using Unity.Payments.RabbitMQ.QueueMessages;
 using Unity.Notifications.Integrations.RabbitMQ;
+using Volo.Abp.Data;
 using Volo.Abp.EventBus.Local;
 
 namespace Unity.Payments.PaymentRequests
@@ -129,55 +130,151 @@ namespace Unity.Payments.PaymentRequests
                 return null;
             }
 
-            using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
+            const int maxConcurrencyAttempts = 3;
+            CasPaymentValues? originalCasValues = null;
 
-            var paymentRequest = await paymentRequestsRepository.GetAsync(PaymentRequestId);
-            var previousPaymentStatus = paymentRequest.PaymentStatus;
-            var previousStatus = paymentRequest.Status;
-
-            UpdatePaymentRequestFromCasResult(paymentRequest, result);
-
-            await paymentRequestsRepository.UpdateAsync(paymentRequest, autoSave: false);
-
-            // CompleteAsync commits the transaction and calls SaveChangesAsync,
-            // which triggers AbpDbContext to collect entity changes into the active audit log.
-            // The audit log is then persisted by QueueConsumerHandler after ConsumeAsync returns.
-            await uow.CompleteAsync();
-
-            if (previousPaymentStatus != paymentRequest.PaymentStatus || previousStatus != paymentRequest.Status)
+            for (var attempt = 1; ; attempt++)
             {
-                await localEventBus.PublishAsync(new PaymentStatusChangedEvent
+                try
                 {
-                    PaymentRequestId = paymentRequest.Id,
-                    ApplicationId = paymentRequest.CorrelationId,
-                    Status = paymentRequest.Status,
-                    CasPaymentStatus = paymentRequest.PaymentStatus,
-                    TenantId = TenantId
-                });
-            }
+                    using var uow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
 
-            return paymentRequest;
+                    var paymentRequest = await paymentRequestsRepository.GetAsync(PaymentRequestId);
+                    var previousPaymentStatus = paymentRequest.PaymentStatus;
+                    var previousStatus = paymentRequest.Status;
+                    originalCasValues ??= GetCurrentCasValues(paymentRequest);
+
+                    var casValues = GetCasValues(paymentRequest, result);
+                    if (attempt > 1)
+                    {
+                        var currentCasValues = GetCurrentCasValues(paymentRequest);
+                        if (currentCasValues == casValues)
+                        {
+                            return paymentRequest;
+                        }
+
+                        if (currentCasValues != originalCasValues)
+                        {
+                            Logger.LogWarning(
+                                "Rejecting stale CAS result for payment request {PaymentRequestId}; the payment has a different CAS state.",
+                                PaymentRequestId);
+                            return paymentRequest;
+                        }
+                    }
+
+                    ApplyCasValues(paymentRequest, casValues);
+
+                    await paymentRequestsRepository.UpdateAsync(paymentRequest, autoSave: false);
+
+                    // CompleteAsync commits the transaction and calls SaveChangesAsync,
+                    // which triggers AbpDbContext to collect entity changes into the active audit log.
+                    // The audit log is then persisted by QueueConsumerHandler after ConsumeAsync returns.
+                    await uow.CompleteAsync();
+
+                    if (previousPaymentStatus != paymentRequest.PaymentStatus || previousStatus != paymentRequest.Status)
+                    {
+                        await localEventBus.PublishAsync(new PaymentStatusChangedEvent
+                        {
+                            PaymentRequestId = paymentRequest.Id,
+                            ApplicationId = paymentRequest.CorrelationId,
+                            Status = paymentRequest.Status,
+                            CasPaymentStatus = paymentRequest.PaymentStatus,
+                            TenantId = TenantId
+                        });
+                    }
+
+                    return paymentRequest;
+                }
+                catch (AbpDbConcurrencyException ex) when (attempt < maxConcurrencyAttempts)
+                {
+                    using var inspectionUow = unitOfWorkManager.Begin(requiresNew: true, isTransactional: false);
+                    var currentPaymentRequest = await paymentRequestsRepository.GetAsync(PaymentRequestId);
+                    var currentCasValues = GetCurrentCasValues(currentPaymentRequest);
+                    var desiredCasValues = GetCasValues(currentPaymentRequest, result);
+
+                    if (currentCasValues == desiredCasValues)
+                    {
+                        return currentPaymentRequest;
+                    }
+
+                    if (currentCasValues != originalCasValues)
+                    {
+                        Logger.LogWarning(
+                            ex,
+                            "Rejecting stale CAS result for payment request {PaymentRequestId}; the payment has a different CAS state.",
+                            PaymentRequestId);
+                        return currentPaymentRequest;
+                    }
+
+                    Logger.LogWarning(
+                        ex,
+                        "Concurrency conflict updating payment request {PaymentRequestId} from CAS; retrying attempt {Attempt} of {MaxAttempts}.",
+                        PaymentRequestId,
+                        attempt + 1,
+                        maxConcurrencyAttempts);
+                }
+                catch (AbpDbConcurrencyException)
+                {
+                    throw;
+                }
+            }
         }
 
-        private static void UpdatePaymentRequestFromCasResult(PaymentRequest paymentRequest, CasPaymentSearchResult result)
+        private static CasPaymentValues GetCasValues(PaymentRequest paymentRequest, CasPaymentSearchResult result)
         {
-            // Handle duplicate NotFound status by appending "2"
-            if (paymentRequest.InvoiceStatus == CasPaymentRequestStatus.NotFound && 
-                result.InvoiceStatus == CasPaymentRequestStatus.NotFound)
+            var invoiceStatus = result.InvoiceStatus ?? string.Empty;
+            if (paymentRequest.InvoiceStatus == CasPaymentRequestStatus.NotFound + "2" &&
+                invoiceStatus == CasPaymentRequestStatus.NotFound)
             {
-                result.InvoiceStatus = CasPaymentRequestStatus.NotFound + "2";
+                invoiceStatus = paymentRequest.InvoiceStatus;
             }
 
-            paymentRequest.SetInvoiceStatus(result.InvoiceStatus ?? "");
-            paymentRequest.SetPaymentStatus(result.PaymentStatus ?? "");
-            paymentRequest.SetPaymentDate(result.PaymentDate ?? "");
-            paymentRequest.SetPaymentNumber(result.PaymentNumber ?? "");
-            
-            if (result.InvoiceStatus != null)
+            if (paymentRequest.InvoiceStatus == CasPaymentRequestStatus.NotFound &&
+                invoiceStatus == CasPaymentRequestStatus.NotFound)
             {
-                paymentRequest.SetCasHttpStatusCode((int)System.Net.HttpStatusCode.OK);
-                paymentRequest.SetCasResponse("SUCCEEDED");
+                invoiceStatus = CasPaymentRequestStatus.NotFound + "2";
+            }
+
+            return new CasPaymentValues(
+                invoiceStatus,
+                result.PaymentStatus ?? string.Empty,
+                result.PaymentNumber ?? string.Empty,
+                result.PaymentDate ?? string.Empty,
+                result.InvoiceStatus != null ? (int)System.Net.HttpStatusCode.OK : null,
+                result.InvoiceStatus != null ? "SUCCEEDED" : null);
+        }
+
+        private static CasPaymentValues GetCurrentCasValues(PaymentRequest paymentRequest)
+        {
+            return new CasPaymentValues(
+                paymentRequest.InvoiceStatus ?? string.Empty,
+                paymentRequest.PaymentStatus ?? string.Empty,
+                paymentRequest.PaymentNumber ?? string.Empty,
+                paymentRequest.PaymentDate ?? string.Empty,
+                paymentRequest.CasHttpStatusCode,
+                paymentRequest.CasResponse);
+        }
+
+        private static void ApplyCasValues(PaymentRequest paymentRequest, CasPaymentValues casValues)
+        {
+            paymentRequest.SetInvoiceStatus(casValues.InvoiceStatus);
+            paymentRequest.SetPaymentStatus(casValues.PaymentStatus);
+            paymentRequest.SetPaymentDate(casValues.PaymentDate);
+            paymentRequest.SetPaymentNumber(casValues.PaymentNumber);
+
+            if (casValues.CasHttpStatusCode.HasValue)
+            {
+                paymentRequest.SetCasHttpStatusCode(casValues.CasHttpStatusCode.Value);
+                paymentRequest.SetCasResponse(casValues.CasResponse ?? string.Empty);
             }
         }
+
+        private readonly record struct CasPaymentValues(
+            string InvoiceStatus,
+            string PaymentStatus,
+            string PaymentNumber,
+            string PaymentDate,
+            int? CasHttpStatusCode,
+            string? CasResponse);
     }
 }

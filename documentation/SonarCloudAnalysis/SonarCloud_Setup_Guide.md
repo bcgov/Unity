@@ -71,7 +71,9 @@ If using CI-based analysis:
 
 ## Step 3 — Project Properties Configuration
 
-Create `applications/Unity.GrantManager/sonar-project.properties`:
+Create `applications/sonar-project.properties`:
+
+> The live file now scans both `Unity.GrantManager/` and `Unity.AI/` from `projectBaseDir: applications`, so its paths carry those prefixes. The snippet below shows the original Grant Manager-only setup; treat the file in the repo as the source of truth.
 
 ```properties
 # SonarCloud configuration for Unity Grant Manager
@@ -184,11 +186,11 @@ jobs:
             echo "BUILD_VERSION=$VERSION" >> $GITHUB_ENV
             echo "Using project version: $VERSION"
             # Replace ${BUILD_VERSION} with actual value
-            sed -i "s/\${BUILD_VERSION}/$VERSION/g" applications/Unity.GrantManager/sonar-project.properties
+            sed -i "s/\${BUILD_VERSION}/$VERSION/g" applications/sonar-project.properties
           else
             echo "UGM_BUILD_VERSION variable not set - removing sonar.projectVersion property"
             # Remove the projectVersion line entirely if no version is available
-            sed -i "/sonar.projectVersion=/d" applications/Unity.GrantManager/sonar-project.properties
+            sed -i "/sonar.projectVersion=/d" applications/sonar-project.properties
           fi
 
       - name: Restore dependencies
@@ -203,12 +205,12 @@ jobs:
         run: |
           echo "BUILD_VERSION environment variable: $BUILD_VERSION"
           echo "Updated sonar-project.properties:"
-          cat applications/Unity.GrantManager/sonar-project.properties | grep "sonar.projectVersion" || echo "No projectVersion set"
+          cat applications/sonar-project.properties | grep "sonar.projectVersion" || echo "No projectVersion set"
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v7
         with:
-          projectBaseDir: applications/Unity.GrantManager
+          projectBaseDir: applications
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -248,7 +250,7 @@ jobs:
 - Ensure GitHub App is properly installed
 
 **Configuration File Not Found:**
-- Verify `sonar-project.properties` location: `applications/Unity.GrantManager/`
+- Verify `sonar-project.properties` location: `applications/`
 - Check `projectBaseDir` setting in workflow matches file location
 
 **Long-Lived Branch Issues:**

@@ -64,7 +64,7 @@ contactNumber · invoiceNumber · payGroup · amount · status · requestedOn ·
 l1ApprovalDate · l2ApprovalDate · l3ApprovalDate · CASResponse · accountCodingDisplay
 ```
 
-Also available but hidden by default: supplier name, submission confirmation code, description, invoice status, payment status, L1/L2/L3 approver names, payment requester name, note, tags, `fsbApNotified`, category, and the three cancellation columns (Cancelled, Cancelled By, Cancelled On).
+Also available but hidden by default: supplier name, submission confirmation code, description, invoice status, payment status, L1/L2/L3 approver names, payment requester name, note, tags, `fsbApNotified`, category, and the two cancellation columns (Cancelled By, Cancelled On). Cancelled requests display "Cancelled" in the Status column.
 
 `ErrorSummary` (set by `ApplyErrorSummary` whenever `CasResponse` is present and not `"SUCCEEDED"`) drives the clickable CAS Response cell, which opens the `CasPaymentRequestResponse` modal.
 
@@ -105,7 +105,7 @@ The page also shows the next batch name (`GetNextBatchInfoAsync`) and, for users
 `UpdatePaymentRequestStatus` reads the ids from the cache and builds a `PaymentsApprovalModel` per payment:
 
 - resolves the applicable threshold per row (`min(form threshold, user threshold)`),
-- adds or removes the Level 3 `ExpenseApproval` row when the amount crosses that threshold,
+- computes whether Level 3 approval is required without changing the payment (the submitted status-change command updates the approval row),
 - computes the destination status for display (`GetNextStatus` — including the `FSB` branch when the form prevents payment),
 - runs data-annotation validation into `ModelState`,
 - drops rows the current user lacks the level permission for.

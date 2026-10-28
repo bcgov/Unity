@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using Quartz;
-using Volo.Abp.BackgroundWorkers.Quartz;
 using Volo.Abp.SettingManagement;
 using Unity.Modules.Shared.Utils;
 using Unity.Payments.Settings;
@@ -9,7 +8,7 @@ using System;
 namespace Unity.Payments.PaymentRequests;
 
 [DisallowConcurrentExecution]
-public class ReconciliationProducer : QuartzBackgroundWorkerBase
+public class ReconciliationProducer : UnityQuartzBackgroundWorkerBase
 {
     private readonly CasPaymentRequestCoordinator _casPaymentRequestCoordinator;
     
@@ -42,7 +41,7 @@ public class ReconciliationProducer : QuartzBackgroundWorkerBase
         }
     }
 
-    public override async Task Execute(IJobExecutionContext context)
+    protected override async Task ExecuteInBackgroundAsync(IJobExecutionContext context)
     {
         await _casPaymentRequestCoordinator.AddPaymentRequestsToReconciliationQueue();
         await Task.CompletedTask;

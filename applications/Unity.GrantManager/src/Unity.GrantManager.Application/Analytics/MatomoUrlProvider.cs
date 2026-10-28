@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Unity.GrantManager.Integrations;
+using Volo.Abp;
 
 namespace Unity.GrantManager.Analytics;
 
@@ -17,6 +18,14 @@ public class MatomoUrlProvider : IAnalyticsUrlProvider
 
     public async Task<string> GetMatomoUrlAsync()
     {
-        return await _endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.ANALYTICS_MATOMO_BASE) ?? string.Empty;
+        try
+        {
+            return await _endpointManagementAppService.GetUgmUrlByKeyNameAsync(DynamicUrlKeyNames.ANALYTICS_MATOMO_BASE);
+        }
+        catch (UserFriendlyException)
+        {
+            // ANALYTICS_MATOMO_BASE is seeded blank; an unconfigured URL means analytics is off
+            return string.Empty;
+        }
     }
 }

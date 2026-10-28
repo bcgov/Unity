@@ -61,8 +61,8 @@
         buttons: [
             {
                 text: isExpanded
-                    ? '<i class="fl fl-back-to-window align-middle"></i> <span>View Simple</span>'
-                    : '<i class="fl fl-fullscreen align-middle"></i> <span>View Expanded</span>',
+                    ? '<i class="fa-solid fa-down-left-and-up-right-to-center align-middle"></i> <span>View Simple</span>'
+                    : '<i class="fa-solid fa-up-right-and-down-left-from-center align-middle"></i> <span>View Expanded</span>',
                 className: 'btn-light rounded-1',
                 action: function (e, dt, button, config) {
                     globalThis.location = isExpanded

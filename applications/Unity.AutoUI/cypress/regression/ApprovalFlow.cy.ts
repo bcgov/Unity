@@ -1,4 +1,5 @@
 /// <reference types="cypress" />
+// @ts-nocheck
 
 /**
  * Approval Flow Regression Test - Full Approval Workflow
@@ -15,17 +16,29 @@
  * - Post-approval status and date validation on the Payments table
  */
 
-import { ApplicationsListPage } from "../pages/ApplicationsListPage";
-import { ApplicationDetailsPage } from "../pages/ApplicationDetailsPage";
-import { ReviewAssessmentPage } from "../pages/ReviewAssessmentPage";
-import { ApplicationDetailsRightTabPage } from "../pages/ApplicationDetailsRightTabPage";
-import { NavigationPage } from "../pages/NavigationPage";
-import { loginIfNeeded } from "../support/auth";
+declare const cy: any;
+declare const Cypress: any;
+declare const describe: {
+  (name: string, callback: () => void): void;
+  skip(name: string, callback: () => void): void;
+};
+declare function it(name: string, callback: (...args: any[]) => void): void;
+declare function before(callback: (...args: any[]) => void): void;
+declare function beforeEach(callback: (...args: any[]) => void): void;
+declare function afterEach(callback: (...args: any[]) => void): void;
+declare function require(moduleName: string): any;
+
+const { ApplicationsListPage } = require("../pages/ApplicationsListPage");
+const { ApplicationDetailsPage } = require("../pages/ApplicationDetailsPage");
+const { ReviewAssessmentPage } = require("../pages/ReviewAssessmentPage");
+const { ApplicationDetailsRightTabPage } = require("../pages/ApplicationDetailsRightTabPage");
+const { NavigationPage } = require("../pages/NavigationPage");
+const { loginIfNeeded } = require("../support/auth");
 
 const isProd =
   (
-    Cypress.env("CHEFS_ENV") ||
-    Cypress.env("environment") ||
+    Cypress.expose("CHEFS_ENV") ||
+    Cypress.expose("environment") ||
     ""
   ).toLowerCase() === "prod";
 
@@ -36,7 +49,7 @@ const TEST_CONFIG = {
   grantProgram: "Default Grants Program",
   approvedAmount: "5000",
   assignOwner: "Unity User1",
-  supplierNumber: Cypress.env("environment") === "TEST" ? "2002712" : "2009366",
+  supplierNumber: Cypress.expose("environment") === "TEST" ? "2002712" : "2009366",
   paymentGroup: "Cheque" as const,
   testComment: "Test comment from automated regression test",
   // Options used when fetching dynamically (ignored when submissionId is set or seeded file exists)
@@ -77,6 +90,7 @@ const APPLICATIONS_PATH = "GrantApplications";
 
   // Resolved after "Fetch submission ID from API" — shared across all subsequent tests
   let submissionId: string;
+  let failedStep = false;
 
   // ============ Shared Helpers ============
 
@@ -95,8 +109,8 @@ const APPLICATIONS_PATH = "GrantApplications";
 
   function navigateToApplicationsList(): void {
     cy.location("pathname", { timeout: 20000 }).then((pathname) => {
-      if (!pathname.includes(`/${APPLICATIONS_PATH}`)) {
-        cy.visit(`${Cypress.env("webapp.url")}${APPLICATIONS_PATH}`);
+      if (pathname !== `/${APPLICATIONS_PATH}`) {
+        cy.visit(`${Cypress.expose("webapp.url")}${APPLICATIONS_PATH}`);
       }
     });
     listPage.waitForNoBlockingOverlay();
@@ -109,7 +123,7 @@ const APPLICATIONS_PATH = "GrantApplications";
   function waitForSubmissionToAppearInList(
     attempt = 1,
     maxAttempts = 8,
-  ): Cypress.Chainable<void> {
+  ): void {
     navigateToApplicationsList();
     dismissBlockingModalIfPresent();
 
@@ -118,7 +132,7 @@ const APPLICATIONS_PATH = "GrantApplications";
       .waitForTableRefresh()
       .searchForSubmission(submissionId);
 
-    return cy.get("body").then(($body) => {
+    cy.get("body").then(($body) => {
       const hasRow = $body.find(`tr:contains("${submissionId}")`).length > 0;
 
       if (hasRow) {
@@ -139,7 +153,7 @@ const APPLICATIONS_PATH = "GrantApplications";
       );
       cy.wait(5000);
       cy.reload();
-      return waitForSubmissionToAppearInList(attempt + 1, maxAttempts);
+      waitForSubmissionToAppearInList(attempt + 1, maxAttempts);
     });
   }
 
@@ -155,9 +169,24 @@ const APPLICATIONS_PATH = "GrantApplications";
     cy.get("#nav-payment-info-tab").should("have.class", "active");
     detailsPage.dismissErrorModalIfPresent();
 
-    cy.intercept("GET", "**/api/app/supplier/sites-by-supplier-number**").as("siteRefresh");
-    detailsPage.clickRefreshSiteList();
-    cy.wait("@siteRefresh");
+    // "Configure payment info" retries once on a known transient CAS token
+    // error, but can still occasionally leave SupplierId unset (observed on
+    // DEV). With no supplier number the app has nothing to look up and never
+    // issues the sites-by-supplier-number request at all, so waiting on that
+    // intercept would hang until timeout for no reason — the main test body
+    // already skips gracefully when the sites table ends up empty.
+    cy.get("#SupplierNumber", { timeout: 20000 })
+      .invoke("val")
+      .then((value) => {
+        if (!value) {
+          cy.log("⚠️ SupplierNumber is empty — skipping site list refresh");
+          return;
+        }
+
+        cy.intercept("GET", "**/api/app/supplier/sites-by-supplier-number**").as("siteRefresh");
+        detailsPage.clickRefreshSiteList();
+        cy.wait("@siteRefresh");
+      });
   }
 
   function waitForBlockingUiToClear(): void {
@@ -360,12 +389,7 @@ const APPLICATIONS_PATH = "GrantApplications";
     dismissBlockingModalIfPresent();
     waitForSubmissionToAppearInList();
 
-    listPage
-      .waitForNoBlockingOverlay()
-      .selectQuickDateRange("last30days")
-      .waitForTableRefresh()
-      .searchForSubmission(submissionId)
-      .selectRowByText(submissionId);
+    listPage.waitForNoBlockingOverlay().selectRowByText(submissionId);
 
     cy.get("#assignApplication", { timeout: 20000 })
       .should("exist")
@@ -481,6 +505,19 @@ const APPLICATIONS_PATH = "GrantApplications";
     loginIfNeeded();
   });
 
+  beforeEach(function () {
+    if (failedStep) this.skip();
+  });
+
+  afterEach(function () {
+    if (
+      this.currentTest?.state === "failed" &&
+      this.currentTest.currentRetry() >= this.currentTest.retries()
+    ) {
+      failedStep = true;
+    }
+  });
+
   // ============ Dynamic Submission Fetch ============
 
   it("Fetch submission ID from API", () => {
@@ -553,18 +590,13 @@ const APPLICATIONS_PATH = "GrantApplications";
     waitForSubmissionToAppearInList();
     listPage.waitForNoBlockingOverlay();
 
-    cy.location("pathname", { timeout: 20000 }).then((pathname) => {
-      if (pathname.includes("/GrantApplications/Details")) {
-        cy.log("Already on details page after assignment");
-      } else {
-        listPage
-          .selectQuickDateRange("last30days")
-          .waitForTableRefresh()
-          .searchForSubmission(submissionId)
-          .selectRowByText(submissionId)
-          .clickOpenButton();
-      }
-    });
+    cy.contains("#GrantApplicationsTable tbody tr td a", submissionId, {
+      timeout: 20000,
+    }).should("be.visible").click();
+    cy.location("pathname", { timeout: 20000 }).should(
+      "eq",
+      "/GrantApplications/Details",
+    );
 
     cy.get(BREADCRUMB_STATUS_SELECTOR, { timeout: 20000 })
       .should("be.visible")
@@ -653,6 +685,31 @@ const APPLICATIONS_PATH = "GrantApplications";
           .clickPaymentInfoSave();
       }
     });
+
+    // The check above can miss a CAS failure that doesn't surface
+    // recognizable error text in time (observed on DEV — no error text, but
+    // SupplierNumber still ended up empty downstream, and payment requests
+    // fail with "supplier information is provided" once that happens).
+    // The input's live value isn't authoritative — it can just echo what was
+    // typed regardless of whether CAS actually confirmed it server-side — so
+    // verify via a reload, the same signal ensureSiteInfoReady() relies on,
+    // and retry the save once more if it's still unset.
+    cy.reload();
+    listPage.waitForNoBlockingOverlay();
+    detailsPage.dismissErrorModalIfPresent();
+    detailsPage.goToPaymentInfoTab();
+    cy.get("#SupplierNumber", { timeout: 20000 })
+      .invoke("val")
+      .then((value) => {
+        if (value) {
+          return;
+        }
+        cy.log("⚠️ SupplierNumber still empty after reload — retrying save once more");
+        detailsPage
+          .enterSupplierNumber(TEST_CONFIG.supplierNumber)
+          .clickElsewhere()
+          .clickPaymentInfoSave();
+      });
   });
 
   // Must use function() (not arrow) so this.skip() is accessible
@@ -787,7 +844,7 @@ const APPLICATIONS_PATH = "GrantApplications";
   // ============ Post-Approval Verification ============
 
   it("Navigate back to applications list", () => {
-    cy.visit(`${Cypress.env("webapp.url")}${APPLICATIONS_PATH}`);
+    cy.visit(`${Cypress.expose("webapp.url")}${APPLICATIONS_PATH}`);
     listPage.switchToGrantProgram(TEST_CONFIG.grantProgram);
   });
 
@@ -849,9 +906,11 @@ const APPLICATIONS_PATH = "GrantApplications";
 
   it("Logout user1 and login as user2 for L2 approval", () => {
     cy.logout();
-    loginIfNeeded({
-      username: Cypress.env("test2username") as string,
-      password: Cypress.env("test2password") as string,
+    cy.env(["test2username", "test2password"]).then(({ test2username, test2password }: any) => {
+      loginIfNeeded({
+        username: test2username,
+        password: test2password,
+      });
     });
   });
 

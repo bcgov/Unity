@@ -13,33 +13,14 @@ using Volo.Abp.Validation;
 
 namespace Unity.GrantManager.Identity
 {
-    [Authorize(IdentityPermissions.Users.Create)]
-    public class UserImportAppService : GrantManagerAppService, IUserImportAppService
-    {
-        private readonly ICssUsersApiService _cssUsersApiService;
-        private readonly ICurrentTenant _currentTenant;
-        private readonly IdentityUserManager _userManager;
-        private readonly IPersonRepository _personRepository;
-        private readonly IUserAccountsRepository _userAccountsRepository;
-        private readonly IIdentityUserRepository _identityUserRepository;
-        private readonly IDataFilter _dataFilter;
-
-        public UserImportAppService(ICssUsersApiService cssUsersApiService,
+    public class UserImportAppService(ICssUsersApiService cssUsersApiService,
             ICurrentTenant currentTenant,
             IdentityUserManager userManager,
             IPersonRepository personRepository,
             IUserAccountsRepository userAccountsRepository,
             IIdentityUserRepository identityUserRepository,
-            IDataFilter dataFilter)
-        {
-            _cssUsersApiService = cssUsersApiService;
-            _currentTenant = currentTenant;
-            _userManager = userManager;
-            _personRepository = personRepository;
-            _userAccountsRepository = userAccountsRepository;
-            _identityUserRepository = identityUserRepository;
-            _dataFilter = dataFilter;
-        }
+            IDataFilter dataFilter) : GrantManagerAppService, IUserImportAppService
+    {
 
         /// <summary>
         /// Import a user creating both a host account and a local person entity for the relevant tenant
@@ -48,15 +29,16 @@ namespace Unity.GrantManager.Identity
         /// <returns></returns>
         /// <exception cref="AbpValidationException"></exception>
         /// <exception cref="UserFriendlyException"></exception>
+        [Authorize(IdentityPermissions.Users.Create)]
         public async Task ImportUserAsync(ImportUserDto importUserDto)
         {
-            var result = await _cssUsersApiService.FindUserAsync(importUserDto.Directory, importUserDto.Guid);
+            var result = await cssUsersApiService.FindUserAsync(importUserDto.Directory, importUserDto.Guid);
 
             if (result.Data == null || result.Data.Length == 0) throw new AbpValidationException();
 
             var cssUser = result.Data[0];
             var oidcSub = (cssUser.Attributes?.IdirUserGuid?[0] ?? Guid.NewGuid().ToString()).ToSubjectWithoutIdp();
-            var existingPerson = await _personRepository.FindByOidcSub(oidcSub);
+            var existingPerson = await personRepository.FindByOidcSub(oidcSub);
             var newUserId = existingPerson?.Id ?? Guid.NewGuid();
 
             IdentityUser? identityUser = await ReactivateAndGetDeletedUserAsync(
@@ -65,11 +47,11 @@ namespace Unity.GrantManager.Identity
 
             if (identityUser == null) throw new UserFriendlyException("Error creating user account");
 
-            await _userManager.AddDefaultRolesAsync(identityUser);
+            await userManager.AddDefaultRolesAsync(identityUser);
 
             if (importUserDto.Roles?.Length > 0)
             {
-                await _userManager.AddToRolesAsync(identityUser, importUserDto.Roles);
+                await userManager.AddToRolesAsync(identityUser, importUserDto.Roles);
             }
 
             var displayName = cssUser.Attributes?.DisplayName?[0] ?? identityUser.NormalizedUserName.ToString();
@@ -94,7 +76,7 @@ namespace Unity.GrantManager.Identity
             string displayName)
         {
             var normalizedOidcSub = oidcSub.ToSubjectWithoutIdp();
-            var existingPerson = await _personRepository.FindByOidcSub(normalizedOidcSub);
+            var existingPerson = await personRepository.FindByOidcSub(normalizedOidcSub);
             var newUserId = existingPerson?.Id ?? Guid.NewGuid();
 
             IdentityUser? identityUser = await ReactivateAndGetDeletedUserAsync(username, normalizedOidcSub, firstName, lastName);
@@ -102,11 +84,11 @@ namespace Unity.GrantManager.Identity
 
             if (identityUser == null) throw new UserFriendlyException("Error creating user account");
 
-            await _userManager.AddDefaultRolesAsync(identityUser);
+            await userManager.AddDefaultRolesAsync(identityUser);
 
             if (importUserDto.Roles?.Length > 0)
             {
-                await _userManager.AddToRolesAsync(identityUser, importUserDto.Roles);
+                await userManager.AddToRolesAsync(identityUser, importUserDto.Roles);
             }
             
             await UpdateAdditionalUserPropertiesAsync(identityUser, normalizedOidcSub, displayName);
@@ -120,16 +102,16 @@ namespace Unity.GrantManager.Identity
         /// <returns></returns>
         /// <exception cref="AbpValidationException"></exception>
         /// <exception cref="UserFriendlyException"></exception>
+        [Authorize(IdentityPermissions.Users.Create)]
         public async Task<IList<UserDto>> SearchAsync(UserSearchDto importUserSearchDto)
         {
             var users = new List<UserDto>();
 
             importUserSearchDto.Directory = importUserSearchDto.Directory.Trim().ToLower();
             if (importUserSearchDto.Directory != "idir") throw new AbpValidationException("Idir Only",
-                new List<ValidationResult>()
-                {
-                    new ValidationResult("Only idir search is supported")
-                }); // for now
+                [
+                    new("Only idir search is supported")
+                ]); // for now
 
             if (string.IsNullOrEmpty(importUserSearchDto.FirstName) &&
                 string.IsNullOrEmpty(importUserSearchDto.LastName) &&
@@ -139,31 +121,28 @@ namespace Unity.GrantManager.Identity
             if (!string.IsNullOrEmpty(importUserSearchDto.FirstName) && importUserSearchDto.FirstName.Length < 2)
             {
                 throw new AbpValidationException("Validation Error",
-                    new List<ValidationResult>()
-                    {
+                    [
                         new ValidationResult("First name length must be greater than 2")
-                    });
+                    ]);
             }
 
             if (!string.IsNullOrEmpty(importUserSearchDto.LastName) && importUserSearchDto.LastName.Length < 2)
             {
                 throw new AbpValidationException("Validation Error",
-                    new List<ValidationResult>()
-                    {
+                    [
                         new ValidationResult("Last name length must be greater than 2")
-                    });
+                    ]);
             }
 
             if (!string.IsNullOrEmpty(importUserSearchDto.Email) && importUserSearchDto.Email.Length < 2)
             {
                 throw new AbpValidationException("Validation Error",
-                    new List<ValidationResult>()
-                    {
+                    [
                         new ValidationResult("Email length must be greater than 2")
-                    });
+                    ]);
             }
 
-            var result = await _cssUsersApiService.SearchUsersAsync(importUserSearchDto.Directory, importUserSearchDto.FirstName, importUserSearchDto.LastName, importUserSearchDto.Email);
+            var result = await cssUsersApiService.SearchUsersAsync(importUserSearchDto.Directory, importUserSearchDto.FirstName, importUserSearchDto.LastName, importUserSearchDto.Email);
 
             if (!result.Success) throw new UserFriendlyException("Error searching directory users");
 
@@ -178,25 +157,130 @@ namespace Unity.GrantManager.Identity
                         UserGuid = item.Attributes?.IdirUserGuid?.FirstOrDefault() ?? string.Empty,
                         Username = item.Attributes?.IdirUsername?.FirstOrDefault() ?? string.Empty,
                         DisplayName = item.Attributes?.DisplayName?.FirstOrDefault() ?? string.Empty,
-                        OidcSub = item.Username
+                        OidcSub = item.Username,
+                        Email = item.Email
                     });
                 }
             }
 
-            return users.GroupBy(u => u.UserGuid).Select(g => g.First()).ToList();
+            return [.. users.GroupBy(u => u.UserGuid).Select(g => g.First())];
+        }
+
+        [Authorize(IdentityPermissions.Users.Update)]
+        public async Task<IList<UserDto>> SearchForRenameAsync(RenameUserSearchDto renameUserSearchDto)
+        {
+            var person = await personRepository.GetAsync(renameUserSearchDto.UserId);
+            if (string.IsNullOrWhiteSpace(person.OidcSub))
+            {
+                return [];
+            }
+            var oidcSub = person.OidcSub.ToSubjectWithoutIdp();
+            var result = await cssUsersApiService.FindUserAsync(renameUserSearchDto.Directory, oidcSub);
+            if (!result.Success || result.Data == null)
+            {
+                return [];
+            }
+
+            return [.. result.Data
+                .Where(user => SubjectsMatch(user.Attributes?.IdirUserGuid?.FirstOrDefault(), person.OidcSub))
+                .Select(user => new UserDto
+                {
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    UserGuid = user.Attributes?.IdirUserGuid?.FirstOrDefault() ?? string.Empty,
+                    Username = user.Attributes?.IdirUsername?.FirstOrDefault() ?? string.Empty,
+                    DisplayName = user.Attributes?.DisplayName?.FirstOrDefault() ?? string.Empty,
+                    OidcSub = user.Username,
+                    Email = user.Email
+                })];
+        }
+
+        [Authorize(IdentityPermissions.Users.Update)]
+        public async Task RenameUserAsync(RenameUserDto renameUserDto)
+        {
+            var person = await personRepository.GetAsync(renameUserDto.UserId);
+            var result = await cssUsersApiService.FindUserAsync("IDIR", renameUserDto.NewUserGuid);
+            var cssUser = result.Data?.FirstOrDefault();
+
+            if (cssUser == null || !SubjectsMatch(cssUser.Attributes?.IdirUserGuid?.FirstOrDefault(), person.OidcSub))
+            {
+                throw new UserFriendlyException("The selected directory user does not match the existing user subject.");
+            }
+
+            var username = cssUser.Attributes?.IdirUsername?.FirstOrDefault();
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new UserFriendlyException("The directory user does not have a username.");
+            }
+
+            var firstName = cssUser.FirstName ?? string.Empty;
+            var lastName = cssUser.LastName ?? string.Empty;
+            var email = cssUser.Email;
+            var displayName = cssUser.Attributes?.DisplayName?.FirstOrDefault() ?? string.Empty;
+            var identityUser = await identityUserRepository.GetAsync(renameUserDto.UserId);
+            var fullName = $"{firstName} {lastName}";
+            var badge = Utils.CreateUserBadge(identityUser);
+
+            if (string.Equals(identityUser.UserName, username, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(identityUser.Name, firstName, StringComparison.Ordinal) &&
+                string.Equals(identityUser.Surname, lastName, StringComparison.Ordinal) &&
+                (string.IsNullOrWhiteSpace(email) || string.Equals(identityUser.Email, email, StringComparison.OrdinalIgnoreCase)) &&
+                string.Equals(GetComparableDisplayName(person.OidcDisplayName), GetComparableDisplayName(displayName), StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(person.FullName, fullName, StringComparison.Ordinal) &&
+                string.Equals(person.Badge, badge, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            if (!string.Equals(identityUser.UserName, username, StringComparison.OrdinalIgnoreCase))
+            {
+                var usernameResult = await userManager.SetUserNameAsync(identityUser, username);
+                if (!usernameResult.Succeeded)
+                {
+                    throw new UserFriendlyException("The directory username could not be applied to the user.");
+                }
+            }
+
+            identityUser.Name = firstName;
+            identityUser.Surname = lastName;
+            if (!string.Equals(identityUser.Email, email, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrWhiteSpace(email))
+            {
+                await userManager.SetEmailAsync(identityUser, email);
+                identityUser.SetEmailConfirmed(true);
+            }
+
+            identityUser.SetProperty("DisplayName", displayName);
+            await identityUserRepository.UpdateAsync(identityUser, true);
+
+            person.OidcDisplayName = displayName;
+            person.FullName = fullName;
+            person.Badge = Utils.CreateUserBadge(identityUser);
+            await personRepository.UpdateAsync(person, true);
         }
 
         [Authorize(IdentityPermissions.Users.Update)]
         public async Task SetUserRolesAsync(Guid userId, string[] roleNames)
         {
-            var user = await _identityUserRepository.GetAsync(userId);
-            await _userManager.SetRolesAsync(user, roleNames);
+            var user = await identityUserRepository.GetAsync(userId);
+            await userManager.SetRolesAsync(user, roleNames);
+        }
+
+        private static bool SubjectsMatch(string? first, string? second)
+        {
+            return !string.IsNullOrWhiteSpace(first) &&
+                !string.IsNullOrWhiteSpace(second) &&
+                string.Equals(first.ToSubjectWithoutIdp(), second.ToSubjectWithoutIdp(), StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string GetComparableDisplayName(string? displayName)
+        {
+            return (displayName ?? string.Empty).Split(':')[0].Trim();
         }
 
         private async Task<IdentityUser?> CreateNewIdentityUserAsync(Guid newUserId, string? username, string? firstName, string? lastName, string? emailAddress)
         {
             if (string.IsNullOrWhiteSpace(emailAddress)) emailAddress = null;
-            IdentityUser? identityUser = new(newUserId, username, emailAddress ?? $"{Guid.Empty}@{username}", _currentTenant.Id)
+            IdentityUser? identityUser = new(newUserId, username, emailAddress ?? $"{Guid.Empty}@{username}", currentTenant.Id)
             {
                 Name = firstName,
                 Surname = lastName,
@@ -208,7 +292,7 @@ namespace Unity.GrantManager.Identity
             }            
 
             // Use identity user manager to create the user
-            var createUserResult = await _userManager.CreateAsync(identityUser) ?? throw new AbpException("Unexpected error importing user");
+            var createUserResult = await userManager.CreateAsync(identityUser) ?? throw new AbpException("Unexpected error importing user");
 
             if (!createUserResult.Succeeded)
             {
@@ -226,12 +310,12 @@ namespace Unity.GrantManager.Identity
         private async Task<IdentityUser?> ReactivateAndGetDeletedUserAsync(string username, string oidcSub, string? firstName, string? lastName)
         {
             //Temporary disable the ISoftDelete filter - find delete user account and reactivate for import
-            using (_dataFilter.Disable<ISoftDelete>())
+            using (dataFilter.Disable<ISoftDelete>())
             {
-                var identityUser = await _identityUserRepository
-                    .FindByTenantIdAndUserNameAsync(username, _currentTenant.Id);
+                var identityUser = await identityUserRepository
+                    .FindByTenantIdAndUserNameAsync(username, currentTenant.Id);
 
-                identityUser ??= (await _userAccountsRepository.GetListByOidcSub(oidcSub))
+                identityUser ??= (await userAccountsRepository.GetListByOidcSub(oidcSub))
                     .FirstOrDefault();
 
                 if (identityUser != null)
@@ -241,7 +325,7 @@ namespace Unity.GrantManager.Identity
                     if (!string.IsNullOrWhiteSpace(username) &&
                         !string.Equals(identityUser.UserName, username, StringComparison.OrdinalIgnoreCase))
                     {
-                        await _userManager.SetUserNameAsync(identityUser, username);
+                        await userManager.SetUserNameAsync(identityUser, username);
                     }
 
                     identityUser.Name = firstName ?? identityUser.Name;
@@ -249,7 +333,7 @@ namespace Unity.GrantManager.Identity
                     identityUser.IsDeleted = false;
                     identityUser.DeleterId = null;
                     identityUser.DeletionTime = null;
-                    await _identityUserRepository.UpdateAsync(identityUser);
+                    await identityUserRepository.UpdateAsync(identityUser);
                     return identityUser;
                 }
             }
@@ -259,10 +343,10 @@ namespace Unity.GrantManager.Identity
 
         private async Task SyncUserToCurrentTenantAsync(IdentityUser user, string oidcSub, string displayName)
         {
-            var existingPerson = await _personRepository.FindByOidcSub(oidcSub);
+            var existingPerson = await personRepository.FindByOidcSub(oidcSub);
             if (existingPerson == null)
             {
-                await _personRepository.InsertAsync(new Person()
+                await personRepository.InsertAsync(new Person()
                 {
                     Id = user.Id,
                     OidcSub = oidcSub.ToSubjectWithoutIdp(),
@@ -276,7 +360,7 @@ namespace Unity.GrantManager.Identity
             existingPerson.OidcDisplayName = displayName;
             existingPerson.FullName = $"{user.Name} {user.Surname}";
             existingPerson.Badge = Utils.CreateUserBadge(user);
-            await _personRepository.UpdateAsync(existingPerson);
+            await personRepository.UpdateAsync(existingPerson);
         }
 
         private async Task<IdentityUser> UpdateAdditionalUserPropertiesAsync(IdentityUser user, string oidcSub, string displayName)
@@ -285,7 +369,7 @@ namespace Unity.GrantManager.Identity
             {
                 user.SetProperty("OidcSub", oidcSub.ToSubjectWithoutIdp());
                 user.SetProperty("DisplayName", displayName);
-                await _identityUserRepository.UpdateAsync(user, true);
+                await identityUserRepository.UpdateAsync(user, true);
             }
 
             return user!;

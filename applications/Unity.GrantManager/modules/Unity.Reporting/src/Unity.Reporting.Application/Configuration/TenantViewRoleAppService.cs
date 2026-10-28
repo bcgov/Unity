@@ -2,81 +2,62 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Unity.Modules.Shared.Permissions;
 using Unity.Reporting.BackgroundJobs;
 using Unity.Reporting.Domain.Configuration;
-using Unity.Reporting.Settings;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.MultiTenancy;
-using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
 
 namespace Unity.Reporting.Configuration;
 
 /// <summary>
-/// Application service for managing tenant-specific view role configurations.
-/// Handles retrieval, updating, and assignment of database roles to reporting views on a per-tenant basis.
-/// Requires IT Admin permissions for all operations to ensure secure configuration management.
+/// Application service for tenant-specific reporting view roles: shows which role a tenant's
+/// reporting views are granted to, and re-grants it on all of them. The role comes from
+/// <see cref="TenantViewRoleManager"/> (the saved setting, else {LicencePlate}_readonly).
+/// Requires the IT Administrator or IT Operations role for all operations.
 /// </summary>
 /// <remarks>
 /// Initializes a new instance of the TenantViewRoleAppService with required dependency injection services.
 /// </remarks>
-[Authorize(IdentityConsts.ITAdminPermissionName)]
+[Authorize(IdentityConsts.ITAdminOrITOperationsPolicyName)]
 public class TenantViewRoleAppService(
     ITenantRepository tenantRepository,
-    ISettingManager settingManager,
+    TenantViewRoleManager tenantViewRoleManager,
     IBackgroundJobManager backgroundJobManager,
     IReportColumnsMapRepository reportColumnsMapRepository,
     ICurrentTenant currentTenant) : ApplicationService, ITenantViewRoleAppService
 {
-    private const string LicencePlateExtraPropertyKey = "LicencePlate";
-
     /// <summary>
-    /// Retrieves the view role configuration for a specific tenant, along with the live existence
-    /// state of the two roles automatically provisioned for the tenant's license plate (its
-    /// read-write role and {LicencePlate}_readonly).
+    /// Retrieves the role a tenant's reporting views are granted to, along with the live existence
+    /// state of that role and of the two roles automatically provisioned for the tenant's license
+    /// plate (its read-write role and {LicencePlate}_readonly).
     /// </summary>
     public async Task<TenantViewRoleDto> GetAsync(Guid tenantId)
     {
-        var tenant = await tenantRepository.GetAsync(tenantId);
+        return await BuildViewRoleAsync(await tenantRepository.GetAsync(tenantId));
+    }
 
-        var licencePlate = tenant.ExtraProperties.TryGetValue(LicencePlateExtraPropertyKey, out var lp)
-            ? lp?.ToString()
-            : null;
-        var expectedReadOnlyRole = string.IsNullOrWhiteSpace(licencePlate) ? null : $"{licencePlate}_readonly";
+    private async Task<TenantViewRoleDto> BuildViewRoleAsync(Tenant tenant)
+    {
+        var licencePlate = TenantViewRoleManager.GetLicencePlate(tenant);
+        var expectedReadOnlyRole = licencePlate == null ? null : $"{licencePlate}_readonly";
+        var viewRole = await tenantViewRoleManager.ResolveAsync(tenant.Id);
 
-        // An explicitly saved role always wins (covers legacy tenants whose role doesn't follow
-        // either naming convention). Otherwise prefer the license-plate readonly role - the one
-        // actually provisioned for new tenants - falling back to the legacy {tenantname}_readonly
-        // pattern only when there's no license plate on record at all.
-        var savedViewRole = await settingManager.GetOrNullAsync(ReportingSettings.TenantViewRole, "T", tenant.Id.ToString());
-
-        string viewRole;
-        bool isDefaultInferred;
-        if (!string.IsNullOrEmpty(savedViewRole))
-        {
-            viewRole = savedViewRole;
-            isDefaultInferred = false;
-        }
-        else if (expectedReadOnlyRole != null)
-        {
-            viewRole = expectedReadOnlyRole;
-            isDefaultInferred = true;
-        }
-        else
-        {
-            viewRole = $"{tenant.Name.ToLowerInvariant()}_readonly";
-            isDefaultInferred = true;
-        }
-
+        bool viewRoleExists = false;
         bool readOnlyRoleExists = false;
         bool mainRoleExists = false;
-        if (!string.IsNullOrWhiteSpace(licencePlate))
+        using (currentTenant.Change(tenant.Id))
         {
-            using (currentTenant.Change(tenantId))
+            if (viewRole != null)
+            {
+                viewRoleExists = await reportColumnsMapRepository.RoleExistsAsync(viewRole);
+            }
+            if (licencePlate != null)
             {
                 readOnlyRoleExists = await reportColumnsMapRepository.RoleExistsAsync(expectedReadOnlyRole!);
                 mainRoleExists = await reportColumnsMapRepository.RoleExistsAsync(licencePlate);
@@ -88,7 +69,7 @@ public class TenantViewRoleAppService(
             TenantId = tenant.Id,
             TenantName = tenant.Name,
             ViewRole = viewRole,
-            IsDefaultInferred = isDefaultInferred,
+            ViewRoleExists = viewRoleExists,
             LicencePlate = licencePlate,
             ExpectedReadOnlyRole = expectedReadOnlyRole,
             ReadOnlyRoleExists = readOnlyRoleExists,
@@ -97,39 +78,16 @@ public class TenantViewRoleAppService(
     }
 
     /// <summary>
-    /// Updates the view role configuration for a specific tenant.
-    /// Sets the database role that will be granted SELECT permissions on reporting views for the tenant.
-    /// </summary>
-    public async Task<TenantViewRoleDto> UpdateAsync(Guid tenantId, UpdateTenantViewRoleDto input)
-    {
-        var tenant = await tenantRepository.GetAsync(tenantId);
-
-        await EnsureRoleExistsAsync(tenantId, input.ViewRole);
-
-        await settingManager.SetAsync(ReportingSettings.TenantViewRole, input.ViewRole, "T", tenantId.ToString());
-
-        return new TenantViewRoleDto
-        {
-            TenantId = tenantId,
-            TenantName = tenant.Name,
-            ViewRole = input.ViewRole,
-            IsDefaultInferred = false // After saving, it's no longer inferred
-        };
-    }
-
-    /// <summary>
-    /// Assigns the configured role to all existing reporting views for a specific tenant.
+    /// Grants the tenant's view role on all existing reporting views.
     /// Queues a background job to perform the role assignment operation asynchronously for all tenant views.
     /// </summary>
     public async Task AssignRoleToViewsAsync(Guid tenantId)
     {
         Logger.LogInformation("Starting role assignment for tenant: {TenantId}", tenantId);
 
-        var role = await settingManager.GetOrNullAsync(ReportingSettings.TenantViewRole, "T", tenantId.ToString());
-        if (string.IsNullOrWhiteSpace(role))
-        {
-            throw new UserFriendlyException("No view role is configured for this tenant yet. Save a role first.");
-        }
+        var role = await tenantViewRoleManager.ResolveAsync(tenantId)
+            ?? throw new UserFriendlyException(
+                "This tenant has no reporting view role: it has no licence plate and no saved role.");
 
         // Fail fast here rather than relying solely on AssignViewRoleBackgroundJob's own check -
         // that check only logs a warning and silently no-ops, so without this the queue call
@@ -156,15 +114,16 @@ public class TenantViewRoleAppService(
             if (!await reportColumnsMapRepository.RoleExistsAsync(role))
             {
                 throw new UserFriendlyException(
-                    $"Role '{role}' does not exist in this tenant's database. Create the role first, or choose an existing one from View DB Info.");
+                    $"Role '{role}' does not exist in this tenant's database. Check Reporting Views.");
             }
         }
     }
 
     /// <summary>
-    /// Retrieves database information for a specific tenant, including available roles and reporting views.
-    /// This method queries the tenant's database to return a comprehensive list of database roles
-    /// and all reporting views in the Reporting schema for the specified tenant.
+    /// Retrieves the reporting health of a tenant's database: the view role and whether it exists,
+    /// and every reporting view reconciled against the mappings that generate them - flagging views
+    /// whose generation failed or is stuck, mapped views missing from the schema, views no mapping
+    /// uses, and views the view role cannot read.
     /// </summary>
     public async Task<TenantDatabaseInfoDto> GetTenantDatabaseInfoAsync(Guid tenantId)
     {
@@ -173,47 +132,81 @@ public class TenantViewRoleAppService(
         var databaseInfo = new TenantDatabaseInfoDto
         {
             TenantId = tenantId,
-            TenantName = tenant.Name,
-            DatabaseRoles = [],
-            ReportingViews = []
+            TenantName = tenant.Name
         };
 
         try
         {
-            // Set the current tenant context for database operations
+            databaseInfo.Role = await BuildViewRoleAsync(tenant);
+            var viewRole = databaseInfo.Role.ViewRoleExists ? databaseInfo.Role.ViewRole : null;
+
             using (currentTenant.Change(tenantId))
             {
-                // Get database roles using repository
-                var roles = await reportColumnsMapRepository.GetDatabaseRolesAsync();
-                
-                // Get role memberships using repository
-                var memberships = await reportColumnsMapRepository.GetRoleMembershipsAsync();
-                
-                // Combine roles and memberships
-                var allRoles = new List<string>();
-                allRoles.AddRange(roles);
-                
-                if (memberships.Count > 0)
+                if (viewRole != null)
                 {
-                    allRoles.Add("--- Role Memberships ---");
-                    allRoles.AddRange(memberships);
+                    var access = await reportColumnsMapRepository.GetRoleAccessAsync(viewRole);
+                    databaseInfo.ViewRoleCanLogin = access?.CanLogin ?? false;
+                    databaseInfo.ViewRoleHasSchemaUsage = access?.HasSchemaUsage ?? false;
                 }
-                
-                databaseInfo.DatabaseRoles = allRoles;
 
-                // Get reporting views using repository
-                databaseInfo.ReportingViews = await reportColumnsMapRepository.GetReportingViewsAsync();
+                // has_table_privilege errors on a role that doesn't exist, so only check grants
+                // against one that does.
+                var grants = await reportColumnsMapRepository.GetReportingViewGrantsAsync(viewRole);
+                var maps = await reportColumnsMapRepository.GetListAsync();
+
+                databaseInfo.Views = BuildViewStatuses(grants, maps, viewRole != null);
             }
 
-            Logger.LogInformation("Retrieved database info for tenant {TenantId}: {RoleCount} roles, {ViewCount} views", 
-                tenantId, databaseInfo.DatabaseRoles.Count, databaseInfo.ReportingViews.Count);
+            Logger.LogInformation("Retrieved database info for tenant {TenantId}: {ViewCount} views, {IssueCount} with issues",
+                tenantId, databaseInfo.Views.Count, databaseInfo.Views.Count(v => v.Issue != ReportingViewIssue.None));
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error retrieving database information for tenant {TenantId}", tenantId);
-            // Return empty lists rather than throwing, so the UI can still display
+            // Return what we have rather than throwing, so the UI can still display
+            databaseInfo.Error = "Could not read the tenant's reporting database. Check the logs for details.";
         }
 
         return databaseInfo;
+    }
+
+    private static List<ReportingViewStatusDto> BuildViewStatuses(
+        List<ReportingViewGrant> grants, List<ReportColumnsMap> maps, bool checkGrants)
+    {
+        var grantsByName = grants.ToDictionary(g => g.ViewName, StringComparer.OrdinalIgnoreCase);
+        var mapsByName = maps
+            .Where(m => !string.IsNullOrWhiteSpace(m.ViewName))
+            .GroupBy(m => m.ViewName.Trim(), StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+        return grantsByName.Keys
+            .Union(mapsByName.Keys, StringComparer.OrdinalIgnoreCase)
+            .Select(name =>
+            {
+                grantsByName.TryGetValue(name, out var grant);
+                mapsByName.TryGetValue(name, out var map);
+                bool? granted = grant != null && checkGrants ? grant.HasSelect : null;
+
+                return new ReportingViewStatusDto
+                {
+                    ViewName = grant?.ViewName ?? name,
+                    CorrelationProvider = map?.CorrelationProvider,
+                    ViewStatus = map?.ViewStatus,
+                    InDatabase = grant != null,
+                    Granted = granted,
+                    Issue = (map?.ViewStatus, grant != null, granted) switch
+                    {
+                        (ViewStatus.FAILED, _, _) => ReportingViewIssue.GenerationFailed,
+                        (ViewStatus.GENERATING, _, _) => ReportingViewIssue.Generating,
+                        (ViewStatus.SUCCESS, false, _) => ReportingViewIssue.Missing,
+                        (null, true, _) => ReportingViewIssue.Unmapped,
+                        (_, _, false) => ReportingViewIssue.NotGranted,
+                        _ => ReportingViewIssue.None
+                    }
+                };
+            })
+            .OrderBy(v => v.Issue == ReportingViewIssue.None)
+            .ThenBy(v => v.ViewName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 }

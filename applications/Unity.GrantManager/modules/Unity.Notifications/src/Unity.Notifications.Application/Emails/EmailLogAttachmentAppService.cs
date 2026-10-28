@@ -42,7 +42,7 @@ public class EmailLogAttachmentAppService(
         }
         else if (templateId.HasValue)
         {
-            await AuthorizationService.CheckAsync(NotificationsPermissions.Email.Send);
+            await AuthorizationService.CheckAsync(NotificationsPermissions.Email.Default);
             attachments = await emailLogAttachmentRepository.GetByTemplateIdAsync(templateId.Value);
         }
 

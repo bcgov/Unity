@@ -1,0 +1,557 @@
+"""
+Metabase API integration module.
+Handles all interactions with Metabase including queries, cards, and embeddings.
+"""
+import os
+import re
+import requests
+import time
+import logging
+from typing import Dict, Any, List, Optional, Tuple
+from config import config
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+
+class MetabaseClient:
+    """Client for interacting with Metabase API"""
+
+    def __init__(self):
+        self.config = config.metabase
+        self.headers = config.metabase_headers
+
+    def _get_headers(self, tenant_id: Optional[str] = None) -> Dict[str, str]:
+        """
+        Get API headers for Metabase requests.
+        If tenant_id is provided, uses tenant-specific API key from config file.
+        Otherwise uses default headers.
+        """
+        if tenant_id:
+            return config.get_tenant_metabase_headers(tenant_id)
+        return self.headers
+
+    def execute_sql(self, sql: str, db_id: int, tenant_id: Optional[str] = None,
+                    max_rows: Optional[int] = None) -> Dict[str, Any]:
+        """
+        Execute SQL query via Metabase API.
+
+        Args:
+            sql: SQL query to execute
+            db_id: Database ID in Metabase
+            tenant_id: Optional tenant ID to use tenant-specific API key
+            max_rows: Optional cap on rows returned by Metabase. When set, only
+                this many rows leave Metabase (avoids transferring the full
+                result just to sample a few rows). None returns the default cap.
+
+        Returns:
+            Query results from Metabase
+        """
+        payload = {
+            "database": db_id,
+            "type": "native",
+            "native": {"query": sql}
+        }
+        if max_rows is not None:
+            payload["constraints"] = {
+                "max-results": max_rows,
+                "max-results-bare-rows": max_rows,
+            }
+
+        headers = self._get_headers(tenant_id)
+
+        r = requests.post(
+            f"{self.config.url}/api/dataset",
+            headers=headers,
+            json=payload,
+            timeout=30,
+        )
+        r.raise_for_status()
+        return r.json()["data"]
+    
+    def validate_sql(self, sql: str, db_id: int, tenant_id: Optional[str] = None) -> Tuple[bool, Optional[str]]:
+        """
+        Validate if SQL query can be executed.
+
+        Args:
+            sql: SQL query to validate
+            db_id: Database ID
+            tenant_id: Optional tenant ID to use tenant-specific API key
+
+        Returns:
+            Tuple of (is_valid, error_message)
+        """
+        payload = {
+            "database": db_id,
+            "type": "native",
+            "native": {"query": sql}
+        }
+
+        headers = self._get_headers(tenant_id)
+
+        r = requests.post(
+            f"{self.config.url}/api/dataset",
+            headers=headers,
+            json=payload,
+            timeout=30,
+        )
+
+        if r.status_code not in (200, 202):
+            return False, f"HTTP {r.status_code}: {r.text}"
+
+        body = r.json()
+
+        # Handle async queries
+        if r.status_code == 202 and body.get("status") == "running":
+            body = self._await_async_body(body, headers)
+            # An unfinished job is not a valid query — don't report it as valid.
+            if body.get("status") == "running":
+                return False, "Metabase async query did not finish before timeout"
+
+        if "error" in body:
+            return False, body["error"]
+
+        return True, None
+
+    def _await_async_body(self, body: Dict[str, Any], headers: Dict[str, str]) -> Dict[str, Any]:
+        """Poll Metabase's async-job endpoint until the job stops running or the
+        deadline elapses. Returns the latest body (which may still show
+        status='running' if it never finished — callers must check)."""
+        job_id = body["id"]
+        deadline = time.time() + 10
+        while time.time() < deadline:
+            jr = requests.get(
+                f"{self.config.url}/api/async/{job_id}",
+                headers=headers,
+                timeout=30,
+            )
+            if jr.status_code == 200:
+                body = jr.json()
+                if body.get("status") != "running":
+                    break
+            time.sleep(0.5)
+        return body
+
+    def run_query_checked(
+        self, sql: str, db_id: int, tenant_id: Optional[str] = None,
+        max_rows: Optional[int] = None,
+    ) -> Tuple[bool, Optional[str], Optional[Dict[str, Any]]]:
+        """Execute SQL once and return (is_valid, error, data).
+
+        Combines validation and a bounded fetch in a single Metabase round-trip:
+        callers that previously did validate_sql() followed by a second execute_sql()
+        for preview rows can use this instead. `max_rows` caps the rows Metabase
+        returns (a bounded run still executes the plan, so SQL errors still surface).
+        `data` is the inner `{cols, rows}` payload on success, else None.
+        """
+        payload: Dict[str, Any] = {
+            "database": db_id,
+            "type": "native",
+            "native": {"query": sql},
+        }
+        if max_rows is not None:
+            payload["constraints"] = {
+                "max-results": max_rows,
+                "max-results-bare-rows": max_rows,
+            }
+
+        headers = self._get_headers(tenant_id)
+        r = requests.post(
+            f"{self.config.url}/api/dataset",
+            headers=headers,
+            json=payload,
+            timeout=30,
+        )
+
+        if r.status_code not in (200, 202):
+            return False, f"HTTP {r.status_code}: {r.text}", None
+
+        body = r.json()
+        if r.status_code == 202 and body.get("status") == "running":
+            body = self._await_async_body(body, headers)
+            # Don't treat an unfinished job as a successful (valid) query —
+            # returning (True, None, None) here would mark it valid and break
+            # the downstream preview/creation flow.
+            if body.get("status") == "running":
+                return False, "Metabase async query did not finish before timeout", None
+
+        if "error" in body:
+            return False, body["error"], None
+
+        return True, None, body.get("data")
+
+    def get_database_metadata(self, db_id: int, tenant_id: Optional[str] = None) -> Dict[str, Any]:
+        """Get metadata for a database including tables and fields"""
+        headers = self._get_headers(tenant_id)
+        r = requests.get(
+            f"{self.config.url}/api/database/{db_id}/metadata",
+            headers=headers
+        )
+        r.raise_for_status()
+        return r.json()
+
+    def create_card(self, sql: str, db_id: int, collection_id: int,
+                    name: str, tenant_id: Optional[str] = None,
+                    visualization_settings: Optional[Dict[str, Any]] = None
+                    ) -> Tuple[int, Optional[Dict[str, Any]]]:
+        """
+        Create a new Metabase card (saved question) and execute its query.
+
+        Args:
+            sql: SQL query for the card
+            db_id: Database ID
+            collection_id: Collection ID to save the card in
+            name: Name of the card
+            tenant_id: Optional tenant ID to use tenant-specific API key
+
+        Returns:
+            Tuple of (card_id, card_data) where card_data is the inner
+            `{"cols": [...], "rows": [...]}` dict from Metabase (same shape as
+            execute_sql), or None if the post-creation query failed.
+        """
+        headers = self._get_headers(tenant_id)
+        url = f"{self.config.url}/api/card"
+        payload = {
+            "name": name,
+            "visualization_settings": visualization_settings or {},
+            "collection_id": collection_id,
+            "enable_embedding": True,
+            "dataset_query": {
+                "database": db_id,
+                "native": {"query": sql},
+                "type": "native"
+            },
+            "display": "table"
+        }
+
+        logger.debug(f"Metabase create_card - URL: {url}")
+        # Do NOT log header values or names to avoid leaking or signaling sensitive information
+        logger.debug("Metabase create_card - Using Metabase authorization header")
+        logger.debug(f"Metabase create_card - Payload keys: {list(payload.keys())}")
+        logger.debug(f"Metabase create_card - SQL length: {len(sql)}")
+
+        try:
+            logger.info("Making POST request to Metabase API...")
+            r = requests.post(
+                url,
+                headers=headers,
+                json=payload,
+                timeout=30  # Add timeout
+            )
+            logger.info(f"POST request completed - Status: {r.status_code}")
+
+        except requests.exceptions.Timeout:
+            logger.error("Metabase request timed out after 30 seconds")
+            raise requests.exceptions.Timeout("Metabase API request timed out")
+        except requests.exceptions.ConnectionError as e:
+            logger.exception(f"Connection error to Metabase: {e}")
+            raise requests.exceptions.ConnectionError(f"Connection error to Metabase: {e}")
+        except Exception as e:
+            logger.exception(f"Unexpected error during Metabase request: {e}")
+            raise requests.exceptions.RequestException(f"Unexpected error during Metabase request: {e}")
+
+        if r.status_code != 200:
+            logger.error(f"Metabase API error - Status: {r.status_code}, Response: {r.text}")
+            raise requests.exceptions.HTTPError(f"HTTP {r.status_code}: {r.text}", response=r)
+
+        try:
+            response_json = r.json()
+            card_id = response_json["id"]
+            logger.info(f"Card created successfully with ID: {card_id}")
+        except Exception as e:
+            logger.exception(f"Error parsing Metabase response: {e}")
+            logger.error(f"Response text: {r.text}")
+            raise ValueError(f"Error parsing Metabase response: {e}")
+
+        card_data = self._run_card_query(card_id, headers)
+        return card_id, card_data
+
+    def _run_card_query(self, card_id: int, headers: Dict[str, str]) -> Optional[Dict[str, Any]]:
+        """Execute a saved card and return its inner data dict.
+
+        Returns None on any failure so callers can fall back gracefully.
+        """
+        query_url = f"{self.config.url}/api/card/{card_id}/query"
+        try:
+            r = requests.post(query_url, headers=headers, json={"ignore_cache": True}, timeout=30)
+            body = r.json()
+
+            if r.status_code == 202 and body.get("status") == "running":
+                job_id = body.get("id")
+                deadline = time.time() + 30
+                while time.time() < deadline:
+                    jr = requests.get(
+                        f"{self.config.url}/api/async/{job_id}",
+                        headers=headers,
+                        timeout=10,
+                    )
+                    if jr.status_code == 200:
+                        body = jr.json()
+                        break
+                    time.sleep(1)
+
+            return body.get("data") if isinstance(body, dict) else None
+        except Exception:
+            logger.exception("Error fetching card data for card %s", card_id)
+            return None
+    
+    def create_model(self, sql: str, db_id: int, collection_id: int,
+                     name: str, description: str,
+                     tenant_id: Optional[str] = None) -> int:
+        """
+        Create a Metabase model card (type='model').
+
+        Models are first-class data sources in Metabase that other questions
+        can build on. The payload mirrors create_card() but sets type='model'.
+        """
+        headers = self._get_headers(tenant_id)
+        url = f"{self.config.url}/api/card"
+        payload = {
+            "name": name,
+            "description": description,
+            "type": "model",
+            "visualization_settings": {},
+            "collection_id": collection_id,
+            "dataset_query": {
+                "database": db_id,
+                "native": {"query": sql},
+                "type": "native"
+            },
+            "display": "table"
+        }
+
+        try:
+            r = requests.post(url, headers=headers, json=payload, timeout=30)
+        except requests.exceptions.Timeout:
+            logger.error("Metabase create_model request timed out after 30 seconds")
+            raise requests.exceptions.Timeout("Metabase API request timed out")
+        except requests.exceptions.ConnectionError as e:
+            logger.exception(f"Connection error to Metabase: {e}")
+            raise
+
+        if r.status_code != 200:
+            logger.error(f"Metabase create_model error - Status: {r.status_code}, Response: {r.text}")
+            raise requests.exceptions.HTTPError(f"HTTP {r.status_code}: {r.text}", response=r)
+
+        try:
+            card_id = r.json()["id"]
+            logger.info(f"Model created successfully with ID: {card_id} (name='{name}')")
+            return card_id
+        except Exception as e:
+            logger.exception(f"Error parsing Metabase create_model response: {e}")
+            raise ValueError(f"Error parsing Metabase response: {e}")
+
+    def get_all_card_names(self, tenant_id: Optional[str] = None) -> set:
+        """Get all card/model names from Metabase (used for duplicate detection)."""
+        headers = self._get_headers(tenant_id)
+        try:
+            r = requests.get(f"{self.config.url}/api/card", headers=headers, timeout=30)
+            if r.status_code != 200:
+                raise requests.exceptions.HTTPError(f"HTTP {r.status_code}: {r.text}", response=r)
+            cards = r.json()
+            return {card.get("name", "") for card in cards if card.get("name")}
+        except Exception as e:
+            logger.exception(f"Error getting card names from Metabase: {e}")
+            return set()
+
+    def update_card_visualization(self, card_id: int, display_mode: str,
+                                 x_fields: List[str], y_fields: List[str],
+                                 tenant_id: Optional[str] = None):
+        """
+        Update visualization settings for a card.
+
+        Args:
+            card_id: Card ID to update
+            display_mode: Visualization type (bar, line, pie, map, etc.)
+            x_fields: Fields for x-axis
+            y_fields: Fields for y-axis
+            tenant_id: Optional tenant ID to use tenant-specific API key
+        """
+        headers = self._get_headers(tenant_id)
+        visualization_settings: Dict[str, Any] = {
+            "graph.dimensions": x_fields,
+            "graph.metrics": y_fields,
+        }
+
+        # Add specific settings for different chart types
+        if display_mode == "pie":
+            visualization_settings.update({
+                "pie.dimension": x_fields,
+                "pie.metric": y_fields[0] if y_fields else ""
+            })
+        elif display_mode == "map":
+            visualization_settings["map.region"] = config.metabase.map_region_uuid
+
+        r = requests.put(
+            f"{self.config.url}/api/card/{card_id}",
+            headers=headers,
+            json={
+                "display": display_mode,
+                "visualization_settings": visualization_settings
+            }
+        )
+
+        if r.status_code != 200:
+            raise requests.exceptions.HTTPError(f"HTTP {r.status_code}: {r.text}", response=r)
+
+    def delete_card(self, card_id: int, tenant_id: Optional[str] = None) -> bool:
+        """Delete a Metabase card"""
+        headers = self._get_headers(tenant_id)
+        r = requests.delete(
+            f"{self.config.url}/api/card/{card_id}",
+            headers=headers
+        )
+        return r.status_code in (200, 204)
+
+    def get_all_cards(self, tenant_id: Optional[str] = None) -> List[int]:
+        """Get all card IDs from Metabase"""
+        headers = self._get_headers(tenant_id)
+        try:
+            r = requests.get(
+                f"{self.config.url}/api/card",
+                headers=headers
+            )
+            if r.status_code != 200:
+                raise requests.exceptions.HTTPError(f"HTTP {r.status_code}: {r.text}", response=r)
+
+            cards = r.json()
+            return [card["id"] for card in cards]
+        except Exception as e:
+            logger.exception(f"Error getting cards from Metabase: {e}")
+            return []
+    
+    
+    def check_card_exists(self, card_id: int, tenant_id: Optional[str] = None) -> bool:
+        """Check if a card exists in Metabase"""
+        existing_cards = self.get_all_cards(tenant_id)
+        return card_id in existing_cards
+
+    def get_card(self, card_id: int, tenant_id: Optional[str] = None) -> Dict[str, Any]:
+        """Get full card detail including dataset_query."""
+        headers = self._get_headers(tenant_id)
+        r = requests.get(
+            f"{self.config.url}/api/card/{card_id}",
+            headers=headers,
+            timeout=15
+        )
+        r.raise_for_status()
+        return r.json()
+
+    def card_sql_and_columns(
+        self, card: Dict[str, Any], db_id: Optional[int] = None,
+        tenant_id: Optional[str] = None,
+    ) -> Tuple[str, List[str]]:
+        """Extract native SQL and output column names from a fetched card.
+
+        Handles both native and structured (GUI) dataset_query — the latter is
+        converted via get_native_query. Columns are read from the SQL's
+        AS "..." aliases, falling back to the card's result_metadata display
+        names. Callers that already hold the card dict avoid a second fetch.
+        """
+        dataset_query = card.get("dataset_query", {})
+        if dataset_query.get("type") == "native":
+            sql = dataset_query.get("native", {}).get("query", "")
+        else:
+            sql = self.get_native_query(dataset_query, tenant_id, db_id=db_id) or ""
+        columns = re.findall(r'AS\s+"([^"]+)"', sql)
+        if not columns:
+            columns = [
+                col.get("display_name", col.get("name", ""))
+                for col in card.get("result_metadata", [])
+            ]
+        return sql, columns
+
+    def get_native_query(self, dataset_query: Dict[str, Any],
+                         tenant_id: Optional[str] = None,
+                         db_id: Optional[int] = None) -> Optional[str]:
+        """Convert a structured (GUI) dataset_query to native SQL via Metabase API.
+        Returns the SQL string, or None if conversion fails.
+        Handles both legacy MBQL and pMBQL (stages-based, Metabase v49+) formats."""
+        headers = self._get_headers(tenant_id)
+
+        query_payload = self._normalize_to_legacy_mbql(dataset_query, db_id)
+        logger.debug(f"get_native_query normalized payload keys: {list(query_payload.keys())}, database={query_payload.get('database')}, type={query_payload.get('type')}")
+
+        # Try multiple request body formats — Metabase versions differ on expected shape
+        formats_to_try = [
+            # Format 1: dataset_query as direct body (Metabase v49+ expects database at top level)
+            query_payload,
+            # Format 2: wrapped in {"query": ...} (older Metabase versions)
+            {"pretty": True, "query": query_payload},
+        ]
+
+        for body in formats_to_try:
+            try:
+                r = requests.post(
+                    f"{self.config.url}/api/dataset/native",
+                    headers=headers,
+                    json=body,
+                    timeout=15
+                )
+                logger.debug(f"get_native_query response status: {r.status_code} (body top-level keys: {list(body.keys())})")
+                if r.status_code == 200:
+                    result = r.json()
+                    sql = result.get("query") or result.get("native", {}).get("query")
+                    if sql:
+                        return sql
+                    logger.warning(f"get_native_query: no SQL in response keys={list(result.keys())}")
+                    return None
+                else:
+                    logger.debug(f"get_native_query format failed: HTTP {r.status_code} — {r.text[:300]}")
+            except Exception:
+                # Don't abort the loop — let the next body format be tried.
+                logger.exception("Failed to convert structured query to native SQL")
+                continue
+
+        logger.warning("get_native_query: all request formats exhausted")
+        return None
+
+    @staticmethod
+    def _normalize_to_legacy_mbql(dataset_query: Dict[str, Any],
+                                   db_id: Optional[int] = None) -> Dict[str, Any]:
+        """Convert pMBQL (stages-based, Metabase v49+) to legacy MBQL format
+        that /api/dataset/native understands.  If already legacy, just ensure
+        required keys are present."""
+        database = dataset_query.get("database") or db_id
+
+        if "stages" in dataset_query:
+            stages = dataset_query["stages"]
+            first_stage = stages[0] if stages else {}
+            clean_stage = {
+                k: v for k, v in first_stage.items()
+                if "/" not in k and "." not in k
+            }
+            return {
+                "database": database,
+                "type": "query",
+                "query": clean_stage,
+            }
+
+        result = dict(dataset_query)
+        if database and "database" not in result:
+            result["database"] = database
+        if "type" not in result:
+            result["type"] = "query"
+        return result
+
+    def get_collection_models(self, collection_id: int, tenant_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        """Get all model-type cards in a given collection (filtered client-side since
+        Metabase's server-side filters vary by version)."""
+        headers = self._get_headers(tenant_id)
+        r = requests.get(
+            f"{self.config.url}/api/card",
+            headers=headers,
+            timeout=30
+        )
+        r.raise_for_status()
+        cards = r.json()
+        return [
+            c for c in cards
+            if c.get("type") == "model"
+            and c.get("collection_id") == collection_id
+            and not c.get("archived", False)
+        ]
+
+
+# Global client instance
+metabase_client = MetabaseClient()

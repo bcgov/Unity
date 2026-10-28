@@ -10,7 +10,7 @@
 
 Cypress.Commands.add("login", () => {
   // 1.) Load Main Page
-  cy.visit(Cypress.env("webapp.url"));
+  cy.visit(Cypress.expose("webapp.url"));
   // 2.) Login to the Default Grant Tenant
   cy.contains("LOGIN").should("exist").click();
   cy.wait(1000);
@@ -20,9 +20,11 @@ Cypress.Commands.add("login", () => {
     // Check if you're already logged in.
     if ($body.find("#user").length) {
       // If #user exists, perform the login steps
-      cy.get("#user").type(Cypress.env("test1username"));
-      cy.get("#password").type(Cypress.env("test1password"));
-      cy.contains("Continue").should("exist").click();
+      cy.env(["test1username", "test1password"]).then(({ test1username, test1password }) => {
+        cy.get("#user").type(test1username, { log: false });
+        cy.get("#password").type(test1password, { log: false });
+        cy.contains("Continue").should("exist").click();
+      });
     } else {
       // If #user does not exist, log a message and proceed
       cy.log("Already logged in");
@@ -36,7 +38,7 @@ Cypress.Commands.add("logout", () => {
   // Send logout request FIRST (while cookies are present to invalidate server session)
   cy.request({
     method: "GET",
-    url: Cypress.env("webapp.url") + "Account/Logout",
+    url: Cypress.expose("webapp.url") + "Account/Logout",
     failOnStatusCode: false,
   });
 
@@ -45,7 +47,7 @@ Cypress.Commands.add("logout", () => {
   cy.clearLocalStorage();
 
   // Visit and verify logout
-  cy.visit(Cypress.env("webapp.url"));
+  cy.visit(Cypress.expose("webapp.url"));
   cy.get('button:contains("LOGIN")', { timeout: 10000 }).should("be.visible");
 
   cy.log("✓ Logged out");
@@ -62,7 +64,7 @@ Cypress.Commands.add("getSubmissionDetail", (key: string) => {
   return cy
     .fixture<{ submissionDetails: SubmissionDetail[] }>("submissions.json")
     .then(({ submissionDetails }) => {
-      const environment = Cypress.env("environment")?.toUpperCase();
+      const environment = Cypress.expose("environment")?.toUpperCase();
       const submissionDetail = submissionDetails.find(
         (detail) => detail.unityEnv.toUpperCase() === environment,
       );
@@ -86,7 +88,7 @@ Cypress.Commands.add("getMetabaseDetail", (key: string) => {
   return cy
     .fixture<{ metabaseDetails: MetabaseDetail[] }>("metabase.json")
     .then(({ metabaseDetails }) => {
-      const environment = Cypress.env("environment")?.toUpperCase();
+      const environment = Cypress.expose("environment")?.toUpperCase();
       const submissionDetail = metabaseDetails.find(
         (detail) => detail.unityEnv.toUpperCase() === environment,
       );
@@ -125,7 +127,7 @@ Cypress.Commands.add("getChefsDetail", (key: string) => {
   return cy
     .fixture<{ chefsDetails: chefsDetail[] }>("chefs.json")
     .then(({ chefsDetails }) => {
-      const environment = Cypress.env("environment")?.toUpperCase();
+      const environment = Cypress.expose("environment")?.toUpperCase();
       const submissionDetail = chefsDetails.find(
         (detail) => detail.unityEnv.toUpperCase() === environment,
       );
@@ -181,9 +183,11 @@ Cypress.Commands.add("chefsLogin", () => {
       // Check if you're already logged in.
       if ($body.find("#user").length) {
         // If #user exists, perform the login steps
-        cy.get("#user").type(Cypress.env("test1username"));
-        cy.get("#password").type(Cypress.env("test1password"));
-        cy.contains("Continue").should("exist").click();
+        cy.env(["test1username", "test1password"]).then(({ test1username, test1password }) => {
+          cy.get("#user").type(test1username, { log: false });
+          cy.get("#password").type(test1password, { log: false });
+          cy.contains("Continue").should("exist").click();
+        });
       } else {
         // If #user does not exist, log a message and proceed
         cy.log("Already logged in");
@@ -252,7 +256,7 @@ interface GrantApplicationResponse {
  * Available status values: 'Submitted', 'Under Assessment', 'Approved', 'Closed', 'Deferred'
  */
 function fetchGrantApplications(): Cypress.Chainable<GrantApplication[]> {
-  const apiUrl = `${Cypress.env("webapp.url")}api/app/grant-application`;
+  const apiUrl = `${Cypress.expose("webapp.url")}api/app/grant-application`;
   return cy.getCookie("XSRF-TOKEN").then((xsrfCookie) => {
     return cy
       .request({
@@ -434,8 +438,8 @@ interface ChefsSeedSubmissionPayload {
  */
 Cypress.Commands.add("seedApprovalFlowSubmission", () => {
   const envKey = (
-    Cypress.env("CHEFS_ENV") ||
-    Cypress.env("environment") ||
+    Cypress.expose("CHEFS_ENV") ||
+    Cypress.expose("environment") ||
     "test"
   ).toLowerCase();
 
@@ -445,16 +449,15 @@ Cypress.Commands.add("seedApprovalFlowSubmission", () => {
     );
   }
 
-  const apiKey = Cypress.env("chefsApiKey") as string | undefined;
+  return cy.env(["chefsApiKey", "test1username"]).then(({ chefsApiKey, test1username }) => {
+    expect(
+      chefsApiKey,
+      `Missing chefsApiKey for '${envKey}' — set it in cypress/config/${envKey}.json`,
+    ).to.exist;
 
-  expect(
-    apiKey,
-    `Missing chefsApiKey for '${envKey}' — set it in cypress/config/${envKey}.json`,
-  ).to.exist;
-
-  return cy
-    .readFile<ChefsSeedApiConfig>("cypress/scripts/chefs-api-config.json")
-    .then((apiConfig) => {
+    return cy
+      .readFile<ChefsSeedApiConfig>("cypress/scripts/chefs-api-config.json")
+      .then((apiConfig) => {
       const environment = apiConfig.environments[envKey];
 
       expect(
@@ -472,7 +475,7 @@ Cypress.Commands.add("seedApprovalFlowSubmission", () => {
           submissionPayload.submission.metadata.origin = environment.baseURL;
           submissionPayload.submission.metadata.referrer = `${environment.baseURL}/app/form/submit?f=${environment.formId}`;
 
-          const basicCredentials = btoa(`${environment.formId}:${apiKey}`);
+          const basicCredentials = btoa(`${environment.formId}:${chefsApiKey}`);
           const submissionUrl = `${environment.baseURL}/app/api/v1/forms/${environment.formId}/versions/${environment.versionId}/submissions`;
 
           return cy
@@ -485,8 +488,8 @@ Cypress.Commands.add("seedApprovalFlowSubmission", () => {
               },
               body: {
                 ...submissionPayload,
-                createdBy: `${Cypress.env("test1username")}@idir`,
-                updatedBy: `${Cypress.env("test1username")}@idir`,
+                createdBy: `${test1username}@idir`,
+                updatedBy: `${test1username}@idir`,
               },
               failOnStatusCode: false,
             })
@@ -515,5 +518,6 @@ Cypress.Commands.add("seedApprovalFlowSubmission", () => {
                 .then(() => confirmationId as string);
             });
         });
-    });
+      });
+  });
 });

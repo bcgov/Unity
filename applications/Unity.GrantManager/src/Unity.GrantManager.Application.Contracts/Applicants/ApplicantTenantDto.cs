@@ -9,5 +9,6 @@ namespace Unity.GrantManager.Applicants
         public string TenantName { get; set; } = string.Empty;
         public string? DisplayName { get; set; }
         public string? DefaultFromAddress { get; set; }
+        public string? MultipleIdentitiesMessageHtml { get; set; }
     }
 }

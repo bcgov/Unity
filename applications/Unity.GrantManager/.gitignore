@@ -191,6 +191,13 @@ ClientBin/
 *.pfx
 *.publishsettings
 node_modules/
+# Yarn 4: ignore the cache and install state (no zero-installs), keep the folders Yarn means to be committed
+**/.yarn/*
+!**/.yarn/patches
+!**/.yarn/plugins
+!**/.yarn/releases
+!**/.yarn/sdks
+!**/.yarn/versions
 orleans.codegen.cs
 
 # Since there are multiple workflows, uncomment next line to ignore bower_components

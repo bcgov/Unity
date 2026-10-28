@@ -2,23 +2,21 @@
 using System;
 using System.Threading.Tasks;
 using Unity.Reporting.Domain.Configuration;
-using Unity.Reporting.Settings;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.MultiTenancy;
-using Volo.Abp.Settings;
 
 namespace Unity.Reporting.BackgroundJobs
 {
     /// <summary>
     /// Background job for asynchronously assigning database roles to all generated reporting views for access control.
-    /// Retrieves the configured role from tenant-specific settings, verifies role existence,
+    /// Resolves the tenant's view role (saved setting, else {LicencePlate}_readonly), verifies role existence,
     /// and applies the role permissions to all views in the reporting schema within the specified tenant context.
     /// </summary>
     public class AssignViewRoleBackgroundJob(
         ICurrentTenant currentTenant,
         IReportColumnsMapRepository reportColumnsMapRepository,
-        ISettingProvider settingProvider,
+        TenantViewRoleManager tenantViewRoleManager,
         ILogger<AssignViewRoleBackgroundJob> logger) : AsyncBackgroundJob<AssignViewRoleBackgroundJobArgs>, ITransientDependency
     {
         public override async Task ExecuteAsync(AssignViewRoleBackgroundJobArgs args)
@@ -29,12 +27,12 @@ namespace Unity.Reporting.BackgroundJobs
             {
                 try
                 {
-                    // Get tenant-specific role - no global fallback since we're tenant-specific now
-                    var role = await settingProvider.GetOrNullAsync(ReportingSettings.TenantViewRole);
+                    // Tenant-specific only - no fallback to the deprecated host-level ViewRole
+                    var role = args.TenantId.HasValue ? await tenantViewRoleManager.ResolveAsync(args.TenantId.Value) : null;
 
                     if (string.IsNullOrEmpty(role))
                     {
-                        logger.LogWarning("No tenant-specific role configured for tenant {TenantId}. Role assignment will be skipped.", args.TenantId);
+                        logger.LogWarning("No view role for tenant {TenantId} (no saved role and no licence plate). Role assignment will be skipped.", args.TenantId);
                         return;
                     }
 

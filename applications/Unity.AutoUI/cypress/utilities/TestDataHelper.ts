@@ -28,27 +28,27 @@ export class TestDataHelper {
    * Get current environment name
    */
   static getCurrentEnvironment(): string {
-    return Cypress.env("environment");
+    return Cypress.expose("environment");
   }
 
   /**
    * Get web app URL
    */
   static getWebAppUrl(): string {
-    return Cypress.env("webapp.url");
+    return Cypress.expose("webapp.url");
   }
 
   /**
    * Get test user credentials
    */
-  static getTestUser(userNumber: 1 | 2 = 1): {
+  static getTestUser(userNumber: 1 | 2 = 1): Cypress.Chainable<{
     username: string;
     password: string;
-  } {
-    return {
-      username: Cypress.env(`test${userNumber}username`),
-      password: Cypress.env(`test${userNumber}password`),
-    };
+  }> {
+    return cy.env([`test${userNumber}username`, `test${userNumber}password`]).then((values) => ({
+      username: values[`test${userNumber}username`],
+      password: values[`test${userNumber}password`],
+    }));
   }
 
   /**
@@ -103,15 +103,15 @@ export class TestDataHelper {
     const tryAction = (): Cypress.Chainable<T> => {
       attempts++;
       if (attempts <= maxAttempts) {
-        return action().then((result: T) => {
-          return result;
-        }).catch((error: Error) => {
-          if (attempts < maxAttempts) {
-            cy.wait(delayMs);
-            return tryAction();
-          }
-          throw error;
-        });
+        return (action().then((result: T) => result) as any).catch(
+          (error: Error) => {
+            if (attempts < maxAttempts) {
+              cy.wait(delayMs);
+              return tryAction();
+            }
+            throw error;
+          },
+        ) as Cypress.Chainable<T>;
       }
       return action();
     };

@@ -51,6 +51,20 @@ namespace Unity.Notifications.EmailNotifications
             return await emailLogsRepository.InsertAsync(emailLog, autoSave: true);
         }
 
+        /// <summary>
+        /// Creates a log for a system-generated email to internal staff (e.g. comment mentions)
+        /// so it appears in the Notifications list and is delivered through the email queue.
+        /// </summary>
+        public async Task<EmailLog> CreateInternalEmailLogAsync(EmailMessageParams email, Guid applicationId, Guid applicantId, EmailType emailType)
+        {
+            EmailOwnership.EnsureSingleOwner(applicationId, applicantId);
+            var emailLog = new EmailLog { Id = GuidGenerator.Create() };
+            emailLog = await PopulateEmailLogAsync(emailLog, email, applicationId, EmailStatus.Initialized, applicantId: applicantId);
+            emailLog.Recipient = RecipientType.Internal;
+            emailLog.EmailType = emailType;
+            return await emailLogsRepository.InsertAsync(emailLog, autoSave: true);
+        }
+
         public async Task<EmailLog?> UpdateEmailLogAsync(Guid emailId, EmailMessageParams email, Guid applicationId, string? status, Guid applicantId = default)
         {
             if (string.IsNullOrEmpty(email.EmailTo))

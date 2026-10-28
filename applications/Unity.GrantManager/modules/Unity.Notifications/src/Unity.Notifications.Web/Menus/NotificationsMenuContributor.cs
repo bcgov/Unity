@@ -31,7 +31,6 @@ public class NotificationsMenuContributor : IMenuContributor
                 NotificationsMenus.NotificationList,
                 l["Menu:Notifications"],
                 "~/Notifications",
-                icon: "fl fl-mail",
                 order: 9,
                 requiredPermissionName: NotificationsPermissions.NotificationList.View
             )
@@ -42,7 +41,6 @@ public class NotificationsMenuContributor : IMenuContributor
                 NotificationsMenus.NotificationLogs,
                 l["Menu:NotificationLogs"],
                 "~/NotificationLogs",
-                icon: "fl fl-table",
                 order: 10,
                 requiredPermissionName: IdentityConsts.ITOperationsPermissionName
             )
@@ -55,7 +53,6 @@ public class NotificationsMenuContributor : IMenuContributor
                     NotificationsMenus.UnityMessaging,
                     l["Menu:RealtimeOps"],
                     "~/UnityMessaging",
-                    icon: "fl fl-users",
                     order: 11,
                     requiredPermissionName: IdentityConsts.ITOperationsPermissionName
                 )

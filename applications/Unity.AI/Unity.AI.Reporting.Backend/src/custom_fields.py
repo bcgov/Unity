@@ -1,0 +1,202 @@
+import json
+import textwrap
+import requests
+import logging
+from config import config
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+
+def _get_headers(tenant_id=None):
+    """Get Metabase API headers, using tenant-specific key if available."""
+    if tenant_id:
+        return config.get_tenant_metabase_headers(tenant_id)
+    return config.metabase_headers
+
+
+def get_sql(sql, db_id, metabase_url, tenant_id=None):
+    ds_req = {
+        "database": db_id,
+        "type": "native",
+        "native": {"query": sql},
+    }
+    r = requests.post(
+        f"{metabase_url}/api/dataset",
+        headers=_get_headers(tenant_id),
+        json=ds_req,
+    )
+    r.raise_for_status()
+    return r.json()["data"]
+
+def get_worksheets():
+    sql = 'SELECT "Worksheets"."Name", "Worksheets"."Id" FROM "Flex"."Worksheets"'
+    data = get_sql(sql, config.metabase.default_db_id, config.metabase.url)
+    return [{"name": r[0], "id": r[1]} for r in data["rows"]]
+
+def get_worksheet_instances(worksheet_id):
+    sql = f'SELECT "WorksheetInstances"."CurrentValue", "WorksheetInstances"."WorksheetCorrelationId" FROM "Flex"."WorksheetInstances" WHERE "WorksheetInstances"."WorksheetId" = \'{worksheet_id}\''
+    data = get_sql(sql, config.metabase.default_db_id, config.metabase.url)
+    return data
+
+def get_custom_labels():
+    all_data = {}
+    batch_size = 500
+    offset = 0
+
+    while True:
+        sql = f'''
+        SELECT "CustomFields"."Label", "CustomFields"."Key"
+        FROM "Flex"."CustomFields"
+        ORDER BY "CustomFields"."Key"
+        LIMIT {batch_size} OFFSET {offset}
+        '''
+        rows = get_sql(sql, config.metabase.default_db_id, config.metabase.url)["rows"]
+
+        if not rows:
+            break
+
+        all_data.update({r[1]: r[0] for r in rows})
+        offset += batch_size
+
+    return all_data
+
+def get_parsed_worksheets():
+    parsed = []
+    worksheets = get_worksheets()
+    custom_labels = get_custom_labels()
+    for w in worksheets:
+        instance = get_worksheet_instances(w["id"])
+        if len(instance["rows"]) > 0 and "values" in json.loads(instance["rows"][0][0]):
+            rows = instance["rows"]
+            keys = [j["key"] for j in json.loads(rows[0][0])["values"]]
+
+            samples = []
+            for row in rows[:3]:
+                keys = [j["key"] for j in json.loads(row[0])["values"]]
+                values = [j["value"] for j in json.loads(row[0])["values"]]
+                samples.append({custom_labels[keys[i]]: values[i][:300] for i in range(len(keys))})
+
+            parsed_string = f'''### {w["name"]}
+**Columns**
+{"\n".join(["- **" + custom_labels[k] + "** type/Text" for k in keys])}
+
+
+**Relations**
+_(none)_
+
+{"**Samples** (up to 3 rows)\n" + textwrap.indent(
+    json.dumps(samples, indent=2, default=str),
+    "    ")}
+        '''
+            parsed.append(parsed_string)
+            break
+    return parsed
+
+
+def get_column_example(table, column):
+    sql = f"SELECT \"{column}\" FROM \"Reporting\".\"{table}\" WHERE \"{column}\" IS NOT null and \"{column}\" <> ''"
+    instance = get_sql(sql, config.metabase.default_db_id, config.metabase.url)
+    try:
+        return instance["rows"][0][0]
+    except (KeyError, IndexError, TypeError):
+        return None
+
+def _format_table_schema(table_name, cols):
+    """Format a table's schema with column examples into a documentation string."""
+    page = f"# Reporting: {table_name}"
+    for c in cols:
+        col_name = c.split(' ')[0]
+        example = get_column_example(table_name, col_name)
+        if example is not None:
+            truncated = example[:50]
+            suffix = '...' if len(example) > 50 else ''
+            page += f"\n - {c}: '{truncated}{suffix}'"
+    return page
+
+def get_views_schemas():
+    schema = requests.get(
+        f"{config.metabase.url}/api/database/{config.metabase.default_db_id}/metadata",
+        headers=_get_headers()
+    ).json()
+
+    junk_cols = {
+        "CreatorId", "LastModificationTime", "LastModifierId",
+        "ExtraProperties", "ConcurrencyStamp", "CreationTime",
+    }
+
+    docs = []
+
+    for tbl in schema["tables"]:
+        if tbl["schema"] != "Reporting" or "Worksheet" not in tbl['name']:
+            continue
+
+        cols = [
+            f"{c['name']} ({c['base_type']})"
+            for c in tbl["fields"]
+            if c["name"] not in junk_cols
+        ]
+
+        # Find out if there are non-blank rows
+        sql = f"SELECT * FROM \"Reporting\".\"{tbl['name']}\" "
+        instance = get_sql(sql, config.metabase.default_db_id, config.metabase.url)
+        rows = [r for r in instance["rows"] if set(r[3:]) != set([''])]
+        if not rows:
+            continue
+
+        page = _format_table_schema(tbl['name'], cols)
+        docs.append(page)
+        logger.debug(page)
+
+    return docs
+
+get_views_schemas()
+# get_column_example("Worksheet-cpworksheet-v1", "field2")
+
+'''
+**Extraction pattern (PostgreSQL)**
+```sql
+SELECT  wi."Id" AS WorksheetInstanceId,
+        {"\n".join(["MAX(CASE WHEN elem ->> 'key' = '" + k + "' THEN elem ->> 'value' END) AS \"" + k + "\"," for k in keys])}
+FROM    Flex."WorksheetInstances"  wi
+CROSS   JOIN LATERAL jsonb_array_elements(wi."CurrentValue" -> 'values') elem
+GROUP BY wi."Id"
+
+Note: in worksheetinstances table: WorksheetCorrelationId, WorksheetId, ID
+Virtual: Name: customLabel1, customLabel2,.. applicationId 
+
+SELECT count(customLabel1) FROM public."Name" WHERE customLabel2 = 'field2'
+
+SELECT COUNT(t."customLabel1")
+FROM (
+  SELECT
+    wi."Id",
+    MAX(elem->>'value') FILTER (WHERE elem->>'key' = 'customLabel1') AS "customLabel1",
+    MAX(elem->>'value') FILTER (WHERE elem->>'key' = 'customLabel2') AS "customLabel2"
+  FROM "Flex"."WorksheetInstances" wi
+  CROSS JOIN LATERAL jsonb_array_elements(wi."CurrentValue"->'values') elem
+  GROUP BY wi."Id"
+) AS t
+WHERE t."customLabel2" = 'field2';
+
+See for example:
+WITH applicant AS (
+  SELECT
+      wi."Id" AS "WorksheetInstanceId",
+      MAX(CASE WHEN elem->>'key' = 'leadApplicant' THEN elem->>'value' END)           AS "leadApplicant",
+      MAX(CASE WHEN elem->>'key' = 'projectIntendedOutcomes' THEN elem->>'value' END) AS "projectIntendedOutcomes"
+  FROM "Flex"."WorksheetInstances" AS wi
+  CROSS JOIN LATERAL jsonb_array_elements(wi."CurrentValue"->'values') AS elem
+  GROUP BY wi."Id"
+)
+SELECT
+    a."projectIntendedOutcomes",
+    app."SubmissionDate"
+FROM "Flex"."WorksheetInstances" AS wi
+JOIN applicant AS a
+  ON wi."Id" = a."WorksheetInstanceId"
+JOIN "public"."Applications" AS app
+  ON app."Id" = wi."CorrelationId"
+WHERE a."leadApplicant" = 'Local Government';
+
+'''

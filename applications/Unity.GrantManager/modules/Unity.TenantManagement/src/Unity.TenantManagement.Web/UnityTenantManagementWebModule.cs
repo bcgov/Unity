@@ -78,7 +78,8 @@ public class UnityTenantManagementWebModule : AbpModule
                 {
                     toolbar.AddButton(
                         LocalizableString.Create<AbpTenantManagementResource>("NewTenant"),
-                        icon: " fl fl-add-to",
+                        icon: "fa-solid fa-circle-plus",
+                        iconType: Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.FontIconType.Other,
                         name: "CreateTenant",
                         requiredPolicyName: IdentityConsts.ITAdminPolicyName,
                         type: Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Button.AbpButtonType.Light

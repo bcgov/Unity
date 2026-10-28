@@ -117,16 +117,19 @@ function reloadDashboard() {
         results.forEach(({ config, labels, counts }) => {
             initializeChart(config, labels, counts);
         });
-    });
+    }).catch(error => console.error('Failed to load dashboard data:', error));
 }
 
 let colorPalette;
 
-fetch('./colorsPalette.json')
-    .then(response => response.json())
-    .then(data => {
-        colorPalette = data.colors;
-    });
+async function loadDashboardColorPalette() {
+    const response = await fetch('./colorsPalette.json');
+    const data = await response.json();
+    colorPalette = data.colors;
+}
+
+loadDashboardColorPalette()
+    .catch(error => console.error('Failed to load dashboard color palette:', error));
 
 reloadDashboard();
 

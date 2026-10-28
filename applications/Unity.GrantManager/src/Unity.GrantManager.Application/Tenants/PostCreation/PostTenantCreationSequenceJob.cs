@@ -26,11 +26,12 @@ namespace Unity.GrantManager.Tenants.PostCreation;
 /// another automatic attempt - recovering it currently requires manually re-enqueuing a
 /// <see cref="PostTenantCreationStepArgs"/> for that step index.
 ///
-/// Every outcome (skip aside - see below) is also persisted onto the tenant's "Sections" status
+/// Every outcome is also persisted onto the tenant's "Sections" status
 /// (<see cref="TenantPostCreationSectionsExtensions"/>), so an admin can see step state from the
-/// Tenants screen without reading logs. A step skipped via <c>CanExecuteAsync</c> returning false
-/// is left as "Waiting" rather than marked as a result, since it may still run on a later manual
-/// re-enqueue (e.g. once required configuration is added).
+/// Tenants screen without reading logs. A step whose <c>CanExecuteAsync</c> says not to run is
+/// recorded as Skipped (it does not apply) or Failure (it should apply but cannot), with the
+/// step's reason as the message; a Failure is treated like an error for
+/// <see cref="IPostTenantCreationStep.ContinueOnError"/>.
 /// </summary>
 public class PostTenantCreationSequenceJob(
     IEnumerable<IPostTenantCreationStep> steps,
@@ -71,11 +72,24 @@ public class PostTenantCreationSequenceJob(
         {
             using (currentTenant.Change(args.TenantId))
             {
-                if (!await step.CanExecuteAsync(args.TenantId))
+                var check = await step.CanExecuteAsync(args.TenantId);
+                if (!check.CanExecute)
                 {
-                    logger.LogInformation(
-                        "{Prefix} Skipping step {StepIndex} '{StepName}' for tenant {TenantId} - CanExecuteAsync returned false",
-                        LogPrefix, args.StepIndex, step.StepName, args.TenantId);
+                    var status = check.Status ?? PostTenantCreationStepStatus.Skipped;
+                    logger.Log(
+                        status == PostTenantCreationStepStatus.Failure ? LogLevel.Warning : LogLevel.Information,
+                        "{Prefix} Not running step {StepIndex} '{StepName}' for tenant {TenantId} ({Status}): {Reason}",
+                        LogPrefix, args.StepIndex, step.StepName, args.TenantId, status, check.Reason);
+
+                    await UpdateStepStatusAsync(args.TenantId, step, status, check.Reason);
+
+                    if (status == PostTenantCreationStepStatus.Failure && !step.ContinueOnError)
+                    {
+                        logger.LogWarning(
+                            "{Prefix} Stopping post-tenant-creation sequence after step '{StepName}' for tenant {TenantId} (ContinueOnError = false)",
+                            LogPrefix, step.StepName, args.TenantId);
+                        return;
+                    }
                 }
                 else
                 {

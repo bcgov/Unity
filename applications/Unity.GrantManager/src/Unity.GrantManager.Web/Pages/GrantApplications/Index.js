@@ -41,7 +41,7 @@ $(function () {
     let actionButtons = [
         {
             extend: 'csv',
-            text: 'Export',
+            text: '<i class="fa-solid fa-file-arrow-down" aria-hidden="true"></i> Export',
             className: 'custom-table-btn flex-none btn btn-secondary',
             exportOptions: {
                 columns: ':visible:not(.notexport)',
@@ -389,6 +389,7 @@ $(function () {
             dt,
             defaultVisibleColumns,
             listColumns,
+            columnSelectButtonText: '<i class="fa-solid fa-list-check" aria-hidden="true"></i> Columns',
             maxRowsPerPage: 10,
             defaultSortColumn: {
                 name: 'submissionDate',
@@ -464,7 +465,10 @@ $(function () {
                 initialLoad = false; // Reset flag after use
             },
             enableContextMenu: true,
-            contextMenuActionsSelector: '[data-selector="applications-table-actions"]'
+            contextMenuActionsSelector: '[data-selector="applications-table-actions"]',
+            contextMenuRowUrl: row => row?.id
+                ? `/GrantApplications/Details?ApplicationId=${encodeURIComponent(row.id)}`
+                : null
         });
 
         dataTable.on('select', function (e, dt, type, indexes) {
@@ -525,7 +529,7 @@ $(function () {
 
     // Update button text based to Save Views
     function updateSavedStatesButtonText() {
-        $('.grp-savedStates').text('Save View');
+        $('.grp-savedStates').html('<i class="fa-regular fa-bookmark" aria-hidden="true"></i> Save View');
     }
 
     dataTable.on('stateRestore-change', updateSavedStatesButtonText);

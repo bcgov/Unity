@@ -32,11 +32,13 @@ public interface IPostTenantCreationStep
     bool ContinueOnError { get; }
 
     /// <summary>
-    /// Validated before <see cref="ExecuteAsync"/> runs. When false, the step is skipped (logged,
-    /// not treated as a failure) and the sequence moves on to the next step. Defaults to true -
-    /// override to check preconditions such as required configuration being present.
+    /// Validated before <see cref="ExecuteAsync"/> runs. <see cref="PostTenantCreationStepCheck.Run"/>
+    /// runs the step. <see cref="PostTenantCreationStepCheck.Skip"/> records it as Skipped (it does
+    /// not apply) and <see cref="PostTenantCreationStepCheck.Fail"/> records it as Failure (it should
+    /// apply but cannot, e.g. required configuration is missing); either way it does not run.
+    /// Defaults to Run - override to check preconditions.
     /// </summary>
-    Task<bool> CanExecuteAsync(Guid tenantId) => Task.FromResult(true);
+    Task<PostTenantCreationStepCheck> CanExecuteAsync(Guid tenantId) => Task.FromResult(PostTenantCreationStepCheck.Run);
 
     Task ExecuteAsync(Guid tenantId);
 }

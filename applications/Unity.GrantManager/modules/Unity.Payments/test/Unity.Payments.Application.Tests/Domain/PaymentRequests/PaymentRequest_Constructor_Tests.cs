@@ -1,9 +1,9 @@
 using Shouldly;
 using System;
 using System.ComponentModel;
+using System.Linq;
 using Unity.Payments.Codes;
 using Unity.Payments.Domain.Exceptions;
-using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Enums;
 using Unity.Payments.PaymentRequests;
 using Volo.Abp;
@@ -49,6 +49,32 @@ public class PaymentRequest_Constructor_Tests : PaymentsApplicationTestBase
         payment.ShouldNotBeNull();
         payment.Status.ShouldBe(PaymentRequestStatus.L1Pending);
         payment.ExpenseApprovals.Count.ShouldBe(2);
+    }
+
+    [Fact]
+    public void SetLevel3ApprovalRequired_AddsOnlyOneLevel3Slot()
+    {
+        var payment = new PaymentRequest(Guid.NewGuid(), BuildNormalDto());
+        var approvalId = Guid.NewGuid();
+
+        payment.SetLevel3ApprovalRequired(true, approvalId);
+        payment.SetLevel3ApprovalRequired(true, Guid.NewGuid());
+
+        payment.ExpenseApprovals.Count.ShouldBe(3);
+        payment.ExpenseApprovals.Single(x => x.Type == ExpenseApprovalType.Level3).Id.ShouldBe(approvalId);
+    }
+
+    [Fact]
+    public void SetLevel3ApprovalRequired_RemovesOnlyLevel3Slot()
+    {
+        var payment = new PaymentRequest(Guid.NewGuid(), BuildNormalDto());
+        payment.SetLevel3ApprovalRequired(true, Guid.NewGuid());
+
+        payment.SetLevel3ApprovalRequired(false, Guid.NewGuid());
+        payment.SetLevel3ApprovalRequired(false, Guid.NewGuid());
+
+        payment.ExpenseApprovals.Count.ShouldBe(2);
+        payment.ExpenseApprovals.Select(x => x.Type).ShouldBe([ExpenseApprovalType.Level1, ExpenseApprovalType.Level2]);
     }
 
     #endregion
