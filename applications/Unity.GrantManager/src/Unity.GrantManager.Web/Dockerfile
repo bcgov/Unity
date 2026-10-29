@@ -1,5 +1,6 @@
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 ENV ASPNETCORE_URLS="http://+:8080"
+ENV TZ=America/Vancouver
 EXPOSE 8080 443
 WORKDIR /app
 
@@ -89,7 +90,9 @@ RUN mkdir -p /.aspnet && \
     chmod 644 /usr/local/share/ca-certificates/ssoroot.crt && \
     update-ca-certificates && \
     apt-get update && \
-    apt-get install -y --no-install-recommends libreoffice-nogui && \
+    apt-get install -y --no-install-recommends \
+        libreoffice-nogui \
+        tzdata-icu && \
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=publish /app/publish .
