@@ -7,6 +7,5 @@ namespace Unity.GrantManager.Intakes
         Task<string> ApplicantLookupByApplicantId(string unityApplicantId);
         Task<string> ApplicantLookupByBceidBusinesName(string bceidBusinessName, bool createIfNotExists = false);
         Task<string?> ApplicantLookupByOidcSub(string oidcSub);
-        Task<string> TestPacificTimeZone();
     }
 }

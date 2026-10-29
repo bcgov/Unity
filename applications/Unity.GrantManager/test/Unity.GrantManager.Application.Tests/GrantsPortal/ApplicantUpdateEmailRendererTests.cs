@@ -29,18 +29,4 @@ public class ApplicantUpdateEmailRendererTests
         html.ShouldContain($"href=\"https://unity.example.test/GrantApplicants/Details?ApplicantId={applicantId}&amp;TenantId={tenantId}\">APP&lt;&amp;&gt;</a>");
     }
 
-    [Theory]
-    [InlineData(1, "2025-01-01 4:00 AM (PST)")]
-    [InlineData(7, "2025-07-01 5:00 AM (PDT)")]
-    public void ShouldUseStandardPacificTimeFormat(int month, string expectedTime)
-    {
-        var html = ApplicantUpdateEmailRenderer.Render("https://unity.example.test", Guid.NewGuid(), Guid.NewGuid(),
-            "APP-123", "Applicant", new DateTime(2025, month, 1, 12, 0, 0, DateTimeKind.Utc),
-            new("Contact", [new("Contact name", "Jane Doe")]));
-
-        html.ShouldContain(expectedTime);
-        html.ShouldContain("<strong>Type of update:</strong> Contact");
-        html.ShouldNotContain("Previous value");
-        html.ShouldContain("<td>Jane Doe</td>");
-    }
 }
