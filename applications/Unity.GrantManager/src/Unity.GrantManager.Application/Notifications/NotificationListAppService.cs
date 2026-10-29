@@ -26,7 +26,7 @@ public class NotificationListAppService(
     : ApplicationService, INotificationListAppService
 {
     private static readonly TimeZoneInfo VancouverTimeZone =
-        TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time");
+        TimeZoneInfo.FindSystemTimeZoneById("America/Vancouver");
 
     public virtual async Task<PagedResultDto<NotificationSummaryDto>> GetListAsync(NotificationListInputDto input)
     {

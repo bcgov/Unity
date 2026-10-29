@@ -20,7 +20,7 @@ public class ApplicationRepository
       IApplicationRepository
 {
     private static readonly TimeZoneInfo VancouverTimeZone =
-        TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time");
+        TimeZoneInfo.FindSystemTimeZoneById("America/Vancouver");
 
     public ApplicationRepository(
         IDbContextProvider<GrantTenantDbContext> dbContextProvider)

@@ -86,7 +86,9 @@ RUN mkdir -p /.aspnet && \
     chmod 644 /usr/local/share/ca-certificates/ssoroot.crt && \
     update-ca-certificates && \
     apt-get update && \
-    apt-get install -y --no-install-recommends libreoffice-nogui && \
+    apt-get install -y --no-install-recommends \
+        libreoffice-nogui \
+        tzdata-icu && \
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=publish /app/publish .

@@ -234,7 +234,7 @@ public class NotificationListAppServiceTests : GrantManagerApplicationTestBase
 
         // Derive the window from the row's own CreationTime, converted to the Vancouver-local
         // calendar the service filters on, so the test does not depend on the machine timezone.
-        var vancouver = TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time");
+        var vancouver = TimeZoneInfo.FindSystemTimeZoneById("America/Vancouver");
         var creationDateLocal = TimeZoneInfo.ConvertTimeFromUtc(
             DateTime.SpecifyKind(draft.CreationTime, DateTimeKind.Utc), vancouver).Date;
 
