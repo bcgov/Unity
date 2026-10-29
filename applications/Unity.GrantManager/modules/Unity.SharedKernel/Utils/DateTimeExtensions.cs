@@ -6,9 +6,9 @@ namespace Unity.Modules.Shared.Utils;
 public static class DateTimeExtensions
 {
     // BC Pacific timezone: PST/PDT depending on time of year.
-    private const string WindowsPacificId = "Pacific Standard Time";
+    private const string WindowsPacificId = "America/Vancouver"; // FIX DST
     private const string IanaPacificId = "America/Vancouver";
-    private static readonly Lazy<TimeZoneInfo> PacificTimeZone = new(GetPacificTimeZone, isThreadSafe: true);
+    private static readonly Lazy<TimeZoneInfo> VancouverTimeZone = new(GetPacificTimeZone, isThreadSafe: true);
 
     // BC Mountain timezone: Peace River / NE BC region — MST/MDT, DST still applies.
     private const string WindowsMountainId = "Mountain Standard Time";
@@ -45,9 +45,9 @@ public static class DateTimeExtensions
             ? utcTime.Value
             : DateTime.SpecifyKind(utcTime.Value, DateTimeKind.Utc);
 
-        var pacificTz = PacificTimeZone.Value;
+        var pacificTz = VancouverTimeZone.Value;
         var ptDateTime = TimeZoneInfo.ConvertTimeFromUtc(utcTimeValue, pacificTz);
-        string abbr = pacificTz.IsDaylightSavingTime(ptDateTime) ? "(PDT)" : "(PST)";
+        string abbr = "(PCT)";
 
         return $"{ptDateTime.ToString("yyyy-MM-dd h:mm tt", CultureInfo.InvariantCulture)} {abbr}";
     }
