@@ -16,6 +16,7 @@ namespace Unity.Notifications.Emails;
 [ExposeServices(typeof(EmailLogAttachmentAppService), typeof(IEmailLogAttachmentAppService), typeof(IEmailLogAttachmentUploadService))]
 public class EmailLogAttachmentAppService(
     IEmailLogAttachmentRepository emailLogAttachmentRepository,
+    IEmailLogsRepository emailLogsRepository,
     EmailAttachmentService emailAttachmentService,
     IExternalUserLookupServiceProvider externalUserLookupServiceProvider,
     EmailComposerAccessChecker emailAccessChecker) : ApplicationService, IEmailLogAttachmentAppService, IEmailLogAttachmentUploadService
@@ -90,6 +91,7 @@ public class EmailLogAttachmentAppService(
         await emailAccessChecker.CheckDraftEditAsync(attachment.EmailLogId.Value);
 
         await emailAttachmentService.DeleteAttachmentAsync(attachment);
+        await TouchEmailLogAsync(attachment.EmailLogId.Value);
     }
 
     public async Task<long> GetTotalFileSizeByEmailLogIdAsync(Guid? emailLogId, Guid? templateId)
@@ -124,6 +126,11 @@ public class EmailLogAttachmentAppService(
         }
         var attachment = await emailAttachmentService.UploadUserAttachmentAsync(emailLogId, templateId, tenantId, fileName, content, contentType);
 
+        if (emailLogId.HasValue)
+        {
+            await TouchEmailLogAsync(emailLogId.Value);
+        }
+
         return new EmailLogAttachmentDto
         {
             Id = attachment.Id,
@@ -135,6 +142,14 @@ public class EmailLogAttachmentAppService(
             S3ObjectKey = attachment.S3ObjectKey,
             AttachedBy = await ResolveUserNameAsync(attachment.UserId)
         };
+    }
+
+    // Attachments are a separate aggregate root, so uploading/deleting one doesn't automatically
+    // bump the parent EmailLog's Last Modified stamp - touch it explicitly.
+    private async Task TouchEmailLogAsync(Guid emailLogId)
+    {
+        var emailLog = await emailLogsRepository.GetAsync(emailLogId);
+        await emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
     }
 
     private async Task<string> ResolveUserNameAsync(Guid userId)
