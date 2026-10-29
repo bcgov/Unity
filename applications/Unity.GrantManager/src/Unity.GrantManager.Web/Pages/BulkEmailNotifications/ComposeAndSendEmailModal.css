@@ -1,3 +1,8 @@
+#composeAndSendEmailModal {
+    --compose-label-width: 5rem;
+    --compose-field-gap: 0.5rem;
+}
+
 #composeAndSendEmailModal .modal-dialog {
     max-width: min(1040px, 95vw);
 }
@@ -108,6 +113,7 @@
 
 #composeAndSendEmailModal .no-draft-preview-mode #EmailForm {
     display: block;
+    padding: 0 0.5rem;
 }
 
 #composeAndSendEmailModal .no-draft-preview-mode #btn-new-email,
@@ -138,6 +144,93 @@
     display: flex;
 }
 
+/* Use the same label column for sender, recipients, template and subject. */
+#composeAndSendEmailModal .from-label {
+    flex: 0 0 var(--compose-label-width);
+    width: var(--compose-label-width);
+    min-width: var(--compose-label-width);
+    display: flex;
+    align-items: center;
+    min-height: 36px;
+}
+
+#composeAndSendEmailModal .compose-labelled-row,
+#composeAndSendEmailModal .compose-recipient-row {
+    margin-bottom: 1rem !important;
+}
+
+#composeAndSendEmailModal #EmailForm .row:has(.email-buttons-container) {
+    padding-bottom: 1rem !important;
+}
+
+#composeAndSendEmailModal #EmailForm .row:has(.from-field-container .field-validation-error) {
+    padding-bottom: 1.75rem !important;
+}
+
+#composeAndSendEmailModal .compose-step-one .email-buttons-group {
+    display: none;
+}
+
+#composeAndSendEmailModal .from-field-container {
+    min-width: 0;
+    margin: 0;
+    gap: var(--compose-field-gap);
+}
+
+#composeAndSendEmailModal .from-field-container .select2-container {
+    min-width: 0;
+}
+
+#composeAndSendEmailModal .compose-field-container {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--compose-field-gap);
+}
+
+#composeAndSendEmailModal .compose-recipient-row > .col-auto {
+    flex: 0 0 calc(var(--compose-label-width) + var(--compose-field-gap)) !important;
+    width: calc(var(--compose-label-width) + var(--compose-field-gap)) !important;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    height: 36px;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+#composeAndSendEmailModal .compose-recipient-row > .col-auto label {
+    margin: 0 !important;
+    font-weight: 500;
+}
+
+#composeAndSendEmailModal .compose-recipient-row > .col {
+    min-width: 0;
+    padding: 0 !important;
+}
+
+#composeAndSendEmailModal .compose-field-container .mb-3 {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0 !important;
+}
+
+#composeAndSendEmailModal .compose-recipient-row .mb-3 {
+    margin: 0 !important;
+}
+
+#composeAndSendEmailModal .compose-field-container .email-input,
+#composeAndSendEmailModal .compose-recipient-row .email-input,
+#composeAndSendEmailModal .compose-body-row .email-input {
+    width: 100% !important;
+    margin: 0 !important;
+}
+
+#composeAndSendEmailModal .compose-body-row,
+#composeAndSendEmailModal .compose-body-row > .col-12 {
+    padding: 0 !important;
+}
+
 #composeAndSendEmailModal .no-draft-preview-mode #btn-show-bcc {
     display: none;
 }
@@ -147,7 +240,7 @@
 }
 
 #composeAndSendEmailModal #email-attachments-section {
-    padding: 0 0.5rem !important;
+    padding: 0 !important;
 }
 
 body.compose-email-resizing {
