@@ -154,7 +154,13 @@ $(function () {
         });
         $table.on('click', '.delete-email-address', function () {
             const row = $table.DataTable().row($(this).closest('tr')).data();
-            if (row.isDefault) {
+            // A default row duplicated by another active row can be deleted; the server moves the default to the duplicate
+            const hasActiveDuplicate = $table.DataTable().rows().data().toArray().some(other =>
+                other.id !== row.id &&
+                other.isActive &&
+                other.emailAddress.toLowerCase() === row.emailAddress.toLowerCase() &&
+                other.emailType.toLowerCase() === row.emailType.toLowerCase());
+            if (row.isDefault && !hasActiveDuplicate) {
                 abp.notify.error('The default email address cannot be deleted. Select another email address as the default first.');
                 return;
             }

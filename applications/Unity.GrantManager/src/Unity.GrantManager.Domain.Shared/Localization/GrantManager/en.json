@@ -80,6 +80,12 @@
     "Applicants": "Applicants",
     "Multiple": "Multiple",
 
+    "ApplicationList:InvalidDate": "Invalid Date",
+    "ApplicationList:InvalidDateValue": "Please enter a valid date.",
+    "ApplicationList:DateInFuture": "The date cannot be in the future",
+    "ApplicationList:DateBeforeMinimum": "The date cannot be before the minimum allowed date",
+    "ApplicationList:DateAfterMaximum": "The date cannot be after the maximum allowed date",
+    "ApplicationList:InvalidDateRange": "Submission Date To cannot be earlier than Submission Date From.",
     "ApplicationList:OpenButton": "Open",
     "ApplicationList:AssignButton": "Assign",
     "ApplicationList:ApproveButton": "Approve",

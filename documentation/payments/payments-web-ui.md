@@ -54,6 +54,8 @@ An empty or absent `requestedFields` list means "include everything" (`IncludesA
 
 The list is date-bounded by design. The action bar carries a quick-range dropdown plus custom from/to inputs; the selection is persisted in `localStorage` under `PaymentRequests_QuickRange` / `_FromDate` / `_ToDate`, defaulting to **last 6 months**. The dates are sent as `requestedFromDate` / `requestedToDate` and converted in `PaymentRequestQueryManager.ConvertToUtcRange` from Vancouver local dates to a UTC range, with the "to" date extended to the end of the local day.
 
+Custom ranges validate both endpoints for typing and picker events: dates must be valid, no earlier than 1900-01-01, no later than today, and ordered from earliest to latest. Invalid custom ranges do not update the applied filters or their local-storage values; invalid ranges restored from local storage or saved views fall back to the last six months. The **Current Fiscal Year** preset keeps its full April 1–March 31 range, including its future end date. Switching to Custom Ranges retains those displayed dates and validates them under the custom-date rules before any manual changes can be applied.
+
 ### Columns
 
 `getColumns()` defines the full set; `defaultVisibleColumns` is the subset shown before the user customises anything:

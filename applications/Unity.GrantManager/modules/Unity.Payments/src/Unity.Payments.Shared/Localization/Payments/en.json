@@ -3,6 +3,12 @@
   "texts": {
     "Payments": "Payments",
     "WelcomeToPayments": "Welcome to Payments Module",
+    "PaymentRequests:InvalidDate": "Invalid Date",
+    "PaymentRequests:InvalidDateValue": "Please enter a valid date.",
+    "PaymentRequests:DateInFuture": "The date cannot be in the future",
+    "PaymentRequests:DateBeforeMinimum": "The date cannot be before the minimum allowed date",
+    "PaymentRequests:DateAfterMaximum": "The date cannot be after the maximum allowed date",
+    "PaymentRequests:InvalidDateRange": "Requested Date To cannot be earlier than Requested Date From.",
 
     "Payments:Errors:ZeroPayment": "Cannot submit a payment request for $0.00",
     "Payments:Errors:MissingSupplierNumber": "Cannot submit a payment request without a supplier number",
