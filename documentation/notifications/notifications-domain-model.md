@@ -61,7 +61,7 @@ Mapping: cascade-delete FKs to both `EmailLog` and `EmailTemplate` (both optiona
 
 An allowlisted address with `EmailType` (one of `Sender`, `ReplyTo`, `NoReply`, `Inbound`, `Support`, `Other`, enforced in `EmailAddressConfigurationsAppService`), `Description`, `IsActive`, `IsDefault`. Two indexes matter:
 
-- `(TenantId, EmailAddress, EmailType)` unique — no duplicate address/type pairs per tenant.
+- `(TenantId, EmailAddress, EmailType)` unique — no duplicate address/type pairs per tenant. The index is case-sensitive (the seeded default sender keeps its original casing while UI-created rows are lowercased), so `EmailAddressConfigurationsAppService` also enforces uniqueness case-insensitively.
 - `TenantId` unique **with filter `"IsDefault" = true`** — a Postgres partial index guaranteeing at most one default address per tenant at the database level, not just in service code.
 
 The active default `Sender` row is the From address fallback used by `EmailNotificationManager.GetEmailObjectAsync` and `EmailNotificationService.SendCommentNotification`; if none exists both fall back to the literal `NoReply@gov.bc.ca`.
