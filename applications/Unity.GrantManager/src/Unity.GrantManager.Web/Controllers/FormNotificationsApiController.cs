@@ -277,7 +277,7 @@ namespace Unity.GrantManager.Web.Controllers
             {
                 Id = e.Id,
                 TemplateId = e.EmailTemplateId,
-                TemplateName = templateMap.TryGetValue(e.EmailTemplateId, out var t) && t != null ? t.Name : string.Empty,
+                TemplateName = templateMap.TryGetValue(e.EmailTemplateId, out var t) && t != null ? t.Name : "Template deleted",
                 TemplateType = templateMap.TryGetValue(e.EmailTemplateId, out var template) && template != null
                     ? template.TemplateType
                     : TemplateTypes.Application,
@@ -403,6 +403,7 @@ namespace Unity.GrantManager.Web.Controllers
             var references = await automatedNotificationAppService.GetTemplateReferencesAsync(templateId);
 
             var associatedPlans = references
+                .Where(n => n.IsActive)
                 .Select(n =>
                     string.IsNullOrWhiteSpace(n.TriggerDetail)
                         ? $"{n.TriggerType} notification"
@@ -417,7 +418,7 @@ namespace Unity.GrantManager.Web.Controllers
                 return Ok(new
                 {
                     canDelete = false,
-                    errorMessage = "This template cannot be deleted because it is assigned to one or more Scheduled Notifications. Please remove the template from all Scheduled Notifications before deleting.",
+                    errorMessage = "This template cannot be deleted because it is assigned to one or more active Scheduled Notifications. Please cancel these Scheduled Notifications or assign them a different template before deleting.",
                     notificationPlanNames = associatedPlans
                 });
             }
@@ -432,7 +433,7 @@ namespace Unity.GrantManager.Web.Controllers
             var references = await automatedNotificationAppService.GetTemplateReferencesAsync(templateId);
             var template = await templateService.GetTemplateById(templateId);
 
-            var templateName = template?.Name ?? "Template";
+            var templateName = template?.Name ?? "Template deleted";
             var planNames = references
                 .Where(n => n.IsActive)
                 .Select(n => string.IsNullOrWhiteSpace(n.TriggerDetail)
