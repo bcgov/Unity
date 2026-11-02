@@ -26,7 +26,7 @@ Every one of the six operations travels the same path from request to result. No
 
 ```csharp
 var operation = AIGenerationOperations.Get(operationType);
-await featureGuard.EnsureEnabledAsync(operation.FeatureName, operation.DisabledLocalizationKey);
+await featureGuard.EnsureEnabledAsync(operation.FeatureName, operation.DisabledErrorCode);
 
 if (operation.RequiresFormVersion && request.ApplicationFormVersionId is null)
     throw new UserFriendlyException($"AI operation '{operationType}' requires an application form version.");
@@ -76,9 +76,9 @@ A duplicate submission **returns quietly** — no exception, no second job, and 
 
 ### Prerequisite validation
 
-`AIGenerationPrerequisiteValidator.EnsureAvailableAsync` switches on the operation type and throws a localized `UserFriendlyException` when the operation cannot possibly succeed:
+`AIGenerationPrerequisiteValidator.EnsureAvailableAsync` switches on the operation type and throws a `BusinessException` with an `AIErrorCodes` code when the operation cannot possibly succeed:
 
-| Operation | Requires | Message key |
+| Operation | Requires | Error code |
 |---|---|---|
 | `attachment-summary` | at least one CHEFS attachment on the application | `AI:NoAttachmentsAvailable` |
 | `application-analysis` | a form submission with non-empty content | `AI:ApplicationAnalysisRequiresSubmission` |
@@ -125,11 +125,13 @@ using (currentTenant.Change(args.TenantId))
     }
     catch (Exception ex)
     {
-        await MarkFailedInNewUowAsync(..., ex.Message, ...);
+        await MarkFailedInNewUowAsync(..., GetFailureReason(errorInfoConverter, ex), ...);
         throw;                                            // let ABP's job retry see it
     }
 }
 ```
+
+The saved failure reason is shown to users, but the job runs outside a web request and so skips ABP's exception handling. `AIGenerationRequestJobHelper.GetFailureReason` passes every exception through ABP's `IExceptionToErrorInfoConverter`, so the saved text matches what a web request would show. Business errors get their localized message. Any other error gets the generic error message, unless exception details are turned on, which happens only in Development. The queue uses the same helper when an enqueue fails. The full exception is still logged, because both places rethrow it.
 
 Every status transition runs in its **own short unit of work** (`requiresNew: true, isTransactional: false`). `AIGenerationRequestJobHelper` explains why that pattern is used for results too:
 
@@ -177,7 +179,7 @@ ApplicationAnalysis enabled? → queue application-analysis
 Scoring             enabled? → queue application-scoring
 ```
 
-Each is queued in its own `try`/`catch (UserFriendlyException)`. The method throws only if *no* feature was enabled, or if every enabled stage failed to queue — so an application with no attachments still gets analysis and scoring, and the attachment-summary failure is swallowed. The handler itself then catches and logs anything that escapes, so a failed AI pipeline never fails intake.
+Each is queued in its own `try`/`catch (BusinessException)`. The method throws only if *no* feature was enabled, or if every enabled stage failed to queue — so an application with no attachments still gets analysis and scoring, and the attachment-summary failure is swallowed. The handler itself then catches and logs anything that escapes, so a failed AI pipeline never fails intake.
 
 Note that the three stages are queued as **peers, not a sequence**. Nothing makes application analysis wait for attachment summaries to finish, even though analysis consumes attachment summaries as input — see [ai-roadmap.md](ai-roadmap.md#the-intake-pipeline-is-three-peers-not-a-chain).
 

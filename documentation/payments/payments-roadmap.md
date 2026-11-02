@@ -69,7 +69,6 @@ Two dbcontexts also map the same tables: `PaymentsDbContext` (bound to the `Tena
 - `PaymentQueueService` lives in `Unity.Payments.Application/Integrations/RabbitMQ/` but is declared in namespace **`Unity.Notifications.Integrations.RabbitMQ`**.
 - `Domain/UserPaymentThresholds/IPaymentConfigurationRepository.cs` declares `IPaymentThresholdRepository`, and its implementation is `EntityFrameworkCore/Repositories/UserPaymentThresholdRepository.cs`.
 - `Pages/PaymentRequests/Index.cshtml.cs` declares `PaymentsPageModel` in namespace `Unity.Payments.Web.Pages.Payments`, not a `PaymentRequests` namespace.
-- The error-code constant `Payments:Errors:InvalidAccountCodingFiled` is misspelled, in both `ErrorConsts` and `en.json`.
 - The Payments main-menu item's display name is the hard-coded string `"Payments"` rather than a `PaymentsResource` key, so it does not localize.
 
 ## CAS reconciliation details

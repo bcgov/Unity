@@ -7,4 +7,5 @@ public class EmailHistoryWidgetViewModel
     public string ApplicantName { get; set; } = string.Empty;
     public string UnityApplicantId { get; set; } = string.Empty;
     public bool EnableEmailDelay { get; set; }
+    public Unity.Notifications.Emails.EmailCapabilitiesDto Capabilities { get; set; } = new();
 }

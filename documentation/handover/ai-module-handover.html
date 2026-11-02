@@ -359,7 +359,7 @@
         <div class="gate-n">01</div>
         <div class="gate-what">Feature</div>
         <div class="gate-scope">Has this tenant bought the capability?</div>
-        <div class="gate-fail"><span><span class="code">AIFeatureGuard</span> throws a localized <b>UserFriendlyException</b>; permissions also disappear from the UI</span></div>
+        <div class="gate-fail"><span><span class="code">AIFeatureGuard</span> throws a <b>BusinessException</b> with a localized <span class="code">AIErrorCodes</span> code; permissions also disappear from the UI</span></div>
       </div>
       <div class="gate-row">
         <div class="gate-n">02</div>
@@ -427,12 +427,11 @@ AIPrompt  (Name + VersionNumber, optionally TenantId)
     <table class="data">
       <thead><tr><th>Model</th><th>Max-output-tokens supported</th><th>Temperature</th></tr></thead>
       <tbody>
-        <tr><td class="code">gpt-4o-mini</td><td class="yes">yes</td><td>0.3</td></tr>
         <tr><td class="code">gpt-5-mini</td><td class="no">no</td><td class="no">—</td></tr>
         <tr><td class="code">gpt-5-nano</td><td class="no">no</td><td class="no">—</td></tr>
       </tbody>
     </table>
-    <p class="note" style="margin-top:12px;">All six operations bind to <span class="code">gpt-5-mini</span>. Those two model settings exist because newer families reject the parameters older ones require — when <span class="code">MaxOutputTokenCountSupported</span> is false the option is <em>not sent at all</em> rather than defaulted, and the same for a null temperature. <strong>The model name is also the Azure deployment name</strong>: the factory passes it straight to <span class="code">GetChatClient(...)</span>.</p>
+    <p class="note" style="margin-top:12px;"><span class="code">gpt-4o-mini</span> is retired (no new Azure deployments allowed): it is no longer seeded, and an existing row is deactivated. All six operations bind to <span class="code">gpt-5-mini</span>. Those two model settings exist because newer families reject the parameters older ones require — when <span class="code">MaxOutputTokenCountSupported</span> is false the option is <em>not sent at all</em> rather than defaulted, and the same for a null temperature. <strong>The model name is also the Azure deployment name</strong>: the factory passes it straight to <span class="code">GetChatClient(...)</span>.</p>
     <p class="note">All three seeders skip tenant contexts and are <strong>corrective</strong> — an existing model or operation row has its provider, active flag, settings, model binding, execution mode and token budget overwritten on every run. There is no admin UI for models or operations; changes made directly in the database are reverted at the next migration run.</p>
 
     <h3>Two AI schemas, in two databases</h3>
@@ -589,7 +588,7 @@ selected ??= global (TenantId == null) newest ACTIVE prompt in this family</div>
     <div class="schematic">GenerateInitialMapping → ReviewInitialMapping
     → GenerateWorksheets → ReviewWorksheets → PublishAssignWorksheets
     → GenerateFinalMapping → ReviewFinalMapping → Completed</div>
-    <p class="note">Map what you can, generate worksheets for what you cannot, publish and assign them, then map again now that the new custom fields exist. The step names are localization keys in <span class="code">AILocalizationKeys</span>; the odd/even sequence rule above is what implements the two mapping passes.</p>
+    <p class="note">Map what you can, generate worksheets for what you cannot, publish and assign them, then map again now that the new custom fields exist. The step names are the <span class="code">AI:Workflow*</span> localization keys; the odd/even sequence rule above is what implements the two mapping passes.</p>
   </section>
 
   <!-- ============ 08 EDGES ============ -->

@@ -644,6 +644,16 @@ function initDropdown(dropdownId, title) {
         dropdownCssClass: 'dashboard-filter-dropdown'
     });
 
+    // Replacing category options makes Select2 redraw selection chips after
+    // the change handlers finish. Keep the fixed label through those redraws.
+    const rendered = $select.next('.select2-container').find('.select2-selection__rendered')[0];
+    new MutationObserver(function () {
+        // Ignore our own label update, and also catch a chip with matching text.
+        if (rendered.childElementCount || rendered.textContent !== title) {
+            setDropdownLabel(dropdownId, title);
+        }
+    }).observe(rendered, { childList: true });
+
     // Fires for mouse selections; the keyboard path restores focus itself.
     // Deferred so it runs after Select2 has finished moving focus away.
     $select.on('select2:select select2:unselect', function () {

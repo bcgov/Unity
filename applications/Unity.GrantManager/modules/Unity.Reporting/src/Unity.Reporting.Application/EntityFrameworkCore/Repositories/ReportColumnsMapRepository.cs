@@ -366,42 +366,14 @@ namespace Unity.Reporting.EntityFrameworkCore.Repositories
             }
 
             var dbContext = await GetDbContextAsync();
-            var connection = dbContext.Database.GetDbConnection();
             await dbContext.Database.OpenConnectionAsync();
-            
+
             try
             {
-                // Get all view names in the Reporting schema
-                using var getViewsCommand = connection.CreateCommand();
-                getViewsCommand.CommandText = @"
-                    SELECT viewname 
-                    FROM pg_views 
-                    WHERE schemaname = 'Reporting'";
-
-                var viewNames = new List<string>();
-                using var viewsReader = await getViewsCommand.ExecuteReaderAsync();
-                
-                while (await viewsReader.ReadAsync())
-                {
-                    viewNames.Add(viewsReader.GetString(0));
-                }
-                
-                await viewsReader.CloseAsync();
-
-                // Grant SELECT permission on each view to the role
-                foreach (var viewName in viewNames)
-                {
-                    // SECURITY: Validate each identifier read back from pg_views before it is
-                    // interpolated into SQL - quoted PostgreSQL identifiers can contain characters
-                    // (embedded quotes, semicolons) that would otherwise break out of the quotes below.
-                    if (!IsValidPostgreSqlIdentifier(viewName))
-                    {
-                        throw new ArgumentException($"Invalid view name format: {viewName}", nameof(viewName));
-                    }
-
-                    var sql = $"GRANT SELECT ON \"Reporting\".\"{viewName}\" TO \"{role}\"";
-                    await dbContext.Database.ExecuteSqlRawAsync(sql);
-                }
+                // One schema-wide grant instead of a per-view loop: no view name is interpolated
+                // into SQL, so legacy auto-generated views (hyphenated, mixed-case names) are covered too.
+                var sql = $"GRANT SELECT ON ALL TABLES IN SCHEMA \"Reporting\" TO \"{role}\"";
+                await dbContext.Database.ExecuteSqlRawAsync(sql);
             }
             finally
             {

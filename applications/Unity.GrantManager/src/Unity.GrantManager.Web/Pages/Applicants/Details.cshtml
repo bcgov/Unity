@@ -23,7 +23,8 @@
     var hasPayments         = await PermissionChecker.IsGrantedAsync(UnitySelector.ApplicantManagement.Payments.Default);
 
     var hasEmail = await FeatureChecker.IsEnabledAsync("Unity.Notifications")
-        && await PermissionChecker.IsGrantedAsync("Notifications.Email");
+        && await PermissionChecker.IsGrantedAsync(Unity.Notifications.Permissions.NotificationsPermissions.Email.Default)
+        && await PermissionChecker.IsGrantedAsync(Unity.Notifications.Permissions.NotificationsPermissions.Email.Applicant.Default);
 
     // Set the first tab to display based on permissions
     string firstTab = "nav-submissions";

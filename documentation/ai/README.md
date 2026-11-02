@@ -30,7 +30,7 @@ This folder documents how the module is built and how it is used. Read in this o
 applications/Unity.GrantManager/modules/Unity.AI/
 ├── src/
 │   ├── Unity.AI.Domain.Shared/          feature consts, settings keys, PromptType,
-│   │                                      AIResource localization + AILocalizationKeys
+│   │                                      AIResource localization + AIErrorCodes
 │   ├── Unity.AI.Application.Contracts/   DTOs, app service interfaces, operation definitions,
 │   │                                      requests/responses, permissions, provider-facing abstractions
 │   ├── Unity.AI.Application/             Domain/          AIModel, AIOperation, AIPrompt

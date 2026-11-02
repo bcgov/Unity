@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.AI.Features;
-using Unity.AI.Localization;
 using Unity.AI.Permissions;
 
 namespace Unity.AI.Generation;
@@ -11,7 +10,7 @@ public sealed record AIGenerationOperationDefinition(
     string OperationType,
     string OperationName,
     string FeatureName,
-    string DisabledLocalizationKey,
+    string DisabledErrorCode,
     string GeneratePermission,
     string ViewPermission,
     bool RequiresFormVersion);
@@ -32,7 +31,7 @@ public static class AIGenerationOperations
                 AttachmentSummary,
                 "AttachmentSummary",
                 AIFeatures.AttachmentSummaries,
-                AILocalizationKeys.AttachmentSummariesDisabled,
+                AIErrorCodes.AttachmentSummariesDisabled,
                 AIPermissions.Analysis.GenerateAttachmentSummaries,
                 AIPermissions.Analysis.ViewAttachmentSummary,
                 false),
@@ -40,7 +39,7 @@ public static class AIGenerationOperations
                 ApplicationAnalysis,
                 "ApplicationAnalysis",
                 AIFeatures.ApplicationAnalysis,
-                AILocalizationKeys.ApplicationAnalysisDisabled,
+                AIErrorCodes.ApplicationAnalysisDisabled,
                 AIPermissions.Analysis.GenerateApplicationAnalysis,
                 AIPermissions.Analysis.ViewApplicationAnalysis,
                 false),
@@ -48,7 +47,7 @@ public static class AIGenerationOperations
                 ApplicationScoring,
                 "ApplicationScoring",
                 AIFeatures.Scoring,
-                AILocalizationKeys.ScoringDisabled,
+                AIErrorCodes.ScoringDisabled,
                 AIPermissions.Analysis.GenerateScoring,
                 AIPermissions.Analysis.ViewScoringResult,
                 false),
@@ -56,7 +55,7 @@ public static class AIGenerationOperations
                 FormMapping,
                 "FormMapping",
                 AIFeatures.FormMapping,
-                AILocalizationKeys.FormMappingDisabled,
+                AIErrorCodes.FormMappingDisabled,
                 AIPermissions.Analysis.GenerateFormMapping,
                 AIPermissions.Analysis.ViewFormMapping,
                 true),
@@ -64,7 +63,7 @@ public static class AIGenerationOperations
                 FormWorksheet,
                 "FormWorksheet",
                 AIFeatures.FormWorksheet,
-                AILocalizationKeys.FormWorksheetDisabled,
+                AIErrorCodes.FormWorksheetDisabled,
                 AIPermissions.Analysis.GenerateFormWorksheet,
                 AIPermissions.Analysis.ViewFormWorksheet,
                 true),
@@ -72,7 +71,7 @@ public static class AIGenerationOperations
                 FormScoresheet,
                 "FormScoresheet",
                 AIFeatures.FormScoresheet,
-                AILocalizationKeys.FormScoresheetDisabled,
+                AIErrorCodes.FormScoresheetDisabled,
                 AIPermissions.Analysis.GenerateFormScoresheet,
                 AIPermissions.Analysis.ViewFormScoresheet,
                 true)

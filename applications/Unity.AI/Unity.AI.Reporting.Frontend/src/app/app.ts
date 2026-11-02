@@ -2,7 +2,6 @@ import { Component, ViewChild, ElementRef, OnInit, OnDestroy, ChangeDetectorRef 
 import { firstValueFrom } from 'rxjs';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 import { Embed } from './embed';
 import { Turn } from './turn';
@@ -49,8 +48,7 @@ export class App implements OnInit, OnDestroy {
     private readonly logger: LoggerService,
     private readonly iframeDetector: IframeDetectorService,
     private readonly configService: ConfigService,
-    private readonly cdr: ChangeDetectorRef,
-    private readonly sanitizer: DomSanitizer
+    private readonly cdr: ChangeDetectorRef
   ) {}
 
   @ViewChild('turnsContainer') private readonly turnsContainer!: ElementRef<HTMLDivElement>;
@@ -64,7 +62,7 @@ export class App implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.initialize();
+    this.initialize().catch(error => this.logger.error('Failed to initialize app:', error));
   }
 
   private async initialize(): Promise<void> {
@@ -293,7 +291,7 @@ export class App implements OnInit, OnDestroy {
 
           // Refresh the sidebar to remove the deleted chat
           if (this.sidebar) {
-            this.sidebar.loadChats();
+            void this.sidebar.loadChats();
           }
 
           // Show success toast for entire chat deletion
@@ -335,7 +333,7 @@ export class App implements OnInit, OnDestroy {
     this.turnToDelete = null;
   }
 
-  async resetConversation() {
+  resetConversation(): void {
     this.conversation = [];
     this.currentTurnIndex = 0;
   }
@@ -424,7 +422,7 @@ export class App implements OnInit, OnDestroy {
     // Retry the question with the existing turn
     this.question = turn.question;
     this.conversation = this.conversation.filter(t => t !== turn);
-    this.askQuestion(nextRetryCount, errorType, turn.errorDetail);
+    void this.askQuestion(nextRetryCount, errorType, turn.errorDetail);
   }
 
   editQuestion(turn: Turn): void {
@@ -440,7 +438,7 @@ export class App implements OnInit, OnDestroy {
     // Resubmit the question with retry_count=1 so the backend skips the semantic cache (is_retry=true).
     this.question = turn.question;
     this.conversation = this.conversation.filter(t => t !== turn);
-    this.askQuestion(1);
+    void this.askQuestion(1);
   }
 
   get isLoading(): boolean {
@@ -452,12 +450,12 @@ export class App implements OnInit, OnDestroy {
     
     // Refresh chat list when opening sidebar
     if (this.sidebarOpen && this.sidebar) {
-      this.sidebar.loadChats();
+      void this.sidebar.loadChats();
     }
   }
 
   onChatSelected(chat: Chat): void {
-    this.loadChat(chat.id);
+    void this.loadChat(chat.id);
   }
 
   onNewChat(): void {
@@ -523,7 +521,7 @@ export class App implements OnInit, OnDestroy {
       
       // Refresh the chat list in the sidebar
       if (this.sidebar) {
-        this.sidebar.loadChats();
+        void this.sidebar.loadChats();
       }
     } catch (error) {
       // Log the error and provide user feedback instead of handling it silently
@@ -660,8 +658,8 @@ export class App implements OnInit, OnDestroy {
     return JSON.stringify(value);
   }
 
-  highlightSql(sql: string): SafeHtml {
-    if (!sql) return this.sanitizer.bypassSecurityTrustHtml('');
+  highlightSql(sql: string): string {
+    if (!sql) return '';
 
     const KEYWORDS = new Set([
       'SELECT','FROM','WHERE','JOIN','LEFT','RIGHT','INNER','OUTER','FULL','ON',
@@ -713,9 +711,9 @@ export class App implements OnInit, OnDestroy {
     const numbered = highlighted.split('\n')
       .map(line => `<span class="sql-line">${line}</span>`)
       .join('');
-    // Safe: all SQL content is HTML-escaped via esc(); only hardcoded <span> tags with
-    // static class names are injected.
-    return this.sanitizer.bypassSecurityTrustHtml(numbered);
+    // SQL content is HTML-escaped via esc(); the [innerHTML] binding then runs Angular's
+    // built-in sanitizer, which keeps the <span class="..."> markup.
+    return numbered;
   }
 
   ngOnDestroy(): void {

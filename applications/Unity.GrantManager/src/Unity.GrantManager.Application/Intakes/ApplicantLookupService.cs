@@ -45,69 +45,6 @@ namespace Unity.GrantManager.Intakes
             }
         }
 
-        public async Task<string> TestPacificTimeZone()
-        {
-            var zoneIds = new[]
-            {
-                "Pacific Standard Time",
-                "America/Vancouver"
-            };
-
-            var testDates = new[]
-            {
-                new DateTimeOffset(2026, 3, 15, 12, 0, 0, TimeSpan.Zero),
-                new DateTimeOffset(2026, 11, 2, 12, 0, 0, TimeSpan.Zero)
-            };
-
-            var results = new List<object>();
-
-            foreach (var zoneId in zoneIds)
-            {
-                try
-                {
-                    var zone = TimeZoneInfo.FindSystemTimeZoneById(zoneId);
-
-                    foreach (var utc in testDates)
-                    {
-                        var local = TimeZoneInfo.ConvertTime(utc, zone);
-
-                        results.Add(new
-                        {
-                            TimeZoneIdRequested = zoneId,
-                            ResolvedTimeZoneId = zone.Id,
-                            UtcInput = utc.ToString("yyyy-MM-ddTHH:mm:ssZ"),
-                            LocalTime = local.ToString("yyyy-MM-ddTHH:mm:sszzz"),
-                            Offset = local.Offset.ToString(),
-                            OffsetHours = local.Offset.TotalHours,
-                            IsDaylightSavingTime =
-                                zone.IsDaylightSavingTime(local),
-                            Success = true,
-                            Error = (string?)null
-                        });
-                    }
-                }
-                catch (Exception ex)
-                {
-                    results.Add(new
-                    {
-                        TimeZoneIdRequested = zoneId,
-                        Success = false,
-                        Error = ex.Message
-                    });
-                }
-            }
-
-            var result = new
-            {
-                ServerUtcNow = DateTimeOffset.UtcNow.ToString("O"),
-                OperatingSystem = System.Runtime.InteropServices.RuntimeInformation.OSDescription,
-                Results = results
-            };
-
-            return await Task.FromResult(
-                JsonConvert.SerializeObject(result, Formatting.Indented));
-        }
-
         public async Task<string> ApplicantLookupByBceidBusinesName(string bceidBusinessName, bool createIfNotExists = false)
         {
             if (string.IsNullOrWhiteSpace(bceidBusinessName))

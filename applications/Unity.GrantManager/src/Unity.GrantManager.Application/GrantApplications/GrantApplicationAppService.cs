@@ -76,7 +76,7 @@ public class GrantApplicationAppService(
     private async Task EnsureAiOperationAccessAsync(string operationType, bool requiresGeneratePermission)
     {
         var operation = AIGenerationOperations.Get(operationType);
-        await aiFeatureGuard.EnsureEnabledAsync(operation.FeatureName, operation.DisabledLocalizationKey);
+        await aiFeatureGuard.EnsureEnabledAsync(operation.FeatureName, operation.DisabledErrorCode);
         await CheckPolicyAsync(requiresGeneratePermission ? operation.GeneratePermission : operation.ViewPermission);
     }
 

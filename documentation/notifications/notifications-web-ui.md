@@ -81,7 +81,7 @@ These are in `src/Unity.GrantManager.Web/`, not in this module, but they are the
 |---|---|---|
 |`Views/Shared/Components/EmailsWidget/`|Shared composer for Application and Applicant details, paired with `EmailHistoryWidget`. Application To defaults to `ApplicantAgent.Email`; Applicant To defaults to the primary contact shown in Applicant Contacts. Lists only templates of the matching type. Scheduling requires `EnableEmailDelay` and the Schedule permission.|`Unity.Notifications` feature, `Notifications.Email` to view, `.Send` to compose; Applicant details also requires Applicant access|
 |`Views/Shared/Components/Notifications/Default.cshtml`|The form-level **Scheduled & Event Based Notifications** table, with Create/Edit/Cancel actions.|`Notifications.Form.Email.Schedule.Create` for Create/Edit, `.Cancel` for Cancel|
-|`Views/Shared/Components/ActionBar/Default.cshtml`|The bulk **Send Email Notification** button and dropdown on the applications list.|`Unity.Notifications` feature **and** `Notifications.Email.SendBulk` **and** `Notifications.Email.Send`|
+|`Views/Shared/Components/ActionBar/Default.cshtml`|The bulk **Send Email Notification** button and dropdown on the applications list.|`Unity.Notifications` feature **and** `Notifications.Email.Application.SendBulk` **and** the Application email View/Create/Send permissions|
 |`Controllers/NotificationsController` (`/Notifications/EmailModal`)|Renders the read-only email detail modal opened from the Notification List. Fetches history for the application and picks the single matching email; returns `404` if it is not there.|`Notifications.NotificationList.View`|
 |`Controllers/FormNotificationsApiController` (`api/form-notifications`)|The scheduled-notification configuration API — see [notifications-scheduled-notifications.md](notifications-scheduled-notifications.md#configuration-api).|`Notifications.Form.Tab` family|
 |`Pages/ConfigurationManagement/Index.cshtml.cs`|Sets `ShowNotifications` from the `Unity.Notifications` feature check, hiding the notification configuration section when off.|feature only|
@@ -96,7 +96,7 @@ Backend checks cover owner, tenant, action permissions, draft status, scheduling
 
 ## Localization
 
-`Unity.Notifications.Domain.Shared/Localization/Notifications/en.json` holds all 144 keys for both this module's pages and the host-side notification surfaces, under the `NotificationsResource` resource. `NotificationsDomainSharedModule` registers it with `AddVirtualJson("/Localization/Notifications")` and base type `AbpValidationResource`, and maps the `Notifications` exception-code namespace to it — which is what turns `BusinessException("Notifications:EmailGroupInUse")` into a localizable message. Only codes with the `Notifications:` prefix go through that mapping.
+`Unity.Notifications.Domain.Shared/Localization/Notifications/en.json` holds all 144 keys for both this module's pages and the host-side notification surfaces, under the `NotificationsResource` resource. `NotificationsDomainSharedModule` registers it with `AddVirtualJson("/Localization/Notifications")` and base type `AbpValidationResource`, and maps the `Notifications` exception-code namespace to it — which is what turns `BusinessException(NotificationsErrorCodes.EmailGroupInUse)` into a localizable message. Only codes with the `Notifications:` prefix go through that mapping, and every code the module and the host app throw is a constant in `NotificationsErrorCodes` (`Unity.Notifications.Domain.Shared/NotificationsErrorCodes.cs`).
 
 Two keys to know about when editing:
 

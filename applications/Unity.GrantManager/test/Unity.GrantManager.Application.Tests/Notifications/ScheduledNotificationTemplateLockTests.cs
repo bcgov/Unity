@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Shouldly;
+using Unity.Notifications;
 using Unity.Notifications.Templates;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
@@ -36,7 +37,7 @@ public class ScheduledNotificationTemplateLockTests(ITestOutputHelper outputHelp
             new CreateUpdateNotificationDto { EmailTemplateId = template.Id });
 
         var inUse = await Should.ThrowAsync<BusinessException>(() => templateService.DeleteTemplate(template.Id));
-        inUse.Code.ShouldBe("Notifications:TemplateInUse");
+        inUse.Code.ShouldBe(NotificationsErrorCodes.TemplateInUse);
         (await templates.GetAsync(template.Id)).ShouldNotBeNull();
 
         var deletedTemplate = new EmailTemplate(Guid.NewGuid(), "deleted template", "", "", "", "", "")

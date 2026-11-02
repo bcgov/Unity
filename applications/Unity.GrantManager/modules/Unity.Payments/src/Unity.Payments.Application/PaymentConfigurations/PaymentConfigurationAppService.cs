@@ -71,7 +71,7 @@ namespace Unity.Payments.PaymentConfigurations
         public virtual async Task<PaymentConfigurationDto> UpdateAsync(UpdatePaymentConfigurationDto updatePaymentConfigurationDto)
         {
             PaymentConfiguration? paymentConfiguration = await FindPaymentConfigurationAsync() ??
-                throw new ConfigurationExistsException(L[ErrorConsts.ConfigurationDoesNotExist]);
+                throw new ConfigurationExistsException(L[PaymentsErrorCodes.ConfigurationDoesNotExist]);
 
             paymentConfiguration.PaymentIdPrefix = updatePaymentConfigurationDto.PaymentIdPrefix;
             var updatedConfiguration = await paymentConfigurationRepository.UpdateAsync(paymentConfiguration);

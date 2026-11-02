@@ -1,14 +1,14 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.EntityFrameworkCore;
+using Unity.Notifications.Permissions;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
-using Unity.Notifications.Permissions;
 
 namespace Unity.Notifications.Templates;
 
@@ -31,8 +31,8 @@ public class TemplateService(
     private readonly IUnitOfWorkManager _unitOfWorkManager = unitOfWorkManager;
     private readonly Volo.Abp.Domain.Repositories.IRepository<GrantManager.Notifications.ScheduledNotification, Guid> _scheduledNotificationsRepository = scheduledNotificationsRepository;
 
-    [Authorize(NotificationsPermissions.Email.Default)]
-    public async Task<EmailTemplate?> CreateAsync(EmailTempateDto templateDto)
+    [Authorize(NotificationsPermissions.Email.Template.Default)]
+    public async Task<EmailTemplate?> CreateAsync(EmailTemplateDto templateDto)
     {
         var templateType = NormalizeTemplateType(templateDto.TemplateType);
 
@@ -50,8 +50,8 @@ public class TemplateService(
             templateType));
     }
 
-    [Authorize(NotificationsPermissions.Email.Send)]
-    public async Task<EmailTemplate?> UpdateTemplate(Guid id, EmailTempateDto templateDto)
+    [Authorize(NotificationsPermissions.Email.Template.Default)]
+    public async Task<EmailTemplate?> UpdateTemplate(Guid id, EmailTemplateDto templateDto)
     {
 
         EmailTemplate template = await _templatesRepository.GetAsync(id);
@@ -85,7 +85,7 @@ public class TemplateService(
         return await _templatesRepository.GetAsync(id);
     }
 
-    [Authorize(NotificationsPermissions.Email.Send)]
+    [Authorize(NotificationsPermissions.Email.Template.Default)]
     public async Task DeleteTemplate(Guid id)
     {
         using var uow = _unitOfWorkManager.Begin(requiresNew: true, isTransactional: true);
@@ -96,13 +96,13 @@ public class TemplateService(
         var inUse = await scheduledQuery.AnyAsync(x => x.EmailTemplateId == id);
         if (inUse)
         {
-            throw new Volo.Abp.BusinessException("Notifications:TemplateInUse");
+            throw new Volo.Abp.BusinessException(NotificationsErrorCodes.TemplateInUse);
         }
 
         await _templatesRepository.DeleteAsync(template);
         await uow.CompleteAsync();
     }
-    [Authorize(NotificationsPermissions.Email.Send)]
+    [Authorize(NotificationsPermissions.Email.Default)]
     public async Task<EmailTemplate?> GetTemplateByName(string name)
     {
         var data =  await _templatesRepository.GetByNameAsync(name);

@@ -66,7 +66,7 @@ export class AdminComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadFeedback();
+    void this.loadFeedback();
   }
 
   async loadFeedback(): Promise<void> {
@@ -180,6 +180,6 @@ export class AdminComponent implements OnInit {
   }
 
   goToMainApp(): void {
-    this.router.navigate(['/app']);
+    void this.router.navigate(['/app']);
   }
 }

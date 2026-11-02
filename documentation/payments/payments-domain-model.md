@@ -66,7 +66,7 @@ Unlike `Supplier`, `Site` exposes public setters and two static helpers used by 
 | `Stob` | 4 | yes |
 | `ProjectNumber` | 7 | yes |
 
-Violations throw `BusinessException(ErrorConsts.InvalidAccountCodingField)` with `field` and `length` data. `FullAccountCode()` / `FullAccountCodeWithDescription()` delegate to `AccountCodingFormatter`, which appends the fixed postfix `000000.0000`.
+Violations throw `BusinessException(PaymentsErrorCodes.InvalidAccountCodingField)` with `field` and `length` data. `FullAccountCode()` / `FullAccountCodeWithDescription()` delegate to `AccountCodingFormatter`, which appends the fixed postfix `000000.0000`.
 
 ### `PaymentConfiguration` — `Domain/PaymentConfigurations/PaymentConfiguration.cs`
 
@@ -216,7 +216,7 @@ Both workers fall back to `0 0 9 1/1 * ? *` if the setting cannot be read.
 
 ## Error codes
 
-`Domain/Exceptions/ErrorConsts.cs`, all localized in `Unity.Payments.Shared/Localization/Payments/en.json`:
+`PaymentsErrorCodes` (`Unity.Payments.Shared/PaymentsErrorCodes.cs`), all localized in `Unity.Payments.Shared/Localization/Payments/en.json`:
 
 | Code | Message |
 |---|---|
@@ -225,7 +225,7 @@ Both workers fall back to `0 0 9 1/1 * ? *` if the setting cannot be read.
 | `Payments:Errors:MissingSite` | Cannot submit a payment request without a site |
 | `Payments:Errors:MissingAccountCoding` | Cannot submit a payment request without an account coding |
 | `Payments:Errors:L2ApproverRestriction` | You cannot approve payments you already approved as L1 |
-| `Payments:Errors:InvalidAccountCodingFiled` | Invalid account coding field {field} : {length} (note the misspelled key) |
+| `Payments:Errors:InvalidAccountCodingField` | Invalid account coding field {field} : {length} |
 | `Payments:Errors:ConfigurationDoesNotExist` | Payment configuration update guard |
 | `Payments:PaymentRequestNotFound` | The payment request could not be found (`PaymentRequestAppService.CancelAsync`) |
 | `Payments:CancellationNotAllowed` | The payment cannot be cancelled in its current status (`PaymentRequestAppService.CancelAsync`) |

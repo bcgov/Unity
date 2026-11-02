@@ -90,7 +90,7 @@ public class ApplicationFormVersionAppServiceMappingReviewTests(ITestOutputHelpe
             .Returns(review);
         var service = CreateService(repository, reviewRepository);
 
-        await Should.ThrowAsync<UserFriendlyException>(async () =>
+        await Should.ThrowAsync<BusinessException>(async () =>
         {
             await service.AcceptMappingSuggestionsAsync(
                 formVersionId,
@@ -256,7 +256,7 @@ public class ApplicationFormVersionAppServiceMappingReviewTests(ITestOutputHelpe
             .Returns(worksheetReview);
         var service = CreateService(repository, reviewRepository, generationService);
 
-        await Should.ThrowAsync<UserFriendlyException>(() => service.FinalizeMappingReviewAsync(formVersionId));
+        await Should.ThrowAsync<BusinessException>(() => service.FinalizeMappingReviewAsync(formVersionId));
 
         await generationService.DidNotReceive().SubmitAsync(
             Arg.Any<string>(), Arg.Any<AIGenerationSubmissionDto>());
@@ -296,7 +296,7 @@ public class ApplicationFormVersionAppServiceMappingReviewTests(ITestOutputHelpe
             Substitute.For<IApplicationFormSubmissionRepository>(),
             Substitute.For<IReportingFieldsGeneratorService>(),
             featureChecker,
-            new AIFeatureGuard(featureChecker, localizer),
+            new AIFeatureGuard(featureChecker),
             localizer,
             generationService ?? Substitute.For<IAIGenerationAppService>(),
             worksheetRepository ?? Substitute.For<IWorksheetRepository>(),

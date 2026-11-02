@@ -53,14 +53,17 @@ $(function () {
     function init() {
         $('#email-attachments-section').hide();
         initializeEmailAddressDataTable();
-        initializeSenderAddressSelector();
-        loadActiveEmailAddresses();
-        initializeTooltips();
-        initializeTemplateNameCounter();
-        initializeTemplateDataTables();
-        initializeDivider();
+        // The templates tab is only rendered when the user has the Notifications.Email.Template permission
+        if (UiElements.templatesTable.length) {
+            initializeSenderAddressSelector();
+            loadActiveEmailAddresses();
+            initializeTooltips();
+            initializeTemplateNameCounter();
+            initializeTemplateDataTables();
+            initializeDivider();
+            initializeRecipientSelect();
+        }
         initializeTabPersistence();
-        initializeRecipientSelect();
         checkFormChanges();
     }
 
@@ -151,7 +154,13 @@ $(function () {
         });
         $table.on('click', '.delete-email-address', function () {
             const row = $table.DataTable().row($(this).closest('tr')).data();
-            if (row.isDefault) {
+            // A default row duplicated by another active row can be deleted; the server moves the default to the duplicate
+            const hasActiveDuplicate = $table.DataTable().rows().data().toArray().some(other =>
+                other.id !== row.id &&
+                other.isActive &&
+                other.emailAddress.toLowerCase() === row.emailAddress.toLowerCase() &&
+                other.emailType.toLowerCase() === row.emailType.toLowerCase());
+            if (row.isDefault && !hasActiveDuplicate) {
                 abp.notify.error('The default email address cannot be deleted. Select another email address as the default first.');
                 return;
             }
@@ -696,6 +705,10 @@ $(function () {
                     if (confirmed) {
                         performSave(isNewTemplate, templateId, templateData, templateName, sendFrom, subject, bodyHTML);
                     }
+                })
+                .catch(function (e) {
+                    console.warn('Failed to save template:', e);
+                    abp.notify.error('Failed to save template.');
                 });
         });
     });
@@ -707,22 +720,23 @@ $(function () {
         return fields.some(field => String(templateData[field] ?? '') !== String(original[field] ?? ''));
     }
 
-    function confirmTemplateAttachmentImpact(templateId, isNewTemplate, templateChangesPending) {
+    async function confirmTemplateAttachmentImpact(templateId, isNewTemplate, templateChangesPending) {
         if (isNewTemplate || !templateChangesPending) {
-            return Promise.resolve(true);
+            return true;
         }
 
-        return $.ajax({
-            url: `/api/form-notifications/template-notification-plans/${encodeURIComponent(templateId)}`,
-            type: 'GET',
-            dataType: 'json'
-        }).then(function (response) {
+        try {
+            const response = await $.ajax({
+                url: `/api/form-notifications/template-notification-plans/${encodeURIComponent(templateId)}`,
+                type: 'GET',
+                dataType: 'json'
+            });
             const planNames = response.notificationPlanNames || [];
             if (planNames.length === 0) {
                 return true;
             }
 
-            return Swal.fire({
+            const result = await Swal.fire({
                 icon: 'warning',
                 title: 'Template changes',
                 html: '<p><strong>Warning:</strong> This template is currently associated with ' + planNames.length + ' notification plan' + (planNames.length === 1 ? '' : 's') + '. Any changes made to this template may impact these notification plan' + (planNames.length === 1 ? '' : 's') + '.</p>',
@@ -733,12 +747,13 @@ $(function () {
                     confirmButton: 'btn btn-primary',
                     cancelButton: 'btn btn-secondary'
                 }
-            }).then(result => result.isConfirmed);
-        }).catch(function (e) {
+            });
+            return result.isConfirmed;
+        } catch (e) {
             console.warn('Failed to check template notification plans:', e);
             abp.notify.error('Unable to verify whether this template is used by a notification plan. The template was not saved.');
             return false;
-        });
+        }
     }
 
     function performSave(isNewTemplate, templateId, templateData, templateName, sendFrom, subject, bodyHTML) {
@@ -1554,6 +1569,9 @@ function deleteEmailAttachment(attachmentId) {
                     });
             }
         );
+    }).catch(function (e) {
+        console.warn('Failed to delete attachment:', e);
+        abp.notify.error('Failed to delete attachment.');
     });
 }
 
@@ -1564,18 +1582,19 @@ function isConfigurationManagementTemplateEditor() {
         $('#templateId').length > 0;
 }
 
-function checkScheduledPlanImpactForAttachmentDelete(templateId) {
-    if (!templateId) return Promise.resolve(true);
+async function checkScheduledPlanImpactForAttachmentDelete(templateId) {
+    if (!templateId) return true;
 
-    return $.ajax({
-        url: `/api/form-notifications/template-notification-plans/${encodeURIComponent(templateId)}`,
-        type: 'GET',
-        dataType: 'json'
-    }).then(function (response) {
+    try {
+        const response = await $.ajax({
+            url: `/api/form-notifications/template-notification-plans/${encodeURIComponent(templateId)}`,
+            type: 'GET',
+            dataType: 'json'
+        });
         const planNames = response.notificationPlanNames || [];
         if (planNames.length === 0) return true;
 
-        return Swal.fire({
+        const result = await Swal.fire({
             icon: 'warning',
             title: 'Scheduled notification impact',
             html: '<p><strong>Warning:</strong> This template is currently associated with ' + planNames.length + ' notification plan' + (planNames.length === 1 ? '' : 's') + '. Any changes made to this template may impact these notification plan' + (planNames.length === 1 ? '' : 's') + '.</p>',
@@ -1586,12 +1605,13 @@ function checkScheduledPlanImpactForAttachmentDelete(templateId) {
                 confirmButton: 'btn btn-primary',
                 cancelButton: 'btn btn-secondary'
             }
-        }).then(result => result.isConfirmed);
-    }).catch(function (e) {
+        });
+        return result.isConfirmed;
+    } catch (e) {
         console.warn('Failed to check template notification plans:', e);
         abp.notify.error('Unable to verify whether this template is used by a scheduled notification plan. The attachment was not deleted.');
         return false;
-    });
+    }
 }
 
 /**

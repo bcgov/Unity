@@ -43,3 +43,9 @@
     transform: translateY(-5px);
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-text {
+    animation: none;
+  }
+}

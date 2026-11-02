@@ -76,7 +76,7 @@ The dependency does run both ways in one respect: the module's `AIApplicationMod
 
 ```text
 Unity.AI.Domain.Shared          → AIFeatures, AISettings, PromptType,
-   (Unity.AI.Shared.csproj)       AIResource + AILocalizationKeys
+   (Unity.AI.Shared.csproj)       AIResource + AIErrorCodes
         ↑
 Unity.AI.Application.Contracts  → DTOs, I*AppService, AIGenerationOperations definitions,
                                   Requests/, Responses/, Models/, AIPermissions,
@@ -166,7 +166,7 @@ Text extraction is **local**, not a service: PDFs via `UglyToad.PdfPig`, Office 
 | **Operation type** | The kebab-case public identifier used on the API and in job args: `attachment-summary`, `application-analysis`, `application-scoring`, `form-mapping`, `form-worksheet`, `form-scoresheet`. |
 | **Operation name** | The PascalCase identifier used for the `AIOperation` row and the prompt family: `AttachmentSummary`, `ApplicationAnalysis`, `ApplicationScoring`, `FormMapping`, `FormWorksheet`, `FormScoresheet`. Bridged by `AIGenerationOperationDefinition`. |
 | **`AIGenerationOperationDefinition`** | The static registry entry tying an operation type to its feature, disabled-message key, generate and view permissions, and whether it needs a form version. |
-| **`AIModel`** | A row naming a deployment (`gpt-4o-mini`, `gpt-5-mini`, `gpt-5-nano`), its provider, and `SettingsJson` holding `MaxOutputTokenCountSupported` and `Temperature`. |
+| **`AIModel`** | A row naming a deployment (`gpt-5-mini`, `gpt-5-nano`; the retired `gpt-4o-mini` row is kept inactive), its provider, and `SettingsJson` holding `MaxOutputTokenCountSupported` and `Temperature`. |
 | **`AIOperation`** | A row binding an operation name to a model, an `ExecutionMode`, and a `CompletionTokens` budget. |
 | **`AIPrompt`** | A versioned system+user prompt pair for one prompt family, optionally tenant-specific, with `MetadataJson` holding reusable template sections. |
 | **Prompt family / version** | `AIPrompt.Name` is the family (equal to the operation name); `VersionNumber` selects the variant. `(TenantId, Name, VersionNumber)` is unique. Resolution prefers the current tenant's row, then the global (`TenantId == null`) row. |

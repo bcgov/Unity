@@ -78,7 +78,7 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
         var service = CreateService(repository, generationService, generationReviewRepository: reviewRepository);
         service.LazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
 
-        await Should.ThrowAsync<Volo.Abp.UserFriendlyException>(() => service.GenerateMappingAsync(formVersionId));
+        await Should.ThrowAsync<Volo.Abp.BusinessException>(() => service.GenerateMappingAsync(formVersionId));
         await generationService.DidNotReceive().SubmitAsync(Arg.Any<string>(), Arg.Any<AIGenerationSubmissionDto>());
     }
 
@@ -443,7 +443,7 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
         var service = CreateService(Substitute.For<IRepository<ApplicationFormVersion, Guid>>(), Substitute.For<IAIGenerationAppService>(), formVersionRepository, scoresheetRepository: scoresheetRepository, generationReviewRepository: reviewRepository, scoresheetInstanceRepository: scoresheetInstanceRepository);
         service.LazyServiceProvider = GetRequiredService<IAbpLazyServiceProvider>();
 
-        await Should.ThrowAsync<Volo.Abp.UserFriendlyException>(() => service.DiscardAiScoresheetSuggestionsAsync(formVersionId));
+        await Should.ThrowAsync<Volo.Abp.BusinessException>(() => service.DiscardAiScoresheetSuggestionsAsync(formVersionId));
         await scoresheetRepository.DidNotReceive().DeleteAsync(Arg.Any<Scoresheet>(), Arg.Any<bool>());
     }
     [Theory]
@@ -589,7 +589,7 @@ public class ApplicationFormVersionAppServiceTests(ITestOutputHelper outputHelpe
             Substitute.For<IApplicationFormSubmissionRepository>(),
             Substitute.For<IReportingFieldsGeneratorService>(),
             featureChecker,
-            new AIFeatureGuard(featureChecker, localizer),
+            new AIFeatureGuard(featureChecker),
             localizer,
             aiGenerationAppService,
             worksheetRepository ?? Substitute.For<IWorksheetRepository>(),

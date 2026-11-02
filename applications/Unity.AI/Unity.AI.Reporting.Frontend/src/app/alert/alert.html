@@ -1,5 +1,5 @@
 @if (isVisible) {
-  <div class="alert-overlay" (click)="onOverlayClick($event)">
+  <div class="alert-overlay" (click)="onOverlayClick($event)" (keydown.escape)="onCancel()">
     <div class="alert-dialog">
       <div class="alert-header">
         <h3>{{ title }}</h3>

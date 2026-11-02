@@ -1,6 +1,6 @@
-namespace Unity.AI.Localization;
+namespace Unity.AI;
 
-public static class AILocalizationKeys
+public static class AIErrorCodes
 {
     public const string AttachmentSummariesDisabled = "AI:AttachmentSummariesDisabled";
     public const string ApplicationAnalysisDisabled = "AI:ApplicationAnalysisDisabled";
@@ -11,7 +11,6 @@ public static class AILocalizationKeys
     public const string FormWorksheetDisabled = "AI:FormWorksheetDisabled";
     public const string FormScoresheetRequiresFormVersion = "AI:FormScoresheetRequiresFormVersion";
     public const string FormScoresheetDisabled = "AI:FormScoresheetDisabled";
-    public const string GenerateAllDisabled = "AI:GenerateAllDisabled";
     public const string NoAttachmentsAvailable = "AI:NoAttachmentsAvailable";
     public const string ApplicationAnalysisRequiresSubmission = "AI:ApplicationAnalysisRequiresSubmission";
     public const string ScoringRequiresScoresheet = "AI:ScoringRequiresScoresheet";
@@ -27,8 +26,6 @@ public static class AILocalizationKeys
     public const string FormScoresheetTitleRequired = "AI:FormScoresheetTitleRequired";
     public const string FormScoresheetSelectionRequired = "AI:FormScoresheetSelectionRequired";
     public const string FormScoresheetSelectionInvalid = "AI:FormScoresheetSelectionInvalid";
-    public const string GenerateFormScoresheetPermissionRequired = "AI:GenerateFormScoresheetPermissionRequired";
-    public const string SavedMappingApplyFailed = "AI:SavedMappingApplyFailed";
     public const string FormGenerationReviewActive = "AI:FormGenerationReviewActive";
     public const string MappingReviewPending = "AI:MappingReviewPending";
     public const string MappingReviewInactive = "AI:MappingReviewInactive";
@@ -39,15 +36,6 @@ public static class AILocalizationKeys
     public const string WorksheetDraftsMustBePublished = "AI:WorksheetDraftsMustBePublished";
     public const string WorksheetTitleRequired = "AI:WorksheetTitleRequired";
     public const string WorksheetSelectionRequired = "AI:WorksheetSelectionRequired";
-    public const string WorkflowGenerateInitialMapping = "AI:WorkflowGenerateInitialMapping";
-    public const string WorkflowReviewInitialMapping = "AI:WorkflowReviewInitialMapping";
-    public const string WorkflowGenerateWorksheets = "AI:WorkflowGenerateWorksheets";
-    public const string WorkflowReviewWorksheets = "AI:WorkflowReviewWorksheets";
-    public const string WorkflowPublishAssignWorksheets = "AI:WorkflowPublishAssignWorksheets";
-    public const string WorkflowGenerateFinalMapping = "AI:WorkflowGenerateFinalMapping";
-    public const string WorkflowReviewFinalMapping = "AI:WorkflowReviewFinalMapping";
-    public const string WorkflowGenerateMapping = "AI:WorkflowGenerateMapping";
-    public const string WorkflowCompleted = "AI:WorkflowCompleted";
     public const string ScoresheetGenerationRequiresFormVersion = "AI:ScoresheetGenerationRequiresFormVersion";
     public const string ScoresheetGenerationProtected = "AI:ScoresheetGenerationProtected";
     public const string ScoresheetGenerationInvalidOutput = "AI:ScoresheetGenerationInvalidOutput";

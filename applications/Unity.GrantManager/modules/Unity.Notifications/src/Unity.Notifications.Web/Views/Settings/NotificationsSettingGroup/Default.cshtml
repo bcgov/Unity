@@ -1,4 +1,10 @@
-﻿@model Unity.Notifications.Web.Views.Settings.NotificationsSettingGroup.NotificationsSettingViewModel
+@using Microsoft.AspNetCore.Authorization
+@using Unity.Notifications.Permissions
+@model Unity.Notifications.Web.Views.Settings.NotificationsSettingGroup.NotificationsSettingViewModel
+@inject IAuthorizationService AuthorizationService
+@{
+    var canManageTemplates = await AuthorizationService.IsGrantedAsync(NotificationsPermissions.Email.Template.Default);
+}
 
 <div class="container-fluid px-0">
     <nav>
@@ -6,9 +12,12 @@
             <button class="nav-link active" id="nav-mapping-tab" data-bs-toggle="tab" data-bs-target="#nav-config" type="button" role="tab">
                 Notifications Configuration
             </button>
-            <button class="nav-link" id="nav-template-tab" data-bs-toggle="tab" data-bs-target="#nav-template" type="button" role="tab">
-                Email Templates
-            </button>
+            @if (canManageTemplates)
+            {
+                <button class="nav-link" id="nav-template-tab" data-bs-toggle="tab" data-bs-target="#nav-template" type="button" role="tab">
+                    Email Templates
+                </button>
+            }
             <button class="nav-link" id="nav-internal-email-group-tab" data-bs-toggle="tab" data-bs-target="#nav-internal-email-group" type="button" role="tab">
                 Internal Email Group
             </button>
@@ -65,16 +74,19 @@
         </div>
 
         <!-- Email Templates -->
-        <div class="tab-pane fade" id="nav-template" role="tabpanel" aria-labelledby="nav-template-tab">
-            <input type="hidden" id="AllowedFileTypes" value="@Model.AllowedFileTypes" />
-            <input type="hidden" id="MaxFileSize" value="@Model.MaxFileSize" />
-            <input type="hidden" id="EmailAttachmentMaxFileSize" value="@Model.EmailAttachmentMaxFileSize" />
-            <input type="hidden" id="TotalEmailAttachmentMaxFileSize" value="@Model.TotalEmailAttachmentMaxFileSize" />
+        @if (canManageTemplates)
+        {
+            <div class="tab-pane fade" id="nav-template" role="tabpanel" aria-labelledby="nav-template-tab">
+                <input type="hidden" id="AllowedFileTypes" value="@Model.AllowedFileTypes" />
+                <input type="hidden" id="MaxFileSize" value="@Model.MaxFileSize" />
+                <input type="hidden" id="EmailAttachmentMaxFileSize" value="@Model.EmailAttachmentMaxFileSize" />
+                <input type="hidden" id="TotalEmailAttachmentMaxFileSize" value="@Model.TotalEmailAttachmentMaxFileSize" />
 
-            <div class="row">
-                @await Html.PartialAsync("/Views/Settings/NotificationsSettingGroup/_Templates.cshtml")      
+                <div class="row">
+                    @await Html.PartialAsync("/Views/Settings/NotificationsSettingGroup/_Templates.cshtml")
+                </div>
             </div>
-        </div>
+        }
 
         <!-- Internal Email Groups -->
         <div class="tab-pane fade" id="nav-internal-email-group" role="tabpanel" aria-labelledby="nav-internal-email-group-tab">

@@ -1,4 +1,4 @@
-﻿namespace Unity.Flex.Domain;
+namespace Unity.Flex;
 
 public static class FlexErrorCodes
 {

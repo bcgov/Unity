@@ -171,7 +171,7 @@ A threshold of `0` means every payment exceeds it, so every payment needs L3. Fa
 
 The same person may not approve at L1 and then at L2. This is enforced twice in `UpdateStatusAsync`:
 
-1. **Up front, for the whole batch** — if any payment being approved is in `L2Pending` and its Level 1 `DecisionUserId` equals the current user, the whole call throws `BusinessException(ErrorConsts.L2ApproverRestriction)` before anything is changed.
+1. **Up front, for the whole batch** — if any payment being approved is in `L2Pending` and its Level 1 `DecisionUserId` equals the current user, the whole call throws `BusinessException(PaymentsErrorCodes.L2ApproverRestriction)` before anything is changed.
 2. **Per payment**, inside `CanPerformLevel2ActionAsync`, the same check throws again.
 
 The approval modal also surfaces this client-side: `PaymentsApprovalModel` carries `PreviousL1Approver` so rows the user cannot approve can be flagged before submitting.

@@ -140,7 +140,7 @@ def get_views_schemas():
         # Find out if there are non-blank rows
         sql = f"SELECT * FROM \"Reporting\".\"{tbl['name']}\" "
         instance = get_sql(sql, config.metabase.default_db_id, config.metabase.url)
-        rows = [r for r in instance["rows"] if set(r[3:]) != set([''])]
+        rows = [r for r in instance["rows"] if set(r[3:]) != {''}]
         if not rows:
             continue
 
