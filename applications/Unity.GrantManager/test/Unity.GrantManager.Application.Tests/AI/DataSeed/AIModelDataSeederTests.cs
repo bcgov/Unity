@@ -39,17 +39,14 @@ public class AIModelDataSeederTests
 
         await seeder.SeedAsync(new DataSeedContext());
 
-        insertedModels.Count.ShouldBe(3);
-        insertedModels.ShouldContain(model => model.Name == "gpt-4o-mini" && model.Provider == "OpenAI" && model.IsActive);
+        insertedModels.Count.ShouldBe(2);
+        insertedModels.ShouldNotContain(model => model.Name == "gpt-4o-mini");
         insertedModels.ShouldContain(model => model.Name == "gpt-5-mini" && model.Provider == "OpenAI" && model.IsActive);
         insertedModels.ShouldContain(model => model.Name == "gpt-5-nano" && model.Provider == "OpenAI" && model.IsActive);
 
-        var gpt4oMini = insertedModels.Single(model => model.Name == "gpt-4o-mini");
         var gpt5Mini = insertedModels.Single(model => model.Name == "gpt-5-mini");
         var gpt5Nano = insertedModels.Single(model => model.Name == "gpt-5-nano");
 
-        DeserializeSettings(gpt4oMini.SettingsJson).MaxOutputTokenCountSupported.ShouldBeTrue();
-        DeserializeSettings(gpt4oMini.SettingsJson).Temperature.ShouldBe(0.3);
         DeserializeSettings(gpt5Mini.SettingsJson).MaxOutputTokenCountSupported.ShouldBeFalse();
         DeserializeSettings(gpt5Mini.SettingsJson).Temperature.ShouldBeNull();
         DeserializeSettings(gpt5Nano.SettingsJson).MaxOutputTokenCountSupported.ShouldBeFalse();
@@ -90,6 +87,71 @@ public class AIModelDataSeederTests
             Arg.Is<AIModel>(model => model != null && model.Name == existingModel.Name),
             Arg.Any<bool>(),
             Arg.Any<System.Threading.CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Should_Deactivate_Retired_Model_Instead_Of_Reseeding_It()
+    {
+        var modelRepository = Substitute.For<IRepository<AIModel, Guid>>();
+        var retiredModel = new AIModel(Guid.NewGuid(), "gpt-4o-mini", "OpenAI")
+        {
+            IsActive = true,
+            SettingsJson = "{}"
+        };
+        modelRepository
+            .GetListAsync(
+                Arg.Any<System.Linq.Expressions.Expression<Func<AIModel, bool>>>(),
+                cancellationToken: Arg.Any<System.Threading.CancellationToken>())
+            .Returns(callInfo =>
+            {
+                var predicateExpression = callInfo
+                    .Arg<System.Linq.Expressions.Expression<Func<AIModel, bool>>>();
+                ArgumentNullException.ThrowIfNull(predicateExpression);
+                var predicate = predicateExpression.Compile();
+                return Task.FromResult(new[] { retiredModel }.Where(predicate).ToList());
+            });
+
+        var seeder = new AIModelDataSeeder(modelRepository);
+
+        await seeder.SeedAsync(new DataSeedContext());
+
+        retiredModel.IsActive.ShouldBeFalse();
+        retiredModel.SettingsJson.ShouldBe("{}");
+        await modelRepository.Received(1).UpdateAsync(retiredModel, autoSave: true);
+        await modelRepository.DidNotReceive().InsertAsync(
+            Arg.Is<AIModel>(model => model != null && model.Name == retiredModel.Name),
+            Arg.Any<bool>(),
+            Arg.Any<System.Threading.CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Should_Not_Update_Retired_Model_That_Is_Already_Inactive()
+    {
+        var modelRepository = Substitute.For<IRepository<AIModel, Guid>>();
+        var retiredModel = new AIModel(Guid.NewGuid(), "gpt-4o-mini", "OpenAI")
+        {
+            IsActive = false,
+            SettingsJson = "{}"
+        };
+        modelRepository
+            .GetListAsync(
+                Arg.Any<System.Linq.Expressions.Expression<Func<AIModel, bool>>>(),
+                cancellationToken: Arg.Any<System.Threading.CancellationToken>())
+            .Returns(callInfo =>
+            {
+                var predicateExpression = callInfo
+                    .Arg<System.Linq.Expressions.Expression<Func<AIModel, bool>>>();
+                ArgumentNullException.ThrowIfNull(predicateExpression);
+                var predicate = predicateExpression.Compile();
+                return Task.FromResult(new[] { retiredModel }.Where(predicate).ToList());
+            });
+
+        var seeder = new AIModelDataSeeder(modelRepository);
+
+        await seeder.SeedAsync(new DataSeedContext());
+
+        retiredModel.IsActive.ShouldBeFalse();
+        await modelRepository.DidNotReceive().UpdateAsync(retiredModel, Arg.Any<bool>(), Arg.Any<System.Threading.CancellationToken>());
     }
 
     private static AIModelSettings DeserializeSettings(string settingsJson)
