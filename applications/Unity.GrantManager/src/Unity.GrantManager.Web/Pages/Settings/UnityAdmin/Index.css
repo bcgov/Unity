@@ -1,0 +1,274 @@
+.dataTables_wrapper .dataTables_scrollHead {
+    background-color: transparent;
+}
+
+#reconciliation-report-div {
+    width: calc(100% - 221px);
+    min-width: 0;
+    margin-left: 221px;
+}
+
+.reconciliation-report {
+    flex: none;
+}
+
+#background-jobs-div {
+    width: calc(100% - 221px);
+    min-width: 0;
+    margin-left: 221px;
+}
+
+.mb-30 {
+    margin-bottom: -30px;
+}
+
+.mb-40 {
+    margin-bottom: -40px;
+}
+
+#audit-logs-div,
+#ai-prompts-div,
+#endpoints-div,
+#exception-logs-div {
+    width: calc(100% - 221px);
+    min-width: 0;
+    max-width: none;
+    margin-left: 221px;
+    flex: none;
+}
+
+#audit-log-settings-div {
+    width: calc(100% - 221px);
+    min-width: 0;
+    margin-left: 221px;
+}
+
+#audit-logs-div {
+    margin-left: 221px;
+    padding-left: 0;
+    padding-right: 0;
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: auto;
+    min-width: 0;
+    width: auto;
+    max-height: none;
+}
+
+/* The Endpoints stylesheet bundled on this page forces #AbpContentToolbar visible;
+   keep it tight so the admin sections sit directly beneath it. */
+#AbpContentToolbar {
+    padding: 0;
+    margin-top: 10px;
+}
+
+#audit-logs-div .reconciliation-filter-inputs {
+    align-items: center;
+}
+
+#audit-logs-div .reconciliation-filter-inputs > div:has(> #audit-search) {
+    display: flex;
+    align-items: center;
+    align-self: stretch;
+    width: 250px;
+    height: auto;
+    margin: 0 10px;
+}
+
+#audit-logs-div .tbl-search-label {
+    display: none;
+}
+
+#audit-search,
+#audit-entity-type {
+    height: 38px;
+    box-sizing: border-box;
+}
+
+#audit-search {
+    display: block;
+    width: 100%;
+    padding: 6px 12px;
+    margin-top: 0;
+    align-self: flex-end;    
+}
+
+#audit-logs-div .reconciliation-filter-buttons {
+    align-items: flex-end !important;
+    margin-left: auto;
+    padding-top: 10px;
+}
+
+#audit-filter-button {
+    margin-top: 0 !important;
+    align-self: flex-end;
+}
+
+.audit-change-time {
+    display: inline-block;
+    white-space: normal;
+    min-width: 9rem;
+}
+
+.background-jobs {
+    flex: none;
+}
+
+.card {
+    padding: 1rem;
+    max-height: 80vh;
+    overflow: scroll;
+    margin-top:20px;
+}
+
+/* DataTable sections: ScrollResize sizes the scroll body to the viewport so the
+   table footer sits at the bottom of the page; the card must not clip or scroll it. */
+#reconciliation-report-div,
+#audit-logs-div,
+#ai-prompts-div,
+#endpoints-div,
+#exception-logs-div {
+    max-height: none;
+    overflow: visible;
+}
+
+.unity-app-main-container {
+    margin: auto;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+#UnityAdminSideMenu.side-menu {
+    float: left;
+    position: absolute;
+    left: 0px;
+    top: 150px;
+    z-index: 1000;
+}
+
+#UnityAdminSideMenu ul {
+    padding-left: 0;
+}
+
+#UnityAdminSideMenu li {
+    height: 40px;
+    padding: 10px;
+    border-radius: 0 100em 100em 0;
+}
+
+#UnityAdminSideMenu .nav-item {
+    justify-content: left;
+}
+
+.unity-admin-config {
+    padding: 1rem;
+    max-height: 80vh;
+    overflow: auto;
+}
+
+
+.hide {
+    display: none !important;
+}
+
+.reconciliation-filter-row {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end !important;
+    padding-bottom: 0 !important;
+}
+
+.reconciliation-filter-inputs {
+    display: flex;
+}
+
+.reconciliation-filter-buttons {
+    display: flex;
+    align-items: flex-end !important;
+    margin-left: auto;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+    min-height: 44px;
+}
+
+label {
+    margin: 0px !important;
+    font-size:14px;
+}
+
+.form-control {
+    border: 2px solid rgb(46, 93, 215);
+
+}
+.tbl-search{
+    display:block;
+}
+
+.tbl-search-label {
+    position: static;
+    display: block;
+    width: auto;
+    height: auto;
+    margin-bottom: 0;
+    visibility: hidden;
+}
+
+.abp-application-layout {
+    overflow-y: scroll;
+}
+
+
+.date-input-filter-div {
+    display: inline-block;
+    padding-bottom: 0px !important;
+}
+
+#btn-toggle-filter {
+    height: 44px;
+    min-height: 44px;
+    margin-right:10px;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+@media (max-width: 900px) {
+    #UnityAdminSideMenu.side-menu {
+        float: none;
+        position: static;
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+
+    #UnityAdminSideMenu ul {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+
+    #UnityAdminSideMenu li {
+        flex: 1 1 180px;
+    }
+
+    #reconciliation-report-div,
+    #background-jobs-div,
+    #audit-logs-div,
+    #ai-prompts-div,
+    #endpoints-div,
+    #exception-logs-div,
+    #audit-log-settings-div {
+        width: 100%;
+        max-width: 100%;
+        margin-left: 0;
+    }
+
+    #audit-logs-div {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .reconciliation-filter-row,
+    .reconciliation-filter-inputs {
+        flex-wrap: wrap;
+    }
+}

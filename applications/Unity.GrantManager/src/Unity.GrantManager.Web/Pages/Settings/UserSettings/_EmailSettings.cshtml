@@ -1,0 +1,27 @@
+@model Unity.GrantManager.Web.Pages.Settings.UserSettings.IndexModel
+
+<div id="email-settings-div" class="input-area card mb-3 main-content-div">
+    <div class="container-fluid px-0">
+        <div class="unity-page-titlebar">
+            <h4>Email Settings</h4>
+        </div>
+        <form method="post" asp-page-handler="Settings">
+            <div class="p-3">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <div class="form-check mb-2">
+                    <input asp-for="EmailBlockCommentTagging" class="form-check-input" />
+                    <label asp-for="EmailBlockCommentTagging" class="form-check-label">Block comment tagging email notifications</label>
+                </div>
+                <div class="form-check mb-2">
+                    <input asp-for="EmailBlockAssigned" class="form-check-input" />
+                    <label asp-for="EmailBlockAssigned" class="form-check-label">Block assigned email notifications</label>
+                </div>                                
+            </div>
+            <div class="border-top p-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fl fl-save me-1"></i>Save
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

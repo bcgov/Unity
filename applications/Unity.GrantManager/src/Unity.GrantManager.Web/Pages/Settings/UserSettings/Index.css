@@ -1,0 +1,79 @@
+
+
+.card {
+    padding: 1rem;
+    max-height: 80vh;
+    overflow: scroll;
+    margin-top:20px;
+}
+
+.unity-app-main-container {
+    margin: auto;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+#UserSettingsMenu.side-menu {
+    float: left;
+    position: absolute;
+    left: 0px;
+    top: 150px;
+    z-index: 1000;
+    min-width: 220px;
+}
+
+#UserSettingsMenu ul {
+    padding-left: 0;
+}
+
+#UserSettingsMenu li {
+    height: 40px;
+    padding: 10px;
+    border-radius: 0 100em 100em 0;
+}
+
+#UserSettingsMenu .nav-item {
+    justify-content: left;
+}
+
+label {
+    margin: 0px !important;
+    font-size:14px;
+}
+
+.config-page-layout {
+    display: flex;
+    align-items: flex-start;
+    width: 100%;
+    gap: 0;
+}
+
+#AbpPageAlerts {
+    display: none;
+}
+
+.main-content-div {
+    width: calc(100% - 221px);
+    min-width: 0;
+    margin-left: 221px;
+}
+
+@media (max-width: 900px) {
+    #UserSettingsMenu.side-menu {
+        float: none;
+        position: static;
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+
+    #UserSettingsMenu ul {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+
+    #UserSettingsMenu li {
+        flex: 1 1 180px;
+    }
+}
