@@ -47,7 +47,7 @@ public class CommentNotificationService(
         return await IsEmailPreferenceEnabledAsync(toUser.Id, SettingsConstants.UserEmailSettings.EmailBlockCommentTagging);
     }
 
-    private async Task<bool> IsEmailPreferenceEnabledAsync(Guid userId, string settingName, bool defaultValue = true)
+    private async Task<bool> IsEmailPreferenceEnabledAsync(Guid userId, string settingName, bool defaultValue = false)
     {
         var value = await settingManager.GetOrNullForUserAsync(settingName, userId);
         return value == null ? defaultValue : bool.Parse(value);
