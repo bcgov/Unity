@@ -94,13 +94,13 @@
 }
 
 #audit-logs-div .reconciliation-filter-buttons {
-    align-items: flex-end !important;
+    align-items: flex-end;
     margin-left: auto;
     padding-top: 10px;
 }
 
 #audit-filter-button {
-    margin-top: 0 !important;
+    margin-top: 0;
     align-self: flex-end;
 }
 
@@ -168,32 +168,32 @@
 }
 
 
-.hide {
-    display: none !important;
+.input-area.hide {
+    display: none;
 }
 
-.reconciliation-filter-row {
+.input-area .reconciliation-filter-row {
     display: flex;
     gap: 1rem;
-    align-items: flex-end !important;
-    padding-bottom: 0 !important;
+    align-items: flex-end;
+    padding-bottom: 0;
 }
 
 .reconciliation-filter-inputs {
     display: flex;
 }
 
-.reconciliation-filter-buttons {
+.input-area .reconciliation-filter-buttons {
     display: flex;
-    align-items: flex-end !important;
+    align-items: flex-end;
     margin-left: auto;
-    margin-bottom: 0 !important;
-    padding-bottom: 0 !important;
+    margin-bottom: 0;
+    padding-bottom: 0;
     min-height: 44px;
 }
 
-label {
-    margin: 0px !important;
+.input-area label {
+    margin: 0;
     font-size:14px;
 }
 
@@ -219,17 +219,17 @@ label {
 }
 
 
-.date-input-filter-div {
+.input-area .date-input-filter-div {
     display: inline-block;
-    padding-bottom: 0px !important;
+    padding-bottom: 0;
 }
 
-#btn-toggle-filter {
+#reconciliation-report-div #btn-toggle-filter {
     height: 44px;
     min-height: 44px;
     margin-right:10px;
-    margin-top: 0 !important;
-    margin-bottom: 0 !important;
+    margin-top: 0;
+    margin-bottom: 0;
 }
 
 @media (max-width: 900px) {

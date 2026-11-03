@@ -37,8 +37,8 @@
     justify-content: left;
 }
 
-label {
-    margin: 0px !important;
+.main-content-div label {
+    margin: 0;
     font-size:14px;
 }
 
