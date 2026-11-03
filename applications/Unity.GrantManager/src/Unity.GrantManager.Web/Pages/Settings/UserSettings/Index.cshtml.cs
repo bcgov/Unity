@@ -24,11 +24,11 @@ namespace Unity.GrantManager.Web.Pages.Settings.UserSettings
         {
             EmailBlockCommentTagging = await settingProvider.GetAsync(
                 SettingsConstants.UserEmailSettings.EmailBlockCommentTagging,
-                defaultValue: true);
+                defaultValue: false);
 
             EmailBlockAssigned = await settingProvider.GetAsync(
                 SettingsConstants.UserEmailSettings.EmailBlockAssigned,
-                defaultValue: true);
+                defaultValue: false);
 
             alertManager.Alerts.Clear();
         }
