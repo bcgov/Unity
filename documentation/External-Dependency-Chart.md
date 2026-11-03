@@ -183,7 +183,7 @@ Unity Applicant Portal (UAP)
 - **CHES** = Common Hosted Email Service — all notification emails route through CHES; it has its own OAuth realm (`comsvcauth`), separate from the standard user-auth realm.
 - **CAS/CFS** = Corporate Accounting System / Common Financial System — handles supplier registration and invoice creation for grant payments.
 - **CHEFS** = Common Hosted Examination and Form Service — UGM pulls form definitions and submission data from CHEFS to populate intake records.
-- **Azure OpenAI** = UGM's operational AI (NOT the Reporting AI). Makes live chat completion calls for: AttachmentSummary, ApplicationAnalysis, ApplicationScoring. Configured via `OpenAI:Endpoint` + `OpenAI:ApiKey` stored in Vault/secrets. Models: `gpt-4o-mini`, `gpt-5-mini`.
+- **Azure OpenAI** = UGM's operational AI (NOT the Reporting AI). Makes live chat completion calls for: AttachmentSummary, ApplicationAnalysis, ApplicationScoring. Configured via `OpenAI:Endpoint` + `OpenAI:ApiKey` stored in Vault/secrets. Models: `gpt-5-mini`, `gpt-5-nano` (`gpt-4o-mini` is retired and deactivated by the seeder).
 - **Reporting AI** = A separate Metabase-based analytics app deployed in OCP (`REPORTING_AI`). UGM only embeds it as an iFrame — there is NO backend HTTP API call to it.
 - **OrgBook** = UAP makes direct browser-to-OrgBook calls from the Angular frontend. UGM also calls OrgBook from its backend service.
 - **Secrets** = All sensitive values (API keys, OAuth secrets, DB passwords) are stored in HashiCorp Vault (`vault.developer.gov.bc.ca`) and pulled via the Kubernetes ExternalSecrets operator into OCP Secrets.

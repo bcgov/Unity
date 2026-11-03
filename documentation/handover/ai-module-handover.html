@@ -427,12 +427,11 @@ AIPrompt  (Name + VersionNumber, optionally TenantId)
     <table class="data">
       <thead><tr><th>Model</th><th>Max-output-tokens supported</th><th>Temperature</th></tr></thead>
       <tbody>
-        <tr><td class="code">gpt-4o-mini</td><td class="yes">yes</td><td>0.3</td></tr>
         <tr><td class="code">gpt-5-mini</td><td class="no">no</td><td class="no">—</td></tr>
         <tr><td class="code">gpt-5-nano</td><td class="no">no</td><td class="no">—</td></tr>
       </tbody>
     </table>
-    <p class="note" style="margin-top:12px;">All six operations bind to <span class="code">gpt-5-mini</span>. Those two model settings exist because newer families reject the parameters older ones require — when <span class="code">MaxOutputTokenCountSupported</span> is false the option is <em>not sent at all</em> rather than defaulted, and the same for a null temperature. <strong>The model name is also the Azure deployment name</strong>: the factory passes it straight to <span class="code">GetChatClient(...)</span>.</p>
+    <p class="note" style="margin-top:12px;"><span class="code">gpt-4o-mini</span> is retired (no new Azure deployments allowed): it is no longer seeded, and an existing row is deactivated. All six operations bind to <span class="code">gpt-5-mini</span>. Those two model settings exist because newer families reject the parameters older ones require — when <span class="code">MaxOutputTokenCountSupported</span> is false the option is <em>not sent at all</em> rather than defaulted, and the same for a null temperature. <strong>The model name is also the Azure deployment name</strong>: the factory passes it straight to <span class="code">GetChatClient(...)</span>.</p>
     <p class="note">All three seeders skip tenant contexts and are <strong>corrective</strong> — an existing model or operation row has its provider, active flag, settings, model binding, execution mode and token budget overwritten on every run. There is no admin UI for models or operations; changes made directly in the database are reverted at the next migration run.</p>
 
     <h3>Two AI schemas, in two databases</h3>

@@ -109,9 +109,10 @@ dotnet ef migrations add <Name> --context GrantTenantDbContext --output-dir Migr
 
 | Name | Provider | `MaxOutputTokenCountSupported` | `Temperature` |
 |---|---|---|---|
-| `gpt-4o-mini` | OpenAI | true | 0.3 |
 | `gpt-5-mini` | OpenAI | false | — |
 | `gpt-5-nano` | OpenAI | false | — |
+
+`gpt-4o-mini` is **retired**: Azure OpenAI no longer allows new deployments of it. It is not seeded, and an existing `gpt-4o-mini` row is set to `IsActive = false` (not deleted) on every run. An operation pointing at an inactive model fails with `AI model 'gpt-4o-mini' is inactive.` instead of calling a deployment that may not exist.
 
 The seeder is idempotent and **corrective**: an existing row has its provider, `IsActive` and `SettingsJson` overwritten on every run.
 
