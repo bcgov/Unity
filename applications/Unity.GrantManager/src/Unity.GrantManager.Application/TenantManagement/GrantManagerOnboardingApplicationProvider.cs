@@ -6,12 +6,16 @@ using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.Assessments;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Identity;
+using Unity.Modules.Shared.Specializations;
 using Unity.TenantManagement;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Features;
 
 namespace Unity.GrantManager.TenantManagement;
 
@@ -21,7 +25,9 @@ public class GrantManagerOnboardingApplicationProvider(
     IRepository<Application, Guid> applicationRepository,
     IRepository<ApplicationForm, Guid> applicationFormRepository,
     IRepository<ApplicationFormVersion, Guid> applicationFormVersionRepository,
-    OnboardingApplicationManager onboardingApplicationManager)
+    OnboardingApplicationManager onboardingApplicationManager,
+    IPersonRepository personRepository,
+    IFeatureChecker featureChecker)
     : IOnboardingApplicationProvider, ITransientDependency
 {
     private async Task<IQueryable<Application>> BuildQueryAsync(string category)
@@ -32,6 +38,8 @@ public class GrantManagerOnboardingApplicationProvider(
             .Include(a => a.ApplicationStatus)
             .Include(a => a.Applicant)
             .Include(a => a.ApplicantAgent)
+            .Include(a => a.Owner)
+            .Include(a => a.ApplicationAssignments!).ThenInclude(x => x.Assignee)
             .Where(a => a.ApplicationForm.Category == category);
     }
 
@@ -98,6 +106,14 @@ public class GrantManagerOnboardingApplicationProvider(
                     case "category":
                         query = query.Where(a => a.ApplicationForm.Category != null && a.ApplicationForm.Category.ToLower().Contains(loweredValue));
                         break;
+                    case "ownername":
+                        query = query.Where(a => a.Owner != null && a.Owner.FullName.ToLower().Contains(loweredValue));
+                        break;
+                    case "assignees":
+                        query = query.Where(a => a.ApplicationAssignments!.Any(x =>
+                            x.Assignee.FullName.ToLower().Contains(loweredValue) ||
+                            (x.Duty != null && x.Duty.ToLower().Contains(loweredValue))));
+                        break;
                     default:
                         query = ApplyCoreFieldFilter(query, cf.Name, loweredValue);
                         break;
@@ -127,7 +143,9 @@ public class GrantManagerOnboardingApplicationProvider(
             .Include(a => a.ApplicationForm)
             .Include(a => a.ApplicationStatus)
             .Include(a => a.Applicant)
-            .Include(a => a.ApplicantAgent);
+            .Include(a => a.ApplicantAgent)
+            .Include(a => a.Owner)
+            .Include(a => a.ApplicationAssignments!).ThenInclude(x => x.Assignee);
 
         var entity = await query.FirstOrDefaultAsync(a => a.Id == id);
         if (entity == null) return null;
@@ -145,6 +163,12 @@ public class GrantManagerOnboardingApplicationProvider(
             Status = a.ApplicationStatus.InternalStatus,
             IsApproved = a.ApplicationStatus.StatusCode == GrantApplicationState.GRANT_APPROVED,
             Category = a.ApplicationForm.Category ?? string.Empty,
+            OwnerId = a.OwnerId,
+            OwnerName = a.Owner?.FullName,
+            Assignees = (a.ApplicationAssignments ?? [])
+                .Select(x => new OnboardingAssigneeDto { AssigneeId = x.AssigneeId, Name = x.Assignee.FullName, Role = x.Duty })
+                .OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+                .ToList(),
             CoreFieldValues = coreFields.ToDictionary(f => f.Key, f => f.Selector(a))
         };
 
@@ -206,6 +230,31 @@ public class GrantManagerOnboardingApplicationProvider(
         await onboardingApplicationManager.TriggerAction(applicationId, GrantApplicationAction.Close);
     }
 
+    public async Task SetAssignmentAsync(OnboardingAssignmentInputDto input)
+    {
+        // The Onboarding page and API are only gated by role. Without this check, assigning in a
+        // regular tenant would change grant applications without running their workflow rules.
+        if (!await featureChecker.IsEnabledAsync(SpecializationConsts.Onboarding))
+        {
+            throw new BusinessException("GrantManager:OnboardingAssignmentNotAvailable");
+        }
+
+        await onboardingApplicationManager.SetAssignmentAsync(
+            input.ApplicationIds,
+            input.OwnerId,
+            input.Assignees.Select(a => (a.AssigneeId, a.Role)).ToList());
+    }
+
+    public async Task<List<OnboardingAssignableUserDto>> GetAssignableUsersAsync()
+    {
+        return await (await personRepository.GetQueryableAsync())
+            .AsNoTracking()
+            .Where(p => p.Id != AIScoringConstants.AiPersonId)
+            .OrderBy(p => p.FullName)
+            .Select(p => new OnboardingAssignableUserDto { Id = p.Id, Name = p.FullName })
+            .ToListAsync();
+    }
+
     public async Task<List<string>> GetAvailableCategoriesAsync()
     {
         var query = await applicationFormRepository.GetQueryableAsync();
@@ -241,6 +290,10 @@ public class GrantManagerOnboardingApplicationProvider(
                 return desc
                     ? query.OrderByDescending(a => a.ApplicationForm.Category)
                     : query.OrderBy(a => a.ApplicationForm.Category);
+            case "ownername":
+                return desc
+                    ? query.OrderByDescending(a => a.Owner!.FullName)
+                    : query.OrderBy(a => a.Owner!.FullName);
         }
 
         // Not a static column — check the core-field registry and sort via its EF navigation
@@ -284,11 +337,29 @@ public class GrantManagerOnboardingApplicationProvider(
         string category, string filter, IReadOnlyList<Guid>? existingMatchIds)
     {
         var coreMatches = await GetCoreFieldGlobalMatchIdsAsync(category, filter);
+        coreMatches.AddRange(await GetAssignmentGlobalMatchIdsAsync(category, filter));
         if (coreMatches.Count == 0) return existingMatchIds?.ToList();
 
         var merged = new HashSet<Guid>(coreMatches);
         if (existingMatchIds != null) merged.UnionWith(existingMatchIds);
         return merged.ToList();
+    }
+
+    private async Task<List<Guid>> GetAssignmentGlobalMatchIdsAsync(string category, string filter)
+    {
+        var loweredFilter = filter.ToLowerInvariant();
+        var query = await BuildQueryAsync(category);
+
+#pragma warning disable CA1862 // EF Core does not support the StringComparison overloads
+        return await query
+            .Where(a =>
+                (a.Owner != null && a.Owner.FullName.ToLower().Contains(loweredFilter)) ||
+                a.ApplicationAssignments!.Any(x =>
+                    x.Assignee.FullName.ToLower().Contains(loweredFilter) ||
+                    (x.Duty != null && x.Duty.ToLower().Contains(loweredFilter))))
+            .Select(a => a.Id)
+            .ToListAsync();
+#pragma warning restore CA1862
     }
 
     private async Task<List<Guid>> GetCoreFieldGlobalMatchIdsAsync(string category, string filter)
