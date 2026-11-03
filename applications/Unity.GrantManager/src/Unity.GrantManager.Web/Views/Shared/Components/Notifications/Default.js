@@ -224,7 +224,7 @@
     function renderTriggerDetail(data, type, row) {
         const detail = row.triggerType === 'Date'
             ? renderDateTriggerDetail(row)
-            : row.eventStatus || '';
+            : row.eventStatusLabel || row.eventStatus || '';
 
         return escapeCellText(appendRecipientDetail(detail, row));
     }
