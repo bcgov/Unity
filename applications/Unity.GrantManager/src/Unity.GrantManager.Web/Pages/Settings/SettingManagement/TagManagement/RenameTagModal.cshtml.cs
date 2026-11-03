@@ -7,7 +7,7 @@ using Unity.GrantManager.GlobalTag;
 using Volo.Abp;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 
-namespace Unity.GrantManager.Web.Pages.SettingManagement.TagManagement;
+namespace Unity.GrantManager.Web.Pages.Settings.SettingManagement.TagManagement;
 
 public class RenameTagModal(ITagsService tagService) : AbpPageModel
 {

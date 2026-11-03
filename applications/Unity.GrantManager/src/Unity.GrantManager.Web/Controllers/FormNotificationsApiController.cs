@@ -374,6 +374,7 @@ namespace Unity.GrantManager.Web.Controllers
                 ApplicationStatusIds = ParseStatusIds(created.ApplicationStatusIds),
                 RecipientCategory = created.RecipientCategory,
                 RecipientIdentifier = created.RecipientIdentifier,
+                IsActive = created.IsActive,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -512,6 +513,7 @@ namespace Unity.GrantManager.Web.Controllers
                 ApplicationStatusIds = ParseStatusIds(updated.ApplicationStatusIds),
                 RecipientCategory = updated.RecipientCategory,
                 RecipientIdentifier = updated.RecipientIdentifier,
+                IsActive = updated.IsActive,
                 CreatedAt = DateTime.UtcNow
             };
 

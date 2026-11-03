@@ -7,7 +7,9 @@
 // need that treatment: each call captures fresh references to the newly-rendered DOM, and the previous DOM (with
 // whatever was bound to it) is simply discarded along with the old closure.
 function initializeEmailsWidget() {
-    if ($('#composeAndSendEmailModal:visible #NoDraftPreviewMode[value="true"]').length > 0) {
+    const $emailForm = $('#EmailForm').first();
+    if ($emailForm.closest('#composeAndSendEmailModal').length &&
+        $emailForm.find('#NoDraftPreviewMode[value="true"]').length) {
         return;
     }
 
@@ -1495,6 +1497,18 @@ function initializeDraftEmailsWidget() {
     }
 
     async function handleNewEmail(fromTemplate = false, templateSubject = '', templateBody = '', templateFrom = '', templateName = '', templateId = '') {
+        if (!isApplicantEmail) {
+            // Read saved addresses each time; Applicant Info can change without reloading this widget.
+            applicationDetails = await loadApplicationDetails();
+            const recipients = [applicationDetails.contactEmail, applicationDetails.signingAuthorityEmail]
+                .filter(email => typeof email === 'string' && email.trim())
+                .map(email => email.trim());
+            defaultValues.emailTo = recipients
+                .filter((email, index) => recipients.findIndex(recipient =>
+                    recipient.toLowerCase() === email.toLowerCase()) === index)
+                .join('; ');
+        }
+
         // Set context flag - if loaded from template, it's not application email context
         isApplicationEmailContext = !fromTemplate;
         if (!fromTemplate) {
@@ -1515,6 +1529,7 @@ function initializeDraftEmailsWidget() {
         $('#EmailTemplateName').val(normalizedTemplateName);
         originalTemplateState = { name: normalizedTemplateName, id: normalizedTemplateId };
         activeTemplateId = normalizedTemplateId || null;
+        UIElements.inputEmailTo.val(defaultValues.emailTo);
         UIElements.inputOriginalEmailTo.val(defaultValues.emailTo);
         UIElements.inputOriginalEmailCC.val(defaultValues.emailCC);
         UIElements.inputOriginalEmailBCC.val(defaultValues.emailBCC);
