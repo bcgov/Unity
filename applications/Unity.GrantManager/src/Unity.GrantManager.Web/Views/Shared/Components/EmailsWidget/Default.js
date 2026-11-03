@@ -7,7 +7,9 @@
 // need that treatment: each call captures fresh references to the newly-rendered DOM, and the previous DOM (with
 // whatever was bound to it) is simply discarded along with the old closure.
 function initializeEmailsWidget() {
-    if ($('#composeAndSendEmailModal:visible #NoDraftPreviewMode[value="true"]').length > 0) {
+    const $emailForm = $('#EmailForm').first();
+    if ($emailForm.closest('#composeAndSendEmailModal').length &&
+        $emailForm.find('#NoDraftPreviewMode[value="true"]').length) {
         return;
     }
 
