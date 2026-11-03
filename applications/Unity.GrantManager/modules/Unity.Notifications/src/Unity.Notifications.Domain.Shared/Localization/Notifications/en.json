@@ -8,7 +8,7 @@
     "Notifications:EmailTemplateTypeMismatch": "The email template type must match the application or applicant being emailed.",
     "Notifications:EmailSchedulingDisabled": "Scheduled email delivery is disabled.",
     "Notifications:EmailNotScheduled": "This email is not awaiting scheduled delivery.",
-    "Notifications:TemplateInUse": "Template is referenced by scheduled notifications and cannot be deleted.",
+    "Notifications:TemplateInUse": "Template is referenced by active scheduled notifications and cannot be deleted. Cancel those notifications or assign them a different template first.",
     "Notifications:TemplateNotAvailable": "The selected email template is no longer available. Refresh the page and choose another template.",
     "Notifications:EmailGroupInUse": "This email group is associated with a scheduled notification and cannot be deleted.",
     "Notifications:EmailAddressInUse": "This email address is used by an email template or email history and cannot be deleted.",

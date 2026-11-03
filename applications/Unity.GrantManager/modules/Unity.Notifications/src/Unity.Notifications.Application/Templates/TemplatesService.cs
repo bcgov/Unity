@@ -82,7 +82,7 @@ public class TemplateService(
     [Authorize(NotificationsPermissions.Email.Default)]
     public async Task<EmailTemplate?> GetTemplateById(Guid id)
     {
-        return await _templatesRepository.GetAsync(id);
+        return await _templatesRepository.GetByIdAsync(id);
     }
 
     [Authorize(NotificationsPermissions.Email.Template.Default)]
@@ -93,7 +93,7 @@ public class TemplateService(
             ?? throw new Volo.Abp.Domain.Entities.EntityNotFoundException(typeof(EmailTemplate), id);
 
         var scheduledQuery = await _scheduledNotificationsRepository.GetQueryableAsync();
-        var inUse = await scheduledQuery.AnyAsync(x => x.EmailTemplateId == id);
+        var inUse = await scheduledQuery.AnyAsync(x => x.EmailTemplateId == id && x.IsActive);
         if (inUse)
         {
             throw new Volo.Abp.BusinessException(NotificationsErrorCodes.TemplateInUse);
