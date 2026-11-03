@@ -1,32 +1,64 @@
-﻿/**
+﻿
+/**
  * Date utility functions for Grant Manager application
  *
  * BC TIMEZONE NOTES (2026):
- *   - BC Pacific zones (Vancouver, Victoria, etc.) do NOT observe DST in 2026.
- *     They remain on PST (UTC-8) year-round. Use formatUtcToBcPacificDateTime / bcPstInputToUtcIso.
- *   - BC Mountain zones (Peace River / NE BC) DO observe DST: MST (UTC-7) in winter,
- *     MDT (UTC-6) in summer. Use formatUtcToBcMountainDateTime for those.
+ *   - Most of BC, including Vancouver and Victoria, now uses
+ *     permanent Pacific Time (PCT, UTC-7).
+ *   - Clocks will NOT fall back on November 1, 2026.
+ *   - Pacific formatting below uses a fixed UTC-7 offset.
+ *   - Southeastern BC (e.g. Cranbrook, Fernie, Golden) continues
+ *     to observe Mountain Standard/Daylight Time.
+ *   - Northeastern BC (e.g. Fort St. John, Dawson Creek) stays
+ *     at UTC-7 year-round.
+ *
+ * IMPORTANT:
+ *   Fixed UTC-7 is appropriate for current/future PCT dates.
+ *   Do not use it to format historical Pacific dates that occurred
+ *   under the previous seasonal PST/PDT rules.
  */
 const DateUtils = (function () {
     'use strict';
 
-    // BC PST is a fixed UTC-8 offset -- no DST in 2026.
-    const BC_PST_OFFSET_MS = -8 * 60 * 60 * 1000;
+    // Etc/GMT signs are reversed: GMT+7 means UTC-7.
+    const BC_PACIFIC_TIME_ZONE = 'Etc/GMT+7';
+    const BC_PACIFIC_OFFSET_MS = -7 * 60 * 60 * 1000;
+    const BC_PACIFIC_OFFSET = '-07:00';
+    const BC_PACIFIC_LABEL = 'PCT';
+
+    // Used for southeastern BC locations that still follow Alberta's
+    // seasonal Mountain Time rules.
+    const BC_SOUTHEAST_MOUNTAIN_TIME_ZONE = 'America/Edmonton';
+
+    function isInvalidDate(date) {
+        return Number.isNaN(date.getTime());
+    }
+
+    function getTimestamp(dateUtc) {
+        if (!dateUtc) return 0;
+
+        const date = new Date(dateUtc);
+        return isInvalidDate(date) ? 0 : date.getTime();
+    }
 
     /**
-     * Formats a UTC date string to the browser's local date format.
-     * NOTE: Uses the browser's system timezone. For BC PST (no DST) use formatUtcToBcPacificDateTime.
-     * @param {string|Date} dateUtc - The UTC date to format
-     * @param {string} type - The type of formatting (for DataTables compatibility)
-     * @param {object} options - Additional formatting options
-     * @returns {string} Formatted date string, or numeric timestamp string for sorting, empty string if input is invalid
+     * Formats a UTC date using the browser's local timezone.
+     *
+     * NOTE:
+     * This intentionally uses the browser's timezone.
+     * Use the BC-specific functions for BC business dates.
      */
     function formatUtcDateToLocal(dateUtc, type, options) {
         if (type === 'sort' || type === 'type') {
-            return dateUtc ? String(new Date(dateUtc).getTime()) : '0';
+            return String(getTimestamp(dateUtc));
         }
+
         if (!dateUtc) return '';
-        return new Date(dateUtc).toLocaleDateString(
+
+        const date = new Date(dateUtc);
+        if (isInvalidDate(date)) return '';
+
+        return date.toLocaleDateString(
             abp.localization.currentCulture.name,
             {
                 year: 'numeric',
@@ -38,126 +70,218 @@ const DateUtils = (function () {
     }
 
     /**
-     * Formats a UTC date/time string as a BC Pacific date (date only).
-     * BC PST is fixed at UTC-8 -- no DST adjustment in 2026.
-     * @param {string|Date} dateUtc
-     * @param {string} type - DataTables type ('sort'|'type' returns numeric timestamp)
-     * @param {object} options - Additional Intl.DateTimeFormat options
+     * Formats a UTC timestamp as a BC Pacific date (date only).
+     *
+     * Uses fixed UTC-7 (PCT).
+     * Intended for current/future dates under BC's new time standard.
      */
     function formatUtcToBcPacificDate(dateUtc, type, options) {
         if (type === 'sort' || type === 'type') {
-            return dateUtc ? String(new Date(dateUtc).getTime()) : '0';
+            return String(getTimestamp(dateUtc));
         }
+
         if (!dateUtc) return '';
-        return new Date(dateUtc).toLocaleDateString(abp.localization.currentCulture.name, {
-            timeZone: 'Etc/GMT+8',
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            ...options
-        });
+
+        const date = new Date(dateUtc);
+        if (isInvalidDate(date)) return '';
+
+        return date.toLocaleDateString(
+            abp.localization.currentCulture.name,
+            {
+                timeZone: BC_PACIFIC_TIME_ZONE,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                ...options
+            }
+        );
     }
 
     /**
-     * Formats a UTC date/time string as a BC Pacific date+time string with "PST" label.
-     * BC PST is fixed at UTC-8 -- no DST adjustment in 2026.
-     * @param {string|Date} dateUtc
-     * @param {string} type - DataTables type ('sort'|'type' returns numeric timestamp)
+     * Formats a UTC timestamp as BC Pacific date and time.
+     *
+     * Displays PCT (UTC-7), not PST/PDT.
+     * Intended for current/future dates under the new BC time standard.
      */
     function formatUtcToBcPacificDateTime(dateUtc, type) {
         if (type === 'sort' || type === 'type') {
-            return dateUtc ? String(new Date(dateUtc).getTime()) : '0';
+            return String(getTimestamp(dateUtc));
         }
+
         if (!dateUtc) return '';
-        const formatted = new Date(dateUtc).toLocaleString(abp.localization.currentCulture.name, {
-            timeZone: 'Etc/GMT+8',
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: 'numeric',
-            minute: '2-digit'
-        });
-        return formatted + ' PST';
+
+        const date = new Date(dateUtc);
+        if (isInvalidDate(date)) return '';
+
+        const formatted = date.toLocaleString(
+            abp.localization.currentCulture.name,
+            {
+                timeZone: BC_PACIFIC_TIME_ZONE,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: 'numeric',
+                minute: '2-digit'
+            }
+        );
+
+        return `${formatted} ${BC_PACIFIC_LABEL}`;
     }
 
     /**
-     * Formats a UTC date/time string for the BC Mountain timezone (Peace River / NE BC).
-     * Mountain Time observes DST in 2026: MST (UTC-7) in winter, MDT (UTC-6) in summer.
-     * @param {string|Date} dateUtc
-     * @param {string} type - DataTables type ('sort'|'type' returns numeric timestamp)
+     * Formats a UTC timestamp for southeastern BC Mountain Time.
+     *
+     * Locations include Cranbrook, Fernie, Golden and Invermere.
+     * These areas continue to follow seasonal Mountain Time rules.
+     *
+     * Do not use this function for northeastern BC locations such
+     * as Fort St. John or Dawson Creek, which remain UTC-7 year-round.
      */
     function formatUtcToBcMountainDateTime(dateUtc, type) {
         if (type === 'sort' || type === 'type') {
-            return dateUtc ? String(new Date(dateUtc).getTime()) : '0';
+            return String(getTimestamp(dateUtc));
         }
+
         if (!dateUtc) return '';
-        // America/Edmonton follows MST/MDT -- DST applies in NE BC.
-        return new Date(dateUtc).toLocaleString(abp.localization.currentCulture.name, {
-            timeZone: 'America/Edmonton',
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: 'numeric',
-            minute: '2-digit',
-            timeZoneName: 'short'
-        });
+
+        const date = new Date(dateUtc);
+        if (isInvalidDate(date)) return '';
+
+        return date.toLocaleString(
+            abp.localization.currentCulture.name,
+            {
+                timeZone: BC_SOUTHEAST_MOUNTAIN_TIME_ZONE,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: 'numeric',
+                minute: '2-digit',
+                timeZoneName: 'short'
+            }
+        );
     }
 
     /**
-     * Converts a datetime-local input string (YYYY-MM-DDTHH:mm) to a UTC ISO string,
-     * treating the input as BC Pacific Standard Time (fixed UTC-8, no DST in 2026).
-     * Use this instead of new Date(localString).toISOString() which relies on the
-     * browser's potentially incorrect DST-adjusted timezone offset.
-     * @param {string} localDatetimeString - Value from a datetime-local input
-     * @returns {string} UTC ISO 8601 string, or empty string if input is empty/invalid
+     * Converts a datetime-local input (YYYY-MM-DDTHH:mm) to UTC ISO.
+     *
+     * Treats the entered time as BC Pacific Time at UTC-7.
+     * This avoids interpreting the value using the browser's timezone.
+     *
+     * IMPORTANT:
+     * Use for dates under the new permanent PCT rule.
+     * This fixed-offset conversion does not handle historical dates
+     * or validate whether the entered date is otherwise meaningful.
      */
     function bcPstInputToUtcIso(localDatetimeString) {
         if (!localDatetimeString) return '';
-        // Append the BC PST fixed offset so Date parses it as UTC-8, not browser-local.
-        const withOffset = localDatetimeString + '-08:00';
-        const date = new Date(withOffset);
-        return Number.isNaN(date.getTime()) ? '' : date.toISOString();
+
+        const match = localDatetimeString.match(
+            /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/
+        );
+
+        if (!match) return '';
+
+        const [, year, month, day, hour, minute, second = '0'] = match;
+
+        const components = [
+            Number(year),
+            Number(month),
+            Number(day),
+            Number(hour),
+            Number(minute),
+            Number(second)
+        ];
+
+        const [y, mo, d, h, mi, s] = components;
+
+        // Validate the calendar components rather than allowing Date
+        // to silently normalize invalid values such as February 30.
+        const check = new Date(Date.UTC(y, mo - 1, d, h, mi, s));
+
+        if (
+            check.getUTCFullYear() !== y ||
+            check.getUTCMonth() !== mo - 1 ||
+            check.getUTCDate() !== d ||
+            check.getUTCHours() !== h ||
+            check.getUTCMinutes() !== mi ||
+            check.getUTCSeconds() !== s
+        ) {
+            return '';
+        }
+
+        // Explicit UTC-7 offset: never use the browser-local offset.
+        const date = new Date(
+            `${localDatetimeString}${BC_PACIFIC_OFFSET}`
+        );
+
+        return isInvalidDate(date) ? '' : date.toISOString();
     }
 
     /**
-     * Converts a UTC timestamp (ms since epoch) to a datetime-local string (YYYY-MM-DDTHH:mm)
-     * in BC Pacific Standard Time (fixed UTC-8, no DST in 2026).
-     * Use this to populate datetime-local inputs with the correct BC PST time.
-     * @param {number} utcMs - Milliseconds since Unix epoch
-     * @returns {string} datetime-local string in BC PST
+     * Converts UTC milliseconds to a datetime-local string
+     * (YYYY-MM-DDTHH:mm) in BC Pacific Time (UTC-7).
+     *
+     * Intended for current/future dates under permanent PCT.
      */
     function utcMsToBcPstDatetimeLocal(utcMs) {
-        // Shift UTC ms by -8h to get BC PST, then read UTC getters (which now represent PST).
-        const shifted = new Date(utcMs + BC_PST_OFFSET_MS);
+        if (utcMs == null || !Number.isFinite(Number(utcMs))) {
+            return '';
+        }
+
+        const date = new Date(Number(utcMs));
+
+        if (isInvalidDate(date)) return '';
+
+        // Shift the instant by -7 hours, then use UTC getters
+        // to produce the corresponding PCT wall-clock time.
+        const shifted = new Date(
+            date.getTime() + BC_PACIFIC_OFFSET_MS
+        );
+
         const pad = n => String(n).padStart(2, '0');
-        return `${shifted.getUTCFullYear()}-${pad(shifted.getUTCMonth() + 1)}-${pad(shifted.getUTCDate())}` +
-               `T${pad(shifted.getUTCHours())}:${pad(shifted.getUTCMinutes())}`;
+
+        return (
+            `${shifted.getUTCFullYear()}-` +
+            `${pad(shifted.getUTCMonth() + 1)}-` +
+            `${pad(shifted.getUTCDate())}T` +
+            `${pad(shifted.getUTCHours())}:` +
+            `${pad(shifted.getUTCMinutes())}`
+        );
     }
 
     /**
-     * Formats a date-only UTC string without local timezone conversion.
-     * Use this for date-only fields (Due Date, Decision Date, Project Start/End Date)
-     * where the stored date should be displayed as-is regardless of browser timezone.
-     * @param {string} dateUtc - The UTC date string to format
-     * @param {string} type - The type of formatting (for DataTables compatibility)
-     * @returns {string|number|null} Formatted date string or timestamp for sorting, empty string if input is invalid
+     * Formats a date-only field without browser-local timezone
+     * conversion.
+     *
+     * Use for fields such as Due Date, Decision Date and Project
+     * Start/End Date when the stored calendar date must be preserved.
      */
     function formatDate(dateUtc, type) {
         if (!dateUtc) return '';
+
         if (type === 'sort' || type === 'type') {
-            return new Date(dateUtc).getTime();
+            return getTimestamp(dateUtc);
         }
+
         try {
-            return luxon.DateTime.fromISO(dateUtc, {
-                locale: abp.localization.currentCulture.name,
-            }).toUTC().toLocaleString();
+            const parsed = luxon.DateTime.fromISO(dateUtc, {
+                locale: abp.localization.currentCulture.name
+            });
+
+            if (!parsed.isValid) return dateUtc;
+
+            return parsed.toUTC().toLocaleString();
         } catch (e) {
             console.warn('Date parse error:', e);
             return dateUtc;
         }
     }
 
-    // Public API
+    // Public API.
+    //
+    // The original names are retained to avoid breaking existing callers.
+    // Consider renaming the two PST-named functions to PCT in a future
+    // cleanup to reflect the new permanent BC time standard.
     return {
         formatUtcDateToLocal: formatUtcDateToLocal,
         formatUtcToBcPacificDate: formatUtcToBcPacificDate,

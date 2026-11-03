@@ -11,7 +11,7 @@ using Unity.Modules.Shared.Specializations;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Settings;
 
-namespace Unity.GrantManager.Web.Pages.UnityAdmin
+namespace Unity.GrantManager.Web.Pages.Settings.UnityAdmin
 {
     [Authorize(IdentityConsts.ITAdminOrITOperationsPolicyName)]
     public partial class IndexModel(

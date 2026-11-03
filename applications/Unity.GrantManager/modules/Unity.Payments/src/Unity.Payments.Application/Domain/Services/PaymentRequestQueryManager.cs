@@ -24,7 +24,7 @@ namespace Unity.Payments.Domain.Services
         IApplicationRepository applicationRepository) : DomainService, IPaymentRequestQueryManager
     {
         private static readonly TimeZoneInfo VancouverTimeZone =
-            TimeZoneInfo.FindSystemTimeZoneById("Pacific Standard Time");
+            TimeZoneInfo.FindSystemTimeZoneById("America/Vancouver");
 
         private static readonly HashSet<string> SiteFields = new(StringComparer.OrdinalIgnoreCase)
         {

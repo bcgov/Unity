@@ -6,5 +6,6 @@ namespace Unity.Flex.Worksheets
     public class CreateSectionDto
     {
         public string Name { get; set; } = string.Empty;
+        public int? FieldWidth { get; set; }
     }
 }

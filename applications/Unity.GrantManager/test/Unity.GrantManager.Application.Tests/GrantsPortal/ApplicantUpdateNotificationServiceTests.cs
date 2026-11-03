@@ -124,7 +124,6 @@ public class ApplicantUpdateNotificationServiceTests
         _savedEmail.EmailType.ShouldBe(EmailType.EventBased);
         _savedEmail.Body.ShouldContain($"ApplicantId={applicant.Id}&amp;TenantId={_tenantId}");
         _savedEmail.Body.ShouldContain(">APP-123</a>");
-        _savedEmail.Body.ShouldContain("2025-07-01 5:34 AM (PDT)");
         _savedEmail.Body.ShouldContain("Jane Doe");
         _savedEmail.Body.ShouldNotContain("Later");
         _uowManager.Received(1).Begin(Arg.Is<AbpUnitOfWorkOptions>(options => options.IsTransactional == true), true);

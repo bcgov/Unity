@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "mode": "report-only",
-  "generatedAt": "2026-10-27T00:07:35.088Z",
+  "generatedAt": "2026-11-03T20:27:51.743Z",
   "summary": {
     "total": 364,
     "matched": 150,
@@ -2131,8 +2131,8 @@
         "applications/Unity.GrantManager/modules/Unity.Theme.UX2/src/Unity.Theme.UX2/wwwroot/themes/ux2/plugins/tableContextMenu.js",
         "applications/Unity.GrantManager/modules/Unity.Theme.UX2/src/Unity.Theme.UX2/wwwroot/themes/ux2/table-utils.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/Applicants/Index.js",
-        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/UnityAdmin/Index.js",
-        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/UnityAdmin/_ReconciliationReport.cshtml",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/Settings/UnityAdmin/Index.js",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/Settings/UnityAdmin/_ReconciliationReport.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ActionBar/Default.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ApplicantSubmissions/Default.js"
       ]
@@ -4938,8 +4938,8 @@
         "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/Notifications/Index.cshtml",
         "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/Notifications/Index.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/GrantApplications/Index.js",
-        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/UnityAdmin/Index.js",
-        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/UnityAdmin/_ReconciliationReport.cshtml",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/Settings/UnityAdmin/Index.js",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/Settings/UnityAdmin/_ReconciliationReport.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ActionBar/Default.cshtml"
       ]
     },
@@ -4957,8 +4957,8 @@
         "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/Notifications/Index.cshtml",
         "applications/Unity.GrantManager/modules/Unity.Notifications/src/Unity.Notifications.Web/Pages/Notifications/Index.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/GrantApplications/Index.js",
-        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/UnityAdmin/Index.js",
-        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/UnityAdmin/_ReconciliationReport.cshtml",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/Settings/UnityAdmin/Index.js",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/Settings/UnityAdmin/_ReconciliationReport.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ActionBar/Default.cshtml"
       ]
     },
@@ -5305,8 +5305,8 @@
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Views/Shared/Components/PaymentActionBar/Default.cshtml",
         "applications/Unity.GrantManager/modules/Unity.Theme.UX2/src/Unity.Theme.UX2/wwwroot/themes/ux2/plugins/filterRow.js",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/GrantApplications/Index.js",
-        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/UnityAdmin/Index.js",
-        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/UnityAdmin/_ReconciliationReport.cshtml",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/Settings/UnityAdmin/Index.js",
+        "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Pages/Settings/UnityAdmin/_ReconciliationReport.cshtml",
         "applications/Unity.GrantManager/src/Unity.GrantManager.Web/Views/Shared/Components/ActionBar/Default.cshtml"
       ]
     },

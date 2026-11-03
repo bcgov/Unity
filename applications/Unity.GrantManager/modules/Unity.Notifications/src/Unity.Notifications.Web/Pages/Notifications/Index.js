@@ -12,6 +12,7 @@ $(function () {
         view: 'Notifications_View'
     };
     let notificationTableFilters = { dateFrom: null, dateTo: null };
+    let lastDateValidationError = null;
     const savedNotificationView = localStorage.getItem(STORAGE_KEYS.view);
     let notificationViewMode = ['both', 'application', 'applicant'].includes(savedNotificationView)
         ? savedNotificationView
@@ -187,7 +188,7 @@ $(function () {
     PubSub.subscribe('notification_email_saved', handleNotificationEmailCompleted);
 
     UIElements.quickDateRange.on('change', handleQuickDateRangeChange);
-    UIElements.inputFilter.on('change', handleInputFilterChange);
+    UIElements.inputFilter.on('input change', handleInputFilterChange);
     UIElements.notificationView.on('change', function () {
         notificationViewMode = $(this).val() || 'both';
         localStorage.setItem(STORAGE_KEYS.view, notificationViewMode);
@@ -205,6 +206,10 @@ $(function () {
     // ============================ Date filter ============================
 
     function initializeFilterDates() {
+        const today = formatDate(new Date());
+        UIElements.submittedFromInput.attr({ 'max': today });
+        UIElements.submittedToInput.attr({ 'max': today });
+
         let savedQuickRange = localStorage.getItem(STORAGE_KEYS.quickRange) || defaultQuickDateRange;
         let savedFromDate = localStorage.getItem(STORAGE_KEYS.fromDate);
         let savedToDate = localStorage.getItem(STORAGE_KEYS.toDate);
@@ -215,17 +220,15 @@ $(function () {
             ? { fromDate: savedFromDate || '', toDate: savedToDate || '' }
             : getDateRange(savedQuickRange);
 
-        if (!isCustomRange && !range) {
+        // Validate saved values before native date inputs can discard malformed dates.
+        if ((isCustomRange && !validateDateRange(range.fromDate, range.toDate)) ||
+            (!isCustomRange && !range)) {
             savedQuickRange = defaultQuickDateRange;
             range = getDateRange(savedQuickRange);
         }
 
         setDateRangeFilters(savedQuickRange, range);
         setDateRangeLocalStorage(savedQuickRange, range);
-
-        const today = formatDate(new Date());
-        UIElements.submittedFromInput.attr({ 'max': today });
-        UIElements.submittedToInput.attr({ 'max': today });
 
         updateDateInputsVisibility();
     }
@@ -250,9 +253,16 @@ $(function () {
         dataTable.ajax.reload(null, true);
     }
 
-    function handleInputFilterChange() {
-        const $input = $(this);
-        if (!validateDate($input.val(), $input)) return;
+    function handleInputFilterChange(event) {
+        // An unfinished native date has an empty value; do not apply it as a cleared filter.
+        if (UIElements.submittedFromInput[0].validity.badInput ||
+            UIElements.submittedToInput[0].validity.badInput) {
+            lastDateValidationError = null;
+            return;
+        }
+
+        // Validate each edit, then apply valid filters when the date is committed.
+        if (!validateDateRange() || event.type === 'input') return;
 
         syncFiltersFromInputs();
 
@@ -270,6 +280,8 @@ $(function () {
         if (range) {
             UIElements.submittedFromInput.val(range.fromDate ?? '');
             UIElements.submittedToInput.val(range.toDate ?? '');
+            UIElements.inputFilter.removeClass('input-validation-error');
+            lastDateValidationError = null;
             syncFiltersFromInputs();
         }
     }
@@ -290,21 +302,54 @@ $(function () {
         }
     }
 
-    function validateDate(dateValue, element) {
-        if (!dateValue) return true;
+    function getDateValidationError(dateValue, element) {
+        if (!dateValue) return null;
 
         const selectedDate = new Date(dateValue);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        if (selectedDate > today) {
-            element.addClass('input-validation-error');
-            abp.notify.error(l('NotificationList:DateCannotBeFuture'));
-            return false;
+        if (Number.isNaN(selectedDate.getTime()) || selectedDate.toISOString().slice(0, 10) !== dateValue) {
+            return 'NotificationList:InvalidDateValue';
         }
 
-        element.removeClass('input-validation-error');
-        return true;
+        // Use the same date-only format for today and the input values.
+        const today = new Date(formatDate(new Date()));
+        const minDate = element.attr('min') ? new Date(element.attr('min')) : null;
+        const maxDate = element.attr('max') ? new Date(element.attr('max')) : null;
+
+        if (selectedDate > today) {
+            return 'NotificationList:DateCannotBeFuture';
+        }
+        if (minDate && selectedDate < minDate) {
+            return 'NotificationList:DateBeforeMinimum';
+        }
+        if (maxDate && selectedDate > maxDate) {
+            return 'NotificationList:DateAfterMaximum';
+        }
+        return null;
+    }
+
+    function validateDateRange(
+        fromDate = UIElements.submittedFromInput.val(),
+        toDate = UIElements.submittedToInput.val()
+    ) {
+        const fromError = getDateValidationError(fromDate, UIElements.submittedFromInput);
+        const toError = getDateValidationError(toDate, UIElements.submittedToInput);
+        let error = fromError || toError;
+
+        UIElements.submittedFromInput.toggleClass('input-validation-error', !!fromError);
+        UIElements.submittedToInput.toggleClass('input-validation-error', !!toError);
+
+        if (!error && fromDate && toDate && new Date(fromDate) > new Date(toDate)) {
+            error = 'NotificationList:InvalidDateRange';
+            UIElements.inputFilter.addClass('input-validation-error');
+        }
+
+        // A single date edit can fire both input and change events.
+        const errorSignature = error ? `${error}:${fromDate}:${toDate}` : null;
+        if (errorSignature && errorSignature !== lastDateValidationError) {
+            abp.notify.error(l(error), l('NotificationList:InvalidDate'));
+        }
+        lastDateValidationError = errorSignature;
+        return !error;
     }
 
     // ============================ Columns ============================

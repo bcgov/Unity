@@ -41,14 +41,14 @@ namespace Unity.Payments.PaymentRequests.Notifications
         private const string SheetName = "FSB Payments";
 
         private const string DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
-        private const string PacificTimeZoneId = "Pacific Standard Time";
+        private const string PacificTimeZoneId = "America/Vancouver";
         private static readonly string[] PacificTimeZoneIanaIds =
         [
             "America/Vancouver",
             "America/Los_Angeles"
         ];
-        private static readonly TimeZoneInfo PacificTimeZone = ResolvePacificTimeZone();
-        private static readonly bool PacificTimeZoneIsUtcFallback = PacificTimeZone.Id == TimeZoneInfo.Utc.Id;
+        private static readonly TimeZoneInfo VancouverTimeZone = ResolvePacificTimeZone();
+        private static readonly bool PacificTimeZoneIsUtcFallback = VancouverTimeZone.Id == TimeZoneInfo.Utc.Id;
 
         /// <summary>
         /// Generates an Excel file from a list of FSB payment data
@@ -145,11 +145,11 @@ namespace Unity.Payments.PaymentRequests.Notifications
             }
 
             var normalizedUtc = DateTime.SpecifyKind(utcDateTime.Value, DateTimeKind.Utc);
-            var pacificTime = TimeZoneInfo.ConvertTime(new DateTimeOffset(normalizedUtc), PacificTimeZone);
+            var pacificTime = TimeZoneInfo.ConvertTime(new DateTimeOffset(normalizedUtc), VancouverTimeZone);
             var tzAbbreviation = "UTC";
             if (!PacificTimeZoneIsUtcFallback)
             {
-                tzAbbreviation = PacificTimeZone.IsDaylightSavingTime(pacificTime.DateTime) ? "PDT" : "PST";
+                tzAbbreviation = "PCT";                
             }
             return $"{pacificTime.ToString(DATE_FORMAT)} {tzAbbreviation}";
         }

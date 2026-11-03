@@ -15,9 +15,14 @@ public class AIModelDataSeeder(
 {
     private static readonly BuiltInModelDefinition[] BuiltInModels =
     [
-        new("gpt-4o-mini", "OpenAI", true, 0.3d),
         new("gpt-5-mini", "OpenAI", false, null),
         new("gpt-5-nano", "OpenAI", false, null)
+    ];
+
+    // Azure OpenAI no longer allows new deployments of these, so existing rows are deactivated, not deleted
+    private static readonly string[] RetiredModelNames =
+    [
+        "gpt-4o-mini"
     ];
 
     public async Task SeedAsync(DataSeedContext context)
@@ -30,6 +35,11 @@ public class AIModelDataSeeder(
         foreach (var model in BuiltInModels)
         {
             await EnsureModelAsync(model);
+        }
+
+        foreach (var modelName in RetiredModelNames)
+        {
+            await DeactivateModelAsync(modelName);
         }
     }
 
@@ -59,6 +69,19 @@ public class AIModelDataSeeder(
                 SettingsJson = JsonSerializer.Serialize(settings)
             },
             autoSave: true);
+    }
+
+    private async Task DeactivateModelAsync(string modelName)
+    {
+        var existing = (await modelRepository.GetListAsync(model =>
+            model.Name == modelName)).SingleOrDefault();
+        if (existing == null || !existing.IsActive)
+        {
+            return;
+        }
+
+        existing.IsActive = false;
+        await modelRepository.UpdateAsync(existing, autoSave: true);
     }
 
     private sealed record BuiltInModelDefinition(
