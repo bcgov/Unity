@@ -149,6 +149,7 @@ public class EmailLogAttachmentAppService(
     private async Task TouchEmailLogAsync(Guid emailLogId)
     {
         var emailLog = await emailLogsRepository.GetAsync(emailLogId);
+        emailLog.LastModificationTime = Clock.Now;
         await emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
     }
 
