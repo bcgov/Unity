@@ -112,6 +112,12 @@ function bindLayoutNotificationEvents(dataTable) {
     dataTable.on('draw', notifySubmissionsLayoutChange);
 }
 
+function syncRowCheckboxes(dataTable, indexes, checked) {
+    indexes.forEach(index => {
+        $(dataTable.row(index).node()).find('.row-checkbox').prop('checked', checked);
+    });
+}
+
 function updateOpenButtonState(dataTable) {
     const selectedRows = dataTable.rows({ selected: true }).data();
     const $openBtn = $('#openSubmissionBtn');
@@ -1232,7 +1238,10 @@ $(function () {
     dataTable.externalSearch('#submissions-search', { delay: 300 });
 
     // Open button handling
-    dataTable.on('select deselect', function () {
+    dataTable.on('select deselect', function (e, dt, type, indexes) {
+        if (type === 'row' && indexes?.length) {
+            syncRowCheckboxes(dataTable, indexes, e.type === 'select');
+        }
         updateOpenButtonState(dataTable);
     });
 

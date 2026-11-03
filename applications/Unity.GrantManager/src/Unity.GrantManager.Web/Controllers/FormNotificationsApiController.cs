@@ -33,29 +33,28 @@ namespace Unity.GrantManager.Web.Controllers
                                                 IApplicantEmailTemplateAppService applicantEmailTemplateService,
                                                 EmailComposerAccessChecker emailAccessChecker) : ControllerBase
     {
-
+        private static readonly List<PaymentStatusOptionDto> PaymentStatuses =
+        [
+            new() { Id = PaymentRequestStatus.Cancelled.ToString(), InternalStatus = "Canceled", OriginalSource = "Unity Payment Status" },
+            new() { Id = CasPaymentRequestStatus.FullyPaid, InternalStatus = CasPaymentRequestStatus.FullyPaid, OriginalSource = "CAS Payment Status" },
+            new() { Id = PaymentRequestStatus.HistoricalPayment.ToString(), InternalStatus = "Historical Payment", OriginalSource = "Unity Payment Status" },
+            new() { Id = PaymentRequestStatus.L1Declined.ToString(), InternalStatus = "L1 Declined", OriginalSource = "Unity Payment Status" },
+            new() { Id = PaymentRequestStatus.L1Pending.ToString(), InternalStatus = "L1 Pending", OriginalSource = "Unity Payment Status" },
+            new() { Id = PaymentRequestStatus.L2Declined.ToString(), InternalStatus = "L2 Declined", OriginalSource = "Unity Payment Status" },
+            new() { Id = PaymentRequestStatus.L2Pending.ToString(), InternalStatus = "L2 Pending", OriginalSource = "Unity Payment Status" },
+            new() { Id = PaymentRequestStatus.L3Declined.ToString(), InternalStatus = "L3 Declined", OriginalSource = "Unity Payment Status" },
+            new() { Id = PaymentRequestStatus.L3Pending.ToString(), InternalStatus = "L3 Pending", OriginalSource = "Unity Payment Status" },
+            new() { Id = CasPaymentRequestStatus.NotPaid, InternalStatus = CasPaymentRequestStatus.NotPaid, OriginalSource = "CAS Payment Status" },
+            new() { Id = PaymentRequestStatus.Paid.ToString(), InternalStatus = "Paid", OriginalSource = "CAS Payment Status" },
+            new() { Id = PaymentRequestStatus.FSB.ToString(), InternalStatus = "Sent to Accounts Payable", OriginalSource = "Unity Payment Status" },
+            new() { Id = PaymentRequestStatus.Submitted.ToString(), InternalStatus = "Submitted to CAS", OriginalSource = "Unity Payment Status" }
+        ];
 
         [Authorize(NotificationsPermissions.Email.Default)]
         [HttpGet("payment-statuses")]
-        public ActionResult<List<object>> GetPaymentStatuses()
+        public ActionResult<List<PaymentStatusOptionDto>> GetPaymentStatuses()
         {
-            var statuses = new List<object>
-            {
-                new { id = PaymentRequestStatus.Cancelled.ToString(), internalStatus = "Canceled", originalSource = "Unity Payment Status" },
-                new { id = CasPaymentRequestStatus.FullyPaid, internalStatus = CasPaymentRequestStatus.FullyPaid, originalSource = "CAS Payment Status" },
-                new { id = PaymentRequestStatus.HistoricalPayment.ToString(), internalStatus = "Historical Payment", originalSource = "Unity Payment Status" },
-                new { id = PaymentRequestStatus.L1Declined.ToString(), internalStatus = "L1 Declined", originalSource = "Unity Payment Status" },
-                new { id = PaymentRequestStatus.L1Pending.ToString(), internalStatus = "L1 Pending", originalSource = "Unity Payment Status" },
-                new { id = PaymentRequestStatus.L2Declined.ToString(), internalStatus = "L2 Declined", originalSource = "Unity Payment Status" },
-                new { id = PaymentRequestStatus.L2Pending.ToString(), internalStatus = "L2 Pending", originalSource = "Unity Payment Status" },
-                new { id = PaymentRequestStatus.L3Declined.ToString(), internalStatus = "L3 Declined", originalSource = "Unity Payment Status" },
-                new { id = PaymentRequestStatus.L3Pending.ToString(), internalStatus = "L3 Pending", originalSource = "Unity Payment Status" },
-                new { id = CasPaymentRequestStatus.NotPaid, internalStatus = CasPaymentRequestStatus.NotPaid, originalSource = "CAS Payment Status" },
-                new { id = PaymentRequestStatus.Paid.ToString(), internalStatus = "Paid", originalSource = "CAS Payment Status" },
-                new { id = PaymentRequestStatus.FSB.ToString(), internalStatus = "Sent to Accounts Payable", originalSource = "Unity Payment Status" },
-                new { id = PaymentRequestStatus.Submitted.ToString(), internalStatus = "Submitted to CAS", originalSource = "Unity Payment Status" }
-            };
-            return Ok(statuses);
+            return Ok(PaymentStatuses);
         }
         // In-memory storage removed; persisting to ScheduledNotifications table via IAutomatedNotificationAppService
 
@@ -277,7 +276,7 @@ namespace Unity.GrantManager.Web.Controllers
             {
                 Id = e.Id,
                 TemplateId = e.EmailTemplateId,
-                TemplateName = templateMap.TryGetValue(e.EmailTemplateId, out var t) && t != null ? t.Name : string.Empty,
+                TemplateName = templateMap.TryGetValue(e.EmailTemplateId, out var t) && t != null ? t.Name : "Template deleted",
                 TemplateType = templateMap.TryGetValue(e.EmailTemplateId, out var template) && template != null
                     ? template.TemplateType
                     : TemplateTypes.Application,
@@ -285,6 +284,7 @@ namespace Unity.GrantManager.Web.Controllers
                 Module = e.Module ?? (e.TriggerType == "Event" ? "Application" : null),
                 DateType = e.DateField,
                 EventStatus = e.EventType ?? e.ApplicationStatus,
+                EventStatusLabel = ResolveEventStatusLabel(e.EventType, e.ApplicationStatus),
                 ApplicationStatusId = e.ApplicationStatusId,
                 ApplicationStatusIds = ParseStatusIds(e.ApplicationStatusIds),
                 RecipientCategory = e.RecipientCategory,
@@ -346,7 +346,7 @@ namespace Unity.GrantManager.Web.Controllers
                 EmailTemplateId = template.Id,
                 TriggerType = input.TriggerType,
                 Module = input.Module,
-                TriggerDetail = input.TriggerType == "Date" ? input.DateType : input.Module == "Payment" ? input.EventStatus : statusLabel,
+                TriggerDetail = input.TriggerType == "Date" ? input.DateType : input.Module == "Payment" ? ResolveEventStatusLabel(input.EventStatus, null) : statusLabel,
                 IsActive = true,
                 EventType = input.Module == "Payment" ? input.EventStatus : null,
                 ApplicationStatusId = input.Module == "Application" ? input.ApplicationStatusId : null,
@@ -369,6 +369,7 @@ namespace Unity.GrantManager.Web.Controllers
                 Module = created.Module,
                 DateType = created.DateField,
                 EventStatus = created.EventType ?? created.ApplicationStatus,
+                EventStatusLabel = ResolveEventStatusLabel(created.EventType, created.ApplicationStatus),
                 ApplicationStatusId = created.ApplicationStatusId,
                 ApplicationStatusIds = ParseStatusIds(created.ApplicationStatusIds),
                 RecipientCategory = created.RecipientCategory,
@@ -403,6 +404,7 @@ namespace Unity.GrantManager.Web.Controllers
             var references = await automatedNotificationAppService.GetTemplateReferencesAsync(templateId);
 
             var associatedPlans = references
+                .Where(n => n.IsActive)
                 .Select(n =>
                     string.IsNullOrWhiteSpace(n.TriggerDetail)
                         ? $"{n.TriggerType} notification"
@@ -417,7 +419,7 @@ namespace Unity.GrantManager.Web.Controllers
                 return Ok(new
                 {
                     canDelete = false,
-                    errorMessage = "This template cannot be deleted because it is assigned to one or more Scheduled Notifications. Please remove the template from all Scheduled Notifications before deleting.",
+                    errorMessage = "This template cannot be deleted because it is assigned to one or more active Scheduled Notifications. Please cancel these Scheduled Notifications or assign them a different template before deleting.",
                     notificationPlanNames = associatedPlans
                 });
             }
@@ -432,7 +434,7 @@ namespace Unity.GrantManager.Web.Controllers
             var references = await automatedNotificationAppService.GetTemplateReferencesAsync(templateId);
             var template = await templateService.GetTemplateById(templateId);
 
-            var templateName = template?.Name ?? "Template";
+            var templateName = template?.Name ?? "Template deleted";
             var planNames = references
                 .Where(n => n.IsActive)
                 .Select(n => string.IsNullOrWhiteSpace(n.TriggerDetail)
@@ -482,7 +484,7 @@ namespace Unity.GrantManager.Web.Controllers
                 EmailTemplateId = template.Id,
                 TriggerType = input.TriggerType,
                 Module = input.Module,
-                TriggerDetail = input.TriggerType == "Date" ? input.DateType : input.Module == "Payment" ? input.EventStatus : statusLabel,
+                TriggerDetail = input.TriggerType == "Date" ? input.DateType : input.Module == "Payment" ? ResolveEventStatusLabel(input.EventStatus, null) : statusLabel,
                 IsActive = true,
                 EventType = input.Module == "Payment" ? input.EventStatus : null,
                 ApplicationStatusId = input.Module == "Application" ? input.ApplicationStatusId : null,
@@ -505,6 +507,7 @@ namespace Unity.GrantManager.Web.Controllers
                 Module = updated.Module,
                 DateType = updated.DateField,
                 EventStatus = updated.EventType ?? updated.ApplicationStatus,
+                EventStatusLabel = ResolveEventStatusLabel(updated.EventType, updated.ApplicationStatus),
                 ApplicationStatusId = updated.ApplicationStatusId,
                 ApplicationStatusIds = ParseStatusIds(updated.ApplicationStatusIds),
                 RecipientCategory = updated.RecipientCategory,
@@ -537,6 +540,18 @@ namespace Unity.GrantManager.Web.Controllers
             }
 
             return true;
+        }
+
+        // Payment event types are stored as status ids (e.g. "FSB"); map them to the label shown in the dropdown.
+        private static string? ResolveEventStatusLabel(string? eventType, string? applicationStatus)
+        {
+            if (string.IsNullOrWhiteSpace(eventType))
+            {
+                return applicationStatus;
+            }
+
+            return PaymentStatuses.Find(s => string.Equals(s.Id, eventType, StringComparison.OrdinalIgnoreCase))?.InternalStatus
+                ?? eventType;
         }
 
         private static string? SerializeStatusIds(IEnumerable<Guid> statusIds)
@@ -577,6 +592,7 @@ namespace Unity.GrantManager.Web.Controllers
         public string? Module { get; init; }
         public string? DateType { get; init; }
         public string? EventStatus { get; init; }
+        public string? EventStatusLabel { get; init; }
         public Guid? ApplicationStatusId { get; init; }
         public List<Guid> ApplicationStatusIds { get; init; } = new();
         public string? RecipientCategory { get; init; }
@@ -584,6 +600,13 @@ namespace Unity.GrantManager.Web.Controllers
         public string TemplateType { get; init; } = TemplateTypes.Application;
         public DateTime CreatedAt { get; init; }
         public bool IsActive { get; init; }
+    }
+
+    public record PaymentStatusOptionDto
+    {
+        public string Id { get; init; } = string.Empty;
+        public string InternalStatus { get; init; } = string.Empty;
+        public string OriginalSource { get; init; } = string.Empty;
     }
 
     public record CreateScheduledNotificationInput
