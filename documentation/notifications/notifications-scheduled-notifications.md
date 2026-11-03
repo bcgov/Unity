@@ -19,7 +19,11 @@ Both triggers converge on the same output: an `EmailNotificationEvent` published
 
 `FullAuditedAggregateRoot<Guid>`, tenant-scoped.
 
-Schedule creation and updates lock the referenced active `EmailTemplate` row inside the write transaction. Template deletion takes the same lock before checking for schedules and soft-deleting the template. This prevents a schedule from being saved between the reference check and the soft delete; a missing or soft-deleted template is rejected when saving a schedule.
+Schedule creation and updates lock the referenced active `EmailTemplate` row inside the write transaction. Template deletion takes the same lock before checking for active schedules and soft-deleting the template. This prevents an active schedule from being saved between the reference check and the soft delete; a missing or soft-deleted template is rejected when saving a schedule.
+
+Only active scheduled notification plans block template deletion. When every referencing plan is cancelled (`IsActive = false`), deletion is allowed. Sending all currently generated emails does not retire an active plan: it can still trigger for future applications or events, so it continues to block deletion. The UI deletion preflight and the server deletion guard enforce the same rule.
+
+Cancelled plans and sent or cancelled email history are retained after template deletion. The plan list displays **Template deleted** when its template is unavailable; template lookups return `null` for missing or soft-deleted templates so the list and replacement flow can handle them. Saving or reactivating a plan requires an available template, and replacing a deleted template remains subject to the existing template-type restrictions.
 
 |Field|Meaning|
 |---|---|

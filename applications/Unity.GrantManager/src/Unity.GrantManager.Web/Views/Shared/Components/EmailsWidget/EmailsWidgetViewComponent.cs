@@ -36,7 +36,14 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
             else
             {
                 var application = await applicationRepository.WithBasicDetailsAsync(applicationId);
-                emailTo = application?.ApplicantAgent?.Email ?? string.Empty;
+                emailTo = string.Join("; ", new[]
+                {
+                    application?.ApplicantAgent?.Email,
+                    application?.SigningAuthorityEmail
+                }
+                    .Where(email => !string.IsNullOrWhiteSpace(email))
+                    .Select(email => email!.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase));
             }
 
             var defaultFromAddress = await settingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);

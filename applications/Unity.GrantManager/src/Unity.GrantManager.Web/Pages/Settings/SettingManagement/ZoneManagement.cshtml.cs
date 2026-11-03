@@ -9,7 +9,7 @@ using Unity.GrantManager.Zones;
 using Volo.Abp.AspNetCore.Mvc.ApplicationConfigurations;
 using Volo.Abp.EventBus.Local;
 
-namespace Unity.GrantManager.Web.Pages.SettingManagement
+namespace Unity.GrantManager.Web.Pages.Settings.SettingManagement
 {
     public class ZoneManagementModel : GrantManagerPageModel
     {
