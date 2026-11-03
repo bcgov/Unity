@@ -3,6 +3,7 @@
     let _onboardingRequestAppService = unity.tenantManagement.onboardingRequest;
     let _dataTable = null;
     let _selectedRow = null;
+    let _selectedRows = [];
     let _selectedCategory = 'Onboarding';
 
     const CATEGORY_STORAGE_KEY = 'Onboarding_SelectedCategory';
@@ -30,7 +31,30 @@
                 return DateUtils.formatUtcDateToLocal(data, type);
             }
         },
-        { title: l('Onboarding:ColumnCategory'), data: 'category', name: 'category', index: 3 }
+        { title: l('Onboarding:ColumnCategory'), data: 'category', name: 'category', index: 3 },
+        {
+            title: l('Onboarding:ColumnOwner'),
+            data: 'ownerName',
+            name: 'ownerName',
+            index: 4,
+            defaultContent: '',
+            render: function (data, type) {
+                if (type !== 'display') return data ?? '';
+                return _escapeHtml(data ?? '');
+            }
+        },
+        {
+            title: l('Onboarding:ColumnAssignee'),
+            data: 'assignees',
+            name: 'assignees',
+            index: 5,
+            orderable: false,
+            defaultContent: '',
+            render: function (data, type) {
+                const text = _formatAssignees(data);
+                return type === 'display' ? _escapeHtml(text) : text;
+            }
+        }
     ];
 
     // ─── Field value renderers ────────────────────────────────────────────────
@@ -41,6 +65,13 @@
             .replaceAll('<', '&lt;')
             .replaceAll('>', '&gt;')
             .replaceAll('"', '&quot;');
+    }
+
+    // "Jane Smith [Reviewer], Alex Chen [Program Lead]"; a role is optional.
+    function _formatAssignees(assignees) {
+        return (assignees || [])
+            .map(function (a) { return a.role ? a.name + ' [' + a.role + ']' : a.name; })
+            .join(', ');
     }
 
     function _formatCheckboxKey(key) {
@@ -235,11 +266,12 @@
 
     function initTable(schema) {
         if (_dataTable) {
-            _dataTable.off('select deselect');
+            _dataTable.off('select deselect draw');
             _dataTable.destroy();
             $('#OnboardingRequestsTable').empty();
             _dataTable = null;
             _selectedRow = null;
+            _selectedRows = [];
             manageActionButtons();
         }
 
@@ -281,21 +313,22 @@
 
         _openRequestedCreateTenant();
 
-        _dataTable.select.style('single');
+        _dataTable.select.style('multi');
 
-        _dataTable.on('select', function (e, dt, type, indexes) {
-            if (type === 'row' && indexes.length) {
-                _selectedRow = dt.row(indexes[0]).data();
-                manageActionButtons();
-            }
+        _dataTable.on('select deselect', function (e, dt, type) {
+            if (type === 'row') _syncSelection();
         });
 
-        _dataTable.on('deselect', function (e, dt, type) {
-            if (type === 'row' && dt.rows({ selected: true }).count() === 0) {
-                _selectedRow = null;
-                manageActionButtons();
-            }
-        });
+        // A server-side redraw replaces the rows, which drops the selection without a deselect event.
+        _dataTable.on('draw', _syncSelection);
+    }
+
+    // Open and Create Tenant act on one request (_selectedRow is only set for exactly one);
+    // Assign acts on all of _selectedRows.
+    function _syncSelection() {
+        _selectedRows = _dataTable.rows({ selected: true }).data().toArray();
+        _selectedRow = _selectedRows.length === 1 ? _selectedRows[0] : null;
+        manageActionButtons();
     }
 
     // ─── Create Tenant requested from the request details page ───────────────
@@ -320,6 +353,7 @@
         $('#btn-open-onboarding').toggleClass('action-bar-btn-unavailable', !hasSelection);
         $('#btn-create-tenant').toggleClass('action-bar-btn-unavailable',
             !hasSelection || _selectedRow.status !== 'Approved');
+        $('#btn-assign-onboarding').toggleClass('action-bar-btn-unavailable', _selectedRows.length === 0);
     }
 
     // ─── Field value preview ─────────────────────────────────────────────────
@@ -525,6 +559,143 @@
         };
     };
 
+    // ─── Assign Owner and Assignees modal ─────────────────────────────────────
+
+    let _assignModal = new abp.ModalManager({
+        viewUrl: abp.appPath + 'TenantManagement/Onboarding/AssignModal',
+        modalClass: 'assignOnboardingModal'
+    });
+
+    let _assignRows = [];
+
+    function _assignmentKey(row) {
+        return JSON.stringify({
+            ownerId: row.ownerId || null,
+            assignees: (row.assignees || [])
+                .map(function (a) { return a.assigneeId + '|' + (a.role || ''); })
+                .sort(function (x, y) { return x.localeCompare(y); })
+        });
+    }
+
+    function _appendUserOptions($select, users, placeholder) {
+        $select.append($('<option>').val('').text(placeholder));
+        users.forEach(function (u) {
+            $select.append($('<option>').val(u.id).text(u.name));
+        });
+    }
+
+    function _addAssigneeRow(users, assigneeId, role) {
+        const $row = $('<div>').addClass('d-flex gap-2 mb-2 assign-onboarding-row');
+        const $user = $('<select>')
+            .addClass('form-select form-select-sm assign-onboarding-user')
+            .attr('aria-label', l('AssignOnboardingModal:AssigneesLabel'));
+        _appendUserOptions($user, users, l('AssignOnboardingModal:AssigneePlaceholder'));
+        $user.val(assigneeId || '');
+
+        const $role = $('<input>')
+            .addClass('form-control form-control-sm assign-onboarding-role')
+            .attr({
+                type: 'text',
+                maxlength: 250,
+                placeholder: l('AssignOnboardingModal:RolePlaceholder'),
+                'aria-label': l('AssignOnboardingModal:RolePlaceholder')
+            })
+            .val(role || '');
+
+        const $remove = $('<button>')
+            .addClass('btn btn-secondary btn-sm')
+            .attr({ type: 'button', title: l('AssignOnboardingModal:RemoveAssignee'), 'aria-label': l('AssignOnboardingModal:RemoveAssignee') })
+            .append($('<i>').addClass('fa-solid fa-xmark'))
+            .on('click', function () { $row.remove(); });
+
+        $('#assign-onboarding-assignees').append($row.append($user, $role, $remove));
+    }
+
+    function _fillAssignForm(users) {
+        // Rows that already agree are prefilled so they can be edited; rows that disagree start
+        // blank, with a warning, because saving overwrites all of them with the same values.
+        const isSame = new Set(_assignRows.map(_assignmentKey)).size === 1;
+        const current = isSame ? _assignRows[0] : { ownerId: null, assignees: [] };
+
+        _appendUserOptions($('#assign-onboarding-owner'), users, l('AssignOnboardingModal:NoOwner'));
+        $('#assign-onboarding-owner').val(current.ownerId || '');
+        $('#assign-onboarding-mixed').toggleClass('d-none', isSame);
+
+        (current.assignees || []).forEach(function (a) { _addAssigneeRow(users, a.assigneeId, a.role); });
+        if (!current.assignees?.length) _addAssigneeRow(users);
+
+        $('#btn-assign-onboarding-add').on('click', function () { _addAssigneeRow(users); });
+        $('#assign-onboarding-loading').addClass('d-none');
+        $('#assign-onboarding-form').removeClass('d-none');
+        $('#btn-assign-onboarding-save').prop('disabled', false);
+    }
+
+    // Returns the assignees to save, or null after showing why they can't be saved. A row left
+    // completely blank is ignored, so an owner can be saved without any assignee.
+    function _readAssignees() {
+        const assignees = [];
+        let error = null;
+
+        $('#assign-onboarding-assignees .assign-onboarding-row').each(function () {
+            const assigneeId = $(this).find('.assign-onboarding-user').val();
+            const role = String($(this).find('.assign-onboarding-role').val() || '').trim();
+
+            if (!assigneeId) {
+                if (role) error = 'AssignOnboardingModal:AssigneeRequired';
+                return;
+            }
+            if (assignees.some(function (a) { return a.assigneeId === assigneeId; })) {
+                error = error || 'AssignOnboardingModal:DuplicateAssignee';
+                return;
+            }
+            assignees.push({ assigneeId: assigneeId, role: role || null });
+        });
+
+        $('#assign-onboarding-error').text(error ? l(error) : '').toggleClass('d-none', !error);
+        return error ? null : assignees;
+    }
+
+    function _saveAssignment() {
+        const assignees = _readAssignees();
+        if (assignees === null) return;
+
+        const $btn = $(this);
+        $btn.prop('disabled', true);
+
+        abp.ajax({
+            url: abp.appPath + 'api/onboarding-requests/assign',
+            type: 'POST',
+            data: JSON.stringify({
+                applicationIds: _assignRows.map(function (r) { return r.id; }),
+                ownerId: $('#assign-onboarding-owner').val() || null,
+                assignees: assignees
+            }),
+            contentType: 'application/json'
+        }).done(function () {
+            abp.notify.success(l('AssignOnboardingModal:SaveSuccess'));
+            _assignModal.close();
+            _dataTable.ajax.reload(null, false);
+        }).fail(function () {
+            $btn.prop('disabled', false);
+        });
+    }
+
+    abp.modals.assignOnboardingModal = function () {
+        return {
+            initModal: function () {
+                $('#btn-assign-onboarding-save').on('click', _saveAssignment);
+
+                abp.ajax({
+                    url: abp.appPath + 'api/onboarding-requests/assignable-users',
+                    type: 'GET'
+                }).done(_fillAssignForm).fail(function () {
+                    $('#assign-onboarding-loading').addClass('d-none');
+                    $('#assign-onboarding-error').text(l('AssignOnboardingModal:LoadFailed')).removeClass('d-none');
+                });
+            }
+        };
+    };
+
     // ─── Jaro-Winkler field auto-detection ───────────────────────────────────
 
     function _normalizeLabel(s) {
@@ -693,6 +864,12 @@
         $('#btn-create-tenant').on('click', function () {
             if (!_selectedRow) return;
             _createTenantModal.open({ id: _selectedRow.id });
+        });
+
+        $('#btn-assign-onboarding').on('click', function () {
+            if (_selectedRows.length === 0) return;
+            _assignRows = _selectedRows;
+            _assignModal.open();
         });
     });
 })();

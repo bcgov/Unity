@@ -31,7 +31,7 @@ GrantManagerOnboardingApplicationProvider   // src/Unity.GrantManager.Applicatio
     [ExposeServices(typeof(IOnboardingApplicationProvider))]
 ```
 
-`GetPagedListAsync`, `GetByIdAsync`, `GetAllIdsAsync`, `GetFormVersionIdsAsync`, `GetMappedCoreFieldColumnsAsync`, `GetAvailableCategoriesAsync`, `CloseApplicationAsync`. `Unity.TenantManagement.Application` has **zero compile-time reference to `Unity.GrantManager`** — confirmed via its `.csproj` (only `AbpTenantManagementDomainModule`, `Unity.SharedKernel`, `Unity.Flex.Application.Contracts`). `OnboardingRequestAppService` resolves the provider via `LazyServiceProvider.LazyGetService<IOnboardingApplicationProvider>()` and degrades gracefully to empty results if nothing is registered — the same runtime-DI inversion pattern used for `IOnboardingUserLookup` (below) and, structurally, for Flex's local-event handlers.
+`GetPagedListAsync`, `GetByIdAsync`, `GetAllIdsAsync`, `GetFormVersionIdsAsync`, `GetMappedCoreFieldColumnsAsync`, `GetAvailableCategoriesAsync`, `CloseApplicationAsync`, `SetAssignmentAsync`, `GetAssignableUsersAsync`. `Unity.TenantManagement.Application` has **zero compile-time reference to `Unity.GrantManager`** — confirmed via its `.csproj` (only `AbpTenantManagementDomainModule`, `Unity.SharedKernel`, `Unity.Flex.Application.Contracts`). `OnboardingRequestAppService` resolves the provider via `LazyServiceProvider.LazyGetService<IOnboardingApplicationProvider>()` and degrades gracefully to empty results if nothing is registered — the same runtime-DI inversion pattern used for `IOnboardingUserLookup` (below) and, structurally, for Flex's local-event handlers.
 
 ## Two data sources merged per request
 
@@ -39,6 +39,12 @@ An onboarding request's visible fields come from two places, merged in `Onboardi
 
 1. **Core fields** — real `Application`/`Applicant`/`ApplicantAgent` columns (`ProjectName`, `RequestedAmount`, `ApplicantName`, `SigningAuthorityEmail`, contact fields, etc.), enumerated by `OnboardingCoreFieldRegistry` (`src/Unity.GrantManager.Application/TenantManagement/OnboardingCoreFieldRegistry.cs`) — a static list of `CoreFieldDefinition(Key, Label, Type, EfPath, Selector)` records. `EfPath` lets these be filtered/sorted **in SQL** via `System.Linq.Dynamic.Core`. Only fields the registry confirms are actually persisted by intake are listed; several theoretically-mappable `IntakeMapping` fields are deliberately left out.
 2. **Worksheet fields** — arbitrary Flex `CustomField`s attached to the onboarding form's `WorksheetInstance`s, fetched via `IWorksheetInstanceAppService.GetListByCorrelationIdsAsync` and parsed **in memory**, since JSONB values can't be filtered/sorted in SQL. `OnboardingRequestAppService.GetListAsync` carries an explicit PERF comment flagging this as fine at current tenant/request volume, worth revisiting if the screen scales.
+
+## Owner and assignees
+
+The queue's permanent Owner and Assignee columns read the `Application`'s existing `OwnerId` and `ApplicationAssignment` rows (an assignee's role is `ApplicationAssignment.Duty`). They are filtered in SQL like the static columns; Owner can be sorted, Assignee cannot.
+
+The Assign action works on one or more selected rows. `OnboardingRequestAppService.AssignAsync` reaches `OnboardingApplicationManager.SetAssignmentAsync`, which makes every selected application carry exactly the submitted owner and assignees: previous values are replaced, and an empty owner or assignee list clears them. It deliberately does not use `ApplicationManager`'s assignment methods, whose "assigning moves `SUBMITTED` to `ASSIGNED`" rule would put a request in a state the onboarding workflow does not have, so assigning never changes status. The provider refuses the save unless the `Unity.Onboarding` feature is enabled for the current tenant, because the page and controller are only gated by role and this write would otherwise reach grant applications in a regular tenant. The people offered come from `Person` rows in the current tenant, excluding the AI scoring person, because both foreign keys point at `Person`.
 
 ## Field mapping is admin-configurable, not hardcoded
 
@@ -74,10 +80,11 @@ Because step 4 is the exact same call the "New Tenant" modal makes, every downst
 
 ## Web UI
 
-`Unity.TenantManagement.Web/Pages/TenantManagement/Onboarding/`, both page models `[Authorize(IdentityConsts.ITOperationsPolicyName)]`:
+`Unity.TenantManagement.Web/Pages/TenantManagement/Onboarding/`, all page models `[Authorize(IdentityConsts.ITOperationsPolicyName)]`:
 
 - **`Index.cshtml(.cs)`** — the onboarding request queue. `OnGet` is empty; all data is fetched client-side through `OnboardingRequestController`.
 - **`CreateTenantModal.cshtml(.cs)`** — the approval modal. `OnGetAsync(id)` loads the request via `IOnboardingRequestAppService.GetAsync` (404s if not found).
+- **`AssignModal.cshtml(.cs)`** — the owner and assignee modal. It loads nothing on the server; `Onboarding/Index.js` fills it from the selected rows and `api/onboarding-requests/assignable-users`.
 - **`OnboardingPageModel`** — shared abstract base (sets `ObjectMapperContext`).
 
 Exposed over HTTP by a hand-written `OnboardingRequestController` (`api/onboarding-requests`) — see [tenant-management-application-services.md](tenant-management-application-services.md#ionboardingrequestappservice--onboardingrequestappservice) for the route table.
@@ -90,4 +97,4 @@ An Onboarding tenant has no applications list: `GrantManagerMenuContributor` hid
 
 ## Why IT Operations, specifically
 
-The whole Onboarding surface — controller, both pages, the app service — is gated to the `ITOperations` role. This is the flip side of the "New Tenant" button being tightened to IT-Administrator-only (see [tenant-management-web-ui.md](tenant-management-web-ui.md)): IT Operations creates tenants exclusively through this reviewed, form-driven, validated path; IT Administrators can also use the direct modal. Both ultimately converge on the same `TenantAppService.CreateAsync` call, so neither path is a "lesser" way to create a tenant — Onboarding is a guided front-end onto the same provisioning logic, with the added structure of an approvable request queue, admin-configurable field mapping, and pre-flight validation.
+The whole Onboarding surface — controller, all pages, the app service — is gated to the `ITOperations` role. This is the flip side of the "New Tenant" button being tightened to IT-Administrator-only (see [tenant-management-web-ui.md](tenant-management-web-ui.md)): IT Operations creates tenants exclusively through this reviewed, form-driven, validated path; IT Administrators can also use the direct modal. Both ultimately converge on the same `TenantAppService.CreateAsync` call, so neither path is a "lesser" way to create a tenant — Onboarding is a guided front-end onto the same provisioning logic, with the added structure of an approvable request queue, admin-configurable field mapping, and pre-flight validation.
