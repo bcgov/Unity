@@ -1,8 +1,7 @@
 @using Microsoft.AspNetCore.Mvc.Localization
 @using Unity.GrantManager.Localization
-@model Unity.GrantManager.Web.Pages.UnityAdmin.IndexModel
+@model Unity.GrantManager.Web.Pages.Settings.UnityAdmin.IndexModel
 @inject IHtmlLocalizer<GrantManagerResource> L
-
 <div id="reconciliation-report-div" class="input-area card mb-3 reconciliation-report">
     <div class="container-fluid px-0">
         <div class="unity-page-titlebar mb-30">
@@ -46,7 +45,7 @@
                     </div>
                 </div>
             </div>
-            <div class="reconciliation-filter-buttons d-flex align-items-center gap-2">
+            <div class="reconciliation-filter-buttons d-flex gap-2">
                 <button id="btn-reconcile" type="button" class="flex-none btn btn-primary" disabled>@L["Reconciliation:Reconcile"]</button>
                 <button id="btn-toggle-filter" type="button" class="custom-table-btn flex-none btn btn-secondary">Filter</button>
             </div>

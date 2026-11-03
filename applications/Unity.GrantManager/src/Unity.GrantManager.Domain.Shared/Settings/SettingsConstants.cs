@@ -19,6 +19,12 @@
             public const string ExceptionLogRetentionDays = "GrantManager.Retention.ExceptionLogRetentionDays";
         }
 
+        public static class UserEmailSettings
+        {
+            public const string EmailBlockCommentTagging = "GrantManager.UserEmailSettings.EmailBlockCommentTagging";
+            public const string EmailBlockAssigned = "GrantManager.UserEmailSettings.EmailBlockAssigned";
+        }
+
         public static class ApplicantPortal
         {
             public const string UseDefaultMultipleIdentitiesMessage = "GrantManager.ApplicantPortal.MultipleIdentities.UseDefaultMessage";

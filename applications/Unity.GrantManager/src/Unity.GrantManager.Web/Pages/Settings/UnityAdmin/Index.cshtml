@@ -4,7 +4,8 @@
 @using Unity.GrantManager.Localization
 @using Microsoft.AspNetCore.Mvc.Localization
 @using Volo.Abp.AspNetCore.Mvc.UI.Layout
-@using Unity.GrantManager.Web.Pages.UnityAdmin
+@using Unity.GrantManager.Web.Pages.Settings.UnityAdmin
+
 @model IndexModel
 @inject IHtmlLocalizer<GrantManagerResource> L
 @inject IAuthorizationService Authorization
@@ -15,19 +16,19 @@
 }
 @section styles {
     <abp-style-bundle name="@typeof(IndexModel).FullName">
-        <abp-style src="/Pages/UnityAdmin/Index.css" />
+        <abp-style src="/Pages/Settings/UnityAdmin/Index.css" />
         <abp-style src="/Pages/Prompts/Index.css" />
         <abp-style src="/Pages/EndpointManagement/Endpoints/Index.css" />
-        <abp-style src="/Pages/ExceptionLogs/Index.css" />
+        <abp-style src="/Pages/Settings/ExceptionLogs/Index.css" />
     </abp-style-bundle>
 }
 @section scripts {
     <abp-script-bundle name="@typeof(IndexModel).FullName">
         <abp-script src="/themes/ux2/plugins/filterRow.js" />
-        <abp-script src="/Pages/UnityAdmin/Index.js" />
+        <abp-script src="/Pages/Settings/UnityAdmin/Index.js" />
         <abp-script src="/Pages/Prompts/Index.js" />
         <abp-script src="/Pages/EndpointManagement/Endpoints/Index.js" />
-        <abp-script src="/Pages/ExceptionLogs/Index.js" />
+        <abp-script src="/Pages/Settings/ExceptionLogs/Index.js" />
     </abp-script-bundle>
 }
 
@@ -35,6 +36,7 @@
 @await Html.PartialAsync("_OptionalSections", Model)
 
 @await Html.PartialAsync("_ReconciliationReport", Model)
+
 
 <div id="background-jobs-div" class="input-area card mb-3 background-jobs hide">
     @await Component.InvokeAsync("BackgroundJobs")

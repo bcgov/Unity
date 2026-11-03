@@ -6,7 +6,7 @@ using Unity.GrantManager.Settings;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.Settings;
 
-namespace Unity.GrantManager.Web.Pages.UnityAdmin;
+namespace Unity.GrantManager.Web.Pages.Settings.UnityAdmin;
 
 public partial class IndexModel
 {

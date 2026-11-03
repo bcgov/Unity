@@ -3,12 +3,12 @@
 @using Unity.GrantManager.Localization
 
 @inject IStringLocalizer<GrantManagerResource> L
-@model Unity.GrantManager.Web.Pages.SettingManagement.ZoneManagementModel
+@model Unity.GrantManager.Web.Pages.Settings.SettingManagement.ZoneManagementModel
 @{
     Layout = null;
 }
 
-<abp-script src="/Pages/SettingManagement/zone-management.js" />
+<abp-script src="/Pages/Settings/SettingManagement/zone-management.js" />
 
 <form id="ZoneManagementForm" method="post" asp-page="/SettingManagement/ZoneManagement" data-script-class="abp.modals.ZoneManagement">
     <div class="container-fluid">
