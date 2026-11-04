@@ -15,4 +15,6 @@ public interface IOnboardingRequestAppService : IApplicationService
     Task CreateTenantAsync(Guid id, CreateTenantInputDto? input);
     Task<OnboardingColumnSchemaDto> GetColumnSchemaAsync(string? category = null);
     Task<List<string>> GetAvailableCategoriesAsync();
+    Task AssignAsync(OnboardingAssignmentInputDto input);
+    Task<List<OnboardingAssignableUserDto>> GetAssignableUsersAsync();
 }

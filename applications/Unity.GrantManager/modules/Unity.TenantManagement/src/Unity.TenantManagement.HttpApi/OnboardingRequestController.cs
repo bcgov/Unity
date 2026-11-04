@@ -68,4 +68,18 @@ public class OnboardingRequestController(IOnboardingRequestAppService onboarding
         if (!ModelState.IsValid) throw new UserFriendlyException("OnboardingRequestController->GetAvailableCategoriesAsync: ModelState Invalid");
         return OnboardingRequestAppService.GetAvailableCategoriesAsync();
     }
+
+    [HttpPost("assign")]
+    public virtual Task AssignAsync([FromBody] OnboardingAssignmentInputDto input)
+    {
+        if (!ModelState.IsValid) throw new UserFriendlyException("OnboardingRequestController->AssignAsync: ModelState Invalid");
+        return OnboardingRequestAppService.AssignAsync(input);
+    }
+
+    [HttpGet("assignable-users")]
+    public virtual Task<List<OnboardingAssignableUserDto>> GetAssignableUsersAsync()
+    {
+        if (!ModelState.IsValid) throw new UserFriendlyException("OnboardingRequestController->GetAssignableUsersAsync: ModelState Invalid");
+        return OnboardingRequestAppService.GetAssignableUsersAsync();
+    }
 }

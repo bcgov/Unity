@@ -247,7 +247,7 @@ public class ApplicantContactQueryService(
         var applicationsQuery = await applicationRepository.GetQueryableAsync();
 
         var agents = await agentsQuery
-            .Where(a => a.ApplicantId == applicantId)
+            .Where(a => a.ApplicantId == applicantId && a.IsActive == true)
             .Select(agent => new ContactInfoItemDto
             {
                 ContactId = agent.Id,

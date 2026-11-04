@@ -12,5 +12,8 @@ public class OnboardingApplicationRecord
     public string Status { get; set; } = string.Empty;
     public bool IsApproved { get; set; }
     public string Category { get; set; } = string.Empty;
+    public Guid? OwnerId { get; set; }
+    public string? OwnerName { get; set; }
+    public List<OnboardingAssigneeDto> Assignees { get; set; } = [];
     public Dictionary<string, object?> CoreFieldValues { get; set; } = [];
 }

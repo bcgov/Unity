@@ -14,9 +14,7 @@
 }
 @section styles {
     <abp-style src="/Views/Shared/Components/ActionBar/Default.css" />
-    <style>
-        #OnboardingRequestsTable tbody tr { cursor: pointer; }
-    </style>
+    <abp-style src="/Pages/GrantApplications/Index.css" />
 }
 @section scripts {
     <abp-script-bundle name="@typeof(IndexModel).FullName">
@@ -24,7 +22,7 @@
         <abp-script src="/Pages/TenantManagement/Onboarding/Index.js" />
     </abp-script-bundle>
 }
-<div class="container-fluid px-2">
+<div class="container-fluid px-2 container-grant-application">
     <div class="action-bar p-2 search-action-bar">
         <div class="search-action-bar_search-wrapper">
             <input type="search" id="search" placeholder="@L["Common:Command:Search"]" aria-label="@L["Common:Command:Search"]" class="tbl-search">
@@ -40,6 +38,9 @@
             <button id="btn-create-tenant"
                     data-selector="onboarding-table-actions"
                     class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable">@L["OnboardingList:CreateTenantButton"]</button>
+            <button id="btn-assign-onboarding"
+                    data-selector="onboarding-table-actions"
+                    class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable">@L["OnboardingList:AssignButton"]</button>
             <button id="btn-toggle-filter" class="custom-table-btn flex-none btn btn-secondary">@L["OnboardingList:FilterButton"]</button>
         </div>
         <div id="dynamicButtonContainerId"></div>
