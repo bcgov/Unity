@@ -24,5 +24,8 @@ public class OnboardingRequestDto
     public bool IsApproved { get; set; }
     public string Category { get; set; } = string.Empty;
     public DateTime? SubmissionDate { get; set; }
+    public Guid? OwnerId { get; set; }
+    public string? OwnerName { get; set; }
+    public List<OnboardingAssigneeDto> Assignees { get; set; } = [];
     public Dictionary<string, object?> Fields { get; set; } = [];
 }
