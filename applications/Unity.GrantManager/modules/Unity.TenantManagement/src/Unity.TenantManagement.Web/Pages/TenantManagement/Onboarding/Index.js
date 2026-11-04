@@ -2,11 +2,14 @@
     let l = abp.localization.getResource('GrantManager');
     let _onboardingRequestAppService = unity.tenantManagement.onboardingRequest;
     let _dataTable = null;
+    let _$table = null;
+    let _defaultVisibleColumns = [];
     let _selectedRow = null;
     let _selectedRows = [];
     let _selectedCategory = 'Onboarding';
 
     const CATEGORY_STORAGE_KEY = 'Onboarding_SelectedCategory';
+    const DEFAULT_VISIBLE_COLUMNS = ['submissionNumber', 'status', 'submissionDate', 'ownerName', 'assignees'];
 
     // ─── Fixed columns (always present) ──────────────────────────────────────
 
@@ -232,7 +235,19 @@
 
     // ─── Column builder ───────────────────────────────────────────────────────
 
-    function buildColumns(schema) {
+    // Tenant Name and Program Manager Email are required to create a tenant, so they are shown by
+    // default. Their keys vary by form: use the saved field mapping, otherwise match on the label.
+    function _requiredFieldKeys(schema) {
+        const columns = schema?.columns || [];
+        const find = function (savedKey, canonicals) {
+            return columns.some(function (c) { return c.key === savedKey; }) ? savedKey : _bestMatch(columns, canonicals);
+        };
+        const tenantName = find(schema?.tenantNameFieldKey, TENANT_NAME_CANONICALS);
+        const programManagers = find(schema?.programManagersFieldKey, PROGRAM_MANAGERS_CANONICALS);
+        return { tenantName, programManagers: programManagers === tenantName ? null : programManagers };
+    }
+
+    function buildColumns(schema, requiredKeys) {
         let cols = FIXED_COLUMNS.map(function (c, i) { return { ...c, index: i }; });
 
         if (schema?.columns) {
@@ -259,26 +274,190 @@
             });
         }
 
-        return cols;
+        // Tenant Name follows Submission Date, and Program Manager Email ends the default columns.
+        const permanent = cols.slice(0, FIXED_COLUMNS.length);
+        const fields = cols.slice(FIXED_COLUMNS.length);
+        const field = function (key) { return fields.find(function (c) { return c.name === key; }); };
+        const tenantName = field(requiredKeys.tenantName);
+        const programManagers = field(requiredKeys.programManagers);
+        const dateIndex = permanent.findIndex(function (c) { return c.name === 'submissionDate'; }) + 1;
+
+        return [
+            ...permanent.slice(0, dateIndex),
+            tenantName,
+            ...permanent.slice(dateIndex),
+            programManagers,
+            ...fields.filter(function (c) { return c !== tenantName && c !== programManagers; })
+        ].filter(Boolean).map(function (c, i) { return { ...c, index: i }; });
+    }
+
+    // ─── Saved views ──────────────────────────────────────────────────────────
+
+    // Saved views and the remembered table state are stored against the table's id, and each
+    // category has different columns, so giving each category its own id keeps them apart.
+    function _tableIdForCategory(category) {
+        const safeCategory = String(category).replaceAll(/[^a-zA-Z0-9]/g, function (c) {
+            return '-' + c.codePointAt(0).toString(16);
+        });
+        return 'OnboardingRequestsTable_' + safeCategory;
+    }
+
+    // DataTables stores column order by position, which stops matching as soon as a form change
+    // adds or removes a column, so the names are stored too.
+    function _saveColumnOrderByName(settings, data) {
+        data.columnOrderNames = settings.aoColumns.map(function (col) { return col.sName; });
+    }
+
+    function _restoreColumnOrderByName(data, listColumns) {
+        if (!data?.columnOrderNames) return;
+
+        const definedNames = listColumns.map(function (col) { return col.name; });
+        const displayNames = data.columnOrderNames.filter(function (name) { return definedNames.includes(name); });
+        definedNames.forEach(function (name) {
+            if (!displayNames.includes(name)) displayNames.push(name);
+        });
+
+        data.colReorder = displayNames.map(function (name) { return definedNames.indexOf(name); });
+
+        // ColReorder and the column filter restore both read this list in display order.
+        const columnsByName = new Map((data.columns || []).map(function (col) { return [col.name, col]; }));
+        data.columns = displayNames.map(function (name) { return columnsByName.get(name); }).filter(Boolean);
+
+        // Sort is stored by name, but DataTables resolves it against the column positions from
+        // before the reorder above, so hand it the position the column is moving to.
+        data.order = (data.order || [])
+            .map(function (o) { return [typeof o[0] === 'string' ? displayNames.indexOf(o[0]) : o[0], o[1]]; })
+            .filter(function (o) { return o[0] >= 0; });
+    }
+
+    // Loading a view on a table that is already on screen applies visibility by position, using the
+    // layout from before the view's column order was applied, and leaves any search or filter the
+    // view doesn't have. The filter row rebuilds from its cache and inputs on every visibility
+    // change, so filters are replaced before visibility is set by name.
+    function _applyLoadedView(dtApi, data) {
+        if (!dtApi.ready() || !data?.columns) return;
+
+        const settings = dtApi.settings()[0];
+        const names = settings.aoColumns.map(function (col) { return col.sName; });
+        const filterRow = settings._filterRow;
+
+        $(settings.oInit.externalSearchInputId).val(data.externalSearch || '');
+
+        if (filterRow) {
+            filterRow.dom.filterRow.find('.custom-filter-input').val('');
+            const filterData = filterRow.s.filterData;
+            Object.keys(filterData).forEach(function (name) { delete filterData[name]; });
+            data.columns.forEach(function (col) {
+                if (col.visible && col.search?.search) filterData[col.name] = col.search.search;
+            });
+        }
+
+        data.columns.forEach(function (col) {
+            const index = names.indexOf(col.name);
+            if (index >= 0) dtApi.column(index).search(col.search?.search || '');
+        });
+        data.columns.forEach(function (col) {
+            const index = names.indexOf(col.name);
+            if (index >= 0 && col.visible !== undefined) dtApi.column(index).visible(col.visible, false);
+        });
+        dtApi.columns.adjust();
+    }
+
+    function _resetToDefaultView(dt) {
+        dt.colReorder.reset();
+        dt.columns().visible(false, false);
+        _defaultVisibleColumns.forEach(function (name) {
+            dt.column(name + ':name').visible(true, false);
+        });
+        dt.columns.adjust();
+        dt.settings()[0]._filterRow?.clearFilters();
+        // clearFilters restores dt.init().order, which ColReorder has moved along with the columns.
+        dt.order([[0, 'asc']]).draw();
+
+        dt.buttons('.grp-savedStates').container().find('.dt-button-collection').hide();
+        $('div.dt-button-background').trigger('click');
+    }
+
+    function _savedViewButton() {
+        return {
+            extend: 'savedStates',
+            className: 'custom-table-btn flex-none btn btn-secondary grp-savedStates',
+            config: {
+                creationModal: true,
+                // A selection refers to rows on the current page, not to the view.
+                saveState: { select: false },
+                splitSecondaries: [
+                    { extend: 'updateState', text: '<i class="fa-regular fa-floppy-disk" aria-hidden="true"></i> ' + l('OnboardingList:UpdateView') },
+                    { extend: 'renameState', text: '<i class="fa-regular fa-pen-to-square" aria-hidden="true"></i> ' + l('OnboardingList:RenameView') },
+                    { extend: 'removeState', text: '<i class="fa-regular fa-trash-can" aria-hidden="true"></i> ' + l('OnboardingList:DeleteView') }
+                ]
+            },
+            buttons: [
+                { extend: 'createState', text: l('OnboardingList:SaveAsView') },
+                {
+                    text: l('OnboardingList:ResetToDefaultView'),
+                    action: function (e, dt) { _resetToDefaultView(dt); }
+                },
+                { extend: 'removeAllStates', text: l('OnboardingList:DeleteAllViews') },
+                { extend: 'spacer', style: 'bar' }
+            ]
+        };
+    }
+
+    function _savedViewLanguage() {
+        return {
+            buttons: { stateRestore: l('OnboardingList:DefaultViewName') },
+            stateRestore: {
+                creationModal: {
+                    title: l('OnboardingList:CreateViewTitle'),
+                    name: l('OnboardingList:ViewNameLabel'),
+                    button: l('OnboardingList:SaveViewButton')
+                },
+                emptyStates: l('OnboardingList:NoSavedViews'),
+                renameTitle: l('OnboardingList:RenameViewTitle'),
+                renameLabel: l('OnboardingList:RenameViewLabel'),
+                removeTitle: l('OnboardingList:DeleteViewTitle'),
+                removeConfirm: l('OnboardingList:DeleteViewConfirm'),
+                removeSubmit: l('OnboardingList:DeleteView'),
+                duplicateError: l('OnboardingList:DuplicateViewName'),
+                removeError: l('OnboardingList:DeleteViewFailed')
+            }
+        };
+    }
+
+    function _showSaveViewLabel() {
+        $('.grp-savedStates').text(l('OnboardingList:SaveView'))
+            .prepend('<i class="fa-regular fa-bookmark" aria-hidden="true"></i> ');
     }
 
     // ─── DataTable init ───────────────────────────────────────────────────────
 
     function initTable(schema) {
+        // Held once, because the id changes per category below.
+        _$table ??= $('#OnboardingRequestsTable');
+
         if (_dataTable) {
-            _dataTable.off('select deselect draw');
+            _dataTable.off('select deselect draw stateRestore-change');
+            // The saved-view plugin's destroy handler removes the DataTables container, and this
+            // table with it. Only the plugin's handlers need clearing before the rebuild.
+            _$table.off('.dtsr dtsr-modal-inserted');
             _dataTable.destroy();
-            $('#OnboardingRequestsTable').empty();
+            _$table.empty();
+            $('#search').val('');
             _dataTable = null;
             _selectedRow = null;
             _selectedRows = [];
             manageActionButtons();
         }
 
-        let listColumns = buildColumns(schema);
+        const requiredKeys = _requiredFieldKeys(schema);
+        let listColumns = buildColumns(schema, requiredKeys);
+        _defaultVisibleColumns = [...DEFAULT_VISIBLE_COLUMNS, requiredKeys.tenantName, requiredKeys.programManagers].filter(Boolean);
+        _$table.attr('id', _tableIdForCategory(_selectedCategory));
 
         _dataTable = initializeDataTable({
-            dt: $('#OnboardingRequestsTable'),
+            dt: _$table,
+            defaultVisibleColumns: _defaultVisibleColumns,
             listColumns: listColumns,
             defaultSortColumn: 0,
             dataEndpoint: _onboardingRequestAppService.getList,
@@ -301,11 +480,17 @@
             responseCallback: function (result) {
                 return { recordsTotal: result.totalCount, recordsFiltered: result.totalCount, data: result.items };
             },
-            actionButtons: commonTableActionButtons(l('Menu:Onboarding')).filter(b => b.id !== 'btn-toggle-filter'),
+            actionButtons: [
+                ...commonTableActionButtons(l('Menu:Onboarding')).filter(b => b.id !== 'btn-toggle-filter'),
+                _savedViewButton()
+            ],
             serverSideEnabled: true,
             pagingEnabled: true,
             reorderEnabled: true,
-            languageSetValues: {},
+            languageSetValues: _savedViewLanguage(),
+            onStateSaveParams: _saveColumnOrderByName,
+            onStateLoadParams: function (settings, data) { _restoreColumnOrderByName(data, listColumns); },
+            onStateLoaded: _applyLoadedView,
             dynamicButtonContainerId: 'dynamicButtonContainerId',
             externalSearchId: 'search',
             lengthMenu: [10, 25, 50]
@@ -321,6 +506,10 @@
 
         // A server-side redraw replaces the rows, which drops the selection without a deselect event.
         _dataTable.on('draw', _syncSelection);
+
+        $('.grp-savedStates').closest('.btn-group').addClass('cstm-save-view');
+        _dataTable.on('stateRestore-change', _showSaveViewLabel);
+        _showSaveViewLabel();
     }
 
     // Open and Create Tenant act on one request (_selectedRow is only set for exactly one);
