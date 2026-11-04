@@ -443,6 +443,7 @@
             _$table.off('.dtsr dtsr-modal-inserted');
             _dataTable.destroy();
             _$table.empty();
+            $('#search').val('');
             _dataTable = null;
             _selectedRow = null;
             _selectedRows = [];
