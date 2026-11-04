@@ -236,14 +236,18 @@
     // ─── Column builder ───────────────────────────────────────────────────────
 
     // Tenant Name and Program Manager Email are required to create a tenant, so they are shown by
-    // default. Their keys vary by form: use the saved field mapping, otherwise match on the label.
+    // default. Their keys vary by form, so a field with exactly that label wins, then the saved
+    // field mapping, then the aliases. Tenant Name aliases must match exactly, because "Tenant
+    // Display Name" and "Program Manager Email" both score above the fuzzy threshold against them.
     function _requiredFieldKeys(schema) {
         const columns = schema?.columns || [];
-        const find = function (savedKey, canonicals) {
-            return columns.some(function (c) { return c.key === savedKey; }) ? savedKey : _bestMatch(columns, canonicals);
-        };
-        const tenantName = find(schema?.tenantNameFieldKey, TENANT_NAME_CANONICALS);
-        const programManagers = find(schema?.programManagersFieldKey, PROGRAM_MANAGERS_CANONICALS);
+        const saved = function (key) { return columns.some(function (c) { return c.key === key; }) ? key : null; };
+        const tenantName = _exactMatch(columns, ['tenant name'])
+            || saved(schema?.tenantNameFieldKey)
+            || _exactMatch(columns, TENANT_NAME_CANONICALS.filter(function (c) { return !SHARED_CANONICALS.has(c); }));
+        const programManagers = _exactMatch(columns, ['program manager email'])
+            || saved(schema?.programManagersFieldKey)
+            || _bestMatch(columns, PROGRAM_MANAGERS_CANONICALS);
         return { tenantName, programManagers: programManagers === tenantName ? null : programManagers };
     }
 
