@@ -352,7 +352,7 @@ $(function () {
         const providerKeyDisplayName = 'Test.Display.Name';
 
         $.ajax({
-            url: abp.appPath + 'SettingManagement/ZoneManagement',
+            url: abp.appPath + 'Settings/SettingManagement/ZoneManagement',
             type: 'GET',
             data: {
                 providerName: providerName,
