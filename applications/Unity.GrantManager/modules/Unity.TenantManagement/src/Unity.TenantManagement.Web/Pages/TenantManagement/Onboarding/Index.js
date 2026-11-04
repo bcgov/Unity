@@ -29,6 +29,9 @@
             title: l('Onboarding:ColumnSubmissionDate'),
             data: 'submissionDate',
             name: 'submissionDate',
+            // Stops DataTables detecting a number and right-aligning the cells under a left-aligned header.
+            type: 'string',
+            width: '7.5rem',
             index: 2,
             render: function (data, type) {
                 return DateUtils.formatUtcDateToLocal(data, type);
