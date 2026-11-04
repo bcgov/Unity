@@ -331,11 +331,31 @@
     }
 
     // Loading a view on a table that is already on screen applies visibility by position, using the
-    // layout from before the view's column order was applied. Set it again by name.
-    function _applyViewColumnVisibility(dtApi, data) {
+    // layout from before the view's column order was applied, and leaves any search or filter the
+    // view doesn't have. The filter row rebuilds from its cache and inputs on every visibility
+    // change, so filters are replaced before visibility is set by name.
+    function _applyLoadedView(dtApi, data) {
         if (!dtApi.ready() || !data?.columns) return;
 
-        const names = dtApi.settings()[0].aoColumns.map(function (col) { return col.sName; });
+        const settings = dtApi.settings()[0];
+        const names = settings.aoColumns.map(function (col) { return col.sName; });
+        const filterRow = settings._filterRow;
+
+        $(settings.oInit.externalSearchInputId).val(data.externalSearch || '');
+
+        if (filterRow) {
+            filterRow.dom.filterRow.find('.custom-filter-input').val('');
+            const filterData = filterRow.s.filterData;
+            Object.keys(filterData).forEach(function (name) { delete filterData[name]; });
+            data.columns.forEach(function (col) {
+                if (col.visible && col.search?.search) filterData[col.name] = col.search.search;
+            });
+        }
+
+        data.columns.forEach(function (col) {
+            const index = names.indexOf(col.name);
+            if (index >= 0) dtApi.column(index).search(col.search?.search || '');
+        });
         data.columns.forEach(function (col) {
             const index = names.indexOf(col.name);
             if (index >= 0 && col.visible !== undefined) dtApi.column(index).visible(col.visible, false);
@@ -469,7 +489,7 @@
             languageSetValues: _savedViewLanguage(),
             onStateSaveParams: _saveColumnOrderByName,
             onStateLoadParams: function (settings, data) { _restoreColumnOrderByName(data, listColumns); },
-            onStateLoaded: _applyViewColumnVisibility,
+            onStateLoaded: _applyLoadedView,
             dynamicButtonContainerId: 'dynamicButtonContainerId',
             externalSearchId: 'search',
             lengthMenu: [10, 25, 50]
