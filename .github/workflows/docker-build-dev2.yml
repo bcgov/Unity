@@ -8,6 +8,7 @@ on:
       - '.gitignore'
       - 'database/**'
       - 'applications/Unity.AI/**'
+      - 'applications/Unity.Tools/Unity.NginxData/**'
       - 'documentation/**'
       - '**/docs/**'
       - '**/README*'

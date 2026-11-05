@@ -8,9 +8,12 @@
     Layout = null;
 }
 
+@section scripts
+{
 <abp-script src="/Pages/Settings/SettingManagement/zone-management.js" />
+}
 
-<form id="ZoneManagementForm" method="post" asp-page="/SettingManagement/ZoneManagement" data-script-class="abp.modals.ZoneManagement">
+<form id="ZoneManagementForm" method="post" asp-page="/Settings/SettingManagement/ZoneManagement" data-script-class="abp.modals.ZoneManagement">
     <div class="container-fluid">
         <div class="configuration-action-bar row">
             <div class="col-12 col-md-8">
