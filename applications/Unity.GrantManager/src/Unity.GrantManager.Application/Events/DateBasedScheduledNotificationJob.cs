@@ -236,9 +236,6 @@ namespace Unity.GrantManager.Events
 
                 var defaultFromAddress = await _settingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
                 string emailFrom = defaultFromAddress ?? "NoReply@gov.bc.ca";
-                
-                // OPTIMIZATION: Collect all tracking records to batch insert at end
-                var trackingRecordsToInsert = new List<ScheduledNotificationTracking>();
 
                 // Group by notification and process
                 foreach (var notification in notifications)
@@ -294,25 +291,11 @@ namespace Unity.GrantManager.Events
                         "DateBasedScheduledNotificationJob: Processing {Count} applications with past dates for notification {NotificationId}.",
                         applicationsToProcess.Count, notification.Id);
 
-                    // Process applications for this notification - pass cached agents and batch list
                     foreach (var application in applicationsToProcess)
                     {
-                        var tracking = await ProcessApplicationForNotificationAsync(
+                        await ProcessApplicationForNotificationAsync(
                             notification, application, template, emailFrom, applicantAgentsDict);
-                        if (tracking != null)
-                        {
-                            trackingRecordsToInsert.Add(tracking);
-                        }
                     }
-                }
-
-                // OPTIMIZATION: Batch insert all tracking records at once instead of individual inserts
-                if (trackingRecordsToInsert.Count > 0)
-                {
-                    _logger.LogInformation(
-                        "DateBasedScheduledNotificationJob: Batch inserting {Count} tracking records for current tenant.",
-                        trackingRecordsToInsert.Count);
-                    await _trackingRepository.InsertManyAsync(trackingRecordsToInsert, autoSave: true);
                 }
             }
             catch (Exception ex)
@@ -373,13 +356,48 @@ namespace Unity.GrantManager.Events
             return applicant?.FiscalYearEnd;
         }
 
-        private async Task<ScheduledNotificationTracking?> ProcessApplicationForNotificationAsync(
+        /// <summary>
+        /// Claims the (application, notification, date field, trigger date) slot by persisting the tracking
+        /// record first, then publishes the email. The claim is committed per application so that one failing
+        /// record can no longer roll back tracking for the whole tenant, which previously caused every
+        /// matching application to be re-emailed on every run.
+        /// </summary>
+        private async Task ProcessApplicationForNotificationAsync(
             ScheduledNotification notification,
             Application application,
             EmailTemplate template,
             string emailFrom,
             Dictionary<Guid, ApplicantAgent> applicantAgentsDict)
-      {
+        {
+            var isInternal = string.Equals(notification.RecipientCategory, "Internal", StringComparison.OrdinalIgnoreCase);
+            var isExternal = string.Equals(notification.RecipientCategory, "External", StringComparison.OrdinalIgnoreCase);
+            if (!isInternal && !isExternal)
+            {
+                _logger.LogWarning(
+                    "DateBasedScheduledNotificationJob: Unknown recipient category '{Category}' for notification {NotificationId}, skipping.",
+                    notification.RecipientCategory, notification.Id);
+                return;
+            }
+
+            var tracking = CreateTrackingRecord(notification, application);
+            if (tracking == null)
+            {
+                return;
+            }
+
+            try
+            {
+                await _trackingRepository.InsertAsync(tracking, autoSave: true);
+            }
+            catch (Exception ex)
+            {
+                // Without a persisted tracking record the next run would send again, so do not send at all.
+                _logger.LogError(ex,
+                    "DateBasedScheduledNotificationJob: Could not record tracking for application {ApplicationId} and notification {NotificationId}; email not sent to avoid duplicates.",
+                    application.Id, notification.Id);
+                return;
+            }
+
             try
             {
                 // Build token values and render template
@@ -407,35 +425,38 @@ namespace Unity.GrantManager.Events
                     RetryAttempts = 0
                 };
 
-                // Publish based on recipient category
-                if (string.Equals(notification.RecipientCategory, "Internal", StringComparison.OrdinalIgnoreCase))
+                if (isInternal)
                 {
                     await _scheduledNotificationHelper.PublishToEmailGroupAsync(
                         _emailGroupsAppService, _emailGroupUsersAppService, _identityUserIntegrationService,
                         _localEventBus, notification, emailEvent);
                 }
-                else if (string.Equals(notification.RecipientCategory, "External", StringComparison.OrdinalIgnoreCase))
+                else
                 {
                     await _scheduledNotificationHelper.PublishToExternalRecipientAsync(
                         _localEventBus, notification, application, applicantAgent, emailEvent);
                 }
-                else
-                {
-                    _logger.LogWarning(
-                        "DateBasedScheduledNotificationJob: Unknown recipient category '{Category}' for notification {NotificationId}, skipping.",
-                        notification.RecipientCategory, notification.Id);
-                    return null;
-                }
-
-                // Create tracking record to prevent duplicate notifications
-                return CreateTrackingRecord(notification, application);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex,
-                    "DateBasedScheduledNotificationJob: Error processing application {ApplicationId} for notification {NotificationId}.",
+                    "DateBasedScheduledNotificationJob: Error processing application {ApplicationId} for notification {NotificationId}; releasing tracking so it is retried next run.",
                     application.Id, notification.Id);
-                return null;
+                await ReleaseTrackingAsync(tracking);
+            }
+        }
+
+        private async Task ReleaseTrackingAsync(ScheduledNotificationTracking tracking)
+        {
+            try
+            {
+                await _trackingRepository.DeleteAsync(tracking.Id, autoSave: true);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex,
+                    "DateBasedScheduledNotificationJob: Could not release tracking {TrackingId}; application {ApplicationId} will not be retried.",
+                    tracking.Id, tracking.ApplicationId);
             }
         }
 
@@ -452,12 +473,21 @@ namespace Unity.GrantManager.Events
                 return null;
             }
 
+            var triggerDate = GetDateFieldValue(application, notification.DateField);
+            if (triggerDate == null)
+            {
+                _logger.LogWarning(
+                    "DateBasedScheduledNotificationJob: No {DateField} value for application {ApplicationId}, cannot track notification {NotificationId}; skipping.",
+                    notification.DateField, application.Id, notification.Id);
+                return null;
+            }
+
             var tracking = new ScheduledNotificationTracking(
                 Guid.NewGuid(),
                 application.Id,
                 notification.Id,
                 notification.DateField,
-                GetDateFieldValue(application, notification.DateField)!.Value,
+                triggerDate.Value,
                 DateTime.UtcNow);
 
             _logger.LogInformation(
