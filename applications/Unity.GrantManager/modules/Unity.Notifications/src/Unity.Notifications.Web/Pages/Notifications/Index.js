@@ -73,7 +73,8 @@ $(function () {
                             emailFrame.srcdoc = '<!DOCTYPE html>' + emailDocument.documentElement.outerHTML;
                         }
                         const breadcrumb = modalMarkup.find('.breadcrumb-container').first();
-                        $('#notificationEmailModalBreadcrumb').empty().append(breadcrumb);
+                        const modalHeader = addEmailTypeToModalHeader(breadcrumb, selectedRows[0].emailTypeText);
+                        $('#notificationEmailModalBreadcrumb').empty().append(modalHeader);
                         $('#notificationEmailModalBody').empty().append(modalMarkup.contents());
                         const selectedEmailElement = document.getElementById('notificationSelectedEmail');
                         if (selectedEmailElement?.textContent) {
@@ -177,6 +178,27 @@ $(function () {
 
     dataTable.on('select deselect draw', updateSelectionState);
     updateSelectionState();
+
+    // Shows the email type in the popup header. Applicant-level emails have no
+    // application header, so a header holding only the email type is created for them.
+    function addEmailTypeToModalHeader(breadcrumb, emailTypeText) {
+        if (!emailTypeText) {
+            return breadcrumb;
+        }
+
+        const emailType = $('<div class="notification-email-type"></div>')
+            .append($('<span class="notification-email-type-label"></span>').text(l('NotificationList:EmailType') + ':'))
+            .append(' ')
+            .append($('<span></span>').text(emailTypeText));
+
+        if (breadcrumb.length) {
+            const breadcrumbDetails = breadcrumb.find('.application-details-breadcrumb').first();
+            (breadcrumbDetails.length ? breadcrumbDetails : breadcrumb).append(emailType);
+            return breadcrumb;
+        }
+
+        return $('<div class="notification-email-header"></div>').append(emailType);
+    }
 
     function handleNotificationEmailCompleted() {
         const notificationEmailModal = document.getElementById('notificationEmailModal');
