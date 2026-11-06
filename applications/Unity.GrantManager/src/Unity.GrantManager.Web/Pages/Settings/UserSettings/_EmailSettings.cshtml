@@ -8,14 +8,10 @@
         <form method="post" asp-page-handler="Settings">
             <div class="p-3">
                 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-                <div class="form-check mb-2">
+                <div class="form-check unt-form-switch form-switch mb-2">
                     <input asp-for="EmailBlockCommentTagging" class="form-check-input" />
                     <label asp-for="EmailBlockCommentTagging" class="form-check-label">Block comment tagging email notifications</label>
-                </div>
-                <div class="form-check mb-2">
-                    <input asp-for="EmailBlockAssigned" class="form-check-input" />
-                    <label asp-for="EmailBlockAssigned" class="form-check-label">Block assigned email notifications</label>
-                </div>                                
+                </div>                              
             </div>
             <div class="border-top p-3">
                 <button type="submit" class="btn btn-primary">
