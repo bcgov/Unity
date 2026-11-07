@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -152,6 +153,9 @@ public class GrantManagerWebModule : AbpModule
         ConfigureAutoMapper();
         ConfigureVirtualFileSystem(hostingEnvironment);
         ConfigureNavigationServices();
+        context.Services.AddScoped<UserNavigationService>();
+        context.Services.AddTransient<PageAccessFilter>();
+        Configure<MvcOptions>(options => options.Filters.AddService<PageAccessFilter>());
         ConfigureAutoApiControllers();
         ConfigureSwaggerServices(context.Services);
         ConfigureUtils(context);

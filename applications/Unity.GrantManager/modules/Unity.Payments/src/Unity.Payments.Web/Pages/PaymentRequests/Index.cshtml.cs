@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
 using Unity.Payments.PaymentRequests;
@@ -6,6 +7,7 @@ using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 
 namespace Unity.Payments.Web.Pages.Payments
 {
+    [Authorize]
     public class PaymentsPageModel(IPaymentRequestAppService paymentRequestAppService) : AbpPageModel
     {
 
