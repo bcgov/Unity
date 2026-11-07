@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using Shouldly;
@@ -16,6 +17,7 @@ using Unity.Modules.Shared.Permissions;
 using Unity.Payments.Permissions;
 using Unity.Payments.Web.Menus;
 using Volo.Abp.Authorization.Permissions;
+using Volo.Abp.DependencyInjection;
 using Volo.Abp.Features;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.Users;
@@ -213,6 +215,7 @@ public class PageAccessTests
         }
 
         using var services = new ServiceCollection()
+            .AddTransient<IAbpLazyServiceProvider, AbpLazyServiceProvider>()
             .AddSingleton(features)
             .AddSingleton(_permissions)
             .BuildServiceProvider();
@@ -228,6 +231,7 @@ public class PageAccessTests
         var pageContext = new PageContext
         {
             HttpContext = new DefaultHttpContext(),
+            RouteData = new RouteData(),
             ActionDescriptor = new CompiledPageActionDescriptor { ViewEnginePath = pagePath }
         };
         var handler = new object();
