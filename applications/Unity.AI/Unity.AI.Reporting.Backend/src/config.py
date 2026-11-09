@@ -112,7 +112,7 @@ class Config:
         )
 
         self.metabase = MetabaseConfig(
-            url=os.getenv("MB_URL", ""),
+            url=os.getenv("MB_URL", "").rstrip("/"),
             default_db_id=default_db_id,
             map_region_uuid=os.getenv("MB_MAP_REGION_UUID", ""),
         )
