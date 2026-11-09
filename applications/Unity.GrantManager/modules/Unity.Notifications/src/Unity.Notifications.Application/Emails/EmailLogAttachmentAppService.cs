@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -114,6 +115,7 @@ public class EmailLogAttachmentAppService(
     // which would bypass validation entirely despite still needing the draft edit permission.
     [Authorize(NotificationsPermissions.Email.Default)]
     [RemoteService(false)]
+    [NonAction]
     public async Task<EmailLogAttachmentDto> UploadAsync(Guid? emailLogId, Guid? templateId, Guid? tenantId, string fileName, byte[] content, string contentType)
     {
         if (emailLogId.HasValue)
