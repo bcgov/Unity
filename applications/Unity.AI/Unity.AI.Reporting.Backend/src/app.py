@@ -219,8 +219,11 @@ if not _is_reloader_watcher:
                         )
                         return
                     logger.info("Embedding database schemas for all tenants...")
-                    embed_all_tenants()
-                    logger.info("Schema embedding completed successfully for all tenants")
+                    _, failure_count = embed_all_tenants()
+                    if failure_count:
+                        logger.warning("Startup schema embedding finished with %d failed database(s)", failure_count)
+                    else:
+                        logger.info("Schema embedding completed successfully for all tenants")
             except Exception as e:
                 logger.warning(f"Schema embedding failed: {e}", exc_info=True)
                 # Don't exit - app can still run without embeddings

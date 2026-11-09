@@ -17,18 +17,84 @@ Browser (localhost:80) → Flask (container port 8080)
 ### Prerequisites
 - Docker and Docker Compose
 - `.env` file (copy from `.env.example`)
+- `Unity.AI.Reporting.Backend/src/tenant_config.local.json` with the
+  default tenant's Metabase API key (mounted at runtime, not included in the image):
+  ```json
+  {
+    "Default Grants Program": {
+      "api_key": "YOUR_METABASE_API_KEY"
+    }
+  }
+  ```
 
 ### Run
-```bash
-# Start services
-docker-compose up --build
-
-# Or run in background
-docker-compose up -d
+From PowerShell on Windows:
+```powershell
+.\ai-startup.ps1
 ```
+
+The script forwards the dev OpenShift AI proxy to localhost:18080 (reusing an
+existing forward), passes `http://host.docker.internal:18080/` as the Azure
+endpoint to Docker Compose, builds and starts the application, then opens
+http://localhost. Log into OpenShift with `oc login --web` first. The proxy
+forward remains running for AI queries after the script returns. The script
+uses an optional, gitignored `docker-compose.override.yml` for machine-specific
+settings. For local GrantManager authentication, the launcher uses `ReportingAI:JWTSecret` from
+GrantManager's `appsettings.Development.json` rather than the AI `.env` key.
+Open AI Reporting through GrantManager to authenticate; opening
+`http://localhost` directly without a token shows the access-check screen.
+
+For a local PostgreSQL host port of 5435 and a GrantManager parent at
+`https://localhost:44342`, create `docker-compose.override.yml` in this
+directory (Docker Compose 2.24.4 or newer is required for `!override`):
+```yaml
+services:
+  postgres:
+    ports: !override
+      - "5435:5432"
+  reporting:
+    volumes:
+      - type: bind
+        source: ./Unity.AI.Reporting.Backend/src/tenant_config.local.json
+        target: /app/backend/src/tenant_config.local.json
+        read_only: true
+        bind:
+          create_host_path: false
+    environment:
+      - ORIGIN_URL=${ORIGIN_URL},https://localhost:44342
+```
+The launcher and shutdown script include this file when it exists. It is
+gitignored and excluded from the Docker build context, so your local settings
+will not be committed or baked into the image.
+
+To use the `AZURE_OPENAI_ENDPOINT` from your `.env` instead of forwarding the
+dev proxy, run `.\ai-startup.ps1 -UseConfiguredAzureEndpoint`. For standalone AI
+testing without GrantManager, `-UseConfiguredJwtSecret` keeps the AI `.env`
+signing key. To start without opening a browser, use Docker Compose directly:
+```bash
+docker compose up --build -d
+```
+
+Direct Docker Compose commands use the values in `.env` and automatically
+load the local override when present; they do not set up the OpenShift proxy.
+An OpenShift-only Azure service name will not resolve from local Docker. Use
+`http://localhost/ready` to check whether the initial schema embedding has
+finished; `/health` only checks that the web server is running.
+
+### Stop
+From PowerShell in this directory:
+```powershell
+.\ai-shutdown.ps1
+```
+
+This stops the AI containers and the dedicated local OpenShift proxy forward.
+It preserves the PostgreSQL data volume and leaves unrelated processes on
+port 18080 alone.
 
 ### Access
 - **Application**: http://localhost
+- **AI PostgreSQL from the host**: localhost:5432 by default, or localhost:5435
+  with the local override above (containers always use postgres:5432).
 
 ## Configuration
 
