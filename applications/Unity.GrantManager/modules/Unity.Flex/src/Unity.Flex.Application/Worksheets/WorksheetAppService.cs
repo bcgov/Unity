@@ -255,7 +255,8 @@ namespace Unity.Flex.Worksheets
 
             foreach (var section in worksheet.Sections)
             {
-                var clonedSection = new WorksheetSection(Guid.NewGuid(), section.Name);
+                var clonedSection = new WorksheetSection(Guid.NewGuid(), section.Name)
+                    .SetDefinition(section.Definition);
                 clonedSection.SetOrder(section.Order);
 
                 foreach (var field in section.Fields.OrderBy(s => s.Order))
