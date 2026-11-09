@@ -1,5 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System.Threading.Tasks;
+using Unity.Modules.Shared;
+using Unity.Payments.Permissions;
+using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Features;
 using Volo.Abp.UI.Navigation;
 
@@ -17,15 +20,22 @@ public class PaymentsMenuContributor : IMenuContributor
         }
     }
 
-    private static Task ConfigureMainMenuAsync(MenuConfigurationContext context)
+    private static async Task ConfigureMainMenuAsync(MenuConfigurationContext context)
     {
-        //Add main menu items.
+        var permissionChecker = context.ServiceProvider.GetRequiredService<IPermissionChecker>();
+        // Existing roles use either the Payments permission or the application payment-list
+        // viewing permission. Preserve both ways of granting access to the Payments page.
+        if (!await permissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.Default)
+            && !await permissionChecker.IsGrantedAsync(UnitySelector.Payment.PaymentList.Default))
+        {
+            return;
+        }
+
         context.Menu.AddItem(
             new ApplicationMenuItem(
                     PaymentsMenus.Prefix,
                     displayName: "Payments",
                     "~/PaymentRequests"
         ));
-        return Task.CompletedTask;
     }
 }
