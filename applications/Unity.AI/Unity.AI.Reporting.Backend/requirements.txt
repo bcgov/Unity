@@ -6,7 +6,7 @@ langchain-openai==1.2.2
 langchain-postgres==0.0.17
 openai>=2.26,<3
 psycopg==3.3.4
-PyJWT==2.13.0
+PyJWT==2.15.1
 python-dotenv==1.2.2
 rapidfuzz>=3.13.0
 requests==2.34.2
