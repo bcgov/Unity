@@ -90,7 +90,7 @@ The body is written explicitly to avoid N+1 queries, and the comments in the sou
 4. **One** batch load of all needed templates, keyed by id.
 5. **One** batch load of all `ApplicantAgent` rows for those applications, keyed by application id.
 6. Per configuration: take the applications for that form, subtract the ones already tracked for `(ScheduledNotificationId, DateField)`, and process the remainder.
-7. Collect tracking records in memory and `InsertManyAsync` them **once** at the end.
+7. Per application: insert its tracking row (committed immediately) **before** publishing the email.
 
 Each application is then rendered and published exactly as the event path does, with `Action = EmailAction.SendDateDriven`.
 
@@ -100,8 +100,8 @@ Each application is then rendered and published exactly as the event path does, 
 
 Two consequences worth knowing:
 
-- A tracking row is created when the event is **published**, not when the email is sent. If the pipeline later fails permanently, the ledger still says "notified" and the job will never retry it.
-- Tracking rows are inserted in one batch at the end of the tenant's run. A crash mid-run means the whole tenant's batch is lost and those applications will be notified again on the next run.
+- The tracking row is written as a claim **before** the event is published. If the insert fails (for example a unique-index conflict), the email is not sent, which prevents repeat sends. If publishing throws, the row is deleted again so the next run retries. If the email pipeline fails permanently after a successful publish, the ledger still says "notified" and the job never retries it.
+- Each application's row is committed on its own, so one failing row no longer affects the tenant's other applications. Before this change, rows were inserted in one batch at the end of the run, and a single failure lost the whole batch, so every matching application was re-emailed on every run.
 
 ## Token substitution
 
