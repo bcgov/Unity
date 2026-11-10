@@ -1058,6 +1058,14 @@
             let modalEl = document.getElementById('notificationModal');
             bootstrap.Modal.getInstance(modalEl)?.hide();
             reloadTable();
+            if (isEdit) {
+                return Swal.fire({
+                    title: 'Automated Notification Updated',
+                    text: 'Notifications already sent are not affected. Your changes apply only to future scheduled notifications and event triggers.',
+                    icon: 'success',
+                    confirmButtonText: 'OK'
+                });
+            }
         }).catch(err => {
             console.error('Save error:', err);
             abp.notify.error('Failed to save notification: ' + err.message);
