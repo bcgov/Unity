@@ -176,6 +176,8 @@
     "ApplicationForms:DeleteConfirmation": "Delete form \"{0}\"? It will be hidden from the Forms list and new parent-form selections, and its configuration screens will no longer be accessible. Existing applications, submissions, payments, and integrations will continue unchanged.",
     "ApplicationForms:DeletedSuccessfully": "Form deleted from the list.",
     "GrantManager:ParentFormUnavailable": "This form has been deleted and cannot be selected as a new parent form.",
+    "GrantManager:ChefsFormInitializationFailed": "Error initializing CHEFS form. Please check the CHEFS: Form ID and API Key.",
+    "GrantManager:ChefsFormAlreadyRegistered": "CHEFS form {ChefsFormId} is already linked to the form \"{ApplicationFormName}\".",
     "Permission:GrantManagerManagement.NotificationScheduler.Default": "Notification Scheduler",
     "Permission:GrantManagerManagement.NotificationScheduler.ManageSchedules": "Manage Notification Schedules",
     "Permission:Metabase": "Metabase",
