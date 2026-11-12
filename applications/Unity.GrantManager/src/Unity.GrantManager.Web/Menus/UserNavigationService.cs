@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Permissions;
 using Unity.Modules.Shared.Permissions;
 using Unity.Payments.Web.Menus;
+using Unity.TenantManagement.Web.Navigation;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.Users;
@@ -22,16 +23,19 @@ public class UserNavigationService(
 
     private Task<ApplicationMenu>? _mainMenu;
 
-    private static readonly Dictionary<string, string> PageMenus = new(StringComparer.OrdinalIgnoreCase)
+    // A page folder is accessible when any of its menu items is visible.
+    private static readonly Dictionary<string, string[]> PageMenus = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["/GrantApplications"] = GrantManagerMenus.Applications,
-        ["/Applicants"] = GrantManagerMenus.Applicants,
-        ["/Intakes"] = GrantManagerMenus.Intakes,
-        ["/ApplicationForms"] = GrantManagerMenus.ApplicationForms,
-        ["/FormConfiguration"] = GrantManagerMenus.ApplicationForms,
-        ["/Dashboard"] = GrantManagerMenus.Dashboard,
-        ["/PaymentRequests"] = PaymentsMenus.Prefix,
-        ["/PaymentHistory"] = PaymentsMenus.Prefix
+        // Onboarding tenants hide Applications, but each onboarding request is an Application
+        // opened from the Onboarding queue on /GrantApplications/Details.
+        ["/GrantApplications"] = [GrantManagerMenus.Applications, TenantManagementMenuNames.Onboarding],
+        ["/Applicants"] = [GrantManagerMenus.Applicants],
+        ["/Intakes"] = [GrantManagerMenus.Intakes],
+        ["/ApplicationForms"] = [GrantManagerMenus.ApplicationForms],
+        ["/FormConfiguration"] = [GrantManagerMenus.ApplicationForms],
+        ["/Dashboard"] = [GrantManagerMenus.Dashboard],
+        ["/PaymentRequests"] = [PaymentsMenus.Prefix],
+        ["/PaymentHistory"] = [PaymentsMenus.Prefix]
     };
 
     public async Task<string?> GetLandingPageAsync()
@@ -62,13 +66,13 @@ public class UserNavigationService(
             return true;
         }
 
-        foreach (var (folder, menuName) in PageMenus)
+        foreach (var (folder, menuNames) in PageMenus)
         {
             if (pagePath.Equals(folder, StringComparison.OrdinalIgnoreCase)
                 || pagePath.StartsWith(folder + "/", StringComparison.OrdinalIgnoreCase))
             {
                 var menu = await GetMainMenuAsync();
-                return ContainsItem(menu.Items, menuName);
+                return menuNames.Any(menuName => ContainsItem(menu.Items, menuName));
             }
         }
 
