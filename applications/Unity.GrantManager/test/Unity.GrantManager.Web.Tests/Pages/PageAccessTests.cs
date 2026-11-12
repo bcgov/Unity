@@ -16,6 +16,7 @@ using Unity.Modules.Shared;
 using Unity.Modules.Shared.Permissions;
 using Unity.Payments.Permissions;
 using Unity.Payments.Web.Menus;
+using Unity.TenantManagement.Web.Navigation;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Features;
@@ -147,6 +148,28 @@ public class PageAccessTests
         _menu.AddItem(new ApplicationMenuItem(PaymentsMenus.Prefix, "Payments", "~/PaymentRequests"));
 
         var (context, called) = await ExecuteFilterAsync("/GrantApplications/Details");
+
+        context.Result.ShouldBeOfType<LocalRedirectResult>().Url.ShouldBe(UserNavigationService.NoAccessUrl);
+        called.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task Page_WithOnboardingAccess_ShouldOpenOnboardingRequestDetails()
+    {
+        _menu.AddItem(new ApplicationMenuItem(TenantManagementMenuNames.Onboarding, "Onboarding", "~/TenantManagement/Onboarding"));
+
+        var (context, called) = await ExecuteFilterAsync("/GrantApplications/Details");
+
+        context.Result.ShouldBeNull();
+        called.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task Page_WithOnboardingAccess_ShouldStillDenyOtherGrantAreas()
+    {
+        _menu.AddItem(new ApplicationMenuItem(TenantManagementMenuNames.Onboarding, "Onboarding", "~/TenantManagement/Onboarding"));
+
+        var (context, called) = await ExecuteFilterAsync("/Applicants/Details");
 
         context.Result.ShouldBeOfType<LocalRedirectResult>().Url.ShouldBe(UserNavigationService.NoAccessUrl);
         called.ShouldBeFalse();
