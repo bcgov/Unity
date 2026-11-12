@@ -38,17 +38,44 @@ public class NotificationListAppService(
         // Filter on the sent date, falling back to the creation date for rows that were never
         // sent (drafts, failures, scheduled emails). Otherwise their null SentDateTime would
         // drop them from every window except "All time".
+        // Written as an OR of plain column comparisons rather than COALESCE(SentDateTime, CreationTime)
+        // so the database can use the SentDateTime and CreationTime indexes.
         if (fromUtc.HasValue)
         {
-            query = query.Where(e => (e.SentDateTime ?? e.CreationTime) >= fromUtc.Value);
+            var from = fromUtc.Value;
+            query = query.Where(e => e.SentDateTime >= from
+                || (e.SentDateTime == null && e.CreationTime >= from));
         }
 
         if (toUtc.HasValue)
         {
-            query = query.Where(e => (e.SentDateTime ?? e.CreationTime) <= toUtc.Value);
+            var to = toUtc.Value;
+            query = query.Where(e => e.SentDateTime <= to
+                || (e.SentDateTime == null && e.CreationTime <= to));
         }
 
-        query = query.OrderBy(sorting);
+        query = input.View switch
+        {
+            NotificationListView.Application => query.Where(e => e.ApplicationId != Guid.Empty),
+            NotificationListView.Applicant => query.Where(e => e.ApplicationId == Guid.Empty),
+            _ => query
+        };
+
+        // Project to the list columns only. EmailLog carries the full HTML Body, CC/BCC and the CHES
+        // response; loading whole entities for every row in the window was the main cost of this page.
+        var projected = query.OrderBy(sorting).Select(e => new NotificationSummaryDto
+        {
+            Id = e.Id,
+            ApplicationId = e.ApplicationId,
+            ApplicantId = e.ApplicantId,
+            SentDateTime = e.SentDateTime,
+            Status = e.Status,
+            FromAddress = e.FromAddress,
+            ToAddress = e.ToAddress,
+            Subject = e.Subject,
+            Recipient = e.Recipient,
+            EmailType = e.EmailType
+        });
 
         // The list runs client-side (serverSideEnabled is off in Index.js): return every row in the
         // date window and let DataTables page, search and sort in the browser. TotalCount is the full
@@ -56,51 +83,74 @@ public class NotificationListAppService(
         // not apply skip/take in client-side mode (GetApplicationListRecordsAsync) and sets
         // totalCount = items.Count to avoid a redundant count query. The 6-month default bounds the
         // payload; full server-side paging is a future option if volume ever requires it.
-        var logs = await AsyncExecuter.ToListAsync(query);
-        var totalCount = logs.Count;
+        var items = await AsyncExecuter.ToListAsync(projected);
+        var totalCount = items.Count;
 
-        var applicationIds = logs.Select(l => l.ApplicationId).Distinct().ToArray();
-        var applications = await applicationRepository.GetListAsync(a => applicationIds.Contains(a.Id));
-        var referenceByAppId = applications.ToDictionary(a => a.Id, a => a.ReferenceNo);
-        var applicantIdByAppId = applications.ToDictionary(a => a.Id, a => a.ApplicantId);
-
-        var applicantIds = logs.Select(l => l.ApplicantId)
-            .Concat(applicantIdByAppId.Values)
+        // EmailLog lives in NotificationsDbContext and Application/Applicant in GrantTenantDbContext,
+        // so these cannot be one SQL join. Each lookup is a single projected query keyed by the
+        // distinct ids on this result set.
+        var applicationIds = items.Select(i => i.ApplicationId)
+            .Where(id => id != Guid.Empty)
             .Distinct()
             .ToArray();
-        var applicants = await applicantRepository.GetListAsync(a => applicantIds.Contains(a.Id));
-        var applicantNameById = applicants.ToDictionary(a => a.Id, a => a.ApplicantName ?? string.Empty);
+        var applicationQuery = await applicationRepository.GetQueryableAsync();
+        var applications = applicationIds.Length == 0
+            ? new List<ApplicationLookup>()
+            : await AsyncExecuter.ToListAsync(applicationQuery
+                .Where(a => applicationIds.Contains(a.Id))
+                .Select(a => new ApplicationLookup(a.Id, a.ReferenceNo, a.ApplicantId)));
+        var applicationById = applications.ToDictionary(a => a.Id);
 
-        var items = logs.Select(log =>
+        var applicantIds = items.Select(i => i.ApplicantId)
+            .Concat(applications.Select(a => a.ApplicantId))
+            .Where(id => id != Guid.Empty)
+            .Distinct()
+            .ToArray();
+        var applicantQuery = await applicantRepository.GetQueryableAsync();
+        var applicantNameById = applicantIds.Length == 0
+            ? new Dictionary<Guid, string>()
+            : (await AsyncExecuter.ToListAsync(applicantQuery
+                .Where(a => applicantIds.Contains(a.Id))
+                .Select(a => new { a.Id, a.ApplicantName })))
+                .ToDictionary(a => a.Id, a => a.ApplicantName ?? string.Empty);
+
+        // Resolve each localized label once rather than once per row.
+        var emailTypeTextCache = new Dictionary<EmailType, string>();
+        string ResolveEmailTypeText(EmailType? emailType)
         {
-            referenceByAppId.TryGetValue(log.ApplicationId, out var referenceNo);
+            if (!emailType.HasValue)
+            {
+                return string.Empty;
+            }
+
+            if (!emailTypeTextCache.TryGetValue(emailType.Value, out var text))
+            {
+                text = GetEmailTypeText(emailType);
+                emailTypeTextCache[emailType.Value] = text;
+            }
+
+            return text;
+        }
+
+        foreach (var item in items)
+        {
+            applicationById.TryGetValue(item.ApplicationId, out var application);
 
             // Prefer the EmailLog.ApplicantId; fall back to the application's applicant.
-            var applicantId = log.ApplicantId != Guid.Empty
-                ? log.ApplicantId
-                : applicantIdByAppId.GetValueOrDefault(log.ApplicationId);
-            applicantNameById.TryGetValue(applicantId, out var applicantName);
-
-            return new NotificationSummaryDto
+            if (item.ApplicantId == Guid.Empty && application is not null)
             {
-                Id = log.Id,
-                ApplicationId = log.ApplicationId,
-                ApplicantId = applicantId,
-                SubmissionReferenceNo = referenceNo ?? string.Empty,
-                ApplicantName = applicantName ?? string.Empty,
-                SentDateTime = log.SentDateTime,
-                Status = log.Status,
-                FromAddress = log.FromAddress,
-                ToAddress = log.ToAddress,
-                Subject = log.Subject,
-                Recipient = log.Recipient,
-                EmailType = log.EmailType,
-                EmailTypeText = GetEmailTypeText(log.EmailType)
-            };
-        }).ToList();
+                item.ApplicantId = application.ApplicantId;
+            }
+
+            item.SubmissionReferenceNo = application?.ReferenceNo ?? string.Empty;
+            item.ApplicantName = applicantNameById.GetValueOrDefault(item.ApplicantId) ?? string.Empty;
+            item.EmailTypeText = ResolveEmailTypeText(item.EmailType);
+        }
 
         return new PagedResultDto<NotificationSummaryDto>(totalCount, items);
     }
+
+    private sealed record ApplicationLookup(Guid Id, string? ReferenceNo, Guid ApplicantId);
 
     // Converts a Vancouver-local date range (date-only) to an inclusive UTC range:
     // From -> start of local day, To -> end of local day (23:59:59.9999999). Mirrors ApplicationRepository.

@@ -246,4 +246,62 @@ public class NotificationListAppServiceTests : GrantManagerApplicationTestBase
 
         result.Items.ShouldContain(i => i.Id == draft.Id);
     }
+
+    [Theory]
+    [Trait("Category", "Integration")]
+    [InlineData(NotificationListView.Both, true, true)]
+    [InlineData(NotificationListView.Application, true, false)]
+    [InlineData(NotificationListView.Applicant, false, true)]
+    public async Task Should_Filter_By_View_On_The_Server(
+        NotificationListView view, bool expectApplicationRow, bool expectApplicantRow)
+    {
+        SetFeatureEnabled("Unity.Notifications", true);
+        var application = await _applicationRepository.GetAsync(GrantManagerTestData.Application1_Id);
+
+        var applicationEmail = await _emailLogsRepository.InsertAsync(new EmailLog
+        {
+            ApplicationId = application.Id,
+            ApplicantId = application.ApplicantId,
+            Subject = "Application Level",
+            Status = "Sent"
+        }, autoSave: true);
+
+        var applicantEmail = await _emailLogsRepository.InsertAsync(new EmailLog
+        {
+            ApplicationId = Guid.Empty,
+            ApplicantId = application.ApplicantId,
+            Subject = "Applicant Level",
+            Status = "Sent"
+        }, autoSave: true);
+
+        var result = await _notificationListAppService.GetListAsync(new NotificationListInputDto { View = view });
+
+        result.Items.Any(i => i.Id == applicationEmail.Id).ShouldBe(expectApplicationRow);
+        result.Items.Any(i => i.Id == applicantEmail.Id).ShouldBe(expectApplicantRow);
+        result.TotalCount.ShouldBe(result.Items.Count);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task Should_Resolve_Applicant_From_Application_When_EmailLog_ApplicantId_Is_Empty()
+    {
+        SetFeatureEnabled("Unity.Notifications", true);
+        var application = await _applicationRepository.GetAsync(GrantManagerTestData.Application1_Id);
+
+        var emailLog = await _emailLogsRepository.InsertAsync(new EmailLog
+        {
+            ApplicationId = application.Id,
+            ApplicantId = Guid.Empty,
+            Subject = "No Applicant On Log",
+            Status = "Sent"
+        }, autoSave: true);
+
+        var result = await _notificationListAppService.GetListAsync(new NotificationListInputDto());
+
+        var row = result.Items.FirstOrDefault(i => i.Id == emailLog.Id);
+        row.ShouldNotBeNull();
+        row.ApplicantId.ShouldBe(application.ApplicantId);
+        row.ApplicantName.ShouldNotBeNullOrEmpty();
+        row.SubmissionReferenceNo.ShouldBe(application.ReferenceNo);
+    }
 }

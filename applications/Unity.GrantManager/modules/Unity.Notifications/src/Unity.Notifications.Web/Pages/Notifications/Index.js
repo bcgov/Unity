@@ -120,19 +120,15 @@ $(function () {
         data: function () {
             return {
                 dateFrom: notificationTableFilters.dateFrom,
-                dateTo: notificationTableFilters.dateTo
+                dateTo: notificationTableFilters.dateTo,
+                // Filtered on the server (NotificationListView) so excluded rows are never downloaded.
+                view: notificationViewMode
             };
         },
-        responseCallback: function (result) {
-            const items = result.items.filter(item => {
-                const isApplicantNotification = !item.applicationId || item.applicationId === '00000000-0000-0000-0000-000000000000';
-                return notificationViewMode === 'both'
-                    || (notificationViewMode === 'applicant' && isApplicantNotification)
-                    || (notificationViewMode === 'application' && !isApplicantNotification);
-            });
-            return responseCallback({ ...result, items });
-        },
+        responseCallback,
         actionButtons,
+        // Build row DOM only for the page being shown; search, sort and export still use all rows.
+        deferRender: true,
         pagingEnabled: true,
         reorderEnabled: true,
         languageSetValues: {},
