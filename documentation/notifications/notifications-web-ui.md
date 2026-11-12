@@ -15,7 +15,7 @@ The module's own Razor Pages live under `modules/Unity.Notifications/src/Unity.N
 
 All three `OnGet` methods are empty; the pages are entirely driven by their `Index.js`.
 
-The Notification List runs **client-side** (`serverSideEnabled` off): `NotificationListAppService.GetListAsync` returns every row in the date window and DataTables pages, searches, and sorts in the browser. `TotalCount` is the full match count, not a page count. The source comment explains the choice — it mirrors the Applications list, and the 6-month default date window bounds the payload. Only `EmailLog`-backed columns are sortable server-side; `ResolveSorting` allowlists them and silently falls back to `SentDateTime DESC` for anything else, so client input never reaches the dynamic-LINQ ordering raw.
+The Notification List runs **client-side** (`serverSideEnabled` off): `NotificationListAppService.GetListAsync` returns every row in the date window that matches the Type selector (`NotificationListView`: Both / Applications / Applicants, filtered server-side), projected to the list columns only, and DataTables pages, searches, and sorts in the browser with `deferRender` on. `TotalCount` is the full match count, not a page count. The source comment explains the choice — it mirrors the Applications list, and the 6-month default date window bounds the payload. Only `EmailLog`-backed columns are sortable server-side; `ResolveSorting` allowlists them and silently falls back to `SentDateTime DESC` for anything else, so client input never reaches the dynamic-LINQ ordering raw.
 
 ## Menus
 
