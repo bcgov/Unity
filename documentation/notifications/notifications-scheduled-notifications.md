@@ -8,7 +8,7 @@ Everything on this page lives in the **host**, not in `Unity.Notifications` — 
 |---|---|
 | `Unity.GrantManager.Domain/Notifications/ScheduledNotification.cs` | The configuration entity |
 | `Unity.GrantManager.Domain/Notifications/ApplicationScheduledNotificationTracking.cs` | The already-sent ledger (class `ScheduledNotificationTracking`) |
-| `Unity.GrantManager.Application/Events/ScheduledNotificationEventHandler.cs` | Event-driven trigger |
+| `Unity.GrantManager.Application/Events/EventNotificationHandler.cs` | Event-driven trigger |
 | `Unity.GrantManager.Application/Events/DateBasedScheduledNotificationJob.cs` | Date-driven trigger (nightly Quartz job) |
 | `Unity.GrantManager.Application/Events/ScheduledNotificationHelper.cs` | Shared token rendering + recipient resolution |
 | `Unity.GrantManager.Web/Controllers/FormNotificationsApiController.cs` | The form-level configuration API |
@@ -43,7 +43,7 @@ Cancelled plans and sent or cancelled email history are retained after template 
 
 ## Trigger 1 — event-driven
 
-`ScheduledNotificationEventHandler` implements `ILocalEventHandler<ApplicationChangedEvent>` **and** `ILocalEventHandler<PaymentStatusChangedEvent>`.
+`EventNotificationHandler` implements `ILocalEventHandler<ApplicationChangedEvent>` **and** `ILocalEventHandler<PaymentStatusChangedEvent>`.
 
 Both handlers follow the same shape:
 
@@ -51,7 +51,7 @@ Both handlers follow the same shape:
 2. Load the application with `includeDetails: true` — the navigation properties (`Applicant`, `ApplicationStatus`, `ApplicationForm`) are needed for token substitution.
 3. Query active matching configurations:
    - **Application status**: `FormId == application.ApplicationFormId && TriggerType == "Event" && IsActive && (Module == null || Module == "Application") && ApplicationStatusId == application.ApplicationStatusId`
-   - **Payment status**: same, but `Module == "Payment" && EventType == eventData.Status.ToString()`
+   - **Payment status**: same, but `Module == "Payment"`, matching `EventType` against the destination workflow status only when `Status != PreviousStatus`, or against the destination CAS payment status only when it differs from `PreviousCasPaymentStatus`. Missing CAS statuses (`null` and empty) are equivalent. Creation events have no previous workflow status. A CAS reconciliation event with an unchanged workflow status therefore does not repeat a `Submitted` or `FSB` plan; a genuine CAS payment-status transition can still trigger its own plan.
 4. Read the tenant's `DefaultFromAddress` setting once for the batch (falling back to `NoReply@gov.bc.ca`).
 5. Load the `ApplicantAgent` once for the batch — used for both contact tokens and recipient resolution.
 6. Call `ProcessNotificationAsync` per configuration.

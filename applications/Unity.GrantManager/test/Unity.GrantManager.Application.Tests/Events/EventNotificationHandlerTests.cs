@@ -159,6 +159,99 @@ public class EventNotificationHandlerTests
             notification.EventType == "Submitted" || notification.EventType == "Validated");
     }
 
+    [Theory]
+    [InlineData(PaymentRequestStatus.FSB)]
+    [InlineData(PaymentRequestStatus.Submitted)]
+    public void Should_SelectWorkflowPlan_WhenPaymentEntersStatus(PaymentRequestStatus paymentStatus)
+    {
+        var formId = Guid.NewGuid();
+        var notification = CreatePaymentNotification(formId, paymentStatus, isActive: true);
+
+        new[] { notification }
+            .AsQueryable()
+            .Where(EventNotificationHandler.PaymentEventNotificationFilter(
+                formId, paymentStatus, null, previousStatus: PaymentRequestStatus.L2Pending))
+            .ShouldHaveSingleItem();
+    }
+
+    [Theory]
+    [InlineData(PaymentRequestStatus.FSB, null, "")]
+    [InlineData(PaymentRequestStatus.FSB, null, "Fully Paid")]
+    [InlineData(PaymentRequestStatus.FSB, "Not Paid", "Fully Paid")]
+    [InlineData(PaymentRequestStatus.Submitted, null, "")]
+    [InlineData(PaymentRequestStatus.Submitted, null, "Fully Paid")]
+    [InlineData(PaymentRequestStatus.Submitted, "Not Paid", "Fully Paid")]
+    public void Should_NotRepeatWorkflowPlan_WhenOnlyCasStatusChanges(
+        PaymentRequestStatus paymentStatus,
+        string? previousCasPaymentStatus,
+        string casPaymentStatus)
+    {
+        var formId = Guid.NewGuid();
+        var notification = CreatePaymentNotification(formId, paymentStatus, isActive: true);
+
+        new[] { notification }
+            .AsQueryable()
+            .Where(EventNotificationHandler.PaymentEventNotificationFilter(
+                formId, paymentStatus, casPaymentStatus, paymentStatus, previousCasPaymentStatus))
+            .ShouldBeEmpty();
+    }
+
+    [Theory]
+    [InlineData(PaymentRequestStatus.FSB)]
+    [InlineData(PaymentRequestStatus.Submitted)]
+    public void Should_SelectOnlyCasPlan_WhenOnlyCasStatusChanges(PaymentRequestStatus paymentStatus)
+    {
+        var formId = Guid.NewGuid();
+        var casNotification = CreatePaymentNotification(formId, paymentStatus, isActive: true);
+        casNotification.EventType = "Fully Paid";
+        var notifications = new[]
+        {
+            CreatePaymentNotification(formId, paymentStatus, isActive: true),
+            casNotification
+        };
+
+        var matches = notifications
+            .AsQueryable()
+            .Where(EventNotificationHandler.PaymentEventNotificationFilter(
+                formId, paymentStatus, "Fully Paid", paymentStatus, "Not Paid"))
+            .ToList();
+
+        matches.ShouldHaveSingleItem().ShouldBe(casNotification);
+    }
+
+    [Fact]
+    public void Should_NotRepeatCasPlan_WhenOnlyWorkflowStatusChanges()
+    {
+        var formId = Guid.NewGuid();
+        var casNotification = CreatePaymentNotification(formId, PaymentRequestStatus.Paid, isActive: true);
+        casNotification.EventType = "Not Paid";
+        var workflowNotification = CreatePaymentNotification(formId, PaymentRequestStatus.Cancelled, isActive: true);
+
+        var matches = new[] { workflowNotification, casNotification }
+            .AsQueryable()
+            .Where(EventNotificationHandler.PaymentEventNotificationFilter(
+                formId, PaymentRequestStatus.Cancelled, "Not Paid", PaymentRequestStatus.HistoricalPayment, "Not Paid"))
+            .ToList();
+
+        matches.ShouldHaveSingleItem().ShouldBe(workflowNotification);
+    }
+
+    [Theory]
+    [InlineData(PaymentRequestStatus.FSB)]
+    [InlineData(PaymentRequestStatus.Submitted)]
+    public void Should_NotSelectPlans_WhenNeitherStatusChanges(PaymentRequestStatus paymentStatus)
+    {
+        var formId = Guid.NewGuid();
+        var casNotification = CreatePaymentNotification(formId, paymentStatus, isActive: true);
+        casNotification.EventType = "Fully Paid";
+
+        new[] { CreatePaymentNotification(formId, paymentStatus, isActive: true), casNotification }
+            .AsQueryable()
+            .Where(EventNotificationHandler.PaymentEventNotificationFilter(
+                formId, paymentStatus, "Fully Paid", paymentStatus, "Fully Paid"))
+            .ShouldBeEmpty();
+    }
+
     private static ScheduledNotification CreateNotification(
         Guid formId,
         Guid statusId,

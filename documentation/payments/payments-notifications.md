@@ -7,7 +7,7 @@ Payments sends two kinds of email, both through `Unity.Notifications`. It never 
 | Payments reach `FSB` status during an approval batch | `EmailAction.SendFsbNotification` | the **FSB-AP** email group | one email per batch, with an `.xlsx` attachment listing the payments |
 | Nightly Quartz job finds recently failed CAS payments | `EmailAction.SendFailedSummary` | every `IEmailRecipientStrategy`'s recipients (currently the **Payments** email group) | an HTML table of failed payments |
 
-A third path exists indirectly: `PaymentStatusChangedEvent` is published on create, on every status change, and on cancel, and the host's `Events/ScheduledNotificationEventHandler` can match it against a configured `ScheduledNotification` to send a templated email to the applicant. That configuration is documented in [`notifications/notifications-scheduled-notifications.md`](../notifications/notifications-scheduled-notifications.md).
+A third path exists indirectly: `PaymentStatusChangedEvent` is published on create, on workflow or CAS payment-status changes, and on cancel, and the host's `Events/EventNotificationHandler` can match the changed status against a configured `ScheduledNotification` to send a templated email to the applicant. That configuration is documented in [`notifications/notifications-scheduled-notifications.md`](../notifications/notifications-scheduled-notifications.md).
 
 ## Recipient strategies
 
@@ -127,10 +127,12 @@ Nothing is sent when a tenant has no recent failures.
 
 ## Payment status change events
 
-`PaymentStatusChangedEvent` (`Events/PaymentStatusChangedEvent.cs`) carries `PaymentRequestId`, `ApplicationId` (the correlation id), `Status` and `TenantId`. It is published from `PaymentRequestAppService`:
+`PaymentStatusChangedEvent` (`Events/PaymentStatusChangedEvent.cs`) carries `PaymentRequestId`, `ApplicationId` (the correlation id), `Status`, `PreviousStatus`, `CasPaymentStatus`, `PreviousCasPaymentStatus`, and `TenantId`. It is published from `PaymentRequestAppService`:
 
 - once per payment in `CreateAsync` and `CreateHistoricalAsync`,
 - in `UpdateStatusAsync`, only when the status actually changed,
 - in `CancelAsync`.
 
-The host's `Events/ScheduledNotificationEventHandler` subscribes to it and, when a `ScheduledNotification` is configured for that form and payment status, publishes a templated `EmailNotificationEvent` to the applicant. Payments neither knows nor cares whether such a configuration exists.
+`CasPaymentRequestCoordinator` also publishes it when reconciliation changes the CAS payment status, carrying both previous statuses. A missing CAS payment status changing from `null` to empty does not publish an event.
+
+The host's `Events/EventNotificationHandler` subscribes to it and, when a `ScheduledNotification` is configured for that form and a status that actually changed, publishes a templated `EmailNotificationEvent` to the applicant. Reconciliation does not repeat the `FSB` or `Submitted` workflow plan while that workflow status stays unchanged. A new payment entering the same status can still trigger the plan independently. Payments neither knows nor cares whether such a configuration exists.
