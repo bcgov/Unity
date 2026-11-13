@@ -9,8 +9,10 @@
 #    each run every Unity database on one Postgres cluster. Start Unity.GrantManager's
 #    stack first (docker compose up -d). The database name in .env (DB_NAME) should
 #    match the running OpenShift environments: UnityAI.
-#    To use the standalone postgres instead: docker compose --profile standalone-db up -d
-#    (it publishes 5432, so stop unitydb first).
+#    The postgres profile, depends_on, DB_HOST and networks entries below are what make it
+#    shared. For the standalone AI postgres instead, don't use this file: use the README's
+#    standalone override (keeps the tenant_config mount and publishes AI postgres on 5435,
+#    so it can run next to unitydb on 5432).
 
 services:
   postgres:

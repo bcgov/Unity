@@ -118,10 +118,26 @@ if ($usesSharedUnityDb) {
         throw "Database '$dbName' does not exist in 'unitydb'. Create it (owned by the .env DB_USER) before starting the AI application."
     }
 } else {
-    # Standalone mode publishes its own postgres on 5432, which clashes with unitydb.
-    $dbState = docker inspect --format '{{.State.Status}}' unitydb 2>$null
-    if ($dbState -eq 'running') {
-        throw "unitydb is running on port 5432. Copy docker-compose.override.yml.example to docker-compose.override.yml to share it, or stop Unity.GrantManager first."
+    # Standalone mode publishes its own postgres. Only stop when its effective host port
+    # (5432 by default, or e.g. 5435 from a local override) is already taken by something
+    # other than this project's own postgres container.
+    $composeConfig = docker compose --project-directory $PSScriptRoot @composeFiles config --format json | ConvertFrom-Json
+    if ($LASTEXITCODE -ne 0) {
+        throw 'Docker Compose could not read the AI compose configuration. Check the output above.'
+    }
+    $ownPostgres = docker compose --project-directory $PSScriptRoot @composeFiles ps -q --status running postgres 2>$null
+    if (-not $ownPostgres) {
+        $publishedPorts = @($composeConfig.services.postgres.ports | Where-Object { $_.published } | ForEach-Object { [int]$_.published })
+        foreach ($port in $publishedPorts) {
+            # Docker Desktop's published ports don't always show as Windows listeners, so ask Docker too.
+            $holder = (docker ps --filter "publish=$port" --format '{{.Names}}' 2>$null | Select-Object -First 1)
+            if (-not $holder -and (Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue)) {
+                $holder = 'another process'
+            }
+            if ($holder) {
+                throw "Port $port, published by the standalone AI postgres, is already in use by $holder. Copy docker-compose.override.yml.example to docker-compose.override.yml to share unitydb, publish AI postgres on another port (see README), or stop $holder."
+            }
+        }
     }
 }
 
