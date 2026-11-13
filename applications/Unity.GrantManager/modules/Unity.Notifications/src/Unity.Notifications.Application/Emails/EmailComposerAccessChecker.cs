@@ -82,7 +82,7 @@ public class EmailComposerAccessChecker(
         return email;
     }
 
-    /// <summary>Edit rights over a draft: Edit on the owner type, or Create when the user started the draft.</summary>
+    /// <summary>Edit rights over a draft: Edit on the owner type, or Create while the user's own new draft is still unsaved.</summary>
     public async Task<EmailLog> CheckDraftEditAsync(Guid emailId)
     {
         var email = await emailLogsRepository.GetAsync(emailId);
@@ -95,17 +95,21 @@ public class EmailComposerAccessChecker(
         return email;
     }
 
+    // Create alone covers only the composer session that started the draft: once saved, the draft
+    // reopens from history and further changes need Edit, whoever created it.
     public async Task<bool> CanEditDraftAsync(EmailLog email)
     {
         var ownerType = EmailOwnerTypes.FromIds(email.ApplicantId);
         return await IsAllowedAsync(ownerType, EmailOperation.Edit)
-            || (IsCreator(email) && await IsAllowedAsync(ownerType, EmailOperation.Create));
+            || (IsCreator(email) && IsUnsaved(email) && await IsAllowedAsync(ownerType, EmailOperation.Create));
     }
 
     public async Task CheckDraftDeleteAsync(EmailLog email)
     {
         var ownerType = EmailOwnerTypes.FromIds(email.ApplicantId);
-        if (!await IsAllowedAsync(ownerType, EmailOperation.DeleteDraft) || !await CanEditDraftAsync(email))
+        var canManageDraft = await IsAllowedAsync(ownerType, EmailOperation.Edit)
+            || (IsCreator(email) && await IsAllowedAsync(ownerType, EmailOperation.Create));
+        if (!await IsAllowedAsync(ownerType, EmailOperation.DeleteDraft) || !canManageDraft)
         {
             throw new AbpAuthorizationException();
         }
@@ -166,6 +170,13 @@ public class EmailComposerAccessChecker(
     private bool IsCreator(EmailLog email)
     {
         return currentUser.Id.HasValue && email.CreatorId == currentUser.Id;
+    }
+
+    // InitializeDraft inserts the composer's placeholder row; the first Save stamps LastModificationTime.
+    // Attachment changes live in their own table and leave the draft row untouched.
+    private static bool IsUnsaved(EmailLog email)
+    {
+        return email.LastModificationTime == null;
     }
 
     // Every operation needs the module gate and the owner-type View; Schedule is additive to Send.
