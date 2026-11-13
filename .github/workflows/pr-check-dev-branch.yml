@@ -73,19 +73,21 @@ jobs:
 
       - uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: "9.0.x"
+          global-json-file: applications/Unity.GrantManager/global.json
 
       - name: Ensure TestResults folder exists
         run: mkdir -p TestResults
 
+      # Run from the solution folder so its global.json pins the SDK; a newer
+      # SDK preinstalled on the runner is otherwise used.
       - name: Run unit tests
+        working-directory: applications/Unity.GrantManager
         run: |
           NAME=$(basename "${{ matrix.project }}" .csproj)
-          TRX="TestResults/${NAME}.trx"
           echo "▶ Running: $NAME"
-          dotnet test "${{ matrix.project }}" \
+          dotnet test "$GITHUB_WORKSPACE/${{ matrix.project }}" \
             --logger "trx;LogFileName=${NAME}.trx" \
-            --results-directory TestResults
+            --results-directory "$GITHUB_WORKSPACE/TestResults"
 
       - uses: actions/upload-artifact@v5
         with:
