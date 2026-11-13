@@ -249,7 +249,8 @@ namespace Unity.Flex.Domain.Services
 
             foreach (var section in worksheet.Sections.OrderBy(s => s.Order))
             {
-                var clonedSection = new WorksheetSection(Guid.NewGuid(), section.Name);
+                var clonedSection = new WorksheetSection(Guid.NewGuid(), section.Name)
+                    .SetDefinition(section.Definition);
                 foreach (var field in section.Fields.OrderBy(s => s.Order))
                 {
                     var clonedField = new CustomField(Guid.NewGuid(),

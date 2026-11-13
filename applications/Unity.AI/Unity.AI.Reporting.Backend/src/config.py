@@ -104,9 +104,11 @@ class Config:
         default_db_id = self.tenant_mappings.get(DEFAULT_TENANT, {}).get("db_id", 5)
 
         self.database = DatabaseConfig(
-            host=os.getenv("DB_HOST", "localhost"),
+            # 127.0.0.1, not localhost: on Windows localhost resolves to ::1 first and the
+            # Docker-published 5432 hangs on IPv6 before libpq falls back to IPv4.
+            host=os.getenv("DB_HOST", "127.0.0.1"),
             port="5432",
-            name=os.getenv("DB_NAME", "unity_ai"),
+            name=os.getenv("DB_NAME", "UnityAI"),
             user=os.getenv("DB_USER", "unity_user"),
             password=os.getenv("DB_PASSWORD", "unity_pass")
         )

@@ -25,4 +25,10 @@ if ($listener) {
     }
 }
 
-Write-Host 'AI application stopped. The database volume was preserved.'
+$usesSharedUnityDb = (Test-Path -PathType Leaf -LiteralPath $localComposeFile) -and
+    ((Get-Content -Raw -LiteralPath $localComposeFile) -match 'unity_local_common-network')
+if ($usesSharedUnityDb) {
+    Write-Host "AI application stopped. Its database lives in GrantManager's shared 'unitydb' container, which is still running."
+} else {
+    Write-Host 'AI application stopped. The standalone postgres volume was preserved.'
+}

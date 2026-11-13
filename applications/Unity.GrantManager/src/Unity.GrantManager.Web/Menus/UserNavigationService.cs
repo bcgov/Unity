@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Permissions;
 using Unity.Modules.Shared.Permissions;
 using Unity.Payments.Web.Menus;
+using Unity.TenantManagement.Web.Navigation;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.Users;
@@ -22,16 +23,22 @@ public class UserNavigationService(
 
     private Task<ApplicationMenu>? _mainMenu;
 
-    private static readonly Dictionary<string, string> PageMenus = new(StringComparer.OrdinalIgnoreCase)
+    // A page path is accessible when any of its menu items is visible. The most specific
+    // (longest) matching path wins, so a page entry overrides its folder's entry.
+    private static readonly Dictionary<string, string[]> PageMenus = new(StringComparer.OrdinalIgnoreCase)
     {
-        ["/GrantApplications"] = GrantManagerMenus.Applications,
-        ["/Applicants"] = GrantManagerMenus.Applicants,
-        ["/Intakes"] = GrantManagerMenus.Intakes,
-        ["/ApplicationForms"] = GrantManagerMenus.ApplicationForms,
-        ["/FormConfiguration"] = GrantManagerMenus.ApplicationForms,
-        ["/Dashboard"] = GrantManagerMenus.Dashboard,
-        ["/PaymentRequests"] = PaymentsMenus.Prefix,
-        ["/PaymentHistory"] = PaymentsMenus.Prefix
+        ["/GrantApplications"] = [GrantManagerMenus.Applications],
+        // Onboarding tenants hide Applications, but each onboarding request is an Application
+        // opened from the Onboarding queue. Only the details page is opened that way; the
+        // application list and any other /GrantApplications page still need Applications.
+        ["/GrantApplications/Details"] = [GrantManagerMenus.Applications, TenantManagementMenuNames.Onboarding],
+        ["/Applicants"] = [GrantManagerMenus.Applicants],
+        ["/Intakes"] = [GrantManagerMenus.Intakes],
+        ["/ApplicationForms"] = [GrantManagerMenus.ApplicationForms],
+        ["/FormConfiguration"] = [GrantManagerMenus.ApplicationForms],
+        ["/Dashboard"] = [GrantManagerMenus.Dashboard],
+        ["/PaymentRequests"] = [PaymentsMenus.Prefix],
+        ["/PaymentHistory"] = [PaymentsMenus.Prefix]
     };
 
     public async Task<string?> GetLandingPageAsync()
@@ -62,18 +69,21 @@ public class UserNavigationService(
             return true;
         }
 
-        foreach (var (folder, menuName) in PageMenus)
+        var menuNames = PageMenus
+            .Where(entry => pagePath.Equals(entry.Key, StringComparison.OrdinalIgnoreCase)
+                || pagePath.StartsWith(entry.Key + "/", StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(entry => entry.Key.Length)
+            .Select(entry => entry.Value)
+            .FirstOrDefault();
+
+        if (menuNames == null)
         {
-            if (pagePath.Equals(folder, StringComparison.OrdinalIgnoreCase)
-                || pagePath.StartsWith(folder + "/", StringComparison.OrdinalIgnoreCase))
-            {
-                var menu = await GetMainMenuAsync();
-                return ContainsItem(menu.Items, menuName);
-            }
+            // Other pages retain their existing authorization policies.
+            return true;
         }
 
-        // Other pages retain their existing authorization policies.
-        return true;
+        var menu = await GetMainMenuAsync();
+        return menuNames.Any(menuName => ContainsItem(menu.Items, menuName));
     }
 
     private Task<ApplicationMenu> GetMainMenuAsync()

@@ -36,7 +36,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
         with:
-          dotnet-version: '9.0.x'
+          global-json-file: applications/Unity.GrantManager/global.json
 
       - name: Set up Python 3.13
         uses: actions/setup-python@v6
