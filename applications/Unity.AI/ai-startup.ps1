@@ -15,13 +15,20 @@ if (-not (Test-Path -PathType Leaf -LiteralPath $tenantConfig)) {
 }
 
 if (-not $UseConfiguredJwtSecret) {
-    $grantManagerSettings = Join-Path $PSScriptRoot '..\Unity.GrantManager\src\Unity.GrantManager.Web\appsettings.Development.json'
-    if (-not (Test-Path -PathType Leaf -LiteralPath $grantManagerSettings)) {
-        throw "GrantManager development settings not found at $grantManagerSettings. Use -UseConfiguredJwtSecret to keep the AI .env value."
+    # Same precedence as GrantManager.Web: the gitignored appsettings.secrets.json overrides appsettings.Development.json.
+    $grantManagerWeb = Join-Path $PSScriptRoot '..\Unity.GrantManager\src\Unity.GrantManager.Web'
+    $grantManagerSettings = @('appsettings.secrets.json', 'appsettings.Development.json') |
+        ForEach-Object { Join-Path $grantManagerWeb $_ } |
+        Where-Object { Test-Path -PathType Leaf -LiteralPath $_ }
+    if (-not $grantManagerSettings) {
+        throw "GrantManager settings not found in $grantManagerWeb. Use -UseConfiguredJwtSecret to keep the AI .env value."
     }
-    $grantManagerJwtSecret = (Get-Content -Raw -LiteralPath $grantManagerSettings | ConvertFrom-Json).ReportingAI.JWTSecret
+    $grantManagerJwtSecret = $grantManagerSettings |
+        ForEach-Object { (Get-Content -Raw -LiteralPath $_ | ConvertFrom-Json).ReportingAI.JWTSecret } |
+        Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+        Select-Object -First 1
     if ([string]::IsNullOrWhiteSpace($grantManagerJwtSecret)) {
-        throw "GrantManager ReportingAI:JWTSecret is not configured. Use -UseConfiguredJwtSecret to keep the AI .env value."
+        throw "GrantManager ReportingAI:JWTSecret is not configured in appsettings.secrets.json or appsettings.Development.json. Use -UseConfiguredJwtSecret to keep the AI .env value."
     }
 }
 
@@ -82,6 +89,42 @@ $localComposeFile = Join-Path $PSScriptRoot 'docker-compose.override.yml'
 if (Test-Path -PathType Leaf -LiteralPath $localComposeFile) {
     $composeFiles += @('-f', $localComposeFile)
 }
+
+# Database name should match the running OpenShift environments (ce395f-dev: dev and dev2).
+$openShiftDbName = 'UnityAI'
+$dbName = $openShiftDbName
+$dbNameLine = Get-Content -LiteralPath (Join-Path $PSScriptRoot '.env') | Where-Object { $_ -match '^\s*DB_NAME\s*=' } | Select-Object -Last 1
+if ($dbNameLine) {
+    $dbName = ($dbNameLine -replace '^\s*DB_NAME\s*=\s*', '').Trim().Trim('"', "'")
+}
+if ($dbName -cne $openShiftDbName) {
+    Write-Warning "DB_NAME in .env is '$dbName'; OpenShift dev/dev2 use '$openShiftDbName'. Update .env to keep local and OpenShift aligned."
+}
+
+$usesSharedUnityDb = (Test-Path -PathType Leaf -LiteralPath $localComposeFile) -and
+    ((Get-Content -Raw -LiteralPath $localComposeFile) -match 'unity_local_common-network')
+if ($usesSharedUnityDb) {
+    # Shared mode: GrantManager's "unitydb" container hosts the AI database, like ce395f-dev.
+    docker network inspect unity_local_common-network 1>$null 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Docker network 'unity_local_common-network' not found. Start Unity.GrantManager first: docker compose up -d (in $PSScriptRoot\..\Unity.GrantManager)."
+    }
+    $dbState = docker inspect --format '{{.State.Status}}' unitydb 2>$null
+    if ($dbState -ne 'running') {
+        throw "Shared Postgres container 'unitydb' is not running. Start Unity.GrantManager first: docker compose up -d (in $PSScriptRoot\..\Unity.GrantManager)."
+    }
+    $dbExists = docker exec unitydb psql -U postgres -Atc "select 1 from pg_database where datname = '$dbName'" 2>$null
+    if ($dbExists -ne '1') {
+        throw "Database '$dbName' does not exist in 'unitydb'. Create it (owned by the .env DB_USER) before starting the AI application."
+    }
+} else {
+    # Standalone mode publishes its own postgres on 5432, which clashes with unitydb.
+    $dbState = docker inspect --format '{{.State.Status}}' unitydb 2>$null
+    if ($dbState -eq 'running') {
+        throw "unitydb is running on port 5432. Copy docker-compose.override.yml.example to docker-compose.override.yml to share it, or stop Unity.GrantManager first."
+    }
+}
+
 $previousEndpoint = [Environment]::GetEnvironmentVariable('AZURE_OPENAI_ENDPOINT', 'Process')
 $previousJwtSecret = [Environment]::GetEnvironmentVariable('JWT_SECRET', 'Process')
 try {
