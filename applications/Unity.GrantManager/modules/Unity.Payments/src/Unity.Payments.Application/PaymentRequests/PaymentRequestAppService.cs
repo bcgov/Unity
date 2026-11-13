@@ -220,6 +220,7 @@ namespace Unity.Payments.PaymentRequests
                         continue;
 
                     var previousStatus = payment.Status; // Capture previous status
+                    var previousCasPaymentStatus = payment.PaymentStatus;
 
                     if (!string.IsNullOrWhiteSpace(payment.Note) && !string.IsNullOrWhiteSpace(dto.Note))
                     {
@@ -251,7 +252,9 @@ namespace Unity.Payments.PaymentRequests
                                 PaymentRequestId = updatedPayment.Id,
                                 ApplicationId = updatedPayment.CorrelationId,
                                 Status = updatedPayment.Status,
+                                PreviousStatus = previousStatus,
                                 CasPaymentStatus = updatedPayment.PaymentStatus,
+                                PreviousCasPaymentStatus = previousCasPaymentStatus,
                                 TenantId = CurrentTenant.Id
                             });
                         }
@@ -494,6 +497,8 @@ namespace Unity.Payments.PaymentRequests
                 throw new BusinessException(PaymentsErrorCodes.CancellationNotAllowed)
                     .WithData("Status", payment.Status.ToString());
 
+            var previousStatus = payment.Status;
+            var previousCasPaymentStatus = payment.PaymentStatus;
             var result = await paymentsManager.CancelPaymentAsync(paymentRequestId);
 
             await PublishPaymentStatusChangedEventAfterCommitAsync(new PaymentStatusChangedEvent
@@ -501,7 +506,9 @@ namespace Unity.Payments.PaymentRequests
                 PaymentRequestId = result.Id,
                 ApplicationId = result.CorrelationId,
                 Status = result.Status,
+                PreviousStatus = previousStatus,
                 CasPaymentStatus = result.PaymentStatus,
+                PreviousCasPaymentStatus = previousCasPaymentStatus,
                 TenantId = CurrentTenant.Id
             });
 
