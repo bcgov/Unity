@@ -47,10 +47,6 @@
         canDeleteDraft: $('#EmailHistoryTable').data('can-delete-draft') === true,
         canCancelScheduled: $('#EmailHistoryTable').data('can-cancel-scheduled') === true
     };
-    // Delete Draft is independent of Edit/Create, so it applies to every draft row.
-    const canDeleteDraftRow = function () {
-        return historyCapabilities.canDeleteDraft;
-    };
 
     let emailHistoryDataTable = $('#EmailHistoryTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
@@ -203,7 +199,8 @@
                         const addWidthClass = enableEmailDelay && hasLoadedEmptyState;
 
                         // Show delete button for drafts
-                        if (data === 'Draft' && canDeleteDraftRow(full)) {
+                        // Delete Draft is independent of Edit/Create, so it applies to every draft row.
+                        if (data === 'Draft' && historyCapabilities.canDeleteDraft) {
                             return generateDeleteButtonContent(full, meta.row, addWidthClass);
                         }
                         // Show cancel button for scheduled sends that haven't passed yet
