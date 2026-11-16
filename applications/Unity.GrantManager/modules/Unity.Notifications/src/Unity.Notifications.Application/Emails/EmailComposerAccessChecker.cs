@@ -172,11 +172,13 @@ public class EmailComposerAccessChecker(
         return currentUser.Id.HasValue && email.CreatorId == currentUser.Id;
     }
 
-    // InitializeDraft inserts the composer's placeholder row; the first Save stamps LastModificationTime.
-    // Attachment changes live in their own table and leave the draft row untouched.
+    // InitializeDraft inserts an empty placeholder row, and Save only persists when there is a recipient.
+    // Judge by content, not LastModificationTime: attachment uploads/deletes touch that stamp before any Save.
     private static bool IsUnsaved(EmailLog email)
     {
-        return email.LastModificationTime == null;
+        return string.IsNullOrEmpty(email.ToAddress)
+            && string.IsNullOrEmpty(email.Subject)
+            && string.IsNullOrEmpty(email.Body);
     }
 
     // Every operation needs the module gate and the owner-type View; Schedule is additive to Send.

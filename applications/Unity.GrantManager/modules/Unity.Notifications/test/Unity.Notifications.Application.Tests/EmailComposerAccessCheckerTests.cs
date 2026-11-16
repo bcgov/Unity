@@ -121,10 +121,10 @@ public class EmailComposerAccessCheckerTests
     }
 
     [Fact]
-    public async Task Should_RequireEdit_ForOwnSavedDraft()
+    public async Task Should_KeepCreateAccess_WhenAttachmentChangesTouchUnsavedDraft()
     {
         _permissions.IsGrantedAsync(NotificationsPermissions.Email.Application.Edit).Returns(false);
-        var savedDraft = new EmailLog
+        var touchedDraft = new EmailLog
         {
             Id = Guid.NewGuid(),
             ApplicationId = Guid.NewGuid(),
@@ -132,6 +132,17 @@ public class EmailComposerAccessCheckerTests
             CreatorId = _userId,
             LastModificationTime = DateTime.UtcNow
         };
+        _logs.GetAsync(touchedDraft.Id, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(touchedDraft);
+
+        (await _checker.CanEditDraftAsync(touchedDraft)).ShouldBeTrue();
+        await Should.NotThrowAsync(() => _checker.CheckDraftEditAsync(touchedDraft.Id));
+    }
+
+    [Fact]
+    public async Task Should_RequireEdit_ForOwnSavedDraft()
+    {
+        _permissions.IsGrantedAsync(NotificationsPermissions.Email.Application.Edit).Returns(false);
+        var savedDraft = CreateSavedOwnDraft();
         _logs.GetAsync(savedDraft.Id, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(savedDraft);
 
         (await _checker.CanEditDraftAsync(savedDraft)).ShouldBeFalse();
@@ -142,16 +153,24 @@ public class EmailComposerAccessCheckerTests
     public async Task Should_LetCreateDeleteOwnSavedDraft_WithDeleteDraftPermission()
     {
         _permissions.IsGrantedAsync(NotificationsPermissions.Email.Application.Edit).Returns(false);
-        var savedDraft = new EmailLog
+        var savedDraft = CreateSavedOwnDraft();
+
+        await Should.NotThrowAsync(() => _checker.CheckDraftDeleteAsync(savedDraft));
+    }
+
+    private EmailLog CreateSavedOwnDraft()
+    {
+        return new EmailLog
         {
             Id = Guid.NewGuid(),
             ApplicationId = Guid.NewGuid(),
             Status = EmailStatus.Draft,
             CreatorId = _userId,
+            ToAddress = "applicant@example.test",
+            Subject = "Subject",
+            Body = "Body",
             LastModificationTime = DateTime.UtcNow
         };
-
-        await Should.NotThrowAsync(() => _checker.CheckDraftDeleteAsync(savedDraft));
     }
 
     [Fact]
