@@ -158,6 +158,28 @@ public class EmailComposerAccessCheckerTests
         await Should.NotThrowAsync(() => _checker.CheckDraftDeleteAsync(savedDraft));
     }
 
+    [Fact]
+    public async Task Should_LetDeleteDraftAloneDeleteAnyonesDraft()
+    {
+        _permissions.IsGrantedAsync(NotificationsPermissions.Email.Application.Edit).Returns(false);
+        _permissions.IsGrantedAsync(NotificationsPermissions.Email.Application.Create).Returns(false);
+        var otherDraft = CreateSavedOwnDraft();
+        otherDraft.CreatorId = Guid.NewGuid();
+
+        await Should.NotThrowAsync(() => _checker.CheckDraftDeleteAsync(otherDraft));
+        (await _checker.GetCapabilitiesAsync(EmailOwnerTypes.Application)).CanDeleteDraft.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task Should_RequireDeleteDraftPermission_ToDeleteDraft()
+    {
+        _permissions.IsGrantedAsync(NotificationsPermissions.Email.Application.DeleteDraft).Returns(false);
+        var savedDraft = CreateSavedOwnDraft();
+
+        await Should.ThrowAsync<AbpAuthorizationException>(() => _checker.CheckDraftDeleteAsync(savedDraft));
+        (await _checker.GetCapabilitiesAsync(EmailOwnerTypes.Application)).CanDeleteDraft.ShouldBeFalse();
+    }
+
     private EmailLog CreateSavedOwnDraft()
     {
         return new EmailLog
