@@ -34,7 +34,6 @@ function initializeDraftEmailsWidget() {
         canEdit: $emailsContainer.data('can-edit') === true,
         canSend: $emailsContainer.data('can-send') === true
     };
-    const widgetUserId = String(abp.currentUser?.id || '').toLowerCase();
     // Close dropdown menus when clicking outside
     $(document).off('click.emailWidgetDropdown').on('click.emailWidgetDropdown', function (e) {
         if (!$(e.target).closest('.tinymce-menu-button, .custom-dropdown-menu').length) {
@@ -2336,8 +2335,8 @@ function initializeDraftEmailsWidget() {
     function getSelectedEmailPermissions(data) {
         const status = (data?.status || '').toString().trim().toLowerCase();
         const isDraftRecord = status === 'draft';
-        const isOwnDraft = !!data?.creatorId && String(data.creatorId).toLowerCase() === widgetUserId;
-        const canEditDraft = isDraftRecord && (capabilities.canEdit || (capabilities.canCreate && isOwnDraft));
+        // Drafts reopened from history are saved drafts; changing them needs Edit even for their creator.
+        const canEditDraft = isDraftRecord && capabilities.canEdit;
 
         return {
             canEditDraft,

@@ -3,9 +3,10 @@
 The `*.json` config files in this folder are **excluded from git** (via `.gitignore`) because they contain credentials.
 Each developer must create their own local copies from the `.example` files provided.
 
-In CI, `dev.json`/`test.json`/`uat.json`/`prod.json` are written at runtime from the `unity-cypress-config` Secret
-(synced from Vault key `GH_UGM_CYPRESS_CONFIG`) by the Cypress Job — see `cypress-job-template.yaml` in
-`tenant-gitops-d18498`.
+In CI these files are not used — `.github/workflows/cypress-e2e-runner.yml` writes the env's config to
+`cypress.env.json` instead, taken from the `CYPRESS_CONFIG_<ENV>` key of either the `UNITY_CYPRESS_CONFIG` repo secret
+(default static-IP runner) or the `unity-cypress-config` Secret synced from Vault key `GH_UGM_CYPRESS_CONFIG`
+(`runner=openshift` fallback, see `cypress-job-template.yaml` in `tenant-gitops-ce395f`).
 
 ## Setup
 

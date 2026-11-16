@@ -110,7 +110,7 @@ public class EmailComposerAccessCheckerTests
     }
 
     [Fact]
-    public async Task Should_LetCreateEditOnlyTheUsersOwnDrafts()
+    public async Task Should_LetCreateEditOnlyTheUsersOwnUnsavedDraft()
     {
         _permissions.IsGrantedAsync(NotificationsPermissions.Email.Application.Edit).Returns(false);
         var ownDraft = new EmailLog { Id = Guid.NewGuid(), ApplicationId = Guid.NewGuid(), Status = EmailStatus.Draft, CreatorId = _userId };
@@ -118,6 +118,81 @@ public class EmailComposerAccessCheckerTests
 
         (await _checker.CanEditDraftAsync(ownDraft)).ShouldBeTrue();
         (await _checker.CanEditDraftAsync(otherDraft)).ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task Should_KeepCreateAccess_WhenAttachmentChangesTouchUnsavedDraft()
+    {
+        _permissions.IsGrantedAsync(NotificationsPermissions.Email.Application.Edit).Returns(false);
+        var touchedDraft = new EmailLog
+        {
+            Id = Guid.NewGuid(),
+            ApplicationId = Guid.NewGuid(),
+            Status = EmailStatus.Draft,
+            CreatorId = _userId,
+            LastModificationTime = DateTime.UtcNow
+        };
+        _logs.GetAsync(touchedDraft.Id, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(touchedDraft);
+
+        (await _checker.CanEditDraftAsync(touchedDraft)).ShouldBeTrue();
+        await Should.NotThrowAsync(() => _checker.CheckDraftEditAsync(touchedDraft.Id));
+    }
+
+    [Fact]
+    public async Task Should_RequireEdit_ForOwnSavedDraft()
+    {
+        _permissions.IsGrantedAsync(NotificationsPermissions.Email.Application.Edit).Returns(false);
+        var savedDraft = CreateSavedOwnDraft();
+        _logs.GetAsync(savedDraft.Id, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(savedDraft);
+
+        (await _checker.CanEditDraftAsync(savedDraft)).ShouldBeFalse();
+        await Should.ThrowAsync<AbpAuthorizationException>(() => _checker.CheckDraftEditAsync(savedDraft.Id));
+    }
+
+    [Fact]
+    public async Task Should_LetCreateDeleteOwnSavedDraft_WithDeleteDraftPermission()
+    {
+        _permissions.IsGrantedAsync(NotificationsPermissions.Email.Application.Edit).Returns(false);
+        var savedDraft = CreateSavedOwnDraft();
+
+        await Should.NotThrowAsync(() => _checker.CheckDraftDeleteAsync(savedDraft));
+    }
+
+    [Fact]
+    public async Task Should_LetDeleteDraftAloneDeleteAnyonesDraft()
+    {
+        _permissions.IsGrantedAsync(NotificationsPermissions.Email.Application.Edit).Returns(false);
+        _permissions.IsGrantedAsync(NotificationsPermissions.Email.Application.Create).Returns(false);
+        var otherDraft = CreateSavedOwnDraft();
+        otherDraft.CreatorId = Guid.NewGuid();
+
+        await Should.NotThrowAsync(() => _checker.CheckDraftDeleteAsync(otherDraft));
+        (await _checker.GetCapabilitiesAsync(EmailOwnerTypes.Application)).CanDeleteDraft.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task Should_RequireDeleteDraftPermission_ToDeleteDraft()
+    {
+        _permissions.IsGrantedAsync(NotificationsPermissions.Email.Application.DeleteDraft).Returns(false);
+        var savedDraft = CreateSavedOwnDraft();
+
+        await Should.ThrowAsync<AbpAuthorizationException>(() => _checker.CheckDraftDeleteAsync(savedDraft));
+        (await _checker.GetCapabilitiesAsync(EmailOwnerTypes.Application)).CanDeleteDraft.ShouldBeFalse();
+    }
+
+    private EmailLog CreateSavedOwnDraft()
+    {
+        return new EmailLog
+        {
+            Id = Guid.NewGuid(),
+            ApplicationId = Guid.NewGuid(),
+            Status = EmailStatus.Draft,
+            CreatorId = _userId,
+            ToAddress = "applicant@example.test",
+            Subject = "Subject",
+            Body = "Body",
+            LastModificationTime = DateTime.UtcNow
+        };
     }
 
     [Fact]

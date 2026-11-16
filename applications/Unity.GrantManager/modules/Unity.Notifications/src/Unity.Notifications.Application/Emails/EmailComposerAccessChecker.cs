@@ -82,7 +82,7 @@ public class EmailComposerAccessChecker(
         return email;
     }
 
-    /// <summary>Edit rights over a draft: Edit on the owner type, or Create when the user started the draft.</summary>
+    /// <summary>Edit rights over a draft: Edit on the owner type, or Create while the user's own new draft is still unsaved.</summary>
     public async Task<EmailLog> CheckDraftEditAsync(Guid emailId)
     {
         var email = await emailLogsRepository.GetAsync(emailId);
@@ -95,17 +95,20 @@ public class EmailComposerAccessChecker(
         return email;
     }
 
+    // Create alone covers only the composer session that started the draft: once saved, the draft
+    // reopens from history and further changes need Edit, whoever created it.
     public async Task<bool> CanEditDraftAsync(EmailLog email)
     {
         var ownerType = EmailOwnerTypes.FromIds(email.ApplicantId);
         return await IsAllowedAsync(ownerType, EmailOperation.Edit)
-            || (IsCreator(email) && await IsAllowedAsync(ownerType, EmailOperation.Create));
+            || (IsCreator(email) && IsUnsaved(email) && await IsAllowedAsync(ownerType, EmailOperation.Create));
     }
 
+    // DeleteDraft stands on its own: it does not require Edit or Create on the owner type.
     public async Task CheckDraftDeleteAsync(EmailLog email)
     {
         var ownerType = EmailOwnerTypes.FromIds(email.ApplicantId);
-        if (!await IsAllowedAsync(ownerType, EmailOperation.DeleteDraft) || !await CanEditDraftAsync(email))
+        if (!await IsAllowedAsync(ownerType, EmailOperation.DeleteDraft))
         {
             throw new AbpAuthorizationException();
         }
@@ -158,7 +161,7 @@ public class EmailComposerAccessChecker(
             CanEdit = canEdit,
             CanSend = await IsAllowedAsync(ownerType, EmailOperation.Send),
             CanSchedule = await IsAllowedAsync(ownerType, EmailOperation.Schedule),
-            CanDeleteDraft = (canCreate || canEdit) && await IsAllowedAsync(ownerType, EmailOperation.DeleteDraft),
+            CanDeleteDraft = await IsAllowedAsync(ownerType, EmailOperation.DeleteDraft),
             CanCancelScheduled = await IsAllowedAsync(ownerType, EmailOperation.CancelScheduled)
         };
     }
@@ -166,6 +169,15 @@ public class EmailComposerAccessChecker(
     private bool IsCreator(EmailLog email)
     {
         return currentUser.Id.HasValue && email.CreatorId == currentUser.Id;
+    }
+
+    // InitializeDraft inserts an empty placeholder row, and Save only persists when there is a recipient.
+    // Judge by content, not LastModificationTime: attachment uploads/deletes touch that stamp before any Save.
+    private static bool IsUnsaved(EmailLog email)
+    {
+        return string.IsNullOrEmpty(email.ToAddress)
+            && string.IsNullOrEmpty(email.Subject)
+            && string.IsNullOrEmpty(email.Body);
     }
 
     // Every operation needs the module gate and the owner-type View; Schedule is additive to Send.

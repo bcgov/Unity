@@ -3,13 +3,24 @@ name: Cypress E2E — Test
 # Runs against the test environment after a successful test deployment,
 # or manually via workflow_dispatch.
 #
-# Runs Cypress inside OpenShift (d18498-tools) — see cypress-e2e-runner.yml.
+# Manual runs can pick runner=openshift to run the suite as an in-cluster Job
+# instead of on the static-IP runner group. See cypress-e2e-runner.yml for how
+# each runner works and where credentials come from.
 
 on:
   workflow_run:
     workflows: ["Test - Build & Push docker images"]
     types: [completed]
   workflow_dispatch:
+    inputs:
+      runner:
+        description: "Where Cypress runs (openshift = in-cluster Job fallback in ce395f-tools)"
+        required: false
+        type: choice
+        options:
+          - static-ip
+          - openshift
+        default: static-ip
 
 permissions:
   contents: read
@@ -22,4 +33,5 @@ jobs:
       env_name: test
       cypress_config_key: CYPRESS_CONFIG_TEST
       git_ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      runner: ${{ inputs.runner || 'static-ip' }}
     secrets: inherit

@@ -2,12 +2,11 @@ name: Cypress E2E — Dev
 
 # Auto-triggers after a successful dev deployment.
 # Can also be run manually — supply base_url to target a feature branch deployment
-# instead of the default dev environment URL.
+# instead of the default dev environment URL, and pick runner=openshift to run
+# the suite as an in-cluster Job instead of on the static-IP runner group.
 #
-# Runs Cypress inside OpenShift (d18498-tools) rather than on the GitHub-hosted
-# runner, since the app's Route is IP-allowlisted to the BC Gov network.
-# Test credentials come from Vault (GH_UGM_CYPRESS_CONFIG) via External Secrets,
-# not GitHub Actions secrets — see cypress-e2e-runner.yml.
+# See cypress-e2e-runner.yml for how each runner works and where credentials
+# come from.
 
 on:
   workflow_run:
@@ -19,6 +18,14 @@ on:
         description: "Override baseUrl (e.g. https://feature-branch.apps.gold.devops.gov.bc.ca/)"
         required: false
         type: string
+      runner:
+        description: "Where Cypress runs (openshift = in-cluster Job fallback in ce395f-tools)"
+        required: false
+        type: choice
+        options:
+          - static-ip
+          - openshift
+        default: static-ip
 
 permissions:
   contents: read
@@ -32,4 +39,5 @@ jobs:
       cypress_config_key: CYPRESS_CONFIG_DEV
       base_url: ${{ inputs.base_url || '' }}
       git_ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      runner: ${{ inputs.runner || 'static-ip' }}
     secrets: inherit

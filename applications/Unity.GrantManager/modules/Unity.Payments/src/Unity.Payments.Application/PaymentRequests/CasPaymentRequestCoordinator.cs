@@ -171,14 +171,18 @@ namespace Unity.Payments.PaymentRequests
                     // The audit log is then persisted by QueueConsumerHandler after ConsumeAsync returns.
                     await uow.CompleteAsync();
 
-                    if (previousPaymentStatus != paymentRequest.PaymentStatus || previousStatus != paymentRequest.Status)
+                    if (previousStatus != paymentRequest.Status ||
+                        !string.Equals(previousPaymentStatus ?? string.Empty,
+                            paymentRequest.PaymentStatus ?? string.Empty, StringComparison.Ordinal))
                     {
                         await localEventBus.PublishAsync(new PaymentStatusChangedEvent
                         {
                             PaymentRequestId = paymentRequest.Id,
                             ApplicationId = paymentRequest.CorrelationId,
                             Status = paymentRequest.Status,
+                            PreviousStatus = previousStatus,
                             CasPaymentStatus = paymentRequest.PaymentStatus,
+                            PreviousCasPaymentStatus = previousPaymentStatus,
                             TenantId = TenantId
                         });
                     }
