@@ -47,7 +47,7 @@ jobs:
         run: git fetch origin "$DIFF_BASE_REF" --depth=1
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           # NOTE: pick this to match whatever Node version the OpenShift
           # Cypress job image uses (defined in the separate tenant-gitops-ce395f
@@ -58,8 +58,9 @@ jobs:
           cache: "npm"
           cache-dependency-path: applications/Unity.AutoUI/package-lock.json
 
+      # The selector scripts are plain Node; no Cypress binary or install scripts needed (Sonar S6505).
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
 
       - name: Check selector registry is up to date
         run: |

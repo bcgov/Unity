@@ -164,6 +164,32 @@ public class PageAccessTests
         called.ShouldBeTrue();
     }
 
+    [Theory]
+    [InlineData("/GrantApplications")]
+    [InlineData("/GrantApplications/Index")]
+    public async Task Page_WithOnboardingAccess_ShouldDenyApplicationList(string pagePath)
+    {
+        _menu.AddItem(new ApplicationMenuItem(TenantManagementMenuNames.Onboarding, "Onboarding", "~/TenantManagement/Onboarding"));
+
+        var (context, called) = await ExecuteFilterAsync(pagePath);
+
+        context.Result.ShouldBeOfType<LocalRedirectResult>().Url.ShouldBe(UserNavigationService.NoAccessUrl);
+        called.ShouldBeFalse();
+    }
+
+    [Theory]
+    [InlineData("/GrantApplications/Index")]
+    [InlineData("/GrantApplications/Details")]
+    public async Task Page_WithApplicationAccess_ShouldOpenListAndDetails(string pagePath)
+    {
+        _menu.AddItem(new ApplicationMenuItem(GrantManagerMenus.Applications, "Applications", "~/GrantApplications"));
+
+        var (context, called) = await ExecuteFilterAsync(pagePath);
+
+        context.Result.ShouldBeNull();
+        called.ShouldBeTrue();
+    }
+
     [Fact]
     public async Task Page_WithOnboardingAccess_ShouldStillDenyOtherGrantAreas()
     {

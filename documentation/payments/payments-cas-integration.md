@@ -132,6 +132,8 @@ CasPaymentRequestCoordinator.UpdatePaymentRequestStatus(tenantId, paymentRequest
 
 The unit of work is completed inside the method so the entity changes are collected into the audit log that `QueueConsumerHandler` persists after `ConsumeAsync` returns.
 
+When reconciliation changes `PaymentStatus`, the coordinator publishes `PaymentStatusChangedEvent` with the previous and current workflow and CAS payment statuses. Missing CAS payment statuses (`null` and empty) are equivalent and do not produce a status-change event. Event notification plans match only the status that changed, so a CAS update does not repeat a `Submitted` or `FSB` workflow notification.
+
 ## What the statuses mean together
 
 `PaymentRequest.Status` and the CAS fields move independently. A typical successful life cycle:

@@ -6,7 +6,7 @@ services:
   postgres:
     image: pgvector/pgvector:pg17
     environment:
-      POSTGRES_DB: ${DB_NAME:-unity_ai}
+      POSTGRES_DB: ${DB_NAME:-UnityAI}
       POSTGRES_USER: ${DB_USER:-unity_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
@@ -16,7 +16,7 @@ services:
     networks:
       - unity-ai-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-unity_user} -d ${DB_NAME:-unity_ai}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-unity_user} -d ${DB_NAME:-UnityAI}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -51,7 +51,7 @@ services:
 
       # Database config
       - DB_HOST=postgres
-      - DB_NAME=${DB_NAME:-unity_ai}
+      - DB_NAME=${DB_NAME:-UnityAI}
       - DB_USER=${DB_USER:-unity_user}
       - DB_PASSWORD=${DB_PASSWORD}
     depends_on:

@@ -115,7 +115,7 @@ MB_URL=https://your-metabase-instance.com
 MB_MAP_REGION_UUID=your_metabase_regional_districts_uuid
 
 # Database — shared by app and postgres container
-DB_NAME=unity_ai
+DB_NAME=UnityAI
 DB_USER=unity_user
 DB_PASSWORD=your_secure_password
 ```
@@ -181,7 +181,7 @@ docker-compose logs -f reporting
 docker-compose down
 
 # Access database
-docker-compose exec postgres psql -U unity_user -d unity_ai
+docker-compose exec postgres psql -U unity_user -d UnityAI
 ```
 
 ## Deployment

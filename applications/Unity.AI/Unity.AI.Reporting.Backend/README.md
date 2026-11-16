@@ -74,7 +74,7 @@ MB_MAP_REGION_UUID=your_metabase_regional_districts_uuid
 
 # Database — port is hardcoded to 5432
 DB_HOST=postgres
-DB_NAME=unity_ai
+DB_NAME=UnityAI
 DB_USER=unity_user
 DB_PASSWORD=your_secure_password
 ```
