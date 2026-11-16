@@ -8,6 +8,8 @@ using Shouldly;
 using Microsoft.Extensions.Logging.Abstractions;
 using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Integrations.Cas;
+using Unity.Payments.Enums;
+using Unity.Payments.Events;
 using Unity.Notifications.Integrations.RabbitMQ;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Data;
@@ -122,9 +124,72 @@ public class CasPaymentRequestCoordinatorTests
         _ = unitOfWork.Received(3).CompleteAsync();
     }
 
+    [Theory]
+    [InlineData(PaymentRequestStatus.FSB, null)]
+    [InlineData(PaymentRequestStatus.FSB, "")]
+    [InlineData(PaymentRequestStatus.Submitted, null)]
+    [InlineData(PaymentRequestStatus.Submitted, "")]
+    public async Task Should_NotPublishStatusChange_WhenReconciliationOnlyNormalizesMissingCasStatus(
+        PaymentRequestStatus workflowStatus,
+        string? paymentStatus)
+    {
+        var paymentRequest = CreatePaymentRequest(paymentStatus: paymentStatus);
+        paymentRequest.SetPaymentRequestStatus(workflowStatus);
+        var repository = Substitute.For<IPaymentRequestRepository>();
+        repository.GetAsync(PaymentRequestId).Returns(paymentRequest);
+        var unitOfWork = Substitute.For<IUnitOfWork>();
+        unitOfWork.CompleteAsync().Returns(Task.CompletedTask);
+        var eventBus = Substitute.For<ILocalEventBus>();
+        var coordinator = CreateCoordinator(repository, unitOfWork, eventBus);
+
+        var result = await coordinator.UpdatePaymentRequestStatus(TenantId, PaymentRequestId,
+            new CasPaymentSearchResult { InvoiceStatus = "NotFound" });
+
+        result!.Status.ShouldBe(workflowStatus);
+        result.PaymentStatus.ShouldBeEmpty();
+        result.InvoiceStatus.ShouldBe("NotFound");
+        await eventBus.DidNotReceive().PublishAsync(Arg.Any<PaymentStatusChangedEvent>(), Arg.Any<bool>());
+    }
+
+    [Theory]
+    [InlineData(PaymentRequestStatus.FSB, null)]
+    [InlineData(PaymentRequestStatus.FSB, "Not Paid")]
+    [InlineData(PaymentRequestStatus.Submitted, null)]
+    [InlineData(PaymentRequestStatus.Submitted, "Not Paid")]
+    public async Task Should_PublishPreviousStatuses_OnlyWhenCasStatusChanges(
+        PaymentRequestStatus workflowStatus,
+        string? previousCasPaymentStatus)
+    {
+        var paymentRequest = CreatePaymentRequest(paymentStatus: previousCasPaymentStatus);
+        paymentRequest.SetPaymentRequestStatus(workflowStatus);
+        var repository = Substitute.For<IPaymentRequestRepository>();
+        repository.GetAsync(PaymentRequestId).Returns(paymentRequest);
+        var unitOfWork = Substitute.For<IUnitOfWork>();
+        unitOfWork.CompleteAsync().Returns(Task.CompletedTask);
+        var eventBus = Substitute.For<ILocalEventBus>();
+        var coordinator = CreateCoordinator(repository, unitOfWork, eventBus);
+        var casResult = new CasPaymentSearchResult
+        {
+            InvoiceStatus = "Validated",
+            PaymentStatus = "Fully Paid"
+        };
+
+        await coordinator.UpdatePaymentRequestStatus(TenantId, PaymentRequestId, casResult);
+        await coordinator.UpdatePaymentRequestStatus(TenantId, PaymentRequestId, casResult);
+
+        await eventBus.Received(1).PublishAsync(Arg.Is<PaymentStatusChangedEvent>(e =>
+            e.PaymentRequestId == PaymentRequestId &&
+            e.TenantId == TenantId &&
+            e.PreviousStatus == workflowStatus &&
+            e.Status == workflowStatus &&
+            e.PreviousCasPaymentStatus == previousCasPaymentStatus &&
+            e.CasPaymentStatus == "Fully Paid"), Arg.Any<bool>());
+    }
+
     private static CasPaymentRequestCoordinator CreateCoordinator(
         IPaymentRequestRepository repository,
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        ILocalEventBus? eventBus = null)
     {
         var unitOfWorkManager = Substitute.For<IUnitOfWorkManager>();
         unitOfWorkManager.Begin(Arg.Any<AbpUnitOfWorkOptions>(), Arg.Any<bool>()).Returns(unitOfWork);
@@ -135,7 +200,7 @@ public class CasPaymentRequestCoordinatorTests
             unitOfWorkManager: unitOfWorkManager,
             tenantRepository: Substitute.For<ITenantRepository>(),
             currentTenant: Substitute.For<ICurrentTenant>(),
-            localEventBus: Substitute.For<ILocalEventBus>());
+            localEventBus: eventBus ?? Substitute.For<ILocalEventBus>());
 
         var lazyServiceProvider = Substitute.For<IAbpLazyServiceProvider>();
         lazyServiceProvider.LazyGetService<ILogger>(Arg.Any<Func<IServiceProvider, ILogger>>())
