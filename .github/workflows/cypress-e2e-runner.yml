@@ -2,20 +2,27 @@ name: Cypress E2E (runner)
 
 # Shared job called by cypress-dev/test/uat/prod.yml.
 #
-# Unity Grant Manager Route is IP-allowlisted to the BC Gov network, which
-# GitHub-hosted runners can't reach. This GitHub job launches an OpenShift Job
-# (from the unity-cypress-job Template in ce395f-tools) that runs the existing
-# Unity.AutoUI Cypress suite from inside the cluster, waits for it to finish,
-# and pulls the logs/screenshots back into this Actions run.
+# The Unity Grant Manager Route is IP-allowlisted to the BC Gov network, which
+# standard GitHub-hosted runners can't reach. Two ways to get past that,
+# selected by the `runner` input:
 #
-# The Job pulls credentials from the unity-cypress-config Secret in ce395f-tools, 
-# synced from Vault (GH_UGM_CYPRESS_CONFIG) via External Secrets.
+#   static-ip (default) — runs the Unity.AutoUI suite directly on the
+#     "Larger Runners - OpenShift Static-IP" runner group, whose egress IPs are
+#     on the Route allowlist. Credentials come from the UNITY_CYPRESS_CONFIG
+#     repo secret.
 #
-# OpenShift auth reuses the pipeline ServiceAccount (ce395f-tools), which already 
-# holds ClusterRole/edit this covers everything the job needs (templates, 
-# processedtemplates, jobs, pods/log, pods/exec), no additional RBAC required. 
-# 
-# Token is CYPRESS_OPENSHIFT_TOKEN and its cluster is CYPRESS_OPENSHIFT_CLUSTER.
+#   openshift — launches an OpenShift Job (from the unity-cypress-job Template
+#     in ce395f-tools, defined in tenant-gitops-ce395f) that runs the suite from
+#     inside the cluster, waits for it to finish, and pulls the logs/screenshots
+#     back into this Actions run. Credentials come from the unity-cypress-config
+#     Secret in ce395f-tools, synced from Vault (GH_UGM_CYPRESS_CONFIG) via
+#     External Secrets. OpenShift auth reuses the pipeline ServiceAccount
+#     (ce395f-tools, ClusterRole/edit) via CYPRESS_OPENSHIFT_TOKEN on
+#     CYPRESS_OPENSHIFT_CLUSTER. Kept as a manual fallback.
+#
+# Both modes use the same credential shape: one JSON object keyed by
+# cypress_config_key (CYPRESS_CONFIG_DEV/TEST/UAT/PROD), each value being that
+# env's config — UNITY_CYPRESS_CONFIG mirrors the Vault secret's keys.
 
 on:
   workflow_call:
@@ -25,7 +32,7 @@ on:
         required: true
         type: string
       cypress_config_key:
-        description: "Key in the unity-cypress-config Secret for this env (e.g. CYPRESS_CONFIG_DEV)"
+        description: "Key in UNITY_CYPRESS_CONFIG / the unity-cypress-config Secret for this env (e.g. CYPRESS_CONFIG_DEV)"
         required: true
         type: string
       base_url:
@@ -37,6 +44,11 @@ on:
         description: "Branch/tag/SHA of bcgov/Unity to check out — must be the triggering commit, not github.sha (workflow_run events set github.sha to the default branch, not the triggering branch)"
         required: true
         type: string
+      runner:
+        description: "Where Cypress runs: static-ip (GitHub static-IP runner group) | openshift (Job in ce395f-tools)"
+        required: false
+        type: string
+        default: static-ip
 
 permissions:
   contents: read
@@ -44,10 +56,94 @@ permissions:
 env:
   TOOLS_NAMESPACE: ce395f-tools
   JOB_TIMEOUT_SECONDS: 1200
+  # Same spec selection as the OpenShift Job template (cypress-job-template.yaml).
+  CYPRESS_SPEC: "cypress/e2e/!(chefsdata.cy.ts|ApplicationsActionBar.cy.ts|basicEmail).cy.ts"
 
 jobs:
   cypress:
-    name: Cypress E2E — ${{ inputs.env_name }}
+    name: Cypress E2E — ${{ inputs.env_name }} (static-ip)
+    if: ${{ inputs.runner != 'openshift' }}
+    runs-on:
+      group: Larger Runners - OpenShift Static-IP
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: applications/Unity.AutoUI
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.git_ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          # Cypress ^15.17.0 needs Node 20.19+ / 22.12+ / 24+.
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: applications/Unity.AutoUI/package-lock.json
+
+      - name: Write environment config
+        # UNITY_CYPRESS_CONFIG holds every env's config keyed by
+        # cypress_config_key; extract this env's entry into cypress.env.json
+        # (Cypress's auto-loaded env file — the test code reads credentials via
+        # Cypress.env()), same as the OpenShift Job does. A value may be stored
+        # as a nested object or as a JSON string; both are accepted.
+        # Every non-URL string leaf is masked individually, since GitHub only
+        # masks the secret's raw text (per line), not values jq re-serializes.
+        # URLs are left readable so the logs still show which env was hit.
+        run: |
+          set -euo pipefail
+          if [ -z "$UNITY_CYPRESS_CONFIG" ]; then
+            echo "::error::UNITY_CYPRESS_CONFIG secret is not set" >&2
+            exit 1
+          fi
+          ENV_CONFIG=$(jq -c --arg k "$CONFIG_KEY" '.[$k] // empty | if type == "string" then fromjson else . end' <<< "$UNITY_CYPRESS_CONFIG")
+          if [ -z "$ENV_CONFIG" ]; then
+            echo "::error::Key $CONFIG_KEY not found in UNITY_CYPRESS_CONFIG" >&2
+            exit 1
+          fi
+          jq -r '.. | strings | select(length > 0 and (test("^https?://") | not))' <<< "$ENV_CONFIG" | while IFS= read -r v; do
+            echo "::add-mask::$v"
+          done
+          echo "$ENV_CONFIG" > cypress.env.json
+        env:
+          UNITY_CYPRESS_CONFIG: ${{ secrets.UNITY_CYPRESS_CONFIG }}
+          CONFIG_KEY: ${{ inputs.cypress_config_key }}
+
+      - name: Install dependencies
+        # --ignore-scripts blocks dependency lifecycle scripts (Sonar githubactions:S6505).
+        # Cypress downloads its binary in postinstall, so install it explicitly afterwards.
+        run: |
+          npm ci --ignore-scripts
+          npx cypress install
+
+      - name: Run Cypress tests
+        run: |
+          if [ -n "$BASE_URL" ]; then
+            npx cypress run --spec "$CYPRESS_SPEC" --config baseUrl="$BASE_URL"
+          else
+            npx cypress run --spec "$CYPRESS_SPEC"
+          fi
+        env:
+          BASE_URL: ${{ inputs.base_url }}
+
+      - name: Upload screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: cypress-screenshots-${{ inputs.env_name }}-${{ github.run_number }}
+          path: applications/Unity.AutoUI/cypress/screenshots
+          if-no-files-found: ignore
+
+      - name: Remove environment config
+        if: always()
+        run: rm -f cypress.env.json
+
+  cypress-openshift:
+    name: Cypress E2E — ${{ inputs.env_name }} (openshift)
+    if: ${{ inputs.runner == 'openshift' }}
     runs-on: ubuntu-latest
     env:
       OC_CLUSTER: ${{ vars.CYPRESS_OPENSHIFT_CLUSTER }}
