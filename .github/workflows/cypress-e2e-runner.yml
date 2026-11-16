@@ -90,9 +90,10 @@ jobs:
         # (Cypress's auto-loaded env file — the test code reads credentials via
         # Cypress.env()), same as the OpenShift Job does. A value may be stored
         # as a nested object or as a JSON string; both are accepted.
-        # Every non-URL string leaf is masked individually, since GitHub only
-        # masks the secret's raw text (per line), not values jq re-serializes.
-        # URLs are left readable so the logs still show which env was hit.
+        # Every string leaf is masked individually, since GitHub only masks the
+        # secret's raw text (per line), not values jq re-serializes. URLs and the
+        # env-name keys (environment, CHEFS_ENV) are left unmasked — masking a
+        # value like "dev" would turn every "dev" in the log into ***.
         run: |
           set -euo pipefail
           if [ -z "$UNITY_CYPRESS_CONFIG" ]; then
@@ -104,7 +105,7 @@ jobs:
             echo "::error::Key $CONFIG_KEY not found in UNITY_CYPRESS_CONFIG" >&2
             exit 1
           fi
-          jq -r '.. | strings | select(length > 0 and (test("^https?://") | not))' <<< "$ENV_CONFIG" | while IFS= read -r v; do
+          jq -r 'del(.environment, .CHEFS_ENV) | .. | strings | select(length > 0 and (test("^https?://") | not))' <<< "$ENV_CONFIG" | while IFS= read -r v; do
             echo "::add-mask::$v"
           done
           echo "$ENV_CONFIG" > cypress.env.json
