@@ -79,6 +79,9 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             //-- FUNDING AGREEMENT PERMISSIONS
             grantApplicationPermissionsGroup.AddApplication_FundingAgreement_Permissions();
 
+            //-- CUSTOM FIELDS PERMISSIONS
+            grantApplicationPermissionsGroup.AddApplication_Custom_Permissions();
+
             var settingManagement = context.GetGroup(SettingManagementPermissions.GroupName);
             settingManagement.AddPermission(UnitySettingManagementPermissions.UserInterface, L("Permission:UnitySettingManagementPermissions.UserInterface"));
             settingManagement.AddPermission(UnitySettingManagementPermissions.BackgroundJobSettings, L("Permission:UnitySettingManagementPermissions.BackgroundJobs"));
@@ -174,6 +177,19 @@ namespace Unity.GrantManager.Permissions.GrantApplications
 
             var upx_Funding_Agreement                           = upx_Funding.AddUnityChild(UnitySelector.Funding.Agreement.Default);
             var upx_Funding_Agreement_Update                    = upx_Funding_Agreement.AddUnityChild(UnitySelector.Funding.Agreement.Update);
+            #endregion
+        }
+
+        public static void AddApplication_Custom_Permissions(this PermissionGroupDefinition grantApplicationPermissionsGroup)
+        {
+            #region CUSTOM FIELDS GRANULAR PERMISSIONS
+            // Custom -> read access to custom fields (from Custom Fields mapping) for all forms
+            //   Edit custom fields in the existing tab  -> fields anchored inside built-in tabs
+            //   Edit custom fields in the solitary tab  -> fields in their own standalone custom tab
+            var upx_Custom                                      = grantApplicationPermissionsGroup.AddPermission(UnitySelector.Custom.Default, L(UnitySelector.Custom.Default));
+
+            var upx_Custom_ExistingTab_Update                   = upx_Custom.AddUnityChild(UnitySelector.Custom.ExistingTab.Update);
+            var upx_Custom_SolitaryTab_Update                   = upx_Custom.AddUnityChild(UnitySelector.Custom.SolitaryTab.Update);
             #endregion
         }
 
