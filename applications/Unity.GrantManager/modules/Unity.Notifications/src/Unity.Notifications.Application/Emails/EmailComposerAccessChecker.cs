@@ -104,12 +104,11 @@ public class EmailComposerAccessChecker(
             || (IsCreator(email) && IsUnsaved(email) && await IsAllowedAsync(ownerType, EmailOperation.Create));
     }
 
+    // DeleteDraft stands on its own: it does not require Edit or Create on the owner type.
     public async Task CheckDraftDeleteAsync(EmailLog email)
     {
         var ownerType = EmailOwnerTypes.FromIds(email.ApplicantId);
-        var canManageDraft = await IsAllowedAsync(ownerType, EmailOperation.Edit)
-            || (IsCreator(email) && await IsAllowedAsync(ownerType, EmailOperation.Create));
-        if (!await IsAllowedAsync(ownerType, EmailOperation.DeleteDraft) || !canManageDraft)
+        if (!await IsAllowedAsync(ownerType, EmailOperation.DeleteDraft))
         {
             throw new AbpAuthorizationException();
         }
@@ -162,7 +161,7 @@ public class EmailComposerAccessChecker(
             CanEdit = canEdit,
             CanSend = await IsAllowedAsync(ownerType, EmailOperation.Send),
             CanSchedule = await IsAllowedAsync(ownerType, EmailOperation.Schedule),
-            CanDeleteDraft = (canCreate || canEdit) && await IsAllowedAsync(ownerType, EmailOperation.DeleteDraft),
+            CanDeleteDraft = await IsAllowedAsync(ownerType, EmailOperation.DeleteDraft),
             CanCancelScheduled = await IsAllowedAsync(ownerType, EmailOperation.CancelScheduled)
         };
     }

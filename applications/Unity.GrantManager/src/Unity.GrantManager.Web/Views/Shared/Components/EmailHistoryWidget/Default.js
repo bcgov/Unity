@@ -44,15 +44,12 @@
         || $('#EmailHistoryTable').data('enable-email-delay') === 'true';
     // Server-computed capabilities; the server still enforces every action.
     const historyCapabilities = {
-        canCreate: $('#EmailHistoryTable').data('can-create') === true,
-        canEdit: $('#EmailHistoryTable').data('can-edit') === true,
         canDeleteDraft: $('#EmailHistoryTable').data('can-delete-draft') === true,
         canCancelScheduled: $('#EmailHistoryTable').data('can-cancel-scheduled') === true
     };
-    const historyUserId = String(abp.currentUser?.id || '').toLowerCase();
-    const canDeleteDraftRow = function (row) {
-        const isOwnDraft = !!row.creatorId && String(row.creatorId).toLowerCase() === historyUserId;
-        return historyCapabilities.canDeleteDraft && (historyCapabilities.canEdit || (historyCapabilities.canCreate && isOwnDraft));
+    // Delete Draft is independent of Edit/Create, so it applies to every draft row.
+    const canDeleteDraftRow = function () {
+        return historyCapabilities.canDeleteDraft;
     };
 
     let emailHistoryDataTable = $('#EmailHistoryTable').DataTable(
