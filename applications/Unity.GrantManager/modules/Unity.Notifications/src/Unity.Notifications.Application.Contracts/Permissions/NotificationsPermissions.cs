@@ -53,6 +53,12 @@ public static class NotificationsPermissions
         public const string View = "Notifications.NotificationList.View";
     }
 
+    public static bool IsIndividualSchedulingPermission(string name)
+    {
+        return name is Email.Application.Schedule or Email.Application.CancelScheduled
+            or Email.Applicant.Schedule or Email.Applicant.CancelScheduled;
+    }
+
     public static string[] GetAll()
     {
         return ReflectionHelper.GetPublicConstantsRecursively(typeof(NotificationsPermissions));

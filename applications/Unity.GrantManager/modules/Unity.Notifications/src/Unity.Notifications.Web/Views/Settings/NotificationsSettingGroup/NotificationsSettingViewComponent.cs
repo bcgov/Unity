@@ -6,6 +6,8 @@ using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Widgets;
 using Volo.Abp.Settings;
 using Microsoft.Extensions.Configuration;
+using Unity.Notifications.Features;
+using Volo.Abp.Features;
 namespace Unity.Notifications.Web.Views.Settings.NotificationsSettingGroup;
 
 [Widget(
@@ -14,7 +16,8 @@ namespace Unity.Notifications.Web.Views.Settings.NotificationsSettingGroup;
     AutoInitialize = true
 )]
 public class NotificationsSettingViewComponent(ISettingProvider settingProvider,  
-                                               IConfiguration configuration) : AbpViewComponent
+                                               IConfiguration configuration,
+                                               IFeatureChecker featureChecker) : AbpViewComponent
 {
     public virtual async Task<IViewComponentResult> InvokeAsync()
     {
@@ -27,6 +30,7 @@ public class NotificationsSettingViewComponent(ISettingProvider settingProvider,
         var model = new NotificationsSettingViewModel
         {
             MaximumRetryAttempts = maximumRetryAttempts,
+            IsIndividualScheduledNotificationEnabled = await featureChecker.IsEnabledAsync(NotificationsFeatureConsts.IndividualScheduledNotification),
             EnableEmailDelay = string.Equals(
                 await settingProvider.GetOrNullAsync(Notifications.Settings.NotificationsSettings.Mailing.EnableEmailDelay),
                 "true", System.StringComparison.OrdinalIgnoreCase),
