@@ -50,7 +50,7 @@ Adds a second entry point to Notification Logs at order 90 in `StandardMenus.Use
 |Field|Source|Editable|
 |---|---|---|
 |`MaximumRetryAttempts`|`EmailMaxRetryAttempts` setting, `TryParse` with fallback `3`, `[MaxValue(10)]`|Yes|
-|`EnableEmailDelay`|`EnableEmailDelay` setting|Yes|
+|`EnableEmailDelay`|`EnableEmailDelay` setting|Visible and editable only when `Unity.Notifications.IndividualScheduledNotification` is enabled; its stored value is preserved while hidden.|
 |`AllowedFileTypes`|`S3:AllowedFileTypes` configuration|Read-only display|
 |`MaxFileSize`|`S3:MaxFileSize`|Read-only display|
 |`EmailAttachmentMaxFileSize`|`S3:EmailAttachmentMaxFileSize`|Read-only display|
@@ -79,7 +79,7 @@ These are in `src/Unity.GrantManager.Web/`, not in this module, but they are the
 
 |Surface|What it does|Gating|
 |---|---|---|
-|`Views/Shared/Components/EmailsWidget/`|Shared composer for Application and Applicant details, paired with `EmailHistoryWidget`. Application To defaults to `ApplicantAgent.Email`; Applicant To defaults to the primary contact shown in Applicant Contacts. Lists only templates of the matching type. Scheduling requires `EnableEmailDelay` and the Schedule permission.|`Unity.Notifications` feature, `Notifications.Email` to view, `.Send` to compose; Applicant details also requires Applicant access|
+|`Views/Shared/Components/EmailsWidget/`|Shared composer for Application and Applicant details, paired with `EmailHistoryWidget`. Application To defaults to `ApplicantAgent.Email`; Applicant To defaults to the primary contact shown in Applicant Contacts. Lists only templates of the matching type. Scheduling requires `Unity.Notifications.IndividualScheduledNotification`, `EnableEmailDelay`, and the applicable Schedule/Send permissions. Disabling the feature removes the scheduling menu and modal, hides the Scheduled Send history column and cancellation controls, and denies scheduling/cancellation APIs. Existing history remains visible.|`Unity.Notifications` feature, `Notifications.Email` to view, `.Send` to compose; Applicant details also requires Applicant access|
 |`Views/Shared/Components/Notifications/Default.cshtml`|The form-level **Scheduled & Event Based Notifications** table, with Create/Edit/Cancel actions.|`Notifications.Form.Email.Schedule.Create` for Create/Edit, `.Cancel` for Cancel|
 |`Views/Shared/Components/ActionBar/Default.cshtml`|The bulk **Send Email Notification** button and dropdown on the applications list.|`Unity.Notifications` feature **and** `Notifications.Email.Application.SendBulk` **and** the Application email View/Create/Send permissions|
 |`Controllers/NotificationsController` (`/Notifications/EmailModal`)|Renders the read-only email detail modal opened from the Notification List. Fetches history for the application and picks the single matching email; returns `404` if it is not there.|`Notifications.NotificationList.View`|

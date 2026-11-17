@@ -6,11 +6,13 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Unity.GrantManager.Notifications;
 using Unity.Notifications.Emails;
+using Unity.Notifications.Features;
 using Unity.Notifications.Permissions;
 using Unity.Notifications.Settings;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
+using Volo.Abp.Features;
 using Volo.Abp.SettingManagement;
 using Volo.Abp.Users;
 
@@ -25,7 +27,8 @@ public class EmailNotificationService(
         ISettingManager settingManager,
         CommentNotificationService commentNotificationService,
         EmailComposerAccessChecker emailAccessChecker,
-        IEmailLogsRepository emailLogsRepository) : ApplicationService, IEmailNotificationService
+        IEmailLogsRepository emailLogsRepository,
+        IFeatureChecker featureChecker) : ApplicationService, IEmailNotificationService
 {
 
     [Authorize(NotificationsPermissions.Email.Default)]
@@ -218,7 +221,11 @@ public class EmailNotificationService(
     public async Task UpdateSettings(NotificationsSettingsDto settingsDto)
     {
         await UpdateTenantSettings(NotificationsSettings.Mailing.EmailMaxRetryAttempts, settingsDto.MaximumRetryAttempts);
-        await settingManager.SetForCurrentTenantAsync(NotificationsSettings.Mailing.EnableEmailDelay, settingsDto.EnableEmailDelay ? "true" : "false");
+        // The checkbox is absent when the feature is disabled; preserve its stored value.
+        if (await featureChecker.IsEnabledAsync(NotificationsFeatureConsts.IndividualScheduledNotification))
+        {
+            await settingManager.SetForCurrentTenantAsync(NotificationsSettings.Mailing.EnableEmailDelay, settingsDto.EnableEmailDelay ? "true" : "false");
+        }
     }
 
     private async Task UpdateTenantSettings(string settingKey, string valueString)

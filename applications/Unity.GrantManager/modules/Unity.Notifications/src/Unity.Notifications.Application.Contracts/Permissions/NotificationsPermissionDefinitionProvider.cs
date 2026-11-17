@@ -1,5 +1,7 @@
-﻿using Unity.Notifications.Localization;
+﻿using Unity.Notifications.Features;
+using Unity.Notifications.Localization;
 using Volo.Abp.Authorization.Permissions;
+using Volo.Abp.Features;
 using Volo.Abp.Localization;
 using Volo.Abp.SettingManagement;
 
@@ -82,7 +84,11 @@ public static class EmailPermissionDefinitionExtensions
         var owner = email.AddUnityChild(view);
         foreach (var operation in operations)
         {
-            owner.AddUnityChild(operation);
+            var permission = owner.AddUnityChild(operation);
+            if (NotificationsPermissions.IsIndividualSchedulingPermission(operation))
+            {
+                permission.RequireFeatures(NotificationsFeatureConsts.IndividualScheduledNotification);
+            }
         }
     }
     public static PermissionDefinition AddUnityChild(this PermissionDefinition parent, string name)
