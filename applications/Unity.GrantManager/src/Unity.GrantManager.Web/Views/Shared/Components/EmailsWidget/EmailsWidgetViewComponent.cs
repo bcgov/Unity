@@ -9,6 +9,8 @@ using Unity.GrantManager.ApplicantProfile;
 using Unity.Notifications.Emails;
 using Volo.Abp.Settings;
 using Unity.Notifications.Settings;
+using Unity.Notifications.Features;
+using Volo.Abp.Features;
 using System.Threading.Tasks;
 using Unity.Notifications.Templates;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -21,7 +23,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
         ScriptTypes = [typeof( EmailsWidgetScriptBundleContributor)],
         StyleTypes = [typeof( EmailsWidgetStyleBundleContributor)],
         AutoInitialize = true)]
-    public class EmailsWidgetViewComponent(ISettingProvider settingProvider, IApplicationRepository applicationRepository, ITemplateService templateService, IApplicantContactQueryService contactQueryService, EmailComposerAccessChecker emailAccessChecker) : AbpViewComponent
+    public class EmailsWidgetViewComponent(ISettingProvider settingProvider, IApplicationRepository applicationRepository, ITemplateService templateService, IApplicantContactQueryService contactQueryService, EmailComposerAccessChecker emailAccessChecker, IFeatureChecker featureChecker) : AbpViewComponent
     {
        
         public async Task<IViewComponentResult> InvokeAsync(Guid applicationId, Guid currentUserId, bool noDraftPreviewMode = false, Guid applicantId = default)
@@ -47,9 +49,10 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.EmailsWidget
             }
 
             var defaultFromAddress = await settingProvider.GetOrNullAsync(NotificationsSettings.Mailing.DefaultFromAddress);
-            var enableEmailDelay = string.Equals(
-                await settingProvider.GetOrNullAsync(NotificationsSettings.Mailing.EnableEmailDelay),
-                "true", StringComparison.OrdinalIgnoreCase);
+            var enableEmailDelay = await featureChecker.IsEnabledAsync(NotificationsFeatureConsts.IndividualScheduledNotification)
+                && string.Equals(
+                    await settingProvider.GetOrNullAsync(NotificationsSettings.Mailing.EnableEmailDelay),
+                    "true", StringComparison.OrdinalIgnoreCase);
 
             EmailsWidgetViewModel model = new()
             {

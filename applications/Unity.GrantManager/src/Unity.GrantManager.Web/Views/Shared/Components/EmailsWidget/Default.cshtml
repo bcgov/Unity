@@ -108,13 +108,16 @@
                                 Send
                             </button>
                         
-                            <button id="btn-send-dropdown" type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" abp-if="@enableScheduleSend">
-                                <i class="fa-solid fa-chevron-down"></i>
-                            </button>
-                            <ul class="dropdown-menu" aria-labelledby="btn-send-dropdown">
-                                <li><a class="dropdown-item btn-send-menu" href="#">Send</a></li>
-                                <li><a class="dropdown-item btn-schedule-send-menu" href="#">Schedule Send</a></li>
-                            </ul>
+                            @if (enableScheduleSend)
+                            {
+                                <button id="btn-send-dropdown" type="button" class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fa-solid fa-chevron-down"></i>
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="btn-send-dropdown">
+                                    <li><a class="dropdown-item btn-send-menu" href="#">Send</a></li>
+                                    <li><a class="dropdown-item btn-schedule-send-menu" href="#">Schedule Send</a></li>
+                                </ul>
+                            }
                         </div>                    
 
                         <!-- Other Buttons (Right) -->
@@ -237,6 +240,8 @@
 
     </form>
 
+@if (enableScheduleSend)
+{
 <!-- Schedule Send Modal -->
 <div id="schedule-modal-backdrop"></div>
 <div id="schedule-send-modal">
@@ -294,6 +299,7 @@
         <button type="button" id="btn-schedule-cancel" class="btn btn-secondary btn-sm">Cancel</button>        
     </div>
 </div>
+}
 
 </div>
 

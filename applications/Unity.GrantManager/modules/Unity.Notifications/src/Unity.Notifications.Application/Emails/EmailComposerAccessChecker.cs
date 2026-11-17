@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.Modules.Shared;
+using Unity.Notifications.Features;
 using Unity.Notifications.Permissions;
 using Unity.Notifications.Settings;
 using Unity.Notifications.Templates;
@@ -194,6 +195,12 @@ public class EmailComposerAccessChecker(
         if (operation == EmailOperation.View)
         {
             return true;
+        }
+
+        if ((operation is EmailOperation.Schedule or EmailOperation.CancelScheduled)
+            && !await featureChecker.IsEnabledAsync(NotificationsFeatureConsts.IndividualScheduledNotification))
+        {
+            return false;
         }
 
         if (operation == EmailOperation.Schedule && !await permissionChecker.IsGrantedAsync(EmailPermissionMap.Get(ownerType, EmailOperation.Send)))

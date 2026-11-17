@@ -6,7 +6,9 @@ using Shouldly;
 using Unity.GrantManager.Applications;
 using Unity.Modules.Shared;
 using Unity.Notifications.Emails;
+using Unity.Notifications.Features;
 using Unity.Notifications.Permissions;
+using Unity.Notifications.Settings;
 using Unity.Notifications.Templates;
 using Volo.Abp;
 using Volo.Abp.Authorization;
@@ -27,6 +29,7 @@ public class EmailComposerAccessCheckerTests
     private readonly IApplicationRepository _applications = Substitute.For<IApplicationRepository>();
     private readonly IPermissionChecker _permissions = Substitute.For<IPermissionChecker>();
     private readonly IFeatureChecker _features = Substitute.For<IFeatureChecker>();
+    private readonly ISettingProvider _settings = Substitute.For<ISettingProvider>();
     private readonly ICurrentUser _currentUser = Substitute.For<ICurrentUser>();
     private readonly Guid _userId = Guid.NewGuid();
     private readonly EmailComposerAccessChecker _checker;
@@ -34,10 +37,12 @@ public class EmailComposerAccessCheckerTests
     public EmailComposerAccessCheckerTests()
     {
         _features.IsEnabledAsync("Unity.Notifications").Returns(true);
+        _features.IsEnabledAsync(NotificationsFeatureConsts.IndividualScheduledNotification).Returns(true);
+        _settings.GetOrNullAsync(NotificationsSettings.Mailing.EnableEmailDelay).Returns("true");
         _permissions.IsGrantedAsync(Arg.Any<string>()).Returns(true);
         _currentUser.Id.Returns(_userId);
         _checker = new EmailComposerAccessChecker(_logs, _templates, _applicants,
-            _applications, _permissions, _features, Substitute.For<ISettingProvider>(), _currentUser);
+            _applications, _permissions, _features, _settings, _currentUser);
     }
 
     [Theory]
@@ -202,6 +207,80 @@ public class EmailComposerAccessCheckerTests
         var otherDraft = new EmailLog { Id = Guid.NewGuid(), ApplicationId = Guid.NewGuid(), Status = EmailStatus.Draft, CreatorId = Guid.NewGuid() };
 
         (await _checker.CanEditDraftAsync(otherDraft)).ShouldBeTrue();
+    }
+
+    [Theory]
+    [InlineData(false, EmailOperation.Schedule)]
+    [InlineData(true, EmailOperation.Schedule)]
+    [InlineData(false, EmailOperation.CancelScheduled)]
+    [InlineData(true, EmailOperation.CancelScheduled)]
+    public async Task Should_RejectIndividualSchedulingOperations_WhenFeatureIsDisabled(bool isApplicant, EmailOperation operation)
+    {
+        _features.IsEnabledAsync(NotificationsFeatureConsts.IndividualScheduledNotification).Returns(false);
+        var applicantId = isApplicant ? Guid.NewGuid() : Guid.Empty;
+
+        await Should.ThrowAsync<AbpAuthorizationException>(() => _checker.CheckPermissionsAsync(applicantId, operation));
+    }
+
+    [Theory]
+    [InlineData(EmailOwnerTypes.Application)]
+    [InlineData(EmailOwnerTypes.Applicant)]
+    public async Task Should_OnlyDisableSchedulingCapabilities_AndRestoreThemWhenReenabled(string ownerType)
+    {
+        _features.IsEnabledAsync(NotificationsFeatureConsts.IndividualScheduledNotification).Returns(false);
+
+        var disabled = await _checker.GetCapabilitiesAsync(ownerType);
+
+        disabled.CanSchedule.ShouldBeFalse();
+        disabled.CanCancelScheduled.ShouldBeFalse();
+        disabled.CanView.ShouldBeTrue();
+        disabled.CanCreate.ShouldBeTrue();
+        disabled.CanEdit.ShouldBeTrue();
+        disabled.CanSend.ShouldBeTrue();
+        disabled.CanDeleteDraft.ShouldBeTrue();
+
+        _features.IsEnabledAsync(NotificationsFeatureConsts.IndividualScheduledNotification).Returns(true);
+        var enabled = await _checker.GetCapabilitiesAsync(ownerType);
+
+        enabled.CanSchedule.ShouldBeTrue();
+        enabled.CanCancelScheduled.ShouldBeTrue();
+    }
+
+    [Theory]
+    [InlineData(false, "true")]
+    [InlineData(true, "true")]
+    [InlineData(false, "false")]
+    [InlineData(true, "false")]
+    [InlineData(false, null)]
+    [InlineData(true, null)]
+    public async Task Should_RespectSchedulingSetting_WhenFeatureIsEnabled(bool isApplicant, string? settingValue)
+    {
+        _settings.GetOrNullAsync(NotificationsSettings.Mailing.EnableEmailDelay).Returns(settingValue);
+        var applicantId = isApplicant ? Guid.NewGuid() : Guid.Empty;
+
+        if (settingValue == "true")
+        {
+            await Should.NotThrowAsync(() => _checker.CheckScheduleAsync(applicantId));
+        }
+        else
+        {
+            var exception = await Should.ThrowAsync<BusinessException>(() => _checker.CheckScheduleAsync(applicantId));
+            exception.Code.ShouldBe(NotificationsErrorCodes.EmailSchedulingDisabled);
+        }
+    }
+
+    [Theory]
+    [InlineData(NotificationsPermissions.Email.Application.Schedule, false)]
+    [InlineData(NotificationsPermissions.Email.Application.CancelScheduled, false)]
+    [InlineData(NotificationsPermissions.Email.Applicant.Schedule, true)]
+    [InlineData(NotificationsPermissions.Email.Applicant.CancelScheduled, true)]
+    public async Task Should_StillRequireSchedulingPermissions_WhenFeatureIsEnabled(string permission, bool isApplicant)
+    {
+        _permissions.IsGrantedAsync(permission).Returns(false);
+        var applicantId = isApplicant ? Guid.NewGuid() : Guid.Empty;
+        var operation = permission.EndsWith("CancelScheduled") ? EmailOperation.CancelScheduled : EmailOperation.Schedule;
+
+        await Should.ThrowAsync<AbpAuthorizationException>(() => _checker.CheckPermissionsAsync(applicantId, operation));
     }
 
     [Fact]

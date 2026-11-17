@@ -29,6 +29,12 @@ namespace Unity.GrantManager
                                 .Create<NotificationsResource>("Allow Notifications"),
                 valueType: new ToggleStringValueType());
 
+            myGroup.AddFeature(NotificationsFeatureConsts.IndividualScheduledNotification,
+                defaultValue: defaultValue,
+                displayName: LocalizableString
+                                .Create<NotificationsResource>("Individual Scheduled Notification"),
+                valueType: new ToggleStringValueType());
+
             myGroup.AddFeature(NotificationsFeatureConsts.DirectMessaging,
                 defaultValue: defaultValue,
                 displayName: LocalizableString
