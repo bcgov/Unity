@@ -67,6 +67,13 @@ namespace Unity.GrantManager.Permissions
             UnitySelector.Funding.Agreement.Update,
         ];
 
+        // Custom fields (read) with edit in existing tabs and the solitary custom tab
+        public readonly List<string> Custom_CommonPermissions = [
+            UnitySelector.Custom.Default,
+            UnitySelector.Custom.ExistingTab.Update,
+            UnitySelector.Custom.SolitaryTab.Update,
+        ];
+
         public readonly List<string> PaymentInfo_CommonPermissions = [
             UnitySelector.Payment.Default,
             UnitySelector.Payment.Summary.Default,
@@ -199,6 +206,7 @@ namespace Unity.GrantManager.Permissions
                     .. ApplicantInfo_CommonPermissions,
                     .. ProjectInfo_CommonPermissions,
                     .. FundingAgreement_CommonPermissions,
+                    .. Custom_CommonPermissions,
                     .. PaymentInfo_CommonPermissions,
                     UnitySelector.Payment.Supplier.Update,
                     .. Notifications_CommonPermissions,
@@ -226,6 +234,7 @@ namespace Unity.GrantManager.Permissions
                     .. ApplicantInfo_CommonPermissions,
                     .. ProjectInfo_CommonPermissions,
                     .. FundingAgreement_CommonPermissions,
+                    .. Custom_CommonPermissions,
                     .. PaymentInfo_CommonPermissions,
                     .. Notifications_CommonPermissions,
                     .. Dashboard_CommonPermissions
@@ -244,6 +253,7 @@ namespace Unity.GrantManager.Permissions
                     .. ApplicantInfo_CommonPermissions,
                     .. ProjectInfo_CommonPermissions,
                     .. FundingAgreement_CommonPermissions,
+                    .. Custom_CommonPermissions,
                     .. PaymentInfo_CommonPermissions,
                     .. Notifications_CommonPermissions,
                     .. Dashboard_CommonPermissions,
@@ -270,6 +280,7 @@ namespace Unity.GrantManager.Permissions
                     UnitySelector.Applicant.Summary.Update_AssignApplicant,
                     .. ProjectInfo_CommonPermissions,
                     .. FundingAgreement_CommonPermissions,
+                    .. Custom_CommonPermissions,
                     .. PaymentInfo_CommonPermissions,
                     UnitySelector.Payment.Supplier.Update,
                     .. Notifications_CommonPermissions,
@@ -297,6 +308,7 @@ namespace Unity.GrantManager.Permissions
                     .. ApplicantInfo_CommonPermissions,
                     .. ProjectInfo_CommonPermissions,
                     .. FundingAgreement_CommonPermissions,
+                    .. Custom_CommonPermissions,
                     .. PaymentInfo_CommonPermissions,
                     .. Notifications_CommonPermissions,
                     .. Dashboard_CommonPermissions
@@ -414,6 +426,9 @@ namespace Unity.GrantManager.Permissions
                     // Funding Agreement read-only (no Edit Contract)
                     UnitySelector.Funding.Default,
                     UnitySelector.Funding.Agreement.Default,
+
+                    // Custom fields read-only (no edit in existing or solitary tab)
+                    UnitySelector.Custom.Default,
 
                     UnitySelector.Payment.Default,
                     UnitySelector.Payment.Summary.Default,
