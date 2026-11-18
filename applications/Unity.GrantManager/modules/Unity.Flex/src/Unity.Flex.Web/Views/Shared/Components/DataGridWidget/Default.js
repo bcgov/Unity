@@ -341,6 +341,11 @@ $(function () {
     }
 
     function editDataRow(button) {
+        if ($(button).closest('#preview').length > 0) {
+            abp.notify.info('Editing is not available in Preview mode.');
+            return;
+        }
+
         // Get the parent <tr> element of the button
         let row = $(button).closest('tr');
         let rowDataSet = row[0].dataset;
