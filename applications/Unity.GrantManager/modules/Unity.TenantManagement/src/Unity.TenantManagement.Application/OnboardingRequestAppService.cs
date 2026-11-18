@@ -256,6 +256,20 @@ public class OnboardingRequestAppService(
         return categories;
     }
 
+    public virtual async Task AssignAsync(OnboardingAssignmentInputDto input)
+    {
+        if (ApplicationProvider == null)
+            throw new UserFriendlyException("Onboarding request not found.");
+
+        await ApplicationProvider.SetAssignmentAsync(input);
+    }
+
+    public virtual async Task<List<OnboardingAssignableUserDto>> GetAssignableUsersAsync()
+    {
+        if (ApplicationProvider == null) return [];
+        return await ApplicationProvider.GetAssignableUsersAsync();
+    }
+
     public virtual async Task<OnboardingValidationResultDto> ValidateAsync(Guid id, string? tenantNameFieldKey, string? programManagersFieldKey, string? branchFieldKey = null, string? featuresFieldKey = null, string? ministryFieldKey = null, string? programAreaFieldKey = null, string? displayNameFieldKey = null, string? divisionFieldKey = null)
     {
         var request = await GetAsync(id);
@@ -441,7 +455,7 @@ public class OnboardingRequestAppService(
             .ToList();
 
     private static bool IsStaticColumn(string name) =>
-        name is "submissionNumber" or "status" or "category" or "submissionDate";
+        name is "submissionNumber" or "status" or "category" or "submissionDate" or "ownerName" or "assignees";
 
     private static (string? Field, bool Descending) ParseSorting(string? sorting)
     {
@@ -526,7 +540,10 @@ public class OnboardingRequestAppService(
             SubmissionDate = app.SubmissionDate,
             Status = app.Status,
             IsApproved = app.IsApproved,
-            Category = app.Category
+            Category = app.Category,
+            OwnerId = app.OwnerId,
+            OwnerName = app.OwnerName,
+            Assignees = app.Assignees
         };
 
         foreach (var (key, value) in app.CoreFieldValues)

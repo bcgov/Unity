@@ -1,4 +1,5 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -16,6 +17,7 @@ namespace Unity.Notifications.Emails;
 [ExposeServices(typeof(EmailLogAttachmentAppService), typeof(IEmailLogAttachmentAppService), typeof(IEmailLogAttachmentUploadService))]
 public class EmailLogAttachmentAppService(
     IEmailLogAttachmentRepository emailLogAttachmentRepository,
+    IEmailLogsRepository emailLogsRepository,
     EmailAttachmentService emailAttachmentService,
     IExternalUserLookupServiceProvider externalUserLookupServiceProvider,
     EmailComposerAccessChecker emailAccessChecker) : ApplicationService, IEmailLogAttachmentAppService, IEmailLogAttachmentUploadService
@@ -65,7 +67,7 @@ public class EmailLogAttachmentAppService(
         return dtos;
     }
 
-    [Authorize(NotificationsPermissions.Email.Send)]
+    [Authorize(NotificationsPermissions.Email.Default)]
     public async Task DeleteAsync(Guid id)
     {
         // Idempotent delete: if already removed by another request, treat as success.
@@ -77,6 +79,7 @@ public class EmailLogAttachmentAppService(
 
         if (attachment.TemplateId.HasValue)
         {
+            await AuthorizationService.CheckAsync(NotificationsPermissions.Email.Template.Default);
             await emailAttachmentService.DeleteAttachmentAsync(attachment);
             return;
         }
@@ -86,9 +89,10 @@ public class EmailLogAttachmentAppService(
             throw new UserFriendlyException("Invalid email log ID.");
         }
 
-        await emailAccessChecker.CheckEmailAsync(attachment.EmailLogId.Value, NotificationsPermissions.Email.Send, requireDraft: true);
+        await emailAccessChecker.CheckDraftEditAsync(attachment.EmailLogId.Value);
 
         await emailAttachmentService.DeleteAttachmentAsync(attachment);
+        await TouchEmailLogAsync(attachment.EmailLogId.Value);
     }
 
     public async Task<long> GetTotalFileSizeByEmailLogIdAsync(Guid? emailLogId, Guid? templateId)
@@ -99,7 +103,7 @@ public class EmailLogAttachmentAppService(
         }
         else
         {
-            await AuthorizationService.CheckAsync(NotificationsPermissions.Email.Send);
+            await AuthorizationService.CheckAsync(NotificationsPermissions.Email.Template.Default);
         }
         return await emailAttachmentService.GetTotalFileSizeAsync(emailLogId, templateId);
     }
@@ -108,16 +112,26 @@ public class EmailLogAttachmentAppService(
     // allowlist/size/content-type validation AttachmentController enforces before calling it. It
     // must only ever be reached in-process, via IEmailLogAttachmentUploadService, from a caller
     // (AttachmentController) that has already run those checks - never directly by an HTTP client,
-    // which would bypass validation entirely despite still needing the Email.Send permission.
-    [Authorize(NotificationsPermissions.Email.Send)]
+    // which would bypass validation entirely despite still needing the draft edit permission.
+    [Authorize(NotificationsPermissions.Email.Default)]
     [RemoteService(false)]
+    [NonAction]
     public async Task<EmailLogAttachmentDto> UploadAsync(Guid? emailLogId, Guid? templateId, Guid? tenantId, string fileName, byte[] content, string contentType)
     {
         if (emailLogId.HasValue)
         {
-            await emailAccessChecker.CheckEmailAsync(emailLogId.Value, NotificationsPermissions.Email.Send, requireDraft: true);
+            await emailAccessChecker.CheckDraftEditAsync(emailLogId.Value);
+        }
+        else
+        {
+            await AuthorizationService.CheckAsync(NotificationsPermissions.Email.Template.Default);
         }
         var attachment = await emailAttachmentService.UploadUserAttachmentAsync(emailLogId, templateId, tenantId, fileName, content, contentType);
+
+        if (emailLogId.HasValue)
+        {
+            await TouchEmailLogAsync(emailLogId.Value);
+        }
 
         return new EmailLogAttachmentDto
         {
@@ -130,6 +144,15 @@ public class EmailLogAttachmentAppService(
             S3ObjectKey = attachment.S3ObjectKey,
             AttachedBy = await ResolveUserNameAsync(attachment.UserId)
         };
+    }
+
+    // Attachments are a separate aggregate root, so uploading/deleting one doesn't automatically
+    // bump the parent EmailLog's Last Modified stamp - touch it explicitly.
+    private async Task TouchEmailLogAsync(Guid emailLogId)
+    {
+        var emailLog = await emailLogsRepository.GetAsync(emailLogId);
+        emailLog.LastModificationTime = Clock.Now;
+        await emailLogsRepository.UpdateAsync(emailLog, autoSave: true);
     }
 
     private async Task<string> ResolveUserNameAsync(Guid userId)

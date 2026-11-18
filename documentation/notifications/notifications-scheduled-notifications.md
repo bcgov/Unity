@@ -8,7 +8,7 @@ Everything on this page lives in the **host**, not in `Unity.Notifications` — 
 |---|---|
 | `Unity.GrantManager.Domain/Notifications/ScheduledNotification.cs` | The configuration entity |
 | `Unity.GrantManager.Domain/Notifications/ApplicationScheduledNotificationTracking.cs` | The already-sent ledger (class `ScheduledNotificationTracking`) |
-| `Unity.GrantManager.Application/Events/ScheduledNotificationEventHandler.cs` | Event-driven trigger |
+| `Unity.GrantManager.Application/Events/EventNotificationHandler.cs` | Event-driven trigger |
 | `Unity.GrantManager.Application/Events/DateBasedScheduledNotificationJob.cs` | Date-driven trigger (nightly Quartz job) |
 | `Unity.GrantManager.Application/Events/ScheduledNotificationHelper.cs` | Shared token rendering + recipient resolution |
 | `Unity.GrantManager.Web/Controllers/FormNotificationsApiController.cs` | The form-level configuration API |
@@ -19,7 +19,11 @@ Both triggers converge on the same output: an `EmailNotificationEvent` published
 
 `FullAuditedAggregateRoot<Guid>`, tenant-scoped.
 
-Schedule creation and updates lock the referenced active `EmailTemplate` row inside the write transaction. Template deletion takes the same lock before checking for schedules and soft-deleting the template. This prevents a schedule from being saved between the reference check and the soft delete; a missing or soft-deleted template is rejected when saving a schedule.
+Schedule creation and updates lock the referenced active `EmailTemplate` row inside the write transaction. Template deletion takes the same lock before checking for active schedules and soft-deleting the template. This prevents an active schedule from being saved between the reference check and the soft delete; a missing or soft-deleted template is rejected when saving a schedule.
+
+Only active scheduled notification plans block template deletion. When every referencing plan is cancelled (`IsActive = false`), deletion is allowed. Sending all currently generated emails does not retire an active plan: it can still trigger for future applications or events, so it continues to block deletion. The UI deletion preflight and the server deletion guard enforce the same rule.
+
+Cancelled plans and sent or cancelled email history are retained after template deletion. The plan list displays **Template deleted** when its template is unavailable; template lookups return `null` for missing or soft-deleted templates so the list and replacement flow can handle them. Saving or reactivating a plan requires an available template, and replacing a deleted template remains subject to the existing template-type restrictions.
 
 |Field|Meaning|
 |---|---|
@@ -39,7 +43,7 @@ Schedule creation and updates lock the referenced active `EmailTemplate` row ins
 
 ## Trigger 1 — event-driven
 
-`ScheduledNotificationEventHandler` implements `ILocalEventHandler<ApplicationChangedEvent>` **and** `ILocalEventHandler<PaymentStatusChangedEvent>`.
+`EventNotificationHandler` implements `ILocalEventHandler<ApplicationChangedEvent>` **and** `ILocalEventHandler<PaymentStatusChangedEvent>`.
 
 Both handlers follow the same shape:
 
@@ -47,7 +51,7 @@ Both handlers follow the same shape:
 2. Load the application with `includeDetails: true` — the navigation properties (`Applicant`, `ApplicationStatus`, `ApplicationForm`) are needed for token substitution.
 3. Query active matching configurations:
    - **Application status**: `FormId == application.ApplicationFormId && TriggerType == "Event" && IsActive && (Module == null || Module == "Application") && ApplicationStatusId == application.ApplicationStatusId`
-   - **Payment status**: same, but `Module == "Payment" && EventType == eventData.Status.ToString()`
+   - **Payment status**: same, but `Module == "Payment"`, matching `EventType` against the destination workflow status only when `Status != PreviousStatus`, or against the destination CAS payment status only when it differs from `PreviousCasPaymentStatus`. Missing CAS statuses (`null` and empty) are equivalent. Creation events have no previous workflow status. A CAS reconciliation event with an unchanged workflow status therefore does not repeat a `Submitted` or `FSB` plan; a genuine CAS payment-status transition can still trigger its own plan.
 4. Read the tenant's `DefaultFromAddress` setting once for the batch (falling back to `NoReply@gov.bc.ca`).
 5. Load the `ApplicantAgent` once for the batch — used for both contact tokens and recipient resolution.
 6. Call `ProcessNotificationAsync` per configuration.
@@ -86,7 +90,7 @@ The body is written explicitly to avoid N+1 queries, and the comments in the sou
 4. **One** batch load of all needed templates, keyed by id.
 5. **One** batch load of all `ApplicantAgent` rows for those applications, keyed by application id.
 6. Per configuration: take the applications for that form, subtract the ones already tracked for `(ScheduledNotificationId, DateField)`, and process the remainder.
-7. Collect tracking records in memory and `InsertManyAsync` them **once** at the end.
+7. Per application: insert its tracking row (committed immediately) **before** publishing the email.
 
 Each application is then rendered and published exactly as the event path does, with `Action = EmailAction.SendDateDriven`.
 
@@ -96,8 +100,8 @@ Each application is then rendered and published exactly as the event path does, 
 
 Two consequences worth knowing:
 
-- A tracking row is created when the event is **published**, not when the email is sent. If the pipeline later fails permanently, the ledger still says "notified" and the job will never retry it.
-- Tracking rows are inserted in one batch at the end of the tenant's run. A crash mid-run means the whole tenant's batch is lost and those applications will be notified again on the next run.
+- The tracking row is written as a claim **before** the event is published. If the insert fails (for example a unique-index conflict), the email is not sent, which prevents repeat sends. If publishing throws, the row is deleted again so the next run retries. If the email pipeline fails permanently after a successful publish, the ledger still says "notified" and the job never retries it.
+- Each application's row is committed on its own, so one failing row no longer affects the tenant's other applications. Before this change, rows were inserted in one batch at the end of the run, and a single failure lost the whole batch, so every matching application was re-emailed on every run.
 
 ## Token substitution
 
@@ -142,7 +146,7 @@ Addresses accumulate into a case-insensitive `HashSet`, are joined with `"; "`, 
 
 The whole method is wrapped in a `try`/`catch` returning `string.Empty` on failure, so a directory outage degrades to "no recipients" rather than an exception.
 
-Because the link is **by group name**, renaming an email group silently detaches it from every scheduled notification referencing it. `EmailGroupsAppService.DeleteAsync` guards deletion (`BusinessException("Notifications:EmailGroupInUse")`) but nothing guards renaming — see [notifications-roadmap.md](notifications-roadmap.md#email-groups-are-linked-to-scheduled-notifications-by-name).
+Because the link is **by group name**, renaming an email group silently detaches it from every scheduled notification referencing it. `EmailGroupsAppService.DeleteAsync` guards deletion (`BusinessException(NotificationsErrorCodes.EmailGroupInUse)`) but nothing guards renaming — see [notifications-roadmap.md](notifications-roadmap.md#email-groups-are-linked-to-scheduled-notifications-by-name).
 
 ### External — `PublishToExternalRecipientAsync`
 

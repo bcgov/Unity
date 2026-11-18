@@ -23,7 +23,7 @@ public static class EmailOwnership
     {
         if ((applicationId == Guid.Empty) == (applicantId == Guid.Empty))
         {
-            throw new BusinessException("Notifications:EmailOwnerRequired");
+            throw new BusinessException(NotificationsErrorCodes.EmailOwnerRequired);
         }
     }
 
@@ -32,7 +32,7 @@ public static class EmailOwnership
         EnsureSingleOwner(applicationId, applicantId);
         if (email.ApplicationId != applicationId || email.ApplicantId != applicantId)
         {
-            throw new BusinessException("Notifications:EmailOwnerMismatch");
+            throw new BusinessException(NotificationsErrorCodes.EmailOwnerMismatch);
         }
         EnsureDraft(email);
     }
@@ -41,7 +41,7 @@ public static class EmailOwnership
     {
         if (email.Status != EmailStatus.Draft)
         {
-            throw new BusinessException("Notifications:EmailMustBeDraft");
+            throw new BusinessException(NotificationsErrorCodes.EmailMustBeDraft);
         }
     }
 
@@ -50,7 +50,7 @@ public static class EmailOwnership
         var expectedType = applicantId == Guid.Empty ? TemplateTypes.Application : TemplateTypes.Applicant;
         if (!string.Equals(template.TemplateType, expectedType, StringComparison.OrdinalIgnoreCase))
         {
-            throw new BusinessException("Notifications:EmailTemplateTypeMismatch");
+            throw new BusinessException(NotificationsErrorCodes.EmailTemplateTypeMismatch);
         }
     }
 }

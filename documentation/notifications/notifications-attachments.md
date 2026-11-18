@@ -96,7 +96,7 @@ The comment in the source states the invariant: *"The database must never retain
 |`GetListByEmailLogIdAsync` / `GetListByTemplateIdAsync`|Return `EmailLogAttachmentDto`s with `AttachedBy` resolved through `IExternalUserLookupServiceProvider` (falling back to an empty string on lookup failure).|
 |`DeleteAsync(id)`|Idempotent — a missing row returns success. Template attachments delete freely; email attachments delete **only from `Draft` emails**, otherwise the localized `Notifications:EmailMustBeDraft` business error.|
 |`GetTotalFileSizeByEmailLogIdAsync(emailLogId?, templateId?)`|Sums `FileSize` from metadata, not from S3 — a cheap in-database check. Backs the composer's total-size indicator and the bulk-send size gate.|
-|`UploadAsync(...)`|**`[RemoteService(false)]`** — deliberately not exposed over HTTP.|
+|`UploadAsync(...)`|**`[NonAction]`** prevents MVC action discovery; `[RemoteService(false)]` also declares it internal to ABP. Not exposed over HTTP.|
 
 That last one is the important gate. `UploadAsync` takes a raw `fileName`/`content`/`contentType` with none of the allowlist, size, or content-type checks that `AttachmentController` enforces. It must only be reached in-process through `IEmailLogAttachmentUploadService`, from a caller that has already run those checks. Exposing it would let an HTTP client bypass validation entirely while still holding a legitimate `Email.Send` permission — the permission alone is not the control here.
 

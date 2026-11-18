@@ -1,0 +1,48 @@
+namespace Unity.AI;
+
+public static class AIErrorCodes
+{
+    public const string AttachmentSummariesDisabled = "AI:AttachmentSummariesDisabled";
+    public const string ApplicationAnalysisDisabled = "AI:ApplicationAnalysisDisabled";
+    public const string ScoringDisabled = "AI:ScoringDisabled";
+    public const string FormMappingRequiresFormVersion = "AI:FormMappingRequiresFormVersion";
+    public const string FormMappingDisabled = "AI:FormMappingDisabled";
+    public const string FormWorksheetRequiresFormVersion = "AI:FormWorksheetRequiresFormVersion";
+    public const string FormWorksheetDisabled = "AI:FormWorksheetDisabled";
+    public const string FormScoresheetRequiresFormVersion = "AI:FormScoresheetRequiresFormVersion";
+    public const string FormScoresheetDisabled = "AI:FormScoresheetDisabled";
+    public const string NoAttachmentsAvailable = "AI:NoAttachmentsAvailable";
+    public const string ApplicationAnalysisRequiresSubmission = "AI:ApplicationAnalysisRequiresSubmission";
+    public const string ScoringRequiresScoresheet = "AI:ScoringRequiresScoresheet";
+    public const string ScoringRequiresScoresheetFields = "AI:ScoringRequiresScoresheetFields";
+    public const string AttachmentNotFound = "AI:AttachmentNotFound";
+    public const string SelectAttachmentForSummaries = "AI:SelectAttachmentForSummaries";
+    public const string FormWorksheetUnavailable = "AI:FormWorksheetUnavailable";
+    public const string FormWorksheetDeleteProtected = "AI:FormWorksheetDeleteProtected";
+    public const string FormWorksheetSelectionInvalid = "AI:FormWorksheetSelectionInvalid";
+    public const string FormScoresheetDeleteProtected = "AI:FormScoresheetDeleteProtected";
+    public const string FormScoresheetHasInstances = "AI:FormScoresheetHasInstances";
+    public const string FormScoresheetUnavailable = "AI:FormScoresheetUnavailable";
+    public const string FormScoresheetTitleRequired = "AI:FormScoresheetTitleRequired";
+    public const string FormScoresheetSelectionRequired = "AI:FormScoresheetSelectionRequired";
+    public const string FormScoresheetSelectionInvalid = "AI:FormScoresheetSelectionInvalid";
+    public const string FormGenerationReviewActive = "AI:FormGenerationReviewActive";
+    public const string MappingReviewPending = "AI:MappingReviewPending";
+    public const string MappingReviewInactive = "AI:MappingReviewInactive";
+    public const string MappingSelectionRequired = "AI:MappingSelectionRequired";
+    public const string MappingSelectionInvalid = "AI:MappingSelectionInvalid";
+    public const string MappingReviewTransitionInvalid = "AI:MappingReviewTransitionInvalid";
+    public const string MappingReviewPendingSuggestions = "AI:MappingReviewPendingSuggestions";
+    public const string WorksheetDraftsMustBePublished = "AI:WorksheetDraftsMustBePublished";
+    public const string WorksheetTitleRequired = "AI:WorksheetTitleRequired";
+    public const string WorksheetSelectionRequired = "AI:WorksheetSelectionRequired";
+    public const string ScoresheetGenerationRequiresFormVersion = "AI:ScoresheetGenerationRequiresFormVersion";
+    public const string ScoresheetGenerationProtected = "AI:ScoresheetGenerationProtected";
+    public const string ScoresheetGenerationInvalidOutput = "AI:ScoresheetGenerationInvalidOutput";
+    public const string ScoresheetGenerationEmpty = "AI:ScoresheetGenerationEmpty";
+    public const string ScoresheetGenerationUnusable = "AI:ScoresheetGenerationUnusable";
+    public const string ScoresheetGenerationNoVersion = "AI:ScoresheetGenerationNoVersion";
+    public const string ScoresheetGenerationNoSections = "AI:ScoresheetGenerationNoSections";
+    public const string ScoresheetGenerationSectionNoFields = "AI:ScoresheetGenerationSectionNoFields";
+    public const string ScoresheetGenerationPropertyInvalid = "AI:ScoresheetGenerationPropertyInvalid";
+}

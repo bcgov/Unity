@@ -1,10 +1,13 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using Unity.GrantManager.Web.Menus;
+
 namespace Unity.GrantManager.Web.Pages.Account
 {
-    public class AccessDeniedModel
+    [AllowAnonymous]
+    public class AccessDeniedModel : PageModel
     {
-        public void OnGet()
-        {
-            //Placeholder. Nothing to do here yet.
-        }
+        public IActionResult OnGet() => LocalRedirect(UserNavigationService.NoAccessUrl);
     }
 }

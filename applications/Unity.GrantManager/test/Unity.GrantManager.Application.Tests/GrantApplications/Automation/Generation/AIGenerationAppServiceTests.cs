@@ -1,11 +1,9 @@
-using Microsoft.Extensions.Localization;
 using NSubstitute;
 using Shouldly;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
-using Unity.AI.Localization;
 using Unity.AI.Generation;
 using Unity.AI.Operations;
 using Unity.AI.Settings;
@@ -28,8 +26,7 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
     {
         var featureChecker = Substitute.For<IFeatureChecker>();
         featureChecker.IsEnabledAsync("Unity.AI.AttachmentSummaries").Returns(true);
-        var localizer = Substitute.For<IStringLocalizer<AIResource>>();
-        var featureGuard = new AIFeatureGuard(featureChecker, localizer);
+        var featureGuard = new AIFeatureGuard(featureChecker);
 
         var applicationId = Guid.NewGuid();
         var attachmentIds = new List<Guid> { Guid.NewGuid(), Guid.NewGuid() };
@@ -152,7 +149,6 @@ public class AIGenerationAppServiceTests(ITestOutputHelper outputHelper) : Grant
         var featureChecker = Substitute.For<IFeatureChecker>();
         featureChecker.IsEnabledAsync(Arg.Any<string>()).Returns(true);
 
-        var localizer = Substitute.For<IStringLocalizer<AIResource>>();
-        return new AIFeatureGuard(featureChecker, localizer);
+        return new AIFeatureGuard(featureChecker);
     }
 }

@@ -23,4 +23,6 @@ public interface IOnboardingApplicationProvider
     Task<List<OnboardingColumnDto>> GetMappedCoreFieldColumnsAsync(string category);
     Task<List<string>> GetAvailableCategoriesAsync();
     Task CloseApplicationAsync(Guid applicationId);
+    Task SetAssignmentAsync(OnboardingAssignmentInputDto input);
+    Task<List<OnboardingAssignableUserDto>> GetAssignableUsersAsync();
 }

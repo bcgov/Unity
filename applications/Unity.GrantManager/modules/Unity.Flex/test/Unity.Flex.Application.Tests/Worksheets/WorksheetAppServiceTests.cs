@@ -398,9 +398,12 @@ namespace Unity.Flex.Worksheets
             worksheets.Count.ShouldBe(3);
         }
 
-        [Fact]
+        [Theory]
+        [InlineData(25)]
+        [InlineData(17)]
+        [InlineData(null)]
         [Trait("Category", "Integration")]
-        public async Task CloneWorksheet()
+        public async Task CloneWorksheet(int? fieldWidth)
         {
             // Arrange           
             var name = "cloneme-v1";
@@ -409,7 +412,7 @@ namespace Unity.Flex.Worksheets
 
             using var uow = _unitOfWorkManager.Begin();
             var wsToClone = new Worksheet(Guid.NewGuid(), name, title);
-            var sectionToClone = new WorksheetSection(Guid.NewGuid(), sectionName);
+            var sectionToClone = new WorksheetSection(Guid.NewGuid(), "Original Section");
             wsToClone.Sections.Add(sectionToClone);
             await _worksheetRepository.InsertAsync(wsToClone, true);
             await uow.SaveChangesAsync();
@@ -417,17 +420,74 @@ namespace Unity.Flex.Worksheets
             wsToClone.Sections[0].AddField(new CustomField(Guid.NewGuid(), "key", wsToClone.Name, "label", CustomFieldType.Text, null));
             await uow.SaveChangesAsync();
 
+            await GetRequiredService<IWorksheetSectionAppService>().EditAsync(sectionToClone.Id, new EditSectionDto
+            {
+                Name = sectionName,
+                FieldWidth = fieldWidth
+            });
+            await uow.SaveChangesAsync();
+
             wsToClone = await _worksheetRepository.GetAsync(wsToClone.Id);
 
             // Act
             var cloned = await _worksheetAppService.CloneAsync(wsToClone.Id);
+            await uow.SaveChangesAsync();
 
             // Assert
             var clonedDb = await _worksheetRepository.GetAsync(cloned.Id);
             clonedDb.ShouldNotBeNull();
             clonedDb.Sections.Count.ShouldBe(1);
+            clonedDb.Sections[0].Name.ShouldBe(sectionName);
+            clonedDb.Sections[0].Definition.ShouldBe(sectionToClone.Definition);
+            cloned.Sections[0].FieldWidth.ShouldBe(fieldWidth);
             clonedDb.Sections[0].Fields.Count.ShouldBe(1);
             clonedDb.Sections[0].Fields[0].Label.ShouldBe("label");
+        }
+
+        [Theory]
+        [InlineData(25)]
+        [InlineData(17)]
+        [InlineData(null)]
+        [Trait("Category", "Integration")]
+        public async Task ExportImportWorksheet_PreservesEditedSectionLayout(int? fieldWidth)
+        {
+            // Arrange
+            using var uow = _unitOfWorkManager.Begin();
+            var worksheet = new Worksheet(Guid.NewGuid(), "roundtrip-v1", "Round Trip");
+            var section = new WorksheetSection(Guid.NewGuid(), "Original Section");
+            worksheet.AddSection(section);
+            await _worksheetRepository.InsertAsync(worksheet, true);
+
+            section.AddField(new CustomField(Guid.NewGuid(), "key", worksheet.Name, "label", CustomFieldType.Text, null));
+            await uow.SaveChangesAsync();
+
+            var editedSection = await GetRequiredService<IWorksheetSectionAppService>().EditAsync(section.Id, new EditSectionDto
+            {
+                Name = "Edited Section",
+                FieldWidth = fieldWidth
+            });
+            await uow.SaveChangesAsync();
+
+            // Act
+            var exported = await _worksheetAppService.ExportWorksheet(worksheet.Id);
+            await _worksheetAppService.ImportWorksheetAsync(new WorksheetImportDto
+            {
+                Name = exported.Name,
+                Content = System.Text.Encoding.UTF8.GetString(exported.Content)
+            });
+            await uow.SaveChangesAsync();
+
+            // Assert
+            var imported = await _worksheetRepository.GetByNameAsync("roundtrip-v2", true);
+            imported.ShouldNotBeNull();
+            imported.Sections.Count.ShouldBe(1);
+            imported.Sections[0].Name.ShouldBe(editedSection.Name);
+            imported.Sections[0].Definition.ShouldBe(editedSection.Definition);
+            imported.Sections[0].Fields.Count.ShouldBe(1);
+            imported.Sections[0].Fields[0].Label.ShouldBe("label");
+
+            var importedDto = await _worksheetAppService.GetAsync(imported.Id);
+            importedDto.Sections[0].FieldWidth.ShouldBe(fieldWidth);
         }
     }
 }

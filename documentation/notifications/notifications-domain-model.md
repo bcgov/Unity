@@ -61,7 +61,7 @@ Mapping: cascade-delete FKs to both `EmailLog` and `EmailTemplate` (both optiona
 
 An allowlisted address with `EmailType` (one of `Sender`, `ReplyTo`, `NoReply`, `Inbound`, `Support`, `Other`, enforced in `EmailAddressConfigurationsAppService`), `Description`, `IsActive`, `IsDefault`. Two indexes matter:
 
-- `(TenantId, EmailAddress, EmailType)` unique — no duplicate address/type pairs per tenant.
+- `(TenantId, EmailAddress, EmailType)` unique — no duplicate address/type pairs per tenant. The index is case-sensitive (the seeded default sender keeps its original casing while UI-created rows are lowercased), so `EmailAddressConfigurationsAppService` also enforces uniqueness case-insensitively.
 - `TenantId` unique **with filter `"IsDefault" = true`** — a Postgres partial index guaranteeing at most one default address per tenant at the database level, not just in service code.
 
 The active default `Sender` row is the From address fallback used by `EmailNotificationManager.GetEmailObjectAsync` and `EmailNotificationService.SendCommentNotification`; if none exists both fall back to the literal `NoReply@gov.bc.ca`.
@@ -85,7 +85,7 @@ The active default `Sender` row is the From address fallback used by `EmailNotif
 - **`FSB-AP`** — recipients for PO-related payment notifications sent to Financial Services Branch.
 - **`Payments`** — recipients for payment failure/error notifications.
 
-`EmailGroupsAppService.DeleteAsync` throws `BusinessException("Notifications:EmailGroupInUse")` if the group's *name* appears in the `RecipientIdentifier` of any active `ScheduledNotification` with `RecipientCategory == "Internal"`. The link between a scheduled notification and a group is by name, not by id — renaming a group silently breaks that link.
+`EmailGroupsAppService.DeleteAsync` throws `BusinessException(NotificationsErrorCodes.EmailGroupInUse)` if the group's *name* appears in the `RecipientIdentifier` of any active `ScheduledNotification` with `RecipientCategory == "Internal"`. The link between a scheduled notification and a group is by name, not by id — renaming a group silently breaks that link.
 
 ## Realtime entities
 
@@ -131,10 +131,10 @@ Declared in `Unity.Notifications.Application.Contracts/Permissions/Notifications
 |---|---|---|
 |`Email.Default`|`Notifications.Email`|Parent node — not itself an `[Authorize]` target|
 |`Email.Send`|`Notifications.Email.Send`|`EmailNotificationService.CancelEmail`, the whole `EmailLogAttachmentAppService`|
-|`Email.SendBulk`|`Notifications.Email.SendBulk`|Host bulk-email surfaces|
+|`Email.Application.SendBulk` / `Email.Applicant.SendBulk`|`Notifications.Email.Application.SendBulk` / `Notifications.Email.Applicant.SendBulk`|`BulkEmailNotificationAppService` (Application owner only for now) via `EmailComposerAccessChecker`|
 |`Email.DeleteDraft`|`Notifications.Email.DeleteDraft`|UI gate on the delete action|
-|`Email.CancelScheduled`|`Notifications.Email.CancelScheduled`|UI gate on the cancel action|
-|`Email.Schedule`|`Notifications.Email.Schedule`|UI gate on the send-later control|
+|`Email.Application.CancelScheduled` / `Email.Applicant.CancelScheduled`|`Notifications.Email.Application.CancelScheduled` / `Notifications.Email.Applicant.CancelScheduled`|Cancellation through email history, `EmailNotificationService.CancelEmail`, and the non-draft delete path; also requires `Unity.Notifications.IndividualScheduledNotification`.|
+|`Email.Application.Schedule` / `Email.Applicant.Schedule`|`Notifications.Email.Application.Schedule` / `Notifications.Email.Applicant.Schedule`|Schedule Send and `EmailAppService.SendAsync` through `EmailComposerAccessChecker`; also requires Send permission, `EnableEmailDelay`, and `Unity.Notifications.IndividualScheduledNotification`.|
 |`Email.NotificationsTab`|`Notifications.Form.Tab`|Parent node for the form-level notification config tab|
 |`Email.ScheduleCreate`|`Notifications.Form.Email.Schedule.Create`|Creating a form scheduled notification|
 |`Email.ScheduleCancel`|`Notifications.Form.Email.Schedule.Cancel`|Cancelling a form scheduled notification|
@@ -142,6 +142,8 @@ Declared in `Unity.Notifications.Application.Contracts/Permissions/Notifications
 |`Settings`|`SettingManagement.Notifications`|Added to ABP's **`SettingManagement`** group, not the Notifications group. Gates `EmailNotificationService.UpdateSettings` and the settings page contributor.|
 
 Two mismatches worth knowing: the localization file defines `Permission:Notifications.Form.Email.Schedule.Delete`, but no such constant is declared or registered; and `Email.ScheduleCancel` is declared and localized but was not found on any `[Authorize]` attribute.
+
+The four individual Schedule/Cancel Scheduled permissions use `RequireFeatures` so they are hidden in permission management while the tenant feature is disabled. The tenant role/user matrix reports filter only those four permissions; unrelated permissions and host report visibility remain unchanged.
 
 Everything on the realtime side is gated by the **role** `IdentityConsts.ITOperationsPermissionName` instead (`modules/Unity.SharedKernel/Permissions/IdentityConsts.cs`).
 
@@ -153,7 +155,9 @@ Defined in `Domain/Settings/NotificationsSettingDefinitionProvider.cs`, keys in 
 |---|---|---|
 |`GrantManager.Notifications.Mailing.DefaultFromAddress`|`NoReply.Unity@gov.bc.ca`|Seeded into `EmailAddressConfiguration` as the default `Sender` row; also read directly by the scheduled-notification handlers and the email widget.|
 |`GrantManager.Notifications.Mailing.EmailMaxRetryAttempts`|`3`|Surfaced and edited on the settings tab. **Not read by the send pipeline** — `EmailConsumer` uses its own hard-coded `maxRetries = 10` ([roadmap](notifications-roadmap.md#the-configured-retry-limit-is-not-the-one-that-applies)).|
-|`GrantManager.Notifications.Mailing.EnableEmailDelay`|`false`|Enables the "schedule this email" control on the per-application email widget.|
+|`GrantManager.Notifications.Mailing.EnableEmailDelay`|`false`|Enables Schedule Send in the Application and Applicant email widgets when `Unity.Notifications.IndividualScheduledNotification` and the applicable Schedule/Send permissions are also enabled. The feature and setting also control the Scheduled Send column in email history.|
+
+The settings checkbox is visible only when `Unity.Notifications.IndividualScheduledNotification` is enabled. While the feature is disabled, saving other notification settings preserves the stored `EnableEmailDelay` value. Individual scheduling and cancellation are denied, while previously scheduled messages and form-level notification plans continue normally.
 
 `NotificationsSettingsDataSeedContributor` explicitly writes `EnableEmailDelay = "false"` into each tenant's settings row when no explicit value exists, so existing tenants get the default on deploy rather than relying on the runtime fallback.
 

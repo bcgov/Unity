@@ -69,7 +69,7 @@ Related naming confusion: the client is `AzureOpenAIClient` (Azure OpenAI), whil
 
 ## Deployment name and model name must be identical
 
-`OpenAIOperationSettings` sets both `ProfileName` and `DeploymentName` to `model.Name`, and the factory passes `DeploymentName` to `GetChatClient(...)`. The Azure deployment must therefore be named exactly `gpt-5-mini`, `gpt-4o-mini` or `gpt-5-nano`. There is no way to point a model row at a differently named deployment.
+`OpenAIOperationSettings` sets both `ProfileName` and `DeploymentName` to `model.Name`, and the factory passes `DeploymentName` to `GetChatClient(...)`. The Azure deployment must therefore be named exactly `gpt-5-mini` or `gpt-5-nano`. There is no way to point a model row at a differently named deployment.
 
 ## Dead resolver accessors
 

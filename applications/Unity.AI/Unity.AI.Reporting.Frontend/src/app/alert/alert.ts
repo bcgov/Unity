@@ -14,15 +14,15 @@ export class AlertComponent {
   @Input() confirmText: string = 'Confirm';
   @Input() cancelText: string = 'Cancel';
   
-  @Output() confirm = new EventEmitter<void>();
-  @Output() cancel = new EventEmitter<void>();
+  @Output() confirmed = new EventEmitter<void>();
+  @Output() cancelled = new EventEmitter<void>();
 
   onConfirm(): void {
-    this.confirm.emit();
+    this.confirmed.emit();
   }
 
   onCancel(): void {
-    this.cancel.emit();
+    this.cancelled.emit();
   }
 
   onOverlayClick(event: Event): void {

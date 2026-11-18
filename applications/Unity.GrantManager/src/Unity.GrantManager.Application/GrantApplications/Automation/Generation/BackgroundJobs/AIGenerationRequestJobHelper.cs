@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Unity.AI.Domain;
 using Unity.AI.RateLimit;
 using Unity.GrantManager.Applications;
+using Volo.Abp.AspNetCore.ExceptionHandling;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Guids;
 using Volo.Abp.Uow;
@@ -14,6 +15,17 @@ namespace Unity.GrantManager.GrantApplications.Automation.BackgroundJobs;
 
 public static class AIGenerationRequestJobHelper
 {
+    /// <summary>
+    /// The saved failure reason is shown to users, but jobs run outside a web request and so
+    /// skip ABP's exception handling. Convert it here the same way a web request would:
+    /// business errors get their localized message, and any other error gets the generic
+    /// message unless exception details are turned on.
+    /// </summary>
+    public static string? GetFailureReason(IExceptionToErrorInfoConverter errorInfoConverter, Exception exception)
+    {
+        return errorInfoConverter.Convert(exception).Message;
+    }
+
     /// <summary>
     /// Reloads the application in a fresh, short-lived unit of work and persists only the
     /// result mutated by <paramref name="applyResult"/>. Keeping this load-to-save window

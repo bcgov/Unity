@@ -31,7 +31,7 @@ Non-sensitive config (deployment names, model versions, database port) is hardco
 | `ORIGIN_URL` | Comma-separated allowed iframe parent origins | `https://dev.example.com` |
 | `FLASK_ENV` | Flask environment mode | `development`, `production` |
 | `DB_HOST` | PostgreSQL host | `[env]-unity-ai-postgres` |
-| `DB_NAME` | PostgreSQL database name | `unity_ai` |
+| `DB_NAME` | PostgreSQL database name | `UnityAI` |
 | `DB_USER` | PostgreSQL username | `unity_user` |
 
 ### 🔧 Build-time (baked into Docker image)
@@ -154,7 +154,7 @@ data:
   MB_MAP_REGION_UUID: "your-regional-districts-uuid"
   ORIGIN_URL: "https://dev-grants.example.com"
   DB_HOST: "dev-unity-ai-postgres"
-  DB_NAME: "unity_ai"
+  DB_NAME: "UnityAI"
   DB_USER: "unity_user"
 ```
 

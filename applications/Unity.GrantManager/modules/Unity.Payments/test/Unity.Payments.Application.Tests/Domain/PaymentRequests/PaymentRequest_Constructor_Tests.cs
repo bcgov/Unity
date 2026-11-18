@@ -3,7 +3,6 @@ using System;
 using System.ComponentModel;
 using System.Linq;
 using Unity.Payments.Codes;
-using Unity.Payments.Domain.Exceptions;
 using Unity.Payments.Enums;
 using Unity.Payments.PaymentRequests;
 using Volo.Abp;
@@ -21,7 +20,7 @@ public class PaymentRequest_Constructor_Tests : PaymentsApplicationTestBase
     {
         var dto = BuildNormalDto(siteId: Guid.Empty);
         Should.Throw<BusinessException>(() => new PaymentRequest(Guid.NewGuid(), dto))
-            .Code.ShouldBe(ErrorConsts.MissingSite);
+            .Code.ShouldBe(PaymentsErrorCodes.MissingSite);
     }
 
     [Fact]
@@ -30,7 +29,7 @@ public class PaymentRequest_Constructor_Tests : PaymentsApplicationTestBase
         var dto = BuildNormalDto();
         dto.AccountCodingId = null;
         Should.Throw<BusinessException>(() => new PaymentRequest(Guid.NewGuid(), dto))
-            .Code.ShouldBe(ErrorConsts.MissingAccountCoding);
+            .Code.ShouldBe(PaymentsErrorCodes.MissingAccountCoding);
     }
 
     [Fact]
@@ -38,7 +37,7 @@ public class PaymentRequest_Constructor_Tests : PaymentsApplicationTestBase
     {
         var dto = BuildNormalDto(accountCodingId: Guid.Empty);
         Should.Throw<BusinessException>(() => new PaymentRequest(Guid.NewGuid(), dto))
-            .Code.ShouldBe(ErrorConsts.MissingAccountCoding);
+            .Code.ShouldBe(PaymentsErrorCodes.MissingAccountCoding);
     }
 
     [Fact]
@@ -86,7 +85,7 @@ public class PaymentRequest_Constructor_Tests : PaymentsApplicationTestBase
     {
         var dto = BuildHistoricalDto(amount: 0m);
         Should.Throw<BusinessException>(() => new PaymentRequest(Guid.NewGuid(), dto))
-            .Code.ShouldBe(ErrorConsts.ZeroPayment);
+            .Code.ShouldBe(PaymentsErrorCodes.ZeroPayment);
     }
 
     [Fact]
@@ -94,7 +93,7 @@ public class PaymentRequest_Constructor_Tests : PaymentsApplicationTestBase
     {
         var dto = BuildHistoricalDto(amount: -1m);
         Should.Throw<BusinessException>(() => new PaymentRequest(Guid.NewGuid(), dto))
-            .Code.ShouldBe(ErrorConsts.ZeroPayment);
+            .Code.ShouldBe(PaymentsErrorCodes.ZeroPayment);
     }
 
     [Fact]

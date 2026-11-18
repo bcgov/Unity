@@ -150,7 +150,7 @@
             }
             return detail;
         }
-        return r.eventStatus || '';
+        return r.eventStatusLabel || r.eventStatus || '';
     }
 
     function handleTemplatesList(list) {

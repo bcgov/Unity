@@ -391,7 +391,13 @@ $(function () {
     });
 
     composeAndSendEmailModal.onOpen(function () {
-        Promise.resolve(window.ComposeAndSendEmail?.initialize()).catch(function (error) {
+        if (typeof window.ComposeAndSendEmail?.initialize !== 'function') {
+            console.error('Compose & Send Email initializer is unavailable.');
+            abp.notify.error('Failed to initialize the email editor. Please close the dialog and try again.');
+            return;
+        }
+
+        window.ComposeAndSendEmail.initialize().catch(function (error) {
             console.error('Failed to initialize Compose & Send Email.', error);
             abp.notify.error('Failed to initialize the email editor. Please close the dialog and try again.');
         });
@@ -587,4 +593,3 @@ $(function () {
     });
     //#endregion Tags and Payments
 });
-

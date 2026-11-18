@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -83,11 +84,16 @@ namespace Unity.GrantManager.Events
             }
             else if (applicationForm == null)
             {
-                EventSubscription eventSubscription = ObjectMapper.Map<EventSubscriptionDto, EventSubscription>(eventSubscriptionDto);
-                applicationForm = await applicationFormManager.InitializeApplicationForm(eventSubscription);
+                // A publish event for an unregistered CHEFS form must not create a form:
+                // forms are registered explicitly by a user, with an intake and API key.
+                Logger.LogWarning(
+                    "Ignoring CHEFS publish event for unregistered form {FormId} (version {FormVersionId}).",
+                    formId,
+                    formVersionId);
+                return false;
             }
 
-            return applicationForm != null;
+            return true;
         }
     }
 }

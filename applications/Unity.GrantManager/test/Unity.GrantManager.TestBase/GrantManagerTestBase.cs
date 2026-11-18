@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp;
 using Volo.Abp.Modularity;
@@ -23,6 +25,28 @@ public abstract class GrantManagerTestBase<TStartupModule> : AbpIntegratedTest<T
     protected override void SetAbpApplicationCreationOptions(AbpApplicationCreationOptions options)
     {
         options.UseAutofac();
+    }
+
+    public override void Dispose()
+    {
+        // ABP builds IConfiguration with reloadOnChange and SetBasePath, and nothing disposes the
+        // resulting PhysicalFileProvider, so each test host leaks an appsettings.json file watcher
+        // (an inotify instance on Linux, capped at 128 on CI runners). Disposing the root alone
+        // does not release it because the source does not own the builder-created file provider.
+        var configuration = ServiceProvider.GetService<IConfiguration>() as IConfigurationRoot;
+        base.Dispose();
+        if (configuration != null)
+        {
+            var fileProviders = configuration.Providers
+                .OfType<FileConfigurationProvider>()
+                .Select(p => p.Source.FileProvider)
+                .OfType<IDisposable>()
+                .Distinct()
+                .ToList();
+            (configuration as IDisposable)?.Dispose();
+            fileProviders.ForEach(fp => fp.Dispose());
+        }
+        GC.SuppressFinalize(this);
     }
 
     protected virtual Task WithUnitOfWorkAsync(Func<Task> func)

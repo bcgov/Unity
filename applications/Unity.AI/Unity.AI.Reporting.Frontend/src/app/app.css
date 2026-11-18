@@ -99,7 +99,7 @@
   width: 320px;
   text-align: left;
   color: inherit;
-  transition: all 0.15s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
@@ -336,7 +336,7 @@
   font-weight: 500;
   color: #495057;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
   white-space: nowrap;
   width: 32px;
   height: 32px;
@@ -832,11 +832,11 @@
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .retry-btn {
-  background: #3182ce;
+  background: #2b6cb0;
   color: white;
 }
 
@@ -883,14 +883,14 @@
   justify-content: center;
   gap: 12px;
   padding: 16px 32px;
-  background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+  background: linear-gradient(135deg, #2b6cb0 0%, #2c5282 100%);
   color: white;
   border: none;
   border-radius: 12px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 4px 12px rgba(66, 153, 225, 0.3);
   position: relative;
   overflow: hidden;
@@ -914,7 +914,7 @@
 .metabase-view-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(66, 153, 225, 0.4);
-  background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+  background: linear-gradient(135deg, #2c5282 0%, #2a4365 100%);
   color: white;
 }
 
@@ -925,7 +925,7 @@
 
 .metabase-view-btn svg {
   flex-shrink: 0;
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease;
 }
 
 .metabase-view-btn:hover svg {
@@ -1047,7 +1047,7 @@
   padding: 8px 12px;
   border-bottom: 1px solid #e2e8f0;
   max-width: 240px;
-  word-break: break-word;
+  overflow-wrap: anywhere;
   z-index: 1;
 }
 
@@ -1081,4 +1081,31 @@
   font-size: 0.9rem;
   color: #666;
   margin: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-dot {
+    animation: none;
+  }
+
+  .metabase-view-btn::before {
+    transition: none;
+  }
+
+  .welcome-action-card,
+  .retry-btn,
+  .help-btn,
+  .metabase-view-btn,
+  .metabase-view-btn svg {
+    transition: none;
+  }
+
+  .welcome-action-card:hover,
+  .retry-btn:hover,
+  .help-btn:hover,
+  .metabase-view-btn:hover,
+  .metabase-view-btn--secondary:hover,
+  .metabase-view-btn:hover svg {
+    transform: none;
+  }
 }

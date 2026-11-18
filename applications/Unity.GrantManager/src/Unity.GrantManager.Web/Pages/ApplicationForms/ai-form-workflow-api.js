@@ -1,5 +1,11 @@
 (function (global) {
-    function request(url, type, data = null, contentType = null) {
+    /**
+     * @param {string} url
+     * @param {string} type
+     * @param {object|string|null} [data=null]
+     * @param {string} [contentType='']
+     */
+    function request(url, type, data = null, contentType = '') {
         const options = { url, type };
         if (data !== null) {
             options.data = contentType === 'application/json' && typeof data !== 'string'

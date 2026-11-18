@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 using NSubstitute;
@@ -6,7 +6,9 @@ using Shouldly;
 using Unity.GrantManager.Applications;
 using Unity.Modules.Shared;
 using Unity.Notifications.Emails;
+using Unity.Notifications.Features;
 using Unity.Notifications.Permissions;
+using Unity.Notifications.Settings;
 using Unity.Notifications.Templates;
 using Volo.Abp;
 using Volo.Abp.Authorization;
@@ -14,6 +16,7 @@ using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Features;
 using Volo.Abp.Settings;
+using Volo.Abp.Users;
 using Xunit;
 
 namespace Unity.Notifications;
@@ -23,33 +26,67 @@ public class EmailComposerAccessCheckerTests
     private readonly IEmailLogsRepository _logs = Substitute.For<IEmailLogsRepository>();
     private readonly ITemplatesRepository _templates = Substitute.For<ITemplatesRepository>();
     private readonly IApplicantRepository _applicants = Substitute.For<IApplicantRepository>();
+    private readonly IApplicationRepository _applications = Substitute.For<IApplicationRepository>();
     private readonly IPermissionChecker _permissions = Substitute.For<IPermissionChecker>();
     private readonly IFeatureChecker _features = Substitute.For<IFeatureChecker>();
+    private readonly ISettingProvider _settings = Substitute.For<ISettingProvider>();
+    private readonly ICurrentUser _currentUser = Substitute.For<ICurrentUser>();
+    private readonly Guid _userId = Guid.NewGuid();
     private readonly EmailComposerAccessChecker _checker;
 
     public EmailComposerAccessCheckerTests()
     {
         _features.IsEnabledAsync("Unity.Notifications").Returns(true);
+        _features.IsEnabledAsync(NotificationsFeatureConsts.IndividualScheduledNotification).Returns(true);
+        _settings.GetOrNullAsync(NotificationsSettings.Mailing.EnableEmailDelay).Returns("true");
         _permissions.IsGrantedAsync(Arg.Any<string>()).Returns(true);
+        _currentUser.Id.Returns(_userId);
         _checker = new EmailComposerAccessChecker(_logs, _templates, _applicants,
-            Substitute.For<IApplicationRepository>(), _permissions, _features, Substitute.For<ISettingProvider>());
+            _applications, _permissions, _features, _settings, _currentUser);
     }
 
     [Theory]
     [InlineData(NotificationsPermissions.Email.Default)]
-    [InlineData(NotificationsPermissions.Email.Send)]
+    [InlineData(NotificationsPermissions.Email.Applicant.Default)]
+    [InlineData(NotificationsPermissions.Email.Applicant.Send)]
     [InlineData(UnitySelector.ApplicantManagement.Applicant.Default)]
     public async Task Should_RequireEmailAndApplicantPermissions(string deniedPermission)
     {
         _permissions.IsGrantedAsync(deniedPermission).Returns(false);
-        await Should.ThrowAsync<AbpAuthorizationException>(() => _checker.CheckOwnerAsync(Guid.Empty, Guid.NewGuid(), NotificationsPermissions.Email.Send));
+        await Should.ThrowAsync<AbpAuthorizationException>(() => _checker.CheckOwnerAsync(Guid.Empty, Guid.NewGuid(), EmailOperation.Send));
+    }
+
+    [Theory]
+    [InlineData(NotificationsPermissions.Email.Application.Default)]
+    [InlineData(NotificationsPermissions.Email.Application.Send)]
+    public async Task Should_RequireApplicationScopedPermissions(string deniedPermission)
+    {
+        _permissions.IsGrantedAsync(deniedPermission).Returns(false);
+        await Should.ThrowAsync<AbpAuthorizationException>(() => _checker.CheckOwnerAsync(Guid.NewGuid(), Guid.Empty, EmailOperation.Send));
+    }
+
+    [Fact]
+    public async Task Should_NotLetOneOwnerTypeAuthorizeTheOther()
+    {
+        _permissions.IsGrantedAsync(Arg.Is<string>(p => p != null && p.StartsWith("Notifications.Email.Applicant"))).Returns(false);
+        await Should.ThrowAsync<AbpAuthorizationException>(() => _checker.CheckOwnerAsync(Guid.Empty, Guid.NewGuid(), EmailOperation.View));
+        await _checker.CheckOwnerAsync(Guid.NewGuid(), Guid.Empty, EmailOperation.Send);
+    }
+
+    [Fact]
+    public async Task Should_RejectLegacyGenericSendAlone()
+    {
+        _permissions.IsGrantedAsync(Arg.Any<string>()).Returns(false);
+        _permissions.IsGrantedAsync(NotificationsPermissions.Email.Default).Returns(true);
+        _permissions.IsGrantedAsync(NotificationsPermissions.Email.Template.Default).Returns(true);
+        await Should.ThrowAsync<AbpAuthorizationException>(() => _checker.CheckOwnerAsync(Guid.NewGuid(), Guid.Empty, EmailOperation.Send));
     }
 
     [Fact]
     public async Task Should_RejectDisabledEmailFeature()
     {
         _features.IsEnabledAsync("Unity.Notifications").Returns(false);
-        await Should.ThrowAsync<AbpAuthorizationException>(() => _checker.CheckOwnerAsync(Guid.Empty, Guid.NewGuid(), NotificationsPermissions.Email.Send));
+        await Should.ThrowAsync<AbpAuthorizationException>(() => _checker.CheckOwnerAsync(Guid.Empty, Guid.NewGuid(), EmailOperation.Send));
     }
 
     [Fact]
@@ -58,7 +95,7 @@ public class EmailComposerAccessCheckerTests
         var foreignId = Guid.NewGuid();
         _applicants.GetAsync(foreignId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromException<Applicant>(new EntityNotFoundException(typeof(Applicant), foreignId)));
-        await Should.ThrowAsync<EntityNotFoundException>(() => _checker.CheckOwnerAsync(Guid.Empty, foreignId, NotificationsPermissions.Email.Send));
+        await Should.ThrowAsync<EntityNotFoundException>(() => _checker.CheckOwnerAsync(Guid.Empty, foreignId, EmailOperation.Send));
     }
 
     [Fact]
@@ -74,6 +111,231 @@ public class EmailComposerAccessCheckerTests
     {
         var email = new EmailLog { Id = Guid.NewGuid(), ApplicantId = Guid.NewGuid(), Status = EmailStatus.Sent };
         _logs.GetAsync(email.Id, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(email);
-        await Should.ThrowAsync<BusinessException>(() => _checker.CheckEmailAsync(email.Id, NotificationsPermissions.Email.Send, requireDraft: true));
+        await Should.ThrowAsync<BusinessException>(() => _checker.CheckEmailAsync(email.Id, EmailOperation.Send, requireDraft: true));
+    }
+
+    [Fact]
+    public async Task Should_LetCreateEditOnlyTheUsersOwnUnsavedDraft()
+    {
+        _permissions.IsGrantedAsync(NotificationsPermissions.Email.Application.Edit).Returns(false);
+        var ownDraft = new EmailLog { Id = Guid.NewGuid(), ApplicationId = Guid.NewGuid(), Status = EmailStatus.Draft, CreatorId = _userId };
+        var otherDraft = new EmailLog { Id = Guid.NewGuid(), ApplicationId = Guid.NewGuid(), Status = EmailStatus.Draft, CreatorId = Guid.NewGuid() };
+
+        (await _checker.CanEditDraftAsync(ownDraft)).ShouldBeTrue();
+        (await _checker.CanEditDraftAsync(otherDraft)).ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task Should_KeepCreateAccess_WhenAttachmentChangesTouchUnsavedDraft()
+    {
+        _permissions.IsGrantedAsync(NotificationsPermissions.Email.Application.Edit).Returns(false);
+        var touchedDraft = new EmailLog
+        {
+            Id = Guid.NewGuid(),
+            ApplicationId = Guid.NewGuid(),
+            Status = EmailStatus.Draft,
+            CreatorId = _userId,
+            LastModificationTime = DateTime.UtcNow
+        };
+        _logs.GetAsync(touchedDraft.Id, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(touchedDraft);
+
+        (await _checker.CanEditDraftAsync(touchedDraft)).ShouldBeTrue();
+        await Should.NotThrowAsync(() => _checker.CheckDraftEditAsync(touchedDraft.Id));
+    }
+
+    [Fact]
+    public async Task Should_RequireEdit_ForOwnSavedDraft()
+    {
+        _permissions.IsGrantedAsync(NotificationsPermissions.Email.Application.Edit).Returns(false);
+        var savedDraft = CreateSavedOwnDraft();
+        _logs.GetAsync(savedDraft.Id, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(savedDraft);
+
+        (await _checker.CanEditDraftAsync(savedDraft)).ShouldBeFalse();
+        await Should.ThrowAsync<AbpAuthorizationException>(() => _checker.CheckDraftEditAsync(savedDraft.Id));
+    }
+
+    [Fact]
+    public async Task Should_LetCreateDeleteOwnSavedDraft_WithDeleteDraftPermission()
+    {
+        _permissions.IsGrantedAsync(NotificationsPermissions.Email.Application.Edit).Returns(false);
+        var savedDraft = CreateSavedOwnDraft();
+
+        await Should.NotThrowAsync(() => _checker.CheckDraftDeleteAsync(savedDraft));
+    }
+
+    [Fact]
+    public async Task Should_LetDeleteDraftAloneDeleteAnyonesDraft()
+    {
+        _permissions.IsGrantedAsync(NotificationsPermissions.Email.Application.Edit).Returns(false);
+        _permissions.IsGrantedAsync(NotificationsPermissions.Email.Application.Create).Returns(false);
+        var otherDraft = CreateSavedOwnDraft();
+        otherDraft.CreatorId = Guid.NewGuid();
+
+        await Should.NotThrowAsync(() => _checker.CheckDraftDeleteAsync(otherDraft));
+        (await _checker.GetCapabilitiesAsync(EmailOwnerTypes.Application)).CanDeleteDraft.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task Should_RequireDeleteDraftPermission_ToDeleteDraft()
+    {
+        _permissions.IsGrantedAsync(NotificationsPermissions.Email.Application.DeleteDraft).Returns(false);
+        var savedDraft = CreateSavedOwnDraft();
+
+        await Should.ThrowAsync<AbpAuthorizationException>(() => _checker.CheckDraftDeleteAsync(savedDraft));
+        (await _checker.GetCapabilitiesAsync(EmailOwnerTypes.Application)).CanDeleteDraft.ShouldBeFalse();
+    }
+
+    private EmailLog CreateSavedOwnDraft()
+    {
+        return new EmailLog
+        {
+            Id = Guid.NewGuid(),
+            ApplicationId = Guid.NewGuid(),
+            Status = EmailStatus.Draft,
+            CreatorId = _userId,
+            ToAddress = "applicant@example.test",
+            Subject = "Subject",
+            Body = "Body",
+            LastModificationTime = DateTime.UtcNow
+        };
+    }
+
+    [Fact]
+    public async Task Should_LetEditChangeAnyonesDraft()
+    {
+        _permissions.IsGrantedAsync(NotificationsPermissions.Email.Application.Create).Returns(false);
+        var otherDraft = new EmailLog { Id = Guid.NewGuid(), ApplicationId = Guid.NewGuid(), Status = EmailStatus.Draft, CreatorId = Guid.NewGuid() };
+
+        (await _checker.CanEditDraftAsync(otherDraft)).ShouldBeTrue();
+    }
+
+    [Theory]
+    [InlineData(false, EmailOperation.Schedule)]
+    [InlineData(true, EmailOperation.Schedule)]
+    [InlineData(false, EmailOperation.CancelScheduled)]
+    [InlineData(true, EmailOperation.CancelScheduled)]
+    public async Task Should_RejectIndividualSchedulingOperations_WhenFeatureIsDisabled(bool isApplicant, EmailOperation operation)
+    {
+        _features.IsEnabledAsync(NotificationsFeatureConsts.IndividualScheduledNotification).Returns(false);
+        var applicantId = isApplicant ? Guid.NewGuid() : Guid.Empty;
+
+        await Should.ThrowAsync<AbpAuthorizationException>(() => _checker.CheckPermissionsAsync(applicantId, operation));
+    }
+
+    [Theory]
+    [InlineData(EmailOwnerTypes.Application)]
+    [InlineData(EmailOwnerTypes.Applicant)]
+    public async Task Should_OnlyDisableSchedulingCapabilities_AndRestoreThemWhenReenabled(string ownerType)
+    {
+        _features.IsEnabledAsync(NotificationsFeatureConsts.IndividualScheduledNotification).Returns(false);
+
+        var disabled = await _checker.GetCapabilitiesAsync(ownerType);
+
+        disabled.CanSchedule.ShouldBeFalse();
+        disabled.CanCancelScheduled.ShouldBeFalse();
+        disabled.CanView.ShouldBeTrue();
+        disabled.CanCreate.ShouldBeTrue();
+        disabled.CanEdit.ShouldBeTrue();
+        disabled.CanSend.ShouldBeTrue();
+        disabled.CanDeleteDraft.ShouldBeTrue();
+
+        _features.IsEnabledAsync(NotificationsFeatureConsts.IndividualScheduledNotification).Returns(true);
+        var enabled = await _checker.GetCapabilitiesAsync(ownerType);
+
+        enabled.CanSchedule.ShouldBeTrue();
+        enabled.CanCancelScheduled.ShouldBeTrue();
+    }
+
+    [Theory]
+    [InlineData(false, "true")]
+    [InlineData(true, "true")]
+    [InlineData(false, "false")]
+    [InlineData(true, "false")]
+    [InlineData(false, null)]
+    [InlineData(true, null)]
+    public async Task Should_RespectSchedulingSetting_WhenFeatureIsEnabled(bool isApplicant, string? settingValue)
+    {
+        _settings.GetOrNullAsync(NotificationsSettings.Mailing.EnableEmailDelay).Returns(settingValue);
+        var applicantId = isApplicant ? Guid.NewGuid() : Guid.Empty;
+
+        if (settingValue == "true")
+        {
+            await Should.NotThrowAsync(() => _checker.CheckScheduleAsync(applicantId));
+        }
+        else
+        {
+            var exception = await Should.ThrowAsync<BusinessException>(() => _checker.CheckScheduleAsync(applicantId));
+            exception.Code.ShouldBe(NotificationsErrorCodes.EmailSchedulingDisabled);
+        }
+    }
+
+    [Theory]
+    [InlineData(NotificationsPermissions.Email.Application.Schedule, false)]
+    [InlineData(NotificationsPermissions.Email.Application.CancelScheduled, false)]
+    [InlineData(NotificationsPermissions.Email.Applicant.Schedule, true)]
+    [InlineData(NotificationsPermissions.Email.Applicant.CancelScheduled, true)]
+    public async Task Should_StillRequireSchedulingPermissions_WhenFeatureIsEnabled(string permission, bool isApplicant)
+    {
+        _permissions.IsGrantedAsync(permission).Returns(false);
+        var applicantId = isApplicant ? Guid.NewGuid() : Guid.Empty;
+        var operation = permission.EndsWith("CancelScheduled") ? EmailOperation.CancelScheduled : EmailOperation.Schedule;
+
+        await Should.ThrowAsync<AbpAuthorizationException>(() => _checker.CheckPermissionsAsync(applicantId, operation));
+    }
+
+    [Fact]
+    public async Task Should_RequireSendBeforeSchedule()
+    {
+        _permissions.IsGrantedAsync(NotificationsPermissions.Email.Application.Send).Returns(false);
+        await Should.ThrowAsync<AbpAuthorizationException>(() => _checker.CheckPermissionsAsync(Guid.Empty, EmailOperation.Schedule));
+    }
+
+    [Fact]
+    public async Task Should_ReportNoCapabilitiesWithoutOwnerTypeView()
+    {
+        _permissions.IsGrantedAsync(NotificationsPermissions.Email.Applicant.Default).Returns(false);
+
+        var capabilities = await _checker.GetCapabilitiesAsync(EmailOwnerTypes.Applicant);
+
+        capabilities.CanView.ShouldBeFalse();
+        capabilities.CanSend.ShouldBeFalse();
+        capabilities.CanCreate.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task Should_ReportCapabilitiesPerOwnerType()
+    {
+        _permissions.IsGrantedAsync(NotificationsPermissions.Email.Application.Send).Returns(false);
+        _permissions.IsGrantedAsync(NotificationsPermissions.Email.Applicant.Edit).Returns(false);
+
+        var application = await _checker.GetCapabilitiesAsync(EmailOwnerTypes.Application);
+        var applicant = await _checker.GetCapabilitiesAsync(EmailOwnerTypes.Applicant);
+
+        application.CanEdit.ShouldBeTrue();
+        application.CanSend.ShouldBeFalse();
+        application.CanSchedule.ShouldBeFalse();
+        applicant.CanEdit.ShouldBeFalse();
+        applicant.CanSend.ShouldBeTrue();
+    }
+
+    [Theory]
+    [InlineData(NotificationsPermissions.Email.Application.SendBulk)]
+    [InlineData(NotificationsPermissions.Email.Application.Create)]
+    [InlineData(NotificationsPermissions.Email.Application.Send)]
+    [InlineData(NotificationsPermissions.Email.Application.Default)]
+    public async Task Should_RequireEveryBulkOperationForApplications(string deniedPermission)
+    {
+        _permissions.IsGrantedAsync(deniedPermission).Returns(false);
+        await Should.ThrowAsync<AbpAuthorizationException>(() => _checker.CheckPermissionsAllAsync(
+            Guid.Empty, EmailOperation.View, EmailOperation.Create, EmailOperation.Send, EmailOperation.SendBulk));
+    }
+
+    [Fact]
+    public async Task Should_ScopeSendBulkToOwnerType()
+    {
+        _permissions.IsGrantedAsync(NotificationsPermissions.Email.Applicant.SendBulk).Returns(false);
+
+        await _checker.CheckPermissionsAsync(Guid.Empty, EmailOperation.SendBulk);
+        await Should.ThrowAsync<AbpAuthorizationException>(() => _checker.CheckPermissionsAsync(Guid.NewGuid(), EmailOperation.SendBulk));
     }
 }

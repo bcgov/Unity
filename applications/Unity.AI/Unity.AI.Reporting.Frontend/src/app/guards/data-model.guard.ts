@@ -19,6 +19,5 @@ export const dataModelGuard: CanActivateFn = () => {
     return true;
   }
 
-  router.navigate(['/app']);
-  return false;
+  return router.createUrlTree(['/app']);
 };

@@ -10,12 +10,14 @@ namespace Unity.GrantManager.Web.Middleware
 {
     internal static partial class ExceptionNotificationHelpers
     {
+        // Business rule violations are normal outcomes, not faults, so they must not feed exception alerts.
         public static bool IsExpected(Exception exception)
         {
             for (Exception? current = exception; current is not null; current = current.InnerException)
             {
                 if (current is OperationCanceledException ||
                     current is AbpAuthorizationException ||
+                    current is IBusinessException ||
                     current is IUserFriendlyException)
                 {
                     return true;

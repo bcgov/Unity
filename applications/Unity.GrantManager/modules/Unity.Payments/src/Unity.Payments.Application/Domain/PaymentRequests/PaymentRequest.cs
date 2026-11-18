@@ -7,7 +7,6 @@ using Unity.Payments.Enums;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Volo.Abp;
-using Unity.Payments.Domain.Exceptions;
 using Unity.Payments.PaymentRequests;
 using Unity.Payments.Codes;
 using Unity.Payments.Domain.PaymentTags;
@@ -136,7 +135,7 @@ namespace Unity.Payments.Domain.PaymentRequests
             PaymentTags = null;
 
             if (Amount <= 0)
-                throw new BusinessException(ErrorConsts.ZeroPayment);
+                throw new BusinessException(PaymentsErrorCodes.ZeroPayment);
         }
 
         public PaymentRequest SetNote(string note)
@@ -252,22 +251,22 @@ namespace Unity.Payments.Domain.PaymentRequests
         {
             if (Amount <= 0)
             {
-                throw new BusinessException(ErrorConsts.ZeroPayment);
+                throw new BusinessException(PaymentsErrorCodes.ZeroPayment);
             }
 
             if (string.IsNullOrWhiteSpace(SupplierNumber))
             {
-                throw new BusinessException(ErrorConsts.MissingSupplierNumber);
+                throw new BusinessException(PaymentsErrorCodes.MissingSupplierNumber);
             }
 
             if (!SiteId.HasValue || SiteId.Value == Guid.Empty)
             {
-                throw new BusinessException(ErrorConsts.MissingSite);
+                throw new BusinessException(PaymentsErrorCodes.MissingSite);
             }
 
             if (!AccountCodingId.HasValue || AccountCodingId.Value == Guid.Empty)
             {
-                throw new BusinessException(ErrorConsts.MissingAccountCoding);
+                throw new BusinessException(PaymentsErrorCodes.MissingAccountCoding);
             }
 
             return this;

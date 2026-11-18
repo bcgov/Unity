@@ -19,7 +19,7 @@
     width: 10px;
     transform: rotate(45deg);
     float: right !important;
-    transition: all 0.5s !important;
+    transition: transform 0.5s !important;
 }
 
 .card-header:not(.card-body .card-header).custom-active::before {
@@ -31,7 +31,7 @@
     width: 10px;
     transform: rotate(-135deg);
     float: right !important;
-    transition: all 0.5s !important;
+    transition: transform 0.5s !important;
 }
 
 .card-body {
@@ -677,4 +677,11 @@ form label.error {
 
 .worksheet_AssessmentInfo {
     padding-left: 0.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .card-header:not(.card-body .card-header)::before,
+    .card-header:not(.card-body .card-header).custom-active::before {
+        transition: none !important;
+    }
 }

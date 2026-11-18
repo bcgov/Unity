@@ -15,9 +15,10 @@ export interface Toast {
 export class ToastService {
   private readonly toastsSubject = new BehaviorSubject<Toast[]>([]);
   public toasts$ = this.toastsSubject.asObservable();
+  private nextId = 0;
 
   private generateId(): string {
-    return Math.random().toString(36).substring(2, 11);
+    return `toast-${++this.nextId}`;
   }
 
   show(message: string, type: Toast['type'] = 'info', duration: number = 2500): string {

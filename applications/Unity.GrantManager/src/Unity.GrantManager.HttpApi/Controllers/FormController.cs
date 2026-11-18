@@ -42,6 +42,7 @@ namespace Unity.GrantManager.Controllers
                 var applicationForm = (await _applicationFormRepository
                     .GetQueryableAsync())
                     .Where(s => s.ChefsApplicationFormGuid == formId)
+                    .OrderBy(s => s.CreationTime)
                     .FirstOrDefault() ?? throw new EntityNotFoundException("Application Form Not Registered");
 
                 if (string.IsNullOrEmpty(applicationForm.ApiKey))

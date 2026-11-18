@@ -41,6 +41,10 @@ public static class GrantManagerDomainErrorCodes
     public const string ChildFormCannotReferenceSelf = "GrantManager:ChildFormCannotReferenceSelf";
     public const string ParentFormUnavailable = "GrantManager:ParentFormUnavailable";
 
+    /* CHEFS FORM REGISTRATION */
+    public const string ChefsFormInitializationFailed = "GrantManager:ChefsFormInitializationFailed";
+    public const string ChefsFormAlreadyRegistered = "GrantManager:ChefsFormAlreadyRegistered";
+
     /* APPLICANT PORTAL EXTERNAL LINKS */
     public const string RenewalLinkRequiredForVisibility = "GrantManager:RenewalLinkRequiredForVisibility";
     public const string RenewalLinkInvalidUri = "GrantManager:RenewalLinkInvalidUri";

@@ -1,0 +1,38 @@
+@page
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Unity.GrantManager.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using Unity.TenantManagement.Web.Pages.TenantManagement.Onboarding
+@model AssignModalModel
+@inject IHtmlLocalizer<GrantManagerResource> L
+@{
+    Layout = null;
+}
+<abp-modal size="Large">
+    <abp-modal-header title="@L["AssignOnboardingModal:Title"].Value"></abp-modal-header>
+    <abp-modal-body>
+        <div id="assign-onboarding-loading" class="text-muted">
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            @L["AssignOnboardingModal:Loading"]
+        </div>
+        <div id="assign-onboarding-form" class="d-none">
+            <div id="assign-onboarding-mixed" class="alert alert-warning small d-none">@L["AssignOnboardingModal:MixedValues"]</div>
+            <div class="mb-3">
+                <label for="assign-onboarding-owner" class="form-label small mb-1">@L["AssignOnboardingModal:OwnerLabel"]</label>
+                <select id="assign-onboarding-owner" class="form-select form-select-sm"></select>
+            </div>
+            <div class="form-label small mb-1">@L["AssignOnboardingModal:AssigneesLabel"]</div>
+            <div id="assign-onboarding-assignees"></div>
+            <button type="button" id="btn-assign-onboarding-add" class="btn btn-secondary btn-sm">@L["AssignOnboardingModal:AddAssignee"]</button>
+        </div>
+        <div id="assign-onboarding-error" class="alert alert-danger small mt-3 mb-0 d-none"></div>
+    </abp-modal-body>
+    <abp-modal-footer>
+        <button type="button" id="btn-assign-onboarding-save" class="btn btn-primary" disabled>
+            @L["AssignOnboardingModal:SaveButton"]
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            @L["Common:Command:Cancel"]
+        </button>
+    </abp-modal-footer>
+</abp-modal>

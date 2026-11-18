@@ -149,6 +149,23 @@ input#search {
     margin-top: -24px;
 }
 
+#notificationEmailModal .notification-email-header {
+    padding: 0.75rem 0.75rem 0;
+}
+
+#notificationEmailModal .notification-email-header .notification-email-type {
+    margin-left: 0;
+}
+
+#notificationEmailModal .notification-email-type {
+    margin-left: 0.75rem;
+    white-space: nowrap;
+}
+
+#notificationEmailModal .notification-email-type-label {
+    font-weight: 700;
+}
+
 #notificationEmailModal #schedule-date-input + button {
     display: none;
 }

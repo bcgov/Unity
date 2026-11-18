@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Unity.Notifications.Emails;
+using Volo.Abp;
 using Volo.Abp.Authorization;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Users;
@@ -197,6 +198,23 @@ public class EmailAttachmentService : ITransientDependency
     {
         var attachments = await GetAttachmentsAsync(emailLogId);
         await ValidateAttachmentsExistAsync(attachments, EmailAttachmentValidationContext.Email);
+    }
+
+    public async Task ValidateEmailAttachmentsTotalSizeAsync(Guid emailLogId)
+    {
+        var attachments = await GetAttachmentsAsync(emailLogId);
+        var totalMb = attachments.Sum(a => a.FileSize) * 0.000001;
+        // Same fallback as AttachmentController: a missing, malformed, or non-positive value means 25 MB.
+        if (!double.TryParse(_configuration["S3:EmailAttachmentsTotalMaxFileSize"], out var maxMb) || maxMb <= 0)
+        {
+            maxMb = 25;
+        }
+
+        if (totalMb > maxMb)
+        {
+            throw new UserFriendlyException(
+                $"The total size of all attachments ({totalMb:F2} MB) exceeds the maximum allowed {maxMb} MB. Please remove one or more attachments before proceeding.");
+        }
     }
 
     public async Task ValidateTemplateAttachmentsAsync(Guid templateId)

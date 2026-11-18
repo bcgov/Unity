@@ -1,10 +1,18 @@
 ﻿@page
-@using Volo.Abp.AspNetCore.Mvc.UI.Layout;
-@model Unity.GrantManager.Web.Pages.Errors.IndexModel
-@inject IPageLayout PageLayout
+@using Unity.GrantManager.Web.Identity
+@using Volo.Abp.Users
+@model Unity.GrantManager.Web.Pages.Account.NoGrantProgramsModel
+@inject ICurrentUser CurrentUser
 @{
     Layout = null;
 }
 <div class="home-container">
-    You do not have access to any grant programs, access needs to be requested.
+    You don't have access to this page. Please contact your Program Area - Business System Administrator.
+    @if (CurrentUser.IsAuthenticated)
+    {
+        @if (CurrentUser.FindClaim(UnityClaimsTypes.HasMultipleTenants)?.Value == "true")
+        {
+            <p><a href="~/GrantPrograms">Switch grant program</a></p>
+        }
+    }
 </div>

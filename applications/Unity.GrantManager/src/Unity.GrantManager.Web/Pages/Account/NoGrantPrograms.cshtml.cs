@@ -1,16 +1,15 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using System.Threading.Tasks;
 
-namespace Unity.GrantManager.Web.Pages.Errors
+namespace Unity.GrantManager.Web.Pages.Account
 {
-    public class IndexModel : PageModel
+    [AllowAnonymous]
+    public class NoGrantProgramsModel : PageModel
     {
-        public async Task OnGetAsync()
+        public void OnGet()
         {
-            // Clear out cookies so we dont get stuck here once access is granted
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);            
+            // Keep an authenticated tenant user signed in so they can switch programs or
+            // retry after permissions are granted. Unlinked identities are signed out at login.
         }
     }
 }

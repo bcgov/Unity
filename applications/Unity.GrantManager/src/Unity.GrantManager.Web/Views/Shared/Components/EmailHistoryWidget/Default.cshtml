@@ -9,5 +9,9 @@
     <abp-table id="EmailHistoryTable" hoverable-rows="true" data-resize-aware="true" class="attachments-table"
                data-applicant-id="@Model.ApplicantId" data-application-id="@Model.ApplicationId"
                data-applicant-name="@Model.ApplicantName" data-unity-applicant-id="@Model.UnityApplicantId"
-               data-enable-email-delay="@Model.EnableEmailDelay.ToString().ToLower()"></abp-table>
+               data-enable-email-delay="@Model.EnableEmailDelay.ToString().ToLower()"
+               data-can-create="@Model.Capabilities.CanCreate.ToString().ToLower()"
+               data-can-edit="@Model.Capabilities.CanEdit.ToString().ToLower()"
+               data-can-delete-draft="@Model.Capabilities.CanDeleteDraft.ToString().ToLower()"
+               data-can-cancel-scheduled="@Model.Capabilities.CanCancelScheduled.ToString().ToLower()"></abp-table>
 </div>

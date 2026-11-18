@@ -23,7 +23,7 @@
     font-size: 0.75rem;
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
-    transition: all 0.2s ease-in-out;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
 .preview-view-btn:hover {
@@ -82,5 +82,19 @@
     100% { 
         opacity: 1; 
         transform: scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .status-text-only {
+        animation: none;
+    }
+
+    .preview-view-btn {
+        transition: none;
+    }
+
+    .preview-view-btn:hover {
+        transform: none;
     }
 }

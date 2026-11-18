@@ -1494,9 +1494,11 @@ class DataModelGenerator:
         ]
         fk_targets = {(s, t) for s, t, _ in fk_map.values()}
         if ("public", "Applications") in fk_targets:
-            rel_lines.append('- "public"."Applications"."ApplicantId" → "public"."Applicants"."Id"')
-            rel_lines.append('- "public"."ApplicantAgents"."ApplicantId" = "public"."Applicants"."Id" AND "public"."ApplicantAgents"."ApplicationId" = "public"."Applications"."Id"')
-            rel_lines.append('- "public"."ApplicantAddresses"."ApplicantId" = "public"."Applicants"."Id" AND "public"."ApplicantAddresses"."ApplicationId" = "public"."Applications"."Id"')
+            rel_lines.extend([
+                '- "public"."Applications"."ApplicantId" → "public"."Applicants"."Id"',
+                '- "public"."ApplicantAgents"."ApplicantId" = "public"."Applicants"."Id" AND "public"."ApplicantAgents"."ApplicationId" = "public"."Applications"."Id"',
+                '- "public"."ApplicantAddresses"."ApplicantId" = "public"."Applicants"."Id" AND "public"."ApplicantAddresses"."ApplicationId" = "public"."Applications"."Id"',
+            ])
         return join_keys_text, "\n".join(rel_lines)
 
     def _build_prompt_context(self, view_name: str, db_id: int,

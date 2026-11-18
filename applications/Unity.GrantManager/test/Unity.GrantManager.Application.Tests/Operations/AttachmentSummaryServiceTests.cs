@@ -108,7 +108,7 @@ public class AttachmentSummaryServiceTests
             Substitute.For<ITextExtractionService>(),
             Substitute.For<IAIService>());
 
-        await Should.ThrowAsync<UserFriendlyException>(() => service.GenerateAndSaveAsync([], "v1"));
+        await Should.ThrowAsync<BusinessException>(() => service.GenerateAndSaveAsync([], "v1"));
 
         await persistence.DidNotReceive().GetApplicationAttachmentIdsAsync(Arg.Any<Guid>());
     }
@@ -262,8 +262,7 @@ public class AttachmentSummaryServiceTests
             aiService,
             Substitute.For<IAIGenerationPrerequisiteValidator>(),
             CreateUnitOfWorkManager(),
-            NullLogger<AttachmentSummaryService>.Instance,
-            Substitute.For<IStringLocalizer<AIResource>>());
+            NullLogger<AttachmentSummaryService>.Instance);
     }
 
     private static IRepository<AIOperation, Guid> CreateOperationRepository()

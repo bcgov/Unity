@@ -8,6 +8,7 @@ on:
       - '.gitignore'
       - 'database/**'
       - 'applications/Unity.AI/**'
+      - 'applications/Unity.Tools/Unity.NginxData/**'
       - 'documentation/**'
       - '**/docs/**'
       - '**/README*'
@@ -33,6 +34,7 @@ env:
   JFROG_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
   JFROG_REPO_PATH: ${{ vars.ARTIFACTORY_REPO }}
   JFROG_SERVICE:  ${{ vars.ARTIFACTORY_SERVICE }}
+  BUILDX_NO_DEFAULT_ATTESTATIONS: 1
 
 jobs:
   Setup:

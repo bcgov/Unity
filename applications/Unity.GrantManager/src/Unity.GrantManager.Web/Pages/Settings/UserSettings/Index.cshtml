@@ -1,0 +1,28 @@
+@page
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Unity.GrantManager.Localization
+@using Unity.GrantManager.Web.Menus
+@using Unity.GrantManager.Web.Pages.Settings.UserSettings
+@using Volo.Abp.AspNetCore.Mvc.UI.Layout
+
+@model IndexModel
+@inject IHtmlLocalizer<GrantManagerResource> L
+@inject IAuthorizationService Authorization
+@inject IPageLayout PageLayout
+@{
+    PageLayout.Content.MenuItemName = GrantManagerMenus.UserSettings;
+    ViewBag.PageTitle = "User Settings";
+}
+
+@section scripts {
+   <abp-script src="/Pages/Settings/UserSettings/Index.js" />
+}
+@section styles {
+   <abp-style src="/Pages/Settings/UserSettings/Index.css" />
+}
+
+<div class="config-page-layout">
+    @await Html.PartialAsync("_Navigation", Model)
+    @await Html.PartialAsync("_EmailSettings", Model)
+</div>

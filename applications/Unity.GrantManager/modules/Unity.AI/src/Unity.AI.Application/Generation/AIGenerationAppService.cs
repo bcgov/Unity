@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
 using Unity.AI.Features;
-using Unity.AI.Localization;
 using Unity.AI.Operations;
 using Unity.AI.Permissions;
 using Unity.AI.Settings;
@@ -27,7 +26,7 @@ public class AIGenerationAppService(
     {
         // All generation routes converge here so authorization, feature, and form-version rules stay consistent.
         var operation = AIGenerationOperations.Get(operationType);
-        await featureGuard.EnsureEnabledAsync(operation.FeatureName, operation.DisabledLocalizationKey);
+        await featureGuard.EnsureEnabledAsync(operation.FeatureName, operation.DisabledErrorCode);
 
         if (operation.RequiresFormVersion && request.ApplicationFormVersionId is null)
         {

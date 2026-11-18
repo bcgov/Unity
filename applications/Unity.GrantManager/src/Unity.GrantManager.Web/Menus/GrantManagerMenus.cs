@@ -20,4 +20,5 @@ public static class GrantManagerMenus
     public const string Applicants = Prefix + ".Applicants";
     public const string ConfigurationManagement = Prefix + ".ConfigurationManagement";
     public const string UnityAdmin = Prefix + ".UnityAdmin";
+    public const string UserSettings = Prefix + ".UserSettings";
 }

@@ -2,10 +2,14 @@
     let l = abp.localization.getResource('GrantManager');
     let _onboardingRequestAppService = unity.tenantManagement.onboardingRequest;
     let _dataTable = null;
+    let _$table = null;
+    let _defaultVisibleColumns = [];
     let _selectedRow = null;
+    let _selectedRows = [];
     let _selectedCategory = 'Onboarding';
 
     const CATEGORY_STORAGE_KEY = 'Onboarding_SelectedCategory';
+    const DEFAULT_VISIBLE_COLUMNS = ['submissionNumber', 'status', 'submissionDate', 'ownerName', 'assignees'];
 
     // ─── Fixed columns (always present) ──────────────────────────────────────
 
@@ -25,12 +29,38 @@
             title: l('Onboarding:ColumnSubmissionDate'),
             data: 'submissionDate',
             name: 'submissionDate',
+            // Stops DataTables detecting a number and right-aligning the cells under a left-aligned header.
+            type: 'string',
+            width: '7.5rem',
             index: 2,
             render: function (data, type) {
                 return DateUtils.formatUtcDateToLocal(data, type);
             }
         },
-        { title: l('Onboarding:ColumnCategory'), data: 'category', name: 'category', index: 3 }
+        { title: l('Onboarding:ColumnCategory'), data: 'category', name: 'category', index: 3 },
+        {
+            title: l('Onboarding:ColumnOwner'),
+            data: 'ownerName',
+            name: 'ownerName',
+            index: 4,
+            defaultContent: '',
+            render: function (data, type) {
+                if (type !== 'display') return data ?? '';
+                return _escapeHtml(data ?? '');
+            }
+        },
+        {
+            title: l('Onboarding:ColumnAssignee'),
+            data: 'assignees',
+            name: 'assignees',
+            index: 5,
+            orderable: false,
+            defaultContent: '',
+            render: function (data, type) {
+                const text = _formatAssignees(data);
+                return type === 'display' ? _escapeHtml(text) : text;
+            }
+        }
     ];
 
     // ─── Field value renderers ────────────────────────────────────────────────
@@ -41,6 +71,13 @@
             .replaceAll('<', '&lt;')
             .replaceAll('>', '&gt;')
             .replaceAll('"', '&quot;');
+    }
+
+    // "Jane Smith [Reviewer], Alex Chen [Program Lead]"; a role is optional.
+    function _formatAssignees(assignees) {
+        return (assignees || [])
+            .map(function (a) { return a.role ? a.name + ' [' + a.role + ']' : a.name; })
+            .join(', ');
     }
 
     function _formatCheckboxKey(key) {
@@ -201,7 +238,23 @@
 
     // ─── Column builder ───────────────────────────────────────────────────────
 
-    function buildColumns(schema) {
+    // Tenant Name and Program Manager Email are required to create a tenant, so they are shown by
+    // default. Their keys vary by form, so a field with exactly that label wins, then the saved
+    // field mapping, then the aliases. Tenant Name aliases must match exactly, because "Tenant
+    // Display Name" and "Program Manager Email" both score above the fuzzy threshold against them.
+    function _requiredFieldKeys(schema) {
+        const columns = schema?.columns || [];
+        const saved = function (key) { return columns.some(function (c) { return c.key === key; }) ? key : null; };
+        const tenantName = _exactMatch(columns, ['tenant name'])
+            || saved(schema?.tenantNameFieldKey)
+            || _exactMatch(columns, TENANT_NAME_CANONICALS.filter(function (c) { return !SHARED_CANONICALS.has(c); }));
+        const programManagers = _exactMatch(columns, ['program manager email'])
+            || saved(schema?.programManagersFieldKey)
+            || _bestMatch(columns, PROGRAM_MANAGERS_CANONICALS);
+        return { tenantName, programManagers: programManagers === tenantName ? null : programManagers };
+    }
+
+    function buildColumns(schema, requiredKeys) {
         let cols = FIXED_COLUMNS.map(function (c, i) { return { ...c, index: i }; });
 
         if (schema?.columns) {
@@ -228,25 +281,190 @@
             });
         }
 
-        return cols;
+        // Tenant Name follows Submission Date, and Program Manager Email ends the default columns.
+        const permanent = cols.slice(0, FIXED_COLUMNS.length);
+        const fields = cols.slice(FIXED_COLUMNS.length);
+        const field = function (key) { return fields.find(function (c) { return c.name === key; }); };
+        const tenantName = field(requiredKeys.tenantName);
+        const programManagers = field(requiredKeys.programManagers);
+        const dateIndex = permanent.findIndex(function (c) { return c.name === 'submissionDate'; }) + 1;
+
+        return [
+            ...permanent.slice(0, dateIndex),
+            tenantName,
+            ...permanent.slice(dateIndex),
+            programManagers,
+            ...fields.filter(function (c) { return c !== tenantName && c !== programManagers; })
+        ].filter(Boolean).map(function (c, i) { return { ...c, index: i }; });
+    }
+
+    // ─── Saved views ──────────────────────────────────────────────────────────
+
+    // Saved views and the remembered table state are stored against the table's id, and each
+    // category has different columns, so giving each category its own id keeps them apart.
+    function _tableIdForCategory(category) {
+        const safeCategory = String(category).replaceAll(/[^a-zA-Z0-9]/g, function (c) {
+            return '-' + c.codePointAt(0).toString(16);
+        });
+        return 'OnboardingRequestsTable_' + safeCategory;
+    }
+
+    // DataTables stores column order by position, which stops matching as soon as a form change
+    // adds or removes a column, so the names are stored too.
+    function _saveColumnOrderByName(settings, data) {
+        data.columnOrderNames = settings.aoColumns.map(function (col) { return col.sName; });
+    }
+
+    function _restoreColumnOrderByName(data, listColumns) {
+        if (!data?.columnOrderNames) return;
+
+        const definedNames = listColumns.map(function (col) { return col.name; });
+        const displayNames = data.columnOrderNames.filter(function (name) { return definedNames.includes(name); });
+        definedNames.forEach(function (name) {
+            if (!displayNames.includes(name)) displayNames.push(name);
+        });
+
+        data.colReorder = displayNames.map(function (name) { return definedNames.indexOf(name); });
+
+        // ColReorder and the column filter restore both read this list in display order.
+        const columnsByName = new Map((data.columns || []).map(function (col) { return [col.name, col]; }));
+        data.columns = displayNames.map(function (name) { return columnsByName.get(name); }).filter(Boolean);
+
+        // Sort is stored by name, but DataTables resolves it against the column positions from
+        // before the reorder above, so hand it the position the column is moving to.
+        data.order = (data.order || [])
+            .map(function (o) { return [typeof o[0] === 'string' ? displayNames.indexOf(o[0]) : o[0], o[1]]; })
+            .filter(function (o) { return o[0] >= 0; });
+    }
+
+    // Loading a view on a table that is already on screen applies visibility by position, using the
+    // layout from before the view's column order was applied, and leaves any search or filter the
+    // view doesn't have. The filter row rebuilds from its cache and inputs on every visibility
+    // change, so filters are replaced before visibility is set by name.
+    function _applyLoadedView(dtApi, data) {
+        if (!dtApi.ready() || !data?.columns) return;
+
+        const settings = dtApi.settings()[0];
+        const names = settings.aoColumns.map(function (col) { return col.sName; });
+        const filterRow = settings._filterRow;
+
+        $(settings.oInit.externalSearchInputId).val(data.externalSearch || '');
+
+        if (filterRow) {
+            filterRow.dom.filterRow.find('.custom-filter-input').val('');
+            const filterData = filterRow.s.filterData;
+            Object.keys(filterData).forEach(function (name) { delete filterData[name]; });
+            data.columns.forEach(function (col) {
+                if (col.visible && col.search?.search) filterData[col.name] = col.search.search;
+            });
+        }
+
+        data.columns.forEach(function (col) {
+            const index = names.indexOf(col.name);
+            if (index >= 0) dtApi.column(index).search(col.search?.search || '');
+        });
+        data.columns.forEach(function (col) {
+            const index = names.indexOf(col.name);
+            if (index >= 0 && col.visible !== undefined) dtApi.column(index).visible(col.visible, false);
+        });
+        dtApi.columns.adjust();
+    }
+
+    function _resetToDefaultView(dt) {
+        dt.colReorder.reset();
+        dt.columns().visible(false, false);
+        _defaultVisibleColumns.forEach(function (name) {
+            dt.column(name + ':name').visible(true, false);
+        });
+        dt.columns.adjust();
+        dt.settings()[0]._filterRow?.clearFilters();
+        // clearFilters restores dt.init().order, which ColReorder has moved along with the columns.
+        dt.order([[0, 'asc']]).draw();
+
+        dt.buttons('.grp-savedStates').container().find('.dt-button-collection').hide();
+        $('div.dt-button-background').trigger('click');
+    }
+
+    function _savedViewButton() {
+        return {
+            extend: 'savedStates',
+            className: 'custom-table-btn flex-none btn btn-secondary grp-savedStates',
+            config: {
+                creationModal: true,
+                // A selection refers to rows on the current page, not to the view.
+                saveState: { select: false },
+                splitSecondaries: [
+                    { extend: 'updateState', text: '<i class="fa-regular fa-floppy-disk" aria-hidden="true"></i> ' + l('OnboardingList:UpdateView') },
+                    { extend: 'renameState', text: '<i class="fa-regular fa-pen-to-square" aria-hidden="true"></i> ' + l('OnboardingList:RenameView') },
+                    { extend: 'removeState', text: '<i class="fa-regular fa-trash-can" aria-hidden="true"></i> ' + l('OnboardingList:DeleteView') }
+                ]
+            },
+            buttons: [
+                { extend: 'createState', text: l('OnboardingList:SaveAsView') },
+                {
+                    text: l('OnboardingList:ResetToDefaultView'),
+                    action: function (e, dt) { _resetToDefaultView(dt); }
+                },
+                { extend: 'removeAllStates', text: l('OnboardingList:DeleteAllViews') },
+                { extend: 'spacer', style: 'bar' }
+            ]
+        };
+    }
+
+    function _savedViewLanguage() {
+        return {
+            buttons: { stateRestore: l('OnboardingList:DefaultViewName') },
+            stateRestore: {
+                creationModal: {
+                    title: l('OnboardingList:CreateViewTitle'),
+                    name: l('OnboardingList:ViewNameLabel'),
+                    button: l('OnboardingList:SaveViewButton')
+                },
+                emptyStates: l('OnboardingList:NoSavedViews'),
+                renameTitle: l('OnboardingList:RenameViewTitle'),
+                renameLabel: l('OnboardingList:RenameViewLabel'),
+                removeTitle: l('OnboardingList:DeleteViewTitle'),
+                removeConfirm: l('OnboardingList:DeleteViewConfirm'),
+                removeSubmit: l('OnboardingList:DeleteView'),
+                duplicateError: l('OnboardingList:DuplicateViewName'),
+                removeError: l('OnboardingList:DeleteViewFailed')
+            }
+        };
+    }
+
+    function _showSaveViewLabel() {
+        $('.grp-savedStates').text(l('OnboardingList:SaveView'))
+            .prepend('<i class="fa-regular fa-bookmark" aria-hidden="true"></i> ');
     }
 
     // ─── DataTable init ───────────────────────────────────────────────────────
 
     function initTable(schema) {
+        // Held once, because the id changes per category below.
+        _$table ??= $('#OnboardingRequestsTable');
+
         if (_dataTable) {
-            _dataTable.off('select deselect');
+            _dataTable.off('select deselect draw stateRestore-change');
+            // The saved-view plugin's destroy handler removes the DataTables container, and this
+            // table with it. Only the plugin's handlers need clearing before the rebuild.
+            _$table.off('.dtsr dtsr-modal-inserted');
             _dataTable.destroy();
-            $('#OnboardingRequestsTable').empty();
+            _$table.empty();
+            $('#search').val('');
             _dataTable = null;
             _selectedRow = null;
+            _selectedRows = [];
             manageActionButtons();
         }
 
-        let listColumns = buildColumns(schema);
+        const requiredKeys = _requiredFieldKeys(schema);
+        let listColumns = buildColumns(schema, requiredKeys);
+        _defaultVisibleColumns = [...DEFAULT_VISIBLE_COLUMNS, requiredKeys.tenantName, requiredKeys.programManagers].filter(Boolean);
+        _$table.attr('id', _tableIdForCategory(_selectedCategory));
 
         _dataTable = initializeDataTable({
-            dt: $('#OnboardingRequestsTable'),
+            dt: _$table,
+            defaultVisibleColumns: _defaultVisibleColumns,
             listColumns: listColumns,
             defaultSortColumn: 0,
             dataEndpoint: _onboardingRequestAppService.getList,
@@ -269,11 +487,17 @@
             responseCallback: function (result) {
                 return { recordsTotal: result.totalCount, recordsFiltered: result.totalCount, data: result.items };
             },
-            actionButtons: commonTableActionButtons(l('Menu:Onboarding')).filter(b => b.id !== 'btn-toggle-filter'),
+            actionButtons: [
+                ...commonTableActionButtons(l('Menu:Onboarding')).filter(b => b.id !== 'btn-toggle-filter'),
+                _savedViewButton()
+            ],
             serverSideEnabled: true,
             pagingEnabled: true,
             reorderEnabled: true,
-            languageSetValues: {},
+            languageSetValues: _savedViewLanguage(),
+            onStateSaveParams: _saveColumnOrderByName,
+            onStateLoadParams: function (settings, data) { _restoreColumnOrderByName(data, listColumns); },
+            onStateLoaded: _applyLoadedView,
             dynamicButtonContainerId: 'dynamicButtonContainerId',
             externalSearchId: 'search',
             lengthMenu: [10, 25, 50]
@@ -281,21 +505,26 @@
 
         _openRequestedCreateTenant();
 
-        _dataTable.select.style('single');
+        _dataTable.select.style('multi');
 
-        _dataTable.on('select', function (e, dt, type, indexes) {
-            if (type === 'row' && indexes.length) {
-                _selectedRow = dt.row(indexes[0]).data();
-                manageActionButtons();
-            }
+        _dataTable.on('select deselect', function (e, dt, type) {
+            if (type === 'row') _syncSelection();
         });
 
-        _dataTable.on('deselect', function (e, dt, type) {
-            if (type === 'row' && dt.rows({ selected: true }).count() === 0) {
-                _selectedRow = null;
-                manageActionButtons();
-            }
-        });
+        // A server-side redraw replaces the rows, which drops the selection without a deselect event.
+        _dataTable.on('draw', _syncSelection);
+
+        $('.grp-savedStates').closest('.btn-group').addClass('cstm-save-view');
+        _dataTable.on('stateRestore-change', _showSaveViewLabel);
+        _showSaveViewLabel();
+    }
+
+    // Open and Create Tenant act on one request (_selectedRow is only set for exactly one);
+    // Assign acts on all of _selectedRows.
+    function _syncSelection() {
+        _selectedRows = _dataTable.rows({ selected: true }).data().toArray();
+        _selectedRow = _selectedRows.length === 1 ? _selectedRows[0] : null;
+        manageActionButtons();
     }
 
     // ─── Create Tenant requested from the request details page ───────────────
@@ -320,6 +549,7 @@
         $('#btn-open-onboarding').toggleClass('action-bar-btn-unavailable', !hasSelection);
         $('#btn-create-tenant').toggleClass('action-bar-btn-unavailable',
             !hasSelection || _selectedRow.status !== 'Approved');
+        $('#btn-assign-onboarding').toggleClass('action-bar-btn-unavailable', _selectedRows.length === 0);
     }
 
     // ─── Field value preview ─────────────────────────────────────────────────
@@ -525,6 +755,143 @@
         };
     };
 
+    // ─── Assign Owner and Assignees modal ─────────────────────────────────────
+
+    let _assignModal = new abp.ModalManager({
+        viewUrl: abp.appPath + 'TenantManagement/Onboarding/AssignModal',
+        modalClass: 'assignOnboardingModal'
+    });
+
+    let _assignRows = [];
+
+    function _assignmentKey(row) {
+        return JSON.stringify({
+            ownerId: row.ownerId || null,
+            assignees: (row.assignees || [])
+                .map(function (a) { return a.assigneeId + '|' + (a.role || ''); })
+                .sort(function (x, y) { return x.localeCompare(y); })
+        });
+    }
+
+    function _appendUserOptions($select, users, placeholder) {
+        $select.append($('<option>').val('').text(placeholder));
+        users.forEach(function (u) {
+            $select.append($('<option>').val(u.id).text(u.name));
+        });
+    }
+
+    function _addAssigneeRow(users, assigneeId, role) {
+        const $row = $('<div>').addClass('d-flex gap-2 mb-2 assign-onboarding-row');
+        const $user = $('<select>')
+            .addClass('form-select form-select-sm assign-onboarding-user')
+            .attr('aria-label', l('AssignOnboardingModal:AssigneesLabel'));
+        _appendUserOptions($user, users, l('AssignOnboardingModal:AssigneePlaceholder'));
+        $user.val(assigneeId || '');
+
+        const $role = $('<input>')
+            .addClass('form-control form-control-sm assign-onboarding-role')
+            .attr({
+                type: 'text',
+                maxlength: 250,
+                placeholder: l('AssignOnboardingModal:RolePlaceholder'),
+                'aria-label': l('AssignOnboardingModal:RolePlaceholder')
+            })
+            .val(role || '');
+
+        const $remove = $('<button>')
+            .addClass('btn btn-secondary btn-sm')
+            .attr({ type: 'button', title: l('AssignOnboardingModal:RemoveAssignee'), 'aria-label': l('AssignOnboardingModal:RemoveAssignee') })
+            .append($('<i>').addClass('fa-solid fa-xmark'))
+            .on('click', function () { $row.remove(); });
+
+        $('#assign-onboarding-assignees').append($row.append($user, $role, $remove));
+    }
+
+    function _fillAssignForm(users) {
+        // Rows that already agree are prefilled so they can be edited; rows that disagree start
+        // blank, with a warning, because saving overwrites all of them with the same values.
+        const isSame = new Set(_assignRows.map(_assignmentKey)).size === 1;
+        const current = isSame ? _assignRows[0] : { ownerId: null, assignees: [] };
+
+        _appendUserOptions($('#assign-onboarding-owner'), users, l('AssignOnboardingModal:NoOwner'));
+        $('#assign-onboarding-owner').val(current.ownerId || '');
+        $('#assign-onboarding-mixed').toggleClass('d-none', isSame);
+
+        (current.assignees || []).forEach(function (a) { _addAssigneeRow(users, a.assigneeId, a.role); });
+        if (!current.assignees?.length) _addAssigneeRow(users);
+
+        $('#btn-assign-onboarding-add').on('click', function () { _addAssigneeRow(users); });
+        $('#assign-onboarding-loading').addClass('d-none');
+        $('#assign-onboarding-form').removeClass('d-none');
+        $('#btn-assign-onboarding-save').prop('disabled', false);
+    }
+
+    // Returns the assignees to save, or null after showing why they can't be saved. A row left
+    // completely blank is ignored, so an owner can be saved without any assignee.
+    function _readAssignees() {
+        const assignees = [];
+        let error = null;
+
+        $('#assign-onboarding-assignees .assign-onboarding-row').each(function () {
+            const assigneeId = $(this).find('.assign-onboarding-user').val();
+            const role = String($(this).find('.assign-onboarding-role').val() || '').trim();
+
+            if (!assigneeId) {
+                if (role) error = 'AssignOnboardingModal:AssigneeRequired';
+                return;
+            }
+            if (assignees.some(function (a) { return a.assigneeId === assigneeId; })) {
+                error = error || 'AssignOnboardingModal:DuplicateAssignee';
+                return;
+            }
+            assignees.push({ assigneeId: assigneeId, role: role || null });
+        });
+
+        $('#assign-onboarding-error').text(error ? l(error) : '').toggleClass('d-none', !error);
+        return error ? null : assignees;
+    }
+
+    function _saveAssignment() {
+        const assignees = _readAssignees();
+        if (assignees === null) return;
+
+        const $btn = $(this);
+        $btn.prop('disabled', true);
+
+        abp.ajax({
+            url: abp.appPath + 'api/onboarding-requests/assign',
+            type: 'POST',
+            data: JSON.stringify({
+                applicationIds: _assignRows.map(function (r) { return r.id; }),
+                ownerId: $('#assign-onboarding-owner').val() || null,
+                assignees: assignees
+            }),
+            contentType: 'application/json'
+        }).done(function () {
+            abp.notify.success(l('AssignOnboardingModal:SaveSuccess'));
+            _assignModal.close();
+            _dataTable.ajax.reload(null, false);
+        }).fail(function () {
+            $btn.prop('disabled', false);
+        });
+    }
+
+    abp.modals.assignOnboardingModal = function () {
+        return {
+            initModal: function () {
+                $('#btn-assign-onboarding-save').on('click', _saveAssignment);
+
+                abp.ajax({
+                    url: abp.appPath + 'api/onboarding-requests/assignable-users',
+                    type: 'GET'
+                }).done(_fillAssignForm).fail(function () {
+                    $('#assign-onboarding-loading').addClass('d-none');
+                    $('#assign-onboarding-error').text(l('AssignOnboardingModal:LoadFailed')).removeClass('d-none');
+                });
+            }
+        };
+    };
+
     // ─── Jaro-Winkler field auto-detection ───────────────────────────────────
 
     function _normalizeLabel(s) {
@@ -693,6 +1060,12 @@
         $('#btn-create-tenant').on('click', function () {
             if (!_selectedRow) return;
             _createTenantModal.open({ id: _selectedRow.id });
+        });
+
+        $('#btn-assign-onboarding').on('click', function () {
+            if (_selectedRows.length === 0) return;
+            _assignRows = _selectedRows;
+            _assignModal.open();
         });
     });
 })();

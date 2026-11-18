@@ -153,6 +153,7 @@ $(function () {
         submittedFromDate: null,
         submittedToDate: null
     };
+    let lastDateValidationError = null;
 
     const UIElements = {
         searchField: $('#search'),
@@ -191,12 +192,15 @@ $(function () {
     }
 
     function initializeSubmittedFilterDates() {
+        const today = formatDate(new Date());
+        UIElements.submittedToInput.attr({ 'max': today });
+        UIElements.submittedFromInput.attr({ 'max': today });
+
         let savedQuickRange = localStorage.getItem('GrantApplications_QuickRange') || defaultQuickDateRange;
         let savedFromDate = localStorage.getItem('GrantApplications_FromDate');
         let savedToDate = localStorage.getItem('GrantApplications_ToDate');
 
         let isCustomRange = savedQuickRange === 'custom';
-        toggleCustomDateInputs(isCustomRange);
 
         let range = isCustomRange
             ? {
@@ -205,56 +209,71 @@ $(function () {
             }
             : getDateRange(savedQuickRange);
 
-        if (!isCustomRange && !range) {
+        // Validate saved values before native date inputs can discard malformed dates.
+        if ((isCustomRange && !validateDateRange(range.fromDate, range.toDate)) ||
+            (!isCustomRange && !range)) {
             savedQuickRange = defaultQuickDateRange;
             range = getDateRange(savedQuickRange);
         }
 
         setDateRangeFilters(savedQuickRange, range);
         setDateRangeLocalStorage(savedQuickRange, range);
-
-        // Set max date to today for both inputs
-        const today = formatDate(new Date());
-        UIElements.submittedToInput.attr({ 'max': today });
-        UIElements.submittedFromInput.attr({ 'max': today });
+        toggleCustomDateInputs(savedQuickRange === 'custom');
     }
 
     function bindUIEvents() {
-        UIElements.inputFilter.on('change', handleInputFilterChange);
+        UIElements.inputFilter.on('input change', handleInputFilterChange);
         UIElements.quickDateRange.on('change', handleQuickDateRangeChange);
     }
 
-    function validateDate(dateValue, element) {
-        if (dateValue) {
-            const selectedDate = new Date(dateValue);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
+    function getDateValidationError(dateValue, element) {
+        if (!dateValue) return null;
 
-            const minDate = element.attr('min') ? new Date(element.attr('min')) : null;
-            const maxDate = element.attr('max') ? new Date(element.attr('max')) : null;
-
-            if (selectedDate > today) {
-                element.addClass('input-validation-error');
-                abp.notify.error('The date cannot be in the future', 'Invalid Date');
-                return false;
-            }
-
-            if (minDate && selectedDate < minDate) {
-                element.addClass('input-validation-error');
-                abp.notify.error('The date cannot be before the minimum allowed date', 'Invalid Date');
-                return false;
-            }
-
-            if (maxDate && selectedDate > maxDate) {
-                element.addClass('input-validation-error');
-                abp.notify.error('The date cannot be after the maximum allowed date', 'Invalid Date');
-                return false;
-            }
-
-            element.removeClass('input-validation-error');
-            return true;
+        const selectedDate = new Date(dateValue);
+        if (Number.isNaN(selectedDate.getTime()) || selectedDate.toISOString().slice(0, 10) !== dateValue) {
+            return 'ApplicationList:InvalidDateValue';
         }
-        return true;
+
+        // Use the same date-only format for today and the input values.
+        const today = new Date(formatDate(new Date()));
+        const minDate = element.attr('min') ? new Date(element.attr('min')) : null;
+        const maxDate = element.attr('max') ? new Date(element.attr('max')) : null;
+
+        if (selectedDate > today) {
+            return 'ApplicationList:DateInFuture';
+        }
+        if (minDate && selectedDate < minDate) {
+            return 'ApplicationList:DateBeforeMinimum';
+        }
+        if (maxDate && selectedDate > maxDate) {
+            return 'ApplicationList:DateAfterMaximum';
+        }
+        return null;
+    }
+
+    function validateDateRange(
+        fromDate = UIElements.submittedFromInput.val(),
+        toDate = UIElements.submittedToInput.val()
+    ) {
+        const fromError = getDateValidationError(fromDate, UIElements.submittedFromInput);
+        const toError = getDateValidationError(toDate, UIElements.submittedToInput);
+        let error = fromError || toError;
+
+        UIElements.submittedFromInput.toggleClass('input-validation-error', !!fromError);
+        UIElements.submittedToInput.toggleClass('input-validation-error', !!toError);
+
+        if (!error && fromDate && toDate && new Date(fromDate) > new Date(toDate)) {
+            error = 'ApplicationList:InvalidDateRange';
+            UIElements.inputFilter.addClass('input-validation-error');
+        }
+
+        // A single date edit can fire both input and change events.
+        const errorSignature = error ? `${error}:${fromDate}:${toDate}` : null;
+        if (errorSignature && errorSignature !== lastDateValidationError) {
+            abp.notify.error(l(error), l('ApplicationList:InvalidDate'));
+        }
+        lastDateValidationError = errorSignature;
+        return !error;
     }
 
     function setDateRangeFilters(quickDateRange, range) {
@@ -265,6 +284,8 @@ $(function () {
             const toDate = range.toDate ?? '';
             UIElements.submittedFromInput.val(fromDate);
             UIElements.submittedToInput.val(toDate);
+            UIElements.inputFilter.removeClass('input-validation-error');
+            lastDateValidationError = null;
             grantTableFilters.submittedFromDate = fromDate;
             grantTableFilters.submittedToDate = toDate;
         }
@@ -341,11 +362,16 @@ $(function () {
     // =====================
     // Input filter change handler
     // =====================
-    function handleInputFilterChange() {
-        const $input = $(this);
-        const dateValue = $input.val();
+    function handleInputFilterChange(event) {
+        // An unfinished native date has an empty value; do not apply it as a cleared filter.
+        if (UIElements.submittedFromInput[0].validity.badInput ||
+            UIElements.submittedToInput[0].validity.badInput) {
+            lastDateValidationError = null;
+            return;
+        }
 
-        if (!validateDate(dateValue, $input)) return;
+        // Validate each edit, then apply valid filters when the date is committed.
+        if (!validateDateRange() || event.type === 'input') return;
 
         grantTableFilters.submittedFromDate = UIElements.submittedFromInput.val();
         grantTableFilters.submittedToDate = UIElements.submittedToInput.val();
@@ -541,7 +567,6 @@ $(function () {
 
         let quickRange = filters.quickDateRange || defaultQuickDateRange;
         let isCustomRange = filters.quickDateRange === 'custom';
-        toggleCustomDateInputs(isCustomRange);
 
         let range = isCustomRange
             ? {
@@ -550,13 +575,15 @@ $(function () {
             }
             : getDateRange(quickRange);
 
-        if (!isCustomRange && !range) {
+        if ((isCustomRange && !validateDateRange(range.fromDate, range.toDate)) ||
+            (!isCustomRange && !range)) {
             quickRange = defaultQuickDateRange;
             range = getDateRange(quickRange);
         }
 
         setDateRangeFilters(quickRange, range);
         setDateRangeLocalStorage(quickRange, range);
+        toggleCustomDateInputs(quickRange === 'custom');
     }
 
 

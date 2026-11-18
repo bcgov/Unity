@@ -99,7 +99,8 @@ public class UpsertSectionModalModel(IWorksheetAppService worksheetAppService,
     {
         return await worksheetAppService.CreateSectionAsync(WorksheetId, new CreateSectionDto()
         {
-            Name = Name ?? string.Empty
+            Name = Name ?? string.Empty,
+            FieldWidth = FieldWidth > 0 ? FieldWidth : null
         });
     }
 

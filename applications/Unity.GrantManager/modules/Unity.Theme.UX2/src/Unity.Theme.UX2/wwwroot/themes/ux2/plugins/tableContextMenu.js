@@ -4,7 +4,6 @@
     // Constants
     const MENU_Z_INDEX = 10000;
     const MENU_VIEWPORT_PADDING = 8;
-    const OFFSCREEN_OFFSET = '-9999px';
     const MENU_ID = 'dt-context-menu';
 
     function getTableSettings(dtApi) {
@@ -328,52 +327,22 @@
     }
 
     /**
-     * Copy text to clipboard with fallback.
+     * Copy text using the Clipboard API and report unavailable or denied access.
      */
-    function copyToClipboard(text) {
-        if (navigator.clipboard?.writeText) {
-            navigator.clipboard.writeText(text)
-                .then(() => {
-                    abp.notify.success((abp.localization.getResource('GrantManager')('DataTable:ContextMenu:CopiedToClipboard') ?? 'Copied to clipboard'),'Success');
-                })
-                .catch(() => {
-                    fallbackCopy(text);
-                });
-        } else {
-            fallbackCopy(text);
-        }
-    }
-
-    /**
-     * Fallback copy using textarea hack (legacy support).
-     */
-    function fallbackCopy(text) {
-        const $textarea = $('<textarea>')
-            .val(text)
-            .css({
-                position: 'fixed',
-                left: OFFSCREEN_OFFSET,
-                top: OFFSCREEN_OFFSET
-            })
-            .appendTo('body');
-
+    async function copyToClipboard(text) {
         try {
-            $textarea[0]?.select?.();
-            const execCommand = document['execCommand']?.bind(document);
-            const success = execCommand ? execCommand('copy') : false;
-            if (success) {
-                abp.notify.success(
-                    (abp.localization.getResource('GrantManager')('DataTable:ContextMenu:CopiedToClipboard') ?? 'Copied to clipboard'),
-                    'Success'
-                );
-            } else {
-                abp.notify.error('Copy failed. Please try again.', 'Error');
+            if (typeof navigator.clipboard?.writeText !== 'function') {
+                throw new TypeError('Clipboard API is unavailable');
             }
+
+            await navigator.clipboard.writeText(text);
+            abp.notify.success(
+                (abp.localization.getResource('GrantManager')('DataTable:ContextMenu:CopiedToClipboard') ?? 'Copied to clipboard'),
+                'Success'
+            );
         } catch (err) {
-            console.debug('Fallback copy error:', err);
+            console.debug('Clipboard copy error:', err);
             abp.notify.error('Copy failed. Please try again.', 'Error');
-        } finally {
-            $textarea.remove();
         }
     }
 
@@ -590,7 +559,7 @@
                 const cellText = ($cell.text() ?? '').trim();
                 appendMenuAction($menuContainer, labels.copy, function (e) {
                     e.preventDefault();
-                    copyToClipboard(cellText);
+                    void copyToClipboard(cellText);
                     hideMenu();
                 }, 'fa-regular fa-copy');
             }

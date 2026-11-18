@@ -1,9 +1,9 @@
+using Microsoft.AspNetCore.Authorization;
+using Shouldly;
 using System;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
-using Shouldly;
 using Unity.Notifications.Permissions;
 using Unity.Notifications.Templates;
 using Volo.Abp.Domain.Repositories;
@@ -25,7 +25,7 @@ public class AutomatedNotificationTemplateReferenceTests(ITestOutputHelper outpu
     public void Should_Require_Email_Send_For_Template_Reference_Lookup()
     {
         PoliciesOf(nameof(AutomatedNotificationAppService.GetTemplateReferencesAsync))
-            .ShouldBe([NotificationsPermissions.Email.Send]);
+            .ShouldBe([NotificationsPermissions.Email.Template.Default]);
     }
 
     [Fact]

@@ -19,10 +19,10 @@ Angular frontend providing an intuitive chat interface for natural language data
 
 ## Tech Stack
 
-- **Framework**: Angular 20.0.0
+- **Framework**: Angular 21.2
 - **UI**: BC Sans typography, custom CSS
 - **HTTP**: Angular HttpClient with RxJS
-- **Build**: Angular CLI 20.0.3, esbuild
+- **Build**: Angular CLI 21.2, esbuild
 
 ## Local Development
 
@@ -45,7 +45,7 @@ Application runs on `http://localhost:4200`
 - `npm start` - Start development server (port 4200)
 - `npm run build` - Production build
 - `npm run watch` - Build and watch for changes
-- `npm test` - Run unit tests with Karma
+- `npm test` - Run unit tests with Vitest
 
 ## Key Components
 

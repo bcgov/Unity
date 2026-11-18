@@ -66,7 +66,7 @@ namespace Unity.Notifications.EmailGroups
             var emailGroup = await _emailGroupsRepository.GetAsync(id);
             if (await IsUsedByScheduledNotificationAsync(emailGroup.Name))
             {
-                throw new BusinessException("Notifications:EmailGroupInUse");
+                throw new BusinessException(NotificationsErrorCodes.EmailGroupInUse);
             }
 
             try

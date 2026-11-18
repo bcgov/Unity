@@ -52,8 +52,10 @@ Class-level `[Authorize(IdentityConsts.ITOperationsPolicyName)]` — the entire 
 |`ValidateAsync(id)`|Client-triggered pre-check — runs the same validation steps `CreateTenantAsync` re-runs server-side.|
 |`CreateTenantAsync(id, CreateTenantInputDto?)`|Approves the request: resolves program managers, feature keys, calls `TenantAppService.CreateAsync`, assigns extra managers, updates the Metabase default email list, closes the source application.|
 |`GetColumnSchemaAsync()` / `GetAvailableCategoriesAsync()`|Drives the admin field-mapping UI (which worksheet field key means "tenant name", etc.) and the intake-category picker.|
+|`AssignAsync(OnboardingAssignmentInputDto)`|Replaces the owner and assignees on every selected request, without changing status.|
+|`GetAssignableUsersAsync()`|People who can be chosen as owner or assignee in the Assign modal.|
 
-Exposed over HTTP by a **hand-written** `OnboardingRequestController` (`api/onboarding-requests`) rather than an auto-generated ABP dynamic proxy — every action additionally does a defensive `ModelState.IsValid` check throwing `UserFriendlyException`, redundant with ASP.NET Core's own model validation but consistent across all five routes.
+Exposed over HTTP by a **hand-written** `OnboardingRequestController` (`api/onboarding-requests`) rather than an auto-generated ABP dynamic proxy — every action additionally does a defensive `ModelState.IsValid` check throwing `UserFriendlyException`, redundant with ASP.NET Core's own model validation but consistent across all its routes.
 
 ## Endpoint management — configurable third-party API base URLs
 

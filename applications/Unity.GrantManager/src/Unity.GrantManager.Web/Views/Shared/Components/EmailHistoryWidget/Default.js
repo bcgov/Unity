@@ -42,12 +42,17 @@
 
     const enableEmailDelay = $('#EmailHistoryTable').data('enable-email-delay') === true
         || $('#EmailHistoryTable').data('enable-email-delay') === 'true';
+    // Server-computed capabilities; the server still enforces every action.
+    const historyCapabilities = {
+        canDeleteDraft: $('#EmailHistoryTable').data('can-delete-draft') === true,
+        canCancelScheduled: $('#EmailHistoryTable').data('can-cancel-scheduled') === true
+    };
 
     let emailHistoryDataTable = $('#EmailHistoryTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
             dom: 'Bfrtip',
             serverSide: false,
-            order: [[2, 'desc']],
+            order: [[5, 'desc']],
             searching: false,
             paging: false,
             select: {
@@ -91,23 +96,6 @@
                     width: '12%'
                 },
                 {
-                    title: 'Created',
-                    data: 'creationTime',
-                    className: 'data-table-header',
-                    width: '12%',
-                    render: function (data) {
-                        return data ? luxon.DateTime.fromISO(data, {
-                            locale: abp.localization.currentCulture.name,
-                        }).toLocaleString({
-                            day: "numeric",
-                            year: "numeric",
-                            month: "numeric",
-                            hour: "numeric",
-                            minute: "numeric"
-                        }) : '—';
-                    }
-                },
-                {
                     title: 'Sent Date',
                     data: 'sentDateTime',
                     className: 'data-table-header',
@@ -126,8 +114,8 @@
                     }
                 },
                 {
-                    title: 'Sent By',
-                    data: 'sentBy',
+                    title: 'Last Modified By',
+                    data: 'lastModifiedBy',
                     className: 'data-table-header',
                     width: enableEmailDelay ? '10%' : '16%',
                     render: function (data, type, full) {
@@ -136,6 +124,28 @@
                         }
                         return data ? data.name + ' ' + data.surname : '—';
                     },
+                },
+                {
+                    title: 'Last Modified Date',
+                    data: 'lastModificationTime',
+                    className: 'data-table-header',
+                    width: '12%',
+                    render: function (data, type) {
+                        if (type === 'sort' || type === 'type') {
+                            // Support sorting
+                            return data ? luxon.DateTime.fromISO(data).toMillis() : 0;
+                        }
+
+                        return data ? luxon.DateTime.fromISO(data, {
+                            locale: abp.localization.currentCulture.name,
+                        }).toLocaleString({
+                            day: "numeric",
+                            year: "numeric",
+                            month: "numeric",
+                            hour: "numeric",
+                            minute: "numeric"
+                        }) : '—';
+                    }
                 },
                 {
                     title: 'Scheduled Send',
@@ -189,11 +199,12 @@
                         const addWidthClass = enableEmailDelay && hasLoadedEmptyState;
 
                         // Show delete button for drafts
-                        if (data === 'Draft' && abp.auth.isGranted('Notifications.Email.DeleteDraft')) {
+                        // Delete Draft is independent of Edit/Create, so it applies to every draft row.
+                        if (data === 'Draft' && historyCapabilities.canDeleteDraft) {
                             return generateDeleteButtonContent(full, meta.row, addWidthClass);
                         }
                         // Show cancel button for scheduled sends that haven't passed yet
-                        else if (full.sendOnDateTime && abp.auth.isGranted('Notifications.Email.CancelScheduled')) {
+                        else if (full.sendOnDateTime && historyCapabilities.canCancelScheduled) {
                             const sendOnDateTime = parseUtcDateTime(full.sendOnDateTime);
                             const now = luxon.DateTime.utc();
                             if (sendOnDateTime && sendOnDateTime > now) {
@@ -236,7 +247,7 @@
         let row = emailHistoryDataTable.row(tr);
         let column = emailHistoryDataTable.column(this);
 
-        if (column.index() > 0 && column.index() < 4) {
+        if (column.index() > 0 && column.index() < 3) {
             const data = row.data();
             const normalizedSelectedRow = {
                 ...data,
@@ -321,26 +332,25 @@ function cancelScheduledEmail(id, rowIndex) {
             confirmButton: 'btn btn-primary',
             cancelButton: 'btn btn-secondary'
         }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            return $.ajax({
-                url: `/api/app/email-notification/${id}/email`,
-                type: "DELETE",
-            })
-                .then(response => {
-                    abp.notify.success('Scheduled email has been cancelled.', 'Cancel Scheduled Email');
-                    PubSub.publish($('#EmailHistoryTable').attr('data-applicant-id') !== '00000000-0000-0000-0000-000000000000' ? 'refresh_applicant_emails' : 'refresh_application_emails');
-                    PubSub.publish('scheduled_email_cancelled', { id: id });
-                })
-                .catch(error => {
-                    console.error('There was a problem with the fetch operation:', error);
-                    
-                    // Extract error message from API response
-                    const errorMessage = error?.responseJSON?.error?.message || 'Failed to cancel scheduled email. Please try again.';
-                    
-                    abp.notify.error(errorMessage, 'Cancel Scheduled Email');
-                });
+    }).then(async (result) => {
+        if (!result.isConfirmed) {
+            return;
         }
+
+        await $.ajax({
+            url: `/api/app/email-notification/${id}/email`,
+            type: "DELETE",
+        });
+        abp.notify.success('Scheduled email has been cancelled.', 'Cancel Scheduled Email');
+        PubSub.publish($('#EmailHistoryTable').attr('data-applicant-id') !== '00000000-0000-0000-0000-000000000000' ? 'refresh_applicant_emails' : 'refresh_application_emails');
+        PubSub.publish('scheduled_email_cancelled', { id: id });
+    }).catch(error => {
+        console.error('There was a problem with the fetch operation:', error);
+
+        // Extract error message from API response
+        const errorMessage = error?.responseJSON?.error?.message || 'Failed to cancel scheduled email. Please try again.';
+
+        abp.notify.error(errorMessage, 'Cancel Scheduled Email');
     });
 }
 
@@ -354,27 +364,25 @@ function deleteDraftEmail(id, rowIndex) {
             confirmButton: 'btn btn-primary',
             cancelButton: 'btn btn-secondary'
         }
-    }).then((result) => {
-        if (result.isConfirmed) {
-            return $.ajax(
-                {
-                    url: `/api/app/email-notification/${id}/email`,
-                    type: "DELETE",
-                })
-                .then(response => {
-                    abp.notify.success('Draft email is successfully deleted.', 'Delete Draft Email');
-                    PubSub.publish($('#EmailHistoryTable').attr('data-applicant-id') !== '00000000-0000-0000-0000-000000000000' ? 'refresh_applicant_emails' : 'refresh_application_emails');
-                    PubSub.publish($('#EmailHistoryTable').attr('data-applicant-id') !== '00000000-0000-0000-0000-000000000000' ? 'applicant_draft_email_deleted' : 'draft_email_deleted', { id: id });
-                })
-                .catch(error => {
-                    console.error('There was a problem with the fetch operation:', error);
-                    
-                    // Extract error message from API response
-                    const errorMessage = error?.responseJSON?.error?.message || 'Failed to delete draft email. Please try again.';
-                    
-                    abp.notify.error(errorMessage, 'Delete Draft Email');
-                });
+    }).then(async (result) => {
+        if (!result.isConfirmed) {
+            return;
         }
+
+        await $.ajax({
+            url: `/api/app/email-notification/${id}/email`,
+            type: "DELETE",
+        });
+        abp.notify.success('Draft email is successfully deleted.', 'Delete Draft Email');
+        PubSub.publish($('#EmailHistoryTable').attr('data-applicant-id') !== '00000000-0000-0000-0000-000000000000' ? 'refresh_applicant_emails' : 'refresh_application_emails');
+        PubSub.publish($('#EmailHistoryTable').attr('data-applicant-id') !== '00000000-0000-0000-0000-000000000000' ? 'applicant_draft_email_deleted' : 'draft_email_deleted', { id: id });
+    }).catch(error => {
+        console.error('There was a problem with the fetch operation:', error);
+
+        // Extract error message from API response
+        const errorMessage = error?.responseJSON?.error?.message || 'Failed to delete draft email. Please try again.';
+
+        abp.notify.error(errorMessage, 'Delete Draft Email');
     });
 }
 

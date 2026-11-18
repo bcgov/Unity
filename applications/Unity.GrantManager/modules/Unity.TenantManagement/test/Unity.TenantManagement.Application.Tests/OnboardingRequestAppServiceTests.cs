@@ -490,4 +490,57 @@ public class OnboardingRequestAppServiceTests : AbpTenantManagementApplicationTe
             d.TenantId == newTenantId && d.UserIdentifier == "guid-2"));
         await _applicationProvider.Received(1).CloseApplicationAsync(id);
     }
+
+    [Fact]
+    public async Task GetAsync_Should_Map_Owner_And_Assignees()
+    {
+        var id = Guid.NewGuid();
+        var ownerId = Guid.NewGuid();
+        var assignee = new OnboardingAssigneeDto { AssigneeId = Guid.NewGuid(), Name = "Jane Smith", Role = "Reviewer" };
+        _applicationProvider.GetByIdAsync(id).Returns(new OnboardingApplicationRecord
+        {
+            Id = id,
+            OwnerId = ownerId,
+            OwnerName = "Olivia Owner",
+            Assignees = [assignee]
+        });
+
+        var result = await _appService.GetAsync(id);
+
+        result.ShouldNotBeNull();
+        result.OwnerId.ShouldBe(ownerId);
+        result.OwnerName.ShouldBe("Olivia Owner");
+        result.Assignees.ShouldBe([assignee]);
+    }
+
+    [Fact]
+    public async Task AssignAsync_Should_Forward_To_Provider()
+    {
+        var input = new OnboardingAssignmentInputDto { ApplicationIds = [Guid.NewGuid()] };
+
+        await _appService.AssignAsync(input);
+
+        await _applicationProvider.Received(1).SetAssignmentAsync(input);
+    }
+
+    [Fact]
+    public async Task GetListAsync_Should_Route_Owner_And_Assignee_Filters_To_Provider_Not_Worksheet_Scan()
+    {
+        await _appService.GetListAsync(new OnboardingListRequestDto
+        {
+            MaxResultCount = 10,
+            ColumnFilters =
+            [
+                new ColumnFilterDto { Name = "ownerName", Value = "olivia" },
+                new ColumnFilterDto { Name = "assignees", Value = "jane" }
+            ]
+        });
+
+        await _applicationProvider.DidNotReceive().GetAllIdsAsync(Arg.Any<string>());
+        await _applicationProvider.Received(1).GetPagedListAsync(
+            Arg.Any<int>(), Arg.Any<int>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(),
+            Arg.Any<IReadOnlyList<Guid>>(),
+            Arg.Is<IReadOnlyList<ColumnFilterDto>>(f => f.Count == 2),
+            Arg.Any<IReadOnlyList<Guid>>());
+    }
 }

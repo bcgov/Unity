@@ -1,19 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Unity.AspNetCore.Mvc.UI.Theme.UX2.Renderers;
-using Unity.GrantManager.Assessments;
 using Unity.GrantManager.Notifications;
 using Unity.Notifications.Emails;
-using Unity.Notifications.EmailAddresses;
+using Unity.Notifications.Features;
 using Unity.Notifications.Permissions;
 using Unity.Notifications.Settings;
 using Volo.Abp;
@@ -21,7 +14,6 @@ using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Features;
 using Volo.Abp.SettingManagement;
-using Volo.Abp.Uow;
 using Volo.Abp.Users;
 
 namespace Unity.Notifications.EmailNotifications;
@@ -33,19 +25,16 @@ public class EmailNotificationService(
         EmailNotificationManager emailNotificationManager,
         IExternalUserLookupServiceProvider externalUserLookupServiceProvider,
         ISettingManager settingManager,
-        IFeatureChecker featureChecker,
-        IConfiguration configuration,
-        IMarkdownRenderer markdownRenderer,
-        IEmailAddressConfigurationsRepository emailAddressConfigurationsRepository,
+        CommentNotificationService commentNotificationService,
         EmailComposerAccessChecker emailAccessChecker,
         IEmailLogsRepository emailLogsRepository,
-        IAssessmentRepository assessmentRepository) : ApplicationService, IEmailNotificationService
+        IFeatureChecker featureChecker) : ApplicationService, IEmailNotificationService
 {
 
-    [Authorize(NotificationsPermissions.Email.Send)]
+    [Authorize(NotificationsPermissions.Email.Default)]
     public async Task<Guid> InitializeDraftAsync(Guid applicationId)
     {
-        await emailAccessChecker.CheckOwnerAsync(applicationId, Guid.Empty, NotificationsPermissions.Email.Send);
+        await emailAccessChecker.CheckOwnerAsync(applicationId, Guid.Empty, EmailOperation.Create);
         var emailLog = await emailNotificationManager.CreateDraftEmailLogAsync(applicationId);
         return emailLog.Id;
     }
@@ -57,24 +46,33 @@ public class EmailNotificationService(
         // Closing an unsaved composer cleans up only the current user's empty draft.
         var isUnsavedOwnDraft = email.Status == EmailStatus.Draft && email.CreatorId == CurrentUser.Id
             && string.IsNullOrEmpty(email.Subject) && string.IsNullOrEmpty(email.Body);
-        var permission = email.Status == EmailStatus.Draft
-            ? (isUnsavedOwnDraft ? NotificationsPermissions.Email.Send : NotificationsPermissions.Email.DeleteDraft)
-            : NotificationsPermissions.Email.CancelScheduled;
-        await emailAccessChecker.CheckOwnerAsync(email.ApplicationId, email.ApplicantId, permission);
+        if (email.Status != EmailStatus.Draft)
+        {
+            await emailAccessChecker.CheckOwnerAsync(email.ApplicationId, email.ApplicantId, EmailOperation.CancelScheduled);
+        }
+        else if (isUnsavedOwnDraft
+            && await AuthorizationService.IsGrantedAsync(EmailPermissionMap.Get(EmailOwnerTypes.FromIds(email.ApplicantId), EmailOperation.Create))) // Empty draft cleanup support
+        {
+            await emailAccessChecker.CheckOwnerAsync(email.ApplicationId, email.ApplicantId, EmailOperation.Create);
+        }
+        else
+        {
+            await emailAccessChecker.CheckDraftDeleteAsync(email);
+        }
         if (email.Status != EmailStatus.Draft && (!email.SendOnDateTime.HasValue || email.SendOnDateTime <= Clock.Now))
         {
-            throw new BusinessException("Notifications:EmailNotScheduled");
+            throw new BusinessException(NotificationsErrorCodes.EmailNotScheduled);
         }
         await emailNotificationManager.DeleteEmailLogAsync(id);
     }
 
-    [Authorize(NotificationsPermissions.Email.CancelScheduled)]
+    [Authorize(NotificationsPermissions.Email.Default)]
     public async Task CancelEmail(Guid id)
     {
-        var email = await emailAccessChecker.CheckEmailAsync(id, NotificationsPermissions.Email.CancelScheduled);
+        var email = await emailAccessChecker.CheckEmailAsync(id, EmailOperation.CancelScheduled);
         if (!email.SendOnDateTime.HasValue || email.SendOnDateTime <= Clock.Now)
         {
-            throw new BusinessException("Notifications:EmailNotScheduled");
+            throw new BusinessException(NotificationsErrorCodes.EmailNotScheduled);
         }
         await emailNotificationManager.CancelEmailLogAsync(id);
     }
@@ -111,119 +109,9 @@ public class EmailNotificationService(
         await notificationAppService.PostToNotificationsAsync(activityTitle, activitySubtitle);
     }
 
-    private Task<string> GetBaseUrlAsync()
-    {
-        var selfUrl = configuration["App:SelfUrl"];
-        
-        if (string.IsNullOrWhiteSpace(selfUrl))
-        {
-            throw new InvalidOperationException(
-                "App:SelfUrl configuration is not set. Cannot resolve base URL for email notifications. " +
-                "Ensure the configuration is properly set in appsettings or environment variables.");
-        }
-        
-        return Task.FromResult(selfUrl.TrimEnd('/'));
-    }
-
     [Authorize]
-    public async Task<HttpResponseMessage> SendCommentNotification(EmailCommentDto input)
-    {
-        HttpResponseMessage res = new();
-        try
-        {
-            if (await featureChecker.IsEnabledAsync("Unity.Notifications"))
-            {
-                var baseUrl = await GetBaseUrlAsync();
-                var (applicationId, applicantId) = await ResolveCommentOwnerAsync(input);
-
-                string commentLink = applicantId != Guid.Empty
-                    ? QueryHelpers.AddQueryString($"{baseUrl}/GrantApplicants/Details", new Dictionary<string, string?>
-                    {
-                        ["ApplicantId"] = applicantId.ToString(),
-                        ["TenantId"] = CurrentTenant.Id?.ToString()
-                    })
-                    : QueryHelpers.AddQueryString($"{baseUrl}/GrantApplications/Details", new Dictionary<string, string?>
-                    {
-                        ["ApplicationId"] = applicationId.ToString(),
-                        ["TenantId"] = CurrentTenant.Id?.ToString()
-                    });
-
-                var subject = $"Unity-Comment: {input.Subject}";
-                var senderAddresses = await emailAddressConfigurationsRepository.GetListAsync(address =>
-                    address.EmailType == "Sender" && address.IsActive && address.IsDefault);
-                var fromEmail = senderAddresses.FirstOrDefault()?.EmailAddress ?? "NoReply@gov.bc.ca";
-
-                var hasSurname = !string.IsNullOrWhiteSpace(CurrentUser.SurName);
-                var hasName = !string.IsNullOrWhiteSpace(CurrentUser.Name);
-
-                var currentUserText = (hasSurname, hasName) switch
-                {
-                    (true, true) => $"{CurrentUser.SurName}, {CurrentUser.Name}",
-                    _ => CurrentUser.UserName ?? "Unknown User"
-                };
-
-                string htmlBody = await RenderCommentNotificationTemplateAsync(currentUserText, input.Body, commentLink);
-
-                // Log each mention email so it appears in the Notifications list, and commit the logs
-                // before queueing so the email consumer can load them.
-                var emailLogs = new List<EmailLog>();
-                using (var uow = UnitOfWorkManager.Begin(requiresNew: true, isTransactional: true))
-                {
-                    foreach (var toEmail in input.MentionNamesEmail.Where(e => !string.IsNullOrWhiteSpace(e)))
-                    {
-                        emailLogs.Add(await emailNotificationManager.CreateInternalEmailLogAsync(
-                            new EmailMessageParams(toEmail, htmlBody, subject, fromEmail, input.EmailTemplateName),
-                            applicationId, applicantId, EmailType.EventBased));
-                    }
-                    await uow.CompleteAsync();
-                }
-
-                foreach (var emailLog in emailLogs)
-                {
-                    await emailNotificationManager.QueueEmailAsync(emailLog);
-                }
-
-                res = new HttpResponseMessage(HttpStatusCode.Accepted);
-            }
-            else
-            {
-                res = new HttpResponseMessage(HttpStatusCode.BadRequest)
-                {
-                    Content = new StringContent("Feature is not enabled.")
-                };
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "EmailNotificationService->SendEmailCommentNotification: Exception occurred while sending email.");
-
-            res = new HttpResponseMessage(HttpStatusCode.InternalServerError)
-            {
-                Content = new StringContent($"An exception occurred while sending the email: {ex.Message}")
-            };
-        }
-        return res;
-    }
-
-    /// <summary>
-    /// Resolves the application or applicant that owns the comment. Assessment comments are
-    /// owned by an assessment, so they resolve to the assessment's application.
-    /// </summary>
-    private async Task<(Guid ApplicationId, Guid ApplicantId)> ResolveCommentOwnerAsync(EmailCommentDto input)
-    {
-        if (!Guid.TryParse(input.OwnerId, out var ownerId) || ownerId == Guid.Empty)
-        {
-            throw new InvalidOperationException("Invalid comment owner.");
-        }
-
-        return input.CommentType switch
-        {
-            Comments.CommentType.ApplicationComment => (ownerId, Guid.Empty),
-            Comments.CommentType.AssessmentComment => ((await assessmentRepository.GetAsync(ownerId)).ApplicationId, Guid.Empty),
-            Comments.CommentType.ApplicantComment => (Guid.Empty, ownerId),
-            _ => throw new InvalidOperationException("Invalid comment type.")
-        };
-    }
+    public Task<HttpResponseMessage> SendCommentNotification(EmailCommentDto input) =>
+        commentNotificationService.SendCommentNotification(input);
 
     /// <summary>
     /// Send Email Notfication
@@ -260,9 +148,10 @@ public class EmailNotificationService(
         return await emailNotificationManager.GetEmailLogByIdAsync(id);
     }
 
-    [Authorize]
+    [Authorize(NotificationsPermissions.Email.Default)]
     public virtual async Task<List<EmailHistoryDto>> GetHistoryByApplicationId(Guid applicationId)
     {
+        await emailAccessChecker.CheckOwnerAsync(applicationId, Guid.Empty, EmailOperation.View);
         var entityList = await emailNotificationManager.GetEmailLogsByApplicationIdAsync(applicationId);
         return await MapEmailHistoryAsync(entityList);
     }
@@ -270,7 +159,7 @@ public class EmailNotificationService(
     [Authorize(NotificationsPermissions.Email.Default)]
     public virtual async Task<List<EmailHistoryDto>> GetHistoryByApplicantId(Guid applicantId)
     {
-        await emailAccessChecker.CheckOwnerAsync(Guid.Empty, applicantId, NotificationsPermissions.Email.Default);
+        await emailAccessChecker.CheckOwnerAsync(Guid.Empty, applicantId, EmailOperation.View);
         return await MapEmailHistoryAsync(await emailLogsRepository.GetByApplicantIdAsync(applicantId));
     }
 
@@ -284,14 +173,16 @@ public class EmailNotificationService(
             dto.TemplateId = templatesByEmail[dto.Id];
         }
 
-        var sentByUserIds = dtoList
-            .Where(d => d.CreatorId.HasValue)
-            .Select(d => d.CreatorId!.Value)
+        // Last modifier if the email has been edited since creation, otherwise the creator
+        var lastModifiedByUserIds = dtoList
+            .Select(d => d.LastModifierId ?? d.CreatorId)
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value)
             .Distinct();
 
         var userDictionary = new Dictionary<Guid, EmailHistoryUserDto>();
 
-        foreach (var userId in sentByUserIds)
+        foreach (var userId in lastModifiedByUserIds)
         {
             var userInfo = await externalUserLookupServiceProvider.FindByIdAsync(userId);
             if (userInfo != null)
@@ -303,10 +194,14 @@ public class EmailNotificationService(
 
         foreach (var item in dtoList)
         {
-            if (item.CreatorId.HasValue && userDictionary.TryGetValue(item.CreatorId.Value, out var userDto))
+            var effectiveModifierId = item.LastModifierId ?? item.CreatorId;
+            if (effectiveModifierId.HasValue && userDictionary.TryGetValue(effectiveModifierId.Value, out var userDto))
             {
-                item.SentBy = userDto;
+                item.LastModifiedBy = userDto;
             }
+
+            // Never-edited emails have no LastModificationTime yet - fall back to creation time
+            item.LastModificationTime ??= item.CreationTime;
         }
 
         return dtoList;
@@ -326,7 +221,11 @@ public class EmailNotificationService(
     public async Task UpdateSettings(NotificationsSettingsDto settingsDto)
     {
         await UpdateTenantSettings(NotificationsSettings.Mailing.EmailMaxRetryAttempts, settingsDto.MaximumRetryAttempts);
-        await settingManager.SetForCurrentTenantAsync(NotificationsSettings.Mailing.EnableEmailDelay, settingsDto.EnableEmailDelay ? "true" : "false");
+        // The checkbox is absent when the feature is disabled; preserve its stored value.
+        if (await featureChecker.IsEnabledAsync(NotificationsFeatureConsts.IndividualScheduledNotification))
+        {
+            await settingManager.SetForCurrentTenantAsync(NotificationsSettings.Mailing.EnableEmailDelay, settingsDto.EnableEmailDelay ? "true" : "false");
+        }
     }
 
     private async Task UpdateTenantSettings(string settingKey, string valueString)
@@ -337,58 +236,4 @@ public class EmailNotificationService(
         }
     }
 
-    /// <summary>
-    /// Renders the comment notification email template with the provided parameters.
-    /// </summary>
-    /// <param name="currentUserText">Display name of the user who mentioned</param>
-    /// <param name="commentBody">The comment body text</param>
-    /// <param name="commentLink">The URL link to view the comment</param>
-    /// <returns>Rendered HTML email body</returns>
-    private async Task<string> RenderCommentNotificationTemplateAsync(string currentUserText, string commentBody, string commentLink)
-    {
-        // Load template from embedded resources or file system
-        string templateContent = await LoadEmailTemplateAsync("CommentNotification");
-
-        var encodedCurrentUserText = WebUtility.HtmlEncode(currentUserText);
-        var encodedCommentBody = markdownRenderer.Render(commentBody);
-        var encodedCommentLink = WebUtility.HtmlEncode(commentLink);
-
-        // Replace placeholders with actual values
-        var renderedTemplate = templateContent
-            .Replace("@Model.CurrentUserText", encodedCurrentUserText)
-            .Replace("@Html.Raw(Model.CommentBody)", encodedCommentBody)
-            .Replace("@Model.CommentLink", encodedCommentLink)
-            .Replace("@model dynamic", string.Empty);
-
-        return renderedTemplate;
-    }
-
-    /// <summary>
-    /// Loads an email template from the Application assembly's embedded resources.
-    /// The resource name follows the format Unity.Notifications.EmailTemplates.{templateName}.cshtml.
-    /// </summary>
-    /// <param name="templateName">Template name without extension (e.g., "CommentNotification")</param>
-    /// <returns>Template content as a string</returns>
-    private async Task<string> LoadEmailTemplateAsync(string templateName)
-    {
-        try
-        {
-            var assembly = typeof(EmailNotificationService).Assembly;
-            var resourceName = $"Unity.Notifications.EmailTemplates.{templateName}.cshtml";
-            await using var templateStream = assembly.GetManifestResourceStream(resourceName);
-
-            if (templateStream == null)
-            {
-                throw new FileNotFoundException($"Embedded email template not found: {resourceName}");
-            }
-
-            using var reader = new StreamReader(templateStream);
-            return await reader.ReadToEndAsync();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, $"Failed to load email template '{templateName}'");
-            throw;
-        }
-    }
 }

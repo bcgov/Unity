@@ -115,7 +115,7 @@ public class ApplicantContactQueryService(
             from submission in submissionsQuery
             join agent in agentsQuery on submission.ApplicationId equals agent.ApplicationId
             join application in applicationsQuery on submission.ApplicationId equals application.Id
-            where submission.OidcSub == subject
+            where submission.OidcSub == subject && agent.IsActive == true
             select new ContactInfoItemDto
             {
                 ContactId = agent.Id,
@@ -247,7 +247,7 @@ public class ApplicantContactQueryService(
         var applicationsQuery = await applicationRepository.GetQueryableAsync();
 
         var agents = await agentsQuery
-            .Where(a => a.ApplicantId == applicantId)
+            .Where(a => a.ApplicantId == applicantId && a.IsActive == true)
             .Select(agent => new ContactInfoItemDto
             {
                 ContactId = agent.Id,

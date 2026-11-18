@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.GrantApplications;
-using Unity.Payments.Domain.Exceptions;
 using Unity.Payments.Domain.PaymentRequests;
 using Unity.Payments.Domain.Services;
 using Unity.Payments.Domain.Shared;
@@ -208,8 +207,8 @@ namespace Unity.Payments.PaymentRequests
                 && CurrentUser.Id == x.ExpenseApprovals.FirstOrDefault(y => y.Type == ExpenseApprovalType.Level1)?.DecisionUserId))
             {
                 throw new BusinessException(
-                    code: ErrorConsts.L2ApproverRestriction,
-                    message: L[ErrorConsts.L2ApproverRestriction]);
+                    code: PaymentsErrorCodes.L2ApproverRestriction,
+                    message: L[PaymentsErrorCodes.L2ApproverRestriction]);
             }
 
             foreach (var dto in paymentRequests)
@@ -221,6 +220,7 @@ namespace Unity.Payments.PaymentRequests
                         continue;
 
                     var previousStatus = payment.Status; // Capture previous status
+                    var previousCasPaymentStatus = payment.PaymentStatus;
 
                     if (!string.IsNullOrWhiteSpace(payment.Note) && !string.IsNullOrWhiteSpace(dto.Note))
                     {
@@ -252,7 +252,9 @@ namespace Unity.Payments.PaymentRequests
                                 PaymentRequestId = updatedPayment.Id,
                                 ApplicationId = updatedPayment.CorrelationId,
                                 Status = updatedPayment.Status,
+                                PreviousStatus = previousStatus,
                                 CasPaymentStatus = updatedPayment.PaymentStatus,
+                                PreviousCasPaymentStatus = previousCasPaymentStatus,
                                 TenantId = CurrentTenant.Id
                             });
                         }
@@ -356,8 +358,8 @@ namespace Unity.Payments.PaymentRequests
             if (IsSameApprover && IsApprove)
             {
                 throw new BusinessException(
-                    code: ErrorConsts.L2ApproverRestriction,
-                    message: L[ErrorConsts.L2ApproverRestriction]);
+                    code: PaymentsErrorCodes.L2ApproverRestriction,
+                    message: L[PaymentsErrorCodes.L2ApproverRestriction]);
             }
             return await permissionChecker.IsGrantedAsync(PaymentsPermissions.Payments.L2ApproveOrDecline) && level2Approvals.Contains(payment.Status);
         }
@@ -480,7 +482,7 @@ namespace Unity.Payments.PaymentRequests
         public virtual async Task<PaymentRequestDto> CancelAsync(Guid paymentRequestId)
         {
             var payment = await paymentRequestQueryManager.GetPaymentRequestByIdAsync(paymentRequestId)
-                ?? throw new BusinessException(ErrorConsts.PaymentRequestNotFound)
+                ?? throw new BusinessException(PaymentsErrorCodes.PaymentRequestNotFound)
                     .WithData("Id", paymentRequestId);
 
             PaymentRequestStatus[] eligibleStatuses =
@@ -492,9 +494,11 @@ namespace Unity.Payments.PaymentRequests
             ];
 
             if (!eligibleStatuses.Contains(payment.Status))
-                throw new BusinessException(ErrorConsts.CancellationNotAllowed)
+                throw new BusinessException(PaymentsErrorCodes.CancellationNotAllowed)
                     .WithData("Status", payment.Status.ToString());
 
+            var previousStatus = payment.Status;
+            var previousCasPaymentStatus = payment.PaymentStatus;
             var result = await paymentsManager.CancelPaymentAsync(paymentRequestId);
 
             await PublishPaymentStatusChangedEventAfterCommitAsync(new PaymentStatusChangedEvent
@@ -502,7 +506,9 @@ namespace Unity.Payments.PaymentRequests
                 PaymentRequestId = result.Id,
                 ApplicationId = result.CorrelationId,
                 Status = result.Status,
+                PreviousStatus = previousStatus,
                 CasPaymentStatus = result.PaymentStatus,
+                PreviousCasPaymentStatus = previousCasPaymentStatus,
                 TenantId = CurrentTenant.Id
             });
 

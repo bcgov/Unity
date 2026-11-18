@@ -6,6 +6,7 @@ namespace Unity.GrantManager.Web.Pages.BulkEmailNotifications.ViewModels
 {
     public class BulkEmailNotificationViewModel
     {
+        // Application-scoped for now; Applicant bulk email would need its own owner id.
         public BulkEmailNotificationViewModel()
         {
             Notes = [];

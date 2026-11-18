@@ -185,7 +185,7 @@ Column typing varies by provider: all five emit `TEXT` / `NUMERIC` / `DECIMAL(18
 | Flex worksheet | `Worksheet-{WorksheetName}` | `Reporting.generate_worksheets_view(uuid)` |
 | Flex scoresheet | `Scoresheet-{ScoresheetName}` | `Reporting.generate_scoresheets_view(uuid)` |
 
-**Why it is being retired:** every column is `TEXT`; view names contain hyphens and so are not valid bare PostgreSQL identifiers (which breaks the "assign role to all views" operation); column names are truncated at 63 characters without de-duplication; there is no cross-version view; generation failures are logged and otherwise silent; and `ReportData` is a duplicate copy of data that already exists in the source tables.
+**Why it is being retired:** every column is `TEXT`; view names contain hyphens and so are not valid bare PostgreSQL identifiers; column names are truncated at 63 characters without de-duplication; there is no cross-version view; generation failures are logged and otherwise silent; and `ReportData` is a duplicate copy of data that already exists in the source tables.
 
 **How to tell them apart in a database:** the explicitly configured views are exactly the `ViewName` values in `Reporting."ReportColumnsMaps"`. Anything else under `Reporting` in `pg_views` is an auto view or an orphan.
 

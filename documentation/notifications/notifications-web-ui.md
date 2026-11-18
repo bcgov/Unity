@@ -15,7 +15,7 @@ The module's own Razor Pages live under `modules/Unity.Notifications/src/Unity.N
 
 All three `OnGet` methods are empty; the pages are entirely driven by their `Index.js`.
 
-The Notification List runs **client-side** (`serverSideEnabled` off): `NotificationListAppService.GetListAsync` returns every row in the date window and DataTables pages, searches, and sorts in the browser. `TotalCount` is the full match count, not a page count. The source comment explains the choice — it mirrors the Applications list, and the 6-month default date window bounds the payload. Only `EmailLog`-backed columns are sortable server-side; `ResolveSorting` allowlists them and silently falls back to `SentDateTime DESC` for anything else, so client input never reaches the dynamic-LINQ ordering raw.
+The Notification List runs **client-side** (`serverSideEnabled` off): `NotificationListAppService.GetListAsync` returns every row in the date window that matches the Type selector (`NotificationListView`: Both / Applications / Applicants, filtered server-side), projected to the list columns only, and DataTables pages, searches, and sorts in the browser with `deferRender` on. `TotalCount` is the full match count, not a page count. The source comment explains the choice — it mirrors the Applications list, and the 6-month default date window bounds the payload. Only `EmailLog`-backed columns are sortable server-side; `ResolveSorting` allowlists them and silently falls back to `SentDateTime DESC` for anything else, so client input never reaches the dynamic-LINQ ordering raw.
 
 ## Menus
 
@@ -50,7 +50,7 @@ Adds a second entry point to Notification Logs at order 90 in `StandardMenus.Use
 |Field|Source|Editable|
 |---|---|---|
 |`MaximumRetryAttempts`|`EmailMaxRetryAttempts` setting, `TryParse` with fallback `3`, `[MaxValue(10)]`|Yes|
-|`EnableEmailDelay`|`EnableEmailDelay` setting|Yes|
+|`EnableEmailDelay`|`EnableEmailDelay` setting|Visible and editable only when `Unity.Notifications.IndividualScheduledNotification` is enabled; its stored value is preserved while hidden.|
 |`AllowedFileTypes`|`S3:AllowedFileTypes` configuration|Read-only display|
 |`MaxFileSize`|`S3:MaxFileSize`|Read-only display|
 |`EmailAttachmentMaxFileSize`|`S3:EmailAttachmentMaxFileSize`|Read-only display|
@@ -79,9 +79,9 @@ These are in `src/Unity.GrantManager.Web/`, not in this module, but they are the
 
 |Surface|What it does|Gating|
 |---|---|---|
-|`Views/Shared/Components/EmailsWidget/`|Shared composer for Application and Applicant details, paired with `EmailHistoryWidget`. Application To defaults to `ApplicantAgent.Email`; Applicant To defaults to the primary contact shown in Applicant Contacts. Lists only templates of the matching type. Scheduling requires `EnableEmailDelay` and the Schedule permission.|`Unity.Notifications` feature, `Notifications.Email` to view, `.Send` to compose; Applicant details also requires Applicant access|
+|`Views/Shared/Components/EmailsWidget/`|Shared composer for Application and Applicant details, paired with `EmailHistoryWidget`. Application To defaults to `ApplicantAgent.Email`; Applicant To defaults to the primary contact shown in Applicant Contacts. Lists only templates of the matching type. Scheduling requires `Unity.Notifications.IndividualScheduledNotification`, `EnableEmailDelay`, and the applicable Schedule/Send permissions. Disabling the feature removes the scheduling menu and modal, hides the Scheduled Send history column and cancellation controls, and denies scheduling/cancellation APIs. Existing history remains visible.|`Unity.Notifications` feature, `Notifications.Email` to view, `.Send` to compose; Applicant details also requires Applicant access|
 |`Views/Shared/Components/Notifications/Default.cshtml`|The form-level **Scheduled & Event Based Notifications** table, with Create/Edit/Cancel actions.|`Notifications.Form.Email.Schedule.Create` for Create/Edit, `.Cancel` for Cancel|
-|`Views/Shared/Components/ActionBar/Default.cshtml`|The bulk **Send Email Notification** button and dropdown on the applications list.|`Unity.Notifications` feature **and** `Notifications.Email.SendBulk` **and** `Notifications.Email.Send`|
+|`Views/Shared/Components/ActionBar/Default.cshtml`|The bulk **Send Email Notification** button and dropdown on the applications list.|`Unity.Notifications` feature **and** `Notifications.Email.Application.SendBulk` **and** the Application email View/Create/Send permissions|
 |`Controllers/NotificationsController` (`/Notifications/EmailModal`)|Renders the read-only email detail modal opened from the Notification List. Fetches history for the application and picks the single matching email; returns `404` if it is not there.|`Notifications.NotificationList.View`|
 |`Controllers/FormNotificationsApiController` (`api/form-notifications`)|The scheduled-notification configuration API — see [notifications-scheduled-notifications.md](notifications-scheduled-notifications.md#configuration-api).|`Notifications.Form.Tab` family|
 |`Pages/ConfigurationManagement/Index.cshtml.cs`|Sets `ShowNotifications` from the `Unity.Notifications` feature check, hiding the notification configuration section when off.|feature only|
@@ -96,7 +96,7 @@ Backend checks cover owner, tenant, action permissions, draft status, scheduling
 
 ## Localization
 
-`Unity.Notifications.Domain.Shared/Localization/Notifications/en.json` holds all 144 keys for both this module's pages and the host-side notification surfaces, under the `NotificationsResource` resource. `NotificationsDomainSharedModule` registers it with `AddVirtualJson("/Localization/Notifications")` and base type `AbpValidationResource`, and maps the `Notifications` exception-code namespace to it — which is what turns `BusinessException("Notifications:EmailGroupInUse")` into a localizable message. Only codes with the `Notifications:` prefix go through that mapping.
+`Unity.Notifications.Domain.Shared/Localization/Notifications/en.json` holds all 144 keys for both this module's pages and the host-side notification surfaces, under the `NotificationsResource` resource. `NotificationsDomainSharedModule` registers it with `AddVirtualJson("/Localization/Notifications")` and base type `AbpValidationResource`, and maps the `Notifications` exception-code namespace to it — which is what turns `BusinessException(NotificationsErrorCodes.EmailGroupInUse)` into a localizable message. Only codes with the `Notifications:` prefix go through that mapping, and every code the module and the host app throw is a constant in `NotificationsErrorCodes` (`Unity.Notifications.Domain.Shared/NotificationsErrorCodes.cs`).
 
 Two keys to know about when editing:
 

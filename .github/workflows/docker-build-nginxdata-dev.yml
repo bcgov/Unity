@@ -1,0 +1,58 @@
+name: Dev - Build & Push Unity NginxData
+
+on:
+  push:
+    branches: [ "dev" ]
+    paths:
+      - 'applications/Unity.Tools/Unity.NginxData/**'
+      - '!applications/Unity.Tools/Unity.NginxData/**/README*'
+  # Allow manual workflow triggering
+  workflow_dispatch:
+# Workflow dependencies
+env:
+  TARGET_ENV: dev
+  OC_CLUSTER: ${{ vars.OPENSHIFT_CLUSTER }}
+  OC_TOOLS_TOKEN: ${{ secrets.TOOLS_OPENSHIFT_TOKEN }}
+  OC_TOOLS_PROJECT: ${{ vars.TOOLS_OPENSHIFT_NAMESPACE }}
+  OC_TARGET_TOKEN: ${{ secrets.OPENSHIFT_TOKEN }}
+  OC_TARGET_PROJECT: ${{ vars.OPENSHIFT_NAMESPACE }}
+
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      contents: read
+    steps:
+    - name: Install OpenShift CLI
+      run: |
+          curl -LO https://mirror.openshift.com/pub/openshift-v4/clients/oc/latest/linux/oc.tar.gz
+          tar -xvf oc.tar.gz
+          sudo mv oc /usr/local/bin
+    - name: Verify OpenShift CLI installation
+      run: oc version
+    - name: Build unity-app-data into ce395f-tools
+      run: |
+        for i in 1 2 3; do
+          oc login --token=$OC_TOOLS_TOKEN --server=$OC_CLUSTER --request-timeout=30s && break
+          if [ "$i" -eq 3 ]; then
+            echo "oc login failed after 3 attempts" >&2
+            exit 1
+          fi
+          echo "oc login attempt $i failed, retrying in 30s..."
+          sleep 30
+        done
+        oc -n $OC_TOOLS_PROJECT start-build $TARGET_ENV-unity-app-data-build --commit=$GITHUB_SHA --follow --wait
+    - name: Roll out unity-app-data-web in ce395f-dev and wait
+      run: |
+        for i in 1 2 3; do
+          oc login --token=$OC_TARGET_TOKEN --server=$OC_CLUSTER --request-timeout=30s && break
+          if [ "$i" -eq 3 ]; then
+            echo "oc login failed after 3 attempts" >&2
+            exit 1
+          fi
+          echo "oc login attempt $i failed, retrying in 30s..."
+          sleep 30
+        done
+        oc -n $OC_TARGET_PROJECT rollout restart deployment/unity-app-data-web
+        oc -n $OC_TARGET_PROJECT rollout status deployment/unity-app-data-web --timeout=180s

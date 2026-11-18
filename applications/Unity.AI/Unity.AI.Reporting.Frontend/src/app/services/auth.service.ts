@@ -361,11 +361,11 @@ export class AuthService {
     const tokenTimestamp = localStorage.getItem('ai_reporting_timestamp');
     console.log('🔍 Token timestamp check:', {
       timestamp: tokenTimestamp,
-      timestampDate: tokenTimestamp ? new Date(parseInt(tokenTimestamp)).toISOString() : null
+      timestampDate: tokenTimestamp ? new Date(Number.parseInt(tokenTimestamp, 10)).toISOString() : null
     });
     
     if (tokenTimestamp) {
-      const tokenAge = Date.now() - parseInt(tokenTimestamp);
+      const tokenAge = Date.now() - Number.parseInt(tokenTimestamp, 10);
       const maxAge = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
       
       console.log('🔍 Token age check:', {
@@ -616,7 +616,7 @@ export class AuthService {
 
   private base64urlDecode(base64url: string): string {
     // Convert base64url to base64
-    let base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
+    let base64 = base64url.replaceAll('-', '+').replaceAll('_', '/');
     
     // Add padding if needed
     while (base64.length % 4) {

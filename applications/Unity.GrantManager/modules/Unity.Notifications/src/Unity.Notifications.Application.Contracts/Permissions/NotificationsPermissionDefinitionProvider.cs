@@ -1,4 +1,5 @@
-﻿using Unity.Notifications.Localization;
+﻿using Unity.Notifications.Features;
+using Unity.Notifications.Localization;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Features;
 using Volo.Abp.Localization;
@@ -12,30 +13,7 @@ public class NotificationsPermissionDefinitionProvider : PermissionDefinitionPro
     {
         var notificationsPermissionsGroup = context.AddGroup(NotificationsPermissions.GroupName, L("Permission:Notifications"));
 
-        var notificationsPermissions = notificationsPermissionsGroup.AddPermission(
-                NotificationsPermissions.Email.Default,
-                L($"Permission:{NotificationsPermissions.Email.Default}"));
-
-        notificationsPermissions.AddChild(
-            NotificationsPermissions.Email.Send,
-            L($"Permission:{NotificationsPermissions.Email.Send}"));
-
-        notificationsPermissions.AddChild(
-            NotificationsPermissions.Email.SendBulk,
-            L($"Permission:{NotificationsPermissions.Email.SendBulk}"));
-
-        notificationsPermissions.AddChild(
-            NotificationsPermissions.Email.DeleteDraft,
-            L($"Permission:{NotificationsPermissions.Email.DeleteDraft}"));
-
-        notificationsPermissions.AddChild(
-            NotificationsPermissions.Email.CancelScheduled,
-            L($"Permission:{NotificationsPermissions.Email.CancelScheduled}"));
-
-        notificationsPermissions.AddChild(
-            NotificationsPermissions.Email.Schedule,
-            L($"Permission:{NotificationsPermissions.Email.Schedule}"));
-
+        notificationsPermissionsGroup.AddNotifications_Email_Permissions();
 
         var scheduleNotificationsPermissions = notificationsPermissionsGroup.AddPermission(
                 NotificationsPermissions.Email.NotificationsTab,
@@ -59,6 +37,63 @@ public class NotificationsPermissionDefinitionProvider : PermissionDefinitionPro
         notificationListPermissions.AddChild(
             NotificationsPermissions.NotificationList.View,
             L($"Permission:{NotificationsPermissions.NotificationList.View}"));
+    }
+
+    private static LocalizableString L(string name)
+    {
+        return LocalizableString.Create<NotificationsResource>(name);
+    }
+}
+
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Major Code Smell", "S125:Sections of code should not be commented out", Justification = "Configuration Code")]
+public static class EmailPermissionDefinitionExtensions
+{
+    public static void AddNotifications_Email_Permissions(this PermissionGroupDefinition notificationsPermissionsGroup)
+    {
+        var email = notificationsPermissionsGroup.AddPermission(NotificationsPermissions.Email.Default, L($"Permission:{NotificationsPermissions.Email.Default}"));
+
+        // Template attachments are not owner-scoped.
+
+        AddOwnerPermissions(
+            email,
+            NotificationsPermissions.Email.Application.Default,
+            NotificationsPermissions.Email.Application.Create,
+            NotificationsPermissions.Email.Application.Edit,
+            NotificationsPermissions.Email.Application.Send,
+            NotificationsPermissions.Email.Application.Schedule,
+            NotificationsPermissions.Email.Application.DeleteDraft,
+            NotificationsPermissions.Email.Application.CancelScheduled,
+            NotificationsPermissions.Email.Application.SendBulk);
+
+        AddOwnerPermissions(
+            email,
+            NotificationsPermissions.Email.Applicant.Default,
+            NotificationsPermissions.Email.Applicant.Create,
+            NotificationsPermissions.Email.Applicant.Edit,
+            NotificationsPermissions.Email.Applicant.Send,
+            NotificationsPermissions.Email.Applicant.Schedule,
+            NotificationsPermissions.Email.Applicant.DeleteDraft,
+            NotificationsPermissions.Email.Applicant.CancelScheduled);
+
+        // Manage Email Templates
+        email.AddUnityChild(NotificationsPermissions.Email.Template.Default);
+    }
+
+    private static void AddOwnerPermissions(PermissionDefinition email, string view, params string[] operations)
+    {
+        var owner = email.AddUnityChild(view);
+        foreach (var operation in operations)
+        {
+            var permission = owner.AddUnityChild(operation);
+            if (NotificationsPermissions.IsIndividualSchedulingPermission(operation))
+            {
+                permission.RequireFeatures(NotificationsFeatureConsts.IndividualScheduledNotification);
+            }
+        }
+    }
+    public static PermissionDefinition AddUnityChild(this PermissionDefinition parent, string name)
+    {
+        return parent.AddChild(name, L($"Permission:{name}"));
     }
 
     private static LocalizableString L(string name)

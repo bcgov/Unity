@@ -1092,6 +1092,7 @@
             selector: '#composeAndSendEmailModal #EmailBody',
             plugins: typeof getPlugins === 'function' ? getPlugins() : 'lists link image preview code',
             toolbar: getComposeToolbarOptions(),
+            toolbar_mode: 'sliding',
             menubar: 'file edit view insert format tools',
             resize: true,
             statusbar: true,

@@ -61,7 +61,7 @@ new OpenAIOperationSettings(
     PromptVersion:                $"v{prompt.VersionNumber}");
 ```
 
-Both `ProfileName` and `DeploymentName` are `model.Name`, so the **Azure deployment must be named after the model** (`gpt-5-mini`, `gpt-4o-mini`, `gpt-5-nano`).
+Both `ProfileName` and `DeploymentName` are `model.Name`, so the **Azure deployment must be named after the model** (`gpt-5-mini`, `gpt-5-nano`).
 
 ### Caching
 

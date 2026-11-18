@@ -548,7 +548,6 @@ public partial class ApplicationActionResultItemToDtoMapper : MapperBase<Applica
     public override partial void Map(ApplicationActionResultItem source, ApplicationActionDto destination);
 }
 [Mapper] public partial class EventSubscriptionToDtoMapper : MapperBase<EventSubscription, EventSubscriptionDto> { public override partial EventSubscriptionDto Map(EventSubscription source); public override partial void Map(EventSubscription source, EventSubscriptionDto destination); }
-[Mapper] public partial class EventSubscriptionDtoToEntityMapper : MapperBase<EventSubscriptionDto, EventSubscription> { public override partial EventSubscription Map(EventSubscriptionDto source); public override partial void Map(EventSubscriptionDto source, EventSubscription destination); }
 [Mapper] public partial class SectorToDtoMapper : MapperBase<Sector, SectorDto> { public override partial SectorDto Map(Sector source); public override partial void Map(Sector source, SectorDto destination); }
 [Mapper] public partial class SubSectorToDtoMapper : MapperBase<SubSector, SubSectorDto> { public override partial SubSectorDto Map(SubSector source); public override partial void Map(SubSector source, SubSectorDto destination); }
 [Mapper] public partial class EconomicRegionToDtoMapper : MapperBase<EconomicRegion, EconomicRegionDto> { public override partial EconomicRegionDto Map(EconomicRegion source); public override partial void Map(EconomicRegion source, EconomicRegionDto destination); }

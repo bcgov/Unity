@@ -26,6 +26,10 @@ public static class NotificationsDbContextModelCreatingExtensions
 
             b.Property(x => x.Recipient).HasConversion<string>().HasMaxLength(32);
             b.Property(x => x.EmailType).HasConversion<string>().HasMaxLength(32);
+
+            // Notification List date-window filter: SentDateTime, falling back to CreationTime for unsent rows.
+            b.HasIndex(x => x.SentDateTime);
+            b.HasIndex(x => x.CreationTime);
         });
 
         modelBuilder.Entity<EmailLogAttachment>(b =>

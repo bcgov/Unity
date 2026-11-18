@@ -81,7 +81,7 @@
     // Returns columns (1–10) for a given width, or '' when width is 0 (auto)
     function widthToColumns(width) {
         if (!width || width <= 0) return '';
-        return Math.min(10, Math.max(1, Math.floor(100 / width)));
+        return Math.min(10, Math.max(1, Math.round(100 / width)));
     }
 
     // Returns width percentage for a given column count (1–10)

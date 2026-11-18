@@ -1,0 +1,78 @@
+﻿@page
+@using Microsoft.Extensions.Localization
+@using Unity.GrantManager.Localization
+
+@inject IStringLocalizer<GrantManagerResource> L
+@model Unity.GrantManager.Web.Pages.Settings.SettingManagement.ZoneManagementModel
+@{
+    Layout = null;
+}
+
+@section scripts
+{
+<abp-script src="/Pages/Settings/SettingManagement/zone-management.js" />
+}
+
+<form id="ZoneManagementForm" method="post" asp-page="/Settings/SettingManagement/ZoneManagement" data-script-class="abp.modals.ZoneManagement">
+    <div class="container-fluid">
+        <div class="configuration-action-bar row">
+            <div class="col-12 col-md-8">
+                <h5>User Interface Configuration</h5>
+            </div>
+            <div class="col-12 col-md-4 btn-wrapper">
+                <abp-button button-type="Primary" 
+                            text="Save" icon-type="Other" icon="fa-regular fa-floppy-disk"
+                            class="btn unt-btn-primary btn-primary"
+                            type="submit"></abp-button>
+                <abp-button id="btn-cancel" 
+                            class="btn unt-btn-outline-primary btn-outline-primary"
+                            abp-tooltip="Navigate back to the Forms">Back</abp-button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <input asp-for="@Model.ProviderKey" />
+                <input asp-for="@Model.ProviderName" />
+
+                        <div class="w-100">
+                            <div class="ps-1 p-3">
+                                <div class="row row-cols-1 row-cols-md-2 g-4">
+                                    @for (var i = 0; i < Model.GroupTemplate.Tabs.Count; i++)
+                                    {
+                                        var tabGroup = Model.GroupTemplate.Tabs[i];
+                                        <abp-column class="border-0">
+                                            <div class="form-switch">
+                                                <abp-input asp-for="@tabGroup.IsEnabled"
+                                                           abp-id-name="@Model.GroupTemplate.Tabs[i].IsEnabled"
+                                                           check-box-hidden-input-render-mode="CheckBoxHiddenInputRenderMode.None"
+                                                           label="@L[$"{tabGroup.Name}"].Value"
+                                                           class="fw-bold"
+                                                           group-data-zone-name="@tabGroup.Name" />
+                                                <input asp-for="@tabGroup.Name" abp-id-name="@Model.GroupTemplate.Tabs[i].Name" hidden />
+                                            </div>
+
+                                            @for (var j = 0; j < tabGroup.Zones.Count; j++)
+                                            {
+                                                var zone = tabGroup.Zones[j];
+                                                <div class="form-switch">
+                                                    <abp-input asp-for="@zone.IsEnabled"
+                                                               abp-id-name="@Model.GroupTemplate.Tabs[i].Zones[j].IsEnabled"
+                                                               check-box-hidden-input-render-mode="CheckBoxHiddenInputRenderMode.None"
+                                                               label="@(L[$"{zone.Name}"].Value)"
+                                                               group-data-zone-name="@zone.Name"
+                                                               group-data-parent-name="@tabGroup.Name"
+                                                               group-style="margin-inline-start: 25px"
+                                                               disabled=@zone.IsConfigurationDisabled />
+
+                                                    <input asp-for="@zone.Name" abp-id-name="@Model.GroupTemplate.Tabs[i].Zones[j].Name" hidden />
+                                                </div>
+                                            }
+                                        </abp-column>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+            </div>
+        </div>
+    </div>
+</form>

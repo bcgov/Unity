@@ -2,10 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using NSubstitute;
 using Shouldly;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Identity;
+using Unity.Modules.Shared.Specializations;
 using Unity.TenantManagement;
+using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 using Xunit;
@@ -21,6 +25,7 @@ public class GrantManagerOnboardingApplicationProviderTests : GrantManagerApplic
     private readonly IRepository<ApplicationFormVersion, Guid> _applicationFormVersionRepository;
     private readonly IRepository<ApplicationStatus, Guid> _applicationStatusRepository;
     private readonly IRepository<Applicant, Guid> _applicantRepository;
+    private readonly IRepository<Person, Guid> _personRepository;
     private readonly IUnitOfWorkManager _unitOfWorkManager;
 
     public GrantManagerOnboardingApplicationProviderTests(ITestOutputHelper outputHelper) : base(outputHelper)
@@ -31,7 +36,9 @@ public class GrantManagerOnboardingApplicationProviderTests : GrantManagerApplic
         _applicationFormVersionRepository = GetRequiredService<IRepository<ApplicationFormVersion, Guid>>();
         _applicationStatusRepository = GetRequiredService<IRepository<ApplicationStatus, Guid>>();
         _applicantRepository = GetRequiredService<IRepository<Applicant, Guid>>();
+        _personRepository = GetRequiredService<IRepository<Person, Guid>>();
         _unitOfWorkManager = GetRequiredService<IUnitOfWorkManager>();
+        _featureChecker!.IsEnabledAsync(SpecializationConsts.Onboarding).Returns(true);
     }
 
     private async Task<Guid> CreateFormAsync(string category)
@@ -487,5 +494,196 @@ public class GrantManagerOnboardingApplicationProviderTests : GrantManagerApplic
         result.TotalCount.ShouldBe(2);
         result.Items.ShouldContain(i => i.Id == coreMatch.Id);
         result.Items.ShouldContain(i => i.Id == worksheetMatch.Id);
+    }
+
+    private async Task<Guid> CreatePersonAsync(string fullName) =>
+        (await _personRepository.InsertAsync(new Person
+        {
+            Id = Guid.NewGuid(),
+            FullName = fullName,
+            OidcSub = Guid.NewGuid().ToString()
+        }, autoSave: true)).Id;
+
+    // The grant workflow's "assigning moves SUBMITTED to ASSIGNED" rule must not apply here, so
+    // these tests start from a real SUBMITTED status.
+    private async Task<Guid> GetSubmittedStatusIdAsync()
+    {
+        using var uow = _unitOfWorkManager.Begin();
+        var existing = await _applicationStatusRepository.FindAsync(s => s.StatusCode == GrantApplicationState.SUBMITTED);
+        var statusId = existing?.Id ?? await CreateStatusAsync("Submitted", GrantApplicationState.SUBMITTED);
+        await uow.CompleteAsync();
+        return statusId;
+    }
+
+    private async Task SetAssignmentAsync(List<Guid> applicationIds, Guid? ownerId, params (Guid Id, string? Role)[] assignees)
+    {
+        using var uow = _unitOfWorkManager.Begin();
+        await _provider.SetAssignmentAsync(new OnboardingAssignmentInputDto
+        {
+            ApplicationIds = applicationIds,
+            OwnerId = ownerId,
+            Assignees = assignees.Select(a => new OnboardingAssigneeInputDto { AssigneeId = a.Id, Role = a.Role }).ToList()
+        });
+        await uow.CompleteAsync();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task SetAssignmentAsync_Should_Apply_Same_Values_To_All_Selected_And_Keep_Status()
+    {
+        var category = $"OnboardingTest-{Guid.NewGuid()}";
+        var formId = await CreateFormAsync(category);
+        var statusId = await GetSubmittedStatusIdAsync();
+        var first = await CreateApplicationAsync(formId, statusId, "REF-A", DateTime.UtcNow);
+        var second = await CreateApplicationAsync(formId, statusId, "REF-B", DateTime.UtcNow);
+        var unselected = await CreateApplicationAsync(formId, statusId, "REF-C", DateTime.UtcNow);
+        var ownerId = await CreatePersonAsync("Olivia Owner");
+        var janeId = await CreatePersonAsync("Jane Smith");
+        var alexId = await CreatePersonAsync("Alex Chen");
+
+        await SetAssignmentAsync([first.Id, second.Id], ownerId, (janeId, " Reviewer "), (alexId, null));
+
+        using var uow = _unitOfWorkManager.Begin();
+        var result = await _provider.GetPagedListAsync(0, 10, sorting: null, category: category);
+
+        foreach (var id in new[] { first.Id, second.Id })
+        {
+            var record = result.Items.Single(i => i.Id == id);
+            record.OwnerId.ShouldBe(ownerId);
+            record.OwnerName.ShouldBe("Olivia Owner");
+            record.Assignees.Select(a => (a.Name, a.Role)).ShouldBe([("Alex Chen", null), ("Jane Smith", "Reviewer")]);
+            record.Status.ShouldBe(result.Items.Single(i => i.Id == unselected.Id).Status);
+        }
+
+        var untouched = result.Items.Single(i => i.Id == unselected.Id);
+        untouched.OwnerName.ShouldBeNull();
+        untouched.Assignees.ShouldBeEmpty();
+
+        var reloaded = await _applicationRepository.GetAsync(first.Id);
+        reloaded.ApplicationStatusId.ShouldBe(statusId);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task SetAssignmentAsync_Should_Replace_Previous_Values()
+    {
+        var category = $"OnboardingTest-{Guid.NewGuid()}";
+        var formId = await CreateFormAsync(category);
+        var statusId = await GetSubmittedStatusIdAsync();
+        var application = await CreateApplicationAsync(formId, statusId, "REF-A", DateTime.UtcNow);
+        var ownerId = await CreatePersonAsync("Olivia Owner");
+        var keptId = await CreatePersonAsync("Kept Person");
+        var removedId = await CreatePersonAsync("Removed Person");
+
+        await SetAssignmentAsync([application.Id], ownerId, (keptId, "Old Role"), (removedId, "Gone"));
+        await SetAssignmentAsync([application.Id], null, (keptId, "New Role"));
+
+        using var uow = _unitOfWorkManager.Begin();
+        var record = await _provider.GetByIdAsync(application.Id);
+
+        record.ShouldNotBeNull();
+        record.OwnerId.ShouldBeNull();
+        record.Assignees.Count.ShouldBe(1);
+        record.Assignees[0].AssigneeId.ShouldBe(keptId);
+        record.Assignees[0].Role.ShouldBe("New Role");
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task SetAssignmentAsync_Should_Reject_And_Change_Nothing_Outside_Onboarding_Tenant()
+    {
+        var category = $"OnboardingTest-{Guid.NewGuid()}";
+        var formId = await CreateFormAsync(category);
+        var application = await CreateApplicationAsync(formId, await GetSubmittedStatusIdAsync(), "REF-A", DateTime.UtcNow);
+        var personId = await CreatePersonAsync("Jane Smith");
+        _featureChecker!.IsEnabledAsync(SpecializationConsts.Onboarding).Returns(false);
+
+        var exception = await Should.ThrowAsync<BusinessException>(() =>
+            SetAssignmentAsync([application.Id], personId, (personId, "Reviewer")));
+
+        exception.Code.ShouldBe("GrantManager:OnboardingAssignmentNotAvailable");
+
+        using var uow = _unitOfWorkManager.Begin();
+        var record = await _provider.GetByIdAsync(application.Id);
+        record.ShouldNotBeNull();
+        record.OwnerId.ShouldBeNull();
+        record.Assignees.ShouldBeEmpty();
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task SetAssignmentAsync_Should_Reject_Duplicate_Assignee()
+    {
+        var category = $"OnboardingTest-{Guid.NewGuid()}";
+        var formId = await CreateFormAsync(category);
+        var application = await CreateApplicationAsync(formId, await GetSubmittedStatusIdAsync(), "REF-A", DateTime.UtcNow);
+        var personId = await CreatePersonAsync("Jane Smith");
+
+        var exception = await Should.ThrowAsync<BusinessException>(() =>
+            SetAssignmentAsync([application.Id], null, (personId, "One"), (personId, "Two")));
+
+        exception.Code.ShouldBe("GrantManager:OnboardingDuplicateAssignee");
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task SetAssignmentAsync_Should_Reject_Unknown_Person()
+    {
+        var category = $"OnboardingTest-{Guid.NewGuid()}";
+        var formId = await CreateFormAsync(category);
+        var application = await CreateApplicationAsync(formId, await GetSubmittedStatusIdAsync(), "REF-A", DateTime.UtcNow);
+
+        var exception = await Should.ThrowAsync<BusinessException>(() =>
+            SetAssignmentAsync([application.Id], Guid.NewGuid()));
+
+        exception.Code.ShouldBe("GrantManager:OnboardingAssigneeNotFound");
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetPagedListAsync_Should_Filter_And_Sort_By_Owner_And_Assignee()
+    {
+        var category = $"OnboardingTest-{Guid.NewGuid()}";
+        var formId = await CreateFormAsync(category);
+        var statusId = await GetSubmittedStatusIdAsync();
+        var first = await CreateApplicationAsync(formId, statusId, "REF-A", DateTime.UtcNow);
+        var second = await CreateApplicationAsync(formId, statusId, "REF-B", DateTime.UtcNow);
+        await CreateApplicationAsync(formId, statusId, "REF-C", DateTime.UtcNow);
+        var zaraId = await CreatePersonAsync("Zara Owner");
+        var adamId = await CreatePersonAsync("Adam Owner");
+        var janeId = await CreatePersonAsync("Jane Smith");
+
+        await SetAssignmentAsync([first.Id], zaraId, (janeId, "Program Lead"));
+        await SetAssignmentAsync([second.Id], adamId);
+
+        using var uow = _unitOfWorkManager.Begin();
+
+        var byOwner = await _provider.GetPagedListAsync(0, 10, null, category,
+            staticColumnFilters: [new ColumnFilterDto { Name = "ownerName", Value = "ZARA" }]);
+        byOwner.Items.Single().Id.ShouldBe(first.Id);
+
+        var byRole = await _provider.GetPagedListAsync(0, 10, null, category,
+            staticColumnFilters: [new ColumnFilterDto { Name = "assignees", Value = "program lead" }]);
+        byRole.Items.Single().Id.ShouldBe(first.Id);
+
+        var bySearch = await _provider.GetPagedListAsync(0, 10, null, category, filter: "adam");
+        bySearch.Items.Single().Id.ShouldBe(second.Id);
+
+        var sorted = await _provider.GetPagedListAsync(0, 10, "ownerName DESC", category);
+        sorted.Items[0].Id.ShouldBe(first.Id);
+        sorted.Items[1].Id.ShouldBe(second.Id);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task GetAssignableUsersAsync_Should_Include_Persons_Except_AI()
+    {
+        var personId = await CreatePersonAsync("Jane Smith");
+
+        using var uow = _unitOfWorkManager.Begin();
+        var users = await _provider.GetAssignableUsersAsync();
+
+        users.ShouldContain(u => u.Id == personId && u.Name == "Jane Smith");
+        users.ShouldNotContain(u => u.Id == Unity.GrantManager.Assessments.AIScoringConstants.AiPersonId);
     }
 }

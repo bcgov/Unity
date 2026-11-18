@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Intakes;
 using Unity.GrantManager.Integrations.Chefs;
 using Volo.Abp.Domain.Repositories;
@@ -68,6 +69,29 @@ namespace Unity.GrantManager.Events
             await _chefsEventSubscriptionService
                 .CreateIntakeMappingAsync(eventSubscriptionDto)
                 .ShouldThrowAsync<NotImplementedException>();
+        }
+
+        [Fact]
+        [Trait("Category", "Integration")]
+        public async Task PublishedFormAsync_Should_Not_Create_Form_For_Unregistered_Chefs_Form()
+        {
+            // Arrange
+            var unregisteredFormId = Guid.NewGuid();
+            var formCountBefore = await WithUnitOfWorkAsync(() => _applicationFormRepository.GetCountAsync());
+
+            // Act
+            var result = await _chefsEventSubscriptionService.PublishedFormAsync(new EventSubscriptionDto
+            {
+                FormId = unregisteredFormId,
+                FormVersion = Guid.NewGuid(),
+                SubscriptionEvent = ChefsEventTypesConsts.FORM_PUBLISHED
+            });
+
+            // Assert
+            result.ShouldBeFalse();
+            (await WithUnitOfWorkAsync(() => _applicationFormRepository.GetCountAsync())).ShouldBe(formCountBefore);
+            (await WithUnitOfWorkAsync(() => _applicationFormRepository.FirstOrDefaultAsync(
+                s => s.ChefsApplicationFormGuid == unregisteredFormId.ToString()))).ShouldBeNull();
         }
 
         public class SubmissionApiServiceMock : ISubmissionsApiService

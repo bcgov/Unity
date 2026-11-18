@@ -61,15 +61,25 @@ public class ApplicationFormAppService
     [Authorize(GrantManagerPermissions.ApplicationForms.Default)]
     public override async Task<ApplicationFormDto> CreateAsync(CreateUpdateApplicationFormDto input)
     {
+        input.ChefsApplicationFormGuid = input.ChefsApplicationFormGuid?.Trim();
+        await EnsureChefsFormNotRegisteredAsync(input.ChefsApplicationFormGuid, excludeFormId: null);
+
         input.ApiKey = _stringEncryptionService.Encrypt(input.ApiKey);
+
+        // Validate against CHEFS before inserting, so a form ID CHEFS does not recognise
+        // (e.g. one from another CHEFS environment) is never saved.
+        var chefsForm = await GetValidatedChefsFormAsync(input);
         var applicationFormDto = await base.CreateAsync(input);
-        return await InitializeFormVersion(applicationFormDto.Id, input);
+        await _applicationFormVersionAppService.InitializePublishedFormVersion(chefsForm, applicationFormDto.Id, initializePublishedOnly: false);
+
+        return applicationFormDto;
     }
 
     [Authorize(GrantManagerPermissions.ApplicationForms.Default)]
     public override async Task<ApplicationFormDto> UpdateAsync(Guid id, CreateUpdateApplicationFormDto input)
     {
         var existingForm = await GetFormForManagementAsync(id);
+        input.ChefsApplicationFormGuid = input.ChefsApplicationFormGuid?.Trim();
         input.ApiKey = _stringEncryptionService.Encrypt(input.ApiKey);
 
         bool hasFormGuidChanged = existingForm.ChefsApplicationFormGuid != input.ChefsApplicationFormGuid;
@@ -77,47 +87,78 @@ public class ApplicationFormAppService
 
         if (hasFormGuidChanged || hasFormApiKeyChanged)
         {
-            return await InitializeFormVersion(id, input);
+            await EnsureChefsFormNotRegisteredAsync(input.ChefsApplicationFormGuid, excludeFormId: id);
+            var chefsForm = await GetValidatedChefsFormAsync(input);
+            var applicationFormDto = await base.UpdateAsync(id, input);
+            await _applicationFormVersionAppService.InitializePublishedFormVersion(chefsForm, id, initializePublishedOnly: false);
+
+            return applicationFormDto;
         }
 
         return await base.UpdateAsync(id, input);
     }
 
-    [Authorize(GrantManagerPermissions.ApplicationForms.Default)]
-    private async Task<ApplicationFormDto> InitializeFormVersion(Guid id, CreateUpdateApplicationFormDto input)
+    /// <summary>
+    /// Fetches the form from CHEFS with the given Form ID and (encrypted) API Key and sets
+    /// <c>input.ApplicationFormName</c> to the name CHEFS reports. Throws if CHEFS cannot be
+    /// reached or does not recognise the Form ID / API Key; nothing is persisted here.
+    /// </summary>
+    private async Task<JObject> GetValidatedChefsFormAsync(CreateUpdateApplicationFormDto input)
     {
-        var applicationFormDto = new ApplicationFormDto();
+        if (string.IsNullOrWhiteSpace(input.ChefsApplicationFormGuid) || string.IsNullOrWhiteSpace(input.ApiKey))
+        {
+            throw new BusinessException(GrantManagerDomainErrorCodes.ChefsFormInitializationFailed);
+        }
 
+        JObject form;
         try
         {
-            if (!string.IsNullOrWhiteSpace(input.ChefsApplicationFormGuid) && !string.IsNullOrWhiteSpace(input.ApiKey))
-            {
-                var form = await _formsApiService.GetForm(
-                    Guid.Parse(input.ChefsApplicationFormGuid),
-                    input.ChefsApplicationFormGuid,
-                    input.ApiKey);
-
-                if (form is JObject formObject)
-                {
-                    var formName = formObject.SelectToken("name")?.ToString();
-                    if (!string.IsNullOrWhiteSpace(formName))
-                    {
-                        input.ApplicationFormName = formName;
-                        applicationFormDto = await base.UpdateAsync(id, input);
-                    }
-
-                    await _applicationFormVersionAppService.InitializePublishedFormVersion(formObject, id, initializePublishedOnly: false);
-                }
-            }
-
-            return applicationFormDto;
+            form = await _formsApiService.GetForm(
+                Guid.Parse(input.ChefsApplicationFormGuid),
+                input.ChefsApplicationFormGuid,
+                input.ApiKey);
         }
         catch (Exception ex)
         {
-            throw new UserFriendlyException(
-                "Error initializing CHEFS form. Please check the CHEFS: Form ID and API Key.",
-                innerException: ex
-            );
+            throw new BusinessException(GrantManagerDomainErrorCodes.ChefsFormInitializationFailed, innerException: ex);
+        }
+
+        // CHEFS answers a rejected Form ID / API Key with an error body that has no form name.
+        var formName = form?.SelectToken("name")?.ToString();
+        if (form == null || string.IsNullOrWhiteSpace(formName))
+        {
+            throw new BusinessException(GrantManagerDomainErrorCodes.ChefsFormInitializationFailed);
+        }
+
+        input.ApplicationFormName = formName;
+        return form;
+    }
+
+    /// <summary>
+    /// A CHEFS form may be linked to only one visible Unity form; a second link silently
+    /// loses every webhook lookup to the older form.
+    /// </summary>
+    private async Task EnsureChefsFormNotRegisteredAsync(string? chefsFormGuid, Guid? excludeFormId)
+    {
+        if (string.IsNullOrWhiteSpace(chefsFormGuid))
+        {
+            return;
+        }
+
+        var normalizedGuid = chefsFormGuid.ToLower();
+        var existingForm = (await Repository.GetQueryableAsync())
+            .Where(s => s.ChefsApplicationFormGuid != null
+                && s.ChefsApplicationFormGuid.ToLower() == normalizedGuid
+                && !s.IsHiddenFromList
+                && (excludeFormId == null || s.Id != excludeFormId))
+            .OrderBy(s => s.CreationTime)
+            .FirstOrDefault();
+
+        if (existingForm != null)
+        {
+            throw new BusinessException(GrantManagerDomainErrorCodes.ChefsFormAlreadyRegistered)
+                .WithData("ChefsFormId", chefsFormGuid)
+                .WithData("ApplicationFormName", existingForm.ApplicationFormName ?? string.Empty);
         }
     }
 

@@ -22,8 +22,6 @@ public class EmailAddressConfigurationsAppService(
     ITemplatesRepository templatesRepository,
     IEmailLogsRepository emailLogsRepository) : ApplicationService, IEmailAddressConfigurationsAppService
 {
-    private const string DefaultEmailAddressRequiredErrorCode = "Notifications:DefaultEmailAddressRequired";
-
     private static readonly string[] AllowedTypes =
     ["Sender", "ReplyTo", "NoReply", "Inbound", "Support", "Other"];
 
@@ -52,30 +50,43 @@ public class EmailAddressConfigurationsAppService(
     {
         Validate(input);
         var emailType = NormalizeEmailType(input.EmailType);
-        await EnsureUniqueAsync(input.EmailAddress, emailType, input.Id);
-
         var entity = await repository.GetAsync(input.Id, true);
+
+        // Only check uniqueness when the address or type actually changes, so rows that are already
+        // duplicated (legacy data) can still be edited and cleaned up.
+        var identityChanged =
+            NormalizeAddress(entity.EmailAddress) != NormalizeAddress(input.EmailAddress) ||
+            !string.Equals(entity.EmailType, emailType, StringComparison.OrdinalIgnoreCase);
+        if (identityChanged)
+        {
+            await EnsureUniqueAsync(input.EmailAddress, emailType, input.Id);
+        }
+
         EnsureDefaultIsActive(input.IsDefault, input.IsActive);
         if (entity.IsDefault && !input.IsDefault)
         {
-            throw new BusinessException(DefaultEmailAddressRequiredErrorCode);
+            throw new BusinessException(NotificationsErrorCodes.DefaultEmailAddressRequired);
         }
         if (entity.IsDefault && !input.IsActive)
         {
-            throw new BusinessException(DefaultEmailAddressRequiredErrorCode);
+            throw new BusinessException(NotificationsErrorCodes.DefaultEmailAddressRequired);
         }
 
         var existing = await repository.GetListAsync();
         if (!input.IsDefault && existing.Where(configuration => configuration.Id != entity.Id).All(configuration => !configuration.IsDefault))
         {
-            throw new BusinessException(DefaultEmailAddressRequiredErrorCode);
+            throw new BusinessException(NotificationsErrorCodes.DefaultEmailAddressRequired);
         }
         if (input.IsDefault)
         {
             await ClearDefaultsAsync(existing.Where(configuration => configuration.Id != entity.Id));
         }
 
-        entity.EmailAddress = NormalizeAddress(input.EmailAddress);
+        if (identityChanged)
+        {
+            // Keep the stored casing otherwise; lowercasing a legacy duplicate would collide on the unique index
+            entity.EmailAddress = NormalizeAddress(input.EmailAddress);
+        }
         entity.EmailType = emailType;
         entity.Description = input.Description.Trim();
         entity.IsActive = input.IsActive;
@@ -88,16 +99,27 @@ public class EmailAddressConfigurationsAppService(
     public async Task DeleteAsync(Guid id)
     {
         var entity = await repository.GetAsync(id);
+
+        // A default row that is a duplicate of another active row (legacy data) can be removed by
+        // handing the default over to that duplicate, since the effective sender address is unchanged.
+        EmailAddressConfiguration? defaultSuccessor = null;
         if (entity.IsDefault)
         {
-            throw new BusinessException(DefaultEmailAddressRequiredErrorCode);
+            defaultSuccessor = (await GetDuplicatesAsync(entity)).FirstOrDefault(configuration => configuration.IsActive)
+                ?? throw new BusinessException(NotificationsErrorCodes.DefaultEmailAddressRequired);
         }
         if (await IsInUseAsync(entity))
         {
-            throw new BusinessException("Notifications:EmailAddressInUse");
+            throw new BusinessException(NotificationsErrorCodes.EmailAddressInUse);
         }
 
         await repository.DeleteAsync(id, true);
+
+        if (defaultSuccessor != null)
+        {
+            defaultSuccessor.IsDefault = true;
+            await repository.UpdateAsync(defaultSuccessor, true);
+        }
     }
 
     public async Task<List<EmailAddressConfigurationDto>> GetListAsync()
@@ -116,18 +138,18 @@ public class EmailAddressConfigurationsAppService(
     {
         if (!new EmailAddressAttribute().IsValid(input.EmailAddress))
         {
-            throw new BusinessException("Notifications:InvalidEmailAddress");
+            throw new BusinessException(NotificationsErrorCodes.InvalidEmailAddress);
         }
 
         if (!AllowedTypes.Contains(input.EmailType, StringComparer.OrdinalIgnoreCase))
         {
-            throw new BusinessException("Notifications:InvalidEmailType");
+            throw new BusinessException(NotificationsErrorCodes.InvalidEmailType);
         }
 
         if (string.Equals(input.EmailType, "Other", StringComparison.OrdinalIgnoreCase) &&
             string.IsNullOrWhiteSpace(input.Description))
         {
-            throw new BusinessException("Notifications:EmailDescriptionRequired");
+            throw new BusinessException(NotificationsErrorCodes.EmailDescriptionRequired);
         }
     }
 
@@ -135,7 +157,7 @@ public class EmailAddressConfigurationsAppService(
     {
         if (isDefault && !isActive)
         {
-            throw new BusinessException(DefaultEmailAddressRequiredErrorCode);
+            throw new BusinessException(NotificationsErrorCodes.DefaultEmailAddressRequired);
         }
     }
 
@@ -150,20 +172,28 @@ public class EmailAddressConfigurationsAppService(
 
     private async Task EnsureUniqueAsync(string address, string emailType, Guid? excludedId)
     {
+        // Stored addresses are not guaranteed to be lowercase (e.g. the seeded default sender keeps its original casing)
         var normalizedAddress = NormalizeAddress(address);
         var entities = await repository.GetListAsync(configuration =>
-            configuration.EmailAddress == normalizedAddress &&
+            configuration.EmailAddress.ToLower() == normalizedAddress &&
             configuration.EmailType.ToUpper() == emailType.ToUpper() &&
             (!excludedId.HasValue || configuration.Id != excludedId.Value));
 
         if (entities.Count > 0)
         {
-            throw new BusinessException("Notifications:DuplicateEmailAddressConfiguration");
+            throw new BusinessException(NotificationsErrorCodes.DuplicateEmailAddressConfiguration);
         }
     }
 
     private async Task<bool> IsInUseAsync(EmailAddressConfiguration entity)
     {
+        // Usage is tracked by address, not by configuration. If another configuration with the same
+        // address and type exists, removing this one leaves nothing that relied on it unconfigured.
+        if ((await GetDuplicatesAsync(entity)).Count > 0)
+        {
+            return false;
+        }
+
         var address = NormalizeAddress(entity.EmailAddress);
         var templates = await templatesRepository.GetListAsync();
         if (templates.Any(template => template.SendFrom != null &&
@@ -180,6 +210,15 @@ public class EmailAddressConfigurationsAppService(
         }
 
         return false;
+    }
+
+    private async Task<List<EmailAddressConfiguration>> GetDuplicatesAsync(EmailAddressConfiguration entity)
+    {
+        var address = NormalizeAddress(entity.EmailAddress);
+        return await repository.GetListAsync(configuration =>
+            configuration.Id != entity.Id &&
+            configuration.EmailAddress.ToLower() == address &&
+            configuration.EmailType.ToUpper() == entity.EmailType.ToUpper());
     }
 
     private async Task<EmailAddressConfigurationDto> ToDtoAsync(EmailAddressConfiguration entity)
