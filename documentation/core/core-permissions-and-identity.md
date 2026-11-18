@@ -36,7 +36,7 @@ public static partial class Applicant
 }
 ```
 
-Top-level groups: `Applicant`, `Application`, `Review`, `Project`, `Funding`, `Payment`, `ApplicantManagement`, `SettingManagement`.
+Top-level groups: `Applicant`, `Application`, `Review`, `Project`, `Funding`, `Custom`, `Payment`, `ApplicantManagement`, `SettingManagement`.
 
 `UpdatePolicy` entries are **custom authorization policies** rather than plain permissions — `UnitySelector.Project.UpdatePolicy` and `UnitySelector.Applicant.UpdatePolicy` gate `GrantApplicationAppService.UpdateProjectInfoAsync` and the applicant equivalents, and are resolved through a policy provider rather than a straight permission check.
 

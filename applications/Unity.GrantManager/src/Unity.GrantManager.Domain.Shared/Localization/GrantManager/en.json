@@ -276,6 +276,10 @@
     "Unity.GrantManager.ApplicationManagement.Funding.Agreement": "Contract",
     "Unity.GrantManager.ApplicationManagement.Funding.Agreement.Update": "Edit Contract",
 
+    "Unity.GrantManager.ApplicationManagement.Custom": "Custom",
+    "Unity.GrantManager.ApplicationManagement.Custom.ExistingTab.Update": "Edit custom fields in the existing tab",
+    "Unity.GrantManager.ApplicationManagement.Custom.SolitaryTab.Update": "Edit custom fields in the solitary tab",
+
     "Unity.GrantManager.ApplicationManagement.Payment": "Payment Info",
     "Unity.GrantManager.ApplicationManagement.Payment.Summary": "Payment Summary",
     "Unity.GrantManager.ApplicationManagement.Payment.Supplier": "Supplier Info",
