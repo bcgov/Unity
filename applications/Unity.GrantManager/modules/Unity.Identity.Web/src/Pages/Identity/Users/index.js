@@ -250,6 +250,7 @@ $(function () {
             titleAttr: lg('Common:Command:Create'),
             id: 'CreateIntakeButton',
             className: 'btn-light rounded-1',
+            available: () => abp.auth.isGranted('AbpIdentity.Users.Create'),
             action: function (e, dt, node, config) {
                 e.preventDefault();
                 _importModal.open();
