@@ -322,20 +322,7 @@ namespace Unity.GrantManager.Events
 
         internal static bool MatchesDateField(Application application, string? dateField, DateTime today)
         {
-            DateTime? triggerDate = dateField switch
-            {
-                NotificationDate => application.NotificationDate,
-                DueDate => application.DueDate,
-                ProjectStartDate => application.ProjectStartDate,
-                ProjectEndDate => application.ProjectEndDate,
-                ContractExecutionDate => application.ContractExecutionDate,
-                // The notification will not send if the FYE Date has no value
-                FiscalYearEnd => GetApplicantFiscalYearEnd(application) is { } fiscalYearEnd
-                    ? fiscalYearEnd.ToDateTime(TimeOnly.MinValue)
-                    : null,
-                _ => null
-            };
-
+            var triggerDate = GetDateFieldValue(application, dateField);
             return triggerDate.HasValue && triggerDate.Value.Date <= today.Date;
         }
 
@@ -497,15 +484,24 @@ namespace Unity.GrantManager.Events
             return tracking;
         }
 
+        /// <summary>
+        /// Resolves the trigger date for the configured date field. Used both for matching and for the
+        /// tracking record / duplicate check, so every supported field must be handled here; a field that
+        /// resolves to null here can never be tracked and would otherwise be re-sent on every run.
+        /// </summary>
         internal static DateTime? GetDateFieldValue(Application application, string? dateField)
         {
             return dateField switch
             {
-                "NotificationDate" => application.NotificationDate,
-                "DueDate" => application.DueDate,
-                "ProjectStartDate" => application.ProjectStartDate,
-                "ProjectEndDate" => application.ProjectEndDate,
-                "ContractExecutionDate" => application.ContractExecutionDate,
+                NotificationDate => application.NotificationDate,
+                DueDate => application.DueDate,
+                ProjectStartDate => application.ProjectStartDate,
+                ProjectEndDate => application.ProjectEndDate,
+                ContractExecutionDate => application.ContractExecutionDate,
+                // The notification will not send if the FYE Date has no value
+                FiscalYearEnd => GetApplicantFiscalYearEnd(application) is { } fiscalYearEnd
+                    ? fiscalYearEnd.ToDateTime(TimeOnly.MinValue)
+                    : null,
                 _ => null
             };
         }
