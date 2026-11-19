@@ -236,7 +236,10 @@ public class ApplicationRepository
 
         var query = (await GetQueryableAsync())
             .AsNoTracking()
-            .Include(a => a.Applicant);
+            .Include(a => a.Applicant)
+            // ApplicationStatus and ApplicationForm back the {{status}} and {{category}} template tokens
+            .Include(a => a.ApplicationStatus)
+            .Include(a => a.ApplicationForm);
 
         return await query
             .Where(a => formIds.Contains(a.ApplicationFormId)
