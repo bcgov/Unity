@@ -1,6 +1,7 @@
 {
   "culture": "en",
   "texts": {
+    "Individual Scheduled Notification": "Individual Scheduled Notification",
     "Notifications:EmailDraftCannotBeScheduled": "Scheduled emails cannot be saved as drafts.",
     "Notifications:EmailOwnerRequired": "Select exactly one application or applicant for this email.",
     "Notifications:EmailOwnerMismatch": "This email belongs to a different application or applicant.",

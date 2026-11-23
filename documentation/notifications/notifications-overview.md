@@ -72,11 +72,12 @@ The host wires the module in at three points:
 
 ## Feature and permission gating
 
-Two **tenant features**, both defined in the host's `GrantManagerFeaturesDefinitionProvider` and both defaulting to `false`:
+Three **tenant features**, all defined in the host's `GrantManagerFeaturesDefinitionProvider` and all defaulting to `false`:
 
 | Feature | Display name | Gates |
 |---|---|---|
 | `Unity.Notifications` | "Allow Notifications" | Everything email: the handler short-circuits, the main menu item is hidden, the settings tab is hidden, `NotificationListAppService` carries `[RequiresFeature]`, and every scheduled-notification handler checks it first. |
+| `Unity.Notifications.IndividualScheduledNotification` (`NotificationsFeatureConsts.IndividualScheduledNotification`) | "Individual Scheduled Notification" | Individual Application and Applicant scheduling and cancellation: the four owner-scoped Schedule/Cancel Scheduled permissions, the schedule-email settings checkbox, EmailsWidget scheduling controls, and scheduling controls in email history. Backend checks reject these interactive operations when disabled. Stored settings and grants are preserved; already scheduled emails continue sending. Form-level notification plans are unaffected. |
 | `Unity.Notifications.DirectMessaging` (`NotificationsFeatureConsts.DirectMessaging`) | "Allow Direct Messaging" | The realtime half only: `NotificationHub.OnConnectedAsync` calls `Context.Abort()` when disabled, the Unity Messaging page and menu item are hidden, and the messaging controller endpoints carry `[RequiresFeature]`. |
 
 Permissions are declared in `NotificationsPermissionDefinitionProvider` under the `Notifications` group, plus one entry grafted onto ABP's `SettingManagement` group. See [notifications-domain-model.md](notifications-domain-model.md#permissions).

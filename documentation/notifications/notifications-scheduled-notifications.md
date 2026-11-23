@@ -85,7 +85,7 @@ The job iterates tenants and runs `ProcessTenantNotificationsAsync` inside each 
 The body is written explicitly to avoid N+1 queries, and the comments in the source label each optimization. In order:
 
 1. All active configurations with a non-empty `DateField`.
-2. **One** application query across every relevant `FormId`, filtered to rows where any of `DueDate`, `ProjectStartDate`, `ProjectEndDate`, `NotificationDate`, `ContractExecutionDate` is non-null and `<= today` (UTC date).
+2. **One** application query across every relevant `FormId`, filtered to rows where any of `DueDate`, `ProjectStartDate`, `ProjectEndDate`, `NotificationDate`, `ContractExecutionDate`, or the applicant's `FiscalYearEnd` is non-null and `<= today` (UTC date). It eager-loads `Applicant`, `ApplicationStatus`, and `ApplicationForm` (needed for FYE matching and the `{{status}}` / `{{category}}` tokens), not the full details graph.
 3. **One** batch query for every `ScheduledNotificationTracking` row belonging to those configurations.
 4. **One** batch load of all needed templates, keyed by id.
 5. **One** batch load of all `ApplicantAgent` rows for those applications, keyed by application id.

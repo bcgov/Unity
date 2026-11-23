@@ -152,6 +152,23 @@ public static partial class UnitySelector
     {
         public const string Default     = "Unity.GrantManager.ApplicationManagement.Comment";
     }
+    public static partial class Custom
+    {
+        // Read access to custom fields (Flex worksheets) mapped to an application form
+        public const string Default     = "Unity.GrantManager.ApplicationManagement.Custom";
+
+        public static partial class ExistingTab
+        {
+            // Custom fields anchored inside a built-in tab (Applicant Info, Project Info, etc.)
+            public const string Update  = "Unity.GrantManager.ApplicationManagement.Custom.ExistingTab.Update";
+        }
+
+        public static partial class SolitaryTab
+        {
+            // Custom fields rendered in their own standalone custom tab
+            public const string Update  = "Unity.GrantManager.ApplicationManagement.Custom.SolitaryTab.Update";
+        }
+    }
     public static partial class Flex
     {
         public const string Default     = "Unity.GrantManager.ApplicationManagement.Flex";

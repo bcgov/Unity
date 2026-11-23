@@ -145,6 +145,26 @@ public class DateBasedScheduledNotificationJobTests
             new DateTime(2026, 9, 10)).ShouldBeFalse();
     }
 
+    [Fact]
+    public void GetDateFieldValue_WhenFiscalYearEnd_ReturnsApplicantFiscalYearEnd()
+    {
+        // Tracking and duplicate detection rely on this value; null here caused daily re-sends.
+        var application = CreateApplication(Guid.NewGuid());
+        application.Applicant = new Applicant { FiscalYearEnd = new DateOnly(2026, 10, 9) };
+
+        DateBasedScheduledNotificationJob.GetDateFieldValue(application, FiscalYearEnd)
+            .ShouldBe(new DateTime(2026, 10, 9));
+    }
+
+    [Fact]
+    public void GetDateFieldValue_WhenFiscalYearEndIsMissing_ReturnsNull()
+    {
+        var application = CreateApplication(Guid.NewGuid());
+        application.Applicant = new Applicant { FiscalYearEnd = null };
+
+        DateBasedScheduledNotificationJob.GetDateFieldValue(application, FiscalYearEnd).ShouldBeNull();
+    }
+
     private static GrantApplication CreateApplication(Guid statusId)
     {
         return new GrantApplication
