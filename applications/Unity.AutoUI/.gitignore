@@ -4,10 +4,13 @@
 cypress.env.json
 
 # Local environment config files — create from the .example files in cypress/config/
+# (per-env <env>.json and/or the combined unity-cypress-config.json; see cypress/config/README-gitignore-config-json-files.md)
 cypress/config/dev.json
+cypress/config/dev2.json
 cypress/config/test.json
 cypress/config/uat.json
 cypress/config/prod.json
+cypress/config/unity-cypress-config.json
 
 # Dependency directories
 node_modules/

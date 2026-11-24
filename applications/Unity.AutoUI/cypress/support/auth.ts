@@ -224,8 +224,20 @@ function performLogin(options: LoginOptions = {}): void {
     }
   });
 
-  // Handle Keycloak login if needed
-  cy.get("body", { timeout }).then(($body: any) => {
+  // Wait for the post-LOGIN redirect to settle. A plain .then() checks the
+  // DOM once (no retry), so it can run while the Unity landing page is still
+  // showing and skip the Keycloak step entirely.
+  cy.get("body", { timeout })
+    .should(($body: any) => {
+      const pathname = $body[0]?.ownerDocument?.location?.pathname ?? "";
+      expect(
+        isKeycloakPage($body) ||
+          isLoggedIn($body) ||
+          pathname.includes("/GrantApplications"),
+        `expected Keycloak provider page or authenticated page. Current path: ${pathname}`,
+      ).to.equal(true);
+    })
+    .then(($body: any) => {
     if (isKeycloakPage($body)) {
       handleKeycloakLogin(options, useMfa, timeout);
     }
