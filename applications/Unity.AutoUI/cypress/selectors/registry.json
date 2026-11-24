@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "mode": "report-only",
-  "generatedAt": "2026-11-12T18:10:06.329Z",
+  "generatedAt": "2026-11-24T17:27:57.865Z",
   "summary": {
     "total": 364,
     "matched": 150,
@@ -4209,7 +4209,7 @@
         "applications/Unity.AutoUI/cypress/support/auth.ts:155",
         "applications/Unity.AutoUI/cypress/support/auth.ts:181",
         "applications/Unity.AutoUI/cypress/support/auth.ts:213",
-        "applications/Unity.AutoUI/cypress/support/auth.ts:228",
+        "applications/Unity.AutoUI/cypress/support/auth.ts:230",
         "applications/Unity.AutoUI/cypress/support/auth.ts:60",
         "applications/Unity.AutoUI/cypress/support/commands.ts:148",
         "applications/Unity.AutoUI/cypress/support/commands.ts:165",
