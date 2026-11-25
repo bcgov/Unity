@@ -7,7 +7,7 @@ version-controlled file.
 
 Only processes entries missing `content_hash`, unless
 --refresh/--refresh-all is passed. Requires live Metabase network access and
-a tenant_config.local.json api_key for the entry's tenant — run by whoever has
+METABASE_API_KEY, and the entry's tenant registered in tenant_registry, — run by whoever has
 that access (see eval/README.md).
 
 Usage:
@@ -25,6 +25,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from config import config  # noqa: E402
+from tenant_registry import tenant_registry  # noqa: E402
 from metabase import metabase_client  # noqa: E402
 
 DATASET_PATH = Path(__file__).parent / "dataset" / "questions.jsonl"
@@ -56,7 +57,7 @@ def write_entries(entries: list, dataset_path: Path = DATASET_PATH):
 def capture_one(entry: dict) -> tuple:
     """Returns (ok, message)."""
     tenant_id = entry["tenant_id"]
-    db_id = config.get_tenant_config(tenant_id)["db_id"]
+    db_id = tenant_registry.get_config(tenant_id)["db_id"]
     try:
         result = metabase_client.execute_sql(entry["gold_sql"], db_id, tenant_id=tenant_id)
     except Exception as e:

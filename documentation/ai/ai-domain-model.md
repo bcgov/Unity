@@ -13,12 +13,8 @@ The module's own entities live in `modules/Unity.AI/src/Unity.AI.Application/Dom
 | `Name` | Unique. Doubles as the **Azure deployment name** — `OpenAIChatClientFactory` passes it straight to `GetChatClient(...)` |
 | `Provider` | Only `"OpenAI"` is accepted anywhere; see [ai-roadmap.md](ai-roadmap.md#the-provider-is-hard-coded-in-three-places) |
 | `IsActive` | An inactive model makes every operation bound to it throw |
-| `SettingsJson` | `jsonb`, deserialised into `AIModelSettings` |
 
-`AIModelSettings` holds two fields that exist because model families differ in what parameters they accept:
-
-- `MaxOutputTokenCountSupported` (default `true`) — when false, `ChatCompletionOptions.MaxOutputTokenCount` is not set at all.
-- `Temperature` (nullable) — when null, temperature is not sent.
+There are no per-model request settings. With `gpt-4o-mini` retired (AB#35030), every model in use is a gpt-5 reasoning model, so the transport sends neither a temperature nor an output token cap (the `SettingsJson` column was dropped in migration `RemoveAIModelSettingsAndCompletionTokens`, AB#34947).
 
 ### `AIOperation` — `Domain/AIOperation.cs`
 
@@ -29,7 +25,6 @@ The module's own entities live in `modules/Unity.AI/src/Unity.AI.Application/Dom
 | `Name` | Unique. The **operation name** (`ApplicationScoring`, …), which is also the prompt family name |
 | `AIModelId` / `AIModel` | Required FK, `DeleteBehavior.Restrict` |
 | `ExecutionMode` | `Sequential` \| `Parallel` \| `Batch`, stored as a string, max length 20 |
-| `CompletionTokens` | The per-call output budget; must be positive or resolution throws |
 | `IsActive` | Inactive operations are invisible to the resolver and cannot be queued |
 
 ### `AIPrompt` — `Domain/AIPrompt.cs`
@@ -103,35 +98,31 @@ dotnet ef migrations add <Name> --context GrantTenantDbContext --output-dir Migr
 
 ## Seed data
 
-`AIDataSeeder` (`IDataSeedContributor`) runs three seeders in order — prompts, models, operations. All three **skip tenant contexts** (`if (context.TenantId != null) return;`), so this is host-level seed data. `GrantManagerDbMigratorModule` depends on `AIApplicationModule` specifically to make this run.
+`AIDataSeeder` (`IDataSeedContributor`) runs one seeder: prompts. It **skips tenant contexts** (`if (context.TenantId != null) return;`), so this is host-level seed data. `GrantManagerDbMigratorModule` depends on `AIApplicationModule` specifically to make this run.
 
-### Models — `AIModelDataSeeder`
+**AI models and AI operations are not seeded** (AB#34947). They are environment configuration: which models exist depends on the deployments in each environment's Azure OpenAI account. They are managed in Unity Admin → **AI Setup** (see [Unity AI Setup](#unity-ai-setup) below): IT Administrator adds, edits and deletes models; IT Operations assigns models to operations, and the DbMigrator never creates or changes them. Existing rows stay as they are across deploys. A new or empty database starts with no models and no operations, so every AI operation fails with `AI operation '...' is not configured.` until AI Setup is done. AI generation is off by default (features and settings default to false), so nothing else breaks.
 
-| Name | Provider | `MaxOutputTokenCountSupported` | `Temperature` |
-|---|---|---|---|
-| `gpt-5-mini` | OpenAI | false | — |
-| `gpt-5-nano` | OpenAI | false | — |
+The values used in every environment when seeding stopped, as a starting point for a new database:
 
-`gpt-4o-mini` is **retired**: Azure OpenAI no longer allows new deployments of it. It is not seeded, and an existing `gpt-4o-mini` row is set to `IsActive = false` (not deleted) on every run. An operation pointing at an inactive model fails with `AI model 'gpt-4o-mini' is inactive.` instead of calling a deployment that may not exist.
-
-The seeder is idempotent and **corrective**: an existing row has its provider, `IsActive` and `SettingsJson` overwritten on every run.
-
-### Operations — `AIOperationDataSeeder`
-
-All six bind to `gpt-5-mini` and default to `Sequential`. The differences are the token budgets, which encode how much output each operation is expected to produce:
-
-| Operation | `CompletionTokens` |
+| Model (Azure deployment name) | Provider |
 |---|---|
-| `ApplicationScoring` | 8000 |
-| `FormScoresheet` | 8000 |
-| `ApplicationAnalysis` | 4000 |
-| `FormWorksheet` | 4000 |
-| `AttachmentSummary` | 2000 |
-| `FormMapping` | 2000 |
+| `gpt-5-mini` | OpenAI |
+| `gpt-5-nano` | OpenAI |
 
-Also corrective — an existing operation has its model, execution mode, token budget and `IsActive` reset on every run. If the seeded model is missing, seeding is skipped with a warning rather than failing.
+| Operation | Model | `ExecutionMode` |
+|---|---|---|
+| `ApplicationScoring` | `gpt-5-mini` | `Sequential` |
+| `FormScoresheet` | `gpt-5-mini` | `Sequential` |
+| `ApplicationAnalysis` | `gpt-5-mini` | `Sequential` |
+| `FormWorksheet` | `gpt-5-mini` | `Sequential` |
+| `AttachmentSummary` | `gpt-5-mini` | `Sequential` |
+| `FormMapping` | `gpt-5-mini` | `Sequential` |
+
+`gpt-4o-mini` is **retired** (AB#35030). Existing rows were left inactive by the old model seeder; delete them in AI Setup once no operation points at them. An operation pointing at an inactive model fails with `AI model 'gpt-4o-mini' is inactive.` instead of calling a deployment that may not exist.
 
 ### Prompts — `AIPromptDataSeeder`
+
+**Insert-only**: it inserts a `Name` + `VersionNumber` only when that name has no version at or above it (so an older version deleted in AI Prompts is not recreated), and never changes an existing one, so an edit or deactivation made in AI Prompts survives the next deploy. New prompt text in code needs a **new `VersionNumber`**; changing the text of an existing version in code has no effect on databases that already have it.
 
 973 lines, almost all of it prompt text held in C# `const string` fields. Seeds global (`TenantId == null`) prompts:
 
@@ -164,7 +155,23 @@ Plus `SettingManagement.ConfigureAI`, grafted onto ABP's `SettingManagement` gro
 
 `AIPermissions` also exposes per-operation aliases (`AIPermissions.ApplicationScoring.View`/`.Generate`, etc.) that point at the same `Analysis.*` constants; both spellings appear in the codebase.
 
-**Prompt administration is not in this group.** `AIPromptAppService` is `[Authorize(IdentityConsts.ITOperationsPolicyName)]` and sets every CRUD policy to the same, so prompts are governed by the `ITOperations` role.
+**Prompt and AI Setup administration is not in this group.** `AIPromptAppService` is `[Authorize(IdentityConsts.ITOperationsPolicyName)]` and sets every CRUD policy to the same, so prompts are governed by the `ITOperations` role. `AIModelAppService` and `AIOperationAppService` (Unity AI Setup) are `[Authorize(IdentityConsts.ITAdminOrITOperationsPolicyName)]` for reading (and model Test). Changing a model (`CreateAsync`, `UpdateAsync`, which includes active/inactive, and `DeleteAsync`) also needs `ITAdminPolicyName`, because a model mirrors an Azure deployment; changing an operation (`AIOperationAppService.UpdateAsync`) also needs `ITOperationsPolicyName`.
+
+## Unity AI Setup
+
+Host-wide models and operations in Unity Admin → AI Setup (next to AI Prompts). Both IT roles see the page and can Test a model; only IT Administrator adds, edits or deletes models, and only IT Operations edits operations. Rules live in `AISetupManager` (`Unity.AI.Application/Domain`):
+
+| Service | Route | Does |
+|---|---|---|
+| `AIModelAppService` | `api/app/ai/setup/models` | List, get, create, update, delete. `POST {id}/test` makes one small chat call to the deployment with `Azure:OpenAI:Endpoint` / `ApiKey` (`AIModelConnectionTester`) and returns success, HTTP status, Azure error code (such as `DeploymentNotFound`) and latency |
+| `AIOperationAppService` | `api/app/ai/setup/operations` | Lists the six built-in operations (`AIPromptTypes.All`), configured or not, plus any other rows, with the highest active host prompt version. `PUT {name}` sets model, execution mode and on/off, and creates the row for a built-in operation that isn't configured yet |
+
+Rules:
+
+- A model name (the Azure deployment name) is unique, case-insensitive. Only provider `OpenAI` is accepted, because the runtime supports no other.
+- A model that **any** operation points at can't be deactivated or deleted.
+- An operation can only point at an **active** model. Execution mode is `Sequential`, `Parallel` or `Batch`, and only `ApplicationScoring` may use `Parallel` or `Batch` (the other operations never read their mode).
+- Every save (models, operations, and AI Prompts) calls `AIConfigurationCacheSignal.Reset()`, which expires the resolver's cached settings on that server. Other web pods pick the change up when their five-minute cache entries expire. See [ai-provider-runtime.md](ai-provider-runtime.md#caching).
 
 ## Settings
 

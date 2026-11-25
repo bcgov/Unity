@@ -14,7 +14,7 @@ namespace Unity.GrantManager.DbMigrator;
     typeof(GrantManagerEntityFrameworkCoreModule),
     typeof(GrantManagerApplicationContractsModule),
     typeof(ReportingApplicationModule), // Needed to seed Reporting data
-    typeof(AIApplicationModule),         // Needed to seed AI prompt data
+    typeof(AIApplicationModule),         // Needed to seed AI prompts (insert-only); models and operations are set in AI Setup
     typeof(UnityTenantManagementApplicationModule) // Registers EncryptedTenantConnectionStringResolver — without it,
                                                      // tenant connection strings are resolved undecrypted (stock ABP
                                                      // resolver), breaking every standard-repository DB call for tenants.

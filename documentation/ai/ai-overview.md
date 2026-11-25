@@ -37,12 +37,11 @@ The pipeline is documented in [ai-generation-pipeline.md](ai-generation-pipeline
 
 ### 2. Model, operation, and prompt are database rows, not code
 
-What model to call, how many completion tokens it may spend, whether it runs items sequentially or in parallel, and the exact system and user prompt text are all rows in the `AI` schema:
+What model to call, whether it runs items sequentially or in parallel, and the exact system and user prompt text are all rows in the `AI` schema:
 
 ```text
 AIOperation ──▶ AIModel ──▶ (Azure endpoint + key from configuration)
-   │  name, ExecutionMode,      name (= deployment name), Provider,
-   │  CompletionTokens,         SettingsJson { MaxOutputTokenCountSupported, Temperature }
+   │  name, ExecutionMode,      name (= deployment name), Provider, IsActive
    │  IsActive
    ▼
 AIPrompt (by name + version)
@@ -100,7 +99,7 @@ The host wires the module in at four points:
 - `GrantManagerApplicationModule` → `[DependsOn(typeof(AIApplicationModule))]`
 - `GrantManagerWebModule` → `[DependsOn(typeof(AIWebModule))]`
 - `GrantManagerHttpApiClientModule` → the AI contracts assembly
-- `GrantManagerDbMigratorModule` → `typeof(AIApplicationModule)`, with the comment *"Needed to seed AI prompt data"*
+- `GrantManagerDbMigratorModule` → `typeof(AIApplicationModule)`, to seed the AI prompts (insert-only; models and operations are set in Unity AI Setup)
 - `GrantManagerDbContext.OnModelCreating` → `modelBuilder.ConfigureAI()`
 
 Note the last one: `ConfigureAI()` is called on the **host** context, not the tenant context. See [ai-domain-model.md](ai-domain-model.md#two-ai-schemas-in-two-databases).
@@ -166,8 +165,8 @@ Text extraction is **local**, not a service: PDFs via `UglyToad.PdfPig`, Office 
 | **Operation type** | The kebab-case public identifier used on the API and in job args: `attachment-summary`, `application-analysis`, `application-scoring`, `form-mapping`, `form-worksheet`, `form-scoresheet`. |
 | **Operation name** | The PascalCase identifier used for the `AIOperation` row and the prompt family: `AttachmentSummary`, `ApplicationAnalysis`, `ApplicationScoring`, `FormMapping`, `FormWorksheet`, `FormScoresheet`. Bridged by `AIGenerationOperationDefinition`. |
 | **`AIGenerationOperationDefinition`** | The static registry entry tying an operation type to its feature, disabled-message key, generate and view permissions, and whether it needs a form version. |
-| **`AIModel`** | A row naming a deployment (`gpt-5-mini`, `gpt-5-nano`; the retired `gpt-4o-mini` row is kept inactive), its provider, and `SettingsJson` holding `MaxOutputTokenCountSupported` and `Temperature`. |
-| **`AIOperation`** | A row binding an operation name to a model, an `ExecutionMode`, and a `CompletionTokens` budget. |
+| **`AIModel`** | A row naming a deployment (`gpt-5-mini`, `gpt-5-nano`; the retired `gpt-4o-mini` row is kept inactive), and its provider. No per-model request settings: no temperature or output cap is sent. |
+| **`AIOperation`** | A row binding an operation name to a model and an `ExecutionMode`. |
 | **`AIPrompt`** | A versioned system+user prompt pair for one prompt family, optionally tenant-specific, with `MetadataJson` holding reusable template sections. |
 | **Prompt family / version** | `AIPrompt.Name` is the family (equal to the operation name); `VersionNumber` selects the variant. `(TenantId, Name, VersionNumber)` is unique. Resolution prefers the current tenant's row, then the global (`TenantId == null`) row. |
 | **`AIGenerationRequest`** | The queued-request row: application, operation, `Queued`/`Running`/`Completed`/`Failed`, timestamps, failure reason. Stored in `AI.AIRequests` in the **host** database. |

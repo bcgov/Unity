@@ -33,15 +33,11 @@ AIOperation by name, IsActive               → else InvalidOperationException "
         ↓
 AIModel by operation.AIModelId              → else InvalidOperationException "is inactive"
         ↓
-model.SettingsJson → AIModelSettings        → else "has invalid settings JSON"
-        ↓
 model.Provider must equal "OpenAI"          → else "provider is not supported"
         ↓
 configuration["Azure:OpenAI:Endpoint"]      → required, must be an absolute URI
         ↓
 active AIPrompt for the operation name      → else "has no active prompt for the current tenant"
-        ↓
-operation.CompletionTokens > 0              → else "must define a positive CompletionTokens value"
         ↓
 configuration["Azure:OpenAI:ApiKey"]        → required
 ```
@@ -50,15 +46,12 @@ The resulting record:
 
 ```csharp
 new OpenAIOperationSettings(
-    ProviderName:                 "OpenAI",
-    ProfileName:                  model.Name,
-    ApiKey:                       configuration["Azure:OpenAI:ApiKey"],
-    Endpoint:                     new Uri(configuration["Azure:OpenAI:Endpoint"]),
-    DeploymentName:               model.Name,          // same as ProfileName
-    MaxOutputTokenCountSupported: modelSettings.MaxOutputTokenCountSupported,
-    Temperature:                  modelSettings.Temperature,
-    CompletionTokens:             operation.CompletionTokens,
-    PromptVersion:                $"v{prompt.VersionNumber}");
+    ProviderName:   "OpenAI",
+    ProfileName:    model.Name,
+    ApiKey:         configuration["Azure:OpenAI:ApiKey"],
+    Endpoint:       new Uri(configuration["Azure:OpenAI:Endpoint"]),
+    DeploymentName: model.Name,          // same as ProfileName
+    PromptVersion:  $"v{prompt.VersionNumber}");
 ```
 
 Both `ProfileName` and `DeploymentName` are `model.Name`, so the **Azure deployment must be named after the model** (`gpt-5-mini`, `gpt-5-nano`).
@@ -72,7 +65,7 @@ Two five-minute `IMemoryCache` entries per operation, keyed by tenant:
 | `ai:operation-snapshot:{tenantId\|host}:{operation}` | A `ResolvedOperationSnapshot` — id, name, model id, token budget, active flag |
 | `ai:operation-settings:{tenantId\|host}:{operation}` | The whole `OpenAIOperationSettings`, **including the API key** |
 
-`IMemoryCache` is registered by `AIApplicationModule` (`AddMemoryCache()`), so this is per-pod and not invalidated by writes. Changing a model, token budget, or prompt activation takes effect within five minutes, independently on each pod. See [ai-roadmap.md](ai-roadmap.md#configuration-caching-is-per-pod-and-holds-the-api-key).
+`IMemoryCache` is registered by `AIApplicationModule` (`AddMemoryCache()`), so this is per-pod. Both entries carry a change token from the singleton `AIConfigurationCacheSignal`; saving a model or operation in Unity AI Setup, or a prompt in AI Prompts, resets it, so the change applies at once **on the pod that handled the save**. Other pods pick it up within five minutes. A change made directly in the database is not signalled and also takes up to five minutes. See [ai-roadmap.md](ai-roadmap.md#configuration-caching-is-per-pod-and-holds-the-api-key).
 
 ### `IsAvailableAsync`
 
@@ -107,29 +100,9 @@ new UserChatMessage(content ?? string.Empty)
 
 The fallback system prompt is a hard-coded string in the transport — it applies only when a prompt row has an empty `SystemPrompt`.
 
-### Options are built defensively
+### No request options
 
-```csharp
-if (settings.MaxOutputTokenCountSupported) options.MaxOutputTokenCount = maxTokens;
-if (includeTemperature && settings.Temperature.HasValue) options.Temperature = (float)settings.Temperature.Value;
-```
-
-Both parameters are omitted rather than defaulted when the model does not support them — which is why `gpt-5-mini` and `gpt-5-nano` are seeded with `MaxOutputTokenCountSupported = false` and no temperature.
-
-### The temperature fallback
-
-Newer model families reject `temperature` outright. Rather than encode a model-family table, the transport retries once without it:
-
-```text
-CompleteChatAsync(..., includeTemperature: true)
-        ↓ ClientResultException
-status == 400  AND  body mentions "temperature"
-               AND  body mentions "unsupported" | "not supported" | "not allowed" | "invalid"
-        ↓ yes
-CompleteChatAsync(..., includeTemperature: false)
-```
-
-Any other failure rethrows. The retry is logged at warning level with the profile name.
+The call is `CompleteChatAsync(messages, new ChatCompletionOptions())`: no temperature and no output token cap. The gpt-5 models reject `temperature`, and an output cap counts their reasoning tokens, so a low cap can end the call before any answer is written (an empty output with `finish_reason` `length`). Per-call length is left to the model; volume is limited by the Azure deployment's tokens-per-minute quota and UGM's rate limiter. (The per-model temperature/token settings and the operation token limit were removed in AB#34947, after `gpt-4o-mini` was retired.)
 
 ### Reading the response
 

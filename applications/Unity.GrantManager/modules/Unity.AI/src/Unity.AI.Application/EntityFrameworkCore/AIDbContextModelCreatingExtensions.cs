@@ -61,10 +61,6 @@ public static class AIDbContextModelCreatingExtensions
             b.Property(x => x.IsActive)
                 .IsRequired();
 
-            b.Property(x => x.SettingsJson)
-                .IsRequired()
-                .HasColumnType("jsonb");
-
             b.HasIndex(x => x.Name)
                 .IsUnique();
         });
@@ -83,9 +79,6 @@ public static class AIDbContextModelCreatingExtensions
                 .IsRequired()
                 .HasConversion<string>()
                 .HasMaxLength(20);
-
-            b.Property(x => x.CompletionTokens)
-                .IsRequired();
 
             b.Property(x => x.IsActive)
                 .IsRequired();

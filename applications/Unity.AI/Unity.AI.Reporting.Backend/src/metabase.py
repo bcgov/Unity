@@ -19,17 +19,17 @@ class MetabaseClient:
 
     def __init__(self):
         self.config = config.metabase
-        self.headers = config.metabase_headers
+
+    @property
+    def headers(self) -> Dict[str, str]:
+        return config.metabase_headers
 
     def _get_headers(self, tenant_id: Optional[str] = None) -> Dict[str, str]:
         """
-        Get API headers for Metabase requests.
-        If tenant_id is provided, uses tenant-specific API key from config file.
-        Otherwise uses default headers.
+        Get API headers for Metabase requests. One METABASE_API_KEY is shared by all
+        tenants; tenant_id is kept in the signature for the existing callers.
         """
-        if tenant_id:
-            return config.get_tenant_metabase_headers(tenant_id)
-        return self.headers
+        return config.metabase_headers
 
     def execute_sql(self, sql: str, db_id: int, tenant_id: Optional[str] = None,
                     max_rows: Optional[int] = None) -> Dict[str, Any]:

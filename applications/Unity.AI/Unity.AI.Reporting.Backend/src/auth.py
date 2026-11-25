@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, timezone
 from functools import wraps
 from flask import abort, g, request, jsonify
 from typing import Optional, Dict, Any, Callable
-from config import DEFAULT_TENANT
+from tenant_registry import TenantEntry, parse_schema_types, tenant_registry
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -74,10 +74,8 @@ class AuthManager:
             if 'sub' in payload and 'user_id' not in payload:
                 payload['user_id'] = payload['sub']
 
-            # If tenant is missing, use default
-            if 'tenant' not in payload:
-                payload['tenant'] = DEFAULT_TENANT
-
+            # No fallback tenant: a token without 'tenant' is rejected by
+            # require_auth (AB#33978).
             return payload
         except jwt.ExpiredSignatureError:
             logger.warning("Token has expired")
@@ -141,9 +139,10 @@ def require_auth(f: Callable) -> Callable:
                     'message': 'Valid JWT token must be provided in Authorization header'
                 }), 401
 
-            # Validate required fields in token
-            required_fields = ['user_id', 'tenant']
-            missing_fields = [field for field in required_fields if field not in user_data]
+            # Validate required fields in token. mb_db_id / mb_collection_id come
+            # from UGM (the tenant's Metabase database and collection, AB#33978).
+            required_fields = ['user_id', 'tenant', 'mb_db_id', 'mb_collection_id']
+            missing_fields = [field for field in required_fields if not user_data.get(field)]
             if missing_fields:
                 logger.warning(f"Token missing required fields: {missing_fields}")
                 return jsonify({
@@ -151,8 +150,20 @@ def require_auth(f: Callable) -> Callable:
                     'message': f'Token missing required fields: {", ".join(missing_fields)}'
                 }), 401
 
+            entry = tenant_entry_from_token(user_data)
+            if entry is None:
+                logger.warning("Token has non-numeric Metabase ids")
+                return jsonify({
+                    'error': 'Invalid token',
+                    'message': 'Token has invalid Metabase ids'
+                }), 401
+
+            # Record the tenant so token-less code (embed-all, /ready) knows it.
+            tenant_registry.register(entry)
+
             # Make user data available to the route
             g.current_user = user_data
+            g.tenant_entry = entry
             return f(*args, **kwargs)
 
         except Exception as e:
@@ -186,6 +197,23 @@ def optional_auth(f: Callable) -> Callable:
         return f(*args, **kwargs)
     
     return decorated_function
+
+
+def tenant_entry_from_token(user_data: Dict[str, Any]) -> Optional[TenantEntry]:
+    """Build the tenant's registry entry from the token claims, or None if the ids aren't integers."""
+    try:
+        db_id = int(str(user_data['mb_db_id']).strip())
+        collection_id = int(str(user_data['mb_collection_id']).strip())
+    except (KeyError, TypeError, ValueError):
+        return None
+    if db_id <= 0 or collection_id <= 0:
+        return None
+    return TenantEntry(
+        tenant_name=str(user_data['tenant']),
+        db_id=db_id,
+        collection_id=collection_id,
+        schema_types=parse_schema_types(user_data.get('schema_types')),
+    )
 
 
 def get_user_from_token() -> Dict[str, Any]:

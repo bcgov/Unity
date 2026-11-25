@@ -7,7 +7,7 @@ export interface Turn {
   safeUrl: SafeResourceUrl | null; 
   iframeLoaded: boolean; 
   sqlPanelOpen?: boolean; // Optional property to track SQL panel state
-  errorType?: 'rate_limit' | 'connection_error' | 'ai_failure' | 'server_error' | 'unknown';
+  errorType?: 'preparing' | 'rate_limit' | 'connection_error' | 'ai_failure' | 'server_error' | 'unknown';
   errorMessage?: string;
   errorDetail?: string | null;
   retryCount?: number;

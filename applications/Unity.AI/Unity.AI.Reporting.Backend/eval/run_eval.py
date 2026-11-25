@@ -22,8 +22,8 @@ by difficulty x schema_type / by tag):
 
 Requires live Metabase, Azure OpenAI, AND Postgres/pgvector (importing
 sql_generator connects to pgvector at import time — one more prerequisite than
-capture_dataset.py / verify_dataset.py), plus a tenant_config.local.json
-api_key for each entry's tenant.
+capture_dataset.py / verify_dataset.py), plus METABASE_API_KEY and
+each entry's tenant registered in tenant_registry.
 
 The semantic query cache lives only in api.py's /api/ask route; calling
 generate_sql directly (as this runner does) never reads or writes it, so every
@@ -479,6 +479,9 @@ def build_consistency(records: List[dict], runs: int) -> Optional[dict]:
 # Prod-tenant suite manifest (checked-in), read by --prod-tenants. An explicit
 # list, deliberately NOT an auto-glob of questions_*.jsonl: a stray/WIP file
 # must never silently join an expensive multi-tenant run.
+# The synthetic eval tenant. It must be registered (open AI Reporting once as it).
+DEFAULT_EVAL_TENANT = "Default Grants Program"
+
 MANIFEST_PATH = Path(__file__).parent / "dataset" / "prod_tenants.json"
 
 
@@ -638,20 +641,27 @@ def dataset_set_sha256(descriptors: List[dict]) -> str:
 
 def _light_imports() -> SimpleNamespace:
     """Import only the infra-free pieces needed for dataset discovery,
-    validation, and selection — config (reads tenant_config.json, no DB) and
+    validation, and selection — config, the tenant registry (one small DB read) and
     capture_dataset.load_entries. Deliberately does NOT import sql_generator
     (which connects pgvector at import) or chdir, so all of main()'s argument
     validation and fail-fast checks run before the heavy stack is touched."""
     src_dir = Path(__file__).parent.parent / "src"
     sys.path.insert(0, str(src_dir))
     sys.path.insert(0, str(Path(__file__).parent))
-    from config import config, DEFAULT_TENANT  # noqa: E402
+    from config import config  # noqa: E402
+    from tenant_registry import tenant_registry  # noqa: E402
     from capture_dataset import load_entries  # noqa: E402
     return SimpleNamespace(
         config=config,
-        default_tenant=DEFAULT_TENANT,
+        tenant_registry=tenant_registry,
+        default_tenant=DEFAULT_EVAL_TENANT,
         load_entries=load_entries,
     )
+
+
+def _tenant_registry():
+    from tenant_registry import tenant_registry  # noqa: E402
+    return tenant_registry
 
 
 def preflight_embeddings(sql_generator, db_ids: List[int]) -> List[Tuple[int, str]]:
@@ -749,7 +759,7 @@ def run_one(entry: dict, deps: SimpleNamespace) -> dict:
         "measured": False,
     }
     tenant_id = entry["tenant_id"]
-    db_id = deps.config.get_tenant_config(tenant_id)["db_id"]
+    db_id = _tenant_registry().get_config(tenant_id)["db_id"]
 
     # 1. Generate. One asyncio.run per call, matching api.py — generate_sql
     # builds its httpx client per request and expects its own event loop.
@@ -1096,7 +1106,7 @@ def main():
     # validation and selection fail fast before the heavy stack is loaded.
     light = _light_imports()
     combined, descriptors = load_and_validate(paths, light, bool(args.prod_tenants))
-    known_tenants = set(light.config.tenant_mappings.keys())
+    known_tenants = {entry.tenant_name for entry in light.tenant_registry.list_all()}
     selected = select_entries(combined, args, known_tenants)
 
     if extract_tables("SELECT 1")[1] == "sqlglot_not_installed":
@@ -1109,7 +1119,7 @@ def main():
     # Preflight: pgvector must have schema rows for every selected db_id, or
     # generate_sql silently returns Nones with no distinguishable cause.
     selected_tenants = {e["tenant_id"] for e in selected}
-    db_ids = [deps.config.get_tenant_config(t)["db_id"] for t in selected_tenants]
+    db_ids = [_tenant_registry().get_config(t)["db_id"] for t in selected_tenants]
     missing = preflight_embeddings(deps.sql_generator, db_ids)
     if missing:
         _fatal("embeddings preflight failed",

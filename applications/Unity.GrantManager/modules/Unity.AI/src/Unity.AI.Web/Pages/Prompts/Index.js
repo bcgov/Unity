@@ -14,19 +14,35 @@ $(function () {
     let isNewVersion      = false;
     let cachedVersions    = [];   // versions for the currently-selected prompt
 
+    const escapeHtml = (value) => $('<div>').text(value ?? '').html();
+
+    // Every column has a fixed width (rem) and the previews are capped to match
+    // (ai-prompt-preview-text in Index.css). If one column were left to fill the
+    // rest, DataTables sizes it without the vertical scrollbar and the table runs
+    // past the Actions column.
+    const promptPreview = (data) => {
+        const text = escapeHtml((data ?? '').slice(0, 80));
+        return `<span class="ai-prompt-preview-text" title="${text}">${text}</span>`;
+    };
+
     // ── Table columns ────────────────────────────────────────────────────────
     const listColumns = [
         {
             title: l('PromptName'),
             name: 'name',
             data: 'name',
-            index: 0
+            index: 0,
+            width: '10rem',
+            className: 'text-nowrap'
         },
         {
             title: l('VersionNumber'),
             name: 'versionNumber',
             data: 'versionNumber',
             index: 1,
+            width: '7rem',
+            // Headers are left-aligned by the theme, so numbers are too.
+            className: 'text-start text-nowrap'
         },
         {
             title: l('SystemPrompt'),
@@ -34,7 +50,8 @@ $(function () {
             data: 'systemPrompt',
             index: 2,
             defaultContent: '',
-            render: (data) => (data ?? '').slice(0, 80)
+            width: '22rem',
+            render: promptPreview
         },
         {
             title: l('UserPrompt'),
@@ -42,13 +59,16 @@ $(function () {
             data: 'userPrompt',
             index: 3,
             defaultContent: '',
-            render: (data) => (data ?? '').slice(0, 80)
+            width: '22rem',
+            render: promptPreview
         },
         {
             title: l('PromptIsActive'),
             name: 'isActive',
             data: 'isActive',
             index: 4,
+            width: '5rem',
+            className: 'text-nowrap',
             render: (data) => data
                 ? '<span class="badge bg-success">Active</span>'
                 : '<span class="badge bg-secondary">Inactive</span>'
@@ -57,14 +77,26 @@ $(function () {
             title: l('Actions'),
             data: 'id',
             orderable: false,
-            className: 'text-center',
+            width: '7rem',
+            className: 'text-center text-nowrap',
             name: 'rowActions',
             index: 5,
             rowAction: {
                 items: [
                     {
-                        text: 'Edit Prompt',
+                        text: l('AISetup:Edit'),
                         action: (data) => editModal.open({ id: data.record.id })
+                    },
+                    {
+                        // The version in use (highest active) cannot be deleted.
+                        text: l('AISetup:Delete'),
+                        visible: (record) => !record.isInUse,
+                        confirmMessage: (data) => l('PromptDeleteConfirm', data.record.name, data.record.versionNumber),
+                        action: (data) => unity.aI.prompts.aIPrompt.delete(data.record.id)
+                            .then(() => {
+                                abp.notify.success(l('PromptDeleted', data.record.name, data.record.versionNumber));
+                                dataTable.ajax.reload();
+                            })
                     }
                 ]
             }

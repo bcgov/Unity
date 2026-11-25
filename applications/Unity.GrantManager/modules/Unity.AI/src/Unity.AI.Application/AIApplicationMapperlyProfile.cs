@@ -9,8 +9,10 @@ namespace Unity.AI;
 [Mapper]
 public partial class AIPromptToAIPromptDtoMapper : MapperBase<AIPrompt, AIPromptDto>
 {
+    [MapperIgnoreTarget(nameof(AIPromptDto.IsInUse))]
     public override partial AIPromptDto Map(AIPrompt source);
 
+    [MapperIgnoreTarget(nameof(AIPromptDto.IsInUse))]
     public override partial void Map(AIPrompt source, AIPromptDto destination);
 }
 

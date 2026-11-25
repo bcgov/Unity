@@ -28,6 +28,7 @@
 
 #audit-logs-div,
 #ai-prompts-div,
+#ai-setup-div,
 #endpoints-div,
 #exception-logs-div {
     width: calc(100% - 221px);
@@ -126,10 +127,20 @@
 #reconciliation-report-div,
 #audit-logs-div,
 #ai-prompts-div,
+#ai-setup-div,
 #endpoints-div,
 #exception-logs-div {
     max-height: none;
     overflow: visible;
+}
+
+/* The Bootstrap rows DataTables adds have -12px side margins, which makes the
+   dt-container 24px wider than it shows; opening a row's Actions menu then
+   scrolls the table sideways and clips the first column. */
+#ai-prompts-div .dt-container > .row,
+#ai-setup-div .dt-container > .row {
+    margin-left: 0;
+    margin-right: 0;
 }
 
 .unity-app-main-container {
@@ -254,6 +265,7 @@
     #background-jobs-div,
     #audit-logs-div,
     #ai-prompts-div,
+    #ai-setup-div,
     #endpoints-div,
     #exception-logs-div,
     #audit-log-settings-div {

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
+using Unity.AI.Runtime.Execution;
 using Unity.Modules.Shared.Permissions;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -29,15 +30,18 @@ public class AIPromptAppService :
 {
     private readonly IDataFilter<IMultiTenant> _multiTenantDataFilter;
     private readonly ICurrentTenant _currentTenant;
+    private readonly AIConfigurationCacheSignal _cacheSignal;
 
     public AIPromptAppService(
         IRepository<AIPrompt, Guid> repository,
         IDataFilter<IMultiTenant> multiTenantDataFilter,
-        ICurrentTenant currentTenant)
+        ICurrentTenant currentTenant,
+        AIConfigurationCacheSignal cacheSignal)
         : base(repository)
     {
         _multiTenantDataFilter = multiTenantDataFilter;
         _currentTenant = currentTenant;
+        _cacheSignal = cacheSignal;
         GetPolicyName = IdentityConsts.ITOperationsPolicyName;
         GetListPolicyName = IdentityConsts.ITOperationsPolicyName;
         CreatePolicyName = IdentityConsts.ITOperationsPolicyName;
@@ -88,9 +92,14 @@ public class AIPromptAppService :
                 .Take(input.MaxResultCount)
                 .ToList();
 
-            return new PagedResultDto<AIPromptDto>(
-                sortedPrompts.Count,
-                ObjectMapper.Map<List<AIPrompt>, List<AIPromptDto>>(items));
+            var inUseIds = GetInUseIds(sortedPrompts);
+            var dtos = ObjectMapper.Map<List<AIPrompt>, List<AIPromptDto>>(items);
+            foreach (var dto in dtos)
+            {
+                dto.IsInUse = inUseIds.Contains(dto.Id);
+            }
+
+            return new PagedResultDto<AIPromptDto>(sortedPrompts.Count, dtos);
         }
     }
 
@@ -125,6 +134,7 @@ public class AIPromptAppService :
                     IsActive = input.IsActive
                 });
 
+            _cacheSignal.Reset();
             return ObjectMapper.Map<AIPrompt, AIPromptDto>(entity);
         }
     }
@@ -153,6 +163,7 @@ public class AIPromptAppService :
             entity.MetadataJson = string.IsNullOrWhiteSpace(input.MetadataJson) ? "{}" : input.MetadataJson;
             entity.IsActive = input.IsActive;
             entity = await Repository.UpdateAsync(entity);
+            _cacheSignal.Reset();
             return ObjectMapper.Map<AIPrompt, AIPromptDto>(entity);
         }
     }
@@ -165,6 +176,19 @@ public class AIPromptAppService :
         }
     }
 
+    /// <summary>
+    /// The version the runtime picks for each tenant (or host) and prompt name:
+    /// the highest active version (see OpenAIConfigurationResolver.ResolvePromptAsync).
+    /// </summary>
+    private static HashSet<Guid> GetInUseIds(IEnumerable<AIPrompt> prompts)
+    {
+        return prompts
+            .Where(prompt => prompt.IsActive)
+            .GroupBy(prompt => (prompt.TenantId, prompt.Name))
+            .Select(group => group.OrderByDescending(prompt => prompt.VersionNumber).First().Id)
+            .ToHashSet();
+    }
+
     private void EnsureMutationAccess(AIPrompt prompt)
     {
         if (_currentTenant.Id is Guid tenantId && prompt.TenantId != tenantId)
@@ -173,7 +197,6 @@ public class AIPromptAppService :
         }
     }
 
-    [RemoteService(false)]
     [HttpDelete("{id}")]
     public override async Task DeleteAsync(Guid id)
     {
@@ -181,7 +204,17 @@ public class AIPromptAppService :
         {
             var entity = await Repository.GetAsync(id);
             EnsureMutationAccess(entity);
+
+            var family = await Repository.GetListAsync(p => p.TenantId == entity.TenantId && p.Name == entity.Name);
+            if (GetInUseIds(family).Contains(entity.Id))
+            {
+                throw new BusinessException(AIErrorCodes.PromptVersionInUse)
+                    .WithData("name", entity.Name)
+                    .WithData("version", entity.VersionNumber);
+            }
+
             await base.DeleteAsync(id);
+            _cacheSignal.Reset();
         }
     }
 }
