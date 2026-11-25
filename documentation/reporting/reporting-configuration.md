@@ -62,7 +62,19 @@ The configuration screen is a view component, not a page of its own. It is rende
 The tab is shown only when **both**:
 
 - the `Unity.Reporting` feature is enabled for the tenant, and
-- the current user has `Reporting.Configuration` (`ReportingPermissions.Configuration.Default`).
+- the current user has **Manage Reporting** — `Reporting.Configuration` (`ReportingPermissions.Configuration.Default`).
+
+### Permission hierarchy
+
+In permission management, reporting configuration permissions are located under **Grant Manager Management → Manage Forms → Manage Reporting**.
+
+| Display label | Permission identifier |
+| --- | --- |
+| **Manage Reporting** | `Reporting.Configuration` |
+| **Edit Reporting Configurations** | `Reporting.Configuration.Update` |
+| **Delete Reporting Configurations** | `Reporting.Configuration.Delete` |
+
+**Edit Reporting Configurations** replaces the former **Update Reporting Configurations** label. The permission identifiers remain unchanged, preserving existing role and user grants.
 
 ### Provider selection
 
@@ -82,9 +94,9 @@ The form-version dropdown is visible only for the `formversion` provider (`IsVer
 
 | Action | Behaviour |
 | --- | --- |
-| **Save** | Creates or updates the mapping (`Create` / `Update`). Requires `Reporting.Configuration.Update`. |
+| **Save** | Creates or updates the mapping (`Create` / `Update`). Requires **Edit Reporting Configurations** (`Reporting.Configuration.Update`). |
 | **Generate View** | Opens a modal that validates the view name for availability and PostgreSQL compliance, then queues generation. Visible only once a configuration is saved. |
-| **Delete** | Opens a confirmation modal listing what will be removed (the configuration, and the database view if one exists). Requires `Reporting.Configuration.Delete`. |
+| **Delete** | Opens a confirmation modal listing what will be removed (the configuration, and the database view if one exists). Requires **Delete Reporting Configurations** (`Reporting.Configuration.Delete`). |
 | **Undo** | Reverts unsaved edits in the table back to the last loaded state. |
 | **Generate unique column names** | Re-runs the sanitisation/uniquing pipeline across all rows. |
 | **Export / Import / Edit JSON** | Export downloads the current mapping as `column-mapping-{provider}-{correlationId}.json`; Import validates each entry has `propertyName` and `columnName` before applying; Edit opens the mapping in an inline JSON editor. All three operate on the in-memory table — nothing is persisted until Save. |
