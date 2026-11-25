@@ -42,7 +42,7 @@ $(function () {
             orderable: false,
             width: '20rem',
             className: 'text-wrap',
-            render: (data) => (data && data.length)
+            render: (data) => data?.length
                 ? data.map(escapeHtml).join(', ')
                 : escapeHtml(l('AISetup:None'))
         },
@@ -63,7 +63,7 @@ $(function () {
                     {
                         text: l('AISetup:Delete'),
                         visible: (record) => canManageModels
-                            && (!record.usedByOperations || record.usedByOperations.length === 0),
+                            && !record.usedByOperations?.length,
                         confirmMessage: (data) => l('AISetup:DeleteConfirm', data.record.name),
                         action: (data) => modelService.delete(data.record.id).then(reloadAll)
                     }
