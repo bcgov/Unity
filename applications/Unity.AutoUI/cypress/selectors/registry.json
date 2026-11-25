@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "mode": "report-only",
-  "generatedAt": "2026-11-24T18:09:04.988Z",
+  "generatedAt": "2026-11-25T20:21:35.335Z",
   "summary": {
     "total": 364,
     "matched": 150,
@@ -3644,6 +3644,7 @@
         "applications/Unity.AutoUI/cypress/regression/ApprovalFlow.cy.ts:936"
       ],
       "applicationMatches": [
+        "applications/Unity.GrantManager/modules/Unity.AI/src/Unity.AI.Web/Pages/AISetup/Index.js",
         "applications/Unity.GrantManager/modules/Unity.AI/src/Unity.AI.Web/Pages/Prompts/Index.cshtml",
         "applications/Unity.GrantManager/modules/Unity.AI/src/Unity.AI.Web/Views/Shared/Components/AIPromptsWidget/Default.cshtml",
         "applications/Unity.GrantManager/modules/Unity.Flex/src/Unity.Flex.Web/Views/Shared/Components/DataGridWidget/Default.cshtml",
@@ -3662,8 +3663,7 @@
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Pages/PaymentRequests/Index.js",
         "applications/Unity.GrantManager/modules/Unity.Payments/src/Unity.Payments.Web/Views/Shared/Components/PaymentActionBar/Default.cshtml",
         "applications/Unity.GrantManager/modules/Unity.Reporting/src/Unity.Reporting.Web/Views/Shared/Components/ReportingConfiguration/Default.cshtml",
-        "applications/Unity.GrantManager/modules/Unity.TenantManagement/src/Unity.TenantManagement.Web/Pages/EndpointManagement/Endpoints/Index.cshtml",
-        "applications/Unity.GrantManager/modules/Unity.TenantManagement/src/Unity.TenantManagement.Web/Pages/TenantManagement/Onboarding/Index.cshtml"
+        "applications/Unity.GrantManager/modules/Unity.TenantManagement/src/Unity.TenantManagement.Web/Pages/EndpointManagement/Endpoints/Index.cshtml"
       ]
     },
     {
