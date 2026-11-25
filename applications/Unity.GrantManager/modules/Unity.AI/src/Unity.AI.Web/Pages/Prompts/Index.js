@@ -14,7 +14,14 @@ $(function () {
     let isNewVersion      = false;
     let cachedVersions    = [];   // versions for the currently-selected prompt
 
-    const escapeHtml = (value) => $('<div>').text(value ?? '').html();
+    // Escapes for both element text and quoted attribute values (" and ' included),
+    // since results also go into title="..." and data-*="...".
+    const escapeHtml = (value) => String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
 
     // Every column has a fixed width (rem) and the previews are capped to match
     // (ai-prompt-preview-text in Index.css). If one column were left to fill the
@@ -33,7 +40,8 @@ $(function () {
             data: 'name',
             index: 0,
             width: '10rem',
-            className: 'text-nowrap'
+            className: 'text-nowrap',
+            render: (data) => escapeHtml(data)
         },
         {
             title: l('VersionNumber'),

@@ -10,7 +10,14 @@ $(function () {
     const modelModal = new abp.ModalManager(abp.appPath + 'AISetup/ModelModal');
     const operationModal = new abp.ModalManager(abp.appPath + 'AISetup/OperationModal');
 
-    const escapeHtml = (value) => $('<div>').text(value ?? '').html();
+    // Escapes for both element text and quoted attribute values (" and ' included),
+    // since results also go into title="..." and data-*="...".
+    const escapeHtml = (value) => String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
 
     // IT Administrator manages models; IT Operations edits operations and AI Prompts.
     // Both can see the tables and Test a model.
@@ -32,7 +39,10 @@ $(function () {
     // Leaving one column without a width lets DataTables size it a few pixels too
     // wide, and width '1%' on several columns pushes the table past its container.
     const modelColumns = [
-        { width: '12rem', className: 'text-nowrap', title: l('AISetup:DeploymentName'), name: 'name', data: 'name', index: 0 },
+        {
+            width: '12rem', className: 'text-nowrap', title: l('AISetup:DeploymentName'), name: 'name', data: 'name', index: 0,
+            render: (data) => escapeHtml(data)
+        },
         {
             width: '6rem', className: 'text-nowrap', title: l('AISetup:Status'), name: 'isActive', data: 'isActive', index: 1,
             render: (data) => statusBadge(data)
