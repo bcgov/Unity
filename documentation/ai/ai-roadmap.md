@@ -51,7 +51,7 @@ But **application analysis and scoring both consume attachment summaries as inpu
 
 Consequences:
 
-- **Changes take up to five minutes**, independently per pod, with no invalidation on write. Activating a new prompt version, switching an operation's model, or changing a token budget applies at different times on different replicas.
+- **Changes take up to five minutes on other pods.** A save in Unity AI Setup or AI Prompts expires the cache only on the pod that handled it (`AIConfigurationCacheSignal`); other replicas keep their entries until they expire.
 - The API key sits in process memory in a cache keyed by a predictable string.
 - `AddMemoryCache()` is called by `AIApplicationModule`, so this is in-process by design, not a misconfigured distributed cache.
 
@@ -73,19 +73,16 @@ Related naming confusion: the client is `AzureOpenAIClient` (Azure OpenAI), whil
 
 ## Dead resolver accessors
 
-`OpenAIConfigurationResolver` exposes seven accessors that production code never calls — the live path is `ResolveOperationSettingsAsync` alone:
+`OpenAIConfigurationResolver` exposes four accessors that production code never calls — the live path is `ResolveOperationSettingsAsync` alone:
 
 | Method | Called by |
 |---|---|
-| `ResolveConfiguredTemperatureAsync` | tests only |
 | `ResolveEndpointAsync` | tests only |
 | `ResolveDeploymentNameAsync` | tests only |
-| `ResolveMaxOutputTokenCountSupportedAsync` | tests only |
 | `ResolveProfileNameAsync` | nothing |
-| `ResolveCompletionTokensAsync` | nothing |
 | `ResolvePromptVersionAsync` | nothing |
 
-Worse, five of them are unusable without an explicit model name: `ResolveModelAsync` returns `null` when `modelName` is null or blank, so calling any of them with no argument throws `"AI model is not configured."` regardless of how the system is set up.
+Worse, three of them are unusable without an explicit model name: `ResolveModelAsync` returns `null` when `modelName` is null or blank, so calling any of them with no argument throws `"AI model is not configured."` regardless of how the system is set up.
 
 ## `IsAvailableAsync` only checks that a key is configured
 
@@ -166,13 +163,9 @@ A request that failed and is retried loses the record of why it failed the first
 
 `EnsureRequestAndEnqueueAsync` returns without an exception when a `Queued` or `Running` request already exists for the same tenant, application and operation. The caller receives a 200 and cannot distinguish "queued" from "already running" — the UI has to poll the status endpoint to find out.
 
-## No admin UI for models or operations
-
-Prompts have a full CRUD area. `AIModel` and `AIOperation` — which decide the model, token budget and execution mode for every call — have none, and their seeders are **corrective**: `AIModelDataSeeder` and `AIOperationDataSeeder` overwrite provider, active flag, settings JSON, model binding, execution mode and token budget on every run. Any change made directly in the database is reverted at the next migration run.
-
 ## Convention drift
 
-- **`Guid.CreateVersion7()` instead of `GuidGenerator`.** `AIPromptAppService.CreateAsync`, `AIModelDataSeeder` and `AIOperationDataSeeder` all bypass ABP's `IGuidGenerator`, which the repo's `.claude/rules/csharp.md` requires. The host-side executors do use `IGuidGenerator`.
+- **`Guid.CreateVersion7()` instead of `GuidGenerator`.** `AIPromptAppService.CreateAsync` and `AIPromptDataSeeder` bypass ABP's `IGuidGenerator`, which the repo's `.claude/rules/csharp.md` requires. The host-side executors do use `IGuidGenerator`.
 - **`DateTime.UtcNow` instead of `Clock`.** Throughout the job helpers, the rate limiter and the prompt file logger.
 - **Two naming schemes for the same six things.** `AIGenerationOperations` uses kebab-case (`application-scoring`) for the API and job args; `AIPromptTypes` uses PascalCase (`ApplicationScoring`) for operation rows and prompt families. `AIGenerationOperationDefinition.OperationName` bridges them, and `AIGenerationOperationKeyHelper` re-exports the kebab-case constants under different names again.
 - **`Unity.AI.Domain.Shared` builds `Unity.AI.Shared.csproj`** — the folder and assembly names disagree.
@@ -191,10 +184,11 @@ Unusually good for this codebase, and worth preserving. Existing suites in `test
 | Outcome model | `AIOperationResultTests` |
 | Queue, job, executor registry, status | `AIGenerationQueueTests`, `AIGenerationAppServiceTests`, `AIGenerationOperationExecutorRegistryTests`, `AIGenerationStatusAppServiceTests`, `LegacyAIGenerationBackgroundJobTests` |
 | Rate limiting | `AI/RateLimit/AIRateLimiterTests` |
-| Seeders | `AI/DataSeed/AIModelDataSeederTests`, `AIPromptDataSeederTests` |
+| Prompt seeder (insert-only) | `AI/DataSeed/AIPromptDataSeederTests` |
+| Unity AI Setup | `AI/Setup/AISetupAppServiceTests` |
 | Input building and execution mode | `Operations/AIApplicationInputBuilderTests`, `AIExecutionModeResolverTests` |
-| Prompts service | `Prompts/AIPromptAppServiceTests` |
+| Prompts service | `Prompts/AIPromptAppServiceTests`, `Prompts/AIPromptDeleteTests` |
 | Form config and mapping | `ApplicationForms/AIConfigurationTests`, `Mapping/AiDraftNameTests` |
 | Scoring → assessment | `CreateAIAssessmentOnScoringGeneratedHandlerTests` |
 
-Thinner: the transport itself (temperature fallback, response extraction, status→outcome mapping), text extraction across formats, and the six operation executors end to end.
+Thinner: the transport itself (response extraction, status→outcome mapping), text extraction across formats, and the six operation executors end to end.

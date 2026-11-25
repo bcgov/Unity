@@ -21,6 +21,13 @@ public class AIExecutionModeResolver(
     public const string FormWorksheetOperation = AIPromptTypes.FormWorksheet;
     public const string FormScoresheetOperation = AIPromptTypes.FormScoresheet;
 
+    /// <summary>
+    /// Operations that read their execution mode. The others make a single call, or
+    /// (AttachmentSummary) always run one item at a time. Keep in step with the
+    /// callers of <see cref="ResolveModeAsync"/>; Unity AI Setup shows the mode only for these.
+    /// </summary>
+    public static readonly string[] OperationsUsingExecutionMode = [ApplicationScoringOperation];
+
     public async Task<AIExecutionMode> ResolveModeAsync(
         string operationName,
         CancellationToken cancellationToken = default)

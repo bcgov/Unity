@@ -14,8 +14,6 @@ public class AIOperation : AuditedAggregateRoot<Guid>
 
     public AIExecutionMode ExecutionMode { get; set; } = AIExecutionMode.Sequential;
 
-    public int CompletionTokens { get; set; }
-
     public bool IsActive { get; set; } = true;
 
     protected AIOperation()

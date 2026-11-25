@@ -809,6 +809,11 @@
   margin: 0;
 }
 
+/* Not an error: same blue as the Try Again button. */
+.failure-title-info {
+  color: #2b6cb0;
+}
+
 .failure-message {
   font-size: 14px;
   color: #718096;

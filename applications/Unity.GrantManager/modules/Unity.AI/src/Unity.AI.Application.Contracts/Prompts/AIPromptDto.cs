@@ -11,4 +11,10 @@ public class AIPromptDto : AuditedEntityDto<Guid>
     public string UserPrompt { get; set; } = string.Empty;
     public string? MetadataJson { get; set; }
     public bool IsActive { get; set; }
+
+    /// <summary>
+    /// True for the version the runtime uses: the highest active version of this
+    /// prompt name for the same tenant (or host). It cannot be deleted.
+    /// </summary>
+    public bool IsInUse { get; set; }
 }

@@ -15,6 +15,7 @@ from chat import chat_manager
 from sql_generator import sql_generator
 from model_generator import data_model_generator
 from auth import require_auth, get_user_from_token, require_data_model_permission
+from tenant_registry import tenant_registry
 from embeddings import embedding_manager
 from static_routes import add_static_routes
 import cache_reranker
@@ -103,7 +104,7 @@ def _error_response(error_type, message, status, detail=None):
     """Build a consistent error JSON response.
 
     Schema:
-        error_type  – machine-readable key (rate_limit | connection_error | ai_failure | server_error)
+        error_type  – machine-readable key (rate_limit | connection_error | ai_failure | server_error | preparing)
         message     – user-facing text
         detail      – optional developer-facing detail (not shown to users)
     """
@@ -274,31 +275,28 @@ def ready():
         except Exception:
             config_status = "unhealthy"
 
-        # Check that every configured tenant db has at least some embeddings.
-        # The startup seed-embed runs in the background (see app.py) so the
-        # process itself comes up immediately — but a brand-new tenant with
-        # no embeddings yet genuinely can't answer schema queries until its
-        # first embed finishes. Existing tenants stay "healthy" throughout a
-        # refresh: embed_schemas adds new embeddings before deleting the old
-        # ones, so there's always a usable set to serve from except on a
-        # tenant's very first-ever embed.
+        # Report registered tenants whose db has no embeddings yet. Informational
+        # only (AB#33978): tenants register themselves on first use, and a
+        # tenant whose first embed is running gets a "preparing" answer from
+        # /api/ask. Failing readiness here would take every pod out of rotation
+        # for all tenants while one new tenant embeds.
         embeddings_status = "healthy"
         try:
-            db_ids = {cfg["db_id"] for cfg in config.tenant_mappings.values()}
+            db_ids = {entry.db_id for entry in tenant_registry.list_all()}
             db_ids_with_embeddings = db_manager.has_embeddings_for_db_ids(
                 db_ids, config.app.collection_name
             )
             pending = sorted(db_ids - db_ids_with_embeddings)
             if pending:
-                embeddings_status = f"unhealthy: no embeddings yet for db_id(s) {pending}"
+                embeddings_status = f"healthy (preparing db_id(s) {pending})"
         except Exception as e:
             logger.exception(f"Error checking embedding readiness: {e}")
-            embeddings_status = "unhealthy: error checking embeddings"
+            embeddings_status = "unknown: error checking embeddings"
 
         # Determine overall readiness
         all_healthy = all(
             status == "healthy"
-            for status in [db_status, jwt_status, config_status, embeddings_status]
+            for status in [db_status, jwt_status, config_status]
         )
 
         response_data = {
@@ -330,11 +328,16 @@ def validate_token():
     Validate JWT token and return user information
     """
     user_data = get_user_from_token()
+    tenant_entry = tenant_registry.get(user_data["tenant"])
+    embeddings_ready = tenant_registry.ensure_embedding_started(
+        tenant_entry, config.app.collection_name
+    )
     return jsonify({
         "valid": True,
         "user_id": user_data["user_id"],
         "tenant_id": user_data["tenant"],
-        "expires": user_data["exp"]
+        "expires": user_data["exp"],
+        "embeddings_ready": embeddings_ready
     }), 200
 
 @app.route("/api/check-admin", methods=["POST"])
@@ -862,11 +865,21 @@ async def _async_ask(data, user_data):
     if not question:
         return abort(400, "question is required")
 
-    tenant_config = config.get_tenant_config(tenant_id)
-    db_id = tenant_config["db_id"]
-    collection_id = tenant_config["collection_id"]
-    schema_types = tenant_config.get("schema_types", ["public"])
+    tenant_entry = tenant_registry.get(tenant_id)
+    db_id = tenant_entry.db_id
+    collection_id = tenant_entry.collection_id
+    schema_types = list(tenant_entry.schema_types)
     collection_name = config.app.collection_name
+
+    # A newly registered tenant has no schema embeddings until its first embed
+    # finishes (minutes). Say so instead of generating SQL blind (AB#33978).
+    if not tenant_registry.ensure_embedding_started(tenant_entry, collection_name):
+        logger.info(f"[preparing] tenant={tenant_id} db={db_id}: first embed not finished")
+        return _error_response(
+            "preparing",
+            "AI Reporting is being prepared for your program. This takes a few minutes the first time. Please try again shortly.",
+            503,
+        )
 
     logger.info(f"Request - Tenant: {tenant_id}, DB: {db_id}, Collection: {collection_id}")
 
@@ -975,7 +988,7 @@ def get_data_model_views():
     user_data = get_user_from_token()
     tenant_id = user_data["tenant"]
 
-    tenant_config = config.get_tenant_config(tenant_id)
+    tenant_config = tenant_registry.get_config(tenant_id)
     db_id = tenant_config["db_id"]
 
     logger.info(f"Data model views request - Tenant: {tenant_id}, DB: {db_id}")
@@ -1009,7 +1022,7 @@ def preview_data_models():
     user_data = get_user_from_token()
     tenant_id = user_data["tenant"]
 
-    tenant_config = config.get_tenant_config(tenant_id)
+    tenant_config = tenant_registry.get_config(tenant_id)
     db_id = tenant_config["db_id"]
 
     body = request.get_json(silent=True) or {}
@@ -1077,7 +1090,7 @@ def create_data_models():
     user_data = get_user_from_token()
     tenant_id = user_data["tenant"]
 
-    tenant_config = config.get_tenant_config(tenant_id)
+    tenant_config = tenant_registry.get_config(tenant_id)
     db_id = tenant_config["db_id"]
     collection_id = tenant_config["collection_id"]
 
@@ -1127,7 +1140,7 @@ def list_data_models():
     user_data = get_user_from_token()
     tenant_id = user_data["tenant"]
 
-    tenant_config = config.get_tenant_config(tenant_id)
+    tenant_config = tenant_registry.get_config(tenant_id)
     collection_id = tenant_config["collection_id"]
 
     try:
@@ -1160,7 +1173,7 @@ def data_model_detail():
 
     try:
         card = metabase_client.get_card(card_id, tenant_id)
-        tenant_config = config.get_tenant_config(tenant_id)
+        tenant_config = tenant_registry.get_config(tenant_id)
         db_id = tenant_config["db_id"]
         sql, columns = metabase_client.card_sql_and_columns(card, db_id, tenant_id)
         return jsonify({
@@ -1197,7 +1210,7 @@ def data_model_preview_data():
 
     try:
         card = metabase_client.get_card(card_id, tenant_id)
-        tenant_config = config.get_tenant_config(tenant_id)
+        tenant_config = tenant_registry.get_config(tenant_id)
         db_id = tenant_config["db_id"]
         sql, _ = metabase_client.card_sql_and_columns(card, db_id, tenant_id)
         raw = metabase_client.execute_sql(
@@ -1222,7 +1235,7 @@ def modify_data_model_preview():
     user_data = get_user_from_token()
     tenant_id = user_data["tenant"]
 
-    tenant_config = config.get_tenant_config(tenant_id)
+    tenant_config = tenant_registry.get_config(tenant_id)
     db_id = tenant_config["db_id"]
 
     body = request.get_json(silent=True) or {}
