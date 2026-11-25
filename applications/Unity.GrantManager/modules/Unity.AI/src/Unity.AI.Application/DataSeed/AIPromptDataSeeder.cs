@@ -12,7 +12,9 @@ using Volo.Abp.MultiTenancy;
 namespace Unity.AI.DataSeed;
 
 /// <summary>
-/// Seeds host-owned, versioned built-in AI prompts.
+/// Seeds host-owned, versioned built-in AI prompts. Insert-only: an existing Name + VersionNumber
+/// is never changed, so changes made in AI Prompts survive a deploy. To ship new prompt text,
+/// add a new VersionNumber.
 /// </summary>
 public class AIPromptDataSeeder(
     IRepository<AIPrompt, Guid> promptRepository,
@@ -154,15 +156,12 @@ public class AIPromptDataSeeder(
         string userPrompt,
         string? metadataJson = null)
     {
+        // Insert-only, and only when this version or a newer one is not there yet:
+        // an older version deleted in AI Prompts stays deleted after the next deploy.
         var prompt = await promptRepository.FirstOrDefaultAsync(
-            p => p.Name == promptName && p.VersionNumber == versionNumber);
+            p => p.Name == promptName && p.VersionNumber >= versionNumber);
         if (prompt != null)
         {
-            prompt.SystemPrompt = systemPrompt;
-            prompt.UserPrompt = userPrompt;
-            prompt.MetadataJson = metadataJson ?? "{}";
-            prompt.IsActive = true;
-            await promptRepository.UpdateAsync(prompt, autoSave: true);
             return;
         }
 

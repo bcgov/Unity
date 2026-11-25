@@ -67,9 +67,9 @@ Fields are ordered by importance: the core `question -> gold_sql -> expected
 result` triple first, then the verification flag (`frozen`), then
 stratification/provenance metadata. Two fields notably **absent** on purpose
 (dropped in favor of simplicity — see git history if you need the rationale):
-`db_id` (100% derivable from `tenant_id` via `tenant_config.json`, so it isn't
+`db_id` (100% derivable from `tenant_id` via the `tenant_registry` table, so it isn't
 stored per entry — tooling resolves it at run time via
-`config.get_tenant_config(tenant_id)`) and `captured_by` (was a constant
+`tenant_registry.get_config(tenant_id)`) and `captured_by` (was a constant
 `"capture_dataset.py"` on every entry, carrying no information).
 
 Field notes:
@@ -237,11 +237,11 @@ python eval/capture_dataset.py --refresh WKS-HARD-004
 python eval/capture_dataset.py --refresh-all
 ```
 
-Resolves `db_id` from `tenant_id` via `config.get_tenant_config(tenant_id)`,
+Resolves `db_id` from `tenant_id` via `tenant_registry.get_config(tenant_id)`,
 calls `metabase_client.execute_sql(gold_sql, db_id, tenant_id=tenant_id)`, and
 fills `expected_columns`/`expected_column_types`/`expected_row_count`/
-`content_hash`/`captured_at`. Requires live Metabase network access and a
-`tenant_config.local.json` (or equivalent) `api_key` for the tenant.
+`content_hash`/`captured_at`. Requires live Metabase network access, `METABASE_API_KEY`, and the tenant
+registered in `tenant_registry` (open AI Reporting once as that tenant).
 
 ### `verify_dataset.py` — re-run every gold SQL, check for drift
 
@@ -368,8 +368,8 @@ model-behavior finding). `1` wins if both occur.
 
 **Prerequisites:** live Metabase + Azure OpenAI **+ Postgres/pgvector**
 (importing `sql_generator` connects to pgvector at import time — one more
-requirement than the capture/verify scripts), plus a
-`tenant_config.local.json` api_key. Optionally `sqlglot` for table-selection
+requirement than the capture/verify scripts), plus
+`METABASE_API_KEY` and the tenants registered in `tenant_registry`. Optionally `sqlglot` for table-selection
 scoring: `pip install -r eval/requirements.txt` (eval-only dependency — the
 production Docker image installs only the root `requirements.txt` and never
 copies `eval/`). Entries run **sequentially** on purpose:

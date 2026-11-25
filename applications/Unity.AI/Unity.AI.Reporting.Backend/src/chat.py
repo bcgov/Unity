@@ -6,7 +6,7 @@ import logging
 from typing import List, Dict, Any, Optional
 from database import chat_repository
 from metabase import metabase_client
-from config import config
+from tenant_registry import tenant_registry
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ class ChatManager:
         tenant_id = chat_data["tenant_id"]
         
         # Get tenant configuration
-        tenant_config = config.get_tenant_config(tenant_id)
+        tenant_config = tenant_registry.get_config(tenant_id)
         db_id = tenant_config["db_id"]
         collection_id = tenant_config["collection_id"]
         

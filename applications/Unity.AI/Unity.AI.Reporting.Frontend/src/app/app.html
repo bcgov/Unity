@@ -75,13 +75,15 @@
                       <div class="failure-content">
                         <div class="failure-icon">
                           @switch (turn.errorType) {
+                            @case ('preparing') { &#9203; }
                             @case ('rate_limit') { &#9203; }
                             @case ('connection_error') { &#128268; }
                             @default { &#9888;&#65039; }
                           }
                         </div>
-                        <div class="failure-title">
+                        <div class="failure-title" [class.failure-title-info]="turn.errorType === 'preparing'">
                           @switch (turn.errorType) {
+                            @case ('preparing') { Preparing AI Reporting }
                             @case ('rate_limit') { Service Busy }
                             @case ('connection_error') { Connection Error }
                             @case ('ai_failure') { Unable to Generate Report }

@@ -17,6 +17,8 @@ $(function () {
         auditLogSettingsDiv: $('#audit-log-settings-div'),
         aiPromptsMenu: $('#ai-prompts-menu-item'),
         aiPromptsDiv: $('#ai-prompts-div'),
+        aiSetupMenu: $('#ai-setup-menu-item'),
+        aiSetupDiv: $('#ai-setup-div'),
         endpointsMenu: $('#endpoints-menu-item'),
         endpointsDiv: $('#endpoints-div'),
         exceptionLogsMenu: $('#exception-logs-menu-item'),
@@ -56,6 +58,7 @@ $(function () {
         UIElements.auditLogsMenu.on('click', menuItemClick);
         UIElements.auditLogSettingsMenu.on('click', menuItemClick);
         UIElements.aiPromptsMenu.on('click', menuItemClick);
+        UIElements.aiSetupMenu.on('click', menuItemClick);
         UIElements.endpointsMenu.on('click', menuItemClick);
         UIElements.exceptionLogsMenu.on('click', menuItemClick);
         UIElements.tenantFilter.on('change', handleTenantChange);
@@ -186,6 +189,7 @@ $(function () {
         UIElements.auditLogsMenu.removeClass('active');
         UIElements.auditLogSettingsMenu.removeClass('active');
         UIElements.aiPromptsMenu.removeClass('active');
+        UIElements.aiSetupMenu.removeClass('active');
         UIElements.endpointsMenu.removeClass('active');
         UIElements.exceptionLogsMenu.removeClass('active');
     }
@@ -196,6 +200,7 @@ $(function () {
         UIElements.auditLogsDiv.addClass('hide');
         UIElements.auditLogSettingsDiv.addClass('hide');
         UIElements.aiPromptsDiv.addClass('hide');
+        UIElements.aiSetupDiv.addClass('hide');
         UIElements.endpointsDiv.addClass('hide');
         UIElements.exceptionLogsDiv.addClass('hide');
     }
@@ -222,6 +227,9 @@ $(function () {
             UIElements.auditLogSettingsDiv.removeClass('hide');
         } else if ($(e.currentTarget).attr('id') === 'ai-prompts-menu-item') {
             UIElements.aiPromptsDiv.removeClass('hide');
+            adjustVisibleDataTables();
+        } else if ($(e.currentTarget).attr('id') === 'ai-setup-menu-item') {
+            UIElements.aiSetupDiv.removeClass('hide');
             adjustVisibleDataTables();
         } else if ($(e.currentTarget).attr('id') === 'endpoints-menu-item') {
             UIElements.endpointsDiv.removeClass('hide');

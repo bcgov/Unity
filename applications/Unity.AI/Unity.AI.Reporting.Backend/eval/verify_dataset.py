@@ -23,6 +23,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from config import config  # noqa: E402
+from tenant_registry import tenant_registry  # noqa: E402
 from metabase import metabase_client  # noqa: E402
 from capture_dataset import DATASET_PATH, compute_content_hash, load_entries  # noqa: E402
 
@@ -32,7 +33,7 @@ def verify_one(entry: dict) -> list:
     if not entry.get("content_hash"):
         return [(False, "not yet captured — skip (run capture_dataset.py first)")]
 
-    db_id = config.get_tenant_config(entry["tenant_id"])["db_id"]
+    db_id = tenant_registry.get_config(entry["tenant_id"])["db_id"]
     try:
         result = metabase_client.execute_sql(entry["gold_sql"], db_id, tenant_id=entry["tenant_id"])
     except Exception as e:

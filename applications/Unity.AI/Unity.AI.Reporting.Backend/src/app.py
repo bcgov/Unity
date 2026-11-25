@@ -6,43 +6,31 @@ import sys
 import logging
 import os
 import threading
-from typing import Optional
 from config import config
 from database import db_manager, cache_repository
 from embeddings import embedding_manager
+from tenant_registry import tenant_registry
 from api import app
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
 
-def embed_schemas_command(db_id: Optional[int] = None):
+def embed_schemas_command(db_id: int):
     """Command to embed database schemas for a single db_id"""
-    if db_id is None:
-        db_id = config.metabase.default_db_id
-
     logger.info(f"Beginning schema embedding process for db_id: {db_id}...")
 
-    # Get schema types and tenant_id for this database from config
-    matched_tenant_id = None
-    tenant_config = None
-    for tid, cfg in config.tenant_mappings.items():
-        if cfg["db_id"] == db_id:
-            matched_tenant_id = tid
-            tenant_config = cfg
-            break
-
-    if tenant_config:
-        schema_types = tenant_config.get("schema_types", ["public"])
-    else:
-        schema_types = ["public"]
+    # Schema types and tenant for this database from the tenant registry
+    entry = tenant_registry.find_by_db_id(db_id)
+    schema_types = list(entry.schema_types) if entry else ["public"]
+    matched_tenant_id = entry.tenant_name if entry else None
 
     embedding_manager.embed_schemas(db_id, schema_types, tenant_id=matched_tenant_id)
     logger.info("Finished embedding process.")
 
 
 def embed_all_tenants() -> tuple[int, int]:
-    """Embed database schemas for ALL tenants defined in tenant_config.json.
+    """Embed database schemas for ALL tenants in the tenant registry.
 
     Returns (success_count, failure_count). Per-db failures are caught and
     logged so one bad tenant doesn't block the rest; the CronJob/CLI wrapper
@@ -51,14 +39,13 @@ def embed_all_tenants() -> tuple[int, int]:
     """
     # Collect unique db_ids with their schema_types
     db_configs = {}
-    for tenant_id, cfg in config.tenant_mappings.items():
-        db_id = cfg["db_id"]
-        if db_id not in db_configs:
-            db_configs[db_id] = {
-                "schema_types": cfg.get("schema_types", ["public"]),
+    for entry in tenant_registry.list_all():
+        if entry.db_id not in db_configs:
+            db_configs[entry.db_id] = {
+                "schema_types": list(entry.schema_types),
                 "tenants": []
             }
-        db_configs[db_id]["tenants"].append(tenant_id)
+        db_configs[entry.db_id]["tenants"].append(entry.tenant_name)
 
     logger.info(f"Embedding schemas for {len(db_configs)} unique database(s): {list(db_configs.keys())}")
 
@@ -68,7 +55,7 @@ def embed_all_tenants() -> tuple[int, int]:
     # Embed schemas for each unique db_id
     for db_id, db_cfg in db_configs.items():
         tenants = ", ".join(db_cfg["tenants"])
-        # Use the first tenant's API key for embedding this database
+        # The first tenant names this database in logs and Metabase calls
         first_tenant_id = db_cfg["tenants"][0] if db_cfg["tenants"] else None
         logger.info(f"Embedding db_id={db_id} (tenants: {tenants})...")
         try:
@@ -114,8 +101,10 @@ def main():
 
         if command == "embed" or command == "g":
             # Embed schemas for a single db_id
-            db_id = int(sys.argv[2]) if len(sys.argv) > 2 else None
-            embed_schemas_command(db_id)
+            if len(sys.argv) < 3:
+                print("Usage: python app.py embed <db_id>")
+                sys.exit(2)
+            embed_schemas_command(int(sys.argv[2]))
 
         elif command == "embed-all":
             # Embed schemas for ALL tenants. Exit non-zero only when *every*
@@ -131,9 +120,9 @@ Metabase Reporter - Natural Language to SQL Application
 
 Commands:
     python app.py                  - Run the Flask server
-    python app.py embed [db_id]    - Embed database schemas for a single db_id
+    python app.py embed <db_id>    - Embed database schemas for a single db_id
     python app.py embed-all        - Embed database schemas for ALL tenants
-    python app.py g [db_id]        - Embed database schemas (alias for embed)
+    python app.py g <db_id>        - Embed database schemas (alias for embed)
     python app.py help             - Show this help message
             """)
 

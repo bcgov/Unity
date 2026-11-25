@@ -1,0 +1,52 @@
+@using Microsoft.Extensions.Configuration
+@using Microsoft.Extensions.Localization
+@using Unity.AI.Localization
+@using Unity.AI.Setup
+@inject IStringLocalizer<AIResource> AIL
+@inject IConfiguration Configuration
+@{
+    // Only the endpoint is shown; the API key never leaves configuration.
+    var aiEndpoint = Configuration[$"Azure:{AISetupConsts.OpenAIProvider}:Endpoint"]?.Trim();
+    // Linked only when it is an http(s) URL, so a bad value can't become a script link.
+    var aiEndpointIsLink = Uri.TryCreate(aiEndpoint, UriKind.Absolute, out var aiEndpointUri)
+        && (aiEndpointUri.Scheme == Uri.UriSchemeHttps || aiEndpointUri.Scheme == Uri.UriSchemeHttp);
+}
+
+<div class="container-fluid px-0">
+    <div class="action-bar p-2 filter-search-action-bar">
+        <div class="unity-page-titlebar me-auto">
+            <h4>@AIL["AISetup:Models"]</h4>
+        </div>
+        <div id="ai-setup-models-dynamic-buttons" class="dynamic-buttons-div button-gap-1"></div>
+    </div>
+    <div class="px-3">
+        <p class="small mb-1">
+            @AIL["AISetup:Endpoint"]
+            @if (string.IsNullOrWhiteSpace(aiEndpoint))
+            {
+                <span class="text-danger">@AIL["AISetup:EndpointNotConfigured"]</span>
+            }
+            else if (aiEndpointIsLink)
+            {
+                <a href="@aiEndpoint" target="_blank" rel="noopener noreferrer">@aiEndpoint</a>
+            }
+            else
+            {
+                <code>@aiEndpoint</code>
+            }
+        </p>
+        <p class="small text-muted mb-2">@AIL["AISetup:CacheNote"]</p>
+        <output id="ai-setup-test-result" class="alert d-block d-none mb-2"></output>
+        <abp-table id="AISetupModelsTable" striped-rows="false" class="nowrap"></abp-table>
+    </div>
+
+    <div class="action-bar p-2 filter-search-action-bar mt-3">
+        <div class="unity-page-titlebar me-auto">
+            <h4>@AIL["AISetup:Operations"]</h4>
+        </div>
+        <div id="ai-setup-operations-dynamic-buttons" class="dynamic-buttons-div button-gap-1"></div>
+    </div>
+    <div class="px-3 pb-3">
+        <abp-table id="AISetupOperationsTable" striped-rows="false" class="nowrap"></abp-table>
+    </div>
+</div>

@@ -21,12 +21,9 @@ public class OpenAITransportServiceTests
             "test-key",
             new System.Uri("https://example.test"),
             "gpt-5-mini",
-            true,
-            null,
-            100,
             "v1");
 
-        var result = await service.GenerateSummaryAsync("content", "system", settings, 100);
+        var result = await service.GenerateSummaryAsync("content", "system", settings);
 
         result.Outcome.ShouldBe(AIOperationOutcome.PermanentFailure);
         result.Response?.Content.ShouldContain("Unsupported provider");

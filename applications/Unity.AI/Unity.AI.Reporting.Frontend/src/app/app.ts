@@ -384,6 +384,11 @@ export class App implements OnInit, OnDestroy {
         turn.errorType = 'unknown';
         turn.errorMessage = 'Your session has expired. Please sign in again.';
         turn.canRetry = false;
+      } else if (errorType === 'preparing') {
+        // First use for this program: its schema is still being embedded (AB#33978).
+        turn.errorType = 'preparing';
+        turn.errorMessage = errorMsg || 'AI Reporting is being prepared for your program. Please try again in a few minutes.';
+        turn.canRetry = true;
       } else if (errorType === 'rate_limit' || error?.status === 429) {
         turn.errorType = 'rate_limit';
         turn.errorMessage = errorMsg || 'Rate limit exceeded. Please wait a moment and try again.';

@@ -48,6 +48,7 @@ services:
       # Metabase config (secrets + env-specific base URL and UUIDs)
       - MB_URL=${MB_URL}
       - MB_MAP_REGION_UUID=${MB_MAP_REGION_UUID}
+      - METABASE_API_KEY=${METABASE_API_KEY}
 
       # Database config
       - DB_HOST=postgres
