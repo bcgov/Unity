@@ -183,8 +183,6 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.Reviews.StartInitial,
                     GrantApplicationPermissions.Reviews.CompleteInitial,
                     GrantApplicationPermissions.Comments.Add,
-                    GrantManagerPermissions.Organizations.Default,
-                    GrantManagerPermissions.Organizations.ManageProfiles,
                     IdentitySeedPermissions.Users.Default,
                     IdentitySeedPermissions.Users.Create,
                     IdentitySeedPermissions.Users.Update,
@@ -269,8 +267,6 @@ namespace Unity.GrantManager.Permissions
                     GrantApplicationPermissions.Reviews.StartInitial,
                     GrantApplicationPermissions.Reviews.CompleteInitial,
                     GrantApplicationPermissions.Comments.Add,
-                    GrantManagerPermissions.Organizations.Default,
-                    GrantManagerPermissions.Organizations.ManageProfiles,
                     GrantApplicationPermissions.Approvals.BulkApplicationApproval,
                     GrantApplicationPermissions.Approvals.DeferAfterApproval,
 
@@ -320,8 +316,6 @@ namespace Unity.GrantManager.Permissions
                     GrantManagerPermissions.Default,
                     UnitySettingManagementPermissions.UserInterface,
                     UnitySettingManagementPermissions.EditProgramDetails,
-                    GrantManagerPermissions.Organizations.Default,
-                    GrantManagerPermissions.Organizations.ManageProfiles,
                     GrantManagerPermissions.Intakes.Default,
                     GrantManagerPermissions.ApplicationForms.Default,
 
