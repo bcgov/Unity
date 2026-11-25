@@ -162,6 +162,8 @@
     "RealtimeOps:MessageType": "Message Type",
     "RealtimeOps:SelectMessageType": "Select message type",
     "RealtimeOps:MessageTypeBanner": "Banner",
-    "RealtimeOps:MessageTypePopup": "Popup"
+    "RealtimeOps:MessageTypePopup": "Popup",
+    "EmailAddressModal:InUseTooltip:AriaLabel": "Advisory If Email Address In Use",
+    "EmailAddressModal:InUseTooltip:Content": "If this email address is currently associated with one or more active Email Templates and/or Form-Level Notification Plans, updating the email address will <strong>not</strong> automatically update any existing templates or notification plans that use it.<br><br>To ensure those configurations use the new email address, you must manually update the <strong>From</strong> email address within each associated Email Template or Form-Level Notification Plan."
   }
 }
