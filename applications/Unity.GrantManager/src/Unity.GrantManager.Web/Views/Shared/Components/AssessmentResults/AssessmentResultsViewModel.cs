@@ -19,6 +19,7 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.AssessmentResults
 
         public bool IsFormEditGranted { get; set; }
         public bool IsEditGranted { get; set; }
+        public bool IsApprovalEditGranted { get; set; }
         public bool IsPostEditFieldsAllowed_Approval { get; set; }
         public bool IsPostEditFieldsAllowed_AssessmentResults { get; set; }
         public bool IsUpdateEligibleForRenewalGranted { get; set; }  

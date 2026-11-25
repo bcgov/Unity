@@ -246,7 +246,8 @@ function enableAssessmentResultsSaveBtn() {
         return;
     }
 
-    if (abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Review.AssessmentResults.Update')) {
+    if (abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Review.AssessmentResults.Update')
+        || abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Review.Approval.Update')) {
         $('#saveAssessmentResultBtn').prop('disabled', false);
     }
 }

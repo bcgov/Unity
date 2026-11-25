@@ -394,13 +394,27 @@ public class GrantApplicationAppService(
         return await (await applicationFormRepository.GetQueryableAsync()).FirstOrDefaultAsync(s => s.Id == applicationFormId);
     }
 
-    [Authorize(UnitySelector.Review.AssessmentResults.Update.Default)]
+    [Authorize(UnitySelector.Review.UpdatePolicy)]
     public async Task<GrantApplicationDto> UpdateAssessmentResultsAsync(Guid id, CreateUpdateAssessmentResultsDto input)
     {
         var application = await applicationRepository.GetAsync(id);
 
+        var canUpdateApproval = await AuthorizationService.IsGrantedAsync(UnitySelector.Review.Approval.Update.Default);
+        var canUpdateAssessmentResults = await CurrentUserCanUpdateAssessmentFieldsAsync();
+
         await SanitizeApprovalZoneInputs(input, application);
         await SanitizeAssessmentResultsZoneInputs(input, application);
+
+        // Fields belonging to a zone the user cannot update keep their current values
+        if (!canUpdateApproval)
+        {
+            RetainApprovalZoneValues(input, application);
+        }
+
+        if (!canUpdateAssessmentResults)
+        {
+            RetainAssessmentResultsZoneValues(input, application);
+        }
 
         application.ValidateAndSetDueDate(input.DueDate);
         application.UpdateAlwaysChangeableFields(
@@ -426,10 +440,14 @@ public class GrantApplicationAppService(
         }
         else
         {
-            if (await CurrentUserCanUpdateAssessmentFieldsAsync())
+            if (canUpdateApproval)
             {
                 application.ValidateAndSetFinalDecisionDate(input.FinalDecisionDate);
                 application.UpdateApprovalFieldsRequiringPostEditPermission(input.ApprovedAmount);
+            }
+
+            if (canUpdateAssessmentResults)
+            {
                 application.UpdateAssessmentResultFieldsRequiringPostEditPermission(input.RequestedAmount, input.TotalScore);
                 application.UpdateFieldsOnlyForPreFinalDecision(
                     input.DueDiligenceStatus,
@@ -448,7 +466,7 @@ public class GrantApplicationAppService(
         }
 
         // Handle custom fields for assessment info
-        if (HasCustomFields(input))
+        if (canUpdateAssessmentResults && HasCustomFields(input))
         {
             await PublishCustomFieldsAsync(application.Id, input);
         }
@@ -568,6 +586,30 @@ public class GrantApplicationAppService(
                 input.DeclineRational ??= application.DeclineRational;
             }
         }
+    }
+
+    private static void RetainApprovalZoneValues(CreateUpdateAssessmentResultsDto input, Application application)
+    {
+        input.ApprovedAmount = application.ApprovedAmount;
+        input.SubStatus = application.SubStatus;
+        input.FinalDecisionDate = application.FinalDecisionDate;
+        input.Notes = application.Notes;
+    }
+
+    private static void RetainAssessmentResultsZoneValues(CreateUpdateAssessmentResultsDto input, Application application)
+    {
+        input.RequestedAmount = application.RequestedAmount;
+        input.TotalProjectBudget = application.TotalProjectBudget;
+        input.RecommendedAmount = application.RecommendedAmount;
+        input.TotalScore = application.TotalScore;
+        input.LikelihoodOfFunding = application.LikelihoodOfFunding;
+        input.RiskRanking = application.RiskRanking;
+        input.DueDiligenceStatus = application.DueDiligenceStatus;
+        input.AssessmentResultStatus = application.AssessmentResultStatus;
+        input.DeclineRational = application.DeclineRational;
+        input.NotificationDate = application.NotificationDate;
+        input.DueDate = application.DueDate;
+        input.EligibleForRenewal = application.EligibleForRenewal;
     }
 
     private async Task<bool> CurrentUserCanUpdateAssessmentFieldsAsync()
