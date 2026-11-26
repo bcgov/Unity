@@ -95,6 +95,11 @@ public class AISetupManager(
         string executionMode,
         bool isActive)
     {
+        if (AISetupConsts.AIReportingOperations.Contains(operationName, StringComparer.OrdinalIgnoreCase))
+        {
+            isActive = true;
+        }
+
         var existing = await FindOperationAsync(operationName);
         if (existing == null && FindBuiltInName(operationName) == null)
         {

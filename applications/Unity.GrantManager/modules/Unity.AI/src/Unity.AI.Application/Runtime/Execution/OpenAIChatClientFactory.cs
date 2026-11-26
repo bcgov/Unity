@@ -14,7 +14,7 @@ public class OpenAIChatClientFactory : ITransientDependency
         return CreateClient(settings).GetChatClient(settings.DeploymentName);
     }
 
-    public EmbeddingClient CreateEmbeddingClient(OpenAIOperationSettings settings)
+    public virtual EmbeddingClient CreateEmbeddingClient(OpenAIOperationSettings settings)
     {
         return CreateClient(settings).GetEmbeddingClient(settings.DeploymentName);
     }

@@ -55,6 +55,26 @@ public class AIReportingSetupTests(ITestOutputHelper outputHelper) : GrantManage
     }
 
     [Fact]
+    public async Task Should_Keep_AI_Reporting_Rows_Active_When_A_Caller_Sends_Inactive()
+    {
+        var chat = await WithUnitOfWorkAsync(() => ModelService.CreateAsync(NewModel("gpt-5-mini", AISetupConsts.ChatModelType)));
+        var embedding = await WithUnitOfWorkAsync(() => ModelService.CreateAsync(
+            NewModel("text-embedding-3-large", AISetupConsts.EmbeddingModelType)));
+        var inactiveChat = NewOperation(chat.Id);
+        inactiveChat.IsActive = false;
+        var inactiveEmbedding = NewOperation(embedding.Id);
+        inactiveEmbedding.IsActive = false;
+
+        await WithUnitOfWorkAsync(() => OperationService.UpdateAsync(AISetupConsts.AIReportingChatOperation, inactiveChat));
+        await WithUnitOfWorkAsync(() => OperationService.UpdateAsync(AISetupConsts.AIReportingEmbeddingOperation, inactiveEmbedding));
+
+        var reporting = await WithUnitOfWorkAsync(() => OperationService.GetAIReportingAsync());
+        reporting.Items.ShouldAllBe(item => item.IsActive);
+        var models = await WithUnitOfWorkAsync(() => Resolver.ResolveAsync());
+        models.IsComplete.ShouldBeTrue();
+    }
+
+    [Fact]
     public async Task Should_Resolve_Nothing_When_AI_Reporting_Has_No_Models()
     {
         var models = await WithUnitOfWorkAsync(() => Resolver.ResolveAsync());

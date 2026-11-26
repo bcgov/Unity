@@ -356,6 +356,39 @@ public class AISetupAppServiceTests(ITestOutputHelper outputHelper) : GrantManag
         chatClientFactory.ReceivedCalls().ShouldBeEmpty();
     }
 
+    [Fact]
+    public async Task Should_Report_A_Failed_Test_When_The_Embedding_Call_Gets_No_Answer()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new System.Collections.Generic.Dictionary<string, string?>
+            {
+                ["Azure:OpenAI:Endpoint"] = "https://example.test",
+                ["Azure:OpenAI:ApiKey"] = "secret"
+            })
+            .Build();
+        var embeddingClient = Substitute.For<OpenAI.Embeddings.EmbeddingClient>();
+        embeddingClient
+            .GenerateEmbeddingAsync(Arg.Any<string>(), Arg.Any<OpenAI.Embeddings.EmbeddingGenerationOptions>(), Arg.Any<System.Threading.CancellationToken>())
+            .Returns<System.ClientModel.ClientResult<OpenAI.Embeddings.OpenAIEmbedding>>(
+                _ => throw new System.Net.Http.HttpRequestException("Name or service not known"));
+        var chatClientFactory = Substitute.For<OpenAIChatClientFactory>();
+        chatClientFactory.CreateEmbeddingClient(Arg.Any<OpenAIOperationSettings>()).Returns(embeddingClient);
+        var transport = new OpenAITransportService(
+            chatClientFactory,
+            Substitute.For<Microsoft.Extensions.Logging.ILogger<OpenAITransportService>>());
+        var tester = new AIModelConnectionTester(transport, chatClientFactory, configuration);
+
+        var result = await tester.TestAsync(new AIModel(Guid.NewGuid(), "text-embedding-3-large", AISetupConsts.OpenAIProvider)
+        {
+            Type = AIModelType.Embedding,
+            ApiVersion = "2024-10-21"
+        });
+
+        result.Success.ShouldBeFalse();
+        result.HttpStatusCode.ShouldBeNull();
+        result.Message.ShouldContain("Name or service not known");
+    }
+
     private static CreateUpdateAIModelDto NewModel(
         string name,
         bool isActive = true,

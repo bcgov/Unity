@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.ClientModel;
 using System.Diagnostics;
+using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -111,6 +112,17 @@ public class AIModelConnectionTester(
                 ErrorCode = ExtractAzureErrorCode(rawResponse),
                 LatencyMilliseconds = stopwatch.ElapsedMilliseconds,
                 Message = TryReadError(rawResponse, "message") ?? ex.Message
+            };
+        }
+        catch (Exception ex) when (ex is HttpRequestException
+            || (ex is OperationCanceledException && !cancellationToken.IsCancellationRequested))
+        {
+            stopwatch.Stop();
+            return new AIModelTestResultDto
+            {
+                Success = false,
+                LatencyMilliseconds = stopwatch.ElapsedMilliseconds,
+                Message = ex.Message
             };
         }
     }
