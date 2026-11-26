@@ -112,6 +112,9 @@ public class MetabaseApiClient(
         return result.Value<int>("id");
     }
 
+    public Task<int?> FindGroupIdAsync(string name, CancellationToken cancellationToken = default) =>
+        FindIdByNameAsync("/api/permissions/group", name, cancellationToken);
+
     public async Task RenameGroupAsync(int groupId, string name, CancellationToken cancellationToken = default)
     {
         var path = $"/api/permissions/group/{groupId}";
