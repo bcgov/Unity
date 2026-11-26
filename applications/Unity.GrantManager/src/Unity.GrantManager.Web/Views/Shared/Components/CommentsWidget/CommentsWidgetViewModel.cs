@@ -18,5 +18,6 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
         public CommentType CommentType { get; set; }
         public Guid CurrentUserId { get; set; }
         public bool CanPinComments { get; set; }
+        public bool CanAddComments { get; set; }
     }
 }
