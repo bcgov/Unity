@@ -17,6 +17,8 @@
             <abp-input asp-for="Input.Name" info="@L["AISetup:NameHelp"].Value" />
             @* Azure OpenAI is the only provider, so it is not offered as a choice. *@
             <input type="hidden" asp-for="Input.Provider" />
+            <abp-select asp-for="Input.Type" asp-items="Model.TypeOptions" info="@L["AISetup:TypeHelp"].Value" />
+            <abp-input asp-for="Input.ApiVersion" info="@L["AISetup:ApiVersionHelp"].Value" />
             <abp-input asp-for="Input.IsActive" />
         </abp-modal-body>
         <abp-modal-footer>

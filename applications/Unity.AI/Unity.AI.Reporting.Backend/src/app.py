@@ -6,6 +6,7 @@ import sys
 import logging
 import os
 import threading
+import ai_models
 from config import config
 from database import db_manager, cache_repository
 from embeddings import embedding_manager
@@ -20,12 +21,17 @@ def embed_schemas_command(db_id: int):
     """Command to embed database schemas for a single db_id"""
     logger.info(f"Beginning schema embedding process for db_id: {db_id}...")
 
-    # Schema types and tenant for this database from the tenant registry
+    # Schema types, tenant and AI Setup's models for this database from the tenant registry
     entry = tenant_registry.find_by_db_id(db_id)
-    schema_types = list(entry.schema_types) if entry else ["public"]
-    matched_tenant_id = entry.tenant_name if entry else None
+    if entry is None or entry.models is None:
+        logger.error(
+            f"db_id={db_id} has no registered tenant with AI Setup models; "
+            "open AI Reporting for that tenant once so UGM sends them")
+        return
 
-    embedding_manager.embed_schemas(db_id, schema_types, tenant_id=matched_tenant_id)
+    with ai_models.use(entry.models):
+        if embedding_manager.embed_schemas(db_id, list(entry.schema_types), tenant_id=entry.tenant_name):
+            tenant_registry.mark_embedded(db_id, entry.models.embedding_deployment)
     logger.info("Finished embedding process.")
 
 
@@ -37,15 +43,23 @@ def embed_all_tenants() -> tuple[int, int]:
     in main() uses the counts to set the exit code so a total failure is
     visible (Job pod shows failed) while a partial success stays exit 0.
     """
-    # Collect unique db_ids with their schema_types
+    # Collect unique db_ids with their schema_types and AI Setup models. A tenant registered
+    # before AI Setup's models were sent has none: it is skipped until it opens AI Reporting.
     db_configs = {}
+    skipped = []
     for entry in tenant_registry.list_all():
+        if entry.models is None:
+            skipped.append(entry.tenant_name)
+            continue
         if entry.db_id not in db_configs:
             db_configs[entry.db_id] = {
                 "schema_types": list(entry.schema_types),
+                "models": entry.models,
                 "tenants": []
             }
         db_configs[entry.db_id]["tenants"].append(entry.tenant_name)
+    if skipped:
+        logger.warning(f"Skipping tenants without AI Setup models (open AI Reporting once): {skipped}")
 
     logger.info(f"Embedding schemas for {len(db_configs)} unique database(s): {list(db_configs.keys())}")
 
@@ -59,7 +73,15 @@ def embed_all_tenants() -> tuple[int, int]:
         first_tenant_id = db_cfg["tenants"][0] if db_cfg["tenants"] else None
         logger.info(f"Embedding db_id={db_id} (tenants: {tenants})...")
         try:
-            embedding_manager.embed_schemas(db_id, db_cfg["schema_types"], tenant_id=first_tenant_id)
+            models = db_cfg["models"]
+            embedded_with = tenant_registry.get_embedded_with(db_id)
+            # Re-embed everything when AI Setup's embedding model differs from the stored vectors'.
+            force = embedded_with is not None and embedded_with != models.embedding_deployment
+            with ai_models.use(models):
+                if force:
+                    cache_repository.purge_db(db_id)
+                if embedding_manager.embed_schemas(db_id, db_cfg["schema_types"], tenant_id=first_tenant_id, force=force):
+                    tenant_registry.mark_embedded(db_id, models.embedding_deployment)
             logger.info(f"Successfully embedded db_id={db_id}")
             success_count += 1
         except Exception as e:

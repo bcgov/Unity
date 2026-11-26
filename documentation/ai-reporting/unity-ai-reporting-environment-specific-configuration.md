@@ -7,7 +7,7 @@ The Unity AI platform uses two sources of runtime configuration:
 1. **Environment variables** — injected via OpenShift Secrets and ConfigMaps (or `.env` locally)
 2. **Tenant config** — a JSON file (`tenant_config.json`) that maps tenants to Metabase databases and schema settings, overridden per environment via the `[env]-unity-ai-tenant-config` OpenShift Secret
 
-Non-sensitive config (deployment names, model versions, database port) is hardcoded in `config.py` and does not require environment variables.
+The Azure OpenAI models AI Reporting uses (chat and embedding deployment, and each one's API version) are **not** configuration here: they are set in Unity Admin → AI Setup → AI Reporting and arrive in the AI Reporting token from UGM (AB#35030). AI Reporting refuses a request without them.
 
 ---
 
@@ -46,10 +46,16 @@ Non-sensitive config (deployment names, model versions, database port) is hardco
 
 | Setting | Value |
 |---------|-------|
-| Azure OpenAI deployment | `gpt-5-mini` |
-| Azure OpenAI embedding deployment | `text-embedding-3-large` |
-| Azure OpenAI API version | `2024-10-21` |
 | Database port | `5432` |
+
+### Set in Unity AI Setup (sent in the token)
+
+| Token claim | AI Setup |
+|---|---|
+| `ai_chat_deployment`, `ai_chat_api_version` | AI Reporting → Chat model, and that model's API version |
+| `ai_embedding_deployment`, `ai_embedding_api_version` | AI Reporting → Embedding model, and that model's API version |
+
+UAI stores them per program in `tenant_registry` (with `embedded_with`, the embedding deployment the schema was embedded with). When the embedding model changes, the next request re-embeds that program's schema and clears its query cache.
 
 ---
 

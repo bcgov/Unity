@@ -23,6 +23,9 @@ public class AIOperationDto
 
     public string ExecutionMode { get; set; } = AISetupConsts.ExecutionModes[0];
 
+    /// <summary>The model type this operation needs: Chat, or Embedding for AI Reporting's embedding row.</summary>
+    public string RequiredModelType { get; set; } = AISetupConsts.ChatModelType;
+
     /// <summary>False when the operation ignores its execution mode (it makes a single call).</summary>
     public bool UsesExecutionMode { get; set; }
 

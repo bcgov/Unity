@@ -7,6 +7,10 @@ namespace Unity.AI.Setup;
 
 public interface IAIModelAppService : IApplicationService
 {
+    /// <summary>Calls the Azure OpenAI endpoint's /healthz from the server (works for the internal proxy).</summary>
+    Task<AIEndpointStatusDto> GetEndpointStatusAsync();
+
+
     Task<ListResultDto<AIModelDto>> GetListAsync();
 
     Task<AIModelDto> GetAsync(Guid id);
@@ -27,6 +31,9 @@ public interface IAIOperationAppService : IApplicationService
     Task<ListResultDto<AIOperationDto>> GetListAsync();
 
     Task<AIOperationDto> GetAsync(string name);
+
+    /// <summary>AI Reporting's chat and embedding model rows (configured or not).</summary>
+    Task<ListResultDto<AIOperationDto>> GetAIReportingAsync();
 
     /// <summary>Updates the operation, creating its row when a built-in operation is not configured yet.</summary>
     Task<AIOperationDto> UpdateAsync(string name, UpdateAIOperationDto input);

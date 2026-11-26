@@ -4,6 +4,8 @@ $(function () {
     }
 
     const l = abp.localization.getResource('AI');
+    // Same Actions width in all three tables so the buttons line up down the page.
+    const actionsColumnWidth = '9.5rem';
     const modelService = unity.aI.setup.aIModel;
     const operationService = unity.aI.setup.aIOperation;
 
@@ -24,9 +26,21 @@ $(function () {
     const canManageModels = abp.auth.isGranted('ITAdministrator');
     const canEditOperations = abp.auth.isGranted('ITOperations');
 
+    // Yellow badge for something that needs setting up; the tooltip says why.
+    const warningBadge = (text, help) => help
+        ? `<span class="badge bg-warning text-dark" data-bs-toggle="tooltip" title="${escapeHtml(help)}">${escapeHtml(text)}</span>`
+        : `<span class="badge bg-warning text-dark">${escapeHtml(text)}</span>`;
+
     const statusBadge = (isActive) => isActive
         ? `<span class="badge bg-success">${escapeHtml(l('AISetup:Active'))}</span>`
         : `<span class="badge bg-secondary">${escapeHtml(l('AISetup:Inactive'))}</span>`;
+
+    // AI Reporting's two AI Setup rows, shown by what they are rather than their row names.
+    const reportingLabels = {
+        AIReporting: l('AISetup:AIReportingChatUsage'),
+        AIReportingEmbedding: l('AISetup:AIReportingEmbeddingUsage')
+    };
+    const operationLabel = (name) => reportingLabels[name] ?? name;
 
     const listResponse = (result) => ({
         recordsTotal: result.items.length,
@@ -44,21 +58,28 @@ $(function () {
             render: (data) => escapeHtml(data)
         },
         {
-            width: '6rem', className: 'text-nowrap', title: l('AISetup:Status'), name: 'isActive', data: 'isActive', index: 1,
+            width: '7rem', className: 'text-nowrap', title: l('AISetup:Type'), name: 'type', data: 'type', index: 1,
+            render: (data) => escapeHtml(data)
+        },
+        {
+            width: '8rem', className: 'text-start text-nowrap', title: l('AISetup:ApiVersion'), name: 'apiVersion', data: 'apiVersion', index: 2,
+            render: (data) => escapeHtml(data)
+        },
+        {
+            width: '6rem', className: 'text-nowrap', title: l('AISetup:Status'), name: 'isActive', data: 'isActive', index: 3,
             render: (data) => statusBadge(data)
         },
         {
-            title: l('AISetup:UsedBy'), name: 'usedByOperations', data: 'usedByOperations', index: 2,
+            title: l('AISetup:UsedBy'), name: 'usedByOperations', data: 'usedByOperations', index: 4,
             orderable: false,
-            width: '20rem',
             className: 'text-wrap',
             render: (data) => data?.length
-                ? data.map(escapeHtml).join(', ')
+                ? data.map((name) => escapeHtml(operationLabel(name))).join(', ')
                 : escapeHtml(l('AISetup:None'))
         },
         {
-            title: l('Actions'), data: 'id', orderable: false, width: '9rem', className: 'text-center text-nowrap',
-            name: 'rowActions', index: 3,
+            title: l('Actions'), data: 'id', orderable: false, width: actionsColumnWidth, className: 'text-center text-nowrap',
+            name: 'rowActions', index: 5,
             rowAction: {
                 items: [
                     {
@@ -125,9 +146,16 @@ $(function () {
         },
         {
             width: '6rem', className: 'text-nowrap', title: l('AISetup:Status'), name: 'isActive', data: 'isActive', index: 1,
-            render: (data, type, row) => row.isConfigured
-                ? statusBadge(data)
-                : `<span class="badge bg-warning text-dark">${escapeHtml(l('AISetup:NotConfigured'))}</span>`
+            render: (data, type, row) => {
+                if (!row.isConfigured) {
+                    return warningBadge(l('AISetup:NotConfigured'));
+                }
+                if (!row.promptVersion) {
+                    // Every version of the prompt is off, so the operation would fail.
+                    return warningBadge(l('AISetup:NoPrompt'), l('AISetup:NoPromptHelp'));
+                }
+                return statusBadge(data);
+            }
         },
         {
             width: '10rem', className: 'text-nowrap', title: l('AISetup:Model'), name: 'aiModelName', data: 'aiModelName', index: 2,
@@ -143,17 +171,13 @@ $(function () {
             }
         },
         {
-            width: '9rem', className: 'text-nowrap', title: l('AISetup:ExecutionMode'), name: 'executionMode', data: 'executionMode', index: 3,
+            // No width: this column takes the spare space.
+            className: 'text-nowrap', title: l('AISetup:ExecutionMode'), name: 'executionMode', data: 'executionMode', index: 3,
             render: (data, type, row) => row.isConfigured ? escapeHtml(data) : ''
         },
         {
-            title: l('AISetup:PromptVersion'), name: 'promptVersion', data: 'promptVersion', index: 4,
-            defaultContent: '',
-            render: (data) => data ? escapeHtml(data) : escapeHtml(l('AISetup:None'))
-        },
-        {
-            title: l('Actions'), data: 'name', orderable: false, width: '6rem', className: 'text-center text-nowrap',
-            name: 'rowActions', index: 5,
+            title: l('Actions'), data: 'name', orderable: false, width: actionsColumnWidth, className: 'text-center text-nowrap',
+            name: 'rowActions', index: 4,
             rowAction: {
                 items: [
                     {
@@ -184,15 +208,94 @@ $(function () {
         useNullPlaceholder: true
     });
 
+    // ── AI Reporting ─────────────────────────────────────────────────────────
+    const reportingColumns = [
+        {
+            width: '21rem', className: 'text-nowrap', title: l('AISetup:Setting'), name: 'name', data: 'name', index: 0,
+            render: (data) => escapeHtml(data === 'AIReportingEmbedding'
+                ? l('AISetup:AIReportingEmbeddingModel')
+                : l('AISetup:AIReportingChatModel'))
+        },
+        {
+            className: 'text-nowrap', title: l('AISetup:Model'), name: 'aiModelName', data: 'aiModelName', index: 1,
+            defaultContent: '',
+            render: (data, type, row) => {
+                if (!row.isConfigured) {
+                    // Not chosen yet: AI Reporting is unavailable until both models are chosen.
+                    return warningBadge(l('AISetup:NotConfigured'), l('AISetup:AIReportingNotConfiguredHelp'));
+                }
+                const name = escapeHtml(data);
+                return row.aiModelIsActive
+                    ? name
+                    : `${name} <span class="badge bg-danger">${escapeHtml(l('AISetup:Inactive'))}</span>`;
+            }
+        },
+        {
+            title: l('Actions'), data: 'name', orderable: false, width: actionsColumnWidth, className: 'text-center text-nowrap',
+            name: 'rowActions', index: 2,
+            rowAction: {
+                items: [
+                    {
+                        text: l('AISetup:Edit'),
+                        visible: () => canEditOperations,
+                        action: (data) => operationModal.open({ name: data.record.name })
+                    }
+                ]
+            }
+        }
+    ];
+
+    const reportingTable = initializeDataTable({
+        dt: $('#AISetupReportingTable'),
+        defaultVisibleColumns: reportingColumns.map(column => column.name),
+        listColumns: reportingColumns,
+        maxRowsPerPage: 25,
+        defaultSortColumn: 0,
+        dataEndpoint: () => operationService.getAIReporting(),
+        data: {},
+        responseCallback: listResponse,
+        actionButtons: [],
+        pagingEnabled: false,
+        reorderEnabled: false,
+        languageSetValues: {},
+        dataTableName: 'AISetupReportingTable',
+        dynamicButtonContainerId: 'ai-setup-reporting-dynamic-buttons',
+        useNullPlaceholder: true
+    });
+
     // Helpers are const arrow functions, not function declarations: the bundle
     // minifier moves declarations out of the block that holds `l`, breaking them.
     const reloadAll = () => {
         modelsTable.ajax.reload();
         operationsTable.ajax.reload();
+        reportingTable.ajax.reload();
     };
 
     modelModal.onResult(reloadAll);
     operationModal.onResult(reloadAll);
+
+    // ── Endpoint status: UGM calls the endpoint's /healthz from inside the cluster ──
+    const endpointStatus = $('#ai-setup-endpoint-status');
+    const showEndpointStatus = (cssClass, text) => {
+        endpointStatus.removeClass('text-muted text-success text-danger').addClass(cssClass).text(text);
+    };
+    modelService.getEndpointStatus()
+        .then((status) => {
+            switch (status.status) {
+                case 'Healthy':
+                    showEndpointStatus('text-success', status.message || l('AISetup:EndpointHealthy'));
+                    break;
+                case 'NoHealthCheck':
+                    showEndpointStatus('text-muted', l('AISetup:EndpointNoHealthCheck', status.httpStatusCode));
+                    break;
+                case 'Unreachable':
+                    showEndpointStatus('text-danger', l('AISetup:EndpointUnreachable', status.message));
+                    break;
+                default:
+                    showEndpointStatus('text-danger', l('AISetup:EndpointNotSet'));
+            }
+        })
+        .catch(() => showEndpointStatus('text-danger', l('AISetup:EndpointStatusFailed')));
 
     // Tooltips for cells drawn later by DataTables, delegated from the section.
     const setupSection = $('#AISetupOperationsTable').closest('.container-fluid')[0];
@@ -200,12 +303,8 @@ $(function () {
         bootstrap.Tooltip.getOrCreateInstance(setupSection, { selector: '[data-bs-toggle="tooltip"]' });
     }
 
-    // The prompt version comes from AI Prompts: say so on the heading. Each operation
-    // name links to its prompt there.
-    $(operationsTable.column('promptVersion:name').header())
-        .attr('data-bs-toggle', 'tooltip')
-        .attr('title', l('AISetup:PromptVersionHelp'));
-
+    // Each operation name opens AI Prompts filtered to its prompt, where Status shows
+    // the version in use.
     $(setupSection).on('click', '.ai-setup-open-prompt', (e) => {
         e.preventDefault();
         const promptName = $(e.currentTarget).data('prompt-name');

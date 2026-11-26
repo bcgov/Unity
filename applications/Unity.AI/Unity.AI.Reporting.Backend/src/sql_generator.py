@@ -125,7 +125,6 @@ class SQLGenerator:
             client,
             system_message=system_message,
             user_message=prompt,
-            temperature=self.config.temperature,
         )
 
         usage = usage_to_dict(response.usage)
@@ -551,7 +550,6 @@ Output EXACTLY one word: RELATED or UNRELATED.
                     client,
                     system_message="You are a helpful assistant that explains SQL queries in simple terms.",
                     user_message=prompt,
-                    temperature=0.3,
                 )
 
             content = response.choices[0].message.content

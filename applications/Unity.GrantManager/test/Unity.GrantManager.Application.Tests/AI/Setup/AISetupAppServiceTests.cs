@@ -35,6 +35,7 @@ public class AISetupAppServiceTests(ITestOutputHelper outputHelper) : GrantManag
         {
             Name = "gpt-5-mini",
             Provider = AISetupConsts.OpenAIProvider,
+            ApiVersion = "2024-10-21",
             IsActive = false
         }));
 
@@ -78,6 +79,7 @@ public class AISetupAppServiceTests(ITestOutputHelper outputHelper) : GrantManag
             {
                 Name = model.Name,
                 Provider = model.Provider,
+                ApiVersion = model.ApiVersion,
                 IsActive = false
             })));
         deactivate.Code.ShouldBe(AIErrorCodes.SetupModelInUse);
@@ -246,13 +248,89 @@ public class AISetupAppServiceTests(ITestOutputHelper outputHelper) : GrantManag
         AISetupConsts.ExecutionModes.ShouldBe(Enum.GetNames<AIExecutionMode>());
     }
 
+    [Fact]
+    public void Should_Match_Model_Type_Enum_Names()
+    {
+        AISetupConsts.ModelTypes.ShouldBe(Enum.GetNames<AIModelType>());
+    }
+
+    [Fact]
+    public async Task Should_Create_Embedding_Model_And_List_Its_Type()
+    {
+        var created = await WithUnitOfWorkAsync(() => ModelService.CreateAsync(
+            NewModel("text-embedding-3-large", type: AISetupConsts.EmbeddingModelType)));
+
+        created.Type.ShouldBe(AISetupConsts.EmbeddingModelType);
+        var list = await WithUnitOfWorkAsync(() => ModelService.GetListAsync());
+        list.Items.ShouldContain(model => model.Id == created.Id && model.Type == AISetupConsts.EmbeddingModelType);
+    }
+
+    [Fact]
+    public async Task Should_Reject_Embedding_Model_For_Operation()
+    {
+        var embedding = await WithUnitOfWorkAsync(() => ModelService.CreateAsync(
+            NewModel("text-embedding-3-large", type: AISetupConsts.EmbeddingModelType)));
+
+        var exception = await Should.ThrowAsync<BusinessException>(() =>
+            WithUnitOfWorkAsync(() => OperationService.UpdateAsync(AIPromptTypes.FormMapping, NewOperation(embedding.Id))));
+        exception.Code.ShouldBe(AIErrorCodes.SetupModelNotChat);
+    }
+
+    [Fact]
+    public async Task Should_Reject_Malformed_Api_Version()
+    {
+        var input = NewModel("gpt-5-mini");
+        input.ApiVersion = "latest";
+
+        var exception = await Should.ThrowAsync<BusinessException>(() =>
+            WithUnitOfWorkAsync(() => ModelService.CreateAsync(input)));
+        exception.Code.ShouldBe(AIErrorCodes.SetupApiVersionInvalid);
+    }
+
+    [Fact]
+    public async Task Should_Keep_Each_Models_Api_Version()
+    {
+        var created = await WithUnitOfWorkAsync(() => ModelService.CreateAsync(NewModel("gpt-5-mini")));
+        var update = NewModel("gpt-5-mini");
+        update.ApiVersion = "2025-04-01-preview";
+
+        var updated = await WithUnitOfWorkAsync(() => ModelService.UpdateAsync(created.Id, update));
+
+        created.ApiVersion.ShouldBe("2024-10-21");
+        // Any well-formed version, not only those the SDK knows.
+        updated.ApiVersion.ShouldBe("2025-04-01-preview");
+    }
+
+    [Fact]
+    public async Task Should_Reject_Unknown_Model_Type()
+    {
+        var exception = await Should.ThrowAsync<BusinessException>(() =>
+            WithUnitOfWorkAsync(() => ModelService.CreateAsync(NewModel("gpt-5-mini", type: "Vision"))));
+        exception.Code.ShouldBe(AIErrorCodes.SetupModelTypeInvalid);
+    }
+
+    [Fact]
+    public async Task Should_Block_Type_Change_When_Model_Is_Used()
+    {
+        var model = await WithUnitOfWorkAsync(() => ModelService.CreateAsync(NewModel("gpt-5-mini")));
+        await WithUnitOfWorkAsync(() => OperationService.UpdateAsync(AIPromptTypes.FormMapping, NewOperation(model.Id)));
+
+        var exception = await Should.ThrowAsync<BusinessException>(() =>
+            WithUnitOfWorkAsync(() => ModelService.UpdateAsync(model.Id,
+                NewModel("gpt-5-mini", type: AISetupConsts.EmbeddingModelType))));
+        exception.Code.ShouldBe(AIErrorCodes.SetupModelInUse);
+    }
+
     [Theory]
-    [InlineData(null, "secret", AIModelConnectionTester.EndpointNotConfigured)]
-    [InlineData("not a uri", "secret", AIModelConnectionTester.EndpointNotConfigured)]
-    [InlineData("https://example.test", "", AIModelConnectionTester.ApiKeyNotConfigured)]
+    [InlineData(null, "secret", "2024-10-21", AIModelConnectionTester.EndpointNotConfigured)]
+    [InlineData("not a uri", "secret", "2024-10-21", AIModelConnectionTester.EndpointNotConfigured)]
+    [InlineData("https://example.test", "", "2024-10-21", AIModelConnectionTester.ApiKeyNotConfigured)]
+    [InlineData("https://example.test", "secret", null, AIModelConnectionTester.ApiVersionNotConfigured)]
+    [InlineData("https://example.test", "secret", "latest", AIModelConnectionTester.ApiVersionNotConfigured)]
     public async Task Should_Report_Missing_Configuration_Without_Calling_Azure(
         string? endpoint,
         string apiKey,
+        string? apiVersion,
         string expectedErrorCode)
     {
         var configuration = new ConfigurationBuilder()
@@ -266,21 +344,29 @@ public class AISetupAppServiceTests(ITestOutputHelper outputHelper) : GrantManag
         var transport = new OpenAITransportService(
             chatClientFactory,
             Substitute.For<Microsoft.Extensions.Logging.ILogger<OpenAITransportService>>());
-        var tester = new AIModelConnectionTester(transport, configuration);
+        var tester = new AIModelConnectionTester(transport, chatClientFactory, configuration);
 
-        var result = await tester.TestAsync(new AIModel(Guid.NewGuid(), "gpt-5-mini", AISetupConsts.OpenAIProvider));
+        var result = await tester.TestAsync(new AIModel(Guid.NewGuid(), "gpt-5-mini", AISetupConsts.OpenAIProvider)
+        {
+            ApiVersion = apiVersion ?? string.Empty
+        });
 
         result.Success.ShouldBeFalse();
         result.ErrorCode.ShouldBe(expectedErrorCode);
         chatClientFactory.ReceivedCalls().ShouldBeEmpty();
     }
 
-    private static CreateUpdateAIModelDto NewModel(string name, bool isActive = true)
+    private static CreateUpdateAIModelDto NewModel(
+        string name,
+        bool isActive = true,
+        string type = AISetupConsts.ChatModelType)
     {
         return new CreateUpdateAIModelDto
         {
             Name = name,
             Provider = AISetupConsts.OpenAIProvider,
+            Type = type,
+            ApiVersion = "2024-10-21",
             IsActive = isActive
         };
     }

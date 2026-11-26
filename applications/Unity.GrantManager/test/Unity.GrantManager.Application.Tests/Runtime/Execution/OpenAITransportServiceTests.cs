@@ -21,6 +21,7 @@ public class OpenAITransportServiceTests
             "test-key",
             new System.Uri("https://example.test"),
             "gpt-5-mini",
+            "2024-10-21",
             "v1");
 
         var result = await service.GenerateSummaryAsync("content", "system", settings);

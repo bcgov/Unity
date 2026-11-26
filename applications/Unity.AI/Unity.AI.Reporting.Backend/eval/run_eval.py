@@ -760,6 +760,11 @@ def run_one(entry: dict, deps: SimpleNamespace) -> dict:
     }
     tenant_id = entry["tenant_id"]
     db_id = _tenant_registry().get_config(tenant_id)["db_id"]
+    # AI Setup's models for this tenant, as registered from its last AI Reporting token.
+    models = _tenant_registry().get(tenant_id).models
+    if models is None:
+        record["generation_error"] = "tenant has no AI Setup models (open AI Reporting once so UGM sends them)"
+        return record
 
     # 1. Generate. One asyncio.run per call, matching api.py — generate_sql
     # builds its httpx client per request and expects its own event loop.
@@ -767,9 +772,11 @@ def run_one(entry: dict, deps: SimpleNamespace) -> dict:
     t0 = time.monotonic()
     sql = metadata = token_usage = None
     try:
-        sql, metadata, token_usage, error_detail = asyncio.run(
-            deps.sql_generator.generate_sql(entry["question"], [], db_id, tenant_id=tenant_id)
-        )
+        import ai_models  # noqa: E402  (src is on sys.path once deps are loaded)
+        with ai_models.use(models):
+            sql, metadata, token_usage, error_detail = asyncio.run(
+                deps.sql_generator.generate_sql(entry["question"], [], db_id, tenant_id=tenant_id)
+            )
         if sql is None:
             record["generation_error"] = error_detail or "no SQL generated (schema retrieval or relevance check failed)"
     except Exception as e:
@@ -1153,7 +1160,9 @@ def main():
                     "limit_per_tenant": args.limit_per_tenant,
                     "tenant": args.tenant, "prod_tenants": bool(args.prod_tenants)},
         "config_snapshot": {
-            "deployment": deps.config.ai.azure_deployment,
+            "deployment": sorted({
+                (_tenant_registry().get(t).chat_deployment or "not set") for t in selected_tenants
+            }),
             "k_samples": deps.config.ai.k_samples,
             "retry_k_samples": deps.config.ai.retry_k_samples,
             "max_self_correction_iterations": deps.config.ai.max_self_correction_iterations,

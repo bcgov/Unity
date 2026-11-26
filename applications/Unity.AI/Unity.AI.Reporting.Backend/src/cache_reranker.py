@@ -449,7 +449,6 @@ class LLMJudge:
                 client,
                 system_message=_SCORER_SYSTEM,
                 user_message=_SCORER_PROMPT.format(q1=q1, q2=q2),
-                temperature=0,
                 max_completion_tokens=1000,
             )
             choice = response.choices[0]
@@ -464,6 +463,14 @@ class LLMJudge:
             if finish_reason == "content_filter":
                 logger.warning(
                     "[llm_judge] content_filter triggered — defaulting score=0"
+                )
+                return 0, tokens
+            if not text.strip():
+                # A reasoning model can spend the whole cap thinking and write nothing; this
+                # counts as a cache miss. Watch how often it happens before changing the cap.
+                logger.warning(
+                    f"[llm_judge] empty answer (finish_reason={finish_reason}, "
+                    f"reasoning_tokens={reasoning_tokens}) — defaulting score=0"
                 )
                 return 0, tokens
             score = self._parse_score(text)

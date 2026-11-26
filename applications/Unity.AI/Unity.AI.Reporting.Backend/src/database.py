@@ -136,6 +136,17 @@ class DatabaseManager:
                         updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     );
                 """)
+            # AI Setup's models for the tenant (from the token, AB#35030), for work that runs
+            # without a token; embedded_with is the embedding deployment its vectors were made with.
+            cur.execute("""
+                    ALTER TABLE tenant_registry
+                        ADD COLUMN IF NOT EXISTS chat_deployment       TEXT,
+                        ADD COLUMN IF NOT EXISTS chat_api_version      TEXT,
+                        ADD COLUMN IF NOT EXISTS embedding_deployment  TEXT,
+                        ADD COLUMN IF NOT EXISTS embedding_api_version TEXT,
+                        ADD COLUMN IF NOT EXISTS embedded_with         TEXT,
+                        DROP COLUMN IF EXISTS api_version;
+                """)
 
             # Schema version tracking — drives conditional semantic-cache invalidation.
             # One row per (db_id, collection_name) holds the structural fingerprint of
@@ -804,6 +815,14 @@ class CacheRepository:
                     WHERE cache_id = %s
                 """, (cache_id,))
             conn.commit()
+
+    def purge_db(self, db_id: int) -> int:
+        """Drop one database's cached answers (their question vectors came from another embedding model)."""
+        with self.db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute("DELETE FROM query_cache WHERE db_id = %s", (db_id,))
+            deleted = cur.rowcount
+            conn.commit()
+        return deleted
 
     def evict_old(self, days: int = 30) -> int:
         """Delete cache entries older than `days` days. Returns count deleted."""

@@ -11,31 +11,39 @@
 
 <form method="post" asp-page="/AISetup/OperationModal">
     <abp-modal>
-        <abp-modal-header title="@($"{L["AISetup:EditOperation"].Value}: {Model.Name}")"></abp-modal-header>
+        <abp-modal-header title="@(Model.IsAIReporting
+            ? (Model.IsAIReportingEmbedding ? L["AISetup:EditAIReportingEmbedding"].Value : L["AISetup:EditAIReportingChat"].Value)
+            : $"{L["AISetup:EditOperation"].Value}: {Model.Name}")"></abp-modal-header>
         <abp-modal-body>
             <abp-input asp-for="Name" />
             @if (Model.ModelOptions.Count == 0)
             {
                 <div class="alert alert-warning mb-3">@L["AISetup:NoActiveModels"]</div>
             }
+            @if (Model.IsAIReportingEmbedding)
+            {
+                <div class="alert alert-warning mb-3">@L["AISetup:EmbeddingChangeWarning"]</div>
+            }
             <abp-select asp-for="Operation.AIModelId" asp-items="Model.ModelOptions" />
-            @if (Model.UsesExecutionMode)
+            @if (Model.IsAIReporting)
+            {
+                @* AI Reporting is always Sequential and active. *@
+                <input type="hidden" asp-for="Operation.ExecutionMode" />
+                <input type="hidden" name="Operation.IsActive" value="true" />
+            }
+            else if (Model.UsesExecutionMode)
             {
                 <abp-select asp-for="Operation.ExecutionMode" asp-items="Model.ExecutionModeOptions" info="@L["AISetup:ExecutionModeHelp"].Value" />
             }
             else
             {
-                @* This operation always runs Sequential, so there is no choice to make. *@
+                @* This operation always runs Sequential: no field, since there is no choice to make. *@
                 <input type="hidden" asp-for="Operation.ExecutionMode" />
-                <div class="mb-3">
-                    <label class="form-label" for="ExecutionModeFixed">@L["AISetup:ExecutionMode"]</label>
-                    <select id="ExecutionModeFixed" class="form-select" disabled>
-                        <option>@Model.Operation.ExecutionMode</option>
-                    </select>
-                    <div class="form-text">@(Model.Name == "AttachmentSummary" ? L["AISetup:ExecutionModeFixedAttachments"] : L["AISetup:ExecutionModeFixed"])</div>
-                </div>
             }
-            <abp-input asp-for="Operation.IsActive" />
+            @if (!Model.IsAIReporting)
+            {
+                <abp-input asp-for="Operation.IsActive" />
+            }
         </abp-modal-body>
         <abp-modal-footer>
             <button class="btn btn-primary" data-busy-text="Saving..." type="submit">Save</button>

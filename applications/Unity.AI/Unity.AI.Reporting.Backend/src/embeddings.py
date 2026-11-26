@@ -5,6 +5,7 @@ Handles schema embedding and similarity search for NL to SQL.
 import hashlib
 import json
 import logging
+import threading
 import time
 import uuid
 from typing import List, Optional, Tuple
@@ -13,6 +14,7 @@ from langchain_core.documents import Document
 from langchain_openai import AzureOpenAIEmbeddings
 from pydantic import SecretStr
 from langchain_postgres import PGVector
+import ai_models
 from config import config
 from database import db_manager, cache_repository
 from metabase import metabase_client
@@ -471,14 +473,34 @@ class SchemaExtractor:
 
 
 class EmbeddingManager:
-    """Manages vector embeddings for schema similarity search"""
+    """Manages vector embeddings for schema similarity search.
+
+    The embedding deployment and its API version come from AI Setup per request or job
+    (``ai_models.current()``), so the client and vector store are built per pair and reused.
+    """
 
     def __init__(self):
-        self.embedding_model = AzureOpenAIEmbeddings(
+        self._stores = {}
+        self._stores_lock = threading.Lock()
+        self.schema_extractor = SchemaExtractor(metabase_client)
+
+    def _store(self):
+        models = ai_models.current()
+        key = (models.embedding_deployment, models.embedding_api_version)
+        with self._stores_lock:
+            store = self._stores.get(key)
+            if store is None:
+                store = self._build_store(*key)
+                self._stores[key] = store
+            return store
+
+    @staticmethod
+    def _build_store(embedding_deployment: str, api_version: str):
+        embedding_model = AzureOpenAIEmbeddings(
             azure_endpoint=config.ai.azure_endpoint,
             api_key=SecretStr(config.ai.azure_api_key),
-            azure_deployment=config.ai.azure_embedding_deployment,
-            api_version=config.ai.azure_api_version
+            azure_deployment=embedding_deployment,
+            api_version=api_version
         )
 
         # pool_pre_ping: verify a pooled connection is still alive (cheap
@@ -489,25 +511,30 @@ class EmbeddingManager:
         # first query after such a gap can hit a connection that's already
         # gone stale (idle timeout, network blip, DB restart) and fail
         # outright instead of transparently reconnecting.
-        self.vector_store = PGVector(
-            embeddings=self.embedding_model,
+        vector_store = PGVector(
+            embeddings=embedding_model,
             collection_name=config.app.collection_name,
             connection=config.database.url,
             use_jsonb=True,
             engine_args={"pool_pre_ping": True}
         )
-        self.schema_extractor = SchemaExtractor(metabase_client)
+        return embedding_model, vector_store
+
+    @property
+    def embedding_model(self):
+        return self._store()[0]
+
+    @property
+    def vector_store(self):
+        return self._store()[1]
 
     def _reconnect_vector_store(self):
-        """Recreate vector store connection"""
+        """Recreate the current models' vector store connection"""
         logger.warning("Reconnecting to vector store due to connection error")
-        self.vector_store = PGVector(
-            embeddings=self.embedding_model,
-            collection_name=config.app.collection_name,
-            connection=config.database.url,
-            use_jsonb=True,
-            engine_args={"pool_pre_ping": True}
-        )
+        models = ai_models.current()
+        key = (models.embedding_deployment, models.embedding_api_version)
+        with self._stores_lock:
+            self._stores[key] = self._build_store(*key)
 
     def _retry_on_connection_error(self, func, *args, **kwargs):
         """Retry a function if it fails with a connection error"""
@@ -542,7 +569,7 @@ class EmbeddingManager:
         return None
 
     def embed_schemas(self, db_id: int, schema_types: Optional[List[str]] = None,
-                      tenant_id: Optional[str] = None):
+                      tenant_id: Optional[str] = None, force: bool = False):
         """
         Embed database schemas for a specific database.
 
@@ -591,12 +618,14 @@ class EmbeddingManager:
                     f"Another embed for db_id={db_id} is already in flight; "
                     f"skipping this concurrent run"
                 )
-                return
+                return False
 
             # --- Phase 1: cheap fingerprint check ---
-            if self._schema_unchanged(db_id, schema_types, collection_name,
-                                      tenant_id=tenant_id):
-                return
+            # force: the embedding model changed in AI Setup, so every vector must be redone
+            # even though the schema itself is unchanged.
+            if not force and self._schema_unchanged(db_id, schema_types, collection_name,
+                                                    tenant_id=tenant_id):
+                return True
 
             # --- Phase 2: full extract → upsert by deterministic id ---
             logger.info(f"Embedding schemas for db_id: {db_id}, types: {schema_types}")
@@ -614,7 +643,7 @@ class EmbeddingManager:
                     f"No documents extracted for db_id={db_id}; "
                     f"existing embeddings left untouched"
                 )
-                return
+                return False
 
             # Upsert by deterministic id (db_id + table/view name) instead of
             # blind-inserting a fresh random id every run: a table/view that
@@ -652,6 +681,7 @@ class EmbeddingManager:
                     f"in place and did not advance the schema fingerprint, so "
                     f"they're retried next run instead of being lost or frozen"
                 )
+            return all_extractions_ok
 
     def _schema_unchanged(self, db_id: int, schema_types: List[str],
                           collection_name: str,
