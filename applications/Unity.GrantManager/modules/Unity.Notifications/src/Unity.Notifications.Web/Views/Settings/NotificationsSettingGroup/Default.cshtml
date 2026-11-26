@@ -1,7 +1,10 @@
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@using Unity.Notifications.Localization
 @using Unity.Notifications.Permissions
 @model Unity.Notifications.Web.Views.Settings.NotificationsSettingGroup.NotificationsSettingViewModel
 @inject IAuthorizationService AuthorizationService
+@inject IStringLocalizer<NotificationsResource> L
 @{
     var canManageTemplates = await AuthorizationService.IsGrantedAsync(NotificationsPermissions.Email.Template.Default);
 }
@@ -123,7 +126,16 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="emailAddressModalTitle">Email Address</h5>
+                <div class="d-flex align-items-center">
+                    <h5 class="modal-title" id="emailAddressModalTitle">Email Address</h5>
+                    <button type="button" id="configuredEmailInUseTooltip" class="notification-tooltip d-none"
+                            aria-label="@L["EmailAddressModal:InUseTooltip:AriaLabel"]"
+                            data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-html="true" data-bs-trigger="manual"
+                            data-bs-custom-class="notification-tooltip-popover email-in-use-tooltip"
+                            data-bs-title="@L["EmailAddressModal:InUseTooltip:Content"]">
+                        <span class="notification-tooltip-icon" aria-hidden="true">i</span>
+                    </button>
+                </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="configuredEmailForm">
@@ -155,11 +167,6 @@
                                 <label class="form-check-label" for="configuredEmailActive">Active</label>
                             </div>
                         </div>
-                    </div>
-                    <div class="configured-email-warning mt-3" role="note">
-                        <strong>Email Address In Use</strong>
-                        <p class="mb-0">If this email address is currently associated with one or more active Email Templates and/or Form-Level Notification Plans, updating the email address will <strong>not</strong> automatically update any existing templates or notification plans that use it.</p>
-                        <p class="mb-0 mt-2">To ensure those configurations use the new email address, you must manually update the <strong>From</strong> email address within each associated Email Template or Form-Level Notification Plan.</p>
                     </div>
                 </div>
                 <div class="modal-footer">

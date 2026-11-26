@@ -44,6 +44,13 @@
     padding: 0.35rem 0.5rem;
 }
 
+/* Long two-paragraph advisory in the Edit Email Address modal: wider and left-aligned so it reads as text */
+.email-in-use-tooltip .tooltip-inner {
+    max-width: 400px;
+    text-align: left;
+    padding: 0.5rem 0.75rem;
+}
+
 body {
     overflow-y:auto!important;
 }
@@ -140,16 +147,6 @@ body {
 
 .configured-email-options > div {
     width: 50%;
-}
-
-.configured-email-warning {
-    display: block;
-    width: 100%;
-    background-color: #fff3cd;
-    border: 1px solid #ffecb5;
-    border-radius: 0.25rem;
-    color: #664d03;
-    padding: 0.75rem;
 }
 
 /* ── Split-pane container ─────────────────────────────────────────────────── */
