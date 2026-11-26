@@ -3,12 +3,14 @@ using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Unity.AI;
 using Unity.AI.Permissions;
+using Unity.AI.Runtime.Execution;
 using Unity.AI.Settings;
 using Unity.GrantManager.Integrations.Metabase;
 using Unity.Modules.Shared.Permissions;
@@ -31,6 +33,7 @@ namespace Unity.GrantManager.Identity
         private readonly IPermissionChecker _permissionChecker;
         private readonly ITenantRepository _tenantRepository;
         private readonly ISettingProvider _settingProvider;
+        private readonly AIReportingModelResolver _reportingModelResolver;
 
         public JwtTokenAppService(
             ICurrentTenant currentTenant,
@@ -38,8 +41,10 @@ namespace Unity.GrantManager.Identity
             IConfiguration configuration,
             IPermissionChecker permissionChecker,
             ITenantRepository tenantRepository,
-            ISettingProvider settingProvider)
+            ISettingProvider settingProvider,
+            AIReportingModelResolver reportingModelResolver)
         {
+            _reportingModelResolver = reportingModelResolver;
             _currentTenant = currentTenant;
             _currentUser = currentUser;
             _configuration = configuration;
@@ -63,7 +68,7 @@ namespace Unity.GrantManager.Identity
             var schemaTypes = await GetSchemaTypesAsync();
 
             // Build claims
-            var claims = new[]
+            var claims = new List<Claim>
             {
                 new Claim("user_id", userId),
                 new Claim("tenant", tenant),
@@ -74,6 +79,19 @@ namespace Unity.GrantManager.Identity
                 new Claim("schema_types", schemaTypes),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
+
+            // AI Reporting's models, each with its API version, come only from AI Setup (AB#35030):
+            // UAI has no defaults, so no token is issued until both models are set.
+            var reportingModels = await _reportingModelResolver.ResolveAsync();
+            if (!reportingModels.IsComplete)
+            {
+                throw new BusinessException(AIErrorCodes.ReportingModelsNotSet);
+            }
+
+            claims.Add(new Claim("ai_chat_deployment", reportingModels.ChatDeployment!));
+            claims.Add(new Claim("ai_chat_api_version", reportingModels.ChatApiVersion!));
+            claims.Add(new Claim("ai_embedding_deployment", reportingModels.EmbeddingDeployment!));
+            claims.Add(new Claim("ai_embedding_api_version", reportingModels.EmbeddingApiVersion!));
 
             // Ensure secretKey is not null or empty
             var secretKey = _configuration["ReportingAI:JWTSecret"];

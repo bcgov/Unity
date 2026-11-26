@@ -670,12 +670,21 @@ def preflight_embeddings(sql_generator, db_ids: List[int]) -> List[Tuple[int, st
     Needed because generate_sql returns four Nones with no error detail when
     retrieval finds nothing (sql_generator.py:428), so the runner otherwise
     can't distinguish 'embeddings never generated' from a real generation
-    failure. Returns (db_id, reason) for each db_id that is not ready."""
+    failure. Returns (db_id, reason) for each db_id that is not ready.
+
+    The vector store belongs to AI Setup's embedding model, so each db is checked
+    with the models its tenant registered from its last AI Reporting token."""
+    import ai_models  # noqa: E402  (src is on sys.path once deps are loaded)
     missing = []
     for db_id in sorted(set(db_ids)):
+        entry = _tenant_registry().find_by_db_id(db_id)
+        if entry is None or entry.models is None:
+            missing.append((db_id, "tenant has no AI Setup models (open AI Reporting once so UGM sends them)"))
+            continue
         try:
-            hits = sql_generator.embeddings.vector_store.similarity_search(
-                "table", k=1, filter={"db_id": db_id, "schema_type": "public"})
+            with ai_models.use(entry.models):
+                hits = sql_generator.embeddings.vector_store.similarity_search(
+                    "table", k=1, filter={"db_id": db_id, "schema_type": "public"})
         except Exception as e:
             missing.append((db_id, f"vector-store query failed: {e!r}"))
             continue
@@ -760,6 +769,11 @@ def run_one(entry: dict, deps: SimpleNamespace) -> dict:
     }
     tenant_id = entry["tenant_id"]
     db_id = _tenant_registry().get_config(tenant_id)["db_id"]
+    # AI Setup's models for this tenant, as registered from its last AI Reporting token.
+    models = _tenant_registry().get(tenant_id).models
+    if models is None:
+        record["generation_error"] = "tenant has no AI Setup models (open AI Reporting once so UGM sends them)"
+        return record
 
     # 1. Generate. One asyncio.run per call, matching api.py — generate_sql
     # builds its httpx client per request and expects its own event loop.
@@ -767,9 +781,11 @@ def run_one(entry: dict, deps: SimpleNamespace) -> dict:
     t0 = time.monotonic()
     sql = metadata = token_usage = None
     try:
-        sql, metadata, token_usage, error_detail = asyncio.run(
-            deps.sql_generator.generate_sql(entry["question"], [], db_id, tenant_id=tenant_id)
-        )
+        import ai_models  # noqa: E402  (src is on sys.path once deps are loaded)
+        with ai_models.use(models):
+            sql, metadata, token_usage, error_detail = asyncio.run(
+                deps.sql_generator.generate_sql(entry["question"], [], db_id, tenant_id=tenant_id)
+            )
         if sql is None:
             record["generation_error"] = error_detail or "no SQL generated (schema retrieval or relevance check failed)"
     except Exception as e:
@@ -1153,7 +1169,9 @@ def main():
                     "limit_per_tenant": args.limit_per_tenant,
                     "tenant": args.tenant, "prod_tenants": bool(args.prod_tenants)},
         "config_snapshot": {
-            "deployment": deps.config.ai.azure_deployment,
+            "deployment": sorted({
+                (_tenant_registry().get(t).chat_deployment or "not set") for t in selected_tenants
+            }),
             "k_samples": deps.config.ai.k_samples,
             "retry_k_samples": deps.config.ai.retry_k_samples,
             "max_self_correction_iterations": deps.config.ai.max_self_correction_iterations,

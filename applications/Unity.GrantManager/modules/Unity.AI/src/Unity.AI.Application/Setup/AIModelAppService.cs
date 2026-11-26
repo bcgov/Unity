@@ -24,8 +24,15 @@ public class AIModelAppService(
     IRepository<AIModel, Guid> modelRepository,
     IRepository<AIOperation, Guid> operationRepository,
     AISetupManager setupManager,
-    AIModelConnectionTester connectionTester) : ApplicationService, IAIModelAppService
+    AIModelConnectionTester connectionTester,
+    AIEndpointHealthChecker endpointHealthChecker) : ApplicationService, IAIModelAppService
 {
+    [HttpGet("endpoint-status")]
+    public virtual Task<AIEndpointStatusDto> GetEndpointStatusAsync()
+    {
+        return endpointHealthChecker.CheckAsync();
+    }
+
 
     [HttpGet]
     public virtual async Task<ListResultDto<AIModelDto>> GetListAsync()
@@ -54,6 +61,8 @@ public class AIModelAppService(
         var model = await setupManager.CreateModelAsync(
             input.Name,
             input.Provider,
+            input.Type,
+            input.ApiVersion,
             input.IsActive);
         return ToDto(model, []);
     }
@@ -67,6 +76,8 @@ public class AIModelAppService(
             model,
             input.Name,
             input.Provider,
+            input.Type,
+            input.ApiVersion,
             input.IsActive);
         var operations = await operationRepository.GetListAsync(operation => operation.AIModelId == id);
         return ToDto(model, operations);
@@ -94,6 +105,8 @@ public class AIModelAppService(
             Id = model.Id,
             Name = model.Name,
             Provider = model.Provider,
+            Type = model.Type.ToString(),
+            ApiVersion = model.ApiVersion,
             IsActive = model.IsActive,
             UsedByOperations = operations
                 .Where(operation => operation.AIModelId == model.Id)

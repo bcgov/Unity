@@ -17,6 +17,20 @@ logger = logging.getLogger(__name__)
 # int4 range.
 _INIT_TABLES_LOCK_KEY = zlib.crc32(b"init_tables") - 2**31
 
+# query_cache.query_embedding is halfvec(3072): the semantic cache only works with an embedding
+# model that returns 3,072 dimensions (text-embedding-3-large). Another size skips the cache.
+CACHE_EMBEDDING_DIMENSIONS = 3072
+
+
+def _cache_fits(embedding: list) -> bool:
+    if len(embedding) == CACHE_EMBEDDING_DIMENSIONS:
+        return True
+    logger.error(
+        f"[cache] skipped: the embedding model returns {len(embedding)} dimensions, but the "
+        f"semantic cache needs {CACHE_EMBEDDING_DIMENSIONS}. Pick a {CACHE_EMBEDDING_DIMENSIONS}-dimension "
+        "embedding model in AI Setup (text-embedding-3-large).")
+    return False
+
 
 class DatabaseManager:
     """Manages database connections and operations"""
@@ -135,6 +149,17 @@ class DatabaseManager:
                         created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     );
+                """)
+            # AI Setup's models for the tenant (from the token, AB#35030), for work that runs
+            # without a token; embedded_with is the embedding deployment its vectors were made with.
+            cur.execute("""
+                    ALTER TABLE tenant_registry
+                        ADD COLUMN IF NOT EXISTS chat_deployment       TEXT,
+                        ADD COLUMN IF NOT EXISTS chat_api_version      TEXT,
+                        ADD COLUMN IF NOT EXISTS embedding_deployment  TEXT,
+                        ADD COLUMN IF NOT EXISTS embedding_api_version TEXT,
+                        ADD COLUMN IF NOT EXISTS embedded_with         TEXT,
+                        DROP COLUMN IF EXISTS api_version;
                 """)
 
             # Schema version tracking — drives conditional semantic-cache invalidation.
@@ -709,6 +734,8 @@ class CacheRepository:
         The context_key filter matters most here: a follow-up's own cached row is
         a ~1.0 cosine neighbour of the same words asked standalone, so similarity
         alone can never separate them."""
+        if not _cache_fits(embedding):
+            return []
         fp = self.build_fingerprint(db_id, schema_types, collection_name)
         embedding_str = "[" + ",".join(str(v) for v in embedding) + "]"
         with self.db.get_connection() as conn, conn.cursor() as cur:
@@ -768,6 +795,8 @@ class CacheRepository:
         The conflict target must list the same five columns as
         idx_query_cache_exact_ctx — the same question asked with and without a
         previous turn is two entries, not one overwriting the other."""
+        if not _cache_fits(embedding):
+            return
         fp = self.build_fingerprint(db_id, schema_types, collection_name)
         embedding_str = "[" + ",".join(str(v) for v in embedding) + "]"
         with self.db.get_connection() as conn, conn.cursor() as cur:
@@ -804,6 +833,14 @@ class CacheRepository:
                     WHERE cache_id = %s
                 """, (cache_id,))
             conn.commit()
+
+    def purge_db(self, db_id: int) -> int:
+        """Drop one database's cached answers (their question vectors came from another embedding model)."""
+        with self.db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute("DELETE FROM query_cache WHERE db_id = %s", (db_id,))
+            deleted = cur.rowcount
+            conn.commit()
+        return deleted
 
     def evict_old(self, days: int = 30) -> int:
         """Delete cache entries older than `days` days. Returns count deleted."""
