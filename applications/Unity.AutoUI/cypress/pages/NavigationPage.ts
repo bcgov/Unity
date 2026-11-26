@@ -40,6 +40,11 @@ export class NavigationPage extends BasePage {
    * @param tenantName - Name of the tenant to switch to (e.g., "Default Grants Program")
    */
   switchToTenantIfAvailable(tenantName: string): void {
+    // Wait for the header to render after login. The .then() below checks the
+    // DOM once (no retry), so without this it can run before the user menu
+    // exists and silently skip the switch, leaving the user's default tenant.
+    cy.get(this.userMenuButton, { timeout: 20000 }).should("exist");
+
     cy.get("body").then(($body) => {
       // Check if user initials menu exists
       const hasUserInitials = $body.find(this.userMenuButton).length > 0;

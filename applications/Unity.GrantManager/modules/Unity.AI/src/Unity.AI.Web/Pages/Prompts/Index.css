@@ -120,3 +120,14 @@ body.split-dragging {
     cursor: col-resize !important;
     user-select: none !important;
 }
+
+/* ── Table: prompt previews ───────────────────────────────────────────────── */
+/* A global class (not nested under the pane) so DataTables' width measurement
+   sees the cap too; the full preview is in the tooltip. */
+.ai-prompt-preview-text {
+    display: block;
+    max-width: 22rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

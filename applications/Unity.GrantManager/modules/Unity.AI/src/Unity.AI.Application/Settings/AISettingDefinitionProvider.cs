@@ -40,6 +40,17 @@ public class AISettingDefinitionProvider : SettingDefinitionProvider
                 isEncrypted: false)
             .WithProviders(TenantSettingValueProvider.ProviderName)
         );
+
+        context.Add(
+            new SettingDefinition(
+                AISettings.ReportingSchemaTypes,
+                AISettings.DefaultReportingSchemaTypes,
+                L("Setting:AI.ReportingSchemaTypes"),
+                isVisibleToClients: false,
+                isInherited: false,
+                isEncrypted: false)
+            .WithProviders(TenantSettingValueProvider.ProviderName)
+        );
     }
 
     private static LocalizableString L(string name)

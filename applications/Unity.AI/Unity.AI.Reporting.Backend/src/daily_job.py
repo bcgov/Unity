@@ -10,13 +10,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 metabase_url = config.metabase.url
-headers = config.metabase_headers
 
 def list_card_creators():
     """List who created and updated each card in Metabase"""
     try:
         # Get all cards/questions from Metabase
-        response = requests.get(f"{metabase_url}/api/card", headers=headers)
+        response = requests.get(f"{metabase_url}/api/card", headers=config.metabase_headers)
 
         if response.status_code != 200:
             logger.error(f"Error fetching cards: HTTP {response.status_code} - {response.text}")

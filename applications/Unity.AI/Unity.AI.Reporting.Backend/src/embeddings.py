@@ -13,9 +13,10 @@ from langchain_core.documents import Document
 from langchain_openai import AzureOpenAIEmbeddings
 from pydantic import SecretStr
 from langchain_postgres import PGVector
-from config import config, DEFAULT_TENANT
+from config import config
 from database import db_manager, cache_repository
 from metabase import metabase_client
+from tenant_registry import tenant_registry
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -784,7 +785,8 @@ class EmbeddingManager:
                 retrieved.extend(public_results)
 
         # Get ALL custom/worksheet schemas — don't rely on top-k similarity
-        tenant_schema_types = config.get_tenant_config(tenant_id or DEFAULT_TENANT).get("schema_types", ["public"])
+        tenant_entry = tenant_registry.find(tenant_id) if tenant_id else None
+        tenant_schema_types = tenant_entry.schema_types if tenant_entry else ["public"]
         if "custom" in tenant_schema_types:
             custom_results = self._get_all_custom_schemas(query, db_id)
             if custom_results:

@@ -1,0 +1,62 @@
+{
+  "CYPRESS_CONFIG_DEV": {
+    "webapp.url": "https://dev-unity.apps.gold.devops.gov.bc.ca/",
+    "environment": "DEV",
+    "test1username": "",
+    "test1password": "",
+    "test2username": "",
+    "test2password": "",
+    "TEST_EMAIL_TO": "",
+    "TEST_EMAIL_CC": "",
+    "TEST_EMAIL_BCC": "",
+    "chefsApiKey": ""
+  },
+  "CYPRESS_CONFIG_DEV2": {
+    "webapp.url": "https://dev2-unity.apps.gold.devops.gov.bc.ca/",
+    "environment": "DEV2",
+    "test1username": "",
+    "test1password": "",
+    "test2username": "",
+    "test2password": "",
+    "TEST_EMAIL_TO": "",
+    "TEST_EMAIL_CC": "",
+    "TEST_EMAIL_BCC": "",
+    "chefsApiKey": ""
+  },
+  "CYPRESS_CONFIG_TEST": {
+    "webapp.url": "https://test-unity.apps.gold.devops.gov.bc.ca/",
+    "environment": "TEST",
+    "test1username": "",
+    "test1password": "",
+    "test2username": "",
+    "test2password": "",
+    "TEST_EMAIL_TO": "",
+    "TEST_EMAIL_CC": "",
+    "TEST_EMAIL_BCC": "",
+    "chefsApiKey": ""
+  },
+  "CYPRESS_CONFIG_UAT": {
+    "webapp.url": "https://uat-unity.apps.gold.devops.gov.bc.ca/",
+    "environment": "UAT",
+    "test1username": "",
+    "test1password": "",
+    "test2username": "",
+    "test2password": "",
+    "TEST_EMAIL_TO": "",
+    "TEST_EMAIL_CC": "",
+    "TEST_EMAIL_BCC": "",
+    "chefsApiKey": ""
+  },
+  "CYPRESS_CONFIG_PROD": {
+    "webapp.url": "https://prod-unity.apps.gold.devops.gov.bc.ca/",
+    "environment": "PROD",
+    "test1username": "",
+    "test1password": "",
+    "test2username": "",
+    "test2password": "",
+    "TEST_EMAIL_TO": "",
+    "TEST_EMAIL_CC": "",
+    "TEST_EMAIL_BCC": "",
+    "chefsApiKey": ""
+  }
+}

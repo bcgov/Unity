@@ -17,6 +17,12 @@
                 AI Prompts
             </li>
         }
+        @if (Model.ShowAISetup)
+        {
+            <li id="ai-setup-menu-item" class="nav-item btn btn-nav">
+                AI Setup
+            </li>
+        }
         @if (Model.ShowEndpoints)
         {
             <li id="endpoints-menu-item" class="nav-item btn btn-nav">

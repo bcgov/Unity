@@ -8,7 +8,4 @@ public sealed record OpenAIOperationSettings(
     string ApiKey,
     Uri Endpoint,
     string DeploymentName,
-    bool MaxOutputTokenCountSupported,
-    double? Temperature,
-    int CompletionTokens,
     string PromptVersion);

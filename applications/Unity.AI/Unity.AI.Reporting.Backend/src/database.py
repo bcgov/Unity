@@ -123,6 +123,20 @@ class DatabaseManager:
                         ON query_cache(tenant_id, db_id, schema_fingerprint);
                 """)
 
+            # Tenants that have opened AI Reporting, with the Metabase ids UGM sent in
+            # their token (AB#33978). Replaces tenant_config.json; read by the startup
+            # seed-embed, the embed-all CronJob and /ready.
+            cur.execute("""
+                    CREATE TABLE IF NOT EXISTS tenant_registry (
+                        tenant_name   TEXT PRIMARY KEY,
+                        db_id         INTEGER NOT NULL,
+                        collection_id INTEGER NOT NULL,
+                        schema_types  TEXT[]  NOT NULL,
+                        created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    );
+                """)
+
             # Schema version tracking — drives conditional semantic-cache invalidation.
             # One row per (db_id, collection_name) holds the structural fingerprint of
             # the embedded schema; embed_schemas compares + purges on change.

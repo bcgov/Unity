@@ -69,7 +69,39 @@ public class AIPromptDataSeederTests
 
 
     [Fact]
-    public async Task Should_Update_Existing_Prompt_To_Current_Definition()
+    public async Task Should_Not_Recreate_Older_Version_Deleted_When_Newer_Exists()
+    {
+        var newest = new AIPrompt(Guid.NewGuid(), AIPromptTypes.ApplicationAnalysis, 2, "system", "user");
+        var promptRepository = Substitute.For<IRepository<AIPrompt, Guid>>();
+        var insertedPrompts = new List<AIPrompt>();
+        promptRepository
+            .FirstOrDefaultAsync(Arg.Any<Expression<Func<AIPrompt, bool>>>())
+            .ReturnsForAnyArgs(callInfo =>
+            {
+                var predicate = callInfo.Arg<Expression<Func<AIPrompt, bool>>>().Compile();
+                return Task.FromResult<AIPrompt>(predicate(newest) ? newest : null!);
+            });
+        promptRepository
+            .InsertAsync(Arg.Any<AIPrompt>(), Arg.Any<bool>(), Arg.Any<System.Threading.CancellationToken>())
+            .ReturnsForAnyArgs(callInfo =>
+            {
+                var prompt = callInfo.Arg<AIPrompt>();
+                insertedPrompts.Add(prompt);
+                return Task.FromResult(prompt);
+            });
+
+        var currentTenant = Substitute.For<ICurrentTenant>();
+        currentTenant.Change(null).Returns(Substitute.For<IDisposable>());
+        var seeder = new AIPromptDataSeeder(promptRepository, currentTenant);
+        await seeder.SeedAsync(new DataSeedContext());
+
+        // v0 and v1 were deleted in AI Prompts; v2 is there, so neither comes back.
+        insertedPrompts.ShouldNotContain(prompt => prompt.Name == AIPromptTypes.ApplicationAnalysis);
+        AssertVersions(insertedPrompts, AIPromptTypes.AttachmentSummary, 0, 1, 2);
+    }
+
+    [Fact]
+    public async Task Should_Not_Change_Existing_Prompt_Version()
     {
         var existingPrompt = new AIPrompt(Guid.NewGuid(), AIPromptTypes.FormWorksheet, 2, "old system prompt", "old user prompt")
         {
@@ -104,11 +136,12 @@ public class AIPromptDataSeederTests
         var seeder = new AIPromptDataSeeder(promptRepository, currentTenant);
         await seeder.SeedAsync(new DataSeedContext());
 
-        existingPrompt.SystemPrompt.ShouldNotBe("old system prompt");
-        existingPrompt.UserPrompt.ShouldContain("WORKSHEET");
-        existingPrompt.MetadataJson.ShouldContain("DATA");
-        existingPrompt.IsActive.ShouldBeTrue();
-        await promptRepository.Received().UpdateAsync(existingPrompt, true, Arg.Any<System.Threading.CancellationToken>());
+        // Insert-only: an edit or deactivation made in AI Prompts survives the next deploy.
+        existingPrompt.SystemPrompt.ShouldBe("old system prompt");
+        existingPrompt.UserPrompt.ShouldBe("old user prompt");
+        existingPrompt.MetadataJson.ShouldBe("old metadata");
+        existingPrompt.IsActive.ShouldBeFalse();
+        await promptRepository.DidNotReceiveWithAnyArgs().UpdateAsync(default!, default, default);
     }
     private static void AssertVersions(
         IEnumerable<AIPrompt> prompts,
