@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Logging;
@@ -9,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Permissions;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.AspNetCore.Mvc.UI.RazorPages;
 using Volo.Abp.Identity;
@@ -18,6 +20,7 @@ using Unity.GrantManager.Web.Models;
 
 namespace Unity.GrantManager.Web.Pages.AssigneeSelection
 {
+    [Authorize(GrantApplicationPermissions.Assignments.AssignInitial)]
     public class AssigneeSelectionModalModel : AbpPageModel
     {
         [BindProperty]

@@ -70,12 +70,15 @@
             class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
             button-type="Secondary" />
 
-        <abp-button id="assignApplication"
-            icon-type="Other" icon="fa-regular fa-hand-point-right"
-            data-selector="applications-table-actions"
-            button-type="Secondary"
-            class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
-            text="@L["ApplicationList:AssignButton"].Value" />
+        @if (await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Assignments.AssignInitial))
+        {
+            <abp-button id="assignApplication"
+                icon-type="Other" icon="fa-regular fa-hand-point-right"
+                data-selector="applications-table-actions"
+                button-type="Secondary"
+                class="custom-table-btn flex-none btn btn-secondary action-bar-btn-unavailable"
+                text="@L["ApplicationList:AssignButton"].Value" />
+        }
 
         @if (await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Approvals.BulkApplicationApproval))
         { 
