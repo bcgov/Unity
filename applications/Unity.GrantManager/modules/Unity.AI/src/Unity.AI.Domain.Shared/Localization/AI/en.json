@@ -159,7 +159,6 @@
     "AISetup:ApiKeyNotConfigured": "Azure:OpenAI:ApiKey is not configured for this environment.",
     "AISetup:Endpoint": "Azure OpenAI endpoint:",
     "AISetup:EndpointNotSet": "Not configured (Azure:OpenAI:Endpoint)",
-    "AISetup:EndpointInternal": "This is an OpenShift service inside the cluster, so it has no link. Unity checks it below.",
     "AISetup:EndpointStatus": "Endpoint status:",
     "AISetup:EndpointChecking": "Checking…",
     "AISetup:EndpointHealthy": "Healthy",
