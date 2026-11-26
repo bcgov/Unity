@@ -83,7 +83,6 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             grantApplicationPermissionsGroup.AddApplication_Custom_Permissions();
 
             var settingManagement = context.GetGroup(SettingManagementPermissions.GroupName);
-            settingManagement.AddPermission(UnitySettingManagementPermissions.UserInterface, L("Permission:UnitySettingManagementPermissions.UserInterface"));
             settingManagement.AddPermission(UnitySettingManagementPermissions.BackgroundJobSettings, L("Permission:UnitySettingManagementPermissions.BackgroundJobs"));
             settingManagement.AddPermission(UnitySettingManagementPermissions.ConfigurePayments, L("Permission:UnitySettingManagementPermissions.ConfigurePayments"));
             settingManagement.AddPermission(UnitySettingManagementPermissions.EditProgramDetails, L("Permission:UnitySettingManagementPermissions.EditProgramDetails"));

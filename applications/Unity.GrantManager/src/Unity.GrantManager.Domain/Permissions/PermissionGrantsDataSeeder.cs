@@ -196,7 +196,7 @@ namespace Unity.GrantManager.Permissions
                     GrantManagerPermissions.Intakes.Default,
                     GrantManagerPermissions.ApplicationForms.Default,
                     GrantManagerPermissions.ApplicationForms.Delete,
-                    UnitySettingManagementPermissions.UserInterface,
+                    GrantManagerPermissions.ApplicationForms.UserInterface,
                     UnitySettingManagementPermissions.EditProgramDetails,
 
                     .. SettingManagement_Tags_CommonPermissions,
@@ -314,7 +314,7 @@ namespace Unity.GrantManager.Permissions
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.SystemAdmin,
                 [
                     GrantManagerPermissions.Default,
-                    UnitySettingManagementPermissions.UserInterface,
+                    GrantManagerPermissions.ApplicationForms.UserInterface,
                     UnitySettingManagementPermissions.EditProgramDetails,
                     GrantManagerPermissions.Intakes.Default,
                     GrantManagerPermissions.ApplicationForms.Default,

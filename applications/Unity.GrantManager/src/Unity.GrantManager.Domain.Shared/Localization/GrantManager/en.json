@@ -169,6 +169,7 @@
     "Permission:GrantApplicationManagement.Comments.Add": "Add Application Comment",
     "Permission:GrantManagerManagement.Intakes.Default": "Manage Intakes",
     "Permission:GrantManagerManagement.ApplicationForms.Default": "Manage Forms",
+    "Permission:GrantManagerManagement.ApplicationForms.UserInterface": "Manage User Interface",
     "Permission:GrantManagerManagement.ApplicationForms.Delete": "Delete Forms",
     "ApplicationForms:DeleteForm": "Delete Form",
     "ApplicationForms:DeleteConfirmation": "Delete form \"{0}\"? It will be hidden from the Forms list and new parent-form selections, and its configuration screens will no longer be accessible. Existing applications, submissions, payments, and integrations will continue unchanged.",
@@ -346,7 +347,7 @@
     "GrantManager:TagNameUnchanged": "New tag cannot be the same as the original tag.",
     "GrantManager:ContactNotFound": "The contact could not be found. Refresh the page and try again.",
     "GrantManager:AddressNotFound": "The address could not be found. Refresh the page and try again.",
-    "GrantManager:AssessmentUserAssignmentAlreadyExists":"Business Exception: You cannot create two assessments on an application for the same user.",
+    "GrantManager:AssessmentUserAssignmentAlreadyExists": "Business Exception: You cannot create two assessments on an application for the same user.",
     "GrantManager:CantCreateAssessmentForFinalStateApplication": "Business Exception: You cannot create an assessment for an application in final state.",
     "GrantManager:PayableFormRequiresHierarchy": "Please select a form hierarchy before saving a payable form.",
     "GrantManager:ChildFormRequiresParentForm": "Please select a parent form when the form hierarchy is set to Child.",
@@ -470,7 +471,6 @@
     "Setting:GrantManager.Locality.SectorFilter.Description": "Filter for the sector and subsector dropdown list of each tenant",
 
     "Permission:UnitySettingManagementPermissions.BackgroundJobs": "Background Jobs",
-    "Permission:UnitySettingManagementPermissions.UserInterface": "Application Tabs",
     "Permission:UnitySettingManagementPermissions.ConfigurePayments": "Configure Payments",
     "Permission:UnitySettingManagementPermissions.EditProgramDetails": "Edit Program Details",
 
@@ -660,7 +660,7 @@
     "ApplicantContacts:ColumnName": "Name",
     "ApplicantContacts:ColumnPhone": "Phone (Work)",
     "ApplicantContacts:ColumnSubmission": "Submission #",
-    
+
     "ApplicantAddresses:ColumnAddressType": "Address Type",
     "ApplicantAddresses:ColumnAddress": "Address",
     "ApplicantAddresses:ColumnUnit": "Unit",

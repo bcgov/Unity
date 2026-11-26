@@ -16,6 +16,7 @@ public class GrantManagerPermissionDefinitionProvider : PermissionDefinitionProv
         grantManagerPermissionsGroup.AddPermission(GrantManagerPermissions.Intakes.Default, L("Permission:GrantManagerManagement.Intakes.Default"));
 
         var applicationFormPermissions = grantManagerPermissionsGroup.AddPermission(GrantManagerPermissions.ApplicationForms.Default, L("Permission:GrantManagerManagement.ApplicationForms.Default"));
+        applicationFormPermissions.AddChild(GrantManagerPermissions.ApplicationForms.UserInterface, L("Permission:GrantManagerManagement.ApplicationForms.UserInterface"));
         applicationFormPermissions.AddChild(GrantManagerPermissions.ApplicationForms.Delete, L("Permission:GrantManagerManagement.ApplicationForms.Delete"));
     }
 

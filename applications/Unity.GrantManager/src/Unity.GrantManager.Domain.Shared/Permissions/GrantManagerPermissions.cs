@@ -16,6 +16,7 @@ public static class GrantManagerPermissions
     public static class ApplicationForms
     {
         public const string Default = GroupName + ".ApplicationForms";
+        public const string UserInterface = Default + ".UserInterface";
         public const string Delete = Default + ".Delete";
     }
 

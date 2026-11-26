@@ -33,7 +33,7 @@ public class ZoneManagementAppService(IZoneManager zoneManager) : GrantManagerAp
         return ObjectMapper.Map<ZoneGroupDefinition, ZoneGroupDefinitionDto>(updatedTemplate);
     }
 
-    [Authorize(UnitySettingManagementPermissions.UserInterface)]
+    [Authorize(GrantManagerPermissions.ApplicationForms.UserInterface)]
     public async Task SetAsync(string providerName, string providerKey, List<UpdateZoneDto> input)
     {
         if (Guid.TryParse(providerKey, out Guid providerId))
