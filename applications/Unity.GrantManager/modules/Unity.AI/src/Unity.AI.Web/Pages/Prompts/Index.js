@@ -93,7 +93,7 @@ $(function () {
             // The Active switch, shown as on AI Setup's models and assignments.
             render: (data, type) => {
                 if (type !== 'display') {
-                    return data ? 1 : 0;
+                    return data ? '1' : '0';
                 }
                 return data
                     ? `<span class="badge bg-success">${escapeHtml(l('PromptActive'))}</span>`

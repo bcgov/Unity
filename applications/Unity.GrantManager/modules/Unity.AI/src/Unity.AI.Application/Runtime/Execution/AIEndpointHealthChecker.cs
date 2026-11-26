@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using System;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -42,8 +43,7 @@ public class AIEndpointHealthChecker(
 
             status.HttpStatusCode = (int)response.StatusCode;
             status.Message = body.Length > MaxMessageLength ? body[..MaxMessageLength] : body;
-            // Any answer means the endpoint is reachable; only a 2xx is a health report.
-            status.Status = response.IsSuccessStatusCode ? AIEndpointStatusDto.Healthy : AIEndpointStatusDto.NoHealthCheck;
+            status.Status = ToStatus(response.StatusCode);
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
@@ -55,4 +55,13 @@ public class AIEndpointHealthChecker(
 
         return status;
     }
+
+    // Any answer means the endpoint is reachable. 404 or 405 means it has no /healthz route;
+    // any other error is a failed health check, such as the proxy's 503 when Azure is down.
+    private static string ToStatus(HttpStatusCode statusCode) => statusCode switch
+    {
+        >= HttpStatusCode.OK and < HttpStatusCode.MultipleChoices => AIEndpointStatusDto.Healthy,
+        HttpStatusCode.NotFound or HttpStatusCode.MethodNotAllowed => AIEndpointStatusDto.NoHealthCheck,
+        _ => AIEndpointStatusDto.Unhealthy
+    };
 }

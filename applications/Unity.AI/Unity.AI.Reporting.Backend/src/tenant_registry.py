@@ -24,6 +24,10 @@ DEFAULT_SCHEMA_TYPES = ["public", "custom"]
 # so a burst of requests for a not-yet-embedded tenant starts one embed, not many.
 _EMBED_RETRY_SECONDS = 120
 
+# The embedding deployment every vector made before AB#35030 came from (UAI had it in code
+# then, and recorded no model with the vectors). Not a default: AI Setup picks the model.
+LEGACY_EMBEDDING_DEPLOYMENT = "text-embedding-3-large"
+
 
 class UnknownTenantError(LookupError):
     """The tenant has never presented a token with Metabase ids."""
@@ -180,8 +184,11 @@ class TenantRegistry:
 
     # -- first-use embedding --------------------------------------------------
 
-    def get_embedded_with(self, db_id: int) -> Optional[str]:
-        """The embedding deployment the db's vectors were made with, or None if not recorded."""
+    def get_embedded_with(self, db_id: int) -> str:
+        """The embedding deployment the db's vectors were made with.
+
+        Vectors from before AB#35030 recorded none; they were all made with the deployment UAI
+        then had in code, so an unrecorded db counts as LEGACY_EMBEDDING_DEPLOYMENT."""
         with self._db.get_connection() as conn, conn.cursor() as cur:
             cur.execute("""
                     SELECT embedded_with FROM tenant_registry
@@ -189,7 +196,7 @@ class TenantRegistry:
                     LIMIT 1
                 """, (db_id,))
             row = cur.fetchone()
-        return row[0] if row else None
+        return row[0] if row else LEGACY_EMBEDDING_DEPLOYMENT
 
     def mark_embedded(self, db_id: int, embedding_deployment: str) -> None:
         """Record which embedding deployment the db's vectors now come from."""
@@ -199,6 +206,8 @@ class TenantRegistry:
                 (embedding_deployment, db_id))
             conn.commit()
         with self._lock:
+            # The db's vectors now belong to this model only.
+            self._embedded_db_ids = {pair for pair in self._embedded_db_ids if pair[0] != db_id}
             self._embedded_db_ids.add((db_id, embedding_deployment))
 
     def is_embedded(self, db_id: int, collection_name: str, embedding_deployment: str) -> bool:
@@ -209,14 +218,7 @@ class TenantRegistry:
         if db_id not in self._db.has_embeddings_for_db_ids({db_id}, collection_name):
             return False
 
-        embedded_with = self.get_embedded_with(db_id)
-        if embedded_with is None:
-            # Vectors from before AB#35030 recorded no model; they were made with the deployment
-            # UAI then had in code (text-embedding-3-large). Adopt the current one as their model
-            # rather than re-embedding every tenant on deploy.
-            self.mark_embedded(db_id, embedding_deployment)
-            return True
-        if embedded_with != embedding_deployment:
+        if self.get_embedded_with(db_id) != embedding_deployment:
             return False
 
         # embed_schemas adds new embeddings before deleting old ones, so once a db has
@@ -242,7 +244,7 @@ class TenantRegistry:
 
         # Embeddings from another model: every vector must be redone, and cached answers
         # matched with the old model's question vectors are dropped.
-        model_changed = (self.get_embedded_with(entry.db_id) not in (None, models.embedding_deployment))
+        model_changed = self.get_embedded_with(entry.db_id) != models.embedding_deployment
 
         now = time.monotonic()
         with self._lock:

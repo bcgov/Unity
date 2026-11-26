@@ -670,12 +670,21 @@ def preflight_embeddings(sql_generator, db_ids: List[int]) -> List[Tuple[int, st
     Needed because generate_sql returns four Nones with no error detail when
     retrieval finds nothing (sql_generator.py:428), so the runner otherwise
     can't distinguish 'embeddings never generated' from a real generation
-    failure. Returns (db_id, reason) for each db_id that is not ready."""
+    failure. Returns (db_id, reason) for each db_id that is not ready.
+
+    The vector store belongs to AI Setup's embedding model, so each db is checked
+    with the models its tenant registered from its last AI Reporting token."""
+    import ai_models  # noqa: E402  (src is on sys.path once deps are loaded)
     missing = []
     for db_id in sorted(set(db_ids)):
+        entry = _tenant_registry().find_by_db_id(db_id)
+        if entry is None or entry.models is None:
+            missing.append((db_id, "tenant has no AI Setup models (open AI Reporting once so UGM sends them)"))
+            continue
         try:
-            hits = sql_generator.embeddings.vector_store.similarity_search(
-                "table", k=1, filter={"db_id": db_id, "schema_type": "public"})
+            with ai_models.use(entry.models):
+                hits = sql_generator.embeddings.vector_store.similarity_search(
+                    "table", k=1, filter={"db_id": db_id, "schema_type": "public"})
         except Exception as e:
             missing.append((db_id, f"vector-store query failed: {e!r}"))
             continue

@@ -285,6 +285,9 @@ $(function () {
                 case 'Healthy':
                     showEndpointStatus('text-success', status.message || l('AISetup:EndpointHealthy'));
                     break;
+                case 'Unhealthy':
+                    showEndpointStatus('text-danger', l('AISetup:EndpointUnhealthy', status.httpStatusCode, status.message));
+                    break;
                 case 'NoHealthCheck':
                     showEndpointStatus('text-muted', l('AISetup:EndpointNoHealthCheck', status.httpStatusCode));
                     break;

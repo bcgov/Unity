@@ -82,13 +82,14 @@ public class CreateUpdateAIModelDto
 public class AIEndpointStatusDto
 {
     public const string Healthy = "Healthy";
+    public const string Unhealthy = "Unhealthy";
     public const string NoHealthCheck = "NoHealthCheck";
     public const string Unreachable = "Unreachable";
     public const string NotConfigured = "NotConfigured";
 
     public string? Endpoint { get; set; }
 
-    /// <summary>Healthy, NoHealthCheck (reachable, no /healthz), Unreachable or NotConfigured.</summary>
+    /// <summary>Healthy, Unhealthy (/healthz answered with an error), NoHealthCheck (reachable, no /healthz: 404 or 405), Unreachable or NotConfigured.</summary>
     public string Status { get; set; } = NotConfigured;
 
     public int? HttpStatusCode { get; set; }

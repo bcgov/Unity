@@ -42,6 +42,23 @@ public class AIEndpointHealthCheckerTests
         status.HttpStatusCode.ShouldBe(404);
     }
 
+    [Theory]
+    [InlineData(HttpStatusCode.ServiceUnavailable)]
+    [InlineData(HttpStatusCode.InternalServerError)]
+    public async Task Should_Report_Unhealthy_With_The_Proxys_Message_When_Healthz_Fails(HttpStatusCode code)
+    {
+        var handler = new StubHandler(_ => new HttpResponseMessage(code)
+        {
+            Content = new StringContent("unhealthy - Azure proxy not responding")
+        });
+
+        var status = await CreateChecker("http://unity-azure-llm-proxy/", handler).CheckAsync();
+
+        status.Status.ShouldBe(AIEndpointStatusDto.Unhealthy);
+        status.HttpStatusCode.ShouldBe((int)code);
+        status.Message.ShouldContain("Azure proxy not responding");
+    }
+
     [Fact]
     public async Task Should_Report_Unreachable_When_The_Call_Fails()
     {

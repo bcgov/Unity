@@ -55,7 +55,7 @@ The Azure OpenAI models AI Reporting uses (chat and embedding deployment, and ea
 | `ai_chat_deployment`, `ai_chat_api_version` | AI Reporting → Chat model, and that model's API version |
 | `ai_embedding_deployment`, `ai_embedding_api_version` | AI Reporting → Embedding model, and that model's API version |
 
-UAI stores them per program in `tenant_registry` (with `embedded_with`, the embedding deployment the schema was embedded with). When the embedding model changes, the next request re-embeds that program's schema and clears its query cache.
+UAI stores them per program in `tenant_registry` (with `embedded_with`, the embedding deployment the schema was embedded with). When the embedding model changes, the next request (or `app.py embed` / `embed-all`) re-embeds that program's schema and clears its query cache. Vectors from before AB#35030 have no `embedded_with`; they count as `text-embedding-3-large`, the model UAI then had in code. The semantic cache stores 3,072-dimension vectors (`halfvec(3072)`), so pick a 3,072-dimension embedding model such as `text-embedding-3-large`; with another size, reports still work but the cache is skipped and an error is logged.
 
 ---
 

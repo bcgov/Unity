@@ -29,10 +29,19 @@ def embed_schemas_command(db_id: int):
             "open AI Reporting for that tenant once so UGM sends them")
         return
 
-    with ai_models.use(entry.models):
-        if embedding_manager.embed_schemas(db_id, list(entry.schema_types), tenant_id=entry.tenant_name):
-            tenant_registry.mark_embedded(db_id, entry.models.embedding_deployment)
+    _embed_db(db_id, list(entry.schema_types), entry.models, entry.tenant_name)
     logger.info("Finished embedding process.")
+
+
+def _embed_db(db_id: int, schema_types: list, models: ai_models.AIModels, tenant_id: str) -> None:
+    """Embed one database with AI Setup's models. When its vectors were made with another
+    embedding model, every vector is redone and its cached answers are dropped."""
+    force = tenant_registry.get_embedded_with(db_id) != models.embedding_deployment
+    with ai_models.use(models):
+        if force:
+            cache_repository.purge_db(db_id)
+        if embedding_manager.embed_schemas(db_id, schema_types, tenant_id=tenant_id, force=force):
+            tenant_registry.mark_embedded(db_id, models.embedding_deployment)
 
 
 def embed_all_tenants() -> tuple[int, int]:
@@ -73,15 +82,7 @@ def embed_all_tenants() -> tuple[int, int]:
         first_tenant_id = db_cfg["tenants"][0] if db_cfg["tenants"] else None
         logger.info(f"Embedding db_id={db_id} (tenants: {tenants})...")
         try:
-            models = db_cfg["models"]
-            embedded_with = tenant_registry.get_embedded_with(db_id)
-            # Re-embed everything when AI Setup's embedding model differs from the stored vectors'.
-            force = embedded_with is not None and embedded_with != models.embedding_deployment
-            with ai_models.use(models):
-                if force:
-                    cache_repository.purge_db(db_id)
-                if embedding_manager.embed_schemas(db_id, db_cfg["schema_types"], tenant_id=first_tenant_id, force=force):
-                    tenant_registry.mark_embedded(db_id, models.embedding_deployment)
+            _embed_db(db_id, db_cfg["schema_types"], db_cfg["models"], first_tenant_id)
             logger.info(f"Successfully embedded db_id={db_id}")
             success_count += 1
         except Exception as e:

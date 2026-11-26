@@ -167,7 +167,23 @@ class FirstUseEmbedTests(unittest.TestCase):
         with mock.patch.object(tr.threading, "Thread") as thread:
             self.assertTrue(registry.ensure_embedding_started(entry(), "embedded_schema"))
         thread.assert_not_called()
-        self.assertEqual(db.embedded_with[7], "text-embedding-3-large")
+
+    def test_should_re_embed_unrecorded_embeddings_when_ai_setup_picks_another_model(self):
+        # Unrecorded vectors were made with the legacy deployment, not with whatever AI Setup now says.
+        registry = tr.TenantRegistry(FakeDb(embedded={7}))
+        with mock.patch.object(tr.threading, "Thread") as thread:
+            self.assertFalse(registry.ensure_embedding_started(
+                entry(embedding="text-embedding-3-small"), "embedded_schema"))
+        self.assertEqual(thread.call_count, 1)
+
+    def test_should_not_trust_cached_readiness_for_a_model_replaced_since(self):
+        db = FakeDb(embedded={7})
+        registry = tr.TenantRegistry(db)
+        registry.mark_embedded(7, "model-a")
+        registry.mark_embedded(7, "model-b")
+
+        self.assertFalse(registry.is_embedded(7, "embedded_schema", "model-a"))
+        self.assertTrue(registry.is_embedded(7, "embedded_schema", "model-b"))
 
     def test_should_re_embed_when_ai_setup_embedding_model_changes(self):
         registry = tr.TenantRegistry(FakeDb(embedded={7}, embedded_with={7: "text-embedding-3-large"}))
