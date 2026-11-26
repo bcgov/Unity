@@ -44,7 +44,8 @@ public class OpenAIConfigurationResolverTests
             .GetAsync(modelId, cancellationToken: Arg.Any<CancellationToken>())
             .Returns(new AIModel(modelId, "gpt-5-mini", "OpenAI")
             {
-                IsActive = true
+                IsActive = true,
+                ApiVersion = "2024-10-21"
             });
 
         operationRepository
@@ -96,6 +97,7 @@ public class OpenAIConfigurationResolverTests
         settings.ProfileName.ShouldBe("gpt-5-mini");
         settings.Endpoint.ShouldBe(new Uri("https://example.test"));
         settings.DeploymentName.ShouldBe("gpt-5-mini");
+        settings.ApiVersion.ShouldBe("2024-10-21");
         settings.PromptVersion.ShouldBe("v1");
     }
 
@@ -113,7 +115,8 @@ public class OpenAIConfigurationResolverTests
             .GetAsync(modelId, cancellationToken: Arg.Any<CancellationToken>())
             .Returns(new AIModel(modelId, "gpt-5-mini", "OpenAI")
             {
-                IsActive = true
+                IsActive = true,
+                ApiVersion = "2024-10-21"
             });
 
         operationRepository
@@ -236,7 +239,8 @@ public class OpenAIConfigurationResolverTests
             .GetAsync(modelId, cancellationToken: Arg.Any<CancellationToken>())
             .Returns(new AIModel(modelId, "gpt-5-mini", "OpenAI")
             {
-                IsActive = true
+                IsActive = true,
+                ApiVersion = "2024-10-21"
             });
 
         operationRepository
@@ -309,7 +313,8 @@ public class OpenAIConfigurationResolverTests
         modelRepository.GetAsync(modelId, cancellationToken: Arg.Any<CancellationToken>())
             .Returns(new AIModel(modelId, "gpt-5-mini", "OpenAI")
             {
-                IsActive = true
+                IsActive = true,
+                ApiVersion = "2024-10-21"
             });
 
         var promptRepository = Substitute.For<IRepository<AIPrompt, Guid>>();

@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Configuration;
 using System;
+using System.ClientModel;
 using System.Diagnostics;
+using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,15 +13,18 @@ using Volo.Abp.DependencyInjection;
 namespace Unity.AI.Runtime.Execution;
 
 /// <summary>
-/// Makes one small chat call to a model's Azure deployment with the configured endpoint and key,
-/// so a missing or retired deployment shows up before an operation uses it.
+/// Makes one small call to a model's Azure deployment with the configured endpoint and key
+/// (a chat message for chat models, a one-word embedding for embedding models), so a missing
+/// or retired deployment shows up before anything uses it.
 /// </summary>
 public class AIModelConnectionTester(
     OpenAITransportService transportService,
+    OpenAIChatClientFactory clientFactory,
     IConfiguration configuration) : ITransientDependency
 {
     public const string EndpointNotConfigured = "EndpointNotConfigured";
     public const string ApiKeyNotConfigured = "ApiKeyNotConfigured";
+    public const string ApiVersionNotConfigured = "ApiVersionNotConfigured";
 
     public virtual async Task<AIModelTestResultDto> TestAsync(AIModel model, CancellationToken cancellationToken = default)
     {
@@ -35,13 +40,25 @@ public class AIModelConnectionTester(
             return Failure(ApiKeyNotConfigured);
         }
 
+        var apiVersion = model.ApiVersion?.Trim();
+        if (!AzureOpenAIApiVersions.IsValid(apiVersion))
+        {
+            return Failure(ApiVersionNotConfigured);
+        }
+
         var settings = new OpenAIOperationSettings(
             model.Provider,
             model.Name,
             apiKey,
             endpoint,
             model.Name,
+            apiVersion,
             "test");
+
+        if (model.Type == AIModelType.Embedding)
+        {
+            return await TestEmbeddingAsync(settings, cancellationToken);
+        }
 
         var stopwatch = Stopwatch.StartNew();
         var result = await transportService.GenerateSummaryAsync(
@@ -65,6 +82,49 @@ public class AIModelConnectionTester(
             LatencyMilliseconds = stopwatch.ElapsedMilliseconds,
             Message = answered ? string.Empty : ExtractAzureErrorMessage(result.Response)
         };
+    }
+
+    private async Task<AIModelTestResultDto> TestEmbeddingAsync(
+        OpenAIOperationSettings settings,
+        CancellationToken cancellationToken)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        try
+        {
+            await clientFactory.CreateEmbeddingClient(settings)
+                .GenerateEmbeddingAsync("OK", cancellationToken: cancellationToken);
+            stopwatch.Stop();
+            return new AIModelTestResultDto
+            {
+                Success = true,
+                HttpStatusCode = 200,
+                LatencyMilliseconds = stopwatch.ElapsedMilliseconds
+            };
+        }
+        catch (ClientResultException ex)
+        {
+            stopwatch.Stop();
+            var rawResponse = ex.GetRawResponse()?.Content?.ToString();
+            return new AIModelTestResultDto
+            {
+                Success = false,
+                HttpStatusCode = ex.Status > 0 ? ex.Status : null,
+                ErrorCode = ExtractAzureErrorCode(rawResponse),
+                LatencyMilliseconds = stopwatch.ElapsedMilliseconds,
+                Message = TryReadError(rawResponse, "message") ?? ex.Message
+            };
+        }
+        catch (Exception ex) when (ex is HttpRequestException
+            || (ex is OperationCanceledException && !cancellationToken.IsCancellationRequested))
+        {
+            stopwatch.Stop();
+            return new AIModelTestResultDto
+            {
+                Success = false,
+                LatencyMilliseconds = stopwatch.ElapsedMilliseconds,
+                Message = ex.Message
+            };
+        }
     }
 
     private static AIModelTestResultDto Failure(string errorCode)

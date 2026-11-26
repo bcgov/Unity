@@ -35,6 +35,10 @@ AIModel by operation.AIModelId              → else InvalidOperationException "
         ↓
 model.Provider must equal "OpenAI"          → else "provider is not supported"
         ↓
+model.Type must be Chat                     → else "is not a chat model"
+        ↓
+model.ApiVersion                            → required
+        ↓
 configuration["Azure:OpenAI:Endpoint"]      → required, must be an absolute URI
         ↓
 active AIPrompt for the operation name      → else "has no active prompt for the current tenant"
@@ -51,10 +55,15 @@ new OpenAIOperationSettings(
     ApiKey:         configuration["Azure:OpenAI:ApiKey"],
     Endpoint:       new Uri(configuration["Azure:OpenAI:Endpoint"]),
     DeploymentName: model.Name,          // same as ProfileName
+    ApiVersion:     model.ApiVersion,
     PromptVersion:  $"v{prompt.VersionNumber}");
 ```
 
 Both `ProfileName` and `DeploymentName` are `model.Name`, so the **Azure deployment must be named after the model** (`gpt-5-mini`, `gpt-5-nano`).
+
+### API version
+
+Each model carries its own `ApiVersion` (AI Setup), and there is no default in code. `Azure.AI.OpenAI` 2.1.0 only knows `2024-06-01` and `2024-10-21`, so `OpenAIChatClientFactory` builds the client with default options and adds `AzureOpenAIApiVersionPolicy` per call, which replaces the SDK's `api-version` query parameter with the model's. Every request is `{endpoint}/openai/deployments/{model}/...?api-version={model.ApiVersion}`, so any version Azure publishes (including previews) can be used. The same factory makes the embedding client used by Test on an `Embedding` model.
 
 ### Caching
 
