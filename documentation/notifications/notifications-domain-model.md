@@ -137,11 +137,10 @@ Declared in `Unity.Notifications.Application.Contracts/Permissions/Notifications
 |`Email.Application.Schedule` / `Email.Applicant.Schedule`|`Notifications.Email.Application.Schedule` / `Notifications.Email.Applicant.Schedule`|Schedule Send and `EmailAppService.SendAsync` through `EmailComposerAccessChecker`; also requires Send permission, `EnableEmailDelay`, and `Unity.Notifications.IndividualScheduledNotification`.|
 |`Email.NotificationsTab`|`Notifications.Form.Tab`|Parent node for the form-level notification config tab|
 |`Email.ScheduleCreate`|`Notifications.Form.Email.Schedule.Create`|Creating a form scheduled notification|
-|`Email.ScheduleCancel`|`Notifications.Form.Email.Schedule.Cancel`|Cancelling a form scheduled notification|
+|`Email.ScheduleCancel`|`Notifications.Form.Email.Schedule.Cancel`|Cancelling a form scheduled notification (`AutomatedNotificationAppService.CancelAsync`, `FormNotificationsApiController.CancelNotification`)|
+|`Email.ScheduleDelete`|`Notifications.Form.Email.Schedule.Delete`|Deleting (soft delete) a form scheduled notification (`AutomatedNotificationAppService.DeleteAsync`, `FormNotificationsApiController.Delete`)|
 |`NotificationList.Default` / `.View`|`Notifications.NotificationList` / `.View`|The Notification List page, `NotificationListAppService`, and the host `NotificationsController.EmailModal`|
 |`Settings`|`SettingManagement.Notifications`|Added to ABP's **`SettingManagement`** group, not the Notifications group. Gates `EmailNotificationService.UpdateSettings` and the settings page contributor.|
-
-Two mismatches worth knowing: the localization file defines `Permission:Notifications.Form.Email.Schedule.Delete`, but no such constant is declared or registered; and `Email.ScheduleCancel` is declared and localized but was not found on any `[Authorize]` attribute.
 
 The four individual Schedule/Cancel Scheduled permissions use `RequireFeatures` so they are hidden in permission management while the tenant feature is disabled. The tenant role/user matrix reports filter only those four permissions; unrelated permissions and host report visibility remain unchanged.
 
