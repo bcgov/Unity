@@ -12,6 +12,8 @@ The module's own entities live in `modules/Unity.AI/src/Unity.AI.Application/Dom
 |---|---|
 | `Name` | Unique. Doubles as the **Azure deployment name** — `OpenAIChatClientFactory` passes it straight to `GetChatClient(...)` |
 | `Provider` | Only `"OpenAI"` is accepted anywhere; see [ai-roadmap.md](ai-roadmap.md#the-provider-is-hard-coded-in-three-places) |
+| `Type` | `Chat` or `Embedding` (`AIModelType`, stored as a string). AI operations and the AI Reporting chat model need a `Chat` model; the AI Reporting embedding model needs an `Embedding` one. Can't change while the model is in use |
+| `ApiVersion` | The Azure OpenAI `?api-version=` sent with every call to this deployment, by UGM and by AI Reporting (for example `2024-10-21`, `2025-04-01-preview`). Required, checked only for form (`AzureOpenAIApiVersions.IsValid`); whether Azure accepts it shows on Test. Migration `AddAIModelApiVersion` set existing rows to `2024-10-21` |
 | `IsActive` | An inactive model makes every operation bound to it throw |
 
 There are no per-model request settings. With `gpt-4o-mini` retired (AB#35030), every model in use is a gpt-5 reasoning model, so the transport sends neither a temperature nor an output token cap (the `SettingsJson` column was dropped in migration `RemoveAIModelSettingsAndCompletionTokens`, AB#34947).
@@ -104,10 +106,13 @@ dotnet ef migrations add <Name> --context GrantTenantDbContext --output-dir Migr
 
 The values used in every environment when seeding stopped, as a starting point for a new database:
 
-| Model (Azure deployment name) | Provider |
-|---|---|
-| `gpt-5-mini` | OpenAI |
-| `gpt-5-nano` | OpenAI |
+| Model (Azure deployment name) | Provider | Type | API version |
+|---|---|---|---|
+| `gpt-5-mini` | OpenAI | Chat | `2024-10-21` |
+| `gpt-5-nano` | OpenAI | Chat | `2024-10-21` |
+| `text-embedding-3-large` | OpenAI | Embedding | `2024-10-21` |
+
+AI Reporting (AB#35030): chat `gpt-5-mini`, embedding `text-embedding-3-large`.
 
 | Operation | Model | `ExecutionMode` |
 |---|---|---|
@@ -168,9 +173,12 @@ Host-wide models and operations in Unity Admin → AI Setup (next to AI Prompts)
 
 Rules:
 
-- A model name (the Azure deployment name) is unique, case-insensitive. Only provider `OpenAI` is accepted, because the runtime supports no other.
+- A model name (the Azure deployment name) is unique, case-insensitive (unique index `IX_AIModels_Name_Lower` on `lower("Name")`). Only provider `OpenAI` is accepted, because the runtime supports no other.
+- A model's API version must look like `2024-10-21` or `2025-04-01-preview` (`AI:SetupApiVersionInvalid`). Any published version can be used, not only those the SDK knows: see [ai-provider-runtime.md](ai-provider-runtime.md#api-version).
 - A model that **any** operation points at can't be deactivated or deleted.
-- An operation can only point at an **active** model. Execution mode is `Sequential`, `Parallel` or `Batch`, and only `ApplicationScoring` may use `Parallel` or `Batch` (the other operations never read their mode).
+- An operation can only point at an **active** model of the right type (`AI:SetupModelNotChat`, `AI:SetupModelNotEmbedding`). Execution mode is `Sequential`, `Parallel` or `Batch`, and only `ApplicationScoring` may use `Parallel` or `Batch` (the other operations never read their mode).
+- **AI Reporting** has two operation rows, `AIReporting` (chat model, writes the SQL) and `AIReportingEmbedding` (embedding model, matches questions to tables), shown in their own AI Reporting section rather than the Model Assignments table (`AISetupConsts.AIReportingOperations`); both are always active (the server ignores an inactive value for them). `AIReportingModelResolver` reads them; `JWTTokenAppService` puts each model's deployment and API version in the AI Reporting token (`ai_chat_deployment`, `ai_chat_api_version`, `ai_embedding_deployment`, `ai_embedding_api_version`) and refuses the token (`AI:ReportingModelsNotSet`) until both are set. AI Reporting has no models of its own. Changing the embedding model makes AI Reporting re-embed each program's schema the next time it is opened.
+- `GET endpoint-status` (`AIEndpointHealthChecker`) calls `Azure:OpenAI:Endpoint` + `/healthz` from the server, with no key and a five-second timeout, so it works for the in-cluster LLM proxy (`http://unity-azure-llm-proxy/`), which has no route. The page shows the proxy's answer, which names the Azure account it forwards to: **Healthy** for a 2xx, **Unhealthy** with the proxy's message for any other error (such as a 503 when Azure is down), and "no /healthz status" only for a 404 or 405.
 - Every save (models, operations, and AI Prompts) calls `AIConfigurationCacheSignal.Reset()`, which expires the resolver's cached settings on that server. Other web pods pick the change up when their five-minute cache entries expire. See [ai-provider-runtime.md](ai-provider-runtime.md#caching).
 
 ## Settings

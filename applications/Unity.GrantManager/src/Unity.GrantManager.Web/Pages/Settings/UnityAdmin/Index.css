@@ -143,6 +143,29 @@
     margin-right: 0;
 }
 
+/* Compact rows in the AI Prompts and AI Setup tables: less cell padding, and the
+   row buttons at their own height (the theme fixes .dropdown-toggle at 44px). */
+#ai-prompts-div table.dataTable > tbody > tr > td,
+#ai-setup-div table.dataTable > tbody > tr > td {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    vertical-align: middle;
+}
+
+#ai-prompts-div table.dataTable > tbody .btn-sm,
+#ai-setup-div table.dataTable > tbody .btn-sm {
+    height: auto;
+    padding-top: 0.125rem;
+    padding-bottom: 0.125rem;
+    line-height: 1.25;
+}
+
+/* Line the endpoint lines up with the headings and tables, which sit inside the
+   DataTables column's 0.75rem padding. */
+#ai-setup-endpoint {
+    padding-left: 1.75rem !important;
+}
+
 .unity-app-main-container {
     margin: auto;
     display: flex;

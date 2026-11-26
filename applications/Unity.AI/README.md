@@ -102,7 +102,7 @@ Copy `.env.example` to `.env` and configure required variables:
 
 ### Critical Variables (Must Set)
 ```env
-# Azure OpenAI — endpoint and key only; deployment names and versions are hardcoded in config.py
+# Azure OpenAI — endpoint and key only; models and API versions come from Unity AI Setup in the token
 AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
 AZURE_OPENAI_API_KEY=your_api_key
 

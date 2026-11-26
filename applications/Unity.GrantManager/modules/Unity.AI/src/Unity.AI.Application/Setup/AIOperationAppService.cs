@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
@@ -46,8 +47,9 @@ public class AIOperationAppService(
         }
 
         // Rows that aren't built-in operations are listed so IT Operations can see them.
+        // AI Reporting's rows have their own section (GetAIReportingAsync).
         foreach (var operation in operations
-                     .Where(candidate => !AIPromptTypes.All.Contains(candidate.Name, StringComparer.OrdinalIgnoreCase))
+                     .Where(candidate => AISetupManager.FindBuiltInName(candidate.Name) == null)
                      .OrderBy(candidate => candidate.Name, StringComparer.OrdinalIgnoreCase))
         {
             items.Add(ToDto(operation.Name, operation, models, promptVersions, isBuiltIn: false));
@@ -56,12 +58,30 @@ public class AIOperationAppService(
         return new ListResultDto<AIOperationDto>(items);
     }
 
+    [HttpGet("ai-reporting")]
+    public virtual async Task<ListResultDto<AIOperationDto>> GetAIReportingAsync()
+    {
+        var operations = await operationRepository.GetListAsync();
+        var models = (await modelRepository.GetListAsync()).ToDictionary(model => model.Id);
+        var noPrompts = new Dictionary<string, int>();
+
+        var items = AISetupConsts.AIReportingOperations
+            .Select(name => ToDto(
+                name,
+                operations.FirstOrDefault(candidate => string.Equals(candidate.Name, name, StringComparison.OrdinalIgnoreCase)),
+                models,
+                noPrompts,
+                isBuiltIn: true))
+            .ToList();
+
+        return new ListResultDto<AIOperationDto>(items);
+    }
+
     [HttpGet("{name}")]
     public virtual async Task<AIOperationDto> GetAsync(string name)
     {
         var operation = await setupManager.FindOperationAsync(name);
-        var builtInName = AIPromptTypes.All.FirstOrDefault(candidate =>
-            string.Equals(candidate, name, StringComparison.OrdinalIgnoreCase));
+        var builtInName = AISetupManager.FindBuiltInName(name);
         if (operation == null && builtInName == null)
         {
             throw new EntityNotFoundException(typeof(AIOperation), name);
@@ -84,7 +104,7 @@ public class AIOperationAppService(
 
         var models = (await modelRepository.GetListAsync()).ToDictionary(model => model.Id);
         var promptVersions = await GetHostPromptVersionsAsync();
-        var isBuiltIn = AIPromptTypes.All.Contains(operation.Name, StringComparer.OrdinalIgnoreCase);
+        var isBuiltIn = AISetupManager.FindBuiltInName(operation.Name) != null;
         return ToDto(operation.Name, operation, models, promptVersions, isBuiltIn);
     }
 
@@ -117,8 +137,9 @@ public class AIOperationAppService(
         {
             Name = name,
             IsBuiltIn = isBuiltIn,
+            RequiredModelType = AISetupManager.GetRequiredModelType(name).ToString(),
             UsesExecutionMode = AIExecutionModeResolver.OperationsUsingExecutionMode.Contains(name, StringComparer.OrdinalIgnoreCase),
-            PromptVersion = promptVersions.TryGetValue(name, out var version) ? $"v{version}" : null
+            PromptVersion = promptVersions.TryGetValue(name, out var version) ? version.ToString(CultureInfo.InvariantCulture) : null
         };
 
         if (operation == null)

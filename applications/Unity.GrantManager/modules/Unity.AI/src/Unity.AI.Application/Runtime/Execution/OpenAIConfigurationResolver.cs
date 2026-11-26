@@ -64,6 +64,11 @@ public class OpenAIConfigurationResolver(
             throw new InvalidOperationException($"AI model '{model.Name}' is inactive.");
         }
 
+        if (model.Type != AIModelType.Chat)
+        {
+            throw new InvalidOperationException($"AI model '{model.Name}' is not a chat model.");
+        }
+
         var providerName = model.Provider;
         if (!string.Equals(providerName, DefaultProviderName, StringComparison.Ordinal))
         {
@@ -82,12 +87,19 @@ public class OpenAIConfigurationResolver(
         }
 
         var apiKey = Required($"Azure:{providerName}:ApiKey");
+        var apiVersion = model.ApiVersion;
+        if (string.IsNullOrWhiteSpace(apiVersion))
+        {
+            throw new InvalidOperationException($"AI model '{model.Name}' has no API version set in AI Setup.");
+        }
+
         var settings = new OpenAIOperationSettings(
             providerName,
             model.Name,
             apiKey,
             new Uri(endpoint),
             model.Name,
+            apiVersion.Trim(),
             $"v{prompt.VersionNumber}");
 
         _memoryCache.Set(cacheKey, settings, CreateCacheEntryOptions());

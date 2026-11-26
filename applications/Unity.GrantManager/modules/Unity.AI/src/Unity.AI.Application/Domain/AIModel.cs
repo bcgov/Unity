@@ -11,6 +11,10 @@ public class AIModel : AuditedAggregateRoot<Guid>
 
     public bool IsActive { get; set; } = true;
 
+    public AIModelType Type { get; set; } = AIModelType.Chat;
+
+    public string ApiVersion { get; set; } = string.Empty;
+
     protected AIModel()
     {
     }

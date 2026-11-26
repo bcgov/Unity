@@ -35,17 +35,30 @@ public class OperationModalModel(
     /// <summary>False when the operation always runs Sequential; the form then shows no choice.</summary>
     public bool UsesExecutionMode { get; private set; }
 
+    /// <summary>Chat, or Embedding for AI Reporting's embedding row.</summary>
+    public string RequiredModelType { get; private set; } = AISetupConsts.ChatModelType;
+
+    /// <summary>AI Reporting's rows: always Sequential and active, so those fields are hidden.</summary>
+    public bool IsAIReporting { get; private set; }
+
+    public bool IsAIReportingEmbedding =>
+        string.Equals(Name, AISetupConsts.AIReportingEmbeddingOperation, StringComparison.OrdinalIgnoreCase);
+
     public async Task OnGetAsync()
     {
         LocalizationResourceType = typeof(AIResource);
         var dto = await operationAppService.GetAsync(Name);
         Name = dto.Name;
         UsesExecutionMode = dto.UsesExecutionMode;
+        RequiredModelType = dto.RequiredModelType;
+        IsAIReporting = AISetupConsts.AIReportingOperations.Contains(dto.Name, StringComparer.OrdinalIgnoreCase);
         var models = (await modelAppService.GetListAsync()).Items;
 
         // Active models only; the current model stays selectable (marked) so the form
         // shows what is saved even after that model was retired.
         ModelOptions = models
+            // Only the model type this row needs (Chat, or Embedding for AI Reporting's embedding row).
+            .Where(model => model.Type == dto.RequiredModelType)
             .Where(model => model.IsActive || model.Id == dto.AIModelId)
             .Select(model => new SelectListItem(
                 model.IsActive ? model.Name : $"{model.Name} {L["AISetup:InactiveSuffix"]}",
@@ -54,7 +67,9 @@ public class OperationModalModel(
 
         Operation = new OperationViewModel
         {
-            AIModelId = dto.AIModelId ?? models.FirstOrDefault(model => model.IsActive)?.Id ?? Guid.Empty,
+            AIModelId = dto.AIModelId
+                ?? models.FirstOrDefault(model => model.IsActive && model.Type == dto.RequiredModelType)?.Id
+                ?? Guid.Empty,
             ExecutionMode = dto.UsesExecutionMode ? dto.ExecutionMode : AISetupConsts.ExecutionModes[0],
             IsActive = !dto.IsConfigured || dto.IsActive
         };

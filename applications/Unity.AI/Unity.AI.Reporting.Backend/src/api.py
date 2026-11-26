@@ -7,6 +7,7 @@ import asyncio
 import logging
 import datetime
 import openai
+import ai_models
 from config import config
 from llm_client import build_async_client
 from database import db_manager, chat_repository, feedback_repository, cache_repository
@@ -211,6 +212,11 @@ def create_app():
     # for external callers (set CORS_ALLOWED_ORIGINS env var as a comma list).
     CORS(app, resources={r"/api/*": {"origins": config.app.cors_allowed_origins or []}})
     
+    # A worker thread serves many requests: never let one request's AI Setup models leak to the next.
+    @app.teardown_request
+    def _clear_ai_models(_exc=None):
+        ai_models.set_current(None)
+
     # Configure Flask based on environment
     app.config['DEBUG'] = config.app.debug
     app.config['TESTING'] = config.app.testing
@@ -655,7 +661,7 @@ async def _embedding_cache_lookup(tenant_id, db_id, schema_types, collection_nam
     """
     loop = asyncio.get_event_loop()
     query_embedding = await loop.run_in_executor(
-        None, embedding_manager.embed_query, normalized_query
+        None, ai_models.bind(embedding_manager.embed_query), normalized_query
     )
     candidates = cache_repository.find_similar_topk(
         tenant_id, db_id, schema_types, collection_name,
@@ -814,7 +820,7 @@ async def _store_query_cache(tenant_id, db_id, schema_types, collection_name,
         if query_embedding is None:
             loop = asyncio.get_event_loop()
             query_embedding = await loop.run_in_executor(
-                None, embedding_manager.embed_query, normalized_query
+                None, ai_models.bind(embedding_manager.embed_query), normalized_query
             )
         cache_repository.save(
             tenant_id, db_id, schema_types, collection_name,

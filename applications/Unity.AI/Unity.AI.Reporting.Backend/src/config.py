@@ -39,22 +39,13 @@ class MetabaseConfig:
 @dataclass
 class AIConfig:
     """AI/LLM configuration settings"""
-    # Azure OpenAI settings — only endpoint and key come from env vars
+    # Azure OpenAI endpoint and key come from env vars. The chat and embedding deployments
+    # and the API version come from UGM's AI Setup (see ai_models.py); none are set in code.
     azure_endpoint: str = ""
     azure_api_key: str = ""
-    azure_deployment: str = "gpt-5-mini"
-    azure_api_version: str = "2024-10-21"
-    azure_embedding_deployment: str = "text-embedding-3-large"
-    temperature: float = 0.2
     k_samples: int = 7
     max_self_correction_iterations: int = 3
     retry_k_samples: int = 1
-
-    @property
-    def supports_temperature(self) -> bool:
-        """Check if the deployed model supports non-default temperature values.
-        gpt-5-mini and future gpt-5 variants only accept the default temperature of 1."""
-        return "gpt-5" not in self.azure_deployment.lower()
 
 
 @dataclass

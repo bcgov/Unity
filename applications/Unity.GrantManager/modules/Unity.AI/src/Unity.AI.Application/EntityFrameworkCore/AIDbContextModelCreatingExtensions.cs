@@ -61,6 +61,17 @@ public static class AIDbContextModelCreatingExtensions
             b.Property(x => x.IsActive)
                 .IsRequired();
 
+            b.Property(x => x.Type)
+                .IsRequired()
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            b.Property(x => x.ApiVersion)
+                .IsRequired()
+                .HasMaxLength(32);
+
+            // Names are also unique ignoring case: migration AddAIModelType adds the PostgreSQL index
+            // IX_AIModels_Name_Lower on lower("Name") with raw SQL (EF can't model it here).
             b.HasIndex(x => x.Name)
                 .IsUnique();
         });

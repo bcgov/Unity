@@ -423,13 +423,15 @@ AIPrompt  (Name + VersionNumber, optionally TenantId)
 
     <h3>Managed in Unity AI Setup, not seeded</h3>
     <table class="data">
-      <thead><tr><th>Model (Azure deployment name)</th><th>Provider</th></tr></thead>
+      <thead><tr><th>Model (Azure deployment name)</th><th>Provider</th><th>Type</th><th>API version</th></tr></thead>
       <tbody>
-        <tr><td class="code">gpt-5-mini</td><td>OpenAI</td></tr>
-        <tr><td class="code">gpt-5-nano</td><td>OpenAI</td></tr>
+        <tr><td class="code">gpt-5-mini</td><td>OpenAI</td><td>Chat</td><td class="code">2024-10-21</td></tr>
+        <tr><td class="code">gpt-5-nano</td><td>OpenAI</td><td>Chat</td><td class="code">2024-10-21</td></tr>
+        <tr><td class="code">text-embedding-3-large</td><td>OpenAI</td><td>Embedding</td><td class="code">2024-10-21</td></tr>
       </tbody>
     </table>
-    <p class="note" style="margin-top:12px;">These are the models in every environment when seeding stopped (AB#34947). <span class="code">gpt-4o-mini</span> is retired (AB#35030); delete its row in AI Setup. All six operations bind to <span class="code">gpt-5-mini</span>. No temperature or output token cap is sent: the gpt-5 models reject temperature, and a cap counts their reasoning tokens. <strong>The model name is also the Azure deployment name</strong>: the factory passes it straight to <span class="code">GetChatClient(...)</span>.</p>
+    <p class="note" style="margin-top:12px;">These are the models in every environment when seeding stopped (AB#34947). <span class="code">gpt-4o-mini</span> is retired (AB#35030); delete its row in AI Setup. All six operations bind to <span class="code">gpt-5-mini</span>. No temperature or output token cap is sent: the gpt-5 models reject temperature, and a cap counts their reasoning tokens. <strong>The model name is also the Azure deployment name</strong>: the factory passes it straight to <span class="code">GetChatClient(...)</span>. Each model carries its own <strong>API version</strong>, sent as <span class="code">?api-version=</span> on every call (<span class="code">AzureOpenAIApiVersionPolicy</span>), so any published Azure version works; there is no default in code (AB#35030).</p>
+    <p class="note"><strong>AI Reporting</strong> takes its chat and embedding models from the AI Reporting section of AI Setup (<span class="code">AIReporting</span> and <span class="code">AIReportingEmbedding</span> rows); UGM sends each model's deployment and API version in the AI Reporting token, and AI Reporting refuses requests until both are set. Changing the embedding model re-embeds each program's schema on its next open.</p>
     <p class="note">Models and operations are environment configuration. They are managed in <strong>Unity Admin → AI Setup</strong>: IT Administrator adds, edits, activates and deletes models (both IT roles can Test a model against its Azure deployment); IT Operations sets model, mode and on/off per operation, and the DbMigrator no longer creates or changes them. A model an operation uses can't be deactivated or deleted. Only prompts are still seeded, <strong>insert-only</strong>: new prompt text in code needs a new version number. An empty database has no operations until AI Setup is done.</p>
 
     <h3>Two AI schemas, in two databases</h3>

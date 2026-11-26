@@ -1,10 +1,11 @@
 """
 Tenant registry: the tenants UAI knows about and their Metabase database and collection.
 
-UGM sends each tenant's Metabase ids in the signed JWT (AB#33978). A valid token
-registers (or updates) the tenant here, so code without a token (startup seed-embed,
-the embed-all CronJob, /ready) can still list tenants. There is no fallback tenant:
-an unknown tenant is an error.
+UGM sends each tenant's Metabase ids in the signed JWT (AB#33978), and AI Setup's AI Reporting
+models and API version (AB#35030). A valid token registers (or updates) the tenant here, so code
+without a token (startup seed-embed, the embed-all CronJob, /ready) can still list tenants and
+use the right models. There is no fallback tenant and no default model: an unknown tenant, or
+one registered before AI Setup's models were sent, is an error for token-less work.
 """
 import logging
 import threading
@@ -12,6 +13,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
+import ai_models
 from database import db_manager
 
 logger = logging.getLogger(__name__)
@@ -21,6 +23,10 @@ DEFAULT_SCHEMA_TYPES = ["public", "custom"]
 # Seconds between background-embed attempts for the same db_id in this process,
 # so a burst of requests for a not-yet-embedded tenant starts one embed, not many.
 _EMBED_RETRY_SECONDS = 120
+
+# The embedding deployment every vector made before AB#35030 came from (UAI had it in code
+# then, and recorded no model with the vectors). Not a default: AI Setup picks the model.
+LEGACY_EMBEDDING_DEPLOYMENT = "text-embedding-3-large"
 
 
 class UnknownTenantError(LookupError):
@@ -33,6 +39,20 @@ class TenantEntry:
     db_id: int
     collection_id: int
     schema_types: List[str] = field(default_factory=lambda: list(DEFAULT_SCHEMA_TYPES))
+    # AI Setup's AI Reporting models, each with its API version (from the token); None for a
+    # row registered before AB#35030.
+    chat_deployment: Optional[str] = None
+    chat_api_version: Optional[str] = None
+    embedding_deployment: Optional[str] = None
+    embedding_api_version: Optional[str] = None
+
+    @property
+    def models(self) -> Optional[ai_models.AIModels]:
+        try:
+            return ai_models.parse(self.chat_deployment, self.chat_api_version,
+                                   self.embedding_deployment, self.embedding_api_version)
+        except ValueError:
+            return None
 
     def as_config(self) -> Dict:
         """Same shape the old tenant_config.json entries had, for existing callers."""
@@ -77,18 +97,30 @@ class TenantRegistry:
 
         with self._db.get_connection() as conn, conn.cursor() as cur:
             cur.execute("""
-                    INSERT INTO tenant_registry (tenant_name, db_id, collection_id, schema_types)
-                    VALUES (%s, %s, %s, %s)
+                    INSERT INTO tenant_registry (tenant_name, db_id, collection_id, schema_types,
+                                                 chat_deployment, chat_api_version,
+                                                 embedding_deployment, embedding_api_version)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (tenant_name) DO UPDATE
                         SET db_id = EXCLUDED.db_id,
                             collection_id = EXCLUDED.collection_id,
                             schema_types = EXCLUDED.schema_types,
+                            chat_deployment = EXCLUDED.chat_deployment,
+                            chat_api_version = EXCLUDED.chat_api_version,
+                            embedding_deployment = EXCLUDED.embedding_deployment,
+                            embedding_api_version = EXCLUDED.embedding_api_version,
                             updated_at = CURRENT_TIMESTAMP
                         WHERE tenant_registry.db_id IS DISTINCT FROM EXCLUDED.db_id
                            OR tenant_registry.collection_id IS DISTINCT FROM EXCLUDED.collection_id
                            OR tenant_registry.schema_types IS DISTINCT FROM EXCLUDED.schema_types
+                           OR tenant_registry.chat_deployment IS DISTINCT FROM EXCLUDED.chat_deployment
+                           OR tenant_registry.chat_api_version IS DISTINCT FROM EXCLUDED.chat_api_version
+                           OR tenant_registry.embedding_deployment IS DISTINCT FROM EXCLUDED.embedding_deployment
+                           OR tenant_registry.embedding_api_version IS DISTINCT FROM EXCLUDED.embedding_api_version
                     RETURNING tenant_name
-                """, (entry.tenant_name, entry.db_id, entry.collection_id, list(entry.schema_types)))
+                """, (entry.tenant_name, entry.db_id, entry.collection_id, list(entry.schema_types),
+                      entry.chat_deployment, entry.chat_api_version,
+                      entry.embedding_deployment, entry.embedding_api_version))
             changed = cur.fetchone() is not None
             conn.commit()
 
@@ -98,7 +130,9 @@ class TenantRegistry:
         if changed:
             logger.info(
                 f"Registered tenant '{entry.tenant_name}': db_id={entry.db_id}, "
-                f"collection_id={entry.collection_id}, schema_types={entry.schema_types}"
+                f"collection_id={entry.collection_id}, schema_types={entry.schema_types}, "
+                f"chat={entry.chat_deployment} ({entry.chat_api_version}), "
+                f"embedding={entry.embedding_deployment} ({entry.embedding_api_version})"
             )
         return changed
 
@@ -112,14 +146,15 @@ class TenantRegistry:
 
         with self._db.get_connection() as conn, conn.cursor() as cur:
             cur.execute("""
-                    SELECT tenant_name, db_id, collection_id, schema_types
+                    SELECT tenant_name, db_id, collection_id, schema_types,
+                           chat_deployment, chat_api_version, embedding_deployment, embedding_api_version
                     FROM tenant_registry WHERE tenant_name = %s
                 """, (tenant_name,))
             row = cur.fetchone()
         if not row:
             return None
 
-        entry = TenantEntry(row[0], row[1], row[2], parse_schema_types(row[3]))
+        entry = _entry_from_row(row)
         with self._lock:
             self._cache[tenant_name] = entry
         return entry
@@ -137,37 +172,79 @@ class TenantRegistry:
         """All registered tenants, read from the database (not the cache)."""
         with self._db.get_connection() as conn, conn.cursor() as cur:
             cur.execute("""
-                    SELECT tenant_name, db_id, collection_id, schema_types
+                    SELECT tenant_name, db_id, collection_id, schema_types,
+                           chat_deployment, chat_api_version, embedding_deployment, embedding_api_version
                     FROM tenant_registry ORDER BY tenant_name
                 """)
             rows = cur.fetchall()
-        return [TenantEntry(r[0], r[1], r[2], parse_schema_types(r[3])) for r in rows]
+        return [_entry_from_row(r) for r in rows]
 
     def find_by_db_id(self, db_id: int) -> Optional[TenantEntry]:
         return next((entry for entry in self.list_all() if entry.db_id == db_id), None)
 
     # -- first-use embedding --------------------------------------------------
 
-    def is_embedded(self, db_id: int, collection_name: str) -> bool:
+    def get_embedded_with(self, db_id: int) -> str:
+        """The embedding deployment the db's vectors were made with.
+
+        Vectors from before AB#35030 recorded none; they were all made with the deployment UAI
+        then had in code, so an unrecorded db counts as LEGACY_EMBEDDING_DEPLOYMENT."""
+        with self._db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute("""
+                    SELECT embedded_with FROM tenant_registry
+                    WHERE db_id = %s AND embedded_with IS NOT NULL
+                    LIMIT 1
+                """, (db_id,))
+            row = cur.fetchone()
+        return row[0] if row else LEGACY_EMBEDDING_DEPLOYMENT
+
+    def mark_embedded(self, db_id: int, embedding_deployment: str) -> None:
+        """Record which embedding deployment the db's vectors now come from."""
+        with self._db.get_connection() as conn, conn.cursor() as cur:
+            cur.execute(
+                "UPDATE tenant_registry SET embedded_with = %s WHERE db_id = %s",
+                (embedding_deployment, db_id))
+            conn.commit()
         with self._lock:
-            if db_id in self._embedded_db_ids:
+            # The db's vectors now belong to this model only.
+            self._embedded_db_ids = {pair for pair in self._embedded_db_ids if pair[0] != db_id}
+            self._embedded_db_ids.add((db_id, embedding_deployment))
+
+    def is_embedded(self, db_id: int, collection_name: str, embedding_deployment: str) -> bool:
+        """True when the db has embeddings made with this embedding deployment."""
+        with self._lock:
+            if (db_id, embedding_deployment) in self._embedded_db_ids:
                 return True
-        embedded = db_id in self._db.has_embeddings_for_db_ids({db_id}, collection_name)
-        if embedded:
-            # embed_schemas adds new embeddings before deleting old ones, so once a
-            # db has embeddings it keeps a usable set.
-            with self._lock:
-                self._embedded_db_ids.add(db_id)
-        return embedded
+        if db_id not in self._db.has_embeddings_for_db_ids({db_id}, collection_name):
+            return False
+
+        if self.get_embedded_with(db_id) != embedding_deployment:
+            return False
+
+        # embed_schemas adds new embeddings before deleting old ones, so once a db has
+        # embeddings it keeps a usable set.
+        with self._lock:
+            self._embedded_db_ids.add((db_id, embedding_deployment))
+        return True
 
     def ensure_embedding_started(self, entry: TenantEntry, collection_name: str) -> bool:
-        """Start a background embed when the tenant's db has no embeddings yet.
+        """Start a background embed when the tenant's db has no embeddings made with
+        AI Setup's current embedding model (first use, or the model was changed).
 
-        Returns True when the db is already embedded. embed_schemas takes the
-        per-db advisory lock, so other workers/pods doing the same thing skip.
+        Returns True when the db is already embedded with that model. embed_schemas takes
+        the per-db advisory lock, so other workers/pods doing the same thing skip.
         """
-        if self.is_embedded(entry.db_id, collection_name):
+        models = entry.models
+        if models is None:
+            raise ai_models.AIModelsNotSetError(
+                f"Tenant '{entry.tenant_name}' has no AI Reporting models from AI Setup.")
+
+        if self.is_embedded(entry.db_id, collection_name, models.embedding_deployment):
             return True
+
+        # Embeddings from another model: every vector must be redone, and cached answers
+        # matched with the old model's question vectors are dropped.
+        model_changed = self.get_embedded_with(entry.db_id) != models.embedding_deployment
 
         now = time.monotonic()
         with self._lock:
@@ -179,19 +256,43 @@ class TenantRegistry:
         def _embed():
             try:
                 # Imported here: embeddings imports this module indirectly.
+                from database import cache_repository
                 from embeddings import embedding_manager
-                logger.info(f"First-use embed for tenant '{entry.tenant_name}' (db_id={entry.db_id})")
-                embedding_manager.embed_schemas(entry.db_id, list(entry.schema_types), tenant_id=entry.tenant_name)
-                # embed_schemas returns quietly when another run holds the db's lock.
-                if self.is_embedded(entry.db_id, collection_name):
-                    logger.info(f"First-use embed finished for db_id={entry.db_id}")
-                else:
-                    logger.info(f"First-use embed for db_id={entry.db_id} skipped; another embed is running")
+                with ai_models.use(models):
+                    reason = "embedding model changed" if model_changed else "first use"
+                    logger.info(f"Embedding tenant '{entry.tenant_name}' (db_id={entry.db_id}, "
+                                f"{reason}, model={models.embedding_deployment})")
+                    if model_changed:
+                        purged = cache_repository.purge_db(entry.db_id)
+                        logger.info(f"Dropped {purged} cached answers for db_id={entry.db_id}")
+                    completed = embedding_manager.embed_schemas(
+                        entry.db_id, list(entry.schema_types), tenant_id=entry.tenant_name, force=model_changed)
+                    # True only when the db's vectors are complete with this model; False when
+                    # another run held the lock or extraction was partial (retried later).
+                    if completed:
+                        self.mark_embedded(entry.db_id, models.embedding_deployment)
+                        logger.info(f"Embed finished for db_id={entry.db_id}")
+                    else:
+                        logger.info(f"Embed for db_id={entry.db_id} not completed "
+                                    "(another embed is running, or extraction was partial)")
             except Exception as e:
-                logger.warning(f"First-use embed failed for db_id={entry.db_id}: {e}", exc_info=True)
+                logger.warning(f"Embed failed for db_id={entry.db_id}: {e}", exc_info=True)
 
         threading.Thread(target=_embed, daemon=True, name=f"first-use-embed-{entry.db_id}").start()
         return False
+
+
+def _entry_from_row(row) -> TenantEntry:
+    return TenantEntry(
+        tenant_name=row[0],
+        db_id=row[1],
+        collection_id=row[2],
+        schema_types=parse_schema_types(row[3]),
+        chat_deployment=row[4],
+        chat_api_version=row[5],
+        embedding_deployment=row[6],
+        embedding_api_version=row[7],
+    )
 
 
 tenant_registry = TenantRegistry()

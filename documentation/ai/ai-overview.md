@@ -165,7 +165,7 @@ Text extraction is **local**, not a service: PDFs via `UglyToad.PdfPig`, Office 
 | **Operation type** | The kebab-case public identifier used on the API and in job args: `attachment-summary`, `application-analysis`, `application-scoring`, `form-mapping`, `form-worksheet`, `form-scoresheet`. |
 | **Operation name** | The PascalCase identifier used for the `AIOperation` row and the prompt family: `AttachmentSummary`, `ApplicationAnalysis`, `ApplicationScoring`, `FormMapping`, `FormWorksheet`, `FormScoresheet`. Bridged by `AIGenerationOperationDefinition`. |
 | **`AIGenerationOperationDefinition`** | The static registry entry tying an operation type to its feature, disabled-message key, generate and view permissions, and whether it needs a form version. |
-| **`AIModel`** | A row naming a deployment (`gpt-5-mini`, `gpt-5-nano`; the retired `gpt-4o-mini` row is kept inactive), and its provider. No per-model request settings: no temperature or output cap is sent. |
+| **`AIModel`** | A row naming a deployment (`gpt-5-mini`, `gpt-5-nano`, `text-embedding-3-large`; the retired `gpt-4o-mini` row is kept inactive), its provider, type (Chat or Embedding) and the API version sent with every call. No temperature or output cap is sent. |
 | **`AIOperation`** | A row binding an operation name to a model and an `ExecutionMode`. |
 | **`AIPrompt`** | A versioned system+user prompt pair for one prompt family, optionally tenant-specific, with `MetadataJson` holding reusable template sections. |
 | **Prompt family / version** | `AIPrompt.Name` is the family (equal to the operation name); `VersionNumber` selects the variant. `(TenantId, Name, VersionNumber)` is unique. Resolution prefers the current tenant's row, then the global (`TenantId == null`) row. |
