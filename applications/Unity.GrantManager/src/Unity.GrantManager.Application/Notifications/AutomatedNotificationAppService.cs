@@ -70,7 +70,7 @@ namespace Unity.GrantManager.Notifications
             };
         }
 
-        [Authorize(NotificationsPermissions.Email.ScheduleCancel)]
+        [Authorize(NotificationsPermissions.Email.ScheduleDelete)]
         public async Task DeleteAsync(Guid id)
         {
             await _repository.DeleteAsync(id, autoSave: true);

@@ -103,6 +103,7 @@ namespace Unity.GrantManager.Permissions
             NotificationsPermissions.Email.NotificationsTab,
             NotificationsPermissions.Email.ScheduleCreate,
             NotificationsPermissions.Email.ScheduleCancel,
+            NotificationsPermissions.Email.ScheduleDelete,
             NotificationsPermissions.Email.Application.CancelScheduled,
             NotificationsPermissions.Email.Application.Schedule,
             NotificationsPermissions.Email.Applicant.CancelScheduled,
