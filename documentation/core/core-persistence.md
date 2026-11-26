@@ -139,7 +139,7 @@ Custom repositories live in `Repositories/`; their interfaces sit beside the ent
 ## Postgres specifics
 
 - **Npgsql legacy timestamps.** `PreConfigureServices` sets `AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true)`, so `timestamp without time zone` is used throughout and `DateTime` values are not implicitly converted to UTC by the driver.
-- **`jsonb` columns** carry the semi-structured payloads: `Application.Payload`, `ApplicationFormVersion.FormSchema`, `GenerationReview.ReviewData`, `ApplicationScoresheetAnswers.Answers`, `AIPrompt.MetadataJson`, `AIModel.SettingsJson`, `NotificationLog.PayloadJson`.
+- **`jsonb` columns** carry the semi-structured payloads: `Application.Payload`, `ApplicationFormVersion.FormSchema`, `GenerationReview.ReviewData`, `ApplicationScoresheetAnswers.Answers`, `AIPrompt.MetadataJson`, `NotificationLog.PayloadJson`.
 - **Entity extensions.** `GrantManagerEfCoreEntityExtensionMappings.Configure()` runs in `PreConfigureServices` and maps ABP's extensible-object properties onto real columns.
 - **Error-level SQL logging** — `dbContextConfiguration.DbContextOptions.LogTo(Console.WriteLine, LogLevel.Error)`.
 

@@ -1,0 +1,77 @@
+@using Microsoft.Extensions.Configuration
+@using Microsoft.Extensions.Localization
+@using Unity.AI.Localization
+@using Unity.AI.Setup
+@inject IStringLocalizer<AIResource> AIL
+@inject IConfiguration Configuration
+@{
+    // Only the endpoint is shown; the API key never leaves configuration.
+    var aiEndpoint = Configuration[$"Azure:{AISetupConsts.OpenAIProvider}:Endpoint"]?.Trim();
+    var aiEndpointIsUrl = Uri.TryCreate(aiEndpoint, UriKind.Absolute, out var aiEndpointUri)
+        && (aiEndpointUri.Scheme == Uri.UriSchemeHttps || aiEndpointUri.Scheme == Uri.UriSchemeHttp);
+    // An OpenShift service address (a host with no dots, or *.svc[.cluster.local]) has no route,
+    // so a browser can't open it: show it as text; the status line below checks it from the server.
+    var aiEndpointIsClusterService = aiEndpointIsUrl
+        && (!aiEndpointUri!.Host.Contains('.')
+            || aiEndpointUri.Host.EndsWith(".svc", StringComparison.OrdinalIgnoreCase)
+            || aiEndpointUri.Host.EndsWith(".svc.cluster.local", StringComparison.OrdinalIgnoreCase));
+    // Linked only when it is a reachable http(s) URL, so a bad value can't become a script link.
+    var aiEndpointIsLink = aiEndpointIsUrl && !aiEndpointIsClusterService;
+}
+
+<div class="container-fluid px-0">
+    @* Endpoint for all AI calls, above the tables. *@
+    <div id="ai-setup-endpoint" class="px-3 pt-2">
+        <p class="small mb-1">
+            @AIL["AISetup:Endpoint"]
+            @if (string.IsNullOrWhiteSpace(aiEndpoint))
+            {
+                <span class="text-danger">@AIL["AISetup:EndpointNotSet"]</span>
+            }
+            else if (aiEndpointIsLink)
+            {
+                <a href="@aiEndpoint" target="_blank" rel="noopener noreferrer">@aiEndpoint</a>
+            }
+            else
+            {
+                <code>@aiEndpoint</code>
+            }
+        </p>
+        @* Filled by Index.js: UGM calls the endpoint's /healthz from the server. *@
+        <p class="small mb-1">
+            @AIL["AISetup:EndpointStatus"]
+            <span id="ai-setup-endpoint-status" class="text-muted">@AIL["AISetup:EndpointChecking"]</span>
+        </p>
+    </div>
+
+    <div class="action-bar p-2 filter-search-action-bar">
+        <div class="unity-page-titlebar me-auto">
+            <h4>@AIL["AISetup:Models"]</h4>
+        </div>
+        <div id="ai-setup-models-dynamic-buttons" class="dynamic-buttons-div button-gap-1"></div>
+    </div>
+    <div class="px-3">
+        <output id="ai-setup-test-result" class="alert d-block d-none mb-2"></output>
+        <abp-table id="AISetupModelsTable" striped-rows="false" class="nowrap"></abp-table>
+    </div>
+
+    <div class="action-bar p-2 filter-search-action-bar mt-3">
+        <div class="unity-page-titlebar me-auto">
+            <h4>@AIL["AISetup:Operations"]</h4>
+        </div>
+        <div id="ai-setup-operations-dynamic-buttons" class="dynamic-buttons-div button-gap-1"></div>
+    </div>
+    <div class="px-3 pb-3">
+        <abp-table id="AISetupOperationsTable" striped-rows="false" class="nowrap"></abp-table>
+    </div>
+
+    <div class="action-bar p-2 filter-search-action-bar mt-3">
+        <div class="unity-page-titlebar me-auto">
+            <h4>@AIL["AISetup:AIReporting"]</h4>
+        </div>
+        <div id="ai-setup-reporting-dynamic-buttons" class="dynamic-buttons-div button-gap-1"></div>
+    </div>
+    <div class="px-3 pb-3">
+        <abp-table id="AISetupReportingTable" striped-rows="false" class="nowrap"></abp-table>
+    </div>
+</div>

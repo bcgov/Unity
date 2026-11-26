@@ -18,6 +18,7 @@ from typing import Optional
 
 from openai import AsyncAzureOpenAI
 
+import ai_models
 from config import config
 
 logger = logging.getLogger(__name__)
@@ -37,7 +38,7 @@ def build_async_client(max_retries: int = 2) -> AsyncAzureOpenAI:
     return AsyncAzureOpenAI(
         azure_endpoint=ai.azure_endpoint,
         api_key=ai.azure_api_key,
-        api_version=ai.azure_api_version,
+        api_version=ai_models.current().chat_api_version,
         max_retries=max_retries,
     )
 
@@ -59,7 +60,6 @@ async def chat_completion(
     *,
     system_message: str,
     user_message: str,
-    temperature: Optional[float] = None,
     max_completion_tokens: Optional[int] = None,
 ):
     """Send a single chat completion and return the raw SDK response.
@@ -69,22 +69,20 @@ async def chat_completion(
     callers either propagate (sql_generator) or swallow into a fallback
     (explain_sql, model_generator, cache_reranker).
 
-    ``temperature`` is only sent when the deployed model supports a non-default
-    value (``config.ai.supports_temperature``) — gpt-5* deployments reject it.
+    The model is AI Setup's AI Reporting chat deployment (``ai_models.current()``).
+    No temperature is sent: the gpt-5 models reject it.
 
     Per-request timeouts are the caller's concern too: pass a timeout-bound
     client via ``client.with_options(timeout=...)`` rather than threading a
     timeout through here (keeps this coroutine free of timeout state).
     """
     kwargs = {
-        "model": config.ai.azure_deployment,
+        "model": ai_models.current().chat_deployment,
         "messages": [
             {"role": "system", "content": system_message},
             {"role": "user", "content": user_message},
         ],
     }
-    if temperature is not None and config.ai.supports_temperature:
-        kwargs["temperature"] = temperature
     if max_completion_tokens is not None:
         kwargs["max_completion_tokens"] = max_completion_tokens
     return await client.chat.completions.create(**kwargs)

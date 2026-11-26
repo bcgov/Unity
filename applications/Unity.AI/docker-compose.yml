@@ -37,7 +37,7 @@ services:
       # Flask config
       - FLASK_ENV=${FLASK_ENV:-development}
 
-      # Azure OpenAI secrets (all other Azure config is hardcoded in config.py)
+      # Azure OpenAI secrets (models and API versions come from Unity AI Setup)
       - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
       - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
 
@@ -48,6 +48,7 @@ services:
       # Metabase config (secrets + env-specific base URL and UUIDs)
       - MB_URL=${MB_URL}
       - MB_MAP_REGION_UUID=${MB_MAP_REGION_UUID}
+      - METABASE_API_KEY=${METABASE_API_KEY}
 
       # Database config
       - DB_HOST=postgres

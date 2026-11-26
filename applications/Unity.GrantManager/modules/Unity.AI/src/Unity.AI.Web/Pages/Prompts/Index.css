@@ -120,3 +120,19 @@ body.split-dragging {
     cursor: col-resize !important;
     user-select: none !important;
 }
+
+/* ── Table: prompt previews ───────────────────────────────────────────────── */
+/* The cell's max-width: 0 stops the preview from widening its column, so the
+   preview fills whatever width the column gets and ends in an ellipsis. Global
+   classes (not nested under the pane) so DataTables' width measurement sees them
+   too; the preview text is also in the tooltip. */
+td.ai-prompt-preview-cell {
+    max-width: 0;
+}
+
+.ai-prompt-preview-text {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

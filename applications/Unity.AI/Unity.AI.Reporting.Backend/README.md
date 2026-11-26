@@ -61,7 +61,7 @@ Server runs on `http://localhost:5000`
 Required variables (see `applications/.env.example`):
 
 ```env
-# Azure OpenAI — endpoint and key only; deployment names, versions are hardcoded in config.py
+# Azure OpenAI — endpoint and key only; models and API versions come from Unity AI Setup in the token
 AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
 AZURE_OPENAI_API_KEY=your_key
 

@@ -53,7 +53,8 @@ public class OpenAIRuntimeServiceTests
             Substitute.For<Microsoft.Extensions.Caching.Memory.IMemoryCache>(),
             configuration,
             multiTenantDataFilter,
-            currentTenant);
+            currentTenant,
+            new AIConfigurationCacheSignal());
     }
 
 }

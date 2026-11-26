@@ -26,6 +26,7 @@ namespace Unity.GrantManager.Web.Pages.Settings.UnityAdmin
 
         public bool IsRestricted { get; set; } = true;
         public bool ShowAIPrompts { get; set; }
+        public bool ShowAISetup { get; set; }
         public bool ShowEndpoints { get; set; }
         public bool ShowExceptionLogs { get; set; }
 
@@ -39,6 +40,8 @@ namespace Unity.GrantManager.Web.Pages.Settings.UnityAdmin
         {
             var isOnboarding = await specializationChecker.IsEnabledAsync(SpecializationConsts.Onboarding);
             ShowAIPrompts = !isOnboarding && User.IsInRole(IdentityConsts.ITOperationsRoleName);
+            ShowAISetup = !isOnboarding
+                && (User.IsInRole(IdentityConsts.ITAdminRoleName) || User.IsInRole(IdentityConsts.ITOperationsRoleName));
             ShowEndpoints = !isOnboarding
                 && (User.IsInRole(IdentityConsts.ITAdminRoleName) || User.IsInRole(IdentityConsts.ITOperationsRoleName));
             ShowExceptionLogs = !isOnboarding && User.IsInRole(IdentityConsts.ITOperationsRoleName);

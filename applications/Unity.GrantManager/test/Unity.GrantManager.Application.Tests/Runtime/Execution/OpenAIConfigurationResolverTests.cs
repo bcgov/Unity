@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
@@ -46,11 +45,7 @@ public class OpenAIConfigurationResolverTests
             .Returns(new AIModel(modelId, "gpt-5-mini", "OpenAI")
             {
                 IsActive = true,
-                SettingsJson = JsonSerializer.Serialize(new AIModelSettings
-                {
-                    MaxOutputTokenCountSupported = true,
-                    Temperature = 0.25
-                })
+                ApiVersion = "2024-10-21"
             });
 
         operationRepository
@@ -64,7 +59,6 @@ public class OpenAIConfigurationResolverTests
                 new(Guid.NewGuid(), AIPromptTypes.ApplicationAnalysis, modelId)
                     {
                         ExecutionMode = AIExecutionMode.Sequential,
-                        CompletionTokens = 2222,
                         IsActive = true
                     }
                 }.Where(predicate.Compile()).ToList());
@@ -103,8 +97,7 @@ public class OpenAIConfigurationResolverTests
         settings.ProfileName.ShouldBe("gpt-5-mini");
         settings.Endpoint.ShouldBe(new Uri("https://example.test"));
         settings.DeploymentName.ShouldBe("gpt-5-mini");
-        settings.Temperature.ShouldBe(0.25);
-        settings.CompletionTokens.ShouldBe(2222);
+        settings.ApiVersion.ShouldBe("2024-10-21");
         settings.PromptVersion.ShouldBe("v1");
     }
 
@@ -123,10 +116,7 @@ public class OpenAIConfigurationResolverTests
             .Returns(new AIModel(modelId, "gpt-5-mini", "OpenAI")
             {
                 IsActive = true,
-                SettingsJson = JsonSerializer.Serialize(new AIModelSettings
-                {
-                    Temperature = 0.2
-                })
+                ApiVersion = "2024-10-21"
             });
 
         operationRepository
@@ -140,7 +130,6 @@ public class OpenAIConfigurationResolverTests
                 new(Guid.NewGuid(), "Default", modelId)
                     {
                         ExecutionMode = AIExecutionMode.Sequential,
-                        CompletionTokens = 2000,
                         IsActive = true
                     }
                 }.Where(predicate.Compile()).ToList());
@@ -193,12 +182,7 @@ public class OpenAIConfigurationResolverTests
                 {
                     new(Guid.NewGuid(), "gpt-5-mini", "OpenAI")
                     {
-                        IsActive = true,
-                        SettingsJson = JsonSerializer.Serialize(new AIModelSettings
-                        {
-                            MaxOutputTokenCountSupported = true,
-                            Temperature = 0.35
-                        })
+                        IsActive = true
                     }
                 }.Where(predicate.Compile()).ToList());
             });
@@ -208,8 +192,6 @@ public class OpenAIConfigurationResolverTests
         resolver.ResolveProviderName().ShouldBe("OpenAI");
         (await resolver.ResolveDeploymentNameAsync("gpt-5-mini")).ShouldBe("gpt-5-mini");
         (await resolver.ResolveEndpointAsync("gpt-5-mini")).ShouldBe(new Uri("https://example.test"));
-        (await resolver.ResolveConfiguredTemperatureAsync("gpt-5-mini")).ShouldBe(0.35);
-        (await resolver.ResolveMaxOutputTokenCountSupportedAsync("gpt-5-mini")).ShouldBeTrue();
     }
 
     [Fact]
@@ -226,11 +208,7 @@ public class OpenAIConfigurationResolverTests
                 {
                     new(Guid.NewGuid(), "Default", "OpenAI")
                     {
-                        IsActive = true,
-                        SettingsJson = JsonSerializer.Serialize(new AIModelSettings
-                        {
-                            MaxOutputTokenCountSupported = true
-                        })
+                        IsActive = true
                     }
                 }.Where(predicate.Compile()).ToList());
             });
@@ -262,10 +240,7 @@ public class OpenAIConfigurationResolverTests
             .Returns(new AIModel(modelId, "gpt-5-mini", "OpenAI")
             {
                 IsActive = true,
-                SettingsJson = JsonSerializer.Serialize(new AIModelSettings
-                {
-                    Temperature = 0.1
-                })
+                ApiVersion = "2024-10-21"
             });
 
         operationRepository
@@ -278,8 +253,7 @@ public class OpenAIConfigurationResolverTests
                 {
                 new(Guid.NewGuid(), AIPromptTypes.ApplicationAnalysis, modelId)
                     {
-                        IsActive = true,
-                        CompletionTokens = 2000
+                        IsActive = true
                     }
                 }.Where(predicate.Compile()).ToList());
             });
@@ -331,8 +305,7 @@ public class OpenAIConfigurationResolverTests
             {
                 new(Guid.NewGuid(), AIPromptTypes.ApplicationAnalysis, modelId)
                 {
-                    IsActive = true,
-                    CompletionTokens = 100
+                    IsActive = true
                 }
             }));
 
@@ -341,7 +314,7 @@ public class OpenAIConfigurationResolverTests
             .Returns(new AIModel(modelId, "gpt-5-mini", "OpenAI")
             {
                 IsActive = true,
-                SettingsJson = JsonSerializer.Serialize(new AIModelSettings())
+                ApiVersion = "2024-10-21"
             });
 
         var promptRepository = Substitute.For<IRepository<AIPrompt, Guid>>();
@@ -425,7 +398,8 @@ public class OpenAIConfigurationResolverTests
             memoryCache ?? Substitute.For<IMemoryCache>(),
             configuration,
             filter,
-            currentTenant);
+            currentTenant,
+            new AIConfigurationCacheSignal());
     }
 
     private static IRepository<AIModel, Guid> CreateEmptyModelRepository()

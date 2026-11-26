@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
 using Unity.AI.Prompts;
+using Unity.AI.Runtime.Execution;
 using Volo.Abp.Authorization;
 using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;
@@ -59,6 +60,6 @@ public class AIPromptAppServiceTests
         var currentTenant = Substitute.For<ICurrentTenant>();
         currentTenant.Id.Returns(tenantId);
 
-        return new AIPromptAppService(repository, dataFilter, currentTenant);
+        return new AIPromptAppService(repository, dataFilter, currentTenant, new AIConfigurationCacheSignal());
     }
 }

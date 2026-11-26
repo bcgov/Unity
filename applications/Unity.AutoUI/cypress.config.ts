@@ -22,21 +22,39 @@ function loadLocalEnvironmentConfig(requestedEnvironment?: string): {
     environmentSource = "default";
   }
 
-  const environmentFilePath = path.resolve(
-    "cypress",
-    "config",
-    `${environmentName}.json`,
+  // Per-env file (cypress/config/<env>.json) takes precedence so existing
+  // local setups keep working.
+  const perEnvConfig = readJsonFile(
+    path.resolve("cypress", "config", `${environmentName}.json`),
   );
+  if (perEnvConfig) {
+    return { environmentName, environmentSource, environmentConfig: perEnvConfig };
+  }
 
+  // Fallback: the combined file, same shape as the UNITY_CYPRESS_CONFIG CI
+  // secret — one CYPRESS_CONFIG_<ENV> key per environment.
+  const combinedConfig = readJsonFile(
+    path.resolve("cypress", "config", "unity-cypress-config.json"),
+  );
+  let entry: unknown =
+    combinedConfig?.[`CYPRESS_CONFIG_${environmentName.toUpperCase()}`];
+  if (typeof entry === "string") {
+    // Matches the workflow's jq `fromjson` handling of string-encoded values.
+    entry = JSON.parse(entry);
+  }
+
+  return {
+    environmentName,
+    environmentSource,
+    environmentConfig: (entry as Record<string, unknown> | undefined) ?? {},
+  };
+}
+
+function readJsonFile(filePath: string): Record<string, unknown> | null {
   try {
-    const content = fs.readFileSync(environmentFilePath, "utf-8");
-    return {
-      environmentName,
-      environmentSource,
-      environmentConfig: JSON.parse(content) as Record<string, unknown>,
-    };
+    return JSON.parse(fs.readFileSync(filePath, "utf-8")) as Record<string, unknown>;
   } catch {
-    return { environmentName, environmentSource, environmentConfig: {} };
+    return null;
   }
 }
 

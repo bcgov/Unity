@@ -328,14 +328,14 @@
 
     <div class="table-scroll">
     <table class="data">
-      <thead><tr><th>Operation type</th><th>Reads</th><th>Produces</th><th>Tokens</th><th>Form version</th></tr></thead>
+      <thead><tr><th>Operation type</th><th>Reads</th><th>Produces</th><th>Form version</th></tr></thead>
       <tbody>
-        <tr><td class="code">attachment-summary</td><td>Attachment bytes, text-extracted in-process</td><td>A summary on each attachment</td><td>2000</td><td class="no">—</td></tr>
-        <tr><td class="code">application-analysis</td><td>Submission + form schema + attachment summaries</td><td class="code">Application.AIAnalysis</td><td>4000</td><td class="no">—</td></tr>
-        <tr><td class="code">application-scoring</td><td>Submission + summaries + scoresheet schema</td><td class="code">AI.ApplicationScoresheetAnswers</td><td>8000</td><td class="no">—</td></tr>
-        <tr><td class="code">form-mapping</td><td>CHEFS fields + Unity fields + existing mapping</td><td>A <span class="code">GenerationReview</span> payload</td><td>2000</td><td class="yes">required</td></tr>
-        <tr><td class="code">form-worksheet</td><td>Form schema + mapping model + existing worksheets</td><td>A draft Flex worksheet</td><td>4000</td><td class="yes">required</td></tr>
-        <tr><td class="code">form-scoresheet</td><td>Form schema + mapping model</td><td>A draft Flex scoresheet</td><td>8000</td><td class="yes">required</td></tr>
+        <tr><td class="code">attachment-summary</td><td>Attachment bytes, text-extracted in-process</td><td>A summary on each attachment</td><td class="no">—</td></tr>
+        <tr><td class="code">application-analysis</td><td>Submission + form schema + attachment summaries</td><td class="code">Application.AIAnalysis</td><td class="no">—</td></tr>
+        <tr><td class="code">application-scoring</td><td>Submission + summaries + scoresheet schema</td><td class="code">AI.ApplicationScoresheetAnswers</td><td class="no">—</td></tr>
+        <tr><td class="code">form-mapping</td><td>CHEFS fields + Unity fields + existing mapping</td><td>A <span class="code">GenerationReview</span> payload</td><td class="yes">required</td></tr>
+        <tr><td class="code">form-worksheet</td><td>Form schema + mapping model + existing worksheets</td><td>A draft Flex worksheet</td><td class="yes">required</td></tr>
+        <tr><td class="code">form-scoresheet</td><td>Form schema + mapping model</td><td>A draft Flex scoresheet</td><td class="yes">required</td></tr>
       </tbody>
     </table>
     </div>
@@ -343,7 +343,6 @@
     <h3>The line the module holds</h3>
     <p><strong>AI output is a draft.</strong> Application scoring lands as a separate <em>AI assessment</em> sitting beside the human ones, never as somebody's score. The three form-generation operations write a <span class="code">GenerationReview</span> that a person must complete or discard — nothing the model produces reaches an application form on its own. Summaries and analysis surface behind a legal disclaimer the user acknowledges before AI is switched on at all.</p>
 
-    <p class="note">Token budgets above are the seeded <span class="code">AIOperation.CompletionTokens</span> values, and they encode how much output each operation is expected to produce — scoring and scoresheet generation get four times the budget of a mapping suggestion.</p>
   </section>
 
   <!-- ============ 02 GATES ============ -->
@@ -410,29 +409,30 @@
   <!-- ============ 03 CONFIG ============ -->
   <section id="config">
     <div class="sec-head"><span class="sec-num">03</span><h2>Config as data</h2></div>
-    <p class="lede">Only the endpoint and the API key come from configuration. Which model an operation calls, how many completion tokens it may spend, whether it fans out sequentially or in parallel, and the exact system and user prompt text are all rows.</p>
+    <p class="lede">Only the endpoint and the API key come from configuration. Which model an operation calls, whether it fans out sequentially or in parallel, and the exact system and user prompt text are all rows.</p>
 
     <div class="schematic">AIOperation ────────▶ AIModel ────────▶ Azure OpenAI
   Name (= prompt family)  Name (= DEPLOYMENT name)   Azure:OpenAI:Endpoint
   AIModelId               Provider ("OpenAI")        Azure:OpenAI:ApiKey
   ExecutionMode           IsActive
-  CompletionTokens        SettingsJson {
-  IsActive                  MaxOutputTokenCountSupported,
-      │                     Temperature }
+  IsActive
+      │
       ▼
 AIPrompt  (Name + VersionNumber, optionally TenantId)
   SystemPrompt · UserPrompt · MetadataJson · IsActive</div>
 
-    <h3>Seeded, and corrective</h3>
+    <h3>Managed in Unity AI Setup, not seeded</h3>
     <table class="data">
-      <thead><tr><th>Model</th><th>Max-output-tokens supported</th><th>Temperature</th></tr></thead>
+      <thead><tr><th>Model (Azure deployment name)</th><th>Provider</th><th>Type</th><th>API version</th></tr></thead>
       <tbody>
-        <tr><td class="code">gpt-5-mini</td><td class="no">no</td><td class="no">—</td></tr>
-        <tr><td class="code">gpt-5-nano</td><td class="no">no</td><td class="no">—</td></tr>
+        <tr><td class="code">gpt-5-mini</td><td>OpenAI</td><td>Chat</td><td class="code">2024-10-21</td></tr>
+        <tr><td class="code">gpt-5-nano</td><td>OpenAI</td><td>Chat</td><td class="code">2024-10-21</td></tr>
+        <tr><td class="code">text-embedding-3-large</td><td>OpenAI</td><td>Embedding</td><td class="code">2024-10-21</td></tr>
       </tbody>
     </table>
-    <p class="note" style="margin-top:12px;"><span class="code">gpt-4o-mini</span> is retired (no new Azure deployments allowed): it is no longer seeded, and an existing row is deactivated. All six operations bind to <span class="code">gpt-5-mini</span>. Those two model settings exist because newer families reject the parameters older ones require — when <span class="code">MaxOutputTokenCountSupported</span> is false the option is <em>not sent at all</em> rather than defaulted, and the same for a null temperature. <strong>The model name is also the Azure deployment name</strong>: the factory passes it straight to <span class="code">GetChatClient(...)</span>.</p>
-    <p class="note">All three seeders skip tenant contexts and are <strong>corrective</strong> — an existing model or operation row has its provider, active flag, settings, model binding, execution mode and token budget overwritten on every run. There is no admin UI for models or operations; changes made directly in the database are reverted at the next migration run.</p>
+    <p class="note" style="margin-top:12px;">These are the models in every environment when seeding stopped (AB#34947). <span class="code">gpt-4o-mini</span> is retired (AB#35030); delete its row in AI Setup. All six operations bind to <span class="code">gpt-5-mini</span>. No temperature or output token cap is sent: the gpt-5 models reject temperature, and a cap counts their reasoning tokens. <strong>The model name is also the Azure deployment name</strong>: the factory passes it straight to <span class="code">GetChatClient(...)</span>. Each model carries its own <strong>API version</strong>, sent as <span class="code">?api-version=</span> on every call (<span class="code">AzureOpenAIApiVersionPolicy</span>), so any published Azure version works; there is no default in code (AB#35030).</p>
+    <p class="note"><strong>AI Reporting</strong> takes its chat and embedding models from the AI Reporting section of AI Setup (<span class="code">AIReporting</span> and <span class="code">AIReportingEmbedding</span> rows); UGM sends each model's deployment and API version in the AI Reporting token, and AI Reporting refuses requests until both are set. Changing the embedding model re-embeds each program's schema on its next open.</p>
+    <p class="note">Models and operations are environment configuration. They are managed in <strong>Unity Admin → AI Setup</strong>: IT Administrator adds, edits, activates and deletes models (both IT roles can Test a model against its Azure deployment); IT Operations sets model, mode and on/off per operation, and the DbMigrator no longer creates or changes them. A model an operation uses can't be deactivated or deleted. Only prompts are still seeded, <strong>insert-only</strong>: new prompt text in code needs a new version number. An empty database has no operations until AI Setup is done.</p>
 
     <h3>Two AI schemas, in two databases</h3>
     <p>The single most surprising fact about AI persistence. <span class="code">ConfigureAI()</span> is called on <strong><span class="code">GrantManagerDbContext</span></strong> — the host context — while the tenant context declares its own <span class="code">AI</span> tables explicitly.</p>
@@ -534,9 +534,8 @@ using (await requestLock.AcquireAsync())
     </table>
     <p class="note" style="margin-top:12px;"><span class="code">AIResponseJson.CleanJsonResponse</span> strips markdown fencing before parsing, because models return fenced JSON regardless of instructions. <span class="code">OperationCanceledException</span> is always rethrown, never mapped.</p>
 
-    <h3>Two defensive touches worth keeping</h3>
+    <h3>A defensive touch worth keeping</h3>
     <div class="rowlist">
-      <div class="row"><div class="k">Temperature fallback<span class="sub">one retry, on 400</span></div><div class="v"><p>Newer model families reject <span class="code">temperature</span> outright. Rather than encode a model-family table, the transport inspects a 400 body for "temperature" plus one of <em>unsupported / not supported / not allowed / invalid</em>, and if it matches, retries once without the parameter. Anything else rethrows.</p></div></div>
       <div class="row"><div class="k">Output read twice over</div><div class="v"><p>First the SDK's typed <span class="code">completion.Content[i].Text</span> parts; if that yields nothing, the raw body is parsed for <span class="code">choices[0].message.content</span> in both its string and array-of-parts forms. An empty output is then logged with finish reason and the full token usage including <span class="code">reasoning_tokens</span> — which is what makes a truncation or a reasoning blowout diagnosable after the fact.</p></div></div>
     </div>
 
@@ -600,7 +599,7 @@ selected ??= global (TenantId == null) newest ACTIVE prompt in this family</div>
       <div class="row"><div class="k"><span class="tag warn">Real risk</span></div><div class="v"><p><strong>A partly failed scoring run is saved as if complete.</strong> <span class="code">ProcessSectionAsync</span> catches per-section exceptions and returns an empty dictionary. The merge produces an answer set silently missing those sections, upserts it over any previous complete run, and fires the event that creates an AI assessment from a partial scoresheet.</p></div></div>
       <div class="row"><div class="k"><span class="tag warn">Real risk</span></div><div class="v"><p><strong>The intake pipeline is three peers, not a chain.</strong> Attachment summary, analysis and scoring are queued as independent jobs with nothing ordering them — yet analysis and scoring both consume attachment summaries as input. On a first intake they typically read no summaries at all, and the prompt renders with an empty attachments block.</p></div></div>
       <div class="row"><div class="k"><span class="tag warn">Performance</span></div><div class="v"><p><strong>The retry loop has no backoff.</strong> Three attempts back to back with no delay and no jitter, including after a <strong>429</strong>. <span class="code">AIExecutionMode.Parallel</span> compounds it: <span class="code">Task.WhenAll</span> over every section with <em>no concurrency cap</em>, so a twenty-section scoresheet issues twenty simultaneous calls, each of which may retry three times.</p></div></div>
-      <div class="row"><div class="k"><span class="tag warn">Multi-pod</span></div><div class="v"><p><strong>Config caching is per-pod and holds the API key.</strong> The fully resolved settings — including <span class="code">ApiKey</span> — sit in <span class="code">IMemoryCache</span> for five minutes under a predictable key, with no invalidation on write. Activating a prompt version or switching an operation's model applies at a different moment on every replica.</p></div></div>
+      <div class="row"><div class="k"><span class="tag warn">Multi-pod</span></div><div class="v"><p><strong>Config caching is per-pod and holds the API key.</strong> The fully resolved settings — including <span class="code">ApiKey</span> — sit in <span class="code">IMemoryCache</span> for five minutes under a predictable key, and a save in AI Setup or AI Prompts expires it only on the pod that handled the save. Other replicas apply the change when their entries expire.</p></div></div>
       <div class="row"><div class="k"><span class="tag warn">Security</span></div><div class="v"><p><strong>Tenant isolation for prompts is manual.</strong> <span class="code">AIPrompt</span> is <span class="code">IMultiTenant</span> but lives in the host database, so every read disables ABP's filter to allow the global fallback and re-imposes tenancy in LINQ or in <span class="code">EnsureReadAccess</span>/<span class="code">EnsureMutationAccess</span>. Any new query over <span class="code">AIPrompt</span> must repeat the pattern; a missed check is a cross-tenant read of prompt text.</p></div></div>
       <div class="row"><div class="k"><span class="tag warn">Confirm intent</span></div><div class="v"><p><strong>Prompt file logging writes applicant data to local disk.</strong> When <span class="code">Azure:Logging:EnablePromptFileLog</span> is on, the full rendered prompt — submission data, extracted attachment text — and the raw provider response are appended to <span class="code">{BaseDirectory}/logs/ai-prompts-*.log</span> on every operation. Off by default; worth a deliberate decision before enabling anywhere holding real applications.</p></div></div>
       <div class="row"><div class="k"><span class="tag warn">Silent</span></div><div class="v"><p><strong><span class="code">IsAvailableAsync</span> only checks that a key is configured.</strong> It reads <span class="code">Azure:OpenAI:ApiKey</span> and returns true. A wrong key, an unreachable endpoint, a missing operation row or an inactive model all still report available.</p></div></div>
@@ -610,7 +609,7 @@ selected ??= global (TenantId == null) newest ACTIVE prompt in this family</div>
       <div class="row"><div class="k"><span class="tag accent">Dead code</span></div><div class="v"><p><strong>Seven resolver accessors production never calls</strong> — four exercised only by tests, three by nothing. Five are unusable without an explicit model name anyway: <span class="code">ResolveModelAsync</span> returns null for a blank name, so they throw <span class="code">"AI model is not configured."</span> regardless of setup. Also unreferenced: the <span class="code">PromptType</span> enum, which is not even a property of <span class="code">AIPrompt</span>.</p></div></div>
       <div class="row"><div class="k"><span class="tag accent">Ergonomics</span></div><div class="v"><p><strong>Prompt text lives in a 973-line C# seeder</strong> of <span class="code">const string</span> bodies — editing a seeded prompt means a code change, a build and a deploy, with unreadable diffs. The runtime already supports versioned rows, so the seeder is the only reason prompt text is compiled in. Meanwhile <span class="code">GetListAsync</span> loads every prompt row and pages in memory, and models and operations have no admin UI at all.</p></div></div>
       <div class="row"><div class="k"><span class="tag roadmap">Convention drift</span></div><div class="v"><p><span class="code">Guid.CreateVersion7()</span> instead of <span class="code">GuidGenerator</span> in the prompt service and both seeders; <span class="code">DateTime.UtcNow</span> instead of <span class="code">Clock</span> throughout. Two naming schemes for the same six things (<span class="code">application-scoring</span> vs <span class="code">ApplicationScoring</span>) bridged by a definition record and re-exported by a key helper. <span class="code">Unity.AI.Domain.Shared</span> builds <span class="code">Unity.AI.Shared.csproj</span>. The permission provider sits in Application.Contracts, unlike every other module. And <span class="code">AIGenerationStatusDto</span> returns its payload twice — nested and flattened.</p></div></div>
-      <div class="row"><div class="k"><span class="tag accent">Coverage</span></div><div class="v"><p><strong>Unusually good, and worth preserving.</strong> Config resolution, prompt resolution and rendering, response validation, the outcome model, queue/job/registry/status, rate limiting, seeders, input building and execution mode all have suites. Thinner: the transport itself (temperature fallback, response extraction, status→outcome mapping), text extraction across formats, and the six executors end to end.</p></div></div>
+      <div class="row"><div class="k"><span class="tag accent">Coverage</span></div><div class="v"><p><strong>Unusually good, and worth preserving.</strong> Config resolution, prompt resolution and rendering, response validation, the outcome model, queue/job/registry/status, rate limiting, seeders, input building and execution mode all have suites. Thinner: the transport itself (response extraction, status→outcome mapping), text extraction across formats, and the six executors end to end.</p></div></div>
     </div>
   </section>
 

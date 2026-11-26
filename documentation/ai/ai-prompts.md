@@ -188,7 +188,7 @@ The asymmetry is deliberate: a tenant may **read** global prompts (`TenantId is 
 | `GetByPromptAsync(promptId)` | All versions of the family that the given prompt belongs to, ascending by version |
 | `CreateAsync` | Creates a **new version** of an existing prompt family. Takes `input.PromptId` to identify the family, targets `_currentTenant.Id ?? prompt.TenantId`, and rejects a duplicate `(tenant, name, version)` with a `UserFriendlyException` |
 | `UpdateAsync` | Edits version number, system prompt, user prompt, metadata and active flag; rejects a version collision with another row |
-| `DeleteAsync` | `[RemoteService(false)]` — not exposed over HTTP; mutation access checked |
+| `DeleteAsync` | Hard-deletes one version; mutation access checked. Refuses the **version in use** — the highest active version for that tenant (or host) and name — with `AI:PromptVersionInUse`. `GetListAsync` sets `IsInUse` on that row, and the AI Prompts Actions menu hides Delete for it |
 
 Note what `CreateAsync` does **not** do: there is no way through this service to create a brand-new prompt *family*. Families come from the seeder, and the UI creates new versions of them. A tenant that edits a prompt is creating a tenant-scoped version that then wins over every global version in that family.
 
@@ -197,7 +197,9 @@ Ids are created with `Guid.CreateVersion7()` rather than ABP's `GuidGenerator` �
 ## Practical notes for editing a prompt
 
 - **Activating a tenant version overrides the whole family.** Once a tenant has any active prompt for `ApplicationScoring`, global improvements to that family stop reaching them.
-- **Changes take up to five minutes to apply**, and independently per pod, because the resolved settings (including the active prompt version) sit in `IMemoryCache`.
+- **Changes apply at once on the pod that handled the save and within five minutes on the others**, because the resolved settings (including the active prompt version) sit in a per-pod `IMemoryCache` that a save only expires locally.
+- **The seeder is insert-only.** It won't overwrite an edit or re-activate a version you turned off. To ship new prompt text from code, add a new version number.
+- **Deleting an older version sticks.** The seeder only inserts a version when that name has no version at or above it, so v0 or v1 deleted next to v2 does not come back on the next deploy. The version in use cannot be deleted; make it inactive (or activate a higher one) first.
 - **Deactivating every version of a family breaks the operation** — `ResolvePromptAsync` throws `"has no active prompt for the current tenant"`, which surfaces as a failed generation request.
 - **Placeholders are validated at render time, not save time.** Test a new prompt by running the operation.
 - To reproduce a historical result, pin the version: pass `promptVersion` on the generate call.
