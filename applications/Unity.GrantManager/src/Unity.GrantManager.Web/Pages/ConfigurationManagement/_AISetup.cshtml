@@ -37,10 +37,6 @@
                 <code>@aiEndpoint</code>
             }
         </p>
-        @if (aiEndpointIsClusterService)
-        {
-            <p class="small text-muted mb-1">@AIL["AISetup:EndpointInternal"]</p>
-        }
         @* Filled by Index.js: UGM calls the endpoint's /healthz from the server. *@
         <p class="small mb-1">
             @AIL["AISetup:EndpointStatus"]

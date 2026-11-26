@@ -143,7 +143,7 @@ class Config:
         if not self.metabase.api_key:
             raise ValueError(
                 "METABASE_API_KEY is not configured. Locally set it in .env; "
-                "in OpenShift it comes from the [env]-unity-ai-secrets secret."
+                "in OpenShift it comes from the unity-metabase secret (MB_AI_REPORTING_API_KEY)."
             )
         return {"x-api-key": self.metabase.api_key}
 
