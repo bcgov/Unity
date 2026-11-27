@@ -1,8 +1,11 @@
 @model Unity.GrantManager.Web.Views.Shared.Components.Notifications.NotificationsViewModel
+@using Microsoft.Extensions.Localization
 @using Volo.Abp.Authorization.Permissions
+@using Unity.Notifications.Localization
 @using Unity.Notifications.Permissions;
 @using static Unity.GrantManager.Notifications.NotificationDateFields
 @inject IPermissionChecker PermissionChecker
+@inject IStringLocalizer<NotificationsResource> L
 
 <link rel="stylesheet" href="/libs/select2/dist/css/select2.min.css" />
 <link rel="stylesheet" href="/libs/select2-bootstrap-5-theme/dist/select2-bootstrap-5-theme.min.css" />
@@ -38,6 +41,12 @@
             {            
             <button class="btn unt-btn-outline-primary btn-sm abp-action-button js-cancel-notification notification-action-btn" type="button">
                 <span>Cancel</span>
+            </button>
+            }
+            @if (await PermissionChecker.IsGrantedAsync(NotificationsPermissions.Email.ScheduleDelete))
+            {
+            <button class="btn unt-btn-outline-primary btn-sm abp-action-button js-delete-notification notification-action-btn" type="button">
+                <span>@L["Delete"]</span>
             </button>
             }
         </div>

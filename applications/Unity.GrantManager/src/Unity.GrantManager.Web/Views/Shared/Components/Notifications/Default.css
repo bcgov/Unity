@@ -277,10 +277,6 @@ table.dataTable td {
     background-color: white;
 }
 
-.js-delete-notification {
-    padding: 10px 5px;
-}
-
 .badge {
     min-height: 24px;
     /* Layout & Alignment */
