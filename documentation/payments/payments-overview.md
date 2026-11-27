@@ -107,7 +107,7 @@ One **tenant feature** gates the whole module: `Unity.Payments` ("Payments"), de
 | Where | How |
 |---|---|
 | App services | `[RequiresFeature("Unity.Payments")]` on `PaymentRequestAppService`, `PaymentConfigurationAppService`, `PaymentInfoAppService`, `PaymentTagAppService`, `SupplierAppService`, `SiteAppService`, and the host's `ApplicantPaymentsAppService` |
-| Main menu | `PaymentsMenuContributor` checks `IFeatureChecker.IsEnabledAsync("Unity.Payments")` before adding the Payments item |
+| Main menu | `PaymentsMenuContributor` checks `IFeatureChecker.IsEnabledAsync("Unity.Payments")` and the `PaymentsPermissions.Payments.Default` permission before adding the Payments item |
 | Widgets | `PaymentInfoViewComponent` and `SupplierInfoViewComponent` return an empty view model when the feature is off |
 | Permissions | Every `UnitySelector.Payment.*` permission is declared `.RequireFeatures("Unity.Payments")`, as are the two payment tag permissions |
 

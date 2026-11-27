@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -251,9 +251,9 @@ public class PageAccessTests
     [Theory]
     [InlineData(true, null, false)]
     [InlineData(true, PaymentsPermissions.Payments.Default, true)]
-    [InlineData(true, UnitySelector.Payment.PaymentList.Default, true)]
+    [InlineData(true, UnitySelector.Payment.PaymentList.Default, false)]
     [InlineData(false, PaymentsPermissions.Payments.Default, false)]
-    public async Task PaymentsMenu_ShouldRequireFeatureAndExistingViewingPermission(
+    public async Task PaymentsMenu_ShouldRequireFeatureAndPaymentsPermission(
         bool featureEnabled, string? permission, bool visible)
     {
         var features = Substitute.For<IFeatureChecker>();

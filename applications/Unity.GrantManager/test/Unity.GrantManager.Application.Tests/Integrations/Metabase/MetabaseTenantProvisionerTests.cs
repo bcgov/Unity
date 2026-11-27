@@ -605,7 +605,7 @@ public class MetabaseTenantProvisionerTests
         var f = CreateProvisioner();
         var user = CreateUser("other@gov.bc.ca");
         f.OtherUsers.Add(user);
-        f.Grants.Add(new PermissionGrant(Guid.NewGuid(), "GrantManagerManagement.Default", UserPermissionValueProvider.ProviderName, user.Id.ToString(), f.Tenant.Id));
+        f.Grants.Add(new PermissionGrant(Guid.NewGuid(), "GrantApplicationManagement.Applications", UserPermissionValueProvider.ProviderName, user.Id.ToString(), f.Tenant.Id));
         f.Grants.Add(new PermissionGrant(Guid.NewGuid(), MetabasePermissions.Access, "C", user.Id.ToString(), f.Tenant.Id));
 
         await f.Provisioner.SyncMembersAsync(f.Tenant.Id, 22);
