@@ -148,7 +148,7 @@ The consequence is architectural rather than functional: `Unity.Notifications.Ap
 ## Miscellaneous smaller items
 
 - **`[AllowAnonymous]` on interface methods.** `IEmailGroupsAppService.GetListAsync` and `IEmailGroupUsersAppService.GetEmailGroupUsersByGroupIdAsync` carry `[AllowAnonymous]` on the **interface** declaration, and `EmailGroupsAppService.GetListAsync` repeats it on the implementation, overriding the class-level `[Authorize]`. Whether anonymous access to the tenant's internal email-group roster is intended is worth confirming.
-- **Unenforced permissions.** `Notifications.Email.CancelScheduled` and `Notifications.Email.Schedule` are declared and localized but were not found on any `[Authorize]`; they gate UI visibility only. `Permission:Notifications.Form.Email.Schedule.Delete` is localized with no matching constant.
+- **Unenforced permissions.** `Notifications.Email.CancelScheduled` and `Notifications.Email.Schedule` are declared and localized but were not found on any `[Authorize]`; they gate UI visibility only.
 - **`GetByTenentIdAsync`** — a typo in a public repository method name (`ITemplatesRepository`). Cosmetic, but it propagates to every caller.
 - **The `EmailNotificaions` folder** (missing a `t`) in `Unity.Notifications.Application`. The namespace inside is spelled correctly, so only file paths are affected — including the ones cited in these docs.
 - **`TemplatesService.cs` declares `TemplateService`**, and `ITemplatesService.cs` declares `ITemplateService`. File names are plural, types are singular.

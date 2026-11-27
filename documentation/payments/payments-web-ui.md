@@ -13,7 +13,7 @@ See [payments-roadmap.md](payments-roadmap.md#anonymous-page-conventions).
 
 ## Menu
 
-`PaymentsMenuContributor` adds a single main-menu item — **Payments** → `~/PaymentRequests` — and only when `IFeatureChecker.IsEnabledAsync("Unity.Payments")` is true. The display name is a hard-coded string rather than a localized resource.
+`PaymentsMenuContributor` adds a single main-menu item — **Payments** → `~/PaymentRequests` — and only when `IFeatureChecker.IsEnabledAsync("Unity.Payments")` is true and the user has `PaymentsPermissions.Payments.Default`. The display name is a hard-coded string rather than a localized resource.
 
 ## Pages
 

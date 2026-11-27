@@ -45,7 +45,7 @@ public class GrantManagerMenuContributor : IMenuContributor
                 l["Menu:Applications"],
                 "~/GrantApplications",
                 order: 1,
-                requiredPermissionName: GrantManagerPermissions.Default
+                requiredPermissionName: GrantApplicationPermissions.Applications.Default
             ).ExcludeWhenSpecializations(SpecializationConsts.Onboarding)
         );
 

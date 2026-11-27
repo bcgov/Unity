@@ -2,12 +2,9 @@
 
 ## Overview
 
-The Unity AI platform uses two sources of runtime configuration:
+The Unity AI platform's runtime configuration is **environment variables**, injected via OpenShift Secrets and ConfigMaps (or `.env` locally). Each program's Metabase database and collection come from the UGM tenant record (Reporting tab) in the AI Reporting token (AB#33978); there is no `tenant_config.json` and no `[env]-unity-ai-tenant-config` Secret any more.
 
-1. **Environment variables** — injected via OpenShift Secrets and ConfigMaps (or `.env` locally)
-2. **Tenant config** — a JSON file (`tenant_config.json`) that maps tenants to Metabase databases and schema settings, overridden per environment via the `[env]-unity-ai-tenant-config` OpenShift Secret
-
-Non-sensitive config (deployment names, model versions, database port) is hardcoded in `config.py` and does not require environment variables.
+The Azure OpenAI models AI Reporting uses (chat and embedding deployment, and each one's API version) are **not** configuration here: they are set in Unity Admin → AI Setup → AI Reporting and arrive in the AI Reporting token from UGM (AB#35030). AI Reporting refuses a request without them.
 
 ---
 
@@ -21,6 +18,7 @@ Non-sensitive config (deployment names, model versions, database port) is hardco
 | `AZURE_OPENAI_API_KEY` | Azure OpenAI API key | Environment-specific key |
 | `JWT_SECRET` | JWT signing secret (64+ chars) | `openssl rand -base64 64` |
 | `DB_PASSWORD` | PostgreSQL password | Environment-specific password |
+| `METABASE_API_KEY` | Metabase API key, shared by every program | From the existing `unity-metabase` Secret (`MB_UNITY_ADMIN_API_KEY`) |
 
 ### 🟡 ConfigMap (environment-specific, non-sensitive)
 
@@ -46,52 +44,22 @@ Non-sensitive config (deployment names, model versions, database port) is hardco
 
 | Setting | Value |
 |---------|-------|
-| Azure OpenAI deployment | `gpt-5-mini` |
-| Azure OpenAI embedding deployment | `text-embedding-3-large` |
-| Azure OpenAI API version | `2024-10-21` |
 | Database port | `5432` |
+
+### Set in Unity AI Setup (sent in the token)
+
+| Token claim | AI Setup |
+|---|---|
+| `ai_chat_deployment`, `ai_chat_api_version` | AI Reporting → Chat model, and that model's API version |
+| `ai_embedding_deployment`, `ai_embedding_api_version` | AI Reporting → Embedding model, and that model's API version |
+
+UAI stores them per program in `tenant_registry` (with `embedded_with`, the embedding deployment the schema was embedded with). When the embedding model changes, the next request (or `app.py embed` / `embed-all`) re-embeds that program's schema and clears its query cache. Vectors from before AB#35030 have no `embedded_with`; they count as `text-embedding-3-large`, the model UAI then had in code. The semantic cache stores 3,072-dimension vectors (`halfvec(3072)`), so pick a 3,072-dimension embedding model such as `text-embedding-3-large`; with another size, reports still work but the cache is skipped and an error is logged.
 
 ---
 
-## Tenant Configuration
+## Program (tenant) settings
 
-The Metabase API key and per-tenant database mappings are **not** environment variables. They live in a JSON file that is mounted into the container as a secret.
-
-### Structure
-
-```json
-{
-  "Default Grants Program": {
-    "db_id": 5,
-    "collection_id": 16,
-    "schema_types": ["public", "custom"],
-    "api_key": "mb_your_metabase_api_key_here"
-  },
-  "REDIP": {
-    "db_id": 9,
-    "collection_id": 93,
-    "schema_types": ["public", "custom"],
-    "api_key": "mb_your_metabase_api_key_here"
-  }
-}
-```
-
-### OpenShift
-
-Each environment has an `[env]-unity-ai-tenant-config` Secret whose value is mounted over the committed `tenant_config.json` at `/app/backend/src/tenant_config.json`. This is where `api_key` and environment-specific `db_id`/`collection_id` values are set.
-
-### Local development
-
-Create `applications/Unity.AI.Reporting.Backend/src/tenant_config.local.json` (gitignored). The app merges it over `tenant_config.json` at startup — only include the fields you want to override:
-
-```json
-{
-  "Default Grants Program": { "api_key": "mb_your_local_key_here" },
-  "REDIP": { "api_key": "mb_your_local_key_here" }
-}
-```
-
-For Docker Compose, copy `docker-compose.override.yml.example` to `docker-compose.override.yml` (also gitignored) to mount the file into the container.
+UAI keeps one row per program in its `tenant_registry` table, written from the AI Reporting token the first time the program opens AI Reporting and refreshed on every later token: Metabase `db_id` (`mb_db_id`), `collection_id` (`mb_collection_id`), schema types, and the AI Setup models above. Set the Metabase ids on the program's Reporting tab in UGM; nothing is configured in UAI.
 
 ---
 
@@ -111,33 +79,6 @@ stringData:
   AZURE_OPENAI_API_KEY: "your-dev-api-key"
   JWT_SECRET: "your-64-char-jwt-secret"
   DB_PASSWORD: "your-dev-db-password"
-```
-
-### Tenant Config Secret
-
-```yaml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: dev-unity-ai-tenant-config
-  namespace: <namespace>-dev
-type: Opaque
-stringData:
-  tenant_config.json: |
-    {
-      "Default Grants Program": {
-        "db_id": 5,
-        "collection_id": 16,
-        "schema_types": ["public", "custom"],
-        "api_key": "mb_your_dev_metabase_api_key"
-      },
-      "REDIP": {
-        "db_id": 9,
-        "collection_id": 93,
-        "schema_types": ["public", "custom"],
-        "api_key": "mb_your_dev_metabase_api_key"
-      }
-    }
 ```
 
 ### ConfigMap
@@ -178,7 +119,7 @@ tenant-gitops-<namespace>/manifests/uai/overlays/
 2. Go to Settings → Admin → Databases
 3. Note the database ID from the URL or database list
 
-Or via API (using the `api_key` from tenant config):
+Or via API (using `METABASE_API_KEY`):
 
 ```bash
 curl -H "x-api-key: YOUR_METABASE_API_KEY" \
@@ -190,10 +131,10 @@ curl -H "x-api-key: YOUR_METABASE_API_KEY" \
 ## Common Issues
 
 ### API calls fail with authentication errors
-Verify the `api_key` in the tenant config secret has access to the Metabase instance.
+Verify `METABASE_API_KEY` has access to the Metabase instance.
 
 ### Application fails with "database not found"
-Verify `db_id` in the tenant config matches an actual database in the environment's Metabase instance.
+Verify the program's Metabase database id on its UGM Reporting tab matches an actual database in the environment's Metabase instance.
 
 ### JWT authentication fails
 Ensure `JWT_SECRET` is set and is at least 64 characters long.
@@ -205,7 +146,7 @@ Check `MB_MAP_REGION_UUID` — it must match the Regional Districts layer UUID i
 
 ## Security Best Practices
 
-1. Never commit secrets to Git — use the `[env]-unity-ai-tenant-config` Secret and `[env]-unity-ai-secrets` for all sensitive values
+1. Never commit secrets to Git — use `[env]-unity-ai-secrets`, `[env]-unity-ai-postgres` and `unity-metabase` for all sensitive values
 2. Each environment must have completely separate credentials
 3. Rotate JWT secrets, API keys, and database passwords regularly (`openssl rand -base64 64` for JWT)
 4. Database users should have only the required permissions

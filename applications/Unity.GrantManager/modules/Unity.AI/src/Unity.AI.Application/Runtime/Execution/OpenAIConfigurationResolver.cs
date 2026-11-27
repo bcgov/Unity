@@ -2,7 +2,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Caching.Memory;
 using System;
 using System.Linq;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Unity.AI.Domain;
@@ -21,14 +20,11 @@ public class OpenAIConfigurationResolver(
     IMemoryCache memoryCache,
     IConfiguration configuration,
     IDataFilter<IMultiTenant> multiTenantDataFilter,
-    ICurrentTenant currentTenant) : ITransientDependency
+    ICurrentTenant currentTenant,
+    AIConfigurationCacheSignal cacheSignal) : ITransientDependency
 {
     private const string DefaultProviderName = "OpenAI";
     private static readonly TimeSpan SettingsCacheDuration = TimeSpan.FromMinutes(5);
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true
-    };
 
     private readonly IRepository<AIModel, Guid> _modelRepository = modelRepository;
     private readonly IRepository<AIOperation, Guid> _operationRepository = operationRepository;
@@ -37,6 +33,7 @@ public class OpenAIConfigurationResolver(
     private readonly IConfiguration _configuration = configuration;
     private readonly IDataFilter<IMultiTenant> _multiTenantDataFilter = multiTenantDataFilter;
     private readonly ICurrentTenant _currentTenant = currentTenant;
+    private readonly AIConfigurationCacheSignal _cacheSignal = cacheSignal;
 
     public string ResolveProviderName() => DefaultProviderName;
 
@@ -67,7 +64,11 @@ public class OpenAIConfigurationResolver(
             throw new InvalidOperationException($"AI model '{model.Name}' is inactive.");
         }
 
-        var modelSettings = ResolveModelSettings(model);
+        if (model.Type != AIModelType.Chat)
+        {
+            throw new InvalidOperationException($"AI model '{model.Name}' is not a chat model.");
+        }
+
         var providerName = model.Provider;
         if (!string.Equals(providerName, DefaultProviderName, StringComparison.Ordinal))
         {
@@ -85,69 +86,24 @@ public class OpenAIConfigurationResolver(
             throw new InvalidOperationException($"AI prompt '{prompt.Name}' v{prompt.VersionNumber} is not active.");
         }
 
-        if (operation.CompletionTokens <= 0)
+        var apiKey = Required($"Azure:{providerName}:ApiKey");
+        var apiVersion = model.ApiVersion;
+        if (string.IsNullOrWhiteSpace(apiVersion))
         {
-            throw new InvalidOperationException($"AI operation '{operation.Name}' must define a positive CompletionTokens value.");
+            throw new InvalidOperationException($"AI model '{model.Name}' has no API version set in AI Setup.");
         }
 
-        var apiKey = Required($"Azure:{providerName}:ApiKey");
         var settings = new OpenAIOperationSettings(
             providerName,
             model.Name,
             apiKey,
             new Uri(endpoint),
             model.Name,
-            modelSettings.MaxOutputTokenCountSupported,
-            modelSettings.Temperature,
-            operation.CompletionTokens,
+            apiVersion.Trim(),
             $"v{prompt.VersionNumber}");
 
-        _memoryCache.Set(cacheKey, settings, SettingsCacheDuration);
+        _memoryCache.Set(cacheKey, settings, CreateCacheEntryOptions());
         return settings;
-    }
-
-    public async Task<double?> ResolveConfiguredTemperatureAsync(string? modelName = null, CancellationToken cancellationToken = default)
-    {
-        var modelConfiguration = await ResolveModelConfigurationAsync(modelName, cancellationToken);
-        if (modelConfiguration != null)
-        {
-            return modelConfiguration.Value.Settings.Temperature;
-        }
-
-        throw new InvalidOperationException("AI model is not configured.");
-    }
-
-    public async Task<bool> ResolveMaxOutputTokenCountSupportedAsync(string? modelName = null, CancellationToken cancellationToken = default)
-    {
-        var modelConfiguration = await ResolveModelConfigurationAsync(modelName, cancellationToken);
-        if (modelConfiguration != null)
-        {
-            return modelConfiguration.Value.Settings.MaxOutputTokenCountSupported;
-        }
-
-        throw new InvalidOperationException("AI model is not configured.");
-    }
-
-    public async Task<int> ResolveCompletionTokensAsync(string operationName, CancellationToken cancellationToken = default)
-    {
-        var operation = await ResolveOperationAsync(operationName, cancellationToken);
-        if (operation == null)
-        {
-            throw new InvalidOperationException($"AI operation '{operationName}' is not configured.");
-        }
-
-        var model = await _modelRepository.GetAsync(operation.AIModelId, cancellationToken: cancellationToken);
-        if (!model.IsActive)
-        {
-            throw new InvalidOperationException($"AI model '{model.Name}' is inactive.");
-        }
-
-        if (operation.CompletionTokens <= 0)
-        {
-            throw new InvalidOperationException($"AI operation '{operation.Name}' must define a positive CompletionTokens value.");
-        }
-
-        return operation.CompletionTokens;
     }
 
     public Task<string> ResolvePromptVersionAsync(string operationName, CancellationToken cancellationToken = default)
@@ -157,10 +113,10 @@ public class OpenAIConfigurationResolver(
 
     public async Task<Uri> ResolveEndpointAsync(string? modelName = null, CancellationToken cancellationToken = default)
     {
-        var modelConfiguration = await ResolveModelConfigurationAsync(modelName, cancellationToken);
-        if (modelConfiguration != null)
+        var model = await ResolveModelAsync(modelName, cancellationToken);
+        if (model != null)
         {
-            return new Uri(Required($"Azure:{modelConfiguration.Value.Model.Provider}:Endpoint"));
+            return new Uri(Required($"Azure:{model.Provider}:Endpoint"));
         }
 
         throw new InvalidOperationException("AI model is not configured.");
@@ -168,10 +124,10 @@ public class OpenAIConfigurationResolver(
 
     public async Task<string> ResolveDeploymentNameAsync(string? modelName = null, CancellationToken cancellationToken = default)
     {
-        var modelConfiguration = await ResolveModelConfigurationAsync(modelName, cancellationToken);
-        if (modelConfiguration != null)
+        var model = await ResolveModelAsync(modelName, cancellationToken);
+        if (model != null)
         {
-            return modelConfiguration.Value.Model.Name;
+            return model.Name;
         }
 
         throw new InvalidOperationException("AI model is not configured.");
@@ -179,43 +135,13 @@ public class OpenAIConfigurationResolver(
 
     public async Task<string> ResolveProfileNameAsync(string? modelName = null, CancellationToken cancellationToken = default)
     {
-        var modelConfiguration = await ResolveModelConfigurationAsync(modelName, cancellationToken);
-        if (modelConfiguration != null)
+        var model = await ResolveModelAsync(modelName, cancellationToken);
+        if (model != null)
         {
-            return modelConfiguration.Value.Model.Name;
+            return model.Name;
         }
 
         throw new InvalidOperationException("AI model is not configured.");
-    }
-
-    private async Task<(AIModel Model, AIModelSettings Settings)?> ResolveModelConfigurationAsync(
-        string? modelName,
-        CancellationToken cancellationToken)
-    {
-        var model = await ResolveModelAsync(modelName, cancellationToken);
-        if (model == null)
-        {
-            return null;
-        }
-
-        var settings = JsonSerializer.Deserialize<AIModelSettings>(model.SettingsJson, JsonOptions);
-        if (settings == null)
-        {
-            throw new InvalidOperationException($"AI model '{model.Name}' has invalid settings JSON.");
-        }
-
-        return (model, settings);
-    }
-
-    private static AIModelSettings ResolveModelSettings(AIModel model)
-    {
-        var settings = JsonSerializer.Deserialize<AIModelSettings>(model.SettingsJson, JsonOptions);
-        if (settings == null)
-        {
-            throw new InvalidOperationException($"AI model '{model.Name}' has invalid settings JSON.");
-        }
-
-        return settings;
     }
 
     private async Task<AIModel?> ResolveModelAsync(string? modelName, CancellationToken cancellationToken)
@@ -300,11 +226,17 @@ public class OpenAIConfigurationResolver(
             operation.Id,
             operation.Name,
             operation.AIModelId,
-            operation.CompletionTokens,
             operation.IsActive);
 
-        _memoryCache.Set(cacheKey, snapshot, SettingsCacheDuration);
+        _memoryCache.Set(cacheKey, snapshot, CreateCacheEntryOptions());
         return snapshot;
+    }
+
+    private MemoryCacheEntryOptions CreateCacheEntryOptions()
+    {
+        return new MemoryCacheEntryOptions()
+            .SetAbsoluteExpiration(SettingsCacheDuration)
+            .AddExpirationToken(_cacheSignal.GetChangeToken());
     }
 
     private string BuildOperationSnapshotCacheKey(string operationName)
@@ -341,6 +273,5 @@ public class OpenAIConfigurationResolver(
         Guid Id,
         string Name,
         Guid AIModelId,
-        int CompletionTokens,
         bool IsActive);
 }

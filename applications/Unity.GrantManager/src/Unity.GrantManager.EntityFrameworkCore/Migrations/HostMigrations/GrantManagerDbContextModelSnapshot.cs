@@ -476,6 +476,11 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("ApiVersion")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -517,9 +522,10 @@ namespace Unity.GrantManager.Migrations.HostMigrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
-                    b.Property<string>("SettingsJson")
+                    b.Property<string>("Type")
                         .IsRequired()
-                        .HasColumnType("jsonb");
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.HasKey("Id");
 
@@ -536,9 +542,6 @@ namespace Unity.GrantManager.Migrations.HostMigrations
 
                     b.Property<Guid>("AIModelId")
                         .HasColumnType("uuid");
-
-                    b.Property<int>("CompletionTokens")
-                        .HasColumnType("integer");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()

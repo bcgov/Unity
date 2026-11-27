@@ -14,19 +14,54 @@ $(function () {
     let isNewVersion      = false;
     let cachedVersions    = [];   // versions for the currently-selected prompt
 
+    // Escapes for both element text and quoted attribute values (" and ' included),
+    // since results also go into title="..." and data-*="...".
+    const escapeHtml = (value) => String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+
+    // The previews fill their column and end in an ellipsis (ai-prompt-preview-cell in
+    // Index.css); User Prompt has no width so it takes the spare space. The text is
+    // limited only to keep the page small; the tooltip shows the same text.
+    const promptPreview = (data) => {
+        const text = escapeHtml((data ?? '').slice(0, 300));
+        return `<span class="ai-prompt-preview-text" title="${text}">${text}</span>`;
+    };
+
     // ── Table columns ────────────────────────────────────────────────────────
     const listColumns = [
         {
             title: l('PromptName'),
             name: 'name',
             data: 'name',
-            index: 0
+            index: 0,
+            // Wide enough for the longest operation name, which doesn't wrap.
+            width: '12rem',
+            className: 'text-nowrap',
+            render: (data) => escapeHtml(data)
         },
         {
             title: l('VersionNumber'),
             name: 'versionNumber',
             data: 'versionNumber',
             index: 1,
+            width: '6.5rem',
+            // Headers are left-aligned by the theme, so numbers are too.
+            className: 'text-start text-nowrap',
+            // In use marks the version Unity calls: the highest active one (worked out
+            // on the server, isInUse). Status shows only the Active switch.
+            render: (data, type, row) => {
+                if (type !== 'display') {
+                    return data;
+                }
+                const inUse = row.isInUse
+                    ? ` <span class="badge bg-primary ms-1">${escapeHtml(l('PromptInUse'))}</span>`
+                    : '';
+                return `${escapeHtml(data)}${inUse}`;
+            }
         },
         {
             title: l('SystemPrompt'),
@@ -34,7 +69,9 @@ $(function () {
             data: 'systemPrompt',
             index: 2,
             defaultContent: '',
-            render: (data) => (data ?? '').slice(0, 80)
+            width: '22rem',
+            className: 'ai-prompt-preview-cell',
+            render: promptPreview
         },
         {
             title: l('UserPrompt'),
@@ -42,29 +79,52 @@ $(function () {
             data: 'userPrompt',
             index: 3,
             defaultContent: '',
-            render: (data) => (data ?? '').slice(0, 80)
+            // No width: this column takes the spare space, so the table fits its box.
+            className: 'ai-prompt-preview-cell',
+            render: promptPreview
         },
         {
-            title: l('PromptIsActive'),
+            title: l('PromptStatus'),
             name: 'isActive',
             data: 'isActive',
             index: 4,
-            render: (data) => data
-                ? '<span class="badge bg-success">Active</span>'
-                : '<span class="badge bg-secondary">Inactive</span>'
+            width: '4.5rem',
+            className: 'text-nowrap',
+            // The Active switch, shown as on AI Setup's models and assignments.
+            render: (data, type) => {
+                if (type !== 'display') {
+                    return data ? '1' : '0';
+                }
+                return data
+                    ? `<span class="badge bg-success">${escapeHtml(l('PromptActive'))}</span>`
+                    : `<span class="badge bg-secondary">${escapeHtml(l('PromptInactive'))}</span>`;
+            }
         },
         {
             title: l('Actions'),
             data: 'id',
             orderable: false,
-            className: 'text-center',
+            // Same as the AI Setup tables.
+            width: '9.5rem',
+            className: 'text-center text-nowrap',
             name: 'rowActions',
             index: 5,
             rowAction: {
                 items: [
                     {
-                        text: 'Edit Prompt',
+                        text: l('AISetup:Edit'),
                         action: (data) => editModal.open({ id: data.record.id })
+                    },
+                    {
+                        // The version in use (highest active) cannot be deleted.
+                        text: l('AISetup:Delete'),
+                        visible: (record) => !record.isInUse,
+                        confirmMessage: (data) => l('PromptDeleteConfirm', data.record.name, data.record.versionNumber),
+                        action: (data) => unity.aI.prompts.aIPrompt.delete(data.record.id)
+                            .then(() => {
+                                abp.notify.success(l('PromptDeleted', data.record.name, data.record.versionNumber));
+                                dataTable.ajax.reload();
+                            })
                     }
                 ]
             }
@@ -109,6 +169,12 @@ $(function () {
         externalSearchId: 'search-prompts',
         fixedHeaders: true
     });
+
+    // The rule behind In use, on the Version heading.
+    $(dataTable.column('versionNumber:name').header())
+        .attr('data-bs-toggle', 'tooltip')
+        .attr('title', l('PromptInUseHelp'));
+    bootstrap.Tooltip.getOrCreateInstance(dt.closest('.dt-container')[0] ?? document.body, { selector: '[data-bs-toggle="tooltip"]' });
 
     createModal.onResult(() => dataTable.ajax.reload());
     editModal.onResult(()   => dataTable.ajax.reload());

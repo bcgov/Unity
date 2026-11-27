@@ -37,7 +37,8 @@ The Cypress projects typically have a directory structure as follows:
     - `commands.ts`: Custom Cypress commands used in end-to-end testing.
 - `node_modules`: Automatically generated folder for the Node.js modules and dependencies.
 - `cypress.config.ts`: Configuration settings for Cypress, written in TypeScript format.
-- `cypress.env.json` : Cypress environmental variables (Ignored in repository).
+- `cypress/config/`: Local credentials and per-environment settings — either one `unity-cypress-config.json` or one `<env>.json` per environment (gitignored). See `cypress/config/README-gitignore-config-json-files.md`.
+- `cypress.env.json` : Cypress environmental variables written by CI (Ignored in repository).
 - `cypress.pipeline.env.json` : CI/CD file used to override `cypress.env.json` variables.
 - `package.json`: Project dependencies and metadata.
 - `package-lock.json`: Automatically generated where npm modifies either the `node_modules` tree or `package.json` file.

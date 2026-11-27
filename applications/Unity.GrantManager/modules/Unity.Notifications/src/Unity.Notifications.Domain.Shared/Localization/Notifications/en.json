@@ -47,6 +47,9 @@
     "Permission:Notifications.Form.Email.Schedule.Create": "Create Form Scheduled Email",
     "Permission:Notifications.Form.Email.Schedule.Delete": "Delete Form Scheduled Email",
     "Permission:Notifications.Form.Email.Schedule.Cancel": "Cancel Form Scheduled Email",
+    "FormNotifications:DeleteConfirmTitle": "Delete Notification Plan?",
+    "FormNotifications:DeleteConfirmMessage": "This notification plan will be permanently removed and will not send any new notifications. Notifications already sent or in progress are not affected.",
+    "FormNotifications:DeleteFailed": "Failed to delete notification plan",
     "Permission:Notifications.NotificationList": "Notification List",
     "Permission:Notifications.NotificationList.View": "View Notification List",
     "Menu:Notifications": "Notifications",
@@ -162,6 +165,8 @@
     "RealtimeOps:MessageType": "Message Type",
     "RealtimeOps:SelectMessageType": "Select message type",
     "RealtimeOps:MessageTypeBanner": "Banner",
-    "RealtimeOps:MessageTypePopup": "Popup"
+    "RealtimeOps:MessageTypePopup": "Popup",
+    "EmailAddressModal:InUseTooltip:AriaLabel": "Email address usage advisory",
+    "EmailAddressModal:InUseTooltip:Content": "If this email address is currently associated with one or more active Email Templates and/or Form-Level Notification Plans, updating the email address will <strong>not</strong> automatically update any existing templates or notification plans that use it.<br><br>To ensure those configurations use the new email address, you must manually update the <strong>From</strong> email address within each associated Email Template or Form-Level Notification Plan."
   }
 }

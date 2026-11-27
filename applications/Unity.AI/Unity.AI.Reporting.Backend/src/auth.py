@@ -12,7 +12,8 @@ from datetime import datetime, timedelta, timezone
 from functools import wraps
 from flask import abort, g, request, jsonify
 from typing import Optional, Dict, Any, Callable
-from config import DEFAULT_TENANT
+import ai_models
+from tenant_registry import TenantEntry, parse_schema_types, tenant_registry
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -74,10 +75,8 @@ class AuthManager:
             if 'sub' in payload and 'user_id' not in payload:
                 payload['user_id'] = payload['sub']
 
-            # If tenant is missing, use default
-            if 'tenant' not in payload:
-                payload['tenant'] = DEFAULT_TENANT
-
+            # No fallback tenant: a token without 'tenant' is rejected by
+            # require_auth (AB#33978).
             return payload
         except jwt.ExpiredSignatureError:
             logger.warning("Token has expired")
@@ -141,9 +140,11 @@ def require_auth(f: Callable) -> Callable:
                     'message': 'Valid JWT token must be provided in Authorization header'
                 }), 401
 
-            # Validate required fields in token
-            required_fields = ['user_id', 'tenant']
-            missing_fields = [field for field in required_fields if field not in user_data]
+            # Validate required fields in token. mb_db_id / mb_collection_id come
+            # from UGM (the tenant's Metabase database and collection, AB#33978); the
+            # ai_* claims are AI Setup's AI Reporting models and API version (AB#35030).
+            required_fields = ['user_id', 'tenant', 'mb_db_id', 'mb_collection_id']
+            missing_fields = [field for field in required_fields if not user_data.get(field)]
             if missing_fields:
                 logger.warning(f"Token missing required fields: {missing_fields}")
                 return jsonify({
@@ -151,8 +152,29 @@ def require_auth(f: Callable) -> Callable:
                     'message': f'Token missing required fields: {", ".join(missing_fields)}'
                 }), 401
 
-            # Make user data available to the route
+            missing_models = [field for field in AI_MODEL_CLAIMS if not user_data.get(field)]
+            if missing_models:
+                logger.warning(f"Token missing AI Setup model claims: {missing_models}")
+                return jsonify({
+                    'error': 'AI Reporting not set up',
+                    'message': "AI Reporting's models are not set in AI Setup. Ask IT Operations to set them."
+                }), 401
+
+            entry = tenant_entry_from_token(user_data)
+            if entry is None or entry.models is None:
+                logger.warning("Token has invalid Metabase ids or AI Setup model claims")
+                return jsonify({
+                    'error': 'Invalid token',
+                    'message': 'Token has invalid Metabase ids or AI Reporting models'
+                }), 401
+
+            # Record the tenant (and its models) so token-less code (embed-all, /ready) knows it.
+            tenant_registry.register(entry)
+
+            # Make user data and AI Setup's models available to the route
             g.current_user = user_data
+            g.tenant_entry = entry
+            ai_models.set_current(entry.models)
             return f(*args, **kwargs)
 
         except Exception as e:
@@ -186,6 +208,37 @@ def optional_auth(f: Callable) -> Callable:
         return f(*args, **kwargs)
     
     return decorated_function
+
+
+def tenant_entry_from_token(user_data: Dict[str, Any]) -> Optional[TenantEntry]:
+    """Build the tenant's registry entry from the token claims, or None if the ids aren't integers."""
+    try:
+        db_id = int(str(user_data['mb_db_id']).strip())
+        collection_id = int(str(user_data['mb_collection_id']).strip())
+    except (KeyError, TypeError, ValueError):
+        return None
+    if db_id <= 0 or collection_id <= 0:
+        return None
+    return TenantEntry(
+        tenant_name=str(user_data['tenant']),
+        db_id=db_id,
+        collection_id=collection_id,
+        schema_types=parse_schema_types(user_data.get('schema_types')),
+        chat_deployment=_claim_or_none(user_data, 'ai_chat_deployment'),
+        chat_api_version=_claim_or_none(user_data, 'ai_chat_api_version'),
+        embedding_deployment=_claim_or_none(user_data, 'ai_embedding_deployment'),
+        embedding_api_version=_claim_or_none(user_data, 'ai_embedding_api_version'),
+    )
+
+
+# AI Setup's AI Reporting models, each with its API version, sent by UGM (AB#35030).
+AI_MODEL_CLAIMS = ('ai_chat_deployment', 'ai_chat_api_version',
+                   'ai_embedding_deployment', 'ai_embedding_api_version')
+
+
+def _claim_or_none(user_data: Dict[str, Any], name: str) -> Optional[str]:
+    value = str(user_data.get(name) or '').strip()
+    return value or None
 
 
 def get_user_from_token() -> Dict[str, Any]:

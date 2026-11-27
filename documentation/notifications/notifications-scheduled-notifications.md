@@ -173,4 +173,6 @@ Anything else logs a warning and is skipped. A recognized identifier with no add
 |`GET /can-delete-template/{templateId}` · `GET /template-notification-plans/{templateId}`|Guard a template deletion by showing what still references it|
 |`POST /email-template/{templateId}/copy-attachments` · `GET /email-template/{templateId}/validate-attachments` · `DELETE /email-log/{emailLogId}/origin-attachments`|The template-attachment operations described in [notifications-attachments.md](notifications-attachments.md)|
 
-Access is gated by the `Notifications.Form.Tab` permission family (`Notifications.Form.Email.Schedule.Create` / `.Cancel`).
+Access is gated by the `Notifications.Form.Tab` permission family (`Notifications.Form.Email.Schedule.Create` / `.Cancel` / `.Delete`).
+
+`DELETE /{formId}/{id}` soft-deletes the plan. The date job and event handler stop picking it up, and emails already sent keep their `ScheduledNotificationId`. Plans never queue emails for later delivery, so nothing else needs cleaning up.

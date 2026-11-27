@@ -431,8 +431,9 @@ interface ChefsSeedSubmissionPayload {
  * IDIR/MFA-picker flakiness a UI-driven login carries.
  *
  * Requires a `chefsApiKey` value for the current environment, set in
- * cypress/config/{env}.json (gitignored) — the form's API key from CHEFS
- * form management settings.
+ * cypress/config/{env}.json or the CYPRESS_CONFIG_{ENV} block of
+ * cypress/config/unity-cypress-config.json (both gitignored) — the form's
+ * API key from CHEFS form management settings.
  *
  * @returns Chainable containing the confirmation ID of the created submission
  */
@@ -452,7 +453,7 @@ Cypress.Commands.add("seedApprovalFlowSubmission", () => {
   return cy.env(["chefsApiKey", "test1username"]).then(({ chefsApiKey, test1username }) => {
     expect(
       chefsApiKey,
-      `Missing chefsApiKey for '${envKey}' — set it in cypress/config/${envKey}.json`,
+      `Missing chefsApiKey for '${envKey}' — set it in cypress/config/${envKey}.json or CYPRESS_CONFIG_${envKey.toUpperCase()} in cypress/config/unity-cypress-config.json`,
     ).to.exist;
 
     return cy

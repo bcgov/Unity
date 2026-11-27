@@ -146,7 +146,6 @@
     "Enum:AssessmentAction.Complete": "Complete Assessment",
 
     "Permission:GrantManagerManagement": "Grant Manager Management",
-    "Permission:GrantManagerManagement.Default": "Default",
 
     "Permission:GrantApplicationManagement": "Grant Application Management",
     "Permission:GrantApplicationManagement.Dashboard.Default": "Dashboard",

@@ -61,14 +61,15 @@ Server runs on `http://localhost:5000`
 Required variables (see `applications/.env.example`):
 
 ```env
-# Azure OpenAI — endpoint and key only; deployment names, versions are hardcoded in config.py
+# Azure OpenAI — endpoint and key only; models and API versions come from Unity AI Setup in the token
 AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
 AZURE_OPENAI_API_KEY=your_key
 
 # JWT Authentication
 JWT_SECRET=your_secure_secret_key
 
-# Metabase — API key lives in tenant_config.local.json (gitignored), not here
+# Metabase — one API key for every program; each program's database and collection come from UGM
+METABASE_API_KEY=mb_your_metabase_api_key
 MB_URL=https://your-metabase-url.com
 MB_MAP_REGION_UUID=your_metabase_regional_districts_uuid
 

@@ -45,7 +45,7 @@
                             </abp-column>
                             <abp-column size="_4" class="px-1">
                                 <abp-input type="date" asp-for="@Model.ApprovalView.FinalDecisionDate"
-                                           onchange="validateDecisionDate();" disabled="@(!Model.IsEditGranted)"
+                                           onchange="validateDecisionDate();" disabled="@(!Model.IsApprovalEditGranted)"
                                            abp-data-datepicker="false">
                                 </abp-input>
                             </abp-column>

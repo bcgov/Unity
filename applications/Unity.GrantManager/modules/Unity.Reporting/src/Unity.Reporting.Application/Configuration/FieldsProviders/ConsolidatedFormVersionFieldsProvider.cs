@@ -11,8 +11,8 @@ using Volo.Abp.DependencyInjection;
 namespace Unity.Reporting.Configuration.FieldsProviders
 {
     /// <summary>
-    /// Fields provider for consolidated form version submission views that span all form versions.
-    /// Reads live field metadata directly from the form metadata service across all form versions,
+    /// Fields provider for consolidated submission metadata from the 10 newest form versions.
+    /// Reads live field metadata directly from the form metadata service for those versions,
     /// merges fields by (Label, Path, Type), and detects version changes for break notification.
     /// The CorrelationId for this provider is the FormId (not a specific form version ID).
     /// </summary>
@@ -21,10 +21,12 @@ namespace Unity.Reporting.Configuration.FieldsProviders
         IFormMetadataService formMetadataService)
         : IFieldsProvider, ITransientDependency
     {
+        private const int MaximumFormVersions = 10;
+
         public string CorrelationProvider => Providers.FormVersionConsolidated;
 
         /// <summary>
-        /// Retrieves and merges submission field metadata across all form versions for consolidated view configuration.
+        /// Retrieves and merges submission field metadata from the 10 newest versions for consolidated view configuration.
         /// Fields matching on (Label, Path, Type) are merged into a single column entry.
         /// Fields with the same (Label, Path) but different Type produce per-version conflict entries.
         /// Fields unique to one version are included with a VersionLabel marker.
@@ -35,7 +37,7 @@ namespace Unity.Reporting.Configuration.FieldsProviders
             var versionsWithFields = new List<(Guid VersionId, string VersionLabel, FieldPathTypeDto[] Fields)>();
             var metadataInfo = new Dictionary<string, string>();
 
-            foreach (var version in versions.OrderBy(v => v.Version))
+            foreach (var version in SelectCurrentVersions(versions))
             {
                 var versionLabel = $"v{version.Version}";
                 var fullMetadata = await formMetadataService.GetFormComponentMetaDataAsync(version.Id);
@@ -65,7 +67,7 @@ namespace Unity.Reporting.Configuration.FieldsProviders
         }
 
         /// <summary>
-        /// Detects changes in form versions since the consolidated mapping was last saved.
+        /// Detects changes in the 10 newest form versions since the consolidated mapping was last saved.
         /// Returns a semicolon-joined change description or null if nothing has changed.
         /// Since form version fields are immutable, only added/removed versions are tracked.
         /// </summary>
@@ -74,7 +76,7 @@ namespace Unity.Reporting.Configuration.FieldsProviders
             var versions = await applicationFormAppService.GetVersionsAsync(formId);
             var currentInfo = new Dictionary<string, string>();
 
-            foreach (var version in versions)
+            foreach (var version in SelectCurrentVersions(versions))
             {
                 var versionLabel = $"v{version.Version}";
                 var fullMetadata = await formMetadataService.GetFormComponentMetaDataAsync(version.Id);
@@ -90,6 +92,13 @@ namespace Unity.Reporting.Configuration.FieldsProviders
 
             return changes.Count > 0 ? string.Join("; ", changes) : null;
         }
+
+        private static IEnumerable<ApplicationFormVersionDto> SelectCurrentVersions(
+            IEnumerable<ApplicationFormVersionDto> versions) =>
+            versions.OrderByDescending(version => version.Version)
+                .ThenBy(version => version.Id)
+                .Take(MaximumFormVersions)
+                .OrderBy(version => version.Version);
 
         private static FieldPathTypeDto? ConvertToFieldPathType(FormComponentMetaDataItemDto? item)
         {

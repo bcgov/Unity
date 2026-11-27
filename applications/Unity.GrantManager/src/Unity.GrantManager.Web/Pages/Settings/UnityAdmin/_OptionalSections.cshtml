@@ -7,6 +7,13 @@
     </div>
 }
 
+@if (Model.ShowAISetup)
+{
+    <div id="ai-setup-div" class="input-area card mb-3 ai-setup hide">
+        @await Html.PartialAsync("../ConfigurationManagement/_AISetup")
+    </div>
+}
+
 @if (Model.ShowEndpoints)
 {
     <div id="endpoints-div" class="input-area card mb-3 endpoints hide">

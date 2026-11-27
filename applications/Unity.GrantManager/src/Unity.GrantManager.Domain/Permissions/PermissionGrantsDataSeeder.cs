@@ -22,6 +22,15 @@ namespace Unity.GrantManager.Permissions
             _permissionDataSeeder = permissionDataSeeder;
         }
 
+        // Replaces the former GrantManagerManagement.Default permission, which gave access to the
+        // Applications menu, the Payments menu and application assignment.
+        // Initial Assignment is provided separately by StatusWorkflowRoleDefaults for eligible roles.
+        public readonly List<string> ApplicationAccess_CommonPermissions = [
+            GrantApplicationPermissions.Applications.Default,
+            PaymentsPermissions.Payments.Default,
+            GrantApplicationPermissions.Assignments.Default
+        ];
+
         public readonly List<string> ReviewAndAssessment_CommonPermissions = [
             UnitySelector.Review.Default,
             UnitySelector.Review.Approval.Default,
@@ -103,6 +112,7 @@ namespace Unity.GrantManager.Permissions
             NotificationsPermissions.Email.NotificationsTab,
             NotificationsPermissions.Email.ScheduleCreate,
             NotificationsPermissions.Email.ScheduleCancel,
+            NotificationsPermissions.Email.ScheduleDelete,
             NotificationsPermissions.Email.Application.CancelScheduled,
             NotificationsPermissions.Email.Application.Schedule,
             NotificationsPermissions.Email.Applicant.CancelScheduled,
@@ -178,8 +188,7 @@ namespace Unity.GrantManager.Permissions
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.ProgramManager,
             [
                     .. StatusWorkflowRoleDefaults.ForRole(UnityRoles.ProgramManager),
-                    GrantManagerPermissions.Default,
-                    GrantApplicationPermissions.Applications.Default,
+                    .. ApplicationAccess_CommonPermissions,
                     GrantApplicationPermissions.Comments.Add,
                     GrantManagerPermissions.Organizations.Default,
                     GrantManagerPermissions.Organizations.ManageProfiles,
@@ -223,8 +232,7 @@ namespace Unity.GrantManager.Permissions
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.Reviewer,
                 [
                     .. StatusWorkflowRoleDefaults.ForRole(UnityRoles.Reviewer),
-                    GrantManagerPermissions.Default,
-                    GrantApplicationPermissions.Applications.Default,
+                    .. ApplicationAccess_CommonPermissions,
                     GrantApplicationPermissions.Comments.Add,
 
                     .. ReviewAndAssessment_CommonPermissions,
@@ -241,8 +249,7 @@ namespace Unity.GrantManager.Permissions
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.Assessor,
                 [
                     .. StatusWorkflowRoleDefaults.ForRole(UnityRoles.Assessor),
-                    GrantManagerPermissions.Default,
-                    GrantApplicationPermissions.Applications.Default,
+                    .. ApplicationAccess_CommonPermissions,
                     GrantApplicationPermissions.Comments.Add,
 
                     .. ReviewAndAssessment_CommonPermissions,
@@ -260,8 +267,7 @@ namespace Unity.GrantManager.Permissions
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.TeamLead,
                 [
                     .. StatusWorkflowRoleDefaults.ForRole(UnityRoles.TeamLead),
-                    GrantManagerPermissions.Default,
-                    GrantApplicationPermissions.Applications.Default,
+                    .. ApplicationAccess_CommonPermissions,
                     GrantApplicationPermissions.Comments.Add,
                     GrantManagerPermissions.Organizations.Default,
                     GrantManagerPermissions.Organizations.ManageProfiles,
@@ -291,8 +297,7 @@ namespace Unity.GrantManager.Permissions
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.Approver,
                 [
                     .. StatusWorkflowRoleDefaults.ForRole(UnityRoles.Approver),
-                    GrantManagerPermissions.Default,
-                    GrantApplicationPermissions.Applications.Default,
+                    .. ApplicationAccess_CommonPermissions,
                     GrantApplicationPermissions.Comments.Add,
 
                     .. ReviewAndAssessment_CommonPermissions,
@@ -309,7 +314,7 @@ namespace Unity.GrantManager.Permissions
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.SystemAdmin,
                 [
                     .. StatusWorkflowRoleDefaults.ForRole(UnityRoles.SystemAdmin),
-                    GrantManagerPermissions.Default,
+                    .. ApplicationAccess_CommonPermissions,
                     UnitySettingManagementPermissions.UserInterface,
                     UnitySettingManagementPermissions.EditProgramDetails,
                     GrantManagerPermissions.Organizations.Default,
@@ -341,9 +346,7 @@ namespace Unity.GrantManager.Permissions
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.L1Approver,
                 [
                     .. StatusWorkflowRoleDefaults.ForRole(UnityRoles.L1Approver),
-                    GrantManagerPermissions.Default,
-                    GrantApplicationPermissions.Applications.Default,
-                    PaymentsPermissions.Payments.Default,
+                    .. ApplicationAccess_CommonPermissions,
                     PaymentsPermissions.Payments.L1ApproveOrDecline,
 
                     .. ReviewAndAssessment_CommonPermissions,
@@ -359,9 +362,7 @@ namespace Unity.GrantManager.Permissions
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.L2Approver,
                 [
                     .. StatusWorkflowRoleDefaults.ForRole(UnityRoles.L2Approver),
-                    GrantManagerPermissions.Default,
-                    GrantApplicationPermissions.Applications.Default,
-                    PaymentsPermissions.Payments.Default,
+                    .. ApplicationAccess_CommonPermissions,
                     PaymentsPermissions.Payments.L2ApproveOrDecline,
 
                     .. ReviewAndAssessment_CommonPermissions,
@@ -377,9 +378,7 @@ namespace Unity.GrantManager.Permissions
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.L3Approver,
                 [
                     .. StatusWorkflowRoleDefaults.ForRole(UnityRoles.L3Approver),
-                    GrantManagerPermissions.Default,
-                    GrantApplicationPermissions.Applications.Default,
-                    PaymentsPermissions.Payments.Default,
+                    .. ApplicationAccess_CommonPermissions,
                     PaymentsPermissions.Payments.L3ApproveOrDecline,
 
                     .. ReviewAndAssessment_CommonPermissions,
@@ -395,9 +394,7 @@ namespace Unity.GrantManager.Permissions
             await _permissionDataSeeder.SeedAsync(RolePermissionValueProvider.ProviderName, UnityRoles.ExternalAssessor,
                 [
                     .. StatusWorkflowRoleDefaults.ForRole(UnityRoles.ExternalAssessor),
-                    GrantManagerPermissions.Default,
-                    GrantApplicationPermissions.Applications.Default,
-                    PaymentsPermissions.Payments.Default,
+                    .. ApplicationAccess_CommonPermissions,
 
                     UnitySelector.Review.Default,
                     UnitySelector.Review.Approval.Default,

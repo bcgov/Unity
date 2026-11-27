@@ -44,6 +44,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from config import config  # noqa: E402
+from tenant_registry import tenant_registry  # noqa: E402
 from sql_format import collapse_sql, has_comment  # noqa: E402
 
 TIER_BY_SCHEMA_TYPE = {
@@ -103,7 +104,7 @@ def gold_sql_from_row(row: dict) -> str:
 def shared_fields_from_row(row: dict) -> dict:
     schema_type = row["schema_type"].strip().lower()
     tenant_id = row["tenant_id"].strip()
-    config.get_tenant_config(tenant_id)  # validates the tenant exists
+    tenant_registry.get_config(tenant_id)  # validates the tenant exists
     return {
         "question": row["question"].strip(),
         "tenant_id": tenant_id,

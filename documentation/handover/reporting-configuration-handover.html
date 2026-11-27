@@ -363,10 +363,11 @@ Unity.Reporting.Web                    ReportingConfiguration view component + c
     </div>
 
     <h3>Permissions</h3>
+    <p>In permission management, reporting configuration permissions are located under <strong>Grant Manager Management → Manage Forms → Manage Reporting</strong>. <strong>Edit Reporting Configurations</strong> replaces the former <strong>Update Reporting Configurations</strong> label. The permission identifiers remain unchanged, preserving existing role and user grants.</p>
     <div class="rowlist">
-      <div class="row"><div class="k">Reporting.Configuration<span class="sub">ReportingPermissions.Configuration.Default</span></div><div class="v"><p>Class-level <span class="code">[Authorize]</span> on <span class="code">ReportMappingService</span>. Also gates the tab's visibility, alongside the <span class="code">Unity.Reporting</span> feature.</p></div></div>
-      <div class="row"><div class="k">Reporting.Configuration.Update</div><div class="v"><p><span class="code">CreateAsync</span>, <span class="code">UpdateAsync</span>, <span class="code">GenerateViewAsync</span>, <span class="code">GenerateColumnNames</span>.</p></div></div>
-      <div class="row"><div class="k">Reporting.Configuration.Delete</div><div class="v"><p><span class="code">DeleteAsync</span> — removes the mapping and drops its view.</p></div></div>
+      <div class="row"><div class="k">Manage Reporting<span class="sub">Reporting.Configuration<br>ReportingPermissions.Configuration.Default</span></div><div class="v"><p>Class-level <span class="code">[Authorize]</span> on <span class="code">ReportMappingService</span>. Also gates the tab's visibility, alongside the <span class="code">Unity.Reporting</span> feature.</p></div></div>
+      <div class="row"><div class="k">Edit Reporting Configurations<span class="sub">Reporting.Configuration.Update</span></div><div class="v"><p><span class="code">CreateAsync</span>, <span class="code">UpdateAsync</span>, <span class="code">GenerateViewAsync</span>, <span class="code">GenerateColumnNames</span>.</p></div></div>
+      <div class="row"><div class="k">Delete Reporting Configurations<span class="sub">Reporting.Configuration.Delete</span></div><div class="v"><p><span class="code">DeleteAsync</span> — removes the mapping and drops its view.</p></div></div>
       <div class="row"><div class="k">IT Admin or IT Operations<span class="sub">IdentityConsts.ITAdminOrITOperationsPolicyName</span></div><div class="v"><p><span class="code">TenantViewRoleAppService</span> in its entirety, plus <span class="code">DatabaseInfoModal</span> — role configuration is an operations concern, not a form-configuration one.</p></div></div>
     </div>
   </section>

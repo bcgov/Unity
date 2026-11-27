@@ -5,8 +5,6 @@ public static class GrantManagerPermissions
 {
     public const string GroupName = "GrantManagerManagement";
 
-    public const string Default = GroupName + ".Default";
-
     public static class Organizations
     {
         public const string Default = GroupName + ".Organizations";

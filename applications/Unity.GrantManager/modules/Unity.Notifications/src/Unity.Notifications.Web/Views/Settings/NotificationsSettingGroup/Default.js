@@ -204,12 +204,59 @@ $(function () {
         return { Sender: 'Sender Address', ReplyTo: 'Reply-to Address', NoReply: 'No-reply Address', Inbound: 'Inbound Address', Support: 'Support Address', Other: 'Other' }[data] || data;
     }
 
+    // The "Email Address In Use" tooltip in the Edit Email Address modal is long, so it uses a manual
+    // trigger and stays open while the pointer is over the button or the tooltip itself (WCAG 1.4.13).
+    // The small delay lets the pointer cross the gap between the button and the tooltip.
+    function initializeEmailInUseTooltip() {
+        const button = document.getElementById('configuredEmailInUseTooltip');
+        if (!button || typeof bootstrap === 'undefined') return;
+
+        // Look the instance up each time, since ABP's DOM auto-init may (re)create it after this runs
+        const getTooltip = () => bootstrap.Tooltip.getOrCreateInstance(button);
+        const hideDelayMs = 200;
+        let hideTimer = null;
+
+        // Bootstrap's show() is not idempotent: calling it on an already-visible tooltip ends in an
+        // internal _leave() that hides it. Only call show() when the tooltip is not currently visible.
+        const isShown = () => {
+            const tipId = button.getAttribute('aria-describedby');
+            return Boolean(tipId && document.getElementById(tipId)?.classList.contains('show'));
+        };
+        const show = () => {
+            clearTimeout(hideTimer);
+            if (!isShown()) {
+                getTooltip().show();
+            }
+        };
+        const scheduleHide = () => {
+            clearTimeout(hideTimer);
+            hideTimer = setTimeout(() => getTooltip().hide(), hideDelayMs);
+        };
+
+        $(button)
+            .on('mouseenter focus', show)
+            .on('mouseleave blur', scheduleHide);
+        $(document)
+            .on('mouseenter', '.email-in-use-tooltip', show)
+            .on('mouseleave', '.email-in-use-tooltip', scheduleHide);
+        $('#emailAddressModal').on('hide.bs.modal', () => {
+            clearTimeout(hideTimer);
+            getTooltip().hide();
+        });
+    }
+
+    initializeEmailInUseTooltip();
+
     function showEmailAddressModal(address) {
         const id = 'emailAddressModal';
         const item = address || { emailAddress: '', emailType: 'Sender', description: '', isActive: true, isDefault: false };
         const activeDisabled = item.isDefault ? 'disabled' : '';
         const $modal = $(`#${id}`);
         $modal.find('#emailAddressModalTitle').text(`${address ? 'Edit' : 'Add'} Email Address`);
+        $modal.find('#configuredEmailInUseTooltip').toggleClass('d-none', !address);
+        if (!address) {
+            bootstrap.Tooltip.getInstance(document.getElementById('configuredEmailInUseTooltip'))?.hide();
+        }
         $modal.find('#configuredEmailAddress').val(item.emailAddress);
         $modal.find('#configuredEmailType').val(item.emailType);
         $modal.find('#configuredEmailDescription').val(item.description);

@@ -80,6 +80,7 @@ public static partial class UnitySelector
     public static partial class Review
     {
         public const string Default     = "Unity.GrantManager.ApplicationManagement.Review";
+        public const string UpdatePolicy = "Unity.GrantManager.ApplicationManagement.Review.UpdatePolicy"; // Custom Policy
         public static partial class Approval
         {
             public const string Default = "Unity.GrantManager.ApplicationManagement.Review.Approval";

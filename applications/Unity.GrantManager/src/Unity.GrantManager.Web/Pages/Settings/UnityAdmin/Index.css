@@ -28,6 +28,7 @@
 
 #audit-logs-div,
 #ai-prompts-div,
+#ai-setup-div,
 #endpoints-div,
 #exception-logs-div {
     width: calc(100% - 221px);
@@ -126,10 +127,43 @@
 #reconciliation-report-div,
 #audit-logs-div,
 #ai-prompts-div,
+#ai-setup-div,
 #endpoints-div,
 #exception-logs-div {
     max-height: none;
     overflow: visible;
+}
+
+/* The Bootstrap rows DataTables adds have -12px side margins, which makes the
+   dt-container 24px wider than it shows; opening a row's Actions menu then
+   scrolls the table sideways and clips the first column. */
+#ai-prompts-div .dt-container > .row,
+#ai-setup-div .dt-container > .row {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* Compact rows in the AI Prompts and AI Setup tables: less cell padding, and the
+   row buttons at their own height (the theme fixes .dropdown-toggle at 44px). */
+#ai-prompts-div table.dataTable > tbody > tr > td,
+#ai-setup-div table.dataTable > tbody > tr > td {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    vertical-align: middle;
+}
+
+#ai-prompts-div table.dataTable > tbody .btn-sm,
+#ai-setup-div table.dataTable > tbody .btn-sm {
+    height: auto;
+    padding-top: 0.125rem;
+    padding-bottom: 0.125rem;
+    line-height: 1.25;
+}
+
+/* Line the endpoint lines up with the headings and tables, which sit inside the
+   DataTables column's 0.75rem padding. */
+#ai-setup-endpoint {
+    padding-left: 1.75rem !important;
 }
 
 .unity-app-main-container {
@@ -254,6 +288,7 @@
     #background-jobs-div,
     #audit-logs-div,
     #ai-prompts-div,
+    #ai-setup-div,
     #endpoints-div,
     #exception-logs-div,
     #audit-log-settings-div {

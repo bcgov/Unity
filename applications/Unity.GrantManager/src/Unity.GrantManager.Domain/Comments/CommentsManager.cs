@@ -72,23 +72,22 @@ namespace Unity.GrantManager.Comments
 
         public async Task<CommentBase> UpdateCommentAsync(Guid ownerId, Guid commentId, string comment, CommentType type)
         {
-            switch (type)
+            var existingComment = await GetCommentAsync(ownerId, commentId, type) ?? throw new EntityNotFoundException();
+
+            if (existingComment.CommenterId != _currentUser.GetId())
             {
-                case CommentType.ApplicationComment:
-                    var applicationComment = await GetCommentAsync(ownerId, commentId, type) ?? throw new EntityNotFoundException();
-                    applicationComment.Comment = comment;
-                    return await _applicationCommentsRepository.UpdateAsync((ApplicationComment)applicationComment!, autoSave: true);
-                case CommentType.AssessmentComment:
-                    var assessmentComment = await GetCommentAsync(ownerId, commentId, type) ?? throw new EntityNotFoundException();
-                    assessmentComment.Comment = comment;
-                    return await _assessmentCommentsRepository.UpdateAsync((AssessmentComment)assessmentComment!, autoSave: true);
-                case CommentType.ApplicantComment:
-                    var applicantComment = await GetCommentAsync(ownerId, commentId, type) ?? throw new EntityNotFoundException();
-                    applicantComment.Comment = comment;
-                    return await _applicantCommentsRepository.UpdateAsync((ApplicantComment)applicantComment!, autoSave: true);
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(type));
+                throw new BusinessException(GrantManagerDomainErrorCodes.NotCommentOwner);
             }
+
+            existingComment.Comment = comment;
+
+            return type switch
+            {
+                CommentType.ApplicationComment => await _applicationCommentsRepository.UpdateAsync((ApplicationComment)existingComment, autoSave: true),
+                CommentType.AssessmentComment => await _assessmentCommentsRepository.UpdateAsync((AssessmentComment)existingComment, autoSave: true),
+                CommentType.ApplicantComment => await _applicantCommentsRepository.UpdateAsync((ApplicantComment)existingComment, autoSave: true),
+                _ => throw new ArgumentOutOfRangeException(nameof(type))
+            };
         }
 
         public async Task<CommentBase?> GetCommentAsync(Guid ownerId, Guid commentId, CommentType type)

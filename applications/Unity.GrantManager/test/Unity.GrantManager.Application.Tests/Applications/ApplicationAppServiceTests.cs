@@ -104,6 +104,7 @@ public class ApplicationAppServiceTests : GrantManagerApplicationTestBase
         var application = (await _applicationsRepository.GetListAsync())[0];
         var applicationComment = (await _applicationCommentsRepository.GetQueryableAsync()).Where(s => s.ApplicationId == application.Id).ToList()[0];
         var updateComment = "Updated Comment";
+        Login(applicationComment.CommenterId);
 
         // Act
         var updatedCommentDto = await _commentsAppService.UpdateAsync(new UpdateCommentByTypeDto()

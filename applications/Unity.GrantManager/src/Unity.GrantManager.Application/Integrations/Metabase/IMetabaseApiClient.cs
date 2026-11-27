@@ -44,6 +44,9 @@ public interface IMetabaseApiClient
     Task RescanDatabaseValuesAsync(int databaseId, CancellationToken cancellationToken = default);
     Task<int> FindOrCreateGroupAsync(string name, CancellationToken cancellationToken = default);
 
+    /// <summary>The ID of the permissions group with this exact name; null when there is none.</summary>
+    Task<int?> FindGroupIdAsync(string name, CancellationToken cancellationToken = default);
+
     /// <summary>Renames the permissions group. Throws with status 404 when it no longer exists.</summary>
     Task RenameGroupAsync(int groupId, string name, CancellationToken cancellationToken = default);
     Task<int?> FindUserIdByEmailAsync(string email, CancellationToken cancellationToken = default);

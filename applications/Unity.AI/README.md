@@ -16,16 +16,7 @@ Browser (localhost:80) → Flask (container port 8080)
 
 ### Prerequisites
 - Docker and Docker Compose
-- `.env` file (copy from `.env.example`)
-- `Unity.AI.Reporting.Backend/src/tenant_config.local.json` with the
-  default tenant's Metabase API key (mounted at runtime, not included in the image):
-  ```json
-  {
-    "Default Grants Program": {
-      "api_key": "YOUR_METABASE_API_KEY"
-    }
-  }
-  ```
+- `.env` file (copy from `.env.example`), including `METABASE_API_KEY`
 
 ### Run
 From PowerShell on Windows:
@@ -53,13 +44,6 @@ services:
     ports: !override
       - "5435:5432"
   reporting:
-    volumes:
-      - type: bind
-        source: ./Unity.AI.Reporting.Backend/src/tenant_config.local.json
-        target: /app/backend/src/tenant_config.local.json
-        read_only: true
-        bind:
-          create_host_path: false
     environment:
       - ORIGIN_URL=${ORIGIN_URL},https://localhost:44342
 ```
@@ -102,7 +86,7 @@ Copy `.env.example` to `.env` and configure required variables:
 
 ### Critical Variables (Must Set)
 ```env
-# Azure OpenAI — endpoint and key only; deployment names and versions are hardcoded in config.py
+# Azure OpenAI — endpoint and key only; models and API versions come from Unity AI Setup in the token
 AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
 AZURE_OPENAI_API_KEY=your_api_key
 
@@ -110,7 +94,8 @@ AZURE_OPENAI_API_KEY=your_api_key
 JWT_SECRET=your_jwt_secret_64_chars_minimum
 ORIGIN_URL=https://your-parent-domain.com,http://localhost
 
-# Metabase — API key lives in tenant_config.local.json (gitignored), not here
+# Metabase — one API key for every program; each program's database and collection come from UGM
+METABASE_API_KEY=mb_your_metabase_api_key
 MB_URL=https://your-metabase-instance.com
 MB_MAP_REGION_UUID=your_metabase_regional_districts_uuid
 
@@ -208,7 +193,7 @@ docker push your-registry/unity-ai-reporting:latest
 
 ### Environment-Specific Configuration
 
-The application supports multiple deployment environments. Non-sensitive configuration (deployment names, model versions, DB IDs) is hardcoded in `config.py` or derived from `tenant_config.json`. Only secrets and base URLs need to be injected at runtime.
+The application supports multiple deployment environments. Models and API versions come from Unity AI Setup, and each program's Metabase database and collection from its UGM Reporting tab, both in the AI Reporting token. Only secrets and base URLs need to be injected at runtime.
 
 See [Environment Configuration Guide](../documentation/unity-ai-reporting-environment-specific-configuration.md) for details.
 

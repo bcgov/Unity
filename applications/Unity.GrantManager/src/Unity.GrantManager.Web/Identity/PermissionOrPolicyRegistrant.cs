@@ -34,5 +34,11 @@ internal static class PermissionOrPolicyRegistrant
 
                 // NOTE: This will be replaced when Worksheets are normalized with UnitySelector.Project.Worksheet.Update
                 UnitySelector.Project.Default)));
+
+        // Review & Assessment (Approval / Assessment Results) Logical OR policy
+        authorizationBuilder.AddPolicy(UnitySelector.Review.UpdatePolicy,
+            policy => policy.AddRequirements(new PermissionOrRequirement(
+                UnitySelector.Review.Approval.Update.Default,
+                UnitySelector.Review.AssessmentResults.Update.Default)));
     }
 }

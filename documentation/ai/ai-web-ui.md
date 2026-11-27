@@ -39,6 +39,8 @@ Feature **and** setting, **or** the `ITAdmin` role as an override. The item itse
 | `~/UnityAdmin` AI Prompts section | `Pages/Prompts/Index.cshtml(.cs)` + `Index.js` | Prompt families and versions |
 | `~/UnityAdmin` AI Prompts modals | `Prompts/CreateModal`, `Prompts/EditModal` | Prompt-level create/edit |
 | `~/UnityAdmin` AI Prompts entry modals | `Prompts/Entries/CreateEntryModal`, `Entries/EditEntryModal` | Version-level create/edit |
+| `~/UnityAdmin` AI Setup section | host `Pages/ConfigurationManagement/_AISetup.cshtml` + module `Pages/AISetup/Index.js` | AI models (with Test) and AI operations |
+| `~/UnityAdmin` AI Setup modals | `AISetup/ModelModal`, `AISetup/OperationModal` | Model create/edit, operation edit |
 | `~/AIReporting` | `Pages/AIReporting/Index.cshtml(.cs)` + `Index.js` | Embedded AI reporting host |
 | `Settings/LegalDisclaimerModal` | `LegalDisclaimerModalModel` | The disclaimer shown before AI is switched on |
 
@@ -56,9 +58,13 @@ CanViewAiReporting = featureAndSettingEnabled || isItAdmin;
 
 If permitted, it resolves the `REPORTING_AI` dynamic URL through the host's `IEndpointManagementAppService` and embeds it. A missing endpoint is caught, logged as a warning, and leaves `ReportingAiUrl` empty rather than throwing — the page renders with nothing in it.
 
+### AI Setup
+
+The AI Setup section in `Pages/Settings/UnityAdmin` (shown to the `ITAdministrator` or `ITOperations` role, not under Onboarding; New Model, model Edit and Delete only for IT Administrator, operation Edit and the links to AI Prompts only for IT Operations) has two tables against `api/app/ai/setup/models` and `api/app/ai/setup/operations`. Above the AI Models heading the page shows the configured `Azure:OpenAI:Endpoint` (never the key; linked only when it isn't an in-cluster service name) and the endpoint status from `GET api/app/ai/setup/models/endpoint-status` (the proxy's `/healthz` answer, called by the server). Models show the deployment name, type (Chat or Embedding), API version (free text, such as `2024-10-21`), status and the operations that use it, with Test, Edit and Delete (Delete hidden while an operation uses the model). The "AI Model Assignments" table (the operations) shows the model each operation calls and its execution mode; Status shows "No prompt in use" when every version of the operation's prompt is inactive. The prompt version in use is shown on AI Prompts, not here. Only `ApplicationScoring` reads its execution mode (`AIExecutionModeResolver.OperationsUsingExecutionMode`), so only its Edit form has an execution mode field (Sequential, Parallel or Batch); the others have no field and always run Sequential, and the server refuses Parallel or Batch for them (`AI:SetupExecutionModeNotUsed`). Each operation name opens the AI Prompts section filtered to its prompt. Operations list all six built-ins, with "Not configured" for any without a row; Edit creates the row. Below it, the **AI Reporting** section has the chat and embedding model rows (`GET api/app/ai/setup/operations/ai-reporting`), edited by IT Operations with the same operation modal, which offers only models of the right type, hides execution mode and on/off, and warns that changing the embedding model re-embeds every program's schema. A row with no model chosen shows a yellow **Not configured** badge, because AI Reporting refuses every request until both are set (`AI:ReportingModelsNotSet`). Rules and caching are in [ai-domain-model.md](ai-domain-model.md#unity-ai-setup).
+
 ### Prompts
 
-The AI Prompts section embedded in `Pages/UnityAdmin/Index.cshtml` drives the list and the four modals against `api/app/ai/prompts`. Behaviour worth knowing before using it is in [ai-prompts.md](ai-prompts.md#administering-prompts) — in particular that saving a prompt as a tenant creates a **tenant-scoped version that overrides the whole global family**, and that placeholder errors surface at generation time rather than at save.
+The AI Prompts section embedded in `Pages/Settings/UnityAdmin/Index.cshtml` drives the list and the four modals against `api/app/ai/prompts`. Status shows the Active switch (**Active** or **Inactive**), as on AI Setup. The version Unity calls, the highest active one, has an **In use** badge next to its number (`AIPromptDto.IsInUse`); the rule is in the Version heading's tooltip. To go back a version, make the one in use inactive. Each row's Actions menu has Edit and Delete; Delete is hidden on the version in use and the server refuses it too (`AI:PromptVersionInUse`). Behaviour worth knowing before using it is in [ai-prompts.md](ai-prompts.md#administering-prompts) — in particular that saving a prompt as a tenant creates a **tenant-scoped version that overrides the whole global family**, and that placeholder errors surface at generation time rather than at save.
 
 ## Settings group
 
@@ -126,6 +132,9 @@ Other host surfaces that consume AI output:
 | Surface | Gate |
 |---|---|
 | AI Prompts menu + pages | `ITOperations` role; hidden under the Onboarding specialization |
+| AI Setup section + `api/app/ai/setup/*` reads and model Test | `ITAdministrator` or `ITOperations` role; hidden under the Onboarding specialization |
+| AI Setup model create, edit (incl. active), delete + model modal | `ITAdministrator` (method policy and modal page) |
+| AI Setup operation edit + operation modal | `ITOperations` (method policy and modal page) |
 | AI Reporting menu + page | (`Unity.AIReporting` feature **and** `ReportingEnabled` setting) **or** `ITAdmin` role; menu item additionally needs `AI.Reporting` |
 | AI settings group | `SettingManagement.ConfigureAI` (visible when any AI feature is on) |
 | AIConfiguration widget toggles | Each toggle needs its matching tenant setting to be on |

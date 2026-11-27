@@ -37,7 +37,7 @@ public class FormNotificationsApiControllerAuthorizationTests
         PoliciesOf(nameof(FormNotificationsApiController.UpdateForForm))
             .ShouldBe([NotificationsPermissions.Email.ScheduleCreate]);
         PoliciesOf(nameof(FormNotificationsApiController.Delete))
-            .ShouldBe([NotificationsPermissions.Email.ScheduleCancel]);
+            .ShouldBe([NotificationsPermissions.Email.ScheduleDelete]);
         PoliciesOf(nameof(FormNotificationsApiController.CancelNotification))
             .ShouldBe([NotificationsPermissions.Email.ScheduleCancel]);
     }

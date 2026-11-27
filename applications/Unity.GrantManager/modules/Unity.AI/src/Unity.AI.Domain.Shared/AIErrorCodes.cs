@@ -45,4 +45,19 @@ public static class AIErrorCodes
     public const string ScoresheetGenerationNoSections = "AI:ScoresheetGenerationNoSections";
     public const string ScoresheetGenerationSectionNoFields = "AI:ScoresheetGenerationSectionNoFields";
     public const string ScoresheetGenerationPropertyInvalid = "AI:ScoresheetGenerationPropertyInvalid";
+    public const string SetupModelNameRequired = "AI:SetupModelNameRequired";
+    public const string SetupModelNameDuplicate = "AI:SetupModelNameDuplicate";
+    public const string SetupProviderNotSupported = "AI:SetupProviderNotSupported";
+    public const string SetupModelInUse = "AI:SetupModelInUse";
+    public const string SetupModelInactive = "AI:SetupModelInactive";
+    public const string SetupModelTypeInvalid = "AI:SetupModelTypeInvalid";
+    public const string SetupModelNotChat = "AI:SetupModelNotChat";
+    public const string SetupModelNotEmbedding = "AI:SetupModelNotEmbedding";
+    public const string SetupExecutionModeInvalid = "AI:SetupExecutionModeInvalid";
+    public const string SetupExecutionModeNotUsed = "AI:SetupExecutionModeNotUsed";
+    public const string SetupOperationUnknown = "AI:SetupOperationUnknown";
+    public const string ReportingNotSetUp = "AI:ReportingNotSetUp";
+    public const string ReportingModelsNotSet = "AI:ReportingModelsNotSet";
+    public const string SetupApiVersionInvalid = "AI:SetupApiVersionInvalid";
+    public const string PromptVersionInUse = "AI:PromptVersionInUse";
 }
