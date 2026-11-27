@@ -48,7 +48,7 @@ public class MetabaseTenantProvisionerIntegrationTests(ITestOutputHelper outputH
                 await grants.InsertAsync(new PermissionGrant(
                     Guid.NewGuid(), MetabasePermissions.Access, UserPermissionValueProvider.ProviderName, analystId.ToString(), tenantId));
                 await grants.InsertAsync(new PermissionGrant(
-                    Guid.NewGuid(), "GrantManagerManagement.Default", UserPermissionValueProvider.ProviderName, otherId.ToString(), tenantId));
+                    Guid.NewGuid(), "GrantApplicationManagement.Applications", UserPermissionValueProvider.ProviderName, otherId.ToString(), tenantId));
             }
         });
         _metabaseApiClient.GetGroupMembersAsync(22).Returns(new List<MetabaseGroupMember>());

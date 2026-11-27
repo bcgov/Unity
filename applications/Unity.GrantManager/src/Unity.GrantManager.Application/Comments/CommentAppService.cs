@@ -17,6 +17,11 @@ namespace Unity.GrantManager.Comments
     {
         public async Task<CommentDto> CreateAsync(CreateCommentByTypeDto dto)
         {
+            if (dto.CommentType == CommentType.ApplicationComment)
+            {
+                await AuthorizationService.CheckAsync(GrantApplicationPermissions.Comments.Add);
+            }
+
             return ObjectMapper.Map<CommentBase, CommentDto>
                 (await commentsManager.CreateCommentAsync(dto.OwnerId, dto.Comment, dto.CommentType));
         }

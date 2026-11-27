@@ -53,6 +53,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
             var commentDtos = await _commentAppService.GetListAsync(new QueryCommentsByTypeDto() { OwnerId = ownerId, CommentType = commentType });
             var mappedComments = MapToCommentDisplay(commentDtos);
 
+            var canAddApplicationComments = await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.Comments.Add);
+
             CommentsWidgetViewModel model = new()
             {
                 CommentType = commentType,
@@ -66,7 +68,8 @@ namespace Unity.GrantManager.Web.Views.Shared.Components.CommentsWidget
                         FullName = $"{user.Name} {user.Surname}",
                         Email = user.Email
                     }).ToList(),
-                CanPinComments = await _authorizationService.IsGrantedAsync(GrantApplicationPermissions.Comments.Add)
+                CanPinComments = canAddApplicationComments,
+                CanAddComments = commentType != CommentType.ApplicationComment || canAddApplicationComments
             };
 
             return View(model);

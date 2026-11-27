@@ -26,6 +26,7 @@ using Unity.GrantManager.Flex;
 using Unity.GrantManager.GlobalTag;
 using Unity.GrantManager.Identity;
 using Unity.GrantManager.Payments;
+using Unity.GrantManager.Permissions;
 using Unity.Modules.Shared;
 using Unity.Modules.Shared.Correlation;
 using Unity.Modules.Shared.Specializations;
@@ -1084,6 +1085,7 @@ public class GrantApplicationAppService(
         return [.. appDtos];
     }
 
+    [Authorize(GrantApplicationPermissions.Assignments.AssignInitial)]
     public async Task InsertOwnerAsync(Guid applicationId, Guid? assigneeId)
     {
         try
@@ -1101,6 +1103,7 @@ public class GrantApplicationAppService(
         }
     }
 
+    [Authorize(GrantApplicationPermissions.Assignments.AssignInitial)]
     public async Task DeleteOwnerAsync(Guid applicationId)
     {
         try
@@ -1119,6 +1122,7 @@ public class GrantApplicationAppService(
     }
 
     [HttpPut]
+    [Authorize(GrantApplicationPermissions.Assignments.AssignInitial)]
     public async Task UpdateAssigneesAsync(dynamic modifiedAssignees)
     {
         var dynamicObject = JsonConvert.DeserializeObject<dynamic>(modifiedAssignees);

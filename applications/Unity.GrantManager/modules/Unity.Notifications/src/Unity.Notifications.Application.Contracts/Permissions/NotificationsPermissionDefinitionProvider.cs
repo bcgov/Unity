@@ -27,6 +27,10 @@ public class NotificationsPermissionDefinitionProvider : PermissionDefinitionPro
             NotificationsPermissions.Email.ScheduleCancel,
             L($"Permission:{NotificationsPermissions.Email.ScheduleCancel}"));
 
+        scheduleNotificationsPermissions.AddChild(
+            NotificationsPermissions.Email.ScheduleDelete,
+            L($"Permission:{NotificationsPermissions.Email.ScheduleDelete}"));
+
         var settingManagement = context.GetGroup(SettingManagementPermissions.GroupName);
         settingManagement.AddPermission(NotificationsPermissions.Settings, L("Permission:NotificationsPermissions.Settings"));
 

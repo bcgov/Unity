@@ -2,11 +2,13 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using Unity.Modules.Shared.Correlation;
+using Volo.Abp.Auditing;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 
 namespace Unity.Flex.Domain.WorksheetInstances
 {
+    [DisableAuditing]
     public class WorksheetInstance : FullAuditedAggregateRoot<Guid>, IMultiTenant, ICorrelationEntity
     {
         [Column(TypeName = "jsonb")]

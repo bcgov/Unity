@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
 using Unity.GrantManager.Identity;
+using Unity.GrantManager.Permissions;
 using Volo.Abp.Application.Services;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.EventBus.Local;
@@ -29,6 +30,7 @@ public class ApplicationAssignmentsAppService(IApplicationManager applicationMan
         return ObjectMapper.Map<List<ApplicationAssignment>, List<GrantApplicationAssigneeDto>>(assignments.OrderBy(t => t.Id).ToList());
     }
 
+    [Authorize(GrantApplicationPermissions.Assignments.AssignInitial)]
     public async Task InsertAssigneeAsync(Guid applicationId, Guid assigneeId, string? duty)
     {
         try
@@ -50,6 +52,7 @@ public class ApplicationAssignmentsAppService(IApplicationManager applicationMan
         }
     }
 
+    [Authorize(GrantApplicationPermissions.Assignments.AssignInitial)]
     public async Task DeleteAssigneeAsync(Guid applicationId, Guid assigneeId)
     {
         try

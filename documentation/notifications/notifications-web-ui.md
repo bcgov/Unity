@@ -96,9 +96,8 @@ Backend checks cover owner, tenant, action permissions, draft status, scheduling
 
 ## Localization
 
-`Unity.Notifications.Domain.Shared/Localization/Notifications/en.json` holds all 144 keys for both this module's pages and the host-side notification surfaces, under the `NotificationsResource` resource. `NotificationsDomainSharedModule` registers it with `AddVirtualJson("/Localization/Notifications")` and base type `AbpValidationResource`, and maps the `Notifications` exception-code namespace to it — which is what turns `BusinessException(NotificationsErrorCodes.EmailGroupInUse)` into a localizable message. Only codes with the `Notifications:` prefix go through that mapping, and every code the module and the host app throw is a constant in `NotificationsErrorCodes` (`Unity.Notifications.Domain.Shared/NotificationsErrorCodes.cs`).
+`Unity.Notifications.Domain.Shared/Localization/Notifications/en.json` holds all 167 keys for both this module's pages and the host-side notification surfaces, under the `NotificationsResource` resource. `NotificationsDomainSharedModule` registers it with `AddVirtualJson("/Localization/Notifications")` and base type `AbpValidationResource`, and maps the `Notifications` exception-code namespace to it — which is what turns `BusinessException(NotificationsErrorCodes.EmailGroupInUse)` into a localizable message. Only codes with the `Notifications:` prefix go through that mapping, and every code the module and the host app throw is a constant in `NotificationsErrorCodes` (`Unity.Notifications.Domain.Shared/NotificationsErrorCodes.cs`).
 
-Two keys to know about when editing:
+One key to know about when editing:
 
-- `Permission:Notifications.Form.Email.Schedule.Delete` is defined but has **no** matching permission constant — a leftover.
 - `Setting:Notifications.Mailing.DefaultFromAddress.DisplayName`/`.Description` do not match the key the provider actually requests (`Setting:GrantManager.Notifications.Mailing.DefaultFromAddress.DisplayName`), so the setting renders with its raw key as the label. See [notifications-roadmap.md](notifications-roadmap.md#setting-display-names-dont-resolve).

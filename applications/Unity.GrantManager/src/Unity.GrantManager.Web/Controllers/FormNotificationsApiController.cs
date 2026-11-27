@@ -381,10 +381,15 @@ namespace Unity.GrantManager.Web.Controllers
             return CreatedAtAction(nameof(GetForForm), new { formId }, dto);
         }
 
-        [Authorize(NotificationsPermissions.Email.ScheduleCancel)]
+        [Authorize(NotificationsPermissions.Email.ScheduleDelete)]
         [HttpDelete("{formId}/{id:guid}")]
         public async Task<IActionResult> Delete(string formId, Guid id)
         {
+            if (!Guid.TryParse(formId, out _))
+            {
+                return BadRequest("Invalid form id");
+            }
+
             await automatedNotificationAppService.DeleteAsync(id);
             return NoContent();
         }

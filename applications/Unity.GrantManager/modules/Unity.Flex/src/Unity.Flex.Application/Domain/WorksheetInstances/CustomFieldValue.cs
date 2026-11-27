@@ -1,10 +1,12 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations.Schema;
+using Volo.Abp.Auditing;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
 
 namespace Unity.Flex.Domain.WorksheetInstances
 {
+    [DisableAuditing]
     public class CustomFieldValue : AuditedEntity<Guid>, IMultiTenant
     {
         [Column(TypeName = "jsonb")]

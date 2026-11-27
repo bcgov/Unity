@@ -310,6 +310,9 @@
         $('#notifications-list').on('click', '.js-cancel-notification', function () {
             onCancelNotification($(this).data('id'));
         });
+        $('#notifications-list').on('click', '.js-delete-notification', function () {
+            onDeleteNotification($(this).data('id'));
+        });
     }
 
     function reloadTable() {
@@ -390,6 +393,38 @@
         }).catch(err => {
             console.error(err);
             abp.notify.error('Failed to cancel notification plan');
+        });
+    }
+
+    function onDeleteNotification(id) {
+        if (!id) return;
+        const ln = abp.localization.getResource('Notifications');
+        const lui = abp.localization.getResource('AbpUi');
+        Swal.fire({
+            title: ln('FormNotifications:DeleteConfirmTitle'),
+            text: ln('FormNotifications:DeleteConfirmMessage'),
+            showCancelButton: true,
+            confirmButtonText: lui('Delete'),
+            cancelButtonText: lui('Cancel'),
+            customClass: {
+                confirmButton: 'btn btn-primary',
+                cancelButton: 'btn btn-secondary'
+            }
+        }).then(async (result) => {
+            if (!result.isConfirmed) {
+                return;
+            }
+
+            const response = await fetch('/api/form-notifications/' + encodeURIComponent(formId) + '/' + encodeURIComponent(id), {
+                method: 'DELETE',
+                headers: { 'RequestVerificationToken': abp.security.antiForgery.getToken() }
+            });
+            if (!response.ok) throw new Error('Failed to delete');
+            abp.notify.success(lui('DeletedSuccessfully'));
+            reloadTable();
+        }).catch(err => {
+            console.error(err);
+            abp.notify.error(ln('FormNotifications:DeleteFailed'));
         });
     }
 
@@ -839,7 +874,13 @@
                 cancelBtn.dataset.id = row.id;
             } else {
                 cancelBtn.remove();
-            }            
+            }
+        }
+
+        // Delete applies to every plan, Active or Cancelled.
+        const deleteBtn = container.querySelector('.js-delete-notification');
+        if (deleteBtn) {
+            deleteBtn.dataset.id = row.id;
         }
         return container.innerHTML;
     }

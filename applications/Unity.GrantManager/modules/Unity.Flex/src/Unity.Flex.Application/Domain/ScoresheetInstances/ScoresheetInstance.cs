@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json;
+using Volo.Abp.Auditing;
 using Unity.Flex.Domain.Scoresheets;
 using Unity.Modules.Shared.Correlation;
 using Volo.Abp.Domain.Entities.Auditing;
@@ -9,6 +10,7 @@ using Volo.Abp.MultiTenancy;
 
 namespace Unity.Flex.Domain.ScoresheetInstances
 {
+    [DisableAuditing]
     public class ScoresheetInstance : FullAuditedAggregateRoot<Guid>, IMultiTenant, ICorrelationEntity
     {
         // Current serialized value
