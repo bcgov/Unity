@@ -46,7 +46,10 @@ namespace Unity.GrantManager.Integrations.Metabase;
 /// 3. Grants that group unrestricted view/query access to the new database connection, scoped to
 ///    just this tenant's data.
 /// 4. Finds or creates a Metabase collection for the tenant and grants the group write access to it.
-/// 5. Stores the database, group and collection IDs in the tenant's ExtraProperties. On a tenant
+/// 5. When <see cref="MetabaseOptions.AIReportingGroupName"/> is set, grants that group (AI
+///    Reporting's API key) the same database and collection access, so AI Reporting can query and
+///    save cards for the tenant without an admin key.
+/// 6. Stores the database, group and collection IDs in the tenant's ExtraProperties. On a tenant
 ///    registered before the IDs were stored, the find-or-create calls return the existing
 ///    resources, so running Setup again backfills the IDs without creating anything.
 ///
@@ -147,6 +150,8 @@ public class MetabaseTenantProvisioner(
             "collection", tenantId);
         await metabaseApiClient.GrantGroupCollectionAccessAsync(groupId, collectionId);
 
+        await GrantAIReportingAccessAsync(databaseId, collectionId, tenantId);
+
         // Reload rather than reuse the tenant from the start: the Metabase calls take minutes, and
         // a save in between (e.g. the Configuration modal) would fail this update's concurrency check.
         using (currentTenant.Change(null))
@@ -161,6 +166,27 @@ public class MetabaseTenantProvisioner(
         logger.LogInformation(
             "{Prefix} Registration complete for tenant {TenantId} ('{TenantName}'): database={DatabaseId}, group={GroupId}, collection={CollectionId}",
             LogPrefix, tenantId, tenant.Name, databaseId, groupId, collectionId);
+    }
+
+    private async Task GrantAIReportingAccessAsync(int databaseId, int collectionId, Guid tenantId)
+    {
+        var groupName = metabaseOptions.Value.AIReportingGroupName?.Trim();
+        if (string.IsNullOrEmpty(groupName))
+        {
+            return;
+        }
+
+        var groupId = await metabaseApiClient.FindGroupIdAsync(groupName);
+        if (groupId == null)
+        {
+            logger.LogWarning(
+                "{Prefix} AI Reporting group '{GroupName}' not found in Metabase; tenant {TenantId} was not granted to it.",
+                LogPrefix, groupName, tenantId);
+            return;
+        }
+
+        await metabaseApiClient.GrantGroupDatabaseAccessAsync(groupId.Value, databaseId);
+        await metabaseApiClient.GrantGroupCollectionAccessAsync(groupId.Value, collectionId);
     }
 
     /// <summary>

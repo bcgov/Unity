@@ -35,4 +35,11 @@ public class MetabaseOptions
     /// out of the box, so set this to <c>false</c> locally or Metabase's connection attempt fails.
     /// </summary>
     public bool? DbSslOverride { get; set; }
+
+    /// <summary>
+    /// Name of the existing non-admin Metabase group AI Reporting's API key belongs to (for example
+    /// "Unity AI Reporting"). Setup grants it native queries on each tenant's database and write
+    /// access to its collection. Empty: no grant. A name Metabase doesn't have is logged, not created.
+    /// </summary>
+    public string AIReportingGroupName { get; set; } = string.Empty;
 }

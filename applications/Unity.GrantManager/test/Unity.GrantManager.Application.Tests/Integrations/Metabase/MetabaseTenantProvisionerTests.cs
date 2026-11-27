@@ -66,7 +66,7 @@ public class MetabaseTenantProvisionerTests
 
     private static Fixture CreateProvisioner(
         string? encryptedReadOnlyConnectionString = "encrypted-blob", string? dbHostOverride = null, bool? dbSslOverride = null,
-        string? additionalMembers = null)
+        string? additionalMembers = null, string? aiReportingGroupName = null)
     {
         var tenant = CreateTenant("AG-MARB");
         if (encryptedReadOnlyConnectionString != null)
@@ -134,7 +134,8 @@ public class MetabaseTenantProvisionerTests
             Enabled = true,
             ApiKey = "test-api-key",
             DbHostOverride = dbHostOverride ?? string.Empty,
-            DbSslOverride = dbSslOverride
+            DbSslOverride = dbSslOverride,
+            AIReportingGroupName = aiReportingGroupName ?? string.Empty
         });
 
         var provisioner = new MetabaseTenantProvisioner(
@@ -207,6 +208,45 @@ public class MetabaseTenantProvisionerTests
         await f.MetabaseApiClient.DidNotReceive().AddGroupMemberAsync(22, Arg.Is<int>(id => id != 101));
         await f.MetabaseApiClient.Received(1).GrantGroupDatabaseAccessAsync(22, 11);
         await f.MetabaseApiClient.Received(1).GrantGroupCollectionAccessAsync(22, 33);
+    }
+
+    [Fact]
+    public async Task SetupAsync_AIReportingGroupConfigured_GrantsItTheTenantDatabaseAndCollection()
+    {
+        var f = CreateProvisioner(aiReportingGroupName: "Unity AI Reporting");
+        f.MetabaseApiClient.FindGroupIdAsync("Unity AI Reporting").Returns(179);
+
+        await f.Provisioner.SetupAsync(f.Tenant.Id);
+
+        await f.MetabaseApiClient.Received(1).GrantGroupDatabaseAccessAsync(179, 11);
+        await f.MetabaseApiClient.Received(1).GrantGroupCollectionAccessAsync(179, 33);
+        await f.MetabaseApiClient.DidNotReceive().FindOrCreateGroupAsync("Unity AI Reporting");
+    }
+
+    [Fact]
+    public async Task SetupAsync_AIReportingGroupNotInMetabase_SkipsTheGrantWithoutCreatingIt()
+    {
+        var f = CreateProvisioner(aiReportingGroupName: "Unity AI Reporting");
+        f.MetabaseApiClient.FindGroupIdAsync("Unity AI Reporting").Returns((int?)null);
+
+        await f.Provisioner.SetupAsync(f.Tenant.Id);
+
+        await f.MetabaseApiClient.DidNotReceive().FindOrCreateGroupAsync("Unity AI Reporting");
+        await f.MetabaseApiClient.Received(1).GrantGroupDatabaseAccessAsync(Arg.Any<int>(), Arg.Any<int>());
+        await f.MetabaseApiClient.Received(1).GrantGroupCollectionAccessAsync(Arg.Any<int>(), Arg.Any<int>());
+        f.Tenant.GetProperty<int?>(MetabaseTenantProvisioner.CollectionIdProperty).ShouldBe(33);
+    }
+
+    [Fact]
+    public async Task SetupAsync_NoAIReportingGroupConfigured_GrantsOnlyTheTenantGroup()
+    {
+        var f = CreateProvisioner();
+
+        await f.Provisioner.SetupAsync(f.Tenant.Id);
+
+        await f.MetabaseApiClient.DidNotReceiveWithAnyArgs().FindGroupIdAsync(default!);
+        await f.MetabaseApiClient.Received(1).GrantGroupDatabaseAccessAsync(Arg.Any<int>(), Arg.Any<int>());
+        await f.MetabaseApiClient.Received(1).GrantGroupCollectionAccessAsync(Arg.Any<int>(), Arg.Any<int>());
     }
 
     [Fact]
