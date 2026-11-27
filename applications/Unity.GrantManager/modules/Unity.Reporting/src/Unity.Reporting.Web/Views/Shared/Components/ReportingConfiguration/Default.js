@@ -1,4 +1,11 @@
 $(function () {
+    // Keep the guard separate so NUglify does not move initializer constants into a narrower scope.
+    if (document.getElementById('reportingFormId')) {
+        initializeReportingConfiguration();
+    }
+});
+
+function initializeReportingConfiguration() {
     let hasUnsavedChanges = false;
     let dataTable = null;
     let _suppressColvisSave = false;
@@ -2290,7 +2297,7 @@ $(function () {
             $('#reportingViewStatus').val(data.finalStatus);
         }
     });
-});
+}
 
 function getTopLevelProviderValue(provider) {
     if (provider === 'worksheet_consolidated') return 'worksheet';

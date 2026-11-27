@@ -142,6 +142,7 @@ namespace Unity.GrantManager.Integrations.Chefs
 
         private static async Task<JObject?> ParseJsonResponseAsync(HttpResponseMessage response)
         {
+            response.EnsureSuccessStatusCode();
             var content = await response.Content.ReadAsStringAsync();
             return string.IsNullOrWhiteSpace(content) ? null : JsonConvert.DeserializeObject<JObject>(content);
         }

@@ -1,8 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.GrantManager.ApplicationForms;
@@ -28,13 +31,16 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
     {
         private readonly IApplicationFormAppService _applicationFormAppService;
         private readonly IReportMappingService _reportMappingService;
+        private readonly ILogger<ReportingConfigurationViewComponent> _logger;
 
         public ReportingConfigurationViewComponent(
             IApplicationFormAppService applicationFormAppService,
-            IReportMappingService reportMappingService)
+            IReportMappingService reportMappingService,
+            ILogger<ReportingConfigurationViewComponent> logger)
         {
             _applicationFormAppService = applicationFormAppService;
             _reportMappingService = reportMappingService;
+            _logger = logger;
         }
 
         /// <summary>
@@ -87,24 +93,34 @@ namespace Unity.Reporting.Web.Views.Shared.Components.ReportingConfiguration
                 var exists = await _reportMappingService.ExistsAsync(correlationId.Value, correlationProvider);
                 hasSavedConfiguration = exists;
 
-                if (exists)
+                try
                 {
-                    var reportColumnsMap = await _reportMappingService
-                        .GetByCorrelationAsync(correlationId.Value, correlationProvider);
+                    if (exists)
+                    {
+                        var reportColumnsMap = await _reportMappingService
+                            .GetByCorrelationAsync(correlationId.Value, correlationProvider);
 
-                    viewName = reportColumnsMap.ViewName;
-                    viewStatus = reportColumnsMap.ViewStatus;
+                        viewName = reportColumnsMap.ViewName;
+                        viewStatus = reportColumnsMap.ViewStatus;
 
-                    // Check for duplicate keys in the mapping data
-                    hasDuplicateKeys = CheckForDuplicateKeys(reportColumnsMap.Mapping?.Rows);
+                        // Check for duplicate keys in the mapping data
+                        hasDuplicateKeys = CheckForDuplicateKeys(reportColumnsMap.Mapping?.Rows);
+                    }
+                    else
+                    {
+                        // Check for duplicate keys in the fields metadata (initial load)
+                        var fieldsMetadata = await _reportMappingService
+                            .GetFieldsMetadataAsync(correlationId.Value, correlationProvider);
+
+                        hasDuplicateKeys = CheckForDuplicateKeys(fieldsMetadata.Fields);
+                    }
                 }
-                else
+                catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.TooManyRequests)
                 {
-                    // Check for duplicate keys in the fields metadata (initial load)
-                    var fieldsMetadata = await _reportMappingService
-                        .GetFieldsMetadataAsync(correlationId.Value, correlationProvider);
-
-                    hasDuplicateKeys = CheckForDuplicateKeys(fieldsMetadata.Fields);
+                    _logger.LogWarning(ex,
+                        "Reporting configuration is unavailable because CHEFS rate-limited metadata for {CorrelationId} ({Provider})",
+                        correlationId.Value, correlationProvider);
+                    return View("RateLimited");
                 }
             }
 

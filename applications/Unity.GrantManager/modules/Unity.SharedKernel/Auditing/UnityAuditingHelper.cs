@@ -35,6 +35,11 @@ public class UnityAuditingHelper : IAuditingHelper, ITransientDependency
 
     public bool IsEntityHistoryEnabled(Type entityType, bool defaultValue = false)
     {
+        if (entityType.IsDefined(typeof(DisableAuditingAttribute), inherit: true))
+        {
+            return false;
+        }
+
         // Force entity history for background jobs - ensures EntityChanges table gets populated
         if (BackgroundJobExecutionContext.IsActive)
         {

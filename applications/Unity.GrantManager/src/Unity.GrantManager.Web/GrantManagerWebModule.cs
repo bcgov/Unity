@@ -58,7 +58,6 @@ using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Auditing;
 using Volo.Abp.Autofac;
-using Volo.Abp.Mapperly;
 using Volo.Abp.BlobStoring;
 using Volo.Abp.Identity;
 using Volo.Abp.Localization;
