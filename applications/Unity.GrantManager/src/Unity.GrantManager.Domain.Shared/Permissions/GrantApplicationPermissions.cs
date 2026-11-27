@@ -32,6 +32,11 @@ namespace Unity.GrantManager.Permissions
             public const string Default = GroupName + ".Applications";
         }
 
+        public static class StatusWorkflow
+        {
+            public const string Default = GroupName + ".StatusWorkflow";
+        }
+
         public static class Assignments
         {
             public const string Default = GroupName + ".Assignments";
@@ -43,6 +48,12 @@ namespace Unity.GrantManager.Permissions
             public const string Default = GroupName + ".Reviews";
             public const string StartInitial = Default + ".StartInitial";
             public const string CompleteInitial = Default + ".CompleteInitial";
+        }
+
+        public static class Assessments
+        {
+            public const string Start = GroupName + ".Assessments.Start";
+            public const string Complete = GroupName + ".Assessments.Complete";
         }
 
         public static class Approvals

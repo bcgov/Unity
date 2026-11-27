@@ -180,3 +180,11 @@ re-cut the branch) immediately before deleting migrations and regenerating
   `pg_dump --schema-only` of a live database. Consider adding a CI check that
   does this automatically so drift is caught immediately instead of
   accumulating for years.
+
+## Status Workflow role-default correction
+
+`HostMigrations/20261126213019_CorrectStatusWorkflowRoleDefaults` is a dedicated one-time host data migration. It removes only the two retired initial-review permission grants for the `assessor` role, including tenant rows in the shared host `PermissionGrants` table. `PermissionGrantsDataSeeder` supplies the full current role default lists on each run; the insert-only seeder restores missing defaults without revoking additional assignments. The migration needs no inserts because seeding supplies the new defaults to existing roles.
+
+Before squashing this migration, verify that every existing host database has applied it or retain an equivalent correction for hosts that have not upgraded. A new database gets the current role defaults from seeding, but an existing database still needs the data correction.
+
+The migration's `Down()` deliberately does not regrant permissions, since it cannot determine each tenant's assignments before the correction. Permission-grant cache keys are deleted separately during web startup after DbMigrator completes.
