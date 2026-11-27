@@ -1,4 +1,6 @@
 $(function () {
+    if (!document.getElementById('reportingFormId')) return;
+
     let hasUnsavedChanges = false;
     let dataTable = null;
     let _suppressColvisSave = false;

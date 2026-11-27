@@ -36,7 +36,8 @@
                 <div id="submissions-mode-toggle" style="@((Model.Provider == "formversion" || Model.Provider == "formversion_consolidated") ? "" : "display:none;")">
                     <fieldset class="btn-group btn-group-sm provider-toggle-group" aria-label="Submissions mode">
                         <input type="radio" class="btn-check" name="submissions-mode" id="submissions-mode-consolidated" value="formversion_consolidated" @(Model.Provider == "formversion_consolidated" ? "checked" : "")>
-                        <label class="btn btn-outline-primary" for="submissions-mode-consolidated">Consolidated</label>
+                        <label class="btn btn-outline-primary" for="submissions-mode-consolidated"
+                               title="Consolidated submission fields use the 10 newest form versions. Older versions remain available in Per Version mode.">Consolidated</label>
                         <input type="radio" class="btn-check" name="submissions-mode" id="submissions-mode-perversion" value="formversion" @(Model.Provider == "formversion" ? "checked" : "")>
                         <label class="btn btn-outline-primary" for="submissions-mode-perversion">Per Version</label>
                     </fieldset>
