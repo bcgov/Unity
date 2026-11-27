@@ -7,6 +7,8 @@ using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
 using Unity.Notifications;
 using Unity.Reporting;
+using Unity.GrantManager.Permissions;
+using Volo.Abp.Authorization.Permissions;
 
 namespace Unity.GrantManager;
 
@@ -26,5 +28,17 @@ namespace Unity.GrantManager;
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
         GrantManagerDtoExtensions.Configure();
+    }
+
+    public override void ConfigureServices(ServiceConfigurationContext context)
+    {
+        // Remove the retired grouping definitions from ABP's persisted permission tree.
+        // The action permission identifiers and their assignments are retained.
+        Configure<AbpPermissionOptions>(options =>
+        {
+            options.DeletedPermissions.Add(GrantApplicationPermissions.Assignments.Default);
+            options.DeletedPermissions.Add(GrantApplicationPermissions.Reviews.Default);
+            options.DeletedPermissions.Add(GrantApplicationPermissions.Approvals.Default);
+        });
     }
 }

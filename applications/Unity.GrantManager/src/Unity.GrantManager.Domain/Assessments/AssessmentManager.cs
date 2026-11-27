@@ -4,7 +4,9 @@ using System.Threading.Tasks;
 using Unity.Flex.Scoresheets.Events;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Permissions;
 using Volo.Abp;
+using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Domain.Services;
 using Volo.Abp.EventBus.Local;
@@ -19,19 +21,22 @@ public class AssessmentManager : DomainService
     private readonly IApplicationFormRepository _applicationFormRepository;
     private readonly ILocalEventBus _localEventBus;
     private readonly IFeatureChecker _featureChecker;
+    private readonly IPermissionChecker _permissionChecker;
 
     public AssessmentManager(
         IApplicationManager applicationManager,
         IAssessmentRepository assessmentRepository,
         IApplicationFormRepository applicationFormRepository,
         ILocalEventBus localEventBus,
-        IFeatureChecker featureChecker)
+        IFeatureChecker featureChecker,
+        IPermissionChecker permissionChecker)
     {
         _applicationManager = applicationManager;
         _assessmentRepository = assessmentRepository;
         _applicationFormRepository = applicationFormRepository;
         _localEventBus = localEventBus;
         _featureChecker = featureChecker;
+        _permissionChecker = permissionChecker;
     }
 
     /// <summary>
@@ -59,10 +64,15 @@ public class AssessmentManager : DomainService
             throw new BusinessException(GrantManagerDomainErrorCodes.CantCreateAssessmentForFinalStateApplication);
         }
 
-        var form = await _applicationFormRepository.GetAsync(application.ApplicationFormId);
-
         var otherAssessments = await _assessmentRepository.GetListByApplicationId(application.Id);
         bool hasOtherAssessments = otherAssessments != null && otherAssessments.Any(a => !a.IsAiAssessment);
+        var startsAssessment = await WouldStartAssessmentAsync(application, hasOtherAssessments);
+        if (startsAssessment && !await _permissionChecker.IsGrantedAsync(GrantApplicationPermissions.Assessments.Start))
+        {
+            throw new BusinessException(GrantManagerDomainErrorCodes.StartAssessmentPermissionRequired);
+        }
+
+        var form = await _applicationFormRepository.GetAsync(application.ApplicationFormId);
 
         var assessment = await _assessmentRepository.InsertAsync(
             new Assessment(
@@ -71,8 +81,7 @@ public class AssessmentManager : DomainService
                 assessorUser.Id),
             autoSave: true);
 
-        var isTransitionToAssessmentAllowed = await _applicationManager.IsActionAllowed(application, GrantApplicationAction.Internal_StartAssessment);
-        if (!hasOtherAssessments && isTransitionToAssessmentAllowed)
+        if (startsAssessment)
         {
             await _applicationManager.TriggerAction(application.Id, GrantApplicationAction.Internal_StartAssessment);
         }
@@ -89,6 +98,22 @@ public class AssessmentManager : DomainService
         }
 
         return assessment;
+    }
+
+    /// <summary>
+    /// Whether creating the first human assessment would advance the application's status.
+    /// </summary>
+    public async Task<bool> RequiresStartAssessmentPermissionAsync(Application application)
+    {
+        var assessments = await _assessmentRepository.GetListByApplicationId(application.Id);
+        var hasHumanAssessments = assessments != null && assessments.Any(assessment => !assessment.IsAiAssessment);
+        return await WouldStartAssessmentAsync(application, hasHumanAssessments);
+    }
+
+    private async Task<bool> WouldStartAssessmentAsync(Application application, bool hasHumanAssessments)
+    {
+        return !hasHumanAssessments
+            && await _applicationManager.IsActionAllowed(application, GrantApplicationAction.Internal_StartAssessment);
     }
 
     /// <summary>
@@ -147,8 +172,6 @@ public class AssessmentManager : DomainService
             Application application,
             IUserData assessorUser)
     {
-        return await _assessmentRepository
-            .AnyAsync(x =>
-                x.ApplicationId == application.Id && x.AssessorId == assessorUser.Id);
+        return await _assessmentRepository.ExistsAsync(application.Id, assessorUser.Id);
     }
 }

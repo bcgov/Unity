@@ -22,6 +22,35 @@ public class ApplicationAuthorizationHandler : AuthorizationHandler<OperationAut
         OperationAuthorizationRequirement requirement,
         Application resource)
     {
+        if (requirement.Name.Equals(GrantApplicationAction.StartReview.ToString())
+            && !await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Reviews.StartInitial))
+        {
+            context.Fail();
+            return;
+        }
+
+        if (requirement.Name.Equals(GrantApplicationAction.CompleteReview.ToString())
+            && !await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Reviews.CompleteInitial))
+        {
+            context.Fail();
+            return;
+        }
+
+        if ((requirement.Name.Equals(GrantApplicationAction.StartAssessment.ToString())
+                || requirement.Name.Equals(GrantApplicationAction.Internal_StartAssessment.ToString()))
+            && !await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Assessments.Start))
+        {
+            context.Fail();
+            return;
+        }
+
+        if (requirement.Name.Equals(GrantApplicationAction.CompleteAssessment.ToString())
+            && !await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Assessments.Complete))
+        {
+            context.Fail();
+            return;
+        }
+
         // Approve and Deny button is only for Approvers
         if ((requirement.Name.Equals(GrantApplicationAction.Approve.ToString()) || requirement.Name.Equals(GrantApplicationAction.Deny.ToString()))
             && !await PermissionChecker.IsGrantedAsync(GrantApplicationPermissions.Approvals.Complete))

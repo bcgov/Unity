@@ -63,26 +63,30 @@ The `AssessmentAction` enum declares three values — `Create`, `SendBack`, `Com
 
 ## Creating an assessment
 
-`AssessmentManager.CreateAsync(application, assessorUser)` enforces two domain rules before anything is written:
+`AssessmentManager.CreateAsync(application, assessorUser)` enforces these rules before anything is written:
 
 | Rule | Error |
 |---|---|
 | A user cannot hold two assessments on one application | `AssessmentUserAssignmentAlreadyExists` |
 | An application in a final decision state cannot be assessed | `CantCreateAssessmentForFinalStateApplication` |
+| Creating the first human assessment that would move the application to `UNDER_ASSESSMENT` requires **Start Assessment** (`GrantApplicationPermissions.Assessments.Start`) | `StartAssessmentPermissionRequired` |
 
-Then three things happen in order:
+The manager checks whether the assessment would start the application's assessment stage before inserting it or publishing scoresheet events:
 
 ```csharp
 var otherAssessments  = await _assessmentRepository.GetListByApplicationId(application.Id);
 bool hasOtherAssessments = otherAssessments != null && otherAssessments.Any(a => !a.IsAiAssessment);
 
+var startsAssessment = await WouldStartAssessmentAsync(application, hasOtherAssessments);
+if (startsAssessment && !await _permissionChecker.IsGrantedAsync(GrantApplicationPermissions.Assessments.Start))
+    throw new BusinessException(GrantManagerDomainErrorCodes.StartAssessmentPermissionRequired);
+
+var form = await _applicationFormRepository.GetAsync(application.ApplicationFormId);
 var assessment = await _assessmentRepository.InsertAsync(
     new Assessment(GuidGenerator.Create(), application.Id, assessorUser.Id), autoSave: true);
 
-// 1. The FIRST human assessment moves the application into UNDER_ASSESSMENT
-var isTransitionToAssessmentAllowed =
-    await _applicationManager.IsActionAllowed(application, GrantApplicationAction.Internal_StartAssessment);
-if (!hasOtherAssessments && isTransitionToAssessmentAllowed)
+// 1. The first human assessment moves the application into UNDER_ASSESSMENT when the workflow permits it.
+if (startsAssessment)
     await _applicationManager.TriggerAction(application.Id, GrantApplicationAction.Internal_StartAssessment);
 
 // 2. A Flex scoresheet instance is created for it
@@ -100,7 +104,9 @@ Two details worth carrying:
 - **`hasOtherAssessments` excludes AI assessments.** An AI assessment existing does not stop the first human assessment from moving the application to `UNDER_ASSESSMENT`.
 - **`RelatedCorrelationId`** points the new scoresheet instance at the first existing assessment's instance, which is how Flex relates parallel assessments of the same application.
 
-The transition is also guarded by `IsActionAllowed` rather than assumed — an application already past `UNDER_ASSESSMENT` gets an assessment without being dragged backwards.
+`WouldStartAssessmentAsync` requires both the absence of human assessments and a successful `IsActionAllowed(application, Internal_StartAssessment)` check. Creating another human assessment, or creating one when the workflow would not advance the application, does not require **Start Assessment**. The existing assessment-creation permission still applies at the application-service boundary.
+
+Both `CreateAsync` and `CloneFromAiAsync` require `UnitySelector.Review.AssessmentReviewList.Create`. `GetCreationAvailabilityAsync` exposes the creation rules to the UI: **Create Assessment** and **Clone from AI** are disabled with a localized explanation when the user lacks **Start Assessment** for the first human assessment's status transition. The message is: `You need the "Start Assessment" permission to create an assessment and move this application to Under Assessment.` The domain manager checks the permission again when creation is submitted, including clone requests, so the UI preflight cannot bypass it.
 
 ## AI assessments
 
@@ -113,6 +119,8 @@ The transition is also guarded by `IsActionAllowed` rather than assumed — an a
 | `IsAiAssessment` | `true` |
 
 It differs from the human path in three ways: it is **idempotent** (returns the existing AI assessment if one exists — only one per application), it takes **no user**, and it **does not touch application state**. A Flex scoresheet instance is still created, with `RelatedCorrelationId = null`.
+
+AI-generated assessments do not require **Start Assessment** because this path never advances the application's status. Cloning an AI assessment creates a human assessment and follows the conditional permission rule above.
 
 `AIScoringConstants` also carries the display identity: OIDC sub `ai-scoring`, name `AI Scoring`, badge `AI`.
 
@@ -132,9 +140,9 @@ and `AssessmentAuthorizationHandler` short-circuits on `resource.IsAiAssessment`
 
 `CloneFromAiAsync(aiAssessmentId)` is how an assessor adopts the AI draft as a starting point:
 
-1. `[Authorize(AIPermissions.Analysis.ViewScoringResult)]`, plus a runtime check that the `Unity.AI.Scoring` feature is on.
+1. Requires both `AIPermissions.Analysis.ViewScoringResult` and `UnitySelector.Review.AssessmentReviewList.Create`, plus a runtime check that the `Unity.AI.Scoring` feature is on.
 2. Rejects a non-AI source with `CannotCloneNonAiAssessment`.
-3. Creates a **normal** assessment for the current user through `AssessmentManager.CreateAsync` — so all the usual rules apply, including the one-per-user rule.
+3. Creates a **normal** assessment for the current user through `AssessmentManager.CreateAsync`, enforcing the one-per-user and final-state rules and requiring **Start Assessment** if it would advance the application's status.
 4. Copies `ApprovalRecommended` across.
 5. `_assessmentScoresheetService.CopyAiAnswersIfEnabledAsync(applicationId, newAssessment.Id)` copies the scoresheet answers.
 

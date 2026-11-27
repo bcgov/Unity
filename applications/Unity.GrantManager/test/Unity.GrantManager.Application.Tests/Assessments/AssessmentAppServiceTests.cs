@@ -1,10 +1,12 @@
 ﻿using Shouldly;
+using Microsoft.Extensions.Localization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Unity.GrantManager.Applications;
 using Unity.GrantManager.Comments;
+using Unity.GrantManager.Localization;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
@@ -26,6 +28,17 @@ namespace Unity.GrantManager.Assessments
             _applicationsRepository = GetRequiredService<IRepository<Application, Guid>>();
             _assessmentRepository = GetRequiredService<IRepository<Assessment, Guid>>();
             _unitOfWorkManager = GetRequiredService<IUnitOfWorkManager>();
+        }
+
+        [Fact]
+        public void StartAssessmentPermissionError_Should_Have_A_User_Friendly_Message()
+        {
+            var localizer = GetRequiredService<IStringLocalizer<GrantManagerResource>>();
+
+            var message = localizer[GrantManagerDomainErrorCodes.StartAssessmentPermissionRequired];
+
+            message.ResourceNotFound.ShouldBeFalse();
+            message.Value.ShouldBe("You need the \"Start Assessment\" permission to create an assessment and move this application to Under Assessment.");
         }
 
         [Fact]

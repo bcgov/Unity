@@ -144,6 +144,7 @@ public class GrantManagerWebModule : AbpModule
         // Pre-warm the EF Core query pipeline after startup (web host only, not DbMigrator)
         context.Services.Configure<DbWarmupOptions>(configuration.GetSection(DbWarmupOptions.SectionName));
         context.Services.AddHostedService<GrantManagerDbWarmupService>();
+        context.Services.AddHostedService<StatusWorkflowPermissionCacheCleanupService>();
 
         ConfgureFormsApiAuhentication(context);
         ConfigureAuthentication(context, configuration);

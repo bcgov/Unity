@@ -6,6 +6,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Unity.AI.Permissions;
 using Unity.GrantManager.Applications;
+using Unity.GrantManager.GrantApplications;
+using Unity.GrantManager.Localization;
+using Unity.GrantManager.Permissions;
 using Unity.GrantManager.Workflow;
 using Unity.Modules.Shared;
 using Volo.Abp;
@@ -44,8 +47,10 @@ namespace Unity.GrantManager.Assessments
             _userLookupProvider = userLookupProvider;
             _featureChecker = featureChecker;
             _assessmentScoresheetService = assessmentScoresheetService;
+            LocalizationResource = typeof(GrantManagerResource);
         }
 
+        [Authorize(UnitySelector.Review.AssessmentReviewList.Create)]
         public async Task<AssessmentDto> CreateAsync(CreateAssessmentDto dto)
         {
             Application application = await _applicationRepository.GetAsync(dto.ApplicationId);
@@ -55,6 +60,29 @@ namespace Unity.GrantManager.Assessments
 
             // Fire the event
             return ObjectMapper.Map<Assessment, AssessmentDto>(result);
+        }
+
+        [Authorize(UnitySelector.Review.AssessmentReviewList.Create)]
+        public async Task<AssessmentCreationAvailabilityDto> GetCreationAvailabilityAsync(Guid applicationId)
+        {
+            var application = await _applicationRepository.GetAsync(applicationId, includeDetails: true);
+            if (GrantApplicationStateGroups.FinalDecisionStates.Contains(application.ApplicationStatus.StatusCode))
+            {
+                return new AssessmentCreationAvailabilityDto { Reason = L["Assessment:FinalState"].Value };
+            }
+            if (await _assessmentRepository.ExistsAsync(applicationId, CurrentUser.GetId()))
+            {
+                return new AssessmentCreationAvailabilityDto { Reason = L["Assessment:AlreadyAssigned"].Value };
+            }
+            if (await _assessmentManager.RequiresStartAssessmentPermissionAsync(application)
+                && !await AuthorizationService.IsGrantedAsync(GrantApplicationPermissions.Assessments.Start))
+            {
+                return new AssessmentCreationAvailabilityDto
+                {
+                    Reason = L[GrantManagerDomainErrorCodes.StartAssessmentPermissionRequired].Value
+                };
+            }
+            return new AssessmentCreationAvailabilityDto { CanCreate = true };
         }
 
         public async Task<IList<AssessmentDto>> GetListAsync(Guid applicationId)
@@ -259,6 +287,7 @@ namespace Unity.GrantManager.Assessments
         /// Thrown when the specified assessment is not an AI assessment.
         /// </exception>
         [Authorize(AIPermissions.Analysis.ViewScoringResult)]
+        [Authorize(UnitySelector.Review.AssessmentReviewList.Create)]
         public async Task<AssessmentDto> CloneFromAiAsync(Guid aiAssessmentId)
         {
             if (!await _featureChecker.IsEnabledAsync("Unity.AI.Scoring"))

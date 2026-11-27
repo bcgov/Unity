@@ -8,6 +8,7 @@ namespace Unity.GrantManager.Assessments;
 public interface IAssessmentAppService : IApplicationService
 {
     Task<AssessmentDto> CreateAsync(CreateAssessmentDto dto);
+    Task<AssessmentCreationAvailabilityDto> GetCreationAvailabilityAsync(Guid applicationId);
     Task<IList<AssessmentDto>> GetListAsync(Guid applicationId);
     Task UpdateAssessmentRecommendation(UpdateAssessmentRecommendationDto dto);
     List<AssessmentAction> GetAllActions();

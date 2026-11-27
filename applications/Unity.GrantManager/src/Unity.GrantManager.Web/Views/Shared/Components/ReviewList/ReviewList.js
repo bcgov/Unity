@@ -2,6 +2,8 @@ const l = abp.localization.getResource('GrantManager');
 const pageApplicationId = decodeURIComponent(document.querySelector("#DetailsViewApplicationId")?.value ?? '');
 const isAiScoringEnabled = document.querySelector("#ReviewListAIScoringEnabled")?.value === 'True';
 const canUseAiScoring = isAiScoringEnabled;
+const hasCreateAssessmentPermission = abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Review.AssessmentReviewList.Create');
+let assessmentCreationCheckVersion = 0;
 
 const actionButtonConfigMap = {
     Generate: { buttonType: 'generateAiButton', order: 4 },
@@ -19,13 +21,6 @@ const actionButtonLabelMap = {
     SendBack: 'Send Back',
     Complete: 'Complete Assessment'
 };
-
-const finalApplicationStates = new Set([
-    'GRANT_NOT_APPROVED',
-    'GRANT_APPROVED',
-    'CLOSED',
-    'WITHDRAWN'
-]);
 
 $(function () {
     const nullPlaceholder = '—';
@@ -67,7 +62,6 @@ $(function () {
         },
         createButton: {
             extend: 'unityWorkflow',
-            init: createButtonInit,
             action: createButtonAction
         },
         cloneButton: {
@@ -220,18 +214,19 @@ $(function () {
         }
 
         updateAiActionButtonsVisibility(reviewListTable, json.data ?? []);
+        updateAssessmentCreationButtons(reviewListTable);
     });
 
     if (canUseAiScoring) {
         GenerateAiAssessmentButton();
     }
 
-    if (canUseAiScoring) {
+    if (canUseAiScoring && hasCreateAssessmentPermission) {
         CloneAssessmentButton();
     }
 
-    if (abp.auth.isGranted('Unity.GrantManager.ApplicationManagement.Review.AssessmentReviewList.Create')) {
-        CreateAssessmentButton().catch(error => console.error('Failed to create assessment buttons:', error));
+    if (hasCreateAssessmentPermission) {
+        CreateAssessmentButton();
     }
 
     function GenerateAiAssessmentButton() {
@@ -242,10 +237,9 @@ $(function () {
         resumeActiveReviewListAiButton(reviewListTable);
     }
 
-    async function CreateAssessmentButton() {
+    function CreateAssessmentButton() {
         let createButtons = new $.fn.dataTable.Buttons(reviewListTable, assessmentCreateButtonGroup);
         createButtons.container().appendTo("#AdjudicationTeamLeadActionBar");
-        await updateCreateButtonState(reviewListTable);
     }
 
     function CloneAssessmentButton() {
@@ -257,6 +251,7 @@ $(function () {
     reviewListTable.buttons(0, null).container().appendTo("#AdjudicationTeamLeadActionBar");
     $("#AdjudicationTeamLeadActionBar .dt-buttons").contents().unwrap();
     updateAiActionButtonsVisibility(reviewListTable);
+    updateAssessmentCreationButtons(reviewListTable);
 
     reviewListTable.on('select', function (e, dt, type, indexes) {
         handleRowSelection(e, dt, type, indexes, reviewListTable);
@@ -283,7 +278,7 @@ $(function () {
     PubSub.subscribe(
         'application_status_changed',
         async (msg, data) => {
-            await updateCreateButtonState(reviewListTable);
+            await updateAssessmentCreationButtons(reviewListTable);
         }
     );
 
@@ -359,8 +354,7 @@ function refreshActionButtons(dataTableContext, assessmentId, selectedData) {
         }
     }
 
-    updateCloneButtonState(dataTableContext).catch(error => console.error('Failed to update clone button state:', error));
-    updateCreateButtonState(dataTableContext).catch(error => console.error('Failed to update create button state:', error));
+    updateAssessmentCreationButtons(dataTableContext);
 }
 
 function renderApproval(data) {
@@ -370,49 +364,48 @@ function renderApproval(data) {
         return nullPlaceholder;
     }
 }
-async function getActionButtonConfigMap() {
-    let applicationId = document.getElementById('DetailsViewApplicationId')?.value;
-    let applicationStatus = await unity.grantManager.grantApplications.grantApplication.getApplicationStatus(applicationId).then(data => {
-        return data;
-    });
-    return applicationStatus;
-}
-
-async function canCreateAssessment() {
-    const applicationStatus = await getActionButtonConfigMap();
-    return !finalApplicationStates.has(applicationStatus.statusCode);
-}
-
-async function updateCreateButtonState(dataTableContext) {
-    if (!dataTableContext.button('Create:name').any()) {
+async function updateAssessmentCreationButtons(dataTableContext) {
+    const createButton = dataTableContext.button('Create:name');
+    const cloneButton = dataTableContext.button('Clone:name');
+    if (!createButton.any() && !cloneButton.any()) {
         return;
     }
 
-    const [isPermittedByStatus, currentAssessmentId] = await Promise.all([
-        canCreateAssessment(),
-        unity.grantManager.assessments.assessment.getCurrentUserAssessmentId(pageApplicationId, {})
-    ]);
-
-    if (isPermittedByStatus && currentAssessmentId == null) {
-        dataTableContext.buttons('Create:name').enable();
-    } else {
-        dataTableContext.buttons('Create:name').disable();
+    const checkVersion = ++assessmentCreationCheckVersion;
+    createButton.disable();
+    cloneButton.disable();
+    try {
+        const availability = await unity.grantManager.assessments.assessment.getCreationAvailability(pageApplicationId);
+        if (checkVersion !== assessmentCreationCheckVersion) {
+            return;
+        }
+        const hasAiAssessment = dataTableContext.rows().data().toArray().some(row => row?.isAiAssessment === true);
+        setAssessmentCreationButtonState(createButton, availability.canCreate, availability.reason);
+        setAssessmentCreationButtonState(cloneButton, availability.canCreate && hasAiAssessment, availability.reason);
+        showAssessmentCreationReason(availability.canCreate ? '' : availability.reason);
+    } catch (error) {
+        if (checkVersion !== assessmentCreationCheckVersion) {
+            return;
+        }
+        const reason = l('Assessment:UnableToCheckCreation');
+        setAssessmentCreationButtonState(createButton, false, reason);
+        setAssessmentCreationButtonState(cloneButton, false, reason);
+        showAssessmentCreationReason(reason);
+        console.error('Failed to check assessment creation permissions:', error);
     }
 }
 
-async function updateCloneButtonState(dataTableContext) {
-    if (!dataTableContext.button('Clone:name').any()) {
+function setAssessmentCreationButtonState(button, enabled, reason) {
+    if (!button.any()) {
         return;
     }
+    button.enable(enabled === true);
+    $(button.node()).attr('title', enabled ? '' : reason ?? '')
+        .attr('aria-describedby', !enabled && reason ? 'AssessmentCreationDisabledReason' : null);
+}
 
-    const hasAiAssessment = dataTableContext.rows().data().toArray().some(row => row?.isAiAssessment === true);
-    const currentAssessmentId = await unity.grantManager.assessments.assessment.getCurrentUserAssessmentId(pageApplicationId, {});
-
-    if (hasAiAssessment && currentAssessmentId == null) {
-        dataTableContext.buttons('Clone:name').enable();
-    } else {
-        dataTableContext.buttons('Clone:name').disable();
-    }
+function showAssessmentCreationReason(reason) {
+    $('#AssessmentCreationDisabledReason').text(reason ?? '').toggleClass('d-none', !reason);
 }
 
 function updateAiActionButtonsVisibility(dataTableContext, rowsData) {
@@ -553,25 +546,14 @@ function executeAssessmentAction(assessmentId, triggerAction) {
         });
 }
 
-function createButtonInit(dt, button, config) {
-    unity.grantManager.assessments.assessment.getCurrentUserAssessmentId(pageApplicationId, {})
-        .done((data) => {
-            if (data == null) {
-                this.enable();
-            } else {
-                this.disable();
-            }
-        });
-}
-
 function cloneButtonAction(e, dt, button, config) {
     const aiRowData = dt.rows().data().toArray().find(row => row?.isAiAssessment === true);
 
     if (typeof (aiRowData) === 'object') {
+        dt.buttons('Create:name').disable();
+        dt.buttons('Clone:name').disable();
         unity.grantManager.assessments.assessment.cloneFromAi(aiRowData.id, {})
             .done(function (data) {
-                dt.buttons('Create:name').disable();
-                dt.buttons('Clone:name').disable();
                 PubSub.publish('assessment_action_completed');
                 PubSub.publish('refresh_review_list', data.id);
                 PubSub.publish("application_status_changed");
@@ -580,7 +562,8 @@ function cloneButtonAction(e, dt, button, config) {
                     l('ReviewerList:CloneAssessment'),
                     "Completed Successfully"
                 );
-            });
+            })
+            .fail(() => updateAssessmentCreationButtons(dt));
     }
 }
 
@@ -592,6 +575,8 @@ function createButtonAction(e, dt, button, config) {
             PubSub.publish("application_status_changed");
             PubSub.publish("refresh_detail_panel_summary");
             PubSub.publish("init_date_pickers");
-        });
+        })
+        .fail(() => updateAssessmentCreationButtons(dt));
     this.disable();
+    dt.buttons('Clone:name').disable();
 }

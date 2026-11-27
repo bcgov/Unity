@@ -85,16 +85,34 @@ system_admin · financial_analyst · l1_approver · l2_approver · l3_approver
 
 ## Seeding permissions to roles
 
-`PermissionGrantsDataSeeder` (393 lines) is the single source of truth for what each role can do out of the box. It calls the seeder once per role:
+`PermissionGrantsDataSeeder` defines the built-in role defaults and passes each role's complete permission list to `IPermissionDataSeeder`:
 
 ```csharp
 await _permissionDataSeeder.SeedAsync(
-    RolePermissionValueProvider.ProviderName, UnityRoles.ProgramManager, new[] { … });
+    RolePermissionValueProvider.ProviderName, UnityRoles.ProgramManager, [ … ], context.TenantId);
 ```
 
 Ten roles are seeded — every `UnityRoles` value except `FinancialAnalyst`, whose grants come from elsewhere. The three payment approver roles get their `PaymentsPermissions.Payments.L*ApproveOrDecline` grants here, which is how a module's permissions reach a core role.
 
-`PermissionDataSeeder` itself is a `[Dependency(ReplaceServices = true)]` override of ABP's, and the reason is in the implementation: it wraps the whole seed in `CurrentTenant.Change(tenantId)` and inserts only permissions not already granted (`names.Except(existsPermissionGrants)`), making re-seeding idempotent and tenant-correct.
+`StatusWorkflowRoleDefaults` in `Domain.Shared/Permissions` is the shared definition of workflow defaults. Each role's seed list includes `StatusWorkflowRoleDefaults.ForRole(roleName)`, and permission-cache invalidation enumerates the same definition with `GetAll()`. Workflow role assignments are maintained in that one place so seeding and cache-key deletion stay aligned.
+
+`PermissionDataSeeder` is a `[Dependency(ReplaceServices = true)]` override of ABP's. It scopes inserts with `CurrentTenant.Change(tenantId)` and adds only permissions not already granted (`names.Except(existsPermissionGrants)`). Every seed run supplies the full current default lists for both new and existing roles. Repeated runs do not duplicate existing assignments.
+
+Application status-action permissions are grouped under **Grant Application Management → Status Workflow**. Each action has its own permission; the parent groups them rather than acting as a master authorization check. Existing action identifiers are retained, including the permission now displayed as **Complete Approval/Decline**.
+
+The same insert-only behavior applies to workflow permissions and every other role default:
+
+- **Missing defaults are restored**, including defaults removed by a tenant administrator, whenever DbMigrator runs seeding again.
+- **Additional assignments are retained**, including administrator-granted permissions outside a role's default list and direct user permissions. Seeding does not delete assignments.
+- **New defaults reach existing roles** through the updated lists without separate migration inserts.
+
+`IdentityDataSeeder` creates the required static roles normally. Permission seeding uses no per-role workflow initialization markers or saved default lists. The default role lists for approval/decline, defer after approval, and bulk approval remain unchanged; missing grants for those defaults are also restored during seeding.
+
+The separate host migration `20261126213019_CorrectStatusWorkflowRoleDefaults` owns the one-time removal of Assessor's retired `Start Initial Review` and `Complete Initial Review` assignments. It deletes only those two names from `PermissionGrants` where `ProviderName = 'R'` and `ProviderKey = 'assessor'`, across host and tenant rows in the host database. Existing rows are removed even if manually granted, because the table cannot distinguish their origin; already absent rows are unchanged. EF migration history records completion, and subsequent seeding never repeats the deletion or grants those retired permissions to Assessor by default. An administrator can deliberately add them after the migration, and seeding retains those additional assignments. The migration's `Down()` intentionally leaves assignments unchanged because the original per-tenant choices cannot be reconstructed safely.
+
+Deployment must complete DbMigrator before starting the new web application. With Redis enabled, a background startup worker deletes permission-grant cache keys for the shared workflow defaults plus the two retired Assessor review pairs, for the host and each tenant. This also clears cached denials for defaults restored by seeding. Subsequent checks load current database values. Direct user cache entries, custom-role entries, and unrelated permission keys are preserved.
+
+Cleanup runs outside the host's startup path. Failures log a warning and retry every 30 seconds until cleanup succeeds or the host stops. A fresh service scope is used for each attempt, and shutdown cancels pending work and retry delays. Cached permission results may remain stale until cleanup succeeds; a Redis outage in this cleanup does not prevent the web application from starting.
 
 `IdentitySeedPermissions` and `SettingManagementSeedPermissions` hold the two grant sets that are not part of the `UnitySelector` tree.
 

@@ -42,20 +42,16 @@ namespace Unity.GrantManager.Permissions.GrantApplications
             // Application
             grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Applications.Default, L("Permission:GrantApplicationManagement.Applications.Default"));
 
-            // Assignment
-            var assignmentPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Assignments.Default, L("Permission:GrantApplicationManagement.Assignments.Default"));
-            assignmentPermissions.AddChild(GrantApplicationPermissions.Assignments.AssignInitial, L("Permission:GrantApplicationManagement.Assignments.AssignInitial"));
-
-            // Review
-            var reviewPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Reviews.Default, L("Permission:GrantApplicationManagement.Reviews.Default"));
-            reviewPermissions.AddChild(GrantApplicationPermissions.Reviews.StartInitial, L("Permission:GrantApplicationManagement.Reviews.StartInitial"));
-            reviewPermissions.AddChild(GrantApplicationPermissions.Reviews.CompleteInitial, L("Permission:GrantApplicationManagement.Reviews.CompleteInitial"));
-
-            // Approval
-            var approvalPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.Approvals.Default, L("Permission:GrantApplicationManagement.Approvals.Default"));
-            approvalPermissions.AddChild(GrantApplicationPermissions.Approvals.Complete, L("Permission:GrantApplicationManagement.Approvals.Complete"));
-            approvalPermissions.AddChild(GrantApplicationPermissions.Approvals.DeferAfterApproval, L("Permission:GrantApplicationManagement.Approvals.DeferAfterApproval"));
-            approvalPermissions.AddChild(GrantApplicationPermissions.Approvals.BulkApplicationApproval, L("Permission:GrantApplicationManagement.Approvals.BulkApplicationApproval"));
+            // Status Workflow groups the actions; each action retains its own permission.
+            var statusWorkflowPermissions = grantApplicationPermissionsGroup.AddPermission(GrantApplicationPermissions.StatusWorkflow.Default, L("Permission:GrantApplicationManagement.StatusWorkflow.Default"));
+            statusWorkflowPermissions.AddChild(GrantApplicationPermissions.Assignments.AssignInitial, L("Permission:GrantApplicationManagement.Assignments.AssignInitial"));
+            statusWorkflowPermissions.AddChild(GrantApplicationPermissions.Reviews.StartInitial, L("Permission:GrantApplicationManagement.Reviews.StartInitial"));
+            statusWorkflowPermissions.AddChild(GrantApplicationPermissions.Reviews.CompleteInitial, L("Permission:GrantApplicationManagement.Reviews.CompleteInitial"));
+            statusWorkflowPermissions.AddChild(GrantApplicationPermissions.Assessments.Start, L("Permission:GrantApplicationManagement.Assessments.Start"));
+            statusWorkflowPermissions.AddChild(GrantApplicationPermissions.Assessments.Complete, L("Permission:GrantApplicationManagement.Assessments.Complete"));
+            statusWorkflowPermissions.AddChild(GrantApplicationPermissions.Approvals.Complete, L("Permission:GrantApplicationManagement.Approvals.Complete"));
+            statusWorkflowPermissions.AddChild(GrantApplicationPermissions.Approvals.DeferAfterApproval, L("Permission:GrantApplicationManagement.Approvals.DeferAfterApproval"));
+            statusWorkflowPermissions.AddChild(GrantApplicationPermissions.Approvals.BulkApplicationApproval, L("Permission:GrantApplicationManagement.Approvals.BulkApplicationApproval"));
 
             // External Status Visibility
             var statusVisibilityPermissions = grantApplicationPermissionsGroup.AddPermission(UnitySelector.Application.Status.Default, L(UnitySelector.Application.Status.Default));
