@@ -95,7 +95,7 @@ public class StatusWorkflowPermissionCacheInvalidatorTests
     public async Task Should_Log_A_Warning_And_Retry_A_Failed_Cache_Cleanup()
     {
         var fixture = new Fixture { FailuresRemaining = 1 };
-        var logger = Substitute.For<ILogger<StatusWorkflowPermissionCacheCleanupService>>();
+        var logger = new RecordingLogger();
         using var provider = CreateStartupServices(fixture, redisEnabled: true);
         using var worker = CreateWorker(provider, logger);
 
@@ -104,8 +104,7 @@ public class StatusWorkflowPermissionCacheInvalidatorTests
 
         fixture.Removals.Count.ShouldBe(2);
         fixture.FailuresRemaining.ShouldBe(0);
-        logger.ReceivedCalls().Any(call => call.GetMethodInfo().Name == nameof(ILogger.Log)
-            && call.GetArguments()[0] is LogLevel.Warning).ShouldBeTrue();
+        logger.LogLevels.ShouldContain(LogLevel.Warning);
     }
 
     [Fact]
@@ -192,6 +191,18 @@ public class StatusWorkflowPermissionCacheInvalidatorTests
         ];
         return affectedPermissions.Select(change => PermissionGrantCacheItem.CalculateCacheKey(
             change.Permission, RolePermissionValueProvider.ProviderName, change.Role));
+    }
+
+    private sealed class RecordingLogger : ILogger<StatusWorkflowPermissionCacheCleanupService>
+    {
+        public List<LogLevel> LogLevels { get; } = new();
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+            Func<TState, Exception?, string> formatter) => LogLevels.Add(logLevel);
     }
 
     private sealed class Fixture

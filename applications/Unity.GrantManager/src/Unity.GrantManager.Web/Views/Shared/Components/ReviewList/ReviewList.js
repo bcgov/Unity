@@ -214,7 +214,7 @@ $(function () {
         }
 
         updateAiActionButtonsVisibility(reviewListTable, json.data ?? []);
-        updateAssessmentCreationButtons(reviewListTable);
+        void updateAssessmentCreationButtons(reviewListTable);
     });
 
     if (canUseAiScoring) {
@@ -251,7 +251,7 @@ $(function () {
     reviewListTable.buttons(0, null).container().appendTo("#AdjudicationTeamLeadActionBar");
     $("#AdjudicationTeamLeadActionBar .dt-buttons").contents().unwrap();
     updateAiActionButtonsVisibility(reviewListTable);
-    updateAssessmentCreationButtons(reviewListTable);
+    void updateAssessmentCreationButtons(reviewListTable);
 
     reviewListTable.on('select', function (e, dt, type, indexes) {
         handleRowSelection(e, dt, type, indexes, reviewListTable);
@@ -354,7 +354,7 @@ function refreshActionButtons(dataTableContext, assessmentId, selectedData) {
         }
     }
 
-    updateAssessmentCreationButtons(dataTableContext);
+    void updateAssessmentCreationButtons(dataTableContext);
 }
 
 function renderApproval(data) {
