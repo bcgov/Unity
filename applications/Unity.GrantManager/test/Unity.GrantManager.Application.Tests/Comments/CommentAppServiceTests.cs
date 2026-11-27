@@ -123,6 +123,7 @@ namespace Unity.GrantManager.Comments
         public async Task UpdateAsync_Should_Update_AssessmentComment()
         {
             // Arrange
+            Login(GrantManagerTestData.User1_UserId);
             using var uow = _unitOfWorkManager.Begin();
             var assessment = (await _assessmentsRepository.GetListAsync())[0];
             var assessmentComment = (await _assessmentCommentsRepository.GetQueryableAsync())
@@ -149,6 +150,7 @@ namespace Unity.GrantManager.Comments
         public async Task UpdateAsync_Should_Update_ApplicationComment()
         {
             // Arrange
+            Login(GrantManagerTestData.User2_UserId);
             using var uow = _unitOfWorkManager.Begin();
             var application = (await _applicationsRepository.GetListAsync())[0];
             var applicationComment = (await _applicationCommentsRepository.GetQueryableAsync())
@@ -265,6 +267,36 @@ namespace Unity.GrantManager.Comments
                     OwnerId = application.Id,
                     CommentType = CommentType.ApplicationComment
                 }));
+        }
+
+        [Fact]
+        [Trait("Category", "Integration")]
+        public async Task Should_Throw_When_NonOwner_Attempts_Update()
+        {
+            Login(GrantManagerTestData.User1_UserId);
+            using var uow = _unitOfWorkManager.Begin();
+            var application = (await _applicationsRepository.GetListAsync())[0];
+
+            var created = await _commentsAppService.CreateAsync(new CreateCommentByTypeDto
+            {
+                OwnerId = application.Id,
+                Comment = "Comment owned by user1",
+                CommentType = CommentType.ApplicationComment
+            });
+
+            Login(GrantManagerTestData.User2_UserId);
+
+            await Should.ThrowAsync<BusinessException>(() =>
+                _commentsAppService.UpdateAsync(new UpdateCommentByTypeDto
+                {
+                    OwnerId = application.Id,
+                    CommentId = created.Id,
+                    Comment = "Overwritten by user2",
+                    CommentType = CommentType.ApplicationComment
+                }));
+
+            var unchanged = await _applicationCommentsRepository.GetAsync(created.Id);
+            unchanged.Comment.ShouldBe("Comment owned by user1");
         }
 
         [Theory]
